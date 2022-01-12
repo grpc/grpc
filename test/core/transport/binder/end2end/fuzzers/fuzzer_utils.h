@@ -59,7 +59,7 @@ class NoOpWritableParcel : public WritableParcel {
 // Binder implementation used in fuzzing.
 //
 // Most of its the functionalities are no-op, except ConstructTxReceiver now
-// returns a TranasctionReceiverForFuzzing.
+// returns a TransactionReceiverForFuzzing.
 class BinderForFuzzing : public Binder {
  public:
   BinderForFuzzing() : input_(absl::make_unique<NoOpWritableParcel>()) {}
@@ -138,9 +138,9 @@ void JoinFuzzingThread();
 //
 // When constructed, start sending fuzzed requests to the client. When all the
 // bytes are consumed, the reference to WireReader will be released.
-class TranasctionReceiverForFuzzing : public TransactionReceiver {
+class TransactionReceiverForFuzzing : public TransactionReceiver {
  public:
-  TranasctionReceiverForFuzzing(
+  TransactionReceiverForFuzzing(
       binder_transport_fuzzer::IncomingParcels incoming_parcels,
       grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
       TransactionReceiver::OnTransactCb cb);

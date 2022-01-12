@@ -25,7 +25,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -34,10 +33,10 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -220,8 +219,8 @@ static void do_connect(void* arg, grpc_error_handle error) {
     grpc_endpoint* server;
     grpc_passthru_endpoint_create(&client, &server, nullptr, true);
     *fc->ep = client;
-    start_scheduling_grpc_passthru_endpoint_channel_effects(
-        client, g_channel_actions, [&]() { g_channel_force_delete = true; });
+    start_scheduling_grpc_passthru_endpoint_channel_effects(client,
+                                                            g_channel_actions);
 
     grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(

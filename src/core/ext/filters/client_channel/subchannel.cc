@@ -141,14 +141,14 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      callstk,           /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
+      callstk,             /* call_stack */
+      nullptr,             /* server_transport_data */
+      args.context,        /* context */
+      args.path.c_slice(), /* path */
+      args.start_time,     /* start_time */
+      args.deadline,       /* deadline */
+      args.arena,          /* arena */
+      args.call_combiner   /* call_combiner */
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
@@ -964,7 +964,8 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder* builder =
+      grpc_channel_stack_builder_create("subchannel");
   grpc_channel_stack_builder_set_channel_arguments(
       builder, connecting_result_.channel_args);
   grpc_channel_stack_builder_set_transport(builder,

@@ -276,8 +276,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
-            'gcc_musl', 'clang4', 'clang12'
+            'gcc4.9', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11', 'gcc_musl',
+            'clang4', 'clang12'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -320,16 +320,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 compiler='cmake_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
-    # C and C++ with the c-ares DNS resolver on Linux
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args,
-                                extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 

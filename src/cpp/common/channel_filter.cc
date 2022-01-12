@@ -30,13 +30,14 @@ namespace grpc {
 
 // MetadataBatch
 
-grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
-                                               const string& value) {
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
-                                        SliceFromCopiedString(value));
-  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata", batch_->LinkHead(storage));
-  return storage;
+void MetadataBatch::AddMetadata(const string& key, const string& value) {
+  batch_->Append(key, grpc_core::Slice::FromCopiedString(value),
+                 [&](absl::string_view error, const grpc_core::Slice&) {
+                   gpr_log(GPR_INFO, "%s",
+                           absl::StrCat("MetadataBatch::AddMetadata error:",
+                                        error, " key=", key, " value=", value)
+                               .c_str());
+                 });
 }
 
 // ChannelData

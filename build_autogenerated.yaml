@@ -131,10 +131,7 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   - test/core/compression/args_utils.h
   - test/core/end2end/cq_verifier.h
@@ -146,10 +143,7 @@ libs:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/util/test_lb_policies.h
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/compression/args_utils.cc
   - test/core/end2end/cq_verifier.cc
@@ -443,19 +437,15 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
-  - src/core/ext/filters/client_channel/resolver_factory.h
-  - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -470,11 +460,10 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
+  - src/core/ext/filters/rbac/rbac_filter.h
+  - src/core/ext/filters/rbac/rbac_service_config_parser.h
   - src/core/ext/filters/server_config_selector/server_config_selector.h
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.h
-  - src/core/ext/service_config/service_config.h
-  - src/core/ext/service_config/service_config_call_data.h
-  - src/core/ext/service_config/service_config_parser.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -492,15 +481,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
-  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -546,6 +532,7 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
@@ -646,6 +633,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h
@@ -653,6 +641,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h
@@ -684,6 +673,11 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.h
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/eval.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/explain.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.h
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/value.upbdefs.h
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h
@@ -724,6 +718,7 @@ libs:
   - src/core/ext/xds/xds_endpoint.h
   - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
+  - src/core/ext/xds/xds_http_rbac_filter.h
   - src/core/ext/xds/xds_listener.h
   - src/core/ext/xds/xds_resource_type.h
   - src/core/ext/xds/xds_resource_type_impl.h
@@ -821,6 +816,7 @@ libs:
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -863,6 +859,10 @@ libs:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resolver/resolver.h
+  - src/core/lib/resolver/resolver_factory.h
+  - src/core/lib/resolver/resolver_registry.h
+  - src/core/lib/resolver/server_address.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -872,6 +872,9 @@ libs:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/sdk_server_authz_filter.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
@@ -917,6 +920,9 @@ libs:
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
+  - src/core/lib/service_config/service_config.h
+  - src/core/lib/service_config/service_config_call_data.h
+  - src/core/lib/service_config/service_config_parser.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -926,7 +932,6 @@ libs:
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -946,11 +951,9 @@ libs:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
-  - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -1021,7 +1024,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
@@ -1037,12 +1039,10 @@ libs:
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
-  - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -1059,10 +1059,10 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
+  - src/core/ext/filters/rbac/rbac_filter.cc
+  - src/core/ext/filters/rbac/rbac_service_config_parser.cc
   - src/core/ext/filters/server_config_selector/server_config_selector.cc
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
-  - src/core/ext/service_config/service_config.cc
-  - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -1088,7 +1088,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -1140,6 +1139,7 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
@@ -1240,6 +1240,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
@@ -1247,6 +1248,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
@@ -1278,6 +1280,11 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
   - src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/eval.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/explain.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.c
+  - src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/value.upbdefs.c
   - src/core/ext/upbdefs-generated/google/api/http.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c
@@ -1315,6 +1322,7 @@ libs:
   - src/core/ext/xds/xds_endpoint.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
+  - src/core/ext/xds/xds_http_rbac_filter.cc
   - src/core/ext/xds/xds_listener.cc
   - src/core/ext/xds/xds_resource_type.cc
   - src/core/ext/xds/xds_route_config.cc
@@ -1449,6 +1457,9 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resolver/resolver.cc
+  - src/core/lib/resolver/resolver_registry.cc
+  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -1457,6 +1468,9 @@ libs:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/sdk_server_authz_filter.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1469,7 +1483,6 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
-  - src/core/lib/security/credentials/credentials_metadata.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   - src/core/lib/security/credentials/external/aws_request_signer.cc
   - src/core/lib/security/credentials/external/external_account_credentials.cc
@@ -1511,6 +1524,8 @@ libs:
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
+  - src/core/lib/service_config/service_config.cc
+  - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -1520,7 +1535,6 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -1546,11 +1560,8 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
-  - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -1766,18 +1777,14 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
-  - src/core/ext/filters/client_channel/resolver_factory.h
-  - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -1792,9 +1799,6 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/service_config/service_config.h
-  - src/core/ext/service_config/service_config_call_data.h
-  - src/core/ext/service_config/service_config_parser.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -1812,15 +1816,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
-  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -1922,6 +1923,7 @@ libs:
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -1963,12 +1965,19 @@ libs:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resolver/resolver.h
+  - src/core/lib/resolver/resolver_factory.h
+  - src/core/lib/resolver/resolver_registry.h
+  - src/core/lib/resolver/server_address.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/service_config/service_config.h
+  - src/core/lib/service_config/service_config_call_data.h
+  - src/core/lib/service_config/service_config_parser.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -1978,7 +1987,6 @@ libs:
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -1998,11 +2006,9 @@ libs:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
-  - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2041,7 +2047,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
@@ -2055,12 +2060,10 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
-  - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2077,8 +2080,6 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/service_config/service_config.cc
-  - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -2102,7 +2103,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -2245,6 +2245,9 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resolver/resolver.cc
+  - src/core/lib/resolver/resolver_registry.cc
+  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -2252,6 +2255,8 @@ libs:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
+  - src/core/lib/service_config/service_config.cc
+  - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -2261,7 +2266,6 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -2287,11 +2291,8 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
-  - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -3730,7 +3731,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -3745,7 +3745,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/status:statusor
@@ -3764,14 +3763,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: metadata_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/metadata_test.cc
-  deps:
-  - grpc_test_util
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -3888,16 +3879,10 @@ targets:
   build: test
   language: c
   headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/surface/public_headers_must_be_c89.c
   deps:
@@ -4028,13 +4013,11 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
   - gpr
@@ -4508,7 +4491,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4526,7 +4508,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/arena_promise_test.cc
   deps:
   - absl/status:statusor
@@ -4561,14 +4542,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/authorization_matchers_test.cc
   deps:
   - grpc_test_util
@@ -4577,16 +4552,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/cpp/server/authorization_policy_provider.cc
   - test/cpp/server/authorization_policy_provider_test.cc
@@ -4843,20 +4812,14 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/cel_authorization_engine.h
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
-  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
   - src/core/lib/security/authorization/mock_cel/cel_expression.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
-  - src/core/lib/security/authorization/rbac_policy.h
   src:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
   - absl/container:flat_hash_set
@@ -5021,7 +4984,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5039,7 +5001,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/status:statusor
@@ -5358,6 +5319,21 @@ targets:
   - test/core/gprpp/cpp_impl_of_test.cc
   deps: []
   uses_polling: false
+- name: crl_ssl_transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/crl_ssl_transport_security_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: delegating_channel_test
   gtest: true
   build: test
@@ -5641,7 +5617,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/iomgr/combiner.cc
@@ -5653,7 +5628,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - absl/status:statusor
@@ -5807,38 +5781,21 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/murmur_hash.h
-  - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tls.h
-  - src/core/lib/gpr/tmpfile.h
-  - src/core/lib/gpr/useful.h
+  - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/construct_destruct.h
-  - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/examine_stack.h
-  - src/core/lib/gprpp/fork.h
-  - src/core/lib/gprpp/global_config.h
-  - src/core/lib/gprpp/global_config_custom.h
-  - src/core/lib/gprpp/global_config_env.h
-  - src/core/lib/gprpp/global_config_generic.h
-  - src/core/lib/gprpp/host_port.h
-  - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/memory.h
-  - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/status_helper.h
-  - src/core/lib/gprpp/sync.h
-  - src/core/lib/gprpp/thd.h
-  - src/core/lib/gprpp/time_util.h
-  - src/core/lib/profiling/timers.h
+  - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_internal.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -5847,81 +5804,53 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/lib/gpr/alloc.cc
-  - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/cpu_iphone.cc
-  - src/core/lib/gpr/cpu_linux.cc
-  - src/core/lib/gpr/cpu_posix.cc
-  - src/core/lib/gpr/cpu_windows.cc
-  - src/core/lib/gpr/env_linux.cc
-  - src/core/lib/gpr/env_posix.cc
-  - src/core/lib/gpr/env_windows.cc
-  - src/core/lib/gpr/log.cc
-  - src/core/lib/gpr/log_android.cc
-  - src/core/lib/gpr/log_linux.cc
-  - src/core/lib/gpr/log_posix.cc
-  - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/string_posix.cc
-  - src/core/lib/gpr/string_util_windows.cc
-  - src/core/lib/gpr/string_windows.cc
-  - src/core/lib/gpr/sync.cc
-  - src/core/lib/gpr/sync_abseil.cc
-  - src/core/lib/gpr/sync_posix.cc
-  - src/core/lib/gpr/sync_windows.cc
-  - src/core/lib/gpr/time.cc
-  - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
-  - src/core/lib/gpr/time_windows.cc
-  - src/core/lib/gpr/tmpfile_msys.cc
-  - src/core/lib/gpr/tmpfile_posix.cc
-  - src/core/lib/gpr/tmpfile_windows.cc
-  - src/core/lib/gpr/wrap_memcpy.cc
-  - src/core/lib/gprpp/examine_stack.cc
-  - src/core/lib/gprpp/fork.cc
-  - src/core/lib/gprpp/global_config_env.cc
-  - src/core/lib/gprpp/host_port.cc
-  - src/core/lib/gprpp/mpscq.cc
-  - src/core/lib/gprpp/stat_posix.cc
-  - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/status_helper.cc
-  - src/core/lib/gprpp/thd_posix.cc
-  - src/core/lib/gprpp/thd_windows.cc
-  - src/core/lib/gprpp/time_util.cc
-  - src/core/lib/profiling/basic_timers.cc
-  - src/core/lib/profiling/stap_timers.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   deps:
-  - absl/base:base
-  - absl/base:core_headers
   - absl/container:flat_hash_set
-  - absl/memory:memory
-  - absl/random:random
-  - absl/status:status
   - absl/status:statusor
-  - absl/strings:cord
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
-  - absl/types:optional
   - absl/types:variant
-  - upb
+  - gpr
   uses_polling: false
 - name: generic_end2end_test
   gtest: true
@@ -5986,14 +5915,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/grpc_authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -6002,16 +5925,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
@@ -6250,16 +6167,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: hpack_encoder_index_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
-  src:
-  - test/core/transport/chttp2/hpack_encoder_index_test.cc
-  deps:
-  - absl/types:optional
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6730,7 +6637,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6746,7 +6652,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/status:statusor
@@ -6994,38 +6899,21 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/murmur_hash.h
-  - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tls.h
-  - src/core/lib/gpr/tmpfile.h
-  - src/core/lib/gpr/useful.h
+  - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/construct_destruct.h
-  - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/examine_stack.h
-  - src/core/lib/gprpp/fork.h
-  - src/core/lib/gprpp/global_config.h
-  - src/core/lib/gprpp/global_config_custom.h
-  - src/core/lib/gprpp/global_config_env.h
-  - src/core/lib/gprpp/global_config_generic.h
-  - src/core/lib/gprpp/host_port.h
-  - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/memory.h
-  - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/status_helper.h
-  - src/core/lib/gprpp/sync.h
-  - src/core/lib/gprpp/thd.h
-  - src/core/lib/gprpp/time_util.h
-  - src/core/lib/profiling/timers.h
+  - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_internal.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_join.h
@@ -7034,77 +6922,50 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/detail/switch.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/intra_activity_waiter.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/lib/gpr/alloc.cc
-  - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/cpu_iphone.cc
-  - src/core/lib/gpr/cpu_linux.cc
-  - src/core/lib/gpr/cpu_posix.cc
-  - src/core/lib/gpr/cpu_windows.cc
-  - src/core/lib/gpr/env_linux.cc
-  - src/core/lib/gpr/env_posix.cc
-  - src/core/lib/gpr/env_windows.cc
-  - src/core/lib/gpr/log.cc
-  - src/core/lib/gpr/log_android.cc
-  - src/core/lib/gpr/log_linux.cc
-  - src/core/lib/gpr/log_posix.cc
-  - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/string_posix.cc
-  - src/core/lib/gpr/string_util_windows.cc
-  - src/core/lib/gpr/string_windows.cc
-  - src/core/lib/gpr/sync.cc
-  - src/core/lib/gpr/sync_abseil.cc
-  - src/core/lib/gpr/sync_posix.cc
-  - src/core/lib/gpr/sync_windows.cc
-  - src/core/lib/gpr/time.cc
-  - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
-  - src/core/lib/gpr/time_windows.cc
-  - src/core/lib/gpr/tmpfile_msys.cc
-  - src/core/lib/gpr/tmpfile_posix.cc
-  - src/core/lib/gpr/tmpfile_windows.cc
-  - src/core/lib/gpr/wrap_memcpy.cc
-  - src/core/lib/gprpp/examine_stack.cc
-  - src/core/lib/gprpp/fork.cc
-  - src/core/lib/gprpp/global_config_env.cc
-  - src/core/lib/gprpp/host_port.cc
-  - src/core/lib/gprpp/mpscq.cc
-  - src/core/lib/gprpp/stat_posix.cc
-  - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/status_helper.cc
-  - src/core/lib/gprpp/thd_posix.cc
-  - src/core/lib/gprpp/thd_windows.cc
-  - src/core/lib/gprpp/time_util.cc
-  - src/core/lib/profiling/basic_timers.cc
-  - src/core/lib/profiling/stap_timers.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/memory_allocator.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
-  - absl/base:base
-  - absl/base:core_headers
-  - absl/memory:memory
-  - absl/random:random
-  - absl/status:status
   - absl/status:statusor
-  - absl/strings:cord
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
-  - absl/types:optional
   - absl/types:variant
-  - upb
+  - gpr
   uses_polling: false
 - name: poll_test
   gtest: true
@@ -7117,15 +6978,6 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: popularity_count_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
-  src:
-  - test/core/transport/chttp2/popularity_count_test.cc
-  deps: []
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -7324,21 +7176,25 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: rbac_service_config_parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: rbac_translator_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/rbac_translator_test.cc
   deps:
@@ -7440,7 +7296,6 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -7457,7 +7312,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/status:statusor
@@ -7508,20 +7362,14 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/cpp/server/authorization_policy_provider.cc
   - test/cpp/end2end/sdk_authz_end2end_test.cc
@@ -7783,15 +7631,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: static_metadata_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/static_metadata_test.cc
-  deps:
-  - grpc_test_util
 - name: stats_test
   gtest: true
   build: test
@@ -7894,14 +7733,12 @@ targets:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_test.cc
   - test/core/util/build.cc
   deps:
@@ -8195,6 +8032,17 @@ targets:
   - absl/status:status
   - absl/status:statusor
   - absl/types:variant
+  uses_polling: false
+- name: try_seq_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/try_seq_metadata_test.cc
+  deps:
+  - grpc
   uses_polling: false
 - name: try_seq_test
   gtest: true
@@ -8595,16 +8443,21 @@ targets:
   - src/proto/grpc/testing/xds/v3/csds.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
   - src/proto/grpc/testing/xds/v3/extension.proto
   - src/proto/grpc/testing/xds/v3/fault.proto
   - src/proto/grpc/testing/xds/v3/fault_common.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
   - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto

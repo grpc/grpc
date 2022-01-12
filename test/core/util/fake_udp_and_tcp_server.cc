@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "fake_udp_and_tcp_server.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"

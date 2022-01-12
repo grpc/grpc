@@ -156,8 +156,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/proxy_mapper_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
@@ -178,9 +176,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_result_parsing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.cc" role="src" />
@@ -189,8 +184,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
@@ -221,15 +214,14 @@
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/server_config_selector/server_config_selector_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/service_config/service_config.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/service_config/service_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/service_config/service_config_call_data.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/service_config/service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
@@ -269,22 +261,18 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_constants.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_utils.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/popularity_count.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_map.h" role="src" />
@@ -378,6 +366,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c" role="src" />
@@ -578,6 +568,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/rbac/v3/rbac.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c" role="src" />
@@ -592,6 +584,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c" role="src" />
@@ -654,6 +648,16 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/checked.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/eval.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/eval.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/explain.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/explain.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/syntax.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/value.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/expr/v1alpha1/value.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/http.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/api/http.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c" role="src" />
@@ -731,6 +735,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.cc" role="src" />
@@ -991,6 +997,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolved_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
@@ -1076,6 +1083,13 @@
     <file baseinstalldir="/" name="src/core/lib/promise/poll.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/race.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/resolver_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/resolver_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/server_address.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resolver/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
@@ -1093,6 +1107,12 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_policy_provider_vtable.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_authorization_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_authorization_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/rbac_policy.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/rbac_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/sdk_server_authz_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/sdk_server_authz_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
@@ -1112,7 +1132,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_external_account_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_external_account_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/external/aws_request_signer.cc" role="src" />
@@ -1192,6 +1211,11 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/b64.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
@@ -1210,8 +1234,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/static_slice.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/static_slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/builtins.cc" role="src" />
@@ -1256,16 +1278,11 @@
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />

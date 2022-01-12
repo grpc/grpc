@@ -18,12 +18,12 @@
 
 #include <random>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -135,12 +135,18 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
+<<<<<<< HEAD
   httpcli_ = HttpCli::Get(
       pollent, ResourceQuota::Default(), &request,
       absl::make_unique<HttpCli::PlaintextHttpCliHandshaker::Factory>(),
       ExecCtx::Get()->Now() + 10000,  // 10s timeout
       &on_done_, &response_);
   httpcli_->Start();
+=======
+  grpc_httpcli_get(pollent, ResourceQuota::Default(), &request,
+                   ExecCtx::Get()->Now() + 10000,  // 10s timeout
+                   &on_done_, &response_);
+>>>>>>> upstream/master
 }
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {
