@@ -761,7 +761,7 @@ class CronetMetadataEncoder {
               const grpc_core::Slice& value_slice) {
     char* key = grpc_slice_to_c_string(key_slice.c_slice());
     char* value;
-    if (grpc_is_binary_header_internal(value_slice.c_slice())) {
+    if (grpc_is_binary_header_internal(key_slice.c_slice())) {
       grpc_slice wire_value = grpc_chttp2_base64_encode(value_slice.c_slice());
       value = grpc_slice_to_c_string(wire_value);
       grpc_slice_unref_internal(wire_value);
