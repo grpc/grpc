@@ -190,11 +190,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "e168777eb0fc14ea5a65749a2f53c095935a6ea65f38899a289808fb0c221dc4",
-            strip_prefix = "boringssl-4fb158925f7753d80fb858cb0239dff893ef9f15",
+            sha256 = "534fa658bd845fd974b50b10f444d392dfd0d93768c4a51b61263fd37d851c40",
+            strip_prefix = "boringssl-b9232f9e27e5668bc0414879dcdedb2a59ea75f2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/4fb158925f7753d80fb858cb0239dff893ef9f15.tar.gz",
-                "https://github.com/google/boringssl/archive/4fb158925f7753d80fb858cb0239dff893ef9f15.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/b9232f9e27e5668bc0414879dcdedb2a59ea75f2.tar.gz",
+                "https://github.com/google/boringssl/archive/b9232f9e27e5668bc0414879dcdedb2a59ea75f2.tar.gz",
             ],
         )
 
@@ -213,11 +213,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "74b5c6f7ca553a8d7c365ff0b5008ef5a44bc1aaeca6f964ad7557c2fa430691",
-            strip_prefix = "protobuf-0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928",
+            sha256 = "1f11c0cb85d5006da7032ac588f87e2e3eb28e9b095f81aba8956cb3635c8d4e",
+            strip_prefix = "protobuf-cb46755e6405e083b45481f5ea4754b180705529",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/0dab03ba7bc438d7ba3eac2b2c1eb39ed520f928.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/cb46755e6405e083b45481f5ea4754b180705529.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/cb46755e6405e083b45481f5ea4754b180705529.tar.gz",
             ],
             patches = ["@com_github_grpc_grpc//third_party:protobuf.patch"],
             patch_args = ["-p1"],
