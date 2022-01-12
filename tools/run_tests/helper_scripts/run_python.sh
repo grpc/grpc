@@ -27,4 +27,3 @@ $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
 (mv -T "$ROOT/htmlcov" "$ROOT/reports/python-coverage") || true
-
