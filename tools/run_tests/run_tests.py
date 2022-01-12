@@ -178,18 +178,22 @@ _PythonConfigVars = collections.namedtuple('_ConfigVars', [
     'venv_relative_python',
     'toolchain',
     'runner',
+    'test_name',
+    'iomgr_platform',
 ])
 
 
 def _python_config_generator(name, major, minor, bits, config_vars):
-    build = (config_vars.shell + config_vars.builder +
-             config_vars.builder_prefix_arguments +
-             [_python_pattern_function(major=major, minor=minor, bits=bits)] +
-             [name] + config_vars.venv_relative_python + config_vars.toolchain)
-    run = (config_vars.shell + config_vars.runner + [
-        os.path.join(name, config_vars.venv_relative_python[0]),
-    ])
-    return PythonConfig(name, build, run)
+    name += '_' + config_vars.iomgr_platform
+    return PythonConfig(
+        name, config_vars.shell + config_vars.builder +
+        config_vars.builder_prefix_arguments +
+        [_python_pattern_function(major=major, minor=minor, bits=bits)] +
+        [name] + config_vars.venv_relative_python + config_vars.toolchain,
+        config_vars.shell + config_vars.runner + [
+            os.path.join(name, config_vars.venv_relative_python[0]),
+            config_vars.test_name
+        ])
 
 
 def _pypy_config_generator(name, major, config_vars):
@@ -612,9 +616,8 @@ class PythonLanguage(object):
         ],
         'asyncio': ['src/python/grpcio_tests/tests_aio/tests.json'],
     }
-
-    _TEST_COMMAND = {
-        'native': 'test_lite',
+    _TEST_FOLDER = {
+        'native': 'test',
         'gevent': 'test_gevent',
         'asyncio': 'test_aio',
     }
@@ -626,36 +629,28 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        jobs = []
-        for io_platform in self._TEST_SPECS_FILE:
-            test_cases = []
-            for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
-                with open(tests_json_file_name) as tests_json_file:
-                    test_cases.extend(json.load(tests_json_file))
-
-            environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-            # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
-            # designed for non-native IO manager. It has a side-effect that
-            # overrides threading settings in C-Core.
-            if io_platform != 'native':
-                environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
-            for python_config in self.pythons:
-                # TODO(https://github.com/grpc/grpc/issues/23784) allow gevent
-                # to run on later version once issue solved.
-                if io_platform == 'gevent' and python_config.name != 'py36':
-                    continue
-                jobs.extend([
-                    self.config.job_spec(
-                        python_config.run + [self._TEST_COMMAND[io_platform]],
-                        timeout_seconds=8 * 60,
-                        environ=dict(
-                            GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
-                            **environment),
-                        shortname='%s.%s.%s' %
-                        (python_config.name, io_platform, test_case),
-                    ) for test_case in test_cases
-                ])
-        return jobs
+        tests_json = []
+        for tests_json_file_name in self._TEST_SPECS_FILE[
+                self.args.iomgr_platform]:
+            with open(tests_json_file_name) as tests_json_file:
+                tests_json.extend(json.load(tests_json_file))
+        environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+        # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
+        # designed for non-native IO manager. It has a side-effect that
+        # overrides threading settings in C-Core.
+        if args.iomgr_platform != 'native':
+            environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
+        return [
+            self.config.job_spec(
+                config.run,
+                timeout_seconds=8 * 60,
+                environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(suite_name),
+                             **environment),
+                shortname='%s.%s.%s' %
+                (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
+                 suite_name),
+            ) for suite_name in tests_json for config in self.pythons
+        ]
 
     def pre_build_steps(self):
         return []
@@ -693,11 +688,6 @@ class PythonLanguage(object):
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
-        if args.iomgr_platform != 'native':
-            raise ValueError(
-                'Python builds no longer differentiate IO Manager platforms, please use "native"'
-            )
-
         if args.arch == 'x86':
             bits = '32'
         else:
@@ -722,13 +712,25 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
+        # Selects the corresponding testing mode.
+        # See src/python/grpcio_tests/commands.py for implementation details.
+        if args.iomgr_platform == 'native':
+            test_command = 'test_lite'
+        elif args.iomgr_platform == 'gevent':
+            test_command = 'test_gevent'
+        elif args.iomgr_platform == 'asyncio':
+            test_command = 'test_aio'
+        else:
+            raise ValueError('Unsupported IO Manager platform: %s' %
+                             args.iomgr_platform)
         runner = [
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
 
         config_vars = _PythonConfigVars(shell, builder,
                                         builder_prefix_arguments,
-                                        venv_relative_python, toolchain, runner)
+                                        venv_relative_python, toolchain, runner,
+                                        test_command, args.iomgr_platform)
         python36_config = _python_config_generator(name='py36',
                                                    major='3',
                                                    minor='6',
@@ -749,11 +751,6 @@ class PythonLanguage(object):
                                                    minor='9',
                                                    bits=bits,
                                                    config_vars=config_vars)
-        python310_config = _python_config_generator(name='py310',
-                                                    major='3',
-                                                    minor='10',
-                                                    bits=bits,
-                                                    config_vars=config_vars)
         pypy27_config = _pypy_config_generator(name='pypy',
                                                major='2',
                                                config_vars=config_vars)
@@ -761,19 +758,34 @@ class PythonLanguage(object):
                                                major='3',
                                                config_vars=config_vars)
 
+        if args.iomgr_platform in ('asyncio', 'gevent'):
+            if args.compiler not in ('default', 'python3.6', 'python3.7',
+                                     'python3.8', 'python3.9'):
+                raise Exception(
+                    'Compiler %s not supported with IO Manager platform: %s' %
+                    (args.compiler, args.iomgr_platform))
+
         if args.compiler == 'default':
             if os.name == 'nt':
-                return (python38_config,)
-            elif os.uname()[0] == 'Darwin':
-                # NOTE(rbellevi): Testing takes significantly longer on
-                # MacOS, so we restrict the number of interpreter versions
-                # tested.
-                return (python38_config,)
+                if args.iomgr_platform == 'gevent':
+                    # TODO(https://github.com/grpc/grpc/issues/23784) allow
+                    # gevent to run on later version once issue solved.
+                    return (python36_config,)
+                else:
+                    return (python38_config,)
             else:
-                return (
-                    python36_config,
-                    python38_config,
-                )
+                if args.iomgr_platform in ('asyncio', 'gevent'):
+                    return (python36_config, python38_config)
+                elif os.uname()[0] == 'Darwin':
+                    # NOTE(rbellevi): Testing takes significantly longer on
+                    # MacOS, so we restrict the number of interpreter versions
+                    # tested.
+                    return (python38_config,)
+                else:
+                    return (
+                        python37_config,
+                        python38_config,
+                    )
         elif args.compiler == 'python3.6':
             return (python36_config,)
         elif args.compiler == 'python3.7':
@@ -782,8 +794,6 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'python3.9':
             return (python39_config,)
-        elif args.compiler == 'python3.10':
-            return (python310_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -795,8 +805,6 @@ class PythonLanguage(object):
                 python36_config,
                 python37_config,
                 python38_config,
-                python39_config,
-                python310_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
