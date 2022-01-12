@@ -6,23 +6,24 @@ libs
 objs
 
 # Python items
+cython_debug/
+python_build/
+yapf_virtual_environment/
+python_pylint_venv/
 .coverage*
 .eggs
-.pytype
-*.egg
-*.egg-info
-a.out
-cython_debug/
-dist/
 htmlcov/
-py3*/
-python_build/
-python_pylint_venv/
-src/python/grpcio_*/=*
-src/python/grpcio_*/build/
+dist/
+*.egg
+py27_gevent/
+py27_native/
+py3[0-9]_gevent/
+py3[0-9]_native/
+a.out
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
-yapf_virtual_environment/
+.pytype
+*.egg-info
 
 # Node installation output
 node_modules
