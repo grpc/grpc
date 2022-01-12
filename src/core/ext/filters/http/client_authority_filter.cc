@@ -30,6 +30,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -37,85 +38,52 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
+namespace grpc_core {
 namespace {
 
-struct call_data {
-  grpc_core::CallCombiner* call_combiner;
+class ClientAuthorityChannelFilter {
+ public:
+  absl::StatusOr<ClientAuthorityChannelFilter> Create(
+      const grpc_channel_args* args) {
+    const grpc_arg* default_authority_arg =
+        grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);
+    if (default_authority_arg == nullptr) {
+      return absl::InvalidArgumentError(
+          "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
+          "channels must explicitly specify a value for this argument.");
+    }
+    const char* default_authority_str =
+        grpc_channel_arg_get_string(default_authority_arg);
+    if (default_authority_str == nullptr) {
+      return absl::InvalidArgumentError(
+          "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
+    }
+    return absl::StatusOr<ClientAuthorityChannelFilter>(
+        ClientAuthorityChannelFilter(
+            Slice::FromCopiedString(default_authority_str)));
+  }
+
+  ArenaPromise<TrailingMetadata> MakeCallPromise(
+      InitialMetadata* initial_metadata,
+      NextPromiseFactory next_promise_factory) {
+    if (initial_metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+      initial_metadata->Set(HttpAuthorityMetadata(), default_authority_.Ref());
+    }
+    return next_promise_factory(initial_metadata);
+  }
+
+ private:
+  explicit ClientAuthorityChannelFilter(Slice default_authority)
+      : default_authority_(std::move(default_authority)) {}
+  Slice default_authority_;
 };
 
-struct channel_data {
-  grpc_core::Slice default_authority;
-};
-
-void client_authority_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  // Handle send_initial_metadata.
-  // If the initial metadata doesn't already contain :authority, add it.
-  if (batch->send_initial_metadata &&
-      batch->payload->send_initial_metadata.send_initial_metadata->get_pointer(
-          grpc_core::HttpAuthorityMetadata()) == nullptr) {
-    batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::HttpAuthorityMetadata(), chand->default_authority.Ref());
-  }
-  // Pass control down the stack.
-  grpc_call_next_op(elem, batch);
-}
-
-/* Constructor for call_data */
-grpc_error_handle client_authority_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  return GRPC_ERROR_NONE;
-}
-
-/* Destructor for call_data */
-void client_authority_destroy_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_final_info* /*final_info*/,
-    grpc_closure* /*ignored*/) {}
-
-/* Constructor for channel_data */
-grpc_error_handle client_authority_init_channel_elem(
-    grpc_channel_element* elem, grpc_channel_element_args* args) {
-  channel_data* chand = new (elem->channel_data) channel_data;
-  const grpc_arg* default_authority_arg =
-      grpc_channel_args_find(args->channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
-  if (default_authority_arg == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
-        "channels must explicitly specify a value for this argument.");
-  }
-  const char* default_authority_str =
-      grpc_channel_arg_get_string(default_authority_arg);
-  if (default_authority_str == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
-  }
-  chand->default_authority =
-      grpc_core::Slice::FromCopiedString(default_authority_str);
-  GPR_ASSERT(!args->is_last);
-  return GRPC_ERROR_NONE;
-}
-
-/* Destructor for channel data */
-void client_authority_destroy_channel_elem(grpc_channel_element* elem) {
-  static_cast<channel_data*>(elem->channel_data)->~channel_data();
-}
 }  // namespace
+}  // namespace grpc_core
 
-const grpc_channel_filter grpc_client_authority_filter = {
-    client_authority_start_transport_stream_op_batch,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    client_authority_init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    client_authority_destroy_call_elem,
-    sizeof(channel_data),
-    client_authority_init_channel_elem,
-    client_authority_destroy_channel_elem,
-    grpc_channel_next_get_info,
-    "authority"};
+const grpc_channel_filter grpc_client_authority_filter =
+    grpc_core::MakePromiseBasedFilter<
+        grpc_core::ClientAuthorityChannelFilter>();
 
 static bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
   const grpc_channel_args* channel_args =
