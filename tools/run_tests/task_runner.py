@@ -73,6 +73,18 @@ argp.add_argument('-x',
                   default='report_taskrunner_sponge_log.xml',
                   type=str,
                   help='Filename for the JUnit-compatible XML report')
+argp.add_argument('--dry_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Only print what would be run.')
+argp.add_argument(
+    '--inner_jobs',
+    default=None,
+    type=int,
+    help=
+    'Number of parallel jobs to use by each target. Passed as build_jobspec(inner_jobs=N) to each target.'
+)
 
 args = argp.parse_args()
 
@@ -83,7 +95,15 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
-targets = sorted(set(targets), key=lambda target: target.name)
+
+print('Will build %d targets:' % len(targets))
+for target in targets:
+    print('  %s, labels %s' % (target.name, target.labels))
+print()
+
+if args.dry_run:
+    print('--dry_run was used, exiting')
+    sys.exit(1)
 
 # Execute pre-build phase
 prebuild_jobs = []
@@ -99,7 +119,7 @@ if prebuild_jobs:
 
 build_jobs = []
 for target in targets:
-    build_jobs.append(target.build_jobspec())
+    build_jobs.append(target.build_jobspec(inner_jobs=args.inner_jobs))
 if not build_jobs:
     print('Nothing to build.')
     sys.exit(1)

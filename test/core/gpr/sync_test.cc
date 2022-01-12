@@ -240,7 +240,7 @@ static void mark_thread_done(struct test* m) {
    */
 static void test(const char* name, void (*body)(void* m),
                  void (*extra)(void* m), int timeout_s, int incr_step) {
-  int64_t iterations = 256;
+  int64_t iterations = 8;
   struct test* m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;
