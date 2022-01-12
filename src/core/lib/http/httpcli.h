@@ -182,6 +182,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // the request (or gpr_inf_future) 'on_response' is a callback to report
   // results to
   static OrphanablePtr<HttpCli> Get(
+      grpc_channel_args* args,
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
       const grpc_httpcli_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
@@ -204,6 +205,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // 'on_response' is a callback to report results to
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCli> Post(
+      grpc_channel_args* args,
       grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
       const grpc_httpcli_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
@@ -211,7 +213,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
-  HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
+  HttpCli(grpc_channel_args* args, const grpc_slice& request_text, grpc_httpcli_response* response,
           ResourceQuotaRefPtr resource_quota, absl::string_view host,
           absl::string_view ssl_host_override, grpc_millis deadline,
           std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
