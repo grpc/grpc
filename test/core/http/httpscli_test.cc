@@ -165,7 +165,6 @@ TEST_F(HttpsCliTest, Get) {
   req.host = host;
   req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/get");
-<<<<<<< HEAD
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
           pops(), grpc_core::ResourceQuota::Default(), &req,

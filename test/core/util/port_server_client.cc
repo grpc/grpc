@@ -167,7 +167,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     req.http.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-<<<<<<< HEAD
     pr->httpcli = grpc_core::HttpCli::Get(
         &pr->pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
@@ -177,13 +176,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                             grpc_schedule_on_exec_ctx),
         &pr->response);
     pr->httpcli->Start();
-=======
-    grpc_httpcli_get(&pr->pops, grpc_core::ResourceQuota::Default(), &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(got_port_from_server, pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &pr->response);
->>>>>>> upstream/master
     return;
   }
   GPR_ASSERT(response);
@@ -223,7 +215,6 @@ int grpc_pick_port_using_server(void) {
     req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     req.http.path = const_cast<char*>("/get");
 
-<<<<<<< HEAD
     auto httpcli = grpc_core::HttpCli::Get(
         &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
@@ -233,13 +224,6 @@ int grpc_pick_port_using_server(void) {
                             grpc_schedule_on_exec_ctx),
         &pr.response);
     httpcli->Start();
-=======
-    grpc_httpcli_get(&pr.pops, grpc_core::ResourceQuota::Default(), &req,
-                     grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
-                     GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
-                                         grpc_schedule_on_exec_ctx),
-                     &pr.response);
->>>>>>> upstream/master
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (pr.port == -1) {
