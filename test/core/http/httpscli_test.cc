@@ -162,8 +162,6 @@ TEST_F(HttpsCliTest, Get) {
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
   memset(&req, 0, sizeof(req));
-  req.host = host;
-  req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/get");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
@@ -192,8 +190,6 @@ TEST_F(HttpsCliTest, Post) {
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host);
   memset(&req, 0, sizeof(req));
-  req.host = host;
-  req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
   req.http.path = const_cast<char*>("/post");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
@@ -230,8 +226,6 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.host = const_cast<char*>(fake_http_server_ptr->address());
-      req.ssl_host_override = const_cast<char*>("foo.test.google.fr");
       req.http.path = const_cast<char*>("/get");
       std::vector<grpc_arg> request_args;
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), fake_http_server_ptr->address()));

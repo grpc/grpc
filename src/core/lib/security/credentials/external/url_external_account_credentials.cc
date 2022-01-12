@@ -124,7 +124,6 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   cb_ = cb;
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(url_.authority().c_str());
   request.http.path = gpr_strdup(url_full_path_.c_str());
   grpc_http_header* headers = nullptr;
   request.http.hdr_count = headers_.size();

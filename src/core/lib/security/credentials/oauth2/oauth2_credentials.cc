@@ -382,7 +382,6 @@ class grpc_compute_engine_token_fetcher_credentials
                                const_cast<char*>("Google")};
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
-    request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST);
     request.http.path =
         const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
     request.http.hdr_count = 1;
@@ -449,7 +448,6 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
       refresh_token_.client_secret, refresh_token_.refresh_token);
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST);
   request.http.path = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
   request.http.hdr_count = 1;
   request.http.hdrs = &header;
@@ -581,7 +579,6 @@ class StsTokenFetcherCredentials
         const_cast<char*>("application/x-www-form-urlencoded")};
     grpc_httpcli_request request;
     memset(&request, 0, sizeof(grpc_httpcli_request));
-    request.host = const_cast<char*>(sts_url_.authority().c_str());
     request.http.path = const_cast<char*>(sts_url_.path().c_str());
     request.http.hdr_count = 1;
     request.http.hdrs = &header;

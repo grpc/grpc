@@ -348,10 +348,10 @@ static int httpcli_post_should_not_be_called(
 }
 
 static int httpcli_get_google_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
+    const grpc_httpcli_request* request, const char* host, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, good_google_email_keys());
-  GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
+  GPR_ASSERT(strcmp(host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->http.path,
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
@@ -394,10 +394,10 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
 }
 
 static int httpcli_get_custom_keys_for_email(
-    const grpc_httpcli_request* request, grpc_millis /*deadline*/,
+    const grpc_httpcli_request* request, const char* host, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
-  GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
+  GPR_ASSERT(strcmp(host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/jwk/foo@bar.com") == 0);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -426,22 +426,22 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   grpc_core::HttpCli::SetOverride(nullptr, nullptr);
 }
 
-static int httpcli_get_jwk_set(const grpc_httpcli_request* request,
+static int httpcli_get_jwk_set(const grpc_httpcli_request* request, const char* host,
                                grpc_millis /*deadline*/, grpc_closure* on_done,
                                grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
-  GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
+  GPR_ASSERT(strcmp(host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, "/oauth2/v3/certs") == 0);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
-static int httpcli_get_openid_config(const grpc_httpcli_request* request,
+static int httpcli_get_openid_config(const grpc_httpcli_request* request, const char* host,
                                      grpc_millis /*deadline*/,
                                      grpc_closure* on_done,
                                      grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
-  GPR_ASSERT(strcmp(request->host, "accounts.google.com") == 0);
+  GPR_ASSERT(strcmp(host, "accounts.google.com") == 0);
   GPR_ASSERT(strcmp(request->http.path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_core::HttpCli::SetOverride(httpcli_get_jwk_set,
                                   httpcli_post_should_not_be_called);

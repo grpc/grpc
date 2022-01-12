@@ -79,12 +79,11 @@ void grpc_free_port_using_server(int port) {
     shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                            grpc_schedule_on_exec_ctx);
 
-    req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     gpr_asprintf(&path, "/drop/%d", port);
     req.http.path = path;
 
     std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), GRPC_PORT_SERVER_ADDRESS));
+    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     auto httpcli = grpc_core::HttpCli::Get(
         args, &pr.pops, grpc_core::ResourceQuota::Default(), &req,
@@ -167,7 +166,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                 1000.0 * (1 + pow(1.3, pr->retries) * rand() / RAND_MAX)),
             GPR_TIMESPAN)));
     pr->retries++;
-    req.host = pr->server;
     req.http.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
@@ -175,7 +173,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), pr->server));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     pr->httpcli = grpc_core::HttpCli::Get(
-        &pr->pops, grpc_core::ResourceQuota::Default(), &req,
+        args, &pr->pops, grpc_core::ResourceQuota::Default(), &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
@@ -220,11 +218,10 @@ int grpc_pick_port_using_server(void) {
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
 
-    req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     req.http.path = const_cast<char*>("/get");
 
     std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), GRPC_PORT_SERVER_ADDRESS));
+    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     auto httpcli = grpc_core::HttpCli::Get(
         args, &pr.pops, grpc_core::ResourceQuota::Default(), &req,

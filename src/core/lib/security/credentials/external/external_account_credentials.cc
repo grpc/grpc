@@ -269,7 +269,6 @@ void ExternalAccountCredentials::ExchangeToken(
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   grpc_http_header* headers = nullptr;
   if (!options_.client_id.empty() && !options_.client_secret.empty()) {
@@ -398,7 +397,6 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   request.http.hdr_count = 2;
   grpc_http_header* headers = static_cast<grpc_http_header*>(

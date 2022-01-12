@@ -162,7 +162,6 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -213,7 +212,6 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
@@ -277,7 +275,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   }
   grpc_httpcli_request request;
   memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
   request.http.path = gpr_strdup(uri->path().c_str());
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};

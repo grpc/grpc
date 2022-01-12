@@ -163,7 +163,6 @@ TEST_F(HttpCliTest, Get) {
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host);
   memset(&req, 0, sizeof(req));
-  req.host = host;
   req.http.path = const_cast<char*>("/get");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
@@ -191,7 +190,6 @@ TEST_F(HttpCliTest, Post) {
   gpr_asprintf(&host, "localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host);
   memset(&req, 0, sizeof(req));
-  req.host = host;
   req.http.path = const_cast<char*>("/post");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
@@ -249,8 +247,6 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.host =
-          const_cast<char*>("dont-care-since-wont-be-resolver.test.com:443");
       req.http.path = const_cast<char*>("/get");
       std::vector<grpc_arg> request_args;
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443")));
@@ -297,7 +293,6 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.host = const_cast<char*>(fake_http_server_ptr->address());
       req.http.path = const_cast<char*>("/get");
       std::vector<grpc_arg> request_args;
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(fake_http_server_ptr->address())));
@@ -348,7 +343,6 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
       grpc_httpcli_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.host = const_cast<char*>(fake_server_address.c_str());
       req.http.path = const_cast<char*>("/get");
       std::vector<grpc_arg> request_args;
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(fake_server_address.c_str())));
@@ -393,7 +387,6 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
   grpc_httpcli_request req;
   grpc_core::ExecCtx exec_ctx;
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>(fake_server_address.c_str());
   req.http.path = const_cast<char*>("/get");
   grpc_pollset_set* pollset_set_to_destroy_eagerly = grpc_pollset_set_create();
   grpc_polling_entity_add_to_pollset_set(pops(),

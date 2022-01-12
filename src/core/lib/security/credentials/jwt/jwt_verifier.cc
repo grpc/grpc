@@ -673,6 +673,7 @@ static void on_openid_config_retrieved(void* user_data,
   const Json* cur;
   std::vector<grpc_arg> request_args;
   grpc_channel_args* args;
+  char* host;
 
   /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time. */
   if (json.type() == Json::Type::JSON_NULL) goto error;
@@ -688,18 +689,18 @@ static void on_openid_config_retrieved(void* user_data,
     goto error;
   }
   jwks_uri += 8;
-  req.host = gpr_strdup(jwks_uri);
+  host = gpr_strdup(jwks_uri);
   req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
   if (req.http.path == nullptr) {
     req.http.path = const_cast<char*>("");
   } else {
-    *(req.host + (req.http.path - jwks_uri)) = '\0';
+    *(host + (req.http.path - jwks_uri)) = '\0';
   }
 
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), req.host));
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
       args, &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
@@ -709,7 +710,7 @@ static void on_openid_config_retrieved(void* user_data,
       &ctx->responses[HTTP_RESPONSE_KEYS]);
   ctx->httpcli->Start();
   grpc_channel_args_destroy(args);
-  gpr_free(req.host);
+  gpr_free(host);
   return;
 
 error:
@@ -772,6 +773,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   http_response_index rsp_idx;
   std::vector<grpc_arg> request_args;
   grpc_channel_args* args;
+  char* host;
 
   GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
              ctx->claims != nullptr);
@@ -799,8 +801,8 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
       goto error;
     }
-    req.host = gpr_strdup(mapping->key_url_prefix);
-    path_prefix = strchr(req.host, '/');
+    host = gpr_strdup(mapping->key_url_prefix);
+    path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
       gpr_asprintf(&req.http.path, "/%s", iss);
     } else {
@@ -811,8 +813,8 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
         GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
-    req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
-    path_prefix = strchr(req.host, '/');
+    host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
+    path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
       req.http.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
@@ -828,7 +830,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), req.host));
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
       args, &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
@@ -837,7 +839,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       &ctx->responses[rsp_idx]);
   ctx->httpcli->Start();
   grpc_channel_args_destroy(args);
-  gpr_free(req.host);
+  gpr_free(host);
   gpr_free(req.http.path);
   return;
 
