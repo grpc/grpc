@@ -21,7 +21,11 @@ mkdir -p cmake/build
 pushd cmake/build
 
 cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
-make protoc plugins -j2
+
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
+
+make protoc plugins "-j${GRPC_PROTOC_BUILD_COMPILER_JOBS}"
 
 popd
 
