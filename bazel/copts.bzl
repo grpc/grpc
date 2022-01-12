@@ -56,7 +56,28 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wno-unused-function",
 ]
 
+# Warning suppression for MSVC on Windows.
+# The list of suppressed warnings should be kept in sync with the cmake build.
+GRPC_MSVC_DEFAULT_COPTS = [
+    "/wd4065",
+    "/wd4090",
+    "/wd4116",
+    "/wd4200",
+    "/wd4244",
+    "/wd4267",
+    "/wd4291",
+    "/wd4311",
+    "/wd4503",
+    "/wd4506",
+    "/wd4619",
+    "/wd4774",
+    "/wd4819",
+    "/wd4987",
+    "/wd4996",
+]
+
 GRPC_DEFAULT_COPTS = select({
     "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS,
+    "//:windows_msvc": GRPC_MSVC_DEFAULT_COPTS,
     "//conditions:default": [],
 })
