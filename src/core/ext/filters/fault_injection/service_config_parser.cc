@@ -122,6 +122,9 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       }
     }
     // Parse max_faults
+    static_assert(
+        std::is_unsigned<decltype(fault_injection_policy.max_faults)>::value,
+        "maxFaults should be unsigned");
     ParseJsonObjectField(json_object, "maxFaults",
                          &fault_injection_policy.max_faults, &sub_error_list,
                          false);
