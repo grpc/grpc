@@ -64,16 +64,16 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
+  const char* host = grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  GPR_ASSERT(host != nullptr);
   if (g_get_override != nullptr) {
-    test_only_generate_response = [request, deadline, on_done, response]() {
+    test_only_generate_response = [request, host, deadline, on_done, response]() {
       // Note that capturing request here assumes it will remain alive
       // until after Start is called. This avoids making a copy as this
       // code path is only used for test mocks.
-      g_get_override(request, deadline, on_done, response);
+      g_get_override(request, host, deadline, on_done, response);
     };
   }
-  const char* host = grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(host != nullptr);
   const char* ssl_host_override = grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   if (ssl_host_override == nullptr) {
     ssl_host_override = "";
@@ -95,15 +95,15 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
+  const char* host = grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  GPR_ASSERT(host != nullptr);
   if (g_post_override != nullptr) {
-    test_only_generate_response = [request, body_bytes, body_size, deadline,
+    test_only_generate_response = [request, host, body_bytes, body_size, deadline,
                                    on_done, response]() {
-      g_post_override(request, body_bytes, body_size, deadline, on_done,
+      g_post_override(request, host, body_bytes, body_size, deadline, on_done,
                       response);
     };
   }
-  const char* host = grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(host != nullptr);
   const char* ssl_host_override = grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   if (ssl_host_override == nullptr) {
     ssl_host_override = "";

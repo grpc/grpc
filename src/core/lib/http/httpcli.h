@@ -50,11 +50,11 @@ typedef struct grpc_httpcli_request {
 typedef struct grpc_http_response grpc_httpcli_response;
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request,
+typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request* request, const char* host,
                                          grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request,
+typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request* request, const char* host,
                                           const char* body_bytes,
                                           size_t body_size,
                                           grpc_millis deadline,
