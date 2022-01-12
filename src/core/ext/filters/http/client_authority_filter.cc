@@ -43,7 +43,10 @@ namespace {
 
 class ClientAuthorityChannelFilter {
  public:
-  absl::StatusOr<ClientAuthorityChannelFilter> Create(
+  static constexpr bool is_client() { return true; }
+  static constexpr const char* name() { return "authority"; }
+
+  static absl::StatusOr<ClientAuthorityChannelFilter> Create(
       const grpc_channel_args* args) {
     const grpc_arg* default_authority_arg =
         grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);

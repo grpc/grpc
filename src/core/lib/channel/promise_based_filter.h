@@ -24,6 +24,7 @@
 
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -42,9 +43,16 @@ namespace promise_filter_detail {
 
 class BaseCallData {
  public:
-  explicit BaseCallData(grpc_call_element_args* args) : arena_(args->arena) {}
+  explicit BaseCallData(const grpc_call_element_args* args)
+      : arena_(args->arena) {}
 
  protected:
+  class ScopedContext : public promise_detail::Context<Arena> {
+   public:
+    explicit ScopedContext(BaseCallData* call_data)
+        : promise_detail::Context<Arena>(call_data->arena_) {}
+  };
+
   Arena* const arena_;
   ArenaPromise<TrailingMetadata> promise_ =
       ArenaPromise<TrailingMetadata>(Never<TrailingMetadata>());
@@ -56,13 +64,14 @@ class CallData;
 template <class ChannelFilter>
 class CallData<ChannelFilter, true> : public BaseCallData {
  public:
-  explicit CallData(grpc_call_element_args* args) : BaseCallData(args) {
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_, RecvTrailingMetadata, this,
-                      grpc_schedule_on_exec_ctx);
+  explicit CallData(const grpc_call_element_args* args) : BaseCallData(args) {
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadata,
+                      this, grpc_schedule_on_exec_ctx);
   }
 
   void Op(grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-    ChannelFilter* filter = static_cast<ChannelFilter*>(elem->filter);
+    ScopedContext context(this);
+    ChannelFilter* filter = static_cast<ChannelFilter*>(elem->channel_data);
     if (op->recv_trailing_metadata) {
       recv_trailing_metadata_ =
           op->payload->recv_trailing_metadata.recv_trailing_metadata;
@@ -75,24 +84,24 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       }
     }
     if (op->send_initial_metadata) {
-      GPR_ASSERT(send_initial_metadata_op_ != nullptr);
+      GPR_ASSERT(send_initial_metadata_op_ == nullptr);
       send_initial_metadata_op_ = op;
       promise_ = filter->MakeCallPromise(
           op->payload->send_initial_metadata.send_initial_metadata,
           [elem](InitialMetadata* initial_metadata) {
             CallData* self = static_cast<CallData*>(elem->call_data);
-            self->initial_metadata_op_->payload->send_initial_metadata
+            self->send_initial_metadata_op_->payload->send_initial_metadata
                 .send_initial_metadata = initial_metadata;
             return ArenaPromise<TrailingMetadata>(
                 [elem]() -> Poll<TrailingMetadata> {
                   CallData* self = static_cast<CallData*>(elem->call_data);
-                  if (grpc_transport_stream_op_batch* op =
-                          absl::exchange(self->initial_metadata_op_, nullptr)) {
+                  if (grpc_transport_stream_op_batch* op = absl::exchange(
+                          self->send_initial_metadata_op_, nullptr)) {
                     // First poll: call next filter.
                     grpc_call_next_op(elem, op);
                   }
                   if (self->recieved_trailing_metadata_) {
-                    return self->trailing_metadata_;
+                    return std::move(*self->recv_trailing_metadata_);
                   }
                   return Pending{};
                 });
@@ -109,6 +118,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
  private:
   static void RecvTrailingMetadata(void* arg, grpc_error_handle error) {
     CallData* self = static_cast<CallData*>(arg);
+    ScopedContext context(self);
     GPR_ASSERT(!self->recieved_trailing_metadata_);
     self->recieved_trailing_metadata_ = true;
     self->WakeInsideCombiner();
@@ -139,6 +149,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 //  public:
 //   static constexpr bool is_client();
 //   static constexpr const char* name();
+//   static absl::StatusOr<SomeChannelFilter> Create(
+//       const grpc_channel_args* args);
 //   ArenaPromise<TrailingMetadata> MakeCallPromise(
 //       InitialMetadata* initial_metadata, NextPromiseFactory next_promise);
 // };
@@ -151,10 +163,7 @@ grpc_channel_filter MakePromiseBasedFilter() {
   return grpc_channel_filter{
       // start_transport_stream_op_batch
       [](grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-        CallData* call_data = static_cast<CallData*>(elem->call_data);
-        if (call_data->Op(elem, op)) {
-          grpc_call_next_op(elem, op);
-        }
+        static_cast<CallData*>(elem->call_data)->Op(elem, op);
       },
       // start_transport_op - for now unsupported
       grpc_channel_next_op,
@@ -163,6 +172,7 @@ grpc_channel_filter MakePromiseBasedFilter() {
       // init_call_elem
       [](grpc_call_element* elem, const grpc_call_element_args* args) {
         new (elem->call_data) CallData(args);
+        return GRPC_ERROR_NONE;
       },
       // set_pollset_or_pollset_set
       grpc_call_stack_ignore_set_pollset_or_pollset_set,
@@ -175,7 +185,10 @@ grpc_channel_filter MakePromiseBasedFilter() {
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
         GPR_ASSERT(!args->is_last);
-        new (elem->channel_data) ChannelFilter();
+        auto status = ChannelFilter::Create(args->channel_args);
+        if (!status.ok()) return absl_status_to_grpc_error(status.status());
+        new (elem->channel_data) ChannelFilter(std::move(*status));
+        return GRPC_ERROR_NONE;
       },
       // destroy_channel_elem
       [](grpc_channel_element* elem) {
