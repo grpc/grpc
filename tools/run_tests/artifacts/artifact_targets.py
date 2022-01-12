@@ -210,14 +210,17 @@ class RubyArtifact:
         return []
 
     def build_jobspec(self, inner_jobs=None):
-        # TODO(jtattermusch): honor inner_jobs arg for this task.
-        del inner_jobs
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building native extension
+            environ['GRPC_RUBY_BUILD_PROCS'] = str(inner_jobs)
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=90 * 60)
+            timeout_seconds=90 * 60,
+            environ=environ)
 
 
 class CSharpExtArtifact:
