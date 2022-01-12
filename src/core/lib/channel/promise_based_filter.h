@@ -129,8 +129,9 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       Poll<TrailingMetadata> poll = promise_();
       if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
         *recv_trailing_metadata_ = std::move(*r);
-        Closure::Run(DEBUG_LOCATION, original_recv_trailing_metadata_ready_,
-                     GRPC_ERROR_NONE);
+        grpc_closure* cb =
+            absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
+        Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
       }
     }
   }
