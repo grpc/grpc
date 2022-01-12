@@ -22,7 +22,3 @@
 #include "src/core/lib/debug/trace.h"
 
 grpc_core::TraceFlag grpc_inproc_trace(false, "inproc");
-
-void grpc_inproc_plugin_init(void) { grpc_inproc_transport_init(); }
-
-void grpc_inproc_plugin_shutdown(void) { grpc_inproc_transport_shutdown(); }

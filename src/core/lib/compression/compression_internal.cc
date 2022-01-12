@@ -35,7 +35,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
 

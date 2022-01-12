@@ -114,7 +114,7 @@ class FakeContainer {
   void Set(StringTrait, std::string x) { SetString(x); }
 
   void Set(const ::grpc_core::ParsedMetadata<FakeContainer>& metadata) {
-    EXPECT_EQ(GRPC_ERROR_NONE, metadata.SetOnContainer(this));
+    metadata.SetOnContainer(this);
   }
 
   MOCK_METHOD1(SetChar, void(char));

@@ -100,6 +100,16 @@ absl::string_view EvaluateArgs::GetHost() const {
   return host;
 }
 
+absl::string_view EvaluateArgs::GetAuthority() const {
+  absl::string_view authority;
+  if (metadata_ != nullptr) {
+    if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
+      authority = authority_md->as_string_view();
+    }
+  }
+  return authority;
+}
+
 absl::string_view EvaluateArgs::GetMethod() const {
   if (metadata_ != nullptr) {
     auto method_md = metadata_->get(HttpMethodMetadata());
@@ -115,28 +125,14 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }
-  // TODO(yashykt): Remove these special cases for known metadata after
-  // https://github.com/grpc/grpc/pull/28267 is merged
-  if (key == HttpMethodMetadata::key()) {
-    auto method = metadata_->get(HttpMethodMetadata());
-    return method.has_value()
-               ? absl::optional<absl::string_view>(
-                     HttpMethodMetadata::Encode(*method).as_string_view())
-               : absl::nullopt;
+  if (absl::EqualsIgnoreCase(key, "te")) {
+    return absl::nullopt;
   }
-  if (key == HttpAuthorityMetadata().key()) {
-    auto authority = metadata_->get_pointer(HttpAuthorityMetadata());
-    return authority != nullptr
-               ? absl::optional<absl::string_view>(authority->as_string_view())
-               : absl::nullopt;
+  if (absl::EqualsIgnoreCase(key, "host")) {
+    // Maps legacy host header to :authority.
+    return GetAuthority();
   }
-  if (key == HttpPathMetadata().key()) {
-    auto path = metadata_->get_pointer(HttpPathMetadata());
-    return path != nullptr
-               ? absl::optional<absl::string_view>(path->as_string_view())
-               : absl::nullopt;
-  }
-  return metadata_->GetValue(key, concatenated_value);
+  return metadata_->GetStringValue(key, concatenated_value);
 }
 
 grpc_resolved_address EvaluateArgs::GetLocalAddress() const {

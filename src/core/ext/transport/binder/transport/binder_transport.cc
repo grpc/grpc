@@ -40,7 +40,6 @@
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 #ifndef NDEBUG
@@ -173,10 +172,10 @@ static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
   bool has_authority = false;
   bool has_path = false;
   for (const auto& kv : metadata) {
-    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_AUTHORITY)) {
+    if (kv.first == ":authority") {
       has_authority = true;
     }
-    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_PATH)) {
+    if (kv.first == ":path") {
       has_path = true;
     }
   }
@@ -327,9 +326,10 @@ class MetadataEncoder {
   MetadataEncoder(bool is_client, Transaction* tx, Metadata* init_md)
       : is_client_(is_client), tx_(tx), init_md_(init_md) {}
 
-  void Encode(grpc_mdelem md) {
-    absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
-    absl::string_view value = grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
+  void Encode(const grpc_core::Slice& key_slice,
+              const grpc_core::Slice& value_slice) {
+    absl::string_view key = key_slice.as_string_view();
+    absl::string_view value = value_slice.as_string_view();
     gpr_log(GPR_INFO, "send metadata key-value %s",
             absl::StrCat(key, " ", value).c_str());
     init_md_->emplace_back(std::string(key), std::string(value));

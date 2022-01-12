@@ -32,12 +32,9 @@ typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
 typedef struct grpc_channel_stack_builder_iterator
     grpc_channel_stack_builder_iterator;
 
-/// Create a new channel stack builder
-grpc_channel_stack_builder* grpc_channel_stack_builder_create(void);
-
-/// Assign a name to the channel stack: \a name must be statically allocated
-void grpc_channel_stack_builder_set_name(grpc_channel_stack_builder* builder,
-                                         const char* name);
+/// Create a new channel stack builder.
+/// \a name must be statically allocated.
+grpc_channel_stack_builder* grpc_channel_stack_builder_create(const char* name);
 
 /// Set the target uri
 void grpc_channel_stack_builder_set_target(grpc_channel_stack_builder* b,
