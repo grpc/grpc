@@ -69,8 +69,7 @@ class XdsBootstrap {
     bool operator==(const XdsServer& other) const {
       return (server_uri == other.server_uri &&
               channel_creds_type == other.channel_creds_type &&
-              channel_creds_config.Dump() ==
-                  other.channel_creds_config.Dump() &&
+              channel_creds_config == other.channel_creds_config &&
               server_features == other.server_features);
     }
 
@@ -85,19 +84,22 @@ class XdsBootstrap {
     }
 
     Json::Object ToJson() const {
-      Json::Object channel_cred = {
-          {"type", channel_creds_type},
-      };
-      Json::Array channel_creds;
-      channel_creds.emplace_back(channel_cred);
-      Json::Array server_features;
-      for (auto& feature : server_features) {
-        server_features.emplace_back(Json(feature));
+      Json::Object channel_creds_json{{"type", channel_creds_type}};
+      if (channel_creds_config.type() != Json::Type::JSON_NULL) {
+        channel_creds_json["config"] = channel_creds_config;
       }
-      return Json::Object({{"server_uri", server_uri},
-                           {"channel_creds", channel_creds},
-                           {"channel_creds_config", channel_creds_config},
-                           {"server_features", server_features}});
+      Json::Object json{
+          {"server_uri", server_uri},
+          {"channel_creds", Json::Array{std::move(channel_creds_json)}},
+      };
+      if (!server_features.empty()) {
+        Json::Array server_features_json;
+        for (auto& feature : server_features) {
+          server_features_json.emplace_back(feature);
+        }
+        json["server_features"] = std::move(server_features_json);
+      }
+      return json;
     }
 
     bool ShouldUseV3() const;

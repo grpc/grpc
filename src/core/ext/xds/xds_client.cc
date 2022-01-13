@@ -1402,8 +1402,8 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
     return false;
   }
   // Create a request that contains the snapshot.
-  grpc_slice request_payload_slice = xds_client()->api_.CreateLrsRequest(
-      parent_->chand()->server_, std::move(snapshot));
+  grpc_slice request_payload_slice =
+      xds_client()->api_.CreateLrsRequest(std::move(snapshot));
   parent_->send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -2299,8 +2299,7 @@ std::string XdsClient::DumpClientConfigBinary() {
     }
   }
   // Assemble config dump messages
-  return api_.AssembleClientConfig(bootstrap_->server(),
-                                   resource_type_metadata_map);
+  return api_.AssembleClientConfig(resource_type_metadata_map);
 }
 
 //

@@ -160,8 +160,7 @@ class XdsApi {
   grpc_slice CreateLrsInitialRequest(const XdsBootstrap::XdsServer& server);
 
   // Creates an LRS request sending a client-side load report.
-  grpc_slice CreateLrsRequest(const XdsBootstrap::XdsServer& server,
-                              ClusterLoadReportMap cluster_load_report_map);
+  grpc_slice CreateLrsRequest(ClusterLoadReportMap cluster_load_report_map);
 
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
@@ -173,7 +172,6 @@ class XdsApi {
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
-      const XdsBootstrap::XdsServer& server,
       const ResourceTypeMetadataMap& resource_type_metadata_map);
 
  private:

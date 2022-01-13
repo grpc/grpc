@@ -506,15 +506,13 @@ void LocalityStatsPopulate(
 }  // namespace
 
 grpc_slice XdsApi::CreateLrsRequest(
-    const XdsBootstrap::XdsServer& server,
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
-                                      server,
-                                      tracer_,
-                                      symtab_->ptr(),
-                                      arena.ptr(),
-                                      false,
+                                      // Temporary XdsServer which will go out
+                                      // of scope but will never be used.
+                                      XdsBootstrap::XdsServer(), tracer_,
+                                      symtab_->ptr(), arena.ptr(), false,
                                       certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
@@ -630,7 +628,6 @@ google_protobuf_Timestamp* GrpcMillisToTimestamp(
 }  // namespace
 
 std::string XdsApi::AssembleClientConfig(
-    const XdsBootstrap::XdsServer& server,
     const ResourceTypeMetadataMap& resource_type_metadata_map) {
   upb::Arena arena;
   // Create the ClientConfig for resource metadata from XdsClient
@@ -639,11 +636,10 @@ std::string XdsApi::AssembleClientConfig(
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
   const XdsEncodingContext context = {client_,
-                                      server,
-                                      tracer_,
-                                      symtab_->ptr(),
-                                      arena.ptr(),
-                                      true,
+                                      // Temporary XdsServer which will go out
+                                      // of scope but will never be used.
+                                      XdsBootstrap::XdsServer(), tracer_,
+                                      symtab_->ptr(), arena.ptr(), true,
                                       certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
