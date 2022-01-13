@@ -40,7 +40,8 @@ inline bool AsciiIsUpper(char c) { return c >= 'A' && c <= 'Z'; }
 
 inline ::std::string ServiceClassName(const ServiceDescriptor* service) {
   const FileDescriptor* file = service->file();
-  ::std::string prefix = google::protobuf::compiler::objectivec::FileClassPrefix(file);
+  ::std::string prefix =
+      google::protobuf::compiler::objectivec::FileClassPrefix(file);
   ::std::string class_name = service->name();
   // We add the prefix in the cases where the string is missing a prefix.
   // We define "missing a prefix" as where 'input':
