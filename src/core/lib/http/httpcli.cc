@@ -61,9 +61,8 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
-    grpc_channel_credentials* channel_creds,
     grpc_millis deadline, grpc_closure* on_done,
-    grpc_httpcli_response* response) {
+    grpc_httpcli_response* response, Options options) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host = grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(host != nullptr);
@@ -79,8 +78,8 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
       scheme, grpc_httpcli_format_get_request(request, host), response,
-      deadline, channel_args, channel_creds,
-      on_done, pollent, name.c_str(), std::move(test_only_generate_response));
+      deadline, channel_args,
+      on_done, pollent, name.c_str(), std::move(test_only_generate_response), std::move(options));
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
@@ -88,9 +87,8 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
-    grpc_channel_credentials* channel_creds,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response, Options options = Options()) {
+    grpc_closure* on_done, grpc_httpcli_response* response, Options options) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host = grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(host != nullptr);
@@ -105,7 +103,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
       absl::StrFormat("HTTP:POST:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
       scheme, grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
-      response, deadline, channel_args, channel_creds,
+      response, deadline, channel_args,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response), std::move(options));
 }
 
