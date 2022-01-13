@@ -175,12 +175,12 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static void OnConnected(void* arg, grpc_error_handle error);
 
   // TODO(delete me)
-  static RefCountedPtr<grpc_channel_credentials>
+  static grpc_channel_credentials*
       HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
     if (scheme == "https") {
-      return MakeRefCounted<grpc_ssl_credentials>(nullptr, nullptr, nullptr);
+      return grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
     } else {
-      return MakeRefCounted<InsecureCredentials>();
+      return grpc_insecure_credentials_create();
     }
   }
 

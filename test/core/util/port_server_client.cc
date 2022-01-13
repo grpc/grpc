@@ -87,8 +87,7 @@ void grpc_free_port_using_server(int port) {
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     auto httpcli = grpc_core::HttpCli::Get(
         args, &pr.pops, &req,
-        absl::make_unique<
-            grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+        grpc_insecure_credentials_create(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
@@ -174,8 +173,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     pr->httpcli = grpc_core::HttpCli::Get(
         args, &pr->pops, &req,
-        absl::make_unique<
-            grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+        grpc_insecure_credentials_create(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
@@ -225,8 +223,7 @@ int grpc_pick_port_using_server(void) {
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     auto httpcli = grpc_core::HttpCli::Get(
         args, &pr.pops, &req,
-        absl::make_unique<
-            grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+        grpc_insecure_credentials_create(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),

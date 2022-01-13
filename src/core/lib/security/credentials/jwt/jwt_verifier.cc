@@ -704,7 +704,7 @@ static void on_openid_config_retrieved(void* user_data,
   args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
       args, &ctx->pollent, &req,
-      absl::make_unique<grpc_core::MakeRefCounted<grpc_ssl_credentials>(nullptr, nullptr, nullptr),
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr,nullptr),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS]);
@@ -834,7 +834,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
       args, &ctx->pollent, &req,
-      absl::make_unique<grpc_core::MakeRefCounted<grpc_ssl_credentials>(nullptr, nullptr, nullptr),
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr,nullptr),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);
   ctx->httpcli->Start();

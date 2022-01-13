@@ -170,8 +170,7 @@ TEST_F(HttpCliTest, Get) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
           args, pops(), &req,
-          absl::make_unique<
-              grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+          grpc_insecure_credentials_create(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -197,8 +196,7 @@ TEST_F(HttpCliTest, Post) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
           args, pops(), &req,
-          absl::make_unique<
-              grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+          grpc_insecure_credentials_create(),
           "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -254,8 +252,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
               args, pops(), &req,
-              absl::make_unique<
-                  grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+              grpc_insecure_credentials_create(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
@@ -300,8 +297,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
               args, pops(), &req,
-              absl::make_unique<
-                  grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+              grpc_insecure_credentials_create(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
@@ -350,8 +346,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
               args, pops(), &req,
-              absl::make_unique<
-                  grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+              grpc_insecure_credentials_create(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
@@ -401,8 +396,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
       grpc_core::HttpCli::Get(
           args, &wrapped_pollset_set_to_destroy_eagerly,
           &req,
-          absl::make_unique<
-              grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
+          grpc_insecure_credentials_create(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                               grpc_schedule_on_exec_ctx),
