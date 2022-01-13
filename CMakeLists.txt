@@ -2546,6 +2546,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
+  src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
@@ -2655,6 +2656,22 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
+  src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/composite/composite_credentials.cc
+  src/core/lib/security/credentials/credentials.cc
+  src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/lib/security/credentials/tls/tls_utils.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
+  src/core/lib/security/security_connector/security_connector.cc
+  src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/ssl_utils_config.cc
+  src/core/lib/security/transport/client_auth_filter.cc
+  src/core/lib/security/transport/secure_endpoint.cc
+  src/core/lib/security/transport/security_handshaker.cc
+  src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/json_util.cc
   src/core/lib/service_config/service_config.cc
   src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
@@ -2699,6 +2716,12 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
+  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/transport_security.cc
+  src/core/tsi/transport_security_grpc.cc
 )
 
 set_target_properties(grpc_unsecure PROPERTIES
@@ -2745,6 +2768,7 @@ target_link_libraries(grpc_unsecure
   absl::variant
   absl::utility
   gpr
+  ${_gRPC_SSL_LIBRARIES}
   address_sorting
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2765,6 +2789,7 @@ foreach(_hdr
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
+  include/grpc/grpc_security.h
   include/grpc/grpc_security_constants.h
   include/grpc/load_reporting.h
   include/grpc/slice.h
