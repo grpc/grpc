@@ -171,6 +171,16 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
 
   static void OnConnected(void* arg, grpc_error_handle error);
 
+  // TODO(delete me)
+  static RefCountedPtr<grpc_channel_credentials>
+      HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
+    if (scheme == "https") {
+      return MakeRefCounted<grpc_ssl_credentials>(nullptr, nullptr, nullptr);
+    } else {
+      return MakeRefCounted<InsecureCredentials>();
+    }
+  }
+
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
