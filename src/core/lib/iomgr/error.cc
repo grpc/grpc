@@ -252,6 +252,8 @@ static const char* error_int_name(grpc_error_ints key) {
       return "channel_connectivity_state";
     case GRPC_ERROR_INT_LB_POLICY_DROP:
       return "lb_policy_drop";
+    case GRPC_ERROR_INT_STREAM_NETWORK_STATE:
+      return "stream_network_state";
     case GRPC_ERROR_INT_MAX:
       GPR_UNREACHABLE_CODE(return "unknown");
   }
