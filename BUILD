@@ -5599,29 +5599,6 @@ grpc_upb_proto_library(
     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
 )
 
-# Once upb code-gen issue is resolved, replace meshca_upb with this.
-# meshca_upb_proto_library(
-#     name = "meshca_upb",
-#     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
-# )
-
-grpc_cc_library(
-    name = "meshca_upb",
-    srcs = [
-        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h",
-    ],
-    external_deps = [
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "protobuf_duration_upb",
-    ],
-)
-
 grpc_upb_proto_library(
     name = "alts_upb",
     deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
