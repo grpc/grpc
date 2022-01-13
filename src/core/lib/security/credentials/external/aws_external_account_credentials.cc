@@ -170,7 +170,7 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ =
-      HttpCli::Get(args, ctx_->pollent, ResourceQuota::Default(), &request,
+      HttpCli::Get(args, ctx_->pollent, &request,
                    HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()),
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
@@ -221,7 +221,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ =
-      HttpCli::Get(args, ctx_->pollent, ResourceQuota::Default(), &request,
+      HttpCli::Get(args, ctx_->pollent, &request,
                    HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()),
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
@@ -284,7 +284,7 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ =
-      HttpCli::Get(args, ctx_->pollent, ResourceQuota::Default(), &request,
+      HttpCli::Get(args, ctx_->pollent, &request,
                    HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()),
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();

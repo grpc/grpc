@@ -169,7 +169,7 @@ TEST_F(HttpCliTest, Get) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
-          args, pops(), grpc_core::ResourceQuota::Default(), &req,
+          args, pops(), &req,
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           NSecondsTime(15),
@@ -196,7 +196,7 @@ TEST_F(HttpCliTest, Post) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
-          args, pops(), grpc_core::ResourceQuota::Default(), &req,
+          args, pops(), &req,
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           "hello", 5, NSecondsTime(15),
@@ -253,7 +253,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
       grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
-              args, pops(), grpc_core::ResourceQuota::Default(), &req,
+              args, pops(), &req,
               absl::make_unique<
                   grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
@@ -299,7 +299,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
       grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
-              args, pops(), grpc_core::ResourceQuota::Default(), &req,
+              args, pops(), &req,
               absl::make_unique<
                   grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
@@ -349,7 +349,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
       grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
-              args, pops(), grpc_core::ResourceQuota::Default(), &req,
+              args, pops(), &req,
               absl::make_unique<
                   grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
               NSecondsTime(15),
@@ -400,7 +400,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
           args, &wrapped_pollset_set_to_destroy_eagerly,
-          grpc_core::ResourceQuota::Default(), &req,
+          &req,
           absl::make_unique<
               grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
           NSecondsTime(15),

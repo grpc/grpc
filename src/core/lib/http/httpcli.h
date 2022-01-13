@@ -171,7 +171,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // results to
   static OrphanablePtr<HttpCli> Get(
       grpc_channel_args* args,
-      grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
+      grpc_polling_entity* pollent,
       const grpc_http_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       grpc_millis deadline, grpc_closure* on_done,
@@ -194,7 +194,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCli> Post(
       grpc_channel_args* args,
-      grpc_polling_entity* pollent, ResourceQuotaRefPtr resource_quota,
+      grpc_polling_entity* pollent,
       const grpc_http_request* request,
       std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
       const char* body_bytes, size_t body_size, grpc_millis deadline,

@@ -703,7 +703,7 @@ static void on_openid_config_retrieved(void* user_data,
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
-      args, &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
+      args, &ctx->pollent, &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
@@ -833,7 +833,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   ctx->httpcli = grpc_core::HttpCli::Get(
-      args, &ctx->pollent, grpc_core::ResourceQuota::Default(), &req,
+      args, &ctx->pollent, &req,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx]);

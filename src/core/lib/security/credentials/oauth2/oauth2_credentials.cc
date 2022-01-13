@@ -393,7 +393,7 @@ class grpc_compute_engine_token_fetcher_credentials
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     httpcli_ = grpc_core::HttpCli::Get(
-        args, pollent, grpc_core::ResourceQuota::Default(), &request,
+        args, pollent, &request,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         deadline,
@@ -458,7 +458,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST)));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = grpc_core::HttpCli::Post(
-      args, pollent, grpc_core::ResourceQuota::Default(), &request,
+      args, pollent, &request,
       absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
       body.c_str(), body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
@@ -589,7 +589,7 @@ class StsTokenFetcherCredentials
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(sts_url_.authority().c_str())));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     httpcli_ = HttpCli::Post(
-        args, pollent, ResourceQuota::Default(), &request,
+        args, pollent, &request,
         HttpCli::HttpCliHandshakerFactoryFromScheme(sts_url_.scheme()), body,
         body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,

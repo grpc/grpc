@@ -86,7 +86,7 @@ void grpc_free_port_using_server(int port) {
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     auto httpcli = grpc_core::HttpCli::Get(
-        args, &pr.pops, grpc_core::ResourceQuota::Default(), &req,
+        args, &pr.pops, &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
@@ -173,7 +173,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), pr->server));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     pr->httpcli = grpc_core::HttpCli::Get(
-        args, &pr->pops, grpc_core::ResourceQuota::Default(), &req,
+        args, &pr->pops, &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
@@ -224,7 +224,7 @@ int grpc_pick_port_using_server(void) {
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     auto httpcli = grpc_core::HttpCli::Get(
-        args, &pr.pops, grpc_core::ResourceQuota::Default(), &req,
+        args, &pr.pops, &req,
         absl::make_unique<
             grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
