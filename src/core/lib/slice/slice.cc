@@ -22,8 +22,6 @@
 
 #include <string.h>
 
-#include "slice_refcount_base.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,6 +29,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount_base.h"
 
 char* grpc_slice_to_c_string(grpc_slice slice) {
   char* out = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
