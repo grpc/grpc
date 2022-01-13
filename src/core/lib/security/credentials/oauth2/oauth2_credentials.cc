@@ -395,7 +395,7 @@ class grpc_compute_engine_token_fetcher_credentials
     httpcli_ = grpc_core::HttpCli::Get(
         args, pollent, &request,
         absl::make_unique<
-            grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+            grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
         deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
@@ -459,7 +459,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = grpc_core::HttpCli::Post(
       args, pollent, &request,
-      absl::make_unique<grpc_core::HttpCli::SSLHttpCliHandshaker::Factory>(),
+      absl::make_unique<grpc_core::MakeRefCounted<grpc_ssl_credentials>(nullptr, nullptr, nullptr),
       body.c_str(), body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                         grpc_schedule_on_exec_ctx),

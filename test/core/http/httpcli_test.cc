@@ -171,7 +171,7 @@ TEST_F(HttpCliTest, Get) {
       grpc_core::HttpCli::Get(
           args, pops(), &req,
           absl::make_unique<
-              grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+              grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -198,7 +198,7 @@ TEST_F(HttpCliTest, Post) {
       grpc_core::HttpCli::Post(
           args, pops(), &req,
           absl::make_unique<
-              grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+              grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
           "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -255,7 +255,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
           grpc_core::HttpCli::Get(
               args, pops(), &req,
               absl::make_unique<
-                  grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+                  grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
@@ -301,7 +301,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
           grpc_core::HttpCli::Get(
               args, pops(), &req,
               absl::make_unique<
-                  grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+                  grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
@@ -351,7 +351,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
           grpc_core::HttpCli::Get(
               args, pops(), &req,
               absl::make_unique<
-                  grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+                  grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
@@ -402,7 +402,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
           args, &wrapped_pollset_set_to_destroy_eagerly,
           &req,
           absl::make_unique<
-              grpc_core::HttpCli::PlaintextHttpCliHandshaker::Factory>(),
+              grpc_core::MakeRefCounted<grpc_core::InsecureCredentials>(),
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                               grpc_schedule_on_exec_ctx),
