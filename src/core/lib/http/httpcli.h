@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -203,7 +204,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_pollset_set* pollset_set_;
   const absl::optional<std::function<void()>> test_only_generate_response_;
   Mutex mu_;
-  OrphanablePtr<HttpCliHandshaker> handshaker_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<HandshakeManager> handshaker_mgr_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   bool connecting_ ABSL_GUARDED_BY(mu_) = false;

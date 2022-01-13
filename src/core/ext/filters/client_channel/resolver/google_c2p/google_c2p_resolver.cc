@@ -138,7 +138,6 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   httpcli_ = HttpCli::Get(
       args, pollent, &request,
       MakeRefCounted<InsecureCredentials>,
-      absl::make_unique<HttpCli::PlaintextHttpCliHandshaker::Factory>(),
       ExecCtx::Get()->Now() + 10000,  // 10s timeout
       &on_done_, &response_);
   httpcli_->Start();

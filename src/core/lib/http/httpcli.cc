@@ -211,9 +211,13 @@ void HttpCli::Orphan() {
       // TODO(apolcyn): fix this to cancel the TCP connection attempt when
       // an API to do so exists.
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "cancelled during TCP connection establishment", &overall_error_, 1));
+          "HTTP request cancelled during TCP connection establishment", &overall_error_, 1));
     }
-    handshaker_.reset();  // cancel potentially pending handshake
+    if (handshake_mgr_ != nullptr) {
+      handshaker_mgr_->Shutdown(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "HTTP request cancelled during security handshake"));
+    }
     if (own_endpoint_ && ep_ != nullptr) {
       grpc_endpoint_shutdown(
           ep_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("HTTP request cancelled"));
@@ -275,10 +279,6 @@ void HttpCli::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
-}
-
-void HttpCli::SSLHttpCliHandshaker::InnerOnDone(void* arg,
-                                                grpc_error_handle error) {
 }
 
 void HttpCli::OnHandshakeDone(void* arg, grpc_error_handle error) {
