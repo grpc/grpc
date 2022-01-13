@@ -781,18 +781,28 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
-// Right now the API presented is the minimal one that will allow us to
-// substitute this type for grpc_metadata_batch in a relatively easy fashion. At
-// that point we'll start iterating this API into something that's ergonomic
-// again, whilst minimally holding the performance bar already set (and
-// hopefully improving some things).
-// In the meantime, we're not going to invest much time in ephemeral API
-// documentation, so if you must use one of these APIs and it's not obvious
-// how, reach out to ctiller.
 //
-// MetadataMap takes a list of traits. Each of these trait objects defines
-// one metadata field that is used by core, and so should have more specialized
-// handling than just using the generic APIs.
+// MetadataMap takes a derived class and list of traits. Each of these trait 
+// objects defines one metadata field that is used by core, and so should have 
+// more specialized handling than just using the generic APIs.
+//
+// MetadataMap is the backing type for some derived type via the curiously
+// recursive template pattern. This is because many types consumed by
+// MetadataMap require the container type to operate on, and many of those
+// types are instantiated one per trait. A naive implementation without the
+// Derived type would, for traits A,B,C, then instantiate for some
+// T<Container, Trait>:
+//  - T<MetadataMap<A,B,C>, A>,
+//  - T<MetadataMap<A,B,C>, B>,
+//  - T<MetadataMap<A,B,C>, C>.
+// Since these types ultimately need to be recorded in the .dynstr segment
+// for dynamic linkers (if gRPC is linked as a static library) this would
+// create O(N^2) bytes of symbols even in stripped libraries. To avoid this
+// we use the derived type (e.g. grpc_metadata_batch right now) to capture
+// the container type, and we would write T<grpc_metadata_batch, A>, etc...
+// Note that now the container type uses a number of bytes that is independent
+// of the number of traits, and so we return to a linear symbol table growth
+// function.
 //
 // Each trait object has the following signature:
 // // Traits for the grpc-xyz metadata field:
