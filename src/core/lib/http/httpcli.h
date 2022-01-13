@@ -35,7 +35,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 
 
 /* User agent this library reports */

@@ -59,10 +59,30 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
 /// Destructs the object.
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 
-// -- Oauth2 Token Fetcher credentials --
-//
-//  This object is a base for credentials that need to acquire an oauth2 token
-//  from an http service.
+// -- Credentials Metadata Request. --
+
+struct grpc_credentials_metadata_request {
+  explicit grpc_credentials_metadata_request(
+      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
+      : creds(std::move(creds)) {}
+  ~grpc_credentials_metadata_request() {
+    grpc_http_response_destroy(&response);
+  }
+
+  grpc_core::RefCountedPtr<grpc_call_credentials> creds;
+  grpc_http_response response;
+};
+
+inline grpc_credentials_metadata_request*
+grpc_credentials_metadata_request_create(
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds) {
+  return new grpc_credentials_metadata_request(std::move(creds));
+}
+
+inline void grpc_credentials_metadata_request_destroy(
+    grpc_credentials_metadata_request* r) {
+  delete r;
+}
 
 struct grpc_oauth2_pending_get_request_metadata {
   grpc_core::CredentialsMetadataArray* md_array;
@@ -70,6 +90,11 @@ struct grpc_oauth2_pending_get_request_metadata {
   grpc_polling_entity* pollent;
   struct grpc_oauth2_pending_get_request_metadata* next;
 };
+
+// -- Oauth2 Token Fetcher credentials --
+//
+//  This object is a base for credentials that need to acquire an oauth2 token
+//  from an http service.
 
 class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
  public:

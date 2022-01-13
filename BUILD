@@ -1798,9 +1798,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/channel_args_endpoint_config.cc",
         "src/core/lib/event_engine/sockaddr.cc",
-        "src/core/lib/http/format_request.cc",
-        "src/core/lib/http/httpcli.cc",
-        "src/core/lib/http/parser.cc",
         "src/core/lib/iomgr/buffer_list.cc",
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/cfstream_handle.cc",
@@ -1951,9 +1948,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/sockaddr.h",
-        "src/core/lib/http/format_request.h",
-        "src/core/lib/http/httpcli.h",
-        "src/core/lib/http/parser.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
@@ -3475,6 +3469,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_httpcli",
+    srcs = [
+        "src/core/lib/http/format_request.cc",
+        "src/core/lib/http/httpcli.cc",
+        "src/core/lib/http/parser.cc",
+    ],
+    hdrs = [
+        "src/core/lib/http/format_request.h",
+        "src/core/lib/http/httpcli.h",
+        "src/core/lib/http/parser.h",
+    ],
+    external_deps = [
+        "absl/functional:bind_front",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_secure_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_httpcli_security_connector",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
@@ -3515,8 +3533,14 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
         "src/core/lib/surface/init_secure.cc",
+        "src/core/lib/http/format_request.cc",
+        "src/core/lib/http/httpcli.cc",
+        "src/core/lib/http/parser.cc",
     ],
     hdrs = [
+        "src/core/lib/http/format_request.h",
+        "src/core/lib/http/httpcli.h",
+        "src/core/lib/http/parser.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/lib/security/authorization/authorization_engine.h",
