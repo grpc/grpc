@@ -36,7 +36,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
@@ -44,16 +43,14 @@
 typedef struct grpc_http_response grpc_httpcli_response;
 
 /* override functions return 1 if they handled the request, 0 otherwise */
-typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request, const char* host,
-                                         grpc_millis deadline,
+typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
+                                         const char* host, grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_httpcli_response* response);
-typedef int (*grpc_httpcli_post_override)(const grpc_http_request* request, const char* host,
-                                          const char* body_bytes,
-                                          size_t body_size,
-                                          grpc_millis deadline,
-                                          grpc_closure* on_complete,
-                                          grpc_httpcli_response* response);
+typedef int (*grpc_httpcli_post_override)(
+    const grpc_http_request* request, const char* host, const char* body_bytes,
+    size_t body_size, grpc_millis deadline, grpc_closure* on_complete,
+    grpc_httpcli_response* response);
 
 namespace grpc_core {
 
@@ -67,7 +64,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
  public:
   struct Options {
     // Channel creds to use.
-    // If null, will default to SslCreds for "https" scheme or InsecureCreds for "http" scheme.
+    // If null, will default to SslCreds for "https" scheme or InsecureCreds for
+    // "http" scheme.
     RefCountedPtr<grpc_channel_credentials> channel_creds;
   };
 
@@ -80,10 +78,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // the request (or gpr_inf_future) 'on_response' is a callback to report
   // results to
   static OrphanablePtr<HttpCli> Get(
-      absl::string_view scheme,
-      const grpc_channel_args* args,
-      grpc_polling_entity* pollent,
-      const grpc_http_request* request,
+      absl::string_view scheme, const grpc_channel_args* args,
+      grpc_polling_entity* pollent, const grpc_http_request* request,
       grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response,
       Options options = Options()) GRPC_MUST_USE_RESULT;
@@ -100,19 +96,18 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // 'on_done' is a callback to report results to
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCli> Post(
-      absl::string_view scheme,
-      const grpc_channel_args* args,
-      grpc_polling_entity* pollent,
-      const grpc_http_request* request,
+      absl::string_view scheme, const grpc_channel_args* args,
+      grpc_polling_entity* pollent, const grpc_http_request* request,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
-      grpc_closure* on_done,
-      grpc_httpcli_response* response,
+      grpc_closure* on_done, grpc_httpcli_response* response,
       Options options = Options()) GRPC_MUST_USE_RESULT;
 
-  HttpCli(absl::string_view scheme, const grpc_slice& request_text, grpc_httpcli_response* response,
-          grpc_millis deadline, const grpc_channel_args* channel_args,
-          grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
-          absl::optional<std::function<void()>> test_only_generate_response, Options options);
+  HttpCli(absl::string_view scheme, const grpc_slice& request_text,
+          grpc_httpcli_response* response, grpc_millis deadline,
+          const grpc_channel_args* channel_args, grpc_closure* on_done,
+          grpc_polling_entity* pollent, const char* name,
+          absl::optional<std::function<void()>> test_only_generate_response,
+          Options options);
 
   ~HttpCli() override;
 

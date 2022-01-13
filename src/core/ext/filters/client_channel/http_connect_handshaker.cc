@@ -339,7 +339,8 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   request.hdr_count = num_headers;
   request.body_length = 0;
   request.body = nullptr;
-  grpc_slice request_slice = grpc_httpcli_format_connect_request(&request, server_name);
+  grpc_slice request_slice =
+      grpc_httpcli_format_connect_request(&request, server_name);
   grpc_slice_buffer_add(&write_buffer_, request_slice);
   // Clean up.
   gpr_free(headers);

@@ -340,16 +340,18 @@ static grpc_httpcli_response http_response(int status, char* body) {
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/, const char* /*body_bytes*/,
-    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_httpcli_response* /*response*/) {
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    const char* /*body_bytes*/, size_t /*body_size*/, grpc_millis /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }
 
-static int httpcli_get_google_keys_for_email(
-    const grpc_http_request* request, const char* host, grpc_millis /*deadline*/,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+static int httpcli_get_google_keys_for_email(const grpc_http_request* request,
+                                             const char* host,
+                                             grpc_millis /*deadline*/,
+                                             grpc_closure* on_done,
+                                             grpc_httpcli_response* response) {
   *response = http_response(200, good_google_email_keys());
   GPR_ASSERT(strcmp(host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->path,
@@ -393,9 +395,11 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   grpc_core::HttpCli::SetOverride(nullptr, nullptr);
 }
 
-static int httpcli_get_custom_keys_for_email(
-    const grpc_http_request* request, const char* host, grpc_millis /*deadline*/,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+static int httpcli_get_custom_keys_for_email(const grpc_http_request* request,
+                                             const char* host,
+                                             grpc_millis /*deadline*/,
+                                             grpc_closure* on_done,
+                                             grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(strcmp(host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->path, "/jwk/foo@bar.com") == 0);
@@ -426,8 +430,9 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   grpc_core::HttpCli::SetOverride(nullptr, nullptr);
 }
 
-static int httpcli_get_jwk_set(const grpc_http_request* request, const char* host,
-                               grpc_millis /*deadline*/, grpc_closure* on_done,
+static int httpcli_get_jwk_set(const grpc_http_request* request,
+                               const char* host, grpc_millis /*deadline*/,
+                               grpc_closure* on_done,
                                grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(strcmp(host, "www.googleapis.com") == 0);
@@ -436,8 +441,8 @@ static int httpcli_get_jwk_set(const grpc_http_request* request, const char* hos
   return 1;
 }
 
-static int httpcli_get_openid_config(const grpc_http_request* request, const char* host,
-                                     grpc_millis /*deadline*/,
+static int httpcli_get_openid_config(const grpc_http_request* request,
+                                     const char* host, grpc_millis /*deadline*/,
                                      grpc_closure* on_done,
                                      grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_openid_config));
@@ -480,8 +485,9 @@ static void on_verification_key_retrieval_error(void* user_data,
   GPR_ASSERT(user_data == (void*)expected_user_data);
 }
 
-static int httpcli_get_bad_json(const grpc_http_request* /* request */, const char* /*host*/,
-                                grpc_millis /*deadline*/, grpc_closure* on_done,
+static int httpcli_get_bad_json(const grpc_http_request* /* request */,
+                                const char* /*host*/, grpc_millis /*deadline*/,
+                                grpc_closure* on_done,
                                 grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
@@ -587,8 +593,9 @@ static void test_jwt_verifier_bad_signature(void) {
 }
 
 static int httpcli_get_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/, grpc_millis /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_httpcli_response* /*response*/) {
   GPR_ASSERT(0);
   return 1;
 }

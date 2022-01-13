@@ -185,8 +185,11 @@ static int is_metadata_server_reachable() {
   memset(&request, 0, sizeof(grpc_http_request));
   request.path = const_cast<char*>("/");
   std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST)));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
+  request_args.push_back(grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST)));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(
+      nullptr, request_args.data(), request_args.size());
   auto httpcli = grpc_core::HttpCli::Get(
       "http", args, &detector.pollent, &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,

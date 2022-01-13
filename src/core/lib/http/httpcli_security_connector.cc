@@ -197,12 +197,13 @@ class HttpCliSSLCredentials : public grpc_channel_credentials {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       return nullptr;
     }
-    const char* ssl_host_override =  grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+    const char* ssl_host_override =
+        grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
     if (ssl_host_override != nullptr) {
       target = ssl_host_override;
     }
-    return httpcli_ssl_channel_security_connector_create(
-      pem_root_certs, root_store, target);
+    return httpcli_ssl_channel_security_connector_create(pem_root_certs,
+                                                         root_store, target);
   }
 
   grpc_core::RefCountedPtr<grpc_channel_credentials>
@@ -219,4 +220,4 @@ RefCountedPtr<grpc_channel_credentials> CreateHttpCliSSLCredentials() {
   return MakeRefCounted<HttpCliSSLCredentials>();
 }
 
-} // namespace grpc_core
+}  // namespace grpc_core

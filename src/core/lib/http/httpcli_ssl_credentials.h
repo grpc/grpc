@@ -33,6 +33,6 @@ namespace grpc_core {
 // The result NOT INTENDED FOR USE with gRPC channels.
 RefCountedPtr<grpc_channel_credentials> CreateHttpCliSSLCredentials();
 
-} //namespace grpc_core
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_SECURITY_CONNECTOR_H */

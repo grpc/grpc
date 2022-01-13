@@ -382,19 +382,20 @@ class grpc_compute_engine_token_fetcher_credentials
                                const_cast<char*>("Google")};
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
-    request.path =
-        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
+    request.path = const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
     request.hdr_count = 1;
     request.hdrs = &header;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST)));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
+    request_args.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST)));
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(
+        nullptr, request_args.data(), request_args.size());
     httpcli_ = grpc_core::HttpCli::Get(
-        "http", args, pollent, &request,
-        deadline,
+        "http", args, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
@@ -453,11 +454,13 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
   std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST)));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
+  request_args.push_back(grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST)));
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(
+      nullptr, request_args.data(), request_args.size());
   httpcli_ = grpc_core::HttpCli::Post(
-      "https", args, pollent, &request,
-      body.c_str(), body.size(), deadline,
+      "https", args, pollent, &request, body.c_str(), body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                         grpc_schedule_on_exec_ctx),
       &metadata_req->response);
@@ -583,11 +586,13 @@ class StsTokenFetcherCredentials
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
     std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(sts_url_.authority().c_str())));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
+    request_args.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+        const_cast<char*>(sts_url_.authority().c_str())));
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(
+        nullptr, request_args.data(), request_args.size());
     httpcli_ = HttpCli::Post(
-        sts_url_.scheme(), args, pollent, &request,
-        body, body_length, deadline,
+        sts_url_.scheme(), args, pollent, &request, body, body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);
