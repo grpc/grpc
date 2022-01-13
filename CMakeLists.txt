@@ -1180,6 +1180,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
+  test/core/end2end/tests/retry_transparent_goaway.cc
   test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
@@ -1322,6 +1323,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
+  test/core/end2end/tests/retry_transparent_goaway.cc
   test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   test/core/end2end/tests/sdk_authz.cc
   test/core/end2end/tests/server_finishes_request.cc

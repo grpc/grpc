@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests transparent retries when the call was never sent out on the wire.
-static void test_retry_transparent_not_sent_on_wire(
+static void test_retry_transparent_goaway(
     grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
@@ -119,7 +119,7 @@ static void test_retry_transparent_not_sent_on_wire(
   char* peer;
 
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_transparent_not_sent_on_wire", nullptr, nullptr);
+      begin_test(config, "retry_transparent_goaway", nullptr, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
@@ -255,11 +255,11 @@ static void test_retry_transparent_not_sent_on_wire(
 
 namespace {
 
-// A filter that, for the first 10 calls it sees, will fail all batches except
+// A filter that, for the first call it sees, will fail all batches except
 // for cancellations, so that the call fails with an error whose
-// StreamNetworkState is kNotSentOnWire.
+// StreamNetworkState is kNotSeenByServer.
 // All subsequent calls are allowed through without failures.
-class FailFirstTenCallsFilter {
+class FailFirstCallFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
@@ -281,20 +281,22 @@ class FailFirstTenCallsFilter {
 
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstTenCallsFilter*>(elem->channel_data);
+      auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
       auto* calld = static_cast<CallData*>(elem->call_data);
-      if (chand->num_calls_ < 10) calld->fail_ = true;
-      if (batch->send_initial_metadata) ++chand->num_calls_;
+      if (!chand->seen_call_) {
+        calld->fail_ = true;
+        chand->seen_call_ = true;
+      }
       if (calld->fail_ && !batch->cancel_stream) {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
             grpc_error_set_int(
                 grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                       "FailFirstTenCallsFilter failing batch"),
+                                       "FailFirstCallFilter failing batch"),
                                    GRPC_ERROR_INT_GRPC_STATUS,
                                    GRPC_STATUS_UNAVAILABLE),
                 GRPC_ERROR_INT_STREAM_NETWORK_STATE,
-                static_cast<int>(grpc_core::StreamNetworkState::kNotSentOnWire)),
+                static_cast<int>(grpc_core::StreamNetworkState::kNotSeenByServer)),
             calld->call_combiner_);
         return;
       }
@@ -311,35 +313,35 @@ class FailFirstTenCallsFilter {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
-    new (elem->channel_data) FailFirstTenCallsFilter();
+    new (elem->channel_data) FailFirstCallFilter();
     return GRPC_ERROR_NONE;
   }
 
   static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstTenCallsFilter*>(elem->channel_data);
-    chand->~FailFirstTenCallsFilter();
+    auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
+    chand->~FailFirstCallFilter();
   }
 
-  size_t num_calls_ = 0;
+  bool seen_call_ = false;
 };
 
-grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
+grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
-    sizeof(FailFirstTenCallsFilter),
+    sizeof(FailFirstCallFilter),
     Init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstTenCallsFilter",
+    "FailFirstCallFilter",
 };
 
 }  // namespace
 
-void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config) {
+void retry_transparent_goaway(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -355,11 +357,11 @@ void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config) {
               }
               // Install filter.
               return grpc_channel_stack_builder_prepend_filter(
-                  builder, &FailFirstTenCallsFilter::kFilterVtable, nullptr,
+                  builder, &FailFirstCallFilter::kFilterVtable, nullptr,
                   nullptr);
             });
       },
-      [config] { test_retry_transparent_not_sent_on_wire(config); });
+      [config] { test_retry_transparent_goaway(config); });
 }
 
-void retry_transparent_not_sent_on_wire_pre_init(void) {}
+void retry_transparent_goaway_pre_init(void) {}
