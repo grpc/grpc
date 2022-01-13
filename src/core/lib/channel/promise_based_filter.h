@@ -110,7 +110,13 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       return;
     }
     if (op->cancel_stream) {
-      promise_ = ArenaPromise<TrailingMetadata>();
+      promise_ =
+          ArenaPromise<TrailingMetadata>([elem]() -> Poll<TrailingMetadata> {
+            CallData* self = static_cast<CallData*>(elem->call_data);
+            if (self->recieved_trailing_metadata_) {
+              return std::move(*self->recv_trailing_metadata_);
+            }
+          });
     }
     grpc_call_next_op(elem, op);
   }
