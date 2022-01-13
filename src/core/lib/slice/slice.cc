@@ -56,10 +56,6 @@ namespace grpc_core {
    with the user provided data pointer & destroy function */
 class NewSliceRefcount : public grpc_slice_refcount {
  public:
-  static void Destroy(grpc_slice_refcount* arg) {
-    delete static_cast<NewSliceRefcount*>(arg);
-  }
-
   NewSliceRefcount(void (*destroy)(void*), void* user_data)
       : grpc_slice_refcount(Destroy),
         user_destroy_(destroy),
@@ -67,6 +63,10 @@ class NewSliceRefcount : public grpc_slice_refcount {
   ~NewSliceRefcount() { user_destroy_(user_data_); }
 
  private:
+  static void Destroy(grpc_slice_refcount* arg) {
+    delete static_cast<NewSliceRefcount*>(arg);
+  }
+
   void (*user_destroy_)(void*);
   void* user_data_;
 };
@@ -110,10 +110,6 @@ namespace grpc_core {
    extended with the user provided data pointer & destroy function */
 class NewWithLenSliceRefcount : public grpc_slice_refcount {
  public:
-  static void Destroy(grpc_slice_refcount* arg) {
-    delete static_cast<NewWithLenSliceRefcount*>(arg);
-  }
-
   NewWithLenSliceRefcount(void (*destroy)(void*, size_t), void* user_data,
                           size_t user_length)
       : grpc_slice_refcount(Destroy),
@@ -123,6 +119,10 @@ class NewWithLenSliceRefcount : public grpc_slice_refcount {
   ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
 
  private:
+  static void Destroy(grpc_slice_refcount* arg) {
+    delete static_cast<NewWithLenSliceRefcount*>(arg);
+  }
+
   void* user_data_;
   size_t user_length_;
   void (*user_destroy_)(void*, size_t);
@@ -309,7 +309,6 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
       tail.data.inlined.length = static_cast<uint8_t>(tail_length);
       memcpy(tail.data.inlined.bytes, source->data.refcounted.bytes + split,
              tail_length);
-      source->refcount = source->refcount;
     } else {
       /* Build the result */
       switch (ref_whom) {
@@ -319,11 +318,9 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
           break;
         case GRPC_SLICE_REF_HEAD:
           tail.refcount = grpc_slice_refcount::NoopRefcount();
-          source->refcount = source->refcount;
           break;
         case GRPC_SLICE_REF_BOTH:
           tail.refcount = source->refcount;
-          source->refcount = source->refcount;
           /* Bump the refcount */
           tail.refcount->Ref();
           break;
@@ -361,7 +358,6 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     head.refcount = nullptr;
     head.data.inlined.length = static_cast<uint8_t>(split);
     memcpy(head.data.inlined.bytes, source->data.refcounted.bytes, split);
-    source->refcount = source->refcount;
     source->data.refcounted.bytes += split;
     source->data.refcounted.length -= split;
   } else {
@@ -374,7 +370,6 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     /* Point into the source array */
     head.data.refcounted.bytes = source->data.refcounted.bytes;
     head.data.refcounted.length = split;
-    source->refcount = source->refcount;
     source->data.refcounted.bytes += split;
     source->data.refcounted.length -= split;
   }

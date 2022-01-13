@@ -19,10 +19,14 @@ package api_fuzzer;
 message Empty {}
 
 message ByteSlice {
+    reserved 2;
+    reserved "intern";
     bytes value = 1;
 }
 
 message StringSlice {
+    reserved 2;
+    reserved "intern";
     string value = 1;
 }
 

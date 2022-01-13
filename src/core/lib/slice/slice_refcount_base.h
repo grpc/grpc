@@ -48,7 +48,7 @@ struct grpc_slice_refcount {
     }
   }
 
-  // Only for type REGULAR, is this the only instance?
+  // Is this the only instance?
   // For this to be useful the caller needs to ensure that if this is the only
   // instance, no other instance could be created during this call.
   bool IsUnique() const { return ref_.load(std::memory_order_relaxed) == 1; }

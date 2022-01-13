@@ -30,8 +30,10 @@
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/slice/slice_utils.h"
+
+#include "absl/strings/string_view.h"
 
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
 void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
@@ -84,6 +86,15 @@ struct SliceHash {
     return grpc_slice_hash_internal(slice);
   }
 };
+
+extern uint32_t g_hash_seed;
+
+// Converts grpc_slice to absl::string_view.
+inline absl::string_view StringViewFromSlice(const grpc_slice& slice) {
+  return absl::string_view(
+      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+      GRPC_SLICE_LENGTH(slice));
+}
 
 }  // namespace grpc_core
 

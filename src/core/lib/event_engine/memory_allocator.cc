@@ -28,11 +28,6 @@ namespace {
 // Takes care of releasing memory back when the slice is destroyed.
 class SliceRefCount : public grpc_slice_refcount {
  public:
-  static void Destroy(grpc_slice_refcount* p) {
-    auto* rc = static_cast<SliceRefCount*>(p);
-    rc->~SliceRefCount();
-    gpr_free(rc);
-  }
   SliceRefCount(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
                 size_t size)
       : grpc_slice_refcount(Destroy),
@@ -43,6 +38,12 @@ class SliceRefCount : public grpc_slice_refcount {
   ~SliceRefCount() { allocator_->Release(size_); }
 
  private:
+  static void Destroy(grpc_slice_refcount* p) {
+    auto* rc = static_cast<SliceRefCount*>(p);
+    rc->~SliceRefCount();
+    gpr_free(rc);
+  }
+
   std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
   size_t size_;
 };

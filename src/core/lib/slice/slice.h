@@ -104,9 +104,7 @@ class BaseSlice {
     return grpc_slice_is_equivalent(slice_, other.slice_);
   }
 
-  uint32_t Hash() const {
-    return gpr_murmur_hash3(data(), length(), g_hash_seed);
-  }
+  uint32_t Hash() const { return grpc_slice_hash_internal(slice_); }
 
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
