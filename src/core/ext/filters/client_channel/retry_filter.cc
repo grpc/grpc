@@ -2205,12 +2205,6 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
           batch, GRPC_ERROR_REF(cancelled_from_surface_), call_combiner_);
       return;
     }
-    // If there is no retry policy, then commit retries immediately.
-    // This ensures that the code below will always jump to the fast path.
-    // TODO(roth): Remove this special case when we implement
-    // transparent retries.
-// FIXME
-//    if (retry_policy_ == nullptr) retry_committed_ = true;
     // If this is the first batch and retries are already committed
     // (e.g., if this batch put the call above the buffer size limit), then
     // immediately create an LB call and delegate the batch to it.  This
