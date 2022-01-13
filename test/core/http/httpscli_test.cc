@@ -165,7 +165,7 @@ TEST_F(HttpsCliTest, Get) {
   req.path = const_cast<char*>("/get");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG), "foo.test.google.fr"));
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG), const_cast<char*>("foo.test.google.fr")));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
@@ -191,7 +191,7 @@ TEST_F(HttpsCliTest, Post) {
   req.path = const_cast<char*>("/post");
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG), "foo.test.google.fr"));
+  request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG), const_cast<char*>("foo.test.google.fr")));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
@@ -225,7 +225,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       req.path = const_cast<char*>("/get");
       std::vector<grpc_arg> request_args;
       request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(fake_http_server_ptr->address())));
-      request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG), "foo.test.google.fr"));
+      request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG), const_cast<char*>("foo.test.google.fr")));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
