@@ -260,7 +260,7 @@ static int looks_like_ip_address(absl::string_view name) {
   return 1;
 }
 
-/* Gets the subject CN from an X509 cert. */
+/* Gets the subject CN if present from an X509 cert. */
 static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
                                            size_t* utf8_size) {
   int common_name_index = -1;
@@ -276,18 +276,18 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
     gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
-    return TSI_NOT_FOUND;
+    return TSI_OK;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
   if (common_name_entry == nullptr) {
     gpr_log(GPR_ERROR, "Could not get common name entry from certificate.");
-    return TSI_INTERNAL_ERROR;
+    return TSI_OK;
   }
   common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
   if (common_name_asn1 == nullptr) {
     gpr_log(GPR_ERROR,
             "Could not get common name entry asn1 from certificate.");
-    return TSI_INTERNAL_ERROR;
+    return TSI_OK;
   }
   utf8_returned_size = ASN1_STRING_to_UTF8(utf8, common_name_asn1);
   if (utf8_returned_size < 0) {
