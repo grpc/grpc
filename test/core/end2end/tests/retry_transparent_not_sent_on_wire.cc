@@ -118,8 +118,8 @@ static void test_retry_transparent_not_sent_on_wire(
   int was_cancelled = 2;
   char* peer;
 
-  grpc_end2end_test_fixture f =
-      begin_test(config, "retry_transparent_not_sent_on_wire", nullptr, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "retry_transparent_not_sent_on_wire", nullptr, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
@@ -223,15 +223,15 @@ static void test_retry_transparent_not_sent_on_wire(
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
-  GPR_ASSERT(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(
-        !grpc_slice_eq(
-            request_metadata_recv.metadata[i].key,
-            grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
+    GPR_ASSERT(!grpc_slice_eq(
+        request_metadata_recv.metadata[i].key,
+        grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
   }
 
   grpc_slice_unref(details);
@@ -294,7 +294,8 @@ class FailFirstTenCallsFilter {
                                    GRPC_ERROR_INT_GRPC_STATUS,
                                    GRPC_STATUS_UNAVAILABLE),
                 GRPC_ERROR_INT_STREAM_NETWORK_STATE,
-                static_cast<int>(grpc_core::StreamNetworkState::kNotSentOnWire)),
+                static_cast<int>(
+                    grpc_core::StreamNetworkState::kNotSentOnWire)),
             calld->call_combiner_);
         return;
       }

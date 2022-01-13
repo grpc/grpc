@@ -393,7 +393,11 @@ class RetryFilter::CallData {
     void MaybeSwitchToFastPath();
 
     // Determines if the call should be retried.
-    enum class RetryDecision { kNoRetry, kTransparentRetry, kConfigurableRetry };
+    enum class RetryDecision {
+      kNoRetry,
+      kTransparentRetry,
+      kConfigurableRetry
+    };
     RetryDecision ShouldRetry(
         absl::optional<grpc_status_code> status, bool is_lb_drop,
         absl::optional<grpc_millis> server_pushback_ms,
@@ -1256,8 +1260,8 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
     if (call_attempt->ShouldRetry(
             /*status=*/absl::nullopt, /*is_lb_drop=*/false,
             /*server_pushback_ms=*/absl::nullopt,
-            /*stream_network_state=*/absl::nullopt)
-        != RetryDecision::kNoRetry) {
+            /*stream_network_state=*/absl::nullopt) !=
+        RetryDecision::kNoRetry) {
       // Mark current attempt as abandoned.
       call_attempt->Abandon();
       // We are retrying.  Start backoff timer.
@@ -1569,7 +1573,8 @@ void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
         value != 0) {
       *is_lb_drop = true;
     }
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_STREAM_NETWORK_STATE, &value)) {
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_STREAM_NETWORK_STATE,
+                           &value)) {
       *stream_network_state = static_cast<StreamNetworkState>(value);
     }
   } else {
@@ -1714,23 +1719,22 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   GetCallStatus(calld->deadline_, md_batch, GRPC_ERROR_REF(error), &status,
                 &server_pushback_ms, &is_lb_drop, &stream_network_state);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "chand=%p calld=%p attempt=%p: call finished, status=%s "
-        "server_pushback_ms=%s is_lb_drop=%d stream_network_state=%s",
-        calld->chand_, calld, call_attempt, grpc_status_code_to_string(status),
-        server_pushback_ms.has_value()
-            ? absl::StrCat(*server_pushback_ms).c_str()
-            : "N/A",
-        is_lb_drop,
-        stream_network_state.has_value()
-            ? absl::StrCat(*stream_network_state).c_str()
-            : "N/A");
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p attempt=%p: call finished, status=%s "
+            "server_pushback_ms=%s is_lb_drop=%d stream_network_state=%s",
+            calld->chand_, calld, call_attempt,
+            grpc_status_code_to_string(status),
+            server_pushback_ms.has_value()
+                ? absl::StrCat(*server_pushback_ms).c_str()
+                : "N/A",
+            is_lb_drop,
+            stream_network_state.has_value()
+                ? absl::StrCat(*stream_network_state).c_str()
+                : "N/A");
   }
   // Check if we should retry.
-  RetryDecision retry_decision =
-      call_attempt->ShouldRetry(status, is_lb_drop, server_pushback_ms,
-                                stream_network_state);
+  RetryDecision retry_decision = call_attempt->ShouldRetry(
+      status, is_lb_drop, server_pushback_ms, stream_network_state);
   if (retry_decision != RetryDecision::kNoRetry) {
     CallCombinerClosureList closures;
     // Cancel call attempt.

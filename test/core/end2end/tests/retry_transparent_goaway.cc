@@ -94,8 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests transparent retries when the call was never sent out on the wire.
-static void test_retry_transparent_goaway(
-    grpc_end2end_test_config config) {
+static void test_retry_transparent_goaway(grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -223,15 +222,15 @@ static void test_retry_transparent_goaway(
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
-  GPR_ASSERT(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
+  GPR_ASSERT(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    GPR_ASSERT(
-        !grpc_slice_eq(
-            request_metadata_recv.metadata[i].key,
-            grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
+    GPR_ASSERT(!grpc_slice_eq(
+        request_metadata_recv.metadata[i].key,
+        grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
   }
 
   grpc_slice_unref(details);
@@ -296,7 +295,8 @@ class FailFirstCallFilter {
                                    GRPC_ERROR_INT_GRPC_STATUS,
                                    GRPC_STATUS_UNAVAILABLE),
                 GRPC_ERROR_INT_STREAM_NETWORK_STATE,
-                static_cast<int>(grpc_core::StreamNetworkState::kNotSeenByServer)),
+                static_cast<int>(
+                    grpc_core::StreamNetworkState::kNotSeenByServer)),
             calld->call_combiner_);
         return;
       }
