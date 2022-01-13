@@ -1232,7 +1232,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_split.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/builtins.cc" role="src" />

@@ -23,6 +23,8 @@
 
 #include <string.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
@@ -32,8 +34,6 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-
-#include "absl/strings/string_view.h"
 
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
 void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
