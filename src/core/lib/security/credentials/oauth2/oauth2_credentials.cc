@@ -588,9 +588,8 @@ class StsTokenFetcherCredentials
     request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(sts_url_.authority().c_str())));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
     httpcli_ = HttpCli::Post(
-        args, pollent, &request,
-        HttpCli::HttpCliHandshakerFactoryFromScheme(sts_url_.scheme()), body,
-        body_length, deadline,
+        sts_url_.scheme(), args, pollent, &request,
+        body, body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response);

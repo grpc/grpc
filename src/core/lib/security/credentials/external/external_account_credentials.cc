@@ -328,8 +328,8 @@ void ExternalAccountCredentials::ExchangeToken(
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = HttpCli::Post(
-      args, ctx_->pollent, &request,
-      HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
+      uri->scheme(), args, ctx_->pollent, &request,
+      body.c_str(),
       body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
@@ -418,9 +418,8 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ = HttpCli::Post(
-      args, ctx_->pollent, &request,
-      HttpCli::HttpCliHandshakerFactoryFromScheme(uri->scheme()), body.c_str(),
-      body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
+      uri->scheme(), args, ctx_->pollent, &request,
+      body.c_str(), body.size(), ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);

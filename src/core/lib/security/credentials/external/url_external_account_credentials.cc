@@ -144,8 +144,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(url_.authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   httpcli_ =
-      HttpCli::Get(args, ctx_->pollent, &request,
-                   HttpCli::HttpCliHandshakerFactoryFromScheme(url_.scheme()),
+      HttpCli::Get(url_.scheme(), args, ctx_->pollent, &request,
                    ctx_->deadline, &ctx_->closure, &ctx_->response);
   httpcli_->Start();
   grpc_channel_args_destroy(args);

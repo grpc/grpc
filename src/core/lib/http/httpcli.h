@@ -125,16 +125,6 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static void SetOverride(grpc_httpcli_get_override get,
                           grpc_httpcli_post_override post);
 
-  // TODO(apolcyn): delete me
-  static grpc_channel_credentials*
-      HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
-    if (scheme == "https") {
-      return grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    } else {
-      return grpc_insecure_credentials_create();
-    }
-  }
-
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
