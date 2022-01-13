@@ -74,11 +74,8 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       g_get_override(request, host, deadline, on_done, response);
     };
   }
-  const char* authority =
-      grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(authority != nullptr);
   std::string name =
-      absl::StrFormat("HTTP:GET:%s:%s", authority, request->path);
+      absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_get_request(request, host), response,
       deadline, channel_args channel_creds,
@@ -102,13 +99,10 @@ OrphanablePtr<HttpCli> HttpCli::Post(
                       response);
     };
   }
-  const char* authority =
-      grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(authority != nullptr);
   std::string name =
-      absl::StrFormat("HTTP:POST:%s:%s", authority, request->path);
+      absl::StrFormat("HTTP:POST:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
-      grpc_httpcli_format_post_request(request, authority, body_bytes, body_size),
+      grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
       response, deadline, channel_args, channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
