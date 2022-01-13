@@ -261,6 +261,10 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
   # Silences thousands of trucation warnings
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
+  # upb
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4090 /wd4116")
+  # public_headers_must_be_c89.c
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4311")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
