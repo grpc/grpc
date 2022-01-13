@@ -22,7 +22,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -36,52 +35,19 @@ namespace grpc {
 namespace testing {
 namespace {
 
-constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
-constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
-
 constexpr char kMessage[] = "Hello";
-
-std::string ReadFile(const char* file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
 
 class SdkAuthzEnd2EndTest : public ::testing::Test {
  protected:
   SdkAuthzEnd2EndTest()
       : server_address_(
-            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())) {
-    std::string root_cert = ReadFile(kCaCertPath);
-    std::string identity_cert = ReadFile(kServerCertPath);
-    std::string private_key = ReadFile(kServerKeyPath);
-    std::vector<experimental::IdentityKeyCertPair>
-        server_identity_key_cert_pairs = {{private_key, identity_cert}};
-    grpc::experimental::TlsServerCredentialsOptions server_options(
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            root_cert, server_identity_key_cert_pairs));
-    server_options.watch_root_certs();
-    server_options.watch_identity_key_cert_pairs();
-    server_options.set_cert_request_type(
-        GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-    server_creds_ = grpc::experimental::TlsServerCredentials(server_options);
-    std::vector<experimental::IdentityKeyCertPair>
-        channel_identity_key_cert_pairs = {
-            {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
-    grpc::experimental::TlsChannelCredentialsOptions channel_options;
-    channel_options.set_certificate_provider(
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath), channel_identity_key_cert_pairs));
-    channel_options.watch_identity_key_cert_pairs();
-    channel_options.watch_root_certs();
-    channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
-  }
+            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())),
+        server_creds_(
+            std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
+                grpc_fake_transport_security_server_credentials_create()))),
+        channel_creds_(
+            std::shared_ptr<ChannelCredentials>(new SecureChannelCredentials(
+                grpc_fake_transport_security_credentials_create()))) {}
 
   ~SdkAuthzEnd2EndTest() override { server_->Shutdown(); }
 
@@ -124,8 +90,6 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannel() {
     ChannelArguments args;
-    // Override target name for host name check
-    args.SetSslTargetNameOverride("foo.test.google.fr");
     return ::grpc::CreateCustomChannel(server_address_, channel_creds_, args);
   }
 
@@ -371,9 +335,16 @@ TEST_F(
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
-      "      \"name\": \"allow_mtls\","
+      "      \"name\": \"allow_echo\","
       "      \"source\": {"
-      "        \"principals\": [\"*\"]"
+      "        \"principals\": ["
+      "          \"foo\""
+      "        ]"
+      "      },"
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
       "      }"
       "    }"
       "  ]"
@@ -387,29 +358,6 @@ TEST_F(
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp.message().empty());
-}
-
-TEST_F(SdkAuthzEnd2EndTest,
-       StaticInitAllowsRpcRequestWithPrincipalsFieldOnAuthenticatedConnection) {
-  std::string policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_mtls\","
-      "      \"source\": {"
-      "        \"principals\": [\"*\"]"
-      "      }"
-      "    }"
-      "  ]"
-      "}";
-  InitServer(CreateStaticAuthzPolicyProvider(policy));
-  auto channel = BuildChannel();
-  ClientContext context;
-  grpc::testing::EchoResponse resp;
-  grpc::Status status = SendRpc(channel, &context, &resp);
-  EXPECT_TRUE(status.ok());
-  EXPECT_EQ(resp.message(), kMessage);
 }
 
 TEST_F(SdkAuthzEnd2EndTest,
