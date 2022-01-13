@@ -69,7 +69,6 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
     // Channel creds to use.
     // If null, will default to SslCreds for "https" scheme or InsecureCreds for "http" scheme.
     RefCountedPtr<grpc_channel_credentials> channel_creds;
-    // ...other options...
   };
 
   // Asynchronously perform a HTTP GET.

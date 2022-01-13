@@ -121,12 +121,12 @@ HttpCli::HttpCli(
     : request_text_(request_text),
       deadline_(deadline),
       channel_args_(grpc_channel_args_copy(channel_args)),
-      channel_creds_(std::move(options.channel_creds)),
+      channel_creds_(options.channel_creds),
       on_done_(on_done),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
-  if (channel_creds_ != nullptr) {
+  if (channel_creds_ == nullptr) {
     if (scheme == "http") {
       channel_creds_ = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
     } else {
@@ -347,6 +347,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
         /*acceptor=*/nullptr, OnHandshakeDone,
         /*user_data=*/req.get());
     sc.reset(DEBUG_LOCATION, "httpcli");
+    grpc_channel_args_destroy(new_args);
   }
 }
 

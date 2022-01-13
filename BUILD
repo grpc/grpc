@@ -2357,6 +2357,7 @@ grpc_cc_library(
         "grpc_service_config",
         "grpc_trace",
         "handshaker_registry",
+        "httpcli",
         "json",
         "json_util",
         "orphanable",
@@ -3460,6 +3461,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "alts_util",
+        "httpcli",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3469,7 +3471,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_httpcli",
+    name = "httpcli",
     srcs = [
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
@@ -3488,7 +3490,9 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
-        "grpc_secure_base",
+        "grpc_security_base",
+        "sockaddr_utils",
+        "useful",
     ],
 )
 
@@ -3533,14 +3537,8 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
         "src/core/lib/security/security_connector/local/local_security_connector.cc",
         "src/core/lib/surface/init_secure.cc",
-        "src/core/lib/http/format_request.cc",
-        "src/core/lib/http/httpcli.cc",
-        "src/core/lib/http/parser.cc",
     ],
     hdrs = [
-        "src/core/lib/http/format_request.h",
-        "src/core/lib/http/httpcli.h",
-        "src/core/lib/http/parser.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/lib/security/authorization/authorization_engine.h",
@@ -3593,6 +3591,7 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
+        "httpcli",
         "json",
         "ref_counted",
         "ref_counted_ptr",
@@ -3830,6 +3829,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
+        "httpcli",
         "json",
         "ref_counted",
         "ref_counted_ptr",
@@ -4155,6 +4155,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_alpn",
         "hpack_constants",
         "hpack_encoder_table",
+        "httpcli",
         "memory_quota",
         "resource_quota_trace",
         "slice",
