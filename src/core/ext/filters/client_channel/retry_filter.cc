@@ -2586,7 +2586,7 @@ void RetryFilter::CallData::AddClosureToStartTransparentRetry(
 }
 
 void RetryFilter::CallData::StartTransparentRetry(void* arg,
-                                                  grpc_error_handle error) {
+                                                  grpc_error_handle /*error*/) {
   auto* calld = static_cast<CallData*>(arg);
   calld->CreateCallAttempt(/*is_transparent_retry=*/true);
 }
