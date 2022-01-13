@@ -60,7 +60,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     grpc_channel_args* args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
-    RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_channel_credentials* channel_creds,
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
@@ -90,7 +90,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_get_request(request, host), response,
       std::move(resource_quota), host, ssl_host_override,
-      deadline, std::move(channel_creds), on_done, pollent, name.c_str(),
+      deadline, channel_creds, on_done, pollent, name.c_str(),
       std::move(test_only_generate_response));
 }
 
@@ -98,7 +98,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     grpc_channel_args* args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
-    RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_channel_credentials* channel_creds,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
@@ -127,7 +127,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
       response, std::move(resource_quota), host,
-      ssl_host_override, deadline, std::move(channel_creds),
+      ssl_host_override, deadline, channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
@@ -141,14 +141,14 @@ HttpCli::HttpCli(
     const grpc_slice& request_text, grpc_httpcli_response* response,
     ResourceQuotaRefPtr resource_quota, absl::string_view host,
     absl::string_view ssl_host_override, grpc_millis deadline,
-    RefCountedPtr<grpc_channel_credentials> channel_creds,
+    grpc_channel_credentials* channel_creds,
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
       host_(host),
       ssl_host_override_(ssl_host_override),
       deadline_(deadline),
-      channel_creds_(std::move(channel_creds)),
+      channel_creds_(channel_creds),
       on_done_(on_done),
       resource_quota_(std::move(resource_quota)),
       pollent_(pollent),

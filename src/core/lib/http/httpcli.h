@@ -35,6 +35,8 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -78,7 +80,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_channel_args* args,
       grpc_polling_entity* pollent,
       const grpc_http_request* request,
-      RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_channel_credentials* channel_creds,
       grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
@@ -101,7 +103,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_channel_args* args,
       grpc_polling_entity* pollent,
       const grpc_http_request* request,
-      RefCountedPtr<grpc_channel_credentials> channel_creds,
+      grpc_channel_credentials* channel_creds,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
@@ -109,7 +111,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
           ResourceQuotaRefPtr resource_quota, absl::string_view host,
           absl::string_view ssl_host_override, grpc_millis deadline,
-          RefCountedPtr<grpc_channel_credentials> channel_creds,
+          grpc_channel_credentials* channel_creds,
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response);
 
