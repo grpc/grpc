@@ -1384,14 +1384,17 @@ bool LoadReportCountersAreZero(const XdsApi::ClusterLoadReportMap& snapshot) {
 bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Construct snapshot from all reported stats.
   XdsApi::ClusterLoadReportMap snapshot =
-      xds_client()->BuildLoadReportSnapshotLocked(parent_->send_all_clusters_,
+      xds_client()->BuildLoadReportSnapshotLocked(parent_->chand()->server_,
+                                                  parent_->send_all_clusters_,
                                                   parent_->cluster_names_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
   last_report_counters_were_zero_ = LoadReportCountersAreZero(snapshot);
   if (old_val && last_report_counters_were_zero_) {
-    if (xds_client()->load_report_map_.empty()) {
+    if (xds_client()
+            ->xds_server_load_report_map_[parent_->chand()->server_]
+            .empty()) {
       parent_->chand()->StopLrsCall();
       return true;
     }
@@ -1438,7 +1441,9 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
   grpc_byte_buffer_destroy(parent_->send_message_payload_);
   parent_->send_message_payload_ = nullptr;
   // If there are no more registered stats to report, cancel the call.
-  if (xds_client()->load_report_map_.empty()) {
+  if (xds_client()
+          ->xds_server_load_report_map_[parent_->chand()->server_]
+          .empty()) {
     parent_->chand()->StopLrsCall();
     GRPC_ERROR_UNREF(error);
     return true;
@@ -2035,7 +2040,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
 }
 
 RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
-    absl::string_view lrs_server, absl::string_view cluster_name,
+    const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name) {
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
@@ -2045,7 +2050,7 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
   // We jump through some hoops here to make sure that the absl::string_views
   // stored in the XdsClusterDropStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
-  auto it = load_report_map_
+  auto it = xds_server_load_report_map_[xds_server]
                 .emplace(std::make_pair(std::move(key), LoadReportState()))
                 .first;
   LoadReportState& load_report_state = it->second;
@@ -2059,31 +2064,32 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
           load_report_state.drop_stats->GetSnapshotAndReset();
     }
     cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
-        Ref(DEBUG_LOCATION, "DropStats"), lrs_server,
+        Ref(DEBUG_LOCATION, "DropStats"), xds_server,
         it->first.first /*cluster_name*/,
         it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  auto resource_name =
-      ParseXdsResourceName(cluster_name, XdsClusterResourceType::Get());
-  GPR_ASSERT(resource_name.ok());
-  auto a = authority_state_map_.find(resource_name->authority);
-  if (a != authority_state_map_.end()) {
-    a->second.channel_state->MaybeStartLrsCall();
+  auto server = xds_server_channel_map_.find(xds_server);
+  if (server != xds_server_channel_map_.end()) {
+    // xds server passed in is found, ok to use
+    gpr_log(GPR_INFO, "donna found server make MaybeStartLrsCall");
+    server->second->MaybeStartLrsCall();
+  } else {
+    gpr_log(GPR_INFO, "donna did not find server");
   }
   return cluster_drop_stats;
 }
 
 void XdsClient::RemoveClusterDropStats(
-    absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+    const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     XdsClusterDropStats* cluster_drop_stats) {
   MutexLock lock(&mu_);
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  auto it = load_report_map_.find(
+  auto it = xds_server_load_report_map_[xds_server].find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (it == load_report_map_.end()) return;
+  if (it == xds_server_load_report_map_[xds_server].end()) return;
   LoadReportState& load_report_state = it->second;
   if (load_report_state.drop_stats == cluster_drop_stats) {
     // Record final snapshot in deleted_drop_stats, which will be
@@ -2095,7 +2101,7 @@ void XdsClient::RemoveClusterDropStats(
 }
 
 RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
-    absl::string_view lrs_server, absl::string_view cluster_name,
+    const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality) {
   // TODO(roth): When we add support for direct federation, use the
@@ -2106,7 +2112,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
   // We jump through some hoops here to make sure that the absl::string_views
   // stored in the XdsClusterLocalityStats object point to the strings
   // in the load_report_map_ key, so that they have the same lifetime.
-  auto it = load_report_map_
+  auto it = xds_server_load_report_map_[xds_server]
                 .emplace(std::make_pair(std::move(key), LoadReportState()))
                 .first;
   LoadReportState& load_report_state = it->second;
@@ -2122,32 +2128,33 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
           locality_state.locality_stats->GetSnapshotAndReset();
     }
     cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
-        Ref(DEBUG_LOCATION, "LocalityStats"), lrs_server,
+        Ref(DEBUG_LOCATION, "LocalityStats"), xds_server,
         it->first.first /*cluster_name*/, it->first.second /*eds_service_name*/,
         std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
-  auto resource_name =
-      ParseXdsResourceName(cluster_name, XdsClusterResourceType::Get());
-  GPR_ASSERT(resource_name.ok());
-  auto a = authority_state_map_.find(resource_name->authority);
-  if (a != authority_state_map_.end()) {
-    a->second.channel_state->MaybeStartLrsCall();
+  auto server = xds_server_channel_map_.find(xds_server);
+  if (server != xds_server_channel_map_.end()) {
+    // xds server passed in is found, ok to use
+    gpr_log(GPR_INFO, "donna found server make MaybeStartLrsCall");
+    server->second->MaybeStartLrsCall();
+  } else {
+    gpr_log(GPR_INFO, "donna did not find server");
   }
   return cluster_locality_stats;
 }
 
 void XdsClient::RemoveClusterLocalityStats(
-    absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+    const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
     absl::string_view eds_service_name,
     const RefCountedPtr<XdsLocalityName>& locality,
     XdsClusterLocalityStats* cluster_locality_stats) {
   MutexLock lock(&mu_);
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  auto it = load_report_map_.find(
+  auto it = xds_server_load_report_map_[xds_server].find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (it == load_report_map_.end()) return;
+  if (it == xds_server_load_report_map_[xds_server].end()) return;
   LoadReportState& load_report_state = it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);
   if (locality_it == load_report_state.locality_stats.end()) return;
@@ -2192,13 +2199,14 @@ void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
 }
 
 XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
-    bool send_all_clusters, const std::set<std::string>& clusters) {
+    const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
+    const std::set<std::string>& clusters) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] start building load report", this);
   }
   XdsApi::ClusterLoadReportMap snapshot_map;
-  for (auto load_report_it = load_report_map_.begin();
-       load_report_it != load_report_map_.end();) {
+  for (auto load_report_it = xds_server_load_report_map_[xds_server].begin();
+       load_report_it != xds_server_load_report_map_[xds_server].end();) {
     // Cluster key is cluster and EDS service name.
     const auto& cluster_key = load_report_it->first;
     LoadReportState& load_report = load_report_it->second;
@@ -2264,7 +2272,8 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     // deleted stats objects, remove the entry.
     if (load_report.locality_stats.empty() &&
         load_report.drop_stats == nullptr) {
-      load_report_it = load_report_map_.erase(load_report_it);
+      load_report_it =
+          xds_server_load_report_map_[xds_server].erase(load_report_it);
     } else {
       ++load_report_it;
     }
