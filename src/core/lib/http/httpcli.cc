@@ -57,6 +57,7 @@ grpc_httpcli_post_override g_post_override;
 }  // namespace
 
 OrphanablePtr<HttpCli> HttpCli::Get(
+    absl::string_view scheme,
     const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
@@ -77,18 +78,19 @@ OrphanablePtr<HttpCli> HttpCli::Get(
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
-      grpc_httpcli_format_get_request(request, host), response,
+      scheme, grpc_httpcli_format_get_request(request, host), response,
       deadline, channel_args, channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
+    absl::string_view scheme,
     const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
     grpc_channel_credentials* channel_creds,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+    grpc_closure* on_done, grpc_httpcli_response* response, Options options = Options()) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host = grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(host != nullptr);
@@ -102,9 +104,9 @@ OrphanablePtr<HttpCli> HttpCli::Post(
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
-      grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
+      scheme, grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
       response, deadline, channel_args, channel_creds,
-      on_done, pollent, name.c_str(), std::move(test_only_generate_response));
+      on_done, pollent, name.c_str(), std::move(test_only_generate_response), std::move(options));
 }
 
 void HttpCli::SetOverride(grpc_httpcli_get_override get,
@@ -114,25 +116,29 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
 }
 
 HttpCli::HttpCli(
-    const grpc_slice& request_text, grpc_httpcli_response* response,
+    absl::string_view scheme, const grpc_slice& request_text, grpc_httpcli_response* response,
     grpc_millis deadline, const grpc_channel_args* channel_args,
-    grpc_channel_credentials* channel_creds, grpc_closure* on_done,
-    grpc_polling_entity* pollent, const char* name,
-    absl::optional<std::function<void()>> test_only_generate_response)
+    grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
+    absl::optional<std::function<void()>> test_only_generate_response, Options options)
     : request_text_(request_text),
       deadline_(deadline),
       channel_args_(grpc_channel_args_copy(channel_args)),
-      channel_creds_(channel_creds),
+      channel_creds_(std::move(options.channel_creds)),
       on_done_(on_done),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
-  // TODO(apolcyn): precondition channel args?
+  if (channel_creds_ != nullptr) {
+    if (scheme == "http") {
+      channel_creds_ = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
+    } else {
+      channel_creds_ = RefCountedPtr<grpc_channel_credentials>(grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr));
+    }
+  }
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
   grpc_iomgr_register_object(&iomgr_obj_, name);
-
   GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&continue_on_read_after_schedule_on_exec_ctx_,
                     ContinueOnReadAfterScheduleOnExecCtx, this,
@@ -168,7 +174,7 @@ HttpCli::HttpCli(
       grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(authority != nullptr);
   dns_request_ = GetDNSResolver()->ResolveName(
-      authority, "https" /* TODO(apolcyn): fix me */, pollset_set_,
+      authority, scheme, pollset_set_,
       absl::bind_front(&HttpCli::OnResolved, this));
 }
 
