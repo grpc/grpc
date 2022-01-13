@@ -74,13 +74,6 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       g_get_override(request, host, deadline, on_done, response);
     };
   }
-  ResourceQuota* existing_resource_quota = grpc_channel_args_find_pointer<ResourceQuota>(args, GRPC_ARG_RESOURCE_QUOTA);
-  ResourceQuotaRefPtr resource_quota;
-  if (existing_resource_quota != nullptr) {
-    resource_quota = existing_resource_quota->Ref();
-  } else {
-    resource_quota = ResourceQuota::Default();
-  }
   const char* authority =
       grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(authority != nullptr);
@@ -88,7 +81,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       absl::StrFormat("HTTP:GET:%s:%s", authority, request->path);
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_get_request(request, host), response,
-      std::move(resource_quota), deadline, channel_args channel_creds,
+      deadline, channel_args channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
@@ -109,13 +102,6 @@ OrphanablePtr<HttpCli> HttpCli::Post(
                       response);
     };
   }
-  ResourceQuota* existing_resource_quota = grpc_channel_args_find_pointer<ResourceQuota>(args, GRPC_ARG_RESOURCE_QUOTA);
-  ResourceQuotaRefPtr resource_quota;
-  if (existing_resource_quota != nullptr) {
-    resource_quota = existing_resource_quota->Ref();
-  } else {
-    resource_quota = ResourceQuota::Default();
-  }
   const char* authority =
       grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(authority != nullptr);
@@ -123,7 +109,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
       absl::StrFormat("HTTP:POST:%s:%s", authority, request->path);
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_post_request(request, authority, body_bytes, body_size),
-      response, std::move(resource_quota), deadline, channel_args, channel_creds,
+      response, deadline, channel_args, channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
@@ -135,19 +121,19 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
 
 HttpCli::HttpCli(
     const grpc_slice& request_text, grpc_httpcli_response* response,
-    ResourceQuotaRefPtr resource_quota, grpc_millis deadline,
-    grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
-    grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
+    grpc_millis deadline, grpc_channel_args* channel_args,
+    grpc_channel_credentials* channel_creds, grpc_closure* on_done,
+    grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
       deadline_(deadline),
       channel_args_(grpc_channel_args_copy_and_add(channel_args)),
       channel_creds_(channel_creds),
       on_done_(on_done),
-      resource_quota_(std::move(resource_quota)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
+  // TODO(apolcyn): precondition channel args?
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -163,6 +149,27 @@ HttpCli::HttpCli(
                     grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  // maybe configure a default resource quota
+  ResourceQuota* existing_resource_quota = grpc_channel_args_find_pointer<ResourceQuota>(channel_args_, GRPC_ARG_RESOURCE_QUOTA);
+  ResourceQuotaRefPtr resource_quota;
+  if (existing_resource_quota != nullptr) {
+    resource_quota_ = existing_resource_quota->Ref();
+  } else {
+    resource_quota_ = ResourceQuota::Default();
+  }
+  grpc_arg rq_arg = grpc_channel_arg_pointer_create(
+        const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resource_quota_->c_ptr(),
+        grpc_resource_quota_arg_vtable());
+  grpc_channel_args* prev_channel_args = channel_args_;
+  channel_args_ = grpc_channel_args_copy_and_add(channel_args_, &rq_arg, 1);
+  grpc_channel_args_destroy(prev_channel_args);
+  prev_channel_args = channel_args_;
+  // TODO(apolcyn): is this the right place to precondition channel args?
+  channel_args_ = CoreConfiguration::Get()
+                   .channel_args_preconditioning()
+                   .PreconditionChannelArgs(channel_args_);
+  grpc_channel_args_destroy(prev_channel_args);
+  // start DNS resolution
   const char* authority =
       grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(authority != nullptr);
@@ -172,6 +179,7 @@ HttpCli::HttpCli(
 }
 
 HttpCli::~HttpCli() {
+  grpc_channel_args_destroy(channel_args_);
   grpc_http_parser_destroy(&parser_);
   if (own_endpoint_ && ep_ != nullptr) {
     grpc_endpoint_destroy(ep_);
@@ -362,14 +370,9 @@ void HttpCli::NextAddress(grpc_error_handle error)
   }
   const grpc_resolved_address* addr = &addresses_[next_address_++];
   GRPC_CLOSURE_INIT(&connected_, OnConnected, this, grpc_schedule_on_exec_ctx);
-  grpc_arg rq_arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resource_quota_->c_ptr(),
-      grpc_resource_quota_arg_vtable());
-  grpc_channel_args channel_args{1, &rq_arg};
   auto* args = CoreConfiguration::Get()
                    .channel_args_preconditioning()
-                   .PreconditionChannelArgs(&channel_args);
-  GPR_ASSERT(!cancelled_);
+                   .PreconditionChannelArgs(channel_args_);
   connecting_ = true;
   own_endpoint_ = false;
   Ref().release();  // ref held by pending connect

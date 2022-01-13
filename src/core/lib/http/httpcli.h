@@ -33,7 +33,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 
@@ -70,8 +69,6 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the get - work on this entity may be used to progress the get
   //   operation
-  // 'resource_quota' allows the caller to specify the quota against which to
-  // allocate
   // 'request' contains request parameters - these are caller owned and
   // can be destroyed once the call returns 'deadline' contains a deadline for
   // the request (or gpr_inf_future) 'on_response' is a callback to report
@@ -88,16 +85,12 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the post - work on this entity may be used to progress the post
   //   operation
-  // 'resource_quota' allows the caller to specify the quota against which to
-  // allocate
   // 'request' contains request parameters - these are caller owned and can be
   //   destroyed once the call returns
   // 'body_bytes' and 'body_size' specify the payload for the post.
   //   When there is no body, pass in NULL as body_bytes.
   // 'deadline' contains a deadline for the request (or gpr_inf_future)
-  // 'em' points to a caller owned event manager that must be alive for the
-  //   lifetime of the request
-  // 'on_response' is a callback to report results to
+  // 'on_done' is a callback to report results to
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCli> Post(
       grpc_channel_args* args,
@@ -109,8 +102,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
   HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
-          ResourceQuotaRefPtr resource_quota, grpc_millis deadline,
-          grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
+          grpc_millis deadline, grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response);
 
