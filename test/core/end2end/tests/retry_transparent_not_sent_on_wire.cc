@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <stdio.h>
 #include <string.h>
@@ -34,6 +32,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -94,14 +93,9 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests failure on a send op batch:
-// - 2 retries allowed for ABORTED status
-// - on the first call attempt, the batch containing the
-//   send_initial_metadata op fails, and then the call returns ABORTED,
-//   all without ever going out on the wire
-// - second attempt returns ABORTED but does not retry, because only 2
-//   attempts are allowed
-static void test_retry_send_op_fails(grpc_end2end_test_config config) {
+// Tests transparent retries when the call was never sent out on the wire.
+static void test_retry_transparent_not_sent_on_wire(
+    grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -124,28 +118,8 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg args[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 2,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    }\n"
-              "  } ]\n"
-              "}")),
-  };
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry_send_op_fails", &client_args, nullptr);
+      begin_test(config, "retry_transparent_not_sent_on_wire", nullptr, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
@@ -211,20 +185,27 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
-  // Server fails with status ABORTED.
+  // Server returns status OK.
   memset(ops, 0, sizeof(ops));
   op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op++;
-  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op->data.send_status_from_server.trailing_metadata_count = 0;
-  op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->op = GRPC_OP_RECV_MESSAGE;
+  op->data.recv_message.recv_message = &request_payload_recv;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op++;
+  op->op = GRPC_OP_SEND_MESSAGE;
+  op->data.send_message.send_message = response_payload;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_OK;
+  op->data.send_status_from_server.status_details = &status_details;
+  op++;
+
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
@@ -236,25 +217,22 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   cq_verify(cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_ABORTED);
+  GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
+  GPR_ASSERT(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
-  // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
-  bool found_retry_header = false;
+  // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
+  // we don't do that for transparent retries.
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(
+    GPR_ASSERT(
+        !grpc_slice_eq(
             request_metadata_recv.metadata[i].key,
-            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
-      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
-                               grpc_slice_from_static_string("1")));
-      found_retry_header = true;
-      break;
-    }
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts")));
   }
-  GPR_ASSERT(found_retry_header);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -278,9 +256,10 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
 namespace {
 
 // A filter that, for the first call it sees, will fail all batches except
-// for cancellations, so that the call fails with status ABORTED.
+// for cancellations, so that the call fails with an error whose
+// StreamNetworkState is kNotSentOnWire.
 // All subsequent calls are allowed through without failures.
-class FailFirstCallFilter {
+class FailFirstTenCallsFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
@@ -302,18 +281,20 @@ class FailFirstCallFilter {
 
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
+      auto* chand = static_cast<FailFirstTenCallsFilter*>(elem->channel_data);
       auto* calld = static_cast<CallData*>(elem->call_data);
-      if (!chand->seen_first_) {
-        chand->seen_first_ = true;
-        calld->fail_ = true;
-      }
+      if (chand->num_calls_ < 10) calld->fail_ = true;
+      if (batch->send_initial_metadata) ++chand->num_calls_;
       if (calld->fail_ && !batch->cancel_stream) {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
-            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "FailFirstCallFilter failing batch"),
-                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
+            grpc_error_set_int(
+                grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                       "FailFirstTenCallsFilter failing batch"),
+                                   GRPC_ERROR_INT_GRPC_STATUS,
+                                   GRPC_STATUS_UNAVAILABLE),
+                GRPC_ERROR_INT_STREAM_NETWORK_STATE,
+                static_cast<int>(grpc_core::StreamNetworkState::kNotSentOnWire)),
             calld->call_combiner_);
         return;
       }
@@ -330,35 +311,35 @@ class FailFirstCallFilter {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
-    new (elem->channel_data) FailFirstCallFilter();
+    new (elem->channel_data) FailFirstTenCallsFilter();
     return GRPC_ERROR_NONE;
   }
 
   static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
-    chand->~FailFirstCallFilter();
+    auto* chand = static_cast<FailFirstTenCallsFilter*>(elem->channel_data);
+    chand->~FailFirstTenCallsFilter();
   }
 
-  bool seen_first_ = false;
+  size_t num_calls_ = 0;
 };
 
-grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
+grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
-    sizeof(FailFirstCallFilter),
+    sizeof(FailFirstTenCallsFilter),
     Init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstCallFilter",
+    "FailFirstTenCallsFilter",
 };
 
 }  // namespace
 
-void retry_send_op_fails(grpc_end2end_test_config config) {
+void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
@@ -374,11 +355,11 @@ void retry_send_op_fails(grpc_end2end_test_config config) {
               }
               // Install filter.
               return grpc_channel_stack_builder_prepend_filter(
-                  builder, &FailFirstCallFilter::kFilterVtable, nullptr,
+                  builder, &FailFirstTenCallsFilter::kFilterVtable, nullptr,
                   nullptr);
             });
       },
-      [config] { test_retry_send_op_fails(config); });
+      [config] { test_retry_transparent_not_sent_on_wire(config); });
 }
 
-void retry_send_op_fails_pre_init(void) {}
+void retry_transparent_not_sent_on_wire_pre_init(void) {}

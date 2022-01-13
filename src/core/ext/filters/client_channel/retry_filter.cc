@@ -2581,6 +2581,10 @@ void RetryFilter::CallData::OnRetryTimerLocked(void* arg,
 
 void RetryFilter::CallData::AddClosureToStartTransparentRetry(
     CallCombinerClosureList* closures) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+    gpr_log(GPR_INFO, "chand=%p calld=%p: scheduling transparent retry", chand_,
+            this);
+  }
   GRPC_CLOSURE_INIT(&retry_closure_, StartTransparentRetry, this, nullptr);
   closures->Add(&retry_closure_, GRPC_ERROR_NONE, "start transparent retry");
 }

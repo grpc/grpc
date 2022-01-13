@@ -267,7 +267,7 @@ class InjectStatusFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
- public:
+ private:
   class CallData {
    public:
     static grpc_error_handle Init(grpc_call_element* elem,
