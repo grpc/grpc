@@ -109,9 +109,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
   HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
-          ResourceQuotaRefPtr resource_quota, absl::string_view host,
-          absl::string_view ssl_host_override, grpc_millis deadline,
-          grpc_channel_credentials* channel_creds,
+          ResourceQuotaRefPtr resource_quota, grpc_millis deadline,
+          grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response);
 
@@ -190,9 +189,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
   const grpc_slice request_text_;
-  const std::string host_;
-  const std::string ssl_host_override_;
   const grpc_millis deadline_;
+  grpc_channel_args* channel_args_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;

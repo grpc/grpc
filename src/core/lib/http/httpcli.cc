@@ -57,7 +57,7 @@ grpc_httpcli_post_override g_post_override;
 }  // namespace
 
 OrphanablePtr<HttpCli> HttpCli::Get(
-    grpc_channel_args* args,
+    grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
     grpc_channel_credentials* channel_creds,
@@ -74,10 +74,6 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       g_get_override(request, host, deadline, on_done, response);
     };
   }
-  const char* ssl_host_override = grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-  if (ssl_host_override == nullptr) {
-    ssl_host_override = "";
-  }
   ResourceQuota* existing_resource_quota = grpc_channel_args_find_pointer<ResourceQuota>(args, GRPC_ARG_RESOURCE_QUOTA);
   ResourceQuotaRefPtr resource_quota;
   if (existing_resource_quota != nullptr) {
@@ -85,17 +81,19 @@ OrphanablePtr<HttpCli> HttpCli::Get(
   } else {
     resource_quota = ResourceQuota::Default();
   }
+  const char* authority =
+      grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  GPR_ASSERT(authority != nullptr);
   std::string name =
-      absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
+      absl::StrFormat("HTTP:GET:%s:%s", authority, request->path);
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_get_request(request, host), response,
-      std::move(resource_quota), host, ssl_host_override,
-      deadline, channel_creds, on_done, pollent, name.c_str(),
-      std::move(test_only_generate_response));
+      std::move(resource_quota), deadline, channel_args channel_creds,
+      on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
-    grpc_channel_args* args,
+    grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
     grpc_channel_credentials* channel_creds,
@@ -111,10 +109,6 @@ OrphanablePtr<HttpCli> HttpCli::Post(
                       response);
     };
   }
-  const char* ssl_host_override = grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-  if (ssl_host_override == nullptr) {
-    ssl_host_override = "";
-  }
   ResourceQuota* existing_resource_quota = grpc_channel_args_find_pointer<ResourceQuota>(args, GRPC_ARG_RESOURCE_QUOTA);
   ResourceQuotaRefPtr resource_quota;
   if (existing_resource_quota != nullptr) {
@@ -122,12 +116,14 @@ OrphanablePtr<HttpCli> HttpCli::Post(
   } else {
     resource_quota = ResourceQuota::Default();
   }
+  const char* authority =
+      grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  GPR_ASSERT(authority != nullptr);
   std::string name =
-      absl::StrFormat("HTTP:POST:%s:%s", host, request->path);
+      absl::StrFormat("HTTP:POST:%s:%s", authority, request->path);
   return MakeOrphanable<HttpCli>(
-      grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
-      response, std::move(resource_quota), host,
-      ssl_host_override, deadline, channel_creds,
+      grpc_httpcli_format_post_request(request, authority, body_bytes, body_size),
+      response, std::move(resource_quota), deadline, channel_args, channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
@@ -139,15 +135,13 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
 
 HttpCli::HttpCli(
     const grpc_slice& request_text, grpc_httpcli_response* response,
-    ResourceQuotaRefPtr resource_quota, absl::string_view host,
-    absl::string_view ssl_host_override, grpc_millis deadline,
-    grpc_channel_credentials* channel_creds,
+    ResourceQuotaRefPtr resource_quota, grpc_millis deadline,
+    grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
-      host_(host),
-      ssl_host_override_(ssl_host_override),
       deadline_(deadline),
+      channel_args_(grpc_channel_args_copy_and_add(channel_args)),
       channel_creds_(channel_creds),
       on_done_(on_done),
       resource_quota_(std::move(resource_quota)),
@@ -169,8 +163,11 @@ HttpCli::HttpCli(
                     grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  const char* authority =
+      grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  GPR_ASSERT(authority != nullptr);
   dns_request_ = GetDNSResolver()->ResolveName(
-      host_.c_str(), "https" /* TODO(apolcyn): fix me */, pollset_set_,
+      authority, "https" /* TODO(apolcyn): fix me */, pollset_set_,
       absl::bind_front(&HttpCli::OnResolved, this));
 }
 
