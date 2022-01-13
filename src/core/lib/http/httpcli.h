@@ -206,7 +206,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   grpc_pollset_set* pollset_set_;
   const absl::optional<std::function<void()>> test_only_generate_response_;
   Mutex mu_;
-  RefCountedPtr<HandshakeManager> handshaker_mgr_ ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   bool connecting_ ABSL_GUARDED_BY(mu_) = false;

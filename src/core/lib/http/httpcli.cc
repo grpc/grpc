@@ -214,7 +214,7 @@ void HttpCli::Orphan() {
           "HTTP request cancelled during TCP connection establishment", &overall_error_, 1));
     }
     if (handshake_mgr_ != nullptr) {
-      handshaker_mgr_->Shutdown(
+      handshake_mgr_->Shutdown(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "HTTP request cancelled during security handshake"));
     }
@@ -267,7 +267,7 @@ void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
                                                       grpc_error_handle error) {
   RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(arg));
   MutexLock lock(&req->mu_);
-  if (error == GRPC_ERROR_NONE && !cancelled_) {
+  if (error == GRPC_ERROR_NONE && !req->cancelled_) {
     req->OnWritten();
   } else {
     req->NextAddress(GRPC_ERROR_REF(error));
@@ -283,22 +283,22 @@ void HttpCli::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
 
 void HttpCli::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
-  RefCountedPtr<HttpCli> self(static_cast<HttpCli*>(args->user_data));
-  MutexLock lock(&self->mu_);
-  own_endpoint_ = true;
-  if (error != GRPC_ERROR_NONE || cancelled_) {
+  RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(args->user_data));
+  MutexLock lock(&req->mu_);
+  req->own_endpoint_ = true;
+  if (error != GRPC_ERROR_NONE || req->cancelled_) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
     // TODO(apolcyn): improve the following error message
-    NextAddress(
+    req->NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
   }
   grpc_channel_args_destroy(args->args);
   grpc_slice_buffer_destroy_internal(args->read_buffer);
   gpr_free(args->read_buffer);
-  ep_ = args->endpoint;
-  StartWrite();
+  req->ep_ = args->endpoint;
+  req->StartWrite();
 }
 
 void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
@@ -323,7 +323,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
     // Create the security connector using the credentials and target name.
     grpc_channel_args* new_args_from_connector = nullptr;
     RefCountedPtr<grpc_channel_security_connector> sc = channel_creds_->create_security_connector(
-        nullptr /*call_creds*/, authority, channel_args_, &new_args_from_connector);
+        nullptr /*call_creds*/, authority, req->channel_args_, &new_args_from_connector);
     GPR_ASSERT(sc != nullptr);
     grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
     grpc_channel_args args = {1, &security_connector_arg};
@@ -332,11 +332,11 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
         &security_connector_arg, 1);
     grpc_channel_args_destroy(new_args_from_connector);
     // Start the handshake
-    handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+    req->handshake_mgr_ = MakeRefCounted<HandshakeManager>();
     CoreConfiguration::Get().handshaker_registry().AddHandshakers(
         HANDSHAKER_CLIENT, new_args,
-        pollset_set_, handshake_mgr_.get());
-    Ref().release();  // ref held by pending handshake
+        req->pollset_set_, req->handshake_mgr_.get());
+    req->Ref().release();  // ref held by pending handshake
     grpc_endpoint* ep = req->ep_;
     req->ep_ = nullptr;
     req->own_endpoint_ = false;
