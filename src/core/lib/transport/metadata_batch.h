@@ -782,8 +782,8 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
 //
-// MetadataMap takes a derived class and list of traits. Each of these trait 
-// objects defines one metadata field that is used by core, and so should have 
+// MetadataMap takes a derived class and list of traits. Each of these trait
+// objects defines one metadata field that is used by core, and so should have
 // more specialized handling than just using the generic APIs.
 //
 // MetadataMap is the backing type for some derived type via the curiously
