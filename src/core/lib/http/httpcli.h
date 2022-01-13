@@ -173,7 +173,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_channel_args* args,
       grpc_polling_entity* pollent,
       const grpc_http_request* request,
-      std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+      RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
@@ -196,7 +196,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_channel_args* args,
       grpc_polling_entity* pollent,
       const grpc_http_request* request,
-      std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+      RefCountedPtr<grpc_channel_credentials> channel_creds,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
       grpc_closure* on_done,
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
@@ -204,7 +204,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
           ResourceQuotaRefPtr resource_quota, absl::string_view host,
           absl::string_view ssl_host_override, grpc_millis deadline,
-          std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+          RefCountedPtr<grpc_channel_credentials> channel_creds,
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response);
 
@@ -216,15 +216,6 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
 
   static void SetOverride(grpc_httpcli_get_override get,
                           grpc_httpcli_post_override post);
-
-  static std::unique_ptr<HttpCli::HttpCliHandshakerFactory>
-  HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
-    if (scheme == "https") {
-      return absl::make_unique<HttpCli::SSLHttpCliHandshaker::Factory>();
-    } else {
-      return absl::make_unique<HttpCli::PlaintextHttpCliHandshaker::Factory>();
-    }
-  }
 
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -272,7 +263,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
 
   void StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void OnHandshakeDone(grpc_endpoint* ep);
+  static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
   static void OnConnected(void* arg, grpc_error_handle error);
 
@@ -285,7 +276,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   const std::string host_;
   const std::string ssl_host_override_;
   const grpc_millis deadline_;
-  std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory_;
+  RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;

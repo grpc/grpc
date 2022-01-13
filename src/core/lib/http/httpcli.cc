@@ -60,7 +60,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     grpc_channel_args* args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
-    std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
+    RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
@@ -90,7 +90,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_get_request(request, host), response,
       std::move(resource_quota), host, ssl_host_override,
-      deadline, std::move(handshaker_factory), on_done, pollent, name.c_str(),
+      deadline, std::move(channel_creds), on_done, pollent, name.c_str(),
       std::move(test_only_generate_response));
 }
 
@@ -98,7 +98,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     grpc_channel_args* args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
-    std::unique_ptr<HttpCli::HttpCliHandshakerFactory> handshaker_factory,
+    RefCountedPtr<grpc_channel_credentials> channel_creds,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
@@ -127,7 +127,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
       response, std::move(resource_quota), host,
-      ssl_host_override, deadline, std::move(handshaker_factory),
+      ssl_host_override, deadline, std::move(channel_creds),
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
@@ -141,14 +141,14 @@ HttpCli::HttpCli(
     const grpc_slice& request_text, grpc_httpcli_response* response,
     ResourceQuotaRefPtr resource_quota, absl::string_view host,
     absl::string_view ssl_host_override, grpc_millis deadline,
-    std::unique_ptr<HttpCliHandshakerFactory> handshaker_factory,
+    RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
       host_(host),
       ssl_host_override_(ssl_host_override),
       deadline_(deadline),
-      handshaker_factory_(std::move(handshaker_factory)),
+      channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(std::move(resource_quota)),
       pollent_(pollent),
@@ -170,7 +170,7 @@ HttpCli::HttpCli(
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   dns_request_ = GetDNSResolver()->ResolveName(
-      host_.c_str(), handshaker_factory_->default_port(), pollset_set_,
+      host_.c_str(), "https" /* TODO(apolcyn): fix me */, pollset_set_,
       absl::bind_front(&HttpCli::OnResolved, this));
 }
 
@@ -316,29 +316,35 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
     }
-    RefCountedPtr<grpc_channel_security_connector> sc =
-        httpcli_ssl_channel_security_connector_create(pem_root_certs, root_store,
-                                                      host_.c_str());
+    // Find the authority to use in the security connector.
+    const char* authority =
+        grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+    GPR_ASSERT(authority != nullptr);
+    // Create the security connector using the credentials and target name.
+    grpc_channel_args* new_args_from_connector = nullptr;
+    RefCountedPtr<grpc_channel_security_connector> sc = channel_creds_->create_security_connector(
+        nullptr /*call_creds*/, authority, channel_args_, &new_args_from_connector);
     GPR_ASSERT(sc != nullptr);
-    grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
-    grpc_channel_args args = {1, &channel_arg};
+    grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
+    grpc_channel_args args = {1, &security_connector_arg};
+    grpc_channel_args* new_args = = grpc_channel_args_copy_and_add(
+        new_args_from_connector != nullptr ? new_args_from_connector : args,
+        &security_connector_arg, 1);
+    grpc_channel_args_destroy(new_args_from_connector);
+    // Start the handshake
     handshake_mgr_ = MakeRefCounted<HandshakeManager>();
     CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-        HANDSHAKER_CLIENT, &args,
-        /*interested_parties=*/nullptr, handshake_mgr_.get());
+        HANDSHAKER_CLIENT, new_args,
+        pollset_set_, handshake_mgr_.get());
     Ref().release();  // ref held by pending handshake
-    handshake_mgr_->DoHandshake(
-        original_endpoint_, /*channel_args=*/nullptr, deadline_,
-        /*acceptor=*/nullptr, HttpCli::SSLHttpCliHandshaker::InnerOnDone,
-        /*user_data=*/this);
-    sc.reset(DEBUG_LOCATION, "httpcli");
-    req->handshaker_ = req->handshaker_factory_->StartHttpCliHandshaker(
-        req->ep_,
-        req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_,
-        req->deadline_, absl::bind_front(&HttpCli::OnHandshakeDone, req));
-    req->own_endpoint_ = false;
+    grpc_endpoint* ep = req->ep_;
     req->ep_ = nullptr;
-    req->Ref().release();  // ref held by pending handshake
+    req->own_endpoint_ = false;
+    handshake_mgr_->DoHandshake(
+        ep, new_args, req->deadline_,
+        /*acceptor=*/nullptr, OnHandshakeDone,
+        /*user_data=*/req.get());
+    sc.reset(DEBUG_LOCATION, "httpcli");
   }
 }
 
@@ -349,7 +355,7 @@ void HttpCli::NextAddress(grpc_error_handle error)
   }
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "HTTP1 request was cancelled", &overall_error_, 1));
+        "HTTP request was cancelled", &overall_error_, 1));
     return;
   }
   if (next_address_ == addresses_.size()) {
