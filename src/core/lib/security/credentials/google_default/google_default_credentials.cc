@@ -188,8 +188,7 @@ static int is_metadata_server_reachable() {
   request_args.push_back(grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST)));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   auto httpcli = grpc_core::HttpCli::Get(
-      args, &detector.pollent, &request,
-      grpc_insecure_credentials_create(),
+      "http", args, &detector.pollent, &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),

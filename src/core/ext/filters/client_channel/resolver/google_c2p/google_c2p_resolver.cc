@@ -136,7 +136,7 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
   httpcli_ = HttpCli::Get(
-      args, pollent, &request,
+      "http", args, pollent, &request,
       grpc_insecure_credentials_create(),
       ExecCtx::Get()->Now() + 10000,  // 10s timeout
       &on_done_, &response_);

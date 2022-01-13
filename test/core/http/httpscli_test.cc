@@ -169,8 +169,7 @@ TEST_F(HttpsCliTest, Get) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Get(
-          args, pops(), &req,
-          grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr),
+          "https", args, pops(), &req,
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -196,8 +195,7 @@ TEST_F(HttpsCliTest, Post) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
       grpc_core::HttpCli::Post(
-          args, pops(), &req,
-          grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr),
+          "https", args, pops(), &req,
           "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -231,8 +229,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
           grpc_core::HttpCli::Get(
-              args, pops(), &req,
-              grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr),
+              "https", args, pops(), &req,
               NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
