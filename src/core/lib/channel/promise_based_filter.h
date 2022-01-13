@@ -22,6 +22,8 @@
 #include "absl/utility/utility.h"
 #include "channel_stack.h"
 
+#include <grpc/status.h>
+
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -44,7 +46,7 @@ namespace promise_filter_detail {
 class BaseCallData {
  public:
   explicit BaseCallData(const grpc_call_element_args* args)
-      : arena_(args->arena) {}
+      : arena_(args->arena), deadline_(args->deadline) {}
 
  protected:
   class ScopedContext : public promise_detail::Context<Arena> {
@@ -54,6 +56,7 @@ class BaseCallData {
   };
 
   Arena* const arena_;
+  const grpc_millis deadline_;
   ArenaPromise<TrailingMetadata> promise_ =
       ArenaPromise<TrailingMetadata>(Never<TrailingMetadata>());
 };
@@ -101,6 +104,9 @@ class CallData<ChannelFilter, true> : public BaseCallData {
                     grpc_call_next_op(elem, op);
                   }
                   if (self->recieved_trailing_metadata_) {
+                    gpr_log(
+                        GPR_INFO, "GOT TRAILING METADATA: %s",
+                        self->recv_trailing_metadata_->DebugString().c_str());
                     return std::move(*self->recv_trailing_metadata_);
                   }
                   return Pending{};
@@ -116,6 +122,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
             if (self->recieved_trailing_metadata_) {
               return std::move(*self->recv_trailing_metadata_);
             }
+            return Pending{};
           });
     }
     grpc_call_next_op(elem, op);
@@ -123,7 +130,17 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
  private:
   static void RecvTrailingMetadata(void* arg, grpc_error_handle error) {
+    gpr_log(GPR_INFO, "RecvTrailingMetadata: %s", grpc_error_string(error));
     CallData* self = static_cast<CallData*>(arg);
+    if (error != GRPC_ERROR_NONE) {
+      grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
+      std::string status_details;
+      grpc_error_get_status(error, self->deadline_, &status_code,
+                            &status_details, nullptr, nullptr);
+      self->recv_trailing_metadata_->Set(GrpcStatusMetadata(), status_code);
+      self->recv_trailing_metadata_->Set(
+          GrpcMessageMetadata(), Slice::FromCopiedString(status_details));
+    }
     ScopedContext context(self);
     GPR_ASSERT(!self->recieved_trailing_metadata_);
     self->recieved_trailing_metadata_ = true;
@@ -134,7 +151,10 @@ class CallData<ChannelFilter, true> : public BaseCallData {
     if (original_recv_trailing_metadata_ready_ != nullptr) {
       Poll<TrailingMetadata> poll = promise_();
       if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
+        gpr_log(GPR_INFO, "FINISHED PROMISE: %s", r->DebugString().c_str());
         *recv_trailing_metadata_ = std::move(*r);
+        gpr_log(GPR_INFO, "CONTINUE UP: %s",
+                recv_trailing_metadata_->DebugString().c_str());
         grpc_closure* cb =
             absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
         Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);

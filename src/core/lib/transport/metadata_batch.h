@@ -852,6 +852,15 @@ class MetadataMap {
   void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
       const;
 
+  std::string DebugString() const {
+    std::string out;
+    Log([&out](absl::string_view key, absl::string_view value) {
+      if (!out.empty()) out.append(", ");
+      absl::StrAppend(&out, key, ": ", value);
+    });
+    return out;
+  }
+
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
