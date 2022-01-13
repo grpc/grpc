@@ -248,7 +248,9 @@ void HttpCli::OnReadInternal(grpc_error_handle error)
       }
     }
   }
-  if (error == GRPC_ERROR_NONE) {
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("HTTP1 request cancelled during read", &overall_error_, 1));
+  } else if (error == GRPC_ERROR_NONE) {
     DoRead();
   } else if (!have_read_byte_) {
     NextAddress(GRPC_ERROR_REF(error));
@@ -261,7 +263,7 @@ void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
                                                       grpc_error_handle error) {
   RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(arg));
   MutexLock lock(&req->mu_);
-  if (error == GRPC_ERROR_NONE) {
+  if (error == GRPC_ERROR_NONE && !cancelled_) {
     req->OnWritten();
   } else {
     req->NextAddress(GRPC_ERROR_REF(error));
@@ -275,21 +277,27 @@ void HttpCli::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
 }
 
-void HttpCli::OnHandshakeDone(grpc_endpoint* ep) {
-  RefCountedPtr<HttpCli> unreffer(this);
-  MutexLock lock(&mu_);
+void HttpCli::SSLHttpCliHandshaker::InnerOnDone(void* arg,
+                                                grpc_error_handle error) {
+}
+
+void HttpCli::OnHandshakeDone(void* arg, grpc_error_handle error) {
+  auto* args = static_cast<HandshakerArgs*>(arg);
+  RefCountedPtr<HttpCli> self(static_cast<HttpCli*>(args->user_data));
+  MutexLock lock(&self->mu_);
   own_endpoint_ = true;
-  if (cancelled_) {
-    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "cancelled during security handshake", &overall_error_, 1));
-    return;
-  }
-  if (!ep) {
+  if (error != GRPC_ERROR_NONE || cancelled_) {
+    gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
+            grpc_error_std_string(error).c_str());
+    // TODO(apolcyn): improve the following error message
     NextAddress(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
     return;
   }
-  ep_ = ep;
+  grpc_channel_args_destroy(args->args);
+  grpc_slice_buffer_destroy_internal(args->read_buffer);
+  gpr_free(args->read_buffer);
+  ep_ = args->endpoint;
   StartWrite();
 }
 
@@ -308,6 +316,22 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
     }
+    RefCountedPtr<grpc_channel_security_connector> sc =
+        httpcli_ssl_channel_security_connector_create(pem_root_certs, root_store,
+                                                      host_.c_str());
+    GPR_ASSERT(sc != nullptr);
+    grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
+    grpc_channel_args args = {1, &channel_arg};
+    handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+    CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+        HANDSHAKER_CLIENT, &args,
+        /*interested_parties=*/nullptr, handshake_mgr_.get());
+    Ref().release();  // ref held by pending handshake
+    handshake_mgr_->DoHandshake(
+        original_endpoint_, /*channel_args=*/nullptr, deadline_,
+        /*acceptor=*/nullptr, HttpCli::SSLHttpCliHandshaker::InnerOnDone,
+        /*user_data=*/this);
+    sc.reset(DEBUG_LOCATION, "httpcli");
     req->handshaker_ = req->handshaker_factory_->StartHttpCliHandshaker(
         req->ep_,
         req->ssl_host_override_.empty() ? req->host_ : req->ssl_host_override_,
@@ -322,6 +346,11 @@ void HttpCli::NextAddress(grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
+  }
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "HTTP1 request was cancelled", &overall_error_, 1));
+    return;
   }
   if (next_address_ == addresses_.size()) {
     Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
