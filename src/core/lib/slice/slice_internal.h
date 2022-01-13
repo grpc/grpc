@@ -32,7 +32,6 @@
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
