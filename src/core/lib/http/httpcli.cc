@@ -46,6 +46,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 
 namespace grpc_core {
 
@@ -130,7 +131,7 @@ HttpCli::HttpCli(
     if (scheme == "http") {
       channel_creds_ = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
     } else {
-      channel_creds_ = RefCountedPtr<grpc_channel_credentials>(grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr));
+      channel_creds_ = RefCountedPtr<grpc_channel_credentials>(CreateHttpCliSSLCredentials());
     }
   }
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);

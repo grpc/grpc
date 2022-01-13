@@ -3476,11 +3476,13 @@ grpc_cc_library(
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
+        "src/core/lib/http/httpcli_security_connector.cc",
     ],
     hdrs = [
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
         "src/core/lib/http/parser.h",
+        "src/core/lib/http/httpcli_ssl_credentials.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
@@ -3488,30 +3490,14 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     deps = [
-        "gpr_base",
-        "grpc_base",
-        "grpc_security_base",
-        "sockaddr_utils",
-        "useful",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_httpcli_security_connector",
-    srcs = [
-        "src/core/lib/http/httpcli_security_connector.cc",
-    ],
-    external_deps = [
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
         "config",
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
         "ref_counted_ptr",
+        "sockaddr_utils",
         "tsi_ssl_credentials",
+        "useful",
     ],
 )
 
@@ -3582,7 +3568,6 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_credentials_util",
-        "grpc_httpcli_security_connector",
         "grpc_jwt_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_security_base",
