@@ -36,9 +36,7 @@ inline string MessageHeaderName(const FileDescriptor* file) {
   return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";
 }
 
-inline bool AsciiIsUpper(char c) {
-  return c >= 'A' && c <= 'Z';
-}
+inline bool AsciiIsUpper(char c) { return c >= 'A' && c <= 'Z'; }
 
 inline string ServiceClassName(const ServiceDescriptor* service) {
   const FileDescriptor* file = service->file();
