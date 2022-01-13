@@ -888,7 +888,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
     }
     if (config_->discovery_mechanisms()[discovery_index]
             .lrs_load_reporting_server.has_value()) {
-      xds_cluster_impl_config["lrsLoadReportingServerName"] =
+      xds_cluster_impl_config["lrsLoadReportingServer"] =
           config_->discovery_mechanisms()[discovery_index]
               .lrs_load_reporting_server->ToJson();
     }
@@ -1151,11 +1151,11 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       discovery_mechanism->cluster_name = it->second.string_value();
     }
     // LRS load reporting server name.
-    it = json.object_value().find("lrsLoadReportingServerName");
+    it = json.object_value().find("lrsLoadReportingServer");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:lrsLoadReportingServerName error:type should be object"));
+            "field:lrsLoadReportingServer error:type should be object"));
       } else {
         grpc_error_handle parse_error;
         discovery_mechanism->lrs_load_reporting_server.emplace(
