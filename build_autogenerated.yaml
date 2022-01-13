@@ -8011,6 +8011,17 @@ targets:
   - absl/status:statusor
   - absl/types:variant
   uses_polling: false
+- name: try_seq_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/try_seq_metadata_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: try_seq_test
   gtest: true
   build: test

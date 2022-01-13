@@ -79,7 +79,8 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony grpc_channel_stack_builder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder* builder =
+      grpc_channel_stack_builder_create("test");
   grpc_channel_stack_builder_set_channel_arguments(builder, args);
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
@@ -123,7 +124,8 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony grpc_channel_stack_builder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder* builder =
+      grpc_channel_stack_builder_create("test");
   grpc_channel_stack_builder_set_channel_arguments(builder, args);
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;

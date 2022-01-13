@@ -21,6 +21,9 @@
 
 #include <jni.h>
 
+#include <functional>
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 namespace grpc_binder {
