@@ -57,14 +57,14 @@ grpc_httpcli_post_override g_post_override;
 }  // namespace
 
 OrphanablePtr<HttpCli> HttpCli::Get(
-    grpc_channel_args* channel_args,
+    const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
     grpc_channel_credentials* channel_creds,
     grpc_millis deadline, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  const char* host = grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  const char* host = grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(host != nullptr);
   if (g_get_override != nullptr) {
     test_only_generate_response = [request, host, deadline, on_done, response]() {
@@ -78,19 +78,19 @@ OrphanablePtr<HttpCli> HttpCli::Get(
       absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
   return MakeOrphanable<HttpCli>(
       grpc_httpcli_format_get_request(request, host), response,
-      deadline, channel_args channel_creds,
+      deadline, channel_args, channel_creds,
       on_done, pollent, name.c_str(), std::move(test_only_generate_response));
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
-    grpc_channel_args* channel_args,
+    const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent,
     const grpc_http_request* request,
     grpc_channel_credentials* channel_creds,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  const char* host = grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  const char* host = grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(host != nullptr);
   if (g_post_override != nullptr) {
     test_only_generate_response = [request, host, body_bytes, body_size, deadline,
@@ -115,13 +115,13 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
 
 HttpCli::HttpCli(
     const grpc_slice& request_text, grpc_httpcli_response* response,
-    grpc_millis deadline, grpc_channel_args* channel_args,
+    grpc_millis deadline, const grpc_channel_args* channel_args,
     grpc_channel_credentials* channel_creds, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response)
     : request_text_(request_text),
       deadline_(deadline),
-      channel_args_(grpc_channel_args_copy_and_add(channel_args)),
+      channel_args_(grpc_channel_args_copy(channel_args)),
       channel_creds_(channel_creds),
       on_done_(on_done),
       pollent_(pollent),
@@ -159,13 +159,13 @@ HttpCli::HttpCli(
   grpc_channel_args_destroy(prev_channel_args);
   prev_channel_args = channel_args_;
   // TODO(apolcyn): is this the right place to precondition channel args?
-  channel_args_ = CoreConfiguration::Get()
+  channel_args_ = const_cast<grpc_channel_args*>(CoreConfiguration::Get()
                    .channel_args_preconditioning()
-                   .PreconditionChannelArgs(channel_args_);
+                   .PreconditionChannelArgs(prev_channel_args));
   grpc_channel_args_destroy(prev_channel_args);
   // start DNS resolution
   const char* authority =
-      grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+      grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(authority != nullptr);
   dns_request_ = GetDNSResolver()->ResolveName(
       authority, "https" /* TODO(apolcyn): fix me */, pollset_set_,
@@ -317,17 +317,16 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
     }
     // Find the authority to use in the security connector.
     const char* authority =
-        grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
+        grpc_channel_args_find_string(req->channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
     GPR_ASSERT(authority != nullptr);
     // Create the security connector using the credentials and target name.
     grpc_channel_args* new_args_from_connector = nullptr;
-    RefCountedPtr<grpc_channel_security_connector> sc = channel_creds_->create_security_connector(
+    RefCountedPtr<grpc_channel_security_connector> sc = req->channel_creds_->create_security_connector(
         nullptr /*call_creds*/, authority, req->channel_args_, &new_args_from_connector);
     GPR_ASSERT(sc != nullptr);
     grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
-    grpc_channel_args args = {1, &security_connector_arg};
-    grpc_channel_args* new_args = = grpc_channel_args_copy_and_add(
-        new_args_from_connector != nullptr ? new_args_from_connector : args,
+    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+        new_args_from_connector != nullptr ? new_args_from_connector : req->channel_args_,
         &security_connector_arg, 1);
     grpc_channel_args_destroy(new_args_from_connector);
     // Start the handshake
@@ -339,7 +338,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
     grpc_endpoint* ep = req->ep_;
     req->ep_ = nullptr;
     req->own_endpoint_ = false;
-    handshake_mgr_->DoHandshake(
+    req->handshake_mgr_->DoHandshake(
         ep, new_args, req->deadline_,
         /*acceptor=*/nullptr, OnHandshakeDone,
         /*user_data=*/req.get());
@@ -364,15 +363,11 @@ void HttpCli::NextAddress(grpc_error_handle error)
   }
   const grpc_resolved_address* addr = &addresses_[next_address_++];
   GRPC_CLOSURE_INIT(&connected_, OnConnected, this, grpc_schedule_on_exec_ctx);
-  auto* args = CoreConfiguration::Get()
-                   .channel_args_preconditioning()
-                   .PreconditionChannelArgs(channel_args_);
   connecting_ = true;
   own_endpoint_ = false;
   Ref().release();  // ref held by pending connect
-  grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, args, addr,
+  grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, channel_args_, addr,
                           deadline_);
-  grpc_channel_args_destroy(args);
 }
 
 void HttpCli::OnResolved(

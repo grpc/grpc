@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 
@@ -74,7 +75,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // the request (or gpr_inf_future) 'on_response' is a callback to report
   // results to
   static OrphanablePtr<HttpCli> Get(
-      grpc_channel_args* args,
+      const grpc_channel_args* args,
       grpc_polling_entity* pollent,
       const grpc_http_request* request,
       grpc_channel_credentials* channel_creds,
@@ -93,7 +94,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // 'on_done' is a callback to report results to
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpCli> Post(
-      grpc_channel_args* args,
+      const grpc_channel_args* args,
       grpc_polling_entity* pollent,
       const grpc_http_request* request,
       grpc_channel_credentials* channel_creds,
@@ -102,7 +103,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_httpcli_response* response) GRPC_MUST_USE_RESULT;
 
   HttpCli(const grpc_slice& request_text, grpc_httpcli_response* response,
-          grpc_millis deadline, grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
+          grpc_millis deadline, const grpc_channel_args* channel_args, grpc_channel_credentials* channel_creds,
           grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response);
 
@@ -114,6 +115,16 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
 
   static void SetOverride(grpc_httpcli_get_override get,
                           grpc_httpcli_post_override post);
+
+  // TODO(apolcyn): delete me
+  static grpc_channel_credentials*
+      HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
+    if (scheme == "https") {
+      return grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
+    } else {
+      return grpc_insecure_credentials_create();
+    }
+  }
 
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -164,16 +175,6 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
   static void OnConnected(void* arg, grpc_error_handle error);
-
-  // TODO(delete me)
-  static grpc_channel_credentials*
-      HttpCliHandshakerFactoryFromScheme(absl::string_view scheme) {
-    if (scheme == "https") {
-      return grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    } else {
-      return grpc_insecure_credentials_create();
-    }
-  }
 
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
