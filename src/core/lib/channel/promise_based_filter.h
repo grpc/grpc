@@ -73,6 +73,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   }
 
   void Op(grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+    gpr_log(GPR_INFO, "OP: %s",
+            grpc_transport_stream_op_batch_string(op).c_str());
     ScopedContext context(this);
     ChannelFilter* filter = static_cast<ChannelFilter*>(elem->channel_data);
     if (op->recv_trailing_metadata) {
@@ -93,16 +95,14 @@ class CallData<ChannelFilter, true> : public BaseCallData {
           op->payload->send_initial_metadata.send_initial_metadata,
           [elem](InitialMetadata* initial_metadata) {
             CallData* self = static_cast<CallData*>(elem->call_data);
-            self->send_initial_metadata_op_->payload->send_initial_metadata
-                .send_initial_metadata = initial_metadata;
+            auto* op = absl::exchange(self->send_initial_metadata_op_, nullptr);
+            GPR_ASSERT(op != nullptr);
+            op->payload->send_initial_metadata.send_initial_metadata =
+                initial_metadata;
+            grpc_call_next_op(elem, op);
             return ArenaPromise<TrailingMetadata>(
                 [elem]() -> Poll<TrailingMetadata> {
                   CallData* self = static_cast<CallData*>(elem->call_data);
-                  if (grpc_transport_stream_op_batch* op = absl::exchange(
-                          self->send_initial_metadata_op_, nullptr)) {
-                    // First poll: call next filter.
-                    grpc_call_next_op(elem, op);
-                  }
                   if (self->recieved_trailing_metadata_) {
                     gpr_log(
                         GPR_INFO, "GOT TRAILING METADATA: %s",
