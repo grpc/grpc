@@ -83,7 +83,7 @@ task 'dlls' do
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
   # use env variable to set artifact build paralellism
-  nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`
+  nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
@@ -134,7 +134,7 @@ task 'gem:native' do
     system "bundle exec rake cross native gem RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
     # use env variable to set artifact build paralellism
-    nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`
+    nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
     Rake::Task['dlls'].execute
     ['x86-mingw32', 'x64-mingw32'].each do |plat|
