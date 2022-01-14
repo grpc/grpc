@@ -36,6 +36,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
@@ -398,7 +399,7 @@ class grpc_compute_engine_token_fetcher_credentials
         "http", args, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
-        &metadata_req->response);
+        &metadata_req->response, grpc_insecure_credentials_create());
     httpcli_->Start();
     grpc_channel_args_destroy(args);
   }
@@ -463,7 +464,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
       "https", args, pollent, &request, body.c_str(), body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                         grpc_schedule_on_exec_ctx),
-      &metadata_req->response);
+      &metadata_req->response, grpc_core::CreateHttpCliSSLCredentials());
   httpcli_->Start();
   grpc_channel_args_destroy(args);
 }
@@ -591,11 +592,17 @@ class StsTokenFetcherCredentials
         const_cast<char*>(sts_url_.authority().c_str())));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, request_args.data(), request_args.size());
+    RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+    if (sts_util_.scheme() == "http") {
+      httpcli_creds = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
+    } else {
+      httpcli_creds = CreateHttpCliSSLCredentials();
+    }
     httpcli_ = HttpCli::Post(
         sts_url_.scheme(), args, pollent, &request, body, body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
-        &metadata_req->response);
+        &metadata_req->response, std::move(httpcli_creds));
     httpcli_->Start();
     grpc_channel_args_destroy(args);
     gpr_free(body);

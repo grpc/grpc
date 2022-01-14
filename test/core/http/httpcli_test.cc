@@ -173,7 +173,7 @@ TEST_F(HttpCliTest, Get) {
       grpc_core::HttpCli::Get("http", args, pops(), &req, NSecondsTime(15),
                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                   grpc_schedule_on_exec_ctx),
-                              &request_state.response);
+                              &request_state.response, grpc_insecure_credentials_create());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -199,7 +199,7 @@ TEST_F(HttpCliTest, Post) {
                                NSecondsTime(15),
                                GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                    grpc_schedule_on_exec_ctx),
-                               &request_state.response);
+                               &request_state.response, grpc_insecure_credentials_create());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -256,7 +256,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
               "http", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_state.response);
+              &request_state.response, grpc_insecure_credentials_create());
       httpcli->Start();
       grpc_channel_args_destroy(args);
       std::thread cancel_thread([&httpcli]() {
@@ -302,7 +302,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
               "http", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_state.response);
+              &request_state.response, grpc_insecure_credentials_create());
       httpcli->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
@@ -352,7 +352,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
               "http", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_state.response);
+              &request_state.response, grpc_insecure_credentials_create());
       httpcli->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
@@ -403,7 +403,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                               grpc_schedule_on_exec_ctx),
-          &request_state.response);
+          &request_state.response, grpc_insecure_credentials_create());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   exec_ctx.Flush();

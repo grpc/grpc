@@ -330,9 +330,15 @@ void ExternalAccountCredentials::ExchangeToken(
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
+  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  if (uri->scheme() == "http") {
+    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
+  } else {
+    httpcli_creds = CreateHttpCliSSLCredentials();
+  }
   httpcli_ = HttpCli::Post(uri->scheme(), args, ctx_->pollent, &request,
                            body.c_str(), body.size(), ctx_->deadline,
-                           &ctx_->closure, &ctx_->response);
+                           &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
   httpcli_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
@@ -422,9 +428,15 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
+  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  if (uri->scheme() == "http") {
+    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
+  } else {
+    httpcli_creds = CreateHttpCliSSLCredentials();
+  }
   httpcli_ = HttpCli::Post(uri->scheme(), args, ctx_->pollent, &request,
                            body.c_str(), body.size(), ctx_->deadline,
-                           &ctx_->closure, &ctx_->response);
+                           &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
   httpcli_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);

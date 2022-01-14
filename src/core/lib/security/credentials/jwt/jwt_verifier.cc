@@ -35,6 +35,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -708,7 +709,7 @@ static void on_openid_config_retrieved(void* user_data,
       "https", args, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
-      &ctx->responses[HTTP_RESPONSE_KEYS]);
+      &ctx->responses[HTTP_RESPONSE_KEYS], grpc_core::CreateHttpCliSSLCredentials());
   ctx->httpcli->Start();
   grpc_channel_args_destroy(args);
   gpr_free(host);
@@ -838,7 +839,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   ctx->httpcli = grpc_core::HttpCli::Get(
       "https", args, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
-      &ctx->responses[rsp_idx]);
+      &ctx->responses[rsp_idx], grpc_core::CreateHttpCliSSLCredentials());
   ctx->httpcli->Start();
   grpc_channel_args_destroy(args);
   gpr_free(host);

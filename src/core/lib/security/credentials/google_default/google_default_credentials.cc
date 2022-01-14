@@ -195,7 +195,7 @@ static int is_metadata_server_reachable() {
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
-      &detector.response);
+      &detector.response, grpc_insecure_credentials_create());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   grpc_core::ExecCtx::Get()->Flush();

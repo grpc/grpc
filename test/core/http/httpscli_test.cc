@@ -29,6 +29,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
@@ -175,7 +176,7 @@ TEST_F(HttpsCliTest, Get) {
       grpc_core::HttpCli::Get("https", args, pops(), &req, NSecondsTime(15),
                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                   grpc_schedule_on_exec_ctx),
-                              &request_state.response);
+                              &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -204,7 +205,7 @@ TEST_F(HttpsCliTest, Post) {
                                NSecondsTime(15),
                                GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                    grpc_schedule_on_exec_ctx),
-                               &request_state.response);
+                               &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -242,7 +243,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
               "https", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_state.response);
+              &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
       httpcli->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();

@@ -146,8 +146,14 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
       const_cast<char*>(url_.authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
+  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  if (url_.scheme() == "http") {
+    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
+  else {
+    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(CreateHttpCliSSLCredentials());
+  }
   httpcli_ = HttpCli::Get(url_.scheme(), args, ctx_->pollent, &request,
-                          ctx_->deadline, &ctx_->closure, &ctx_->response);
+                          ctx_->deadline, &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
   httpcli_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
