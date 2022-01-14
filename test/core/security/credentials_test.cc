@@ -311,8 +311,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
-  grpc_http_response response =
-      http_response(200, valid_oauth2_json_response);
+  grpc_http_response response = http_response(200, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_value, &token_lifetime) ==
              GRPC_CREDENTIALS_OK);
@@ -326,8 +325,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
-  grpc_http_response response =
-      http_response(401, valid_oauth2_json_response);
+  grpc_http_response response = http_response(401, valid_oauth2_json_response);
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_value, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);
@@ -365,9 +363,9 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
   grpc_http_response response = http_response(200,
-                                                 "{"
-                                                 " \"expires_in\":3599, "
-                                                 " \"token_type\":\"Bearer\"}");
+                                              "{"
+                                              " \"expires_in\":3599, "
+                                              " \"token_type\":\"Bearer\"}");
   GPR_ASSERT(grpc_oauth2_token_fetcher_credentials_parse_server_response(
                  &response, &token_value, &token_lifetime) ==
              GRPC_CREDENTIALS_ERROR);

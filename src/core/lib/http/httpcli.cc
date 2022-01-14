@@ -59,8 +59,7 @@ grpc_httpcli_post_override g_post_override;
 OrphanablePtr<HttpCli> HttpCli::Get(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
-    grpc_millis deadline, grpc_closure* on_done,
-    grpc_http_response* response,
+    grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host =
