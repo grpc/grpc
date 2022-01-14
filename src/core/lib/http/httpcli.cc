@@ -159,7 +159,7 @@ HttpCli::HttpCli(
   channel_args_ = grpc_channel_args_copy_and_add(channel_args_, &rq_arg, 1);
   grpc_channel_args_destroy(prev_channel_args);
   prev_channel_args = channel_args_;
-  // TODO(apolcyn): is this the right place to precondition channel args?
+  // TODO(apolcyn): is here the right place to precondition channel args?
   channel_args_ = const_cast<grpc_channel_args*>(
       CoreConfiguration::Get()
           .channel_args_preconditioning()
