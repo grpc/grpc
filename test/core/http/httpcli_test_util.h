@@ -19,8 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <tuple>
-
 #include "test/core/util/subprocess.h"
 
 namespace grpc_core {
