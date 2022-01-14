@@ -709,7 +709,8 @@ static void on_openid_config_retrieved(void* user_data,
       "https", args, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
-      &ctx->responses[HTTP_RESPONSE_KEYS], grpc_core::CreateHttpCliSSLCredentials());
+      &ctx->responses[HTTP_RESPONSE_KEYS],
+      grpc_core::CreateHttpCliSSLCredentials());
   ctx->httpcli->Start();
   grpc_channel_args_destroy(args);
   gpr_free(host);

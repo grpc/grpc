@@ -75,7 +75,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_polling_entity* pollent, const grpc_http_request* request,
       grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response,
-      RefCountedPtr<grpc_channel_credentials> channel_creds) GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds)
+      GRPC_MUST_USE_RESULT;
 
   // Asynchronously perform a HTTP POST.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -93,7 +94,8 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_polling_entity* pollent, const grpc_http_request* request,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
       grpc_closure* on_done, grpc_httpcli_response* response,
-      RefCountedPtr<grpc_channel_credentials> channel_creds) GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds)
+      GRPC_MUST_USE_RESULT;
 
   HttpCli(absl::string_view scheme, const grpc_slice& request_text,
           grpc_httpcli_response* response, grpc_millis deadline,

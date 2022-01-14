@@ -176,7 +176,8 @@ TEST_F(HttpsCliTest, Get) {
       grpc_core::HttpCli::Get("https", args, pops(), &req, NSecondsTime(15),
                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                   grpc_schedule_on_exec_ctx),
-                              &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
+                              &request_state.response,
+                              grpc_core::CreateHttpCliSSLCredentials());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -201,11 +202,11 @@ TEST_F(HttpsCliTest, Post) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-      grpc_core::HttpCli::Post("https", args, pops(), &req, "hello", 5,
-                               NSecondsTime(15),
-                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
-                                                   grpc_schedule_on_exec_ctx),
-                               &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
+      grpc_core::HttpCli::Post(
+          "https", args, pops(), &req, "hello", 5, NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_state,
+                              grpc_schedule_on_exec_ctx),
+          &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
   httpcli->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -243,7 +244,8 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
               "https", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
-              &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
+              &request_state.response,
+              grpc_core::CreateHttpCliSSLCredentials());
       httpcli->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();

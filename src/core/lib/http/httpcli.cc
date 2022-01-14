@@ -56,13 +56,12 @@ grpc_httpcli_post_override g_post_override;
 
 }  // namespace
 
-OrphanablePtr<HttpCli> HttpCli::Get(absl::string_view scheme,
-                                    const grpc_channel_args* channel_args,
-                                    grpc_polling_entity* pollent,
-                                    const grpc_http_request* request,
-                                    grpc_millis deadline, grpc_closure* on_done,
-                                    grpc_httpcli_response* response,
-                                    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+OrphanablePtr<HttpCli> HttpCli::Get(
+    absl::string_view scheme, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    grpc_millis deadline, grpc_closure* on_done,
+    grpc_httpcli_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host =
       grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
@@ -330,7 +329,8 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
             nullptr /*call_creds*/, authority, req->channel_args_,
             &new_args_from_connector);
     if (sc == nullptr) {
-      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("failed to create security connector", &req->overall_error_, 1));
+      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "failed to create security connector", &req->overall_error_, 1));
       return;
     }
     grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
