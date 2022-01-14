@@ -18,7 +18,7 @@ set -ex
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-PYTHON=$(realpath "${1:-py27/bin/python}")
+PYTHON=$(realpath "${1:-py36/bin/python}")
 
 ROOT=$(pwd)
 
@@ -27,4 +27,3 @@ $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
 (mv -T "$ROOT/htmlcov" "$ROOT/reports/python-coverage") || true
-

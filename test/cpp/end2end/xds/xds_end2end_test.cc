@@ -913,6 +913,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       const char* xds_authority = "",
       grpc_channel_args* xds_channel_args = nullptr) {
     ChannelArguments args;
+    // TODO(roth): Remove this once we enable retries by default internally.
+    args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }

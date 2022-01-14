@@ -28,8 +28,11 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_security.h>
+
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_channel_creds.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -99,39 +102,6 @@ grpc_error_handle ParseChannelCredsArray(const Json::Array& json,
 }
 
 }  // namespace
-
-//
-// XdsChannelCredsRegistry
-//
-
-bool XdsChannelCredsRegistry::IsSupported(const std::string& creds_type) {
-  return creds_type == "google_default" || creds_type == "insecure" ||
-         creds_type == "fake";
-}
-
-bool XdsChannelCredsRegistry::IsValidConfig(const std::string& /*creds_type*/,
-                                            const Json& /*config*/) {
-  // Currently, none of the creds types actually take a config, but we
-  // ignore whatever might be specified in the bootstrap file for
-  // forward compatibility reasons.
-  return true;
-}
-
-RefCountedPtr<grpc_channel_credentials>
-XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
-                                          const Json& /*config*/) {
-  if (creds_type == "google_default") {
-    return RefCountedPtr<grpc_channel_credentials>(
-        grpc_google_default_credentials_create(nullptr));
-  } else if (creds_type == "insecure") {
-    return RefCountedPtr<grpc_channel_credentials>(
-        grpc_insecure_credentials_create());
-  } else if (creds_type == "fake") {
-    return RefCountedPtr<grpc_channel_credentials>(
-        grpc_fake_transport_security_credentials_create());
-  }
-  return nullptr;
-}
 
 //
 // XdsBootstrap::XdsServer
