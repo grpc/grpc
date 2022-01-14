@@ -469,9 +469,5 @@ def targets():
         RubyArtifact('linux', 'x64', presubmit=True),
         RubyArtifact('macos', 'x64', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
-<<<<<<< HEAD
-        PHPArtifact('macos', 'x64', presubmit=True)
-=======
         PHPArtifact('macos', 'x64', presubmit=True),
->>>>>>> f08fb4e3ba (ugly hack for more ccache hits)
     ])
