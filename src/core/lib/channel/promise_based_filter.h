@@ -46,6 +46,7 @@ using NextPromiseFactory =
 
 namespace promise_filter_detail {
 
+// Call data shared between all implementations of promise-based filters.
 class BaseCallData {
  public:
   explicit BaseCallData(const grpc_call_element_args* args)
@@ -66,9 +67,13 @@ class BaseCallData {
   ArenaPromise<TrailingMetadata> promise_;
 };
 
+// Specific call data per channel filter.
+// Note that we further specialize for clients and servers since their
+// implementations are very different.
 template <class ChannelFilter, bool kIsClient = ChannelFilter::is_client()>
 class CallData;
 
+// Client implementation of call data.
 template <class ChannelFilter>
 class CallData<ChannelFilter, true> : public BaseCallData {
  public:
@@ -80,9 +85,13 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
   ~CallData() { GRPC_ERROR_UNREF(cancelled_error_); }
 
+  // Handle one grpc_transport_stream_op_batch
   void Op(grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+    // Fake out the activity based context.
     ScopedContext context(this);
 
+    // If this is a cancel stream, cancel anything we have pending and propagate
+    // the cancellation.
     if (op->cancel_stream) {
       GPR_ASSERT(!op->send_initial_metadata && !op->send_trailing_metadata &&
                  !op->send_message && !op->recv_initial_metadata &&
@@ -92,23 +101,33 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       return;
     }
 
+    // send_initial_metadata: seeing this triggers the start of the promise part
+    // of this filter.
     if (op->send_initial_metadata) {
+      // If we're already cancelled, just terminate the batch.
       if (send_initial_state_ == SendInitialState::kCancelled) {
         grpc_transport_stream_op_batch_finish_with_failure(
             op, GRPC_ERROR_REF(cancelled_error_), call_combiner_);
         return;
       }
+      // Otherwise, we should not have seen a send_initial_metadata op yet.
       GPR_ASSERT(send_initial_state_ == SendInitialState::kInitial);
+      // Mark ourselves as queued.
       send_initial_state_ = SendInitialState::kQueued;
       if (op->recv_trailing_metadata) {
+        // If there's a recv_trailing_metadata op, we queue that too.
         GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
         recv_trailing_state_ = RecvTrailingState::kQueued;
       }
+      // This is the queuing!
       send_initial_metadata_batch_ = op;
+      // And kick start the promise.
       StartPromise(elem);
       return;
     }
 
+    // recv_trailing_metadata *without* send_initial_metadata: hook it so we can
+    // respond to it, and push it down.
     if (op->recv_trailing_metadata) {
       GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
       recv_trailing_state_ = RecvTrailingState::kForwarded;
@@ -119,20 +138,47 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   }
 
  private:
-  enum class SendInitialState { kInitial, kQueued, kForwarded, kCancelled };
-  enum class RecvTrailingState {
+  // At what stage is our handling of send initial metadata?
+  enum class SendInitialState {
+    // Start state: no op seen
     kInitial,
+    // We've seen the op, and started the promise in response to it, but have
+    // not yet sent the op to the next filter.
     kQueued,
+    // We've sent the op to the next filter.
     kForwarded,
+    // We were cancelled.
+    kCancelled
+  };
+  // At what stage is our handling of recv trailing metadata?
+  enum class RecvTrailingState {
+    // Start state: no op seen
+    kInitial,
+    // We saw the op, and since it was bundled with send initial metadata, we
+    // queued it until the send initial metadata can be sent to the next filter.
+    kQueued,
+    // We've forwarded the op to the next filter.
+    kForwarded,
+    // The op has completed from below, but we haven't yet forwarded it up (the
+    // promise gets to interject and mutate it).
     kComplete,
+    // We've called the recv_metadata_ready callback from the original
+    // recv_trailing_metadata op that was presented to us.
     kResponded,
+    // We've been cancelled and handled that locally.
+    // (i.e. whilst the recv_trailing_metadata op is queued in this filter).
     kCancelled
   };
 
+  // Handle cancellation.
   void Cancel(grpc_call_element* elem, grpc_error_handle error) {
+    // Track the latest reason for cancellation.
     GRPC_ERROR_UNREF(cancelled_error_);
     cancelled_error_ = GRPC_ERROR_REF(error);
+    // Stop running the promise.
     promise_ = ArenaPromise<TrailingMetadata>();
+    // If we have an op queued, fail that op.
+    // Record what we've done.
     if (send_initial_state_ == SendInitialState::kQueued) {
       send_initial_state_ = SendInitialState::kCancelled;
       if (recv_trailing_state_ == RecvTrailingState::kQueued) {
@@ -146,11 +192,13 @@ class CallData<ChannelFilter, true> : public BaseCallData {
     }
   }
 
+  // Begin running the promise - which will ultimately take some initial
+  // metadata and return some trailing metadata.
   void StartPromise(grpc_call_element* elem) {
     GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-
     ChannelFilter* filter = static_cast<ChannelFilter*>(elem->channel_data);
 
+    // Construct the promise.
     promise_ = filter->MakeCallPromise(
         send_initial_metadata_batch_->payload->send_initial_metadata
             .send_initial_metadata,
@@ -158,9 +206,13 @@ class CallData<ChannelFilter, true> : public BaseCallData {
           return static_cast<CallData*>(elem->call_data)
               ->NextPromiseFactory(elem, initial_metadata);
         });
+    // Poll once.
     WakeInsideCombiner();
   }
 
+  // Interject our callback into the op batch for recv trailing metadata ready.
+  // Stash a pointer to the trailing metadata that will be filled in, so we can
+  // manipulate it later.
   void HookRecvTrailingMetadata(grpc_transport_stream_op_batch* op) {
     recv_trailing_metadata_ =
         op->payload->recv_trailing_metadata.recv_trailing_metadata;
@@ -170,6 +222,10 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         &recv_trailing_metadata_ready_;
   }
 
+  // Construct a promise that will "call" the next filter.
+  // Effectively:
+  //   - put the modified initial metadata into the batch to be sent down.
+  //   - return a wrapper around PollTrailingMetadata as the promise.
   ArenaPromise<TrailingMetadata> NextPromiseFactory(
       grpc_call_element* elem, InitialMetadata* initial_metadata) {
     GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
@@ -181,12 +237,18 @@ class CallData<ChannelFilter, true> : public BaseCallData {
     });
   }
 
+  // Wrapper to make it look like we're calling the next filter as a promise.
+  // First poll: send the send_initial_metadata op down the stack.
+  // All polls: await receiving the trailing metadata, then return it to the
+  // application.
   Poll<TrailingMetadata> PollTrailingMetadata(grpc_call_element* elem) {
     if (send_initial_state_ == SendInitialState::kQueued) {
+      // First poll: pass the send_initial_metadata op down the stack.
       auto* op = absl::exchange(send_initial_metadata_batch_, nullptr);
       GPR_ASSERT(op != nullptr);
       send_initial_state_ = SendInitialState::kForwarded;
       if (recv_trailing_state_ == RecvTrailingState::kQueued) {
+        // (and the recv_trailing_metadata op if it's part of the queuing)
         HookRecvTrailingMetadata(op);
         recv_trailing_state_ = RecvTrailingState::kForwarded;
       }
@@ -196,15 +258,24 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       case RecvTrailingState::kInitial:
       case RecvTrailingState::kQueued:
       case RecvTrailingState::kForwarded:
+        // No trailing metadata yet: we are pending.
+        // We return that and expect the promise to be repolled later (if it's
+        // not cancelled).
         return Pending{};
       case RecvTrailingState::kComplete:
+        // We've received trailing metadata: pass it to the promise and allow it
+        // to adjust it.
         return std::move(*recv_trailing_metadata_);
       case RecvTrailingState::kCancelled: {
+        // We've been cancelled: synthesize some trailing metadata and pass it
+        // to the calling promise for adjustment.
         TrailingMetadata synthetic(arena_);
         SetStatusFromError(&synthetic, cancelled_error_);
         return synthetic;
       }
       case RecvTrailingState::kResponded:
+        // We've already responded to the caller: we can't do anything and we
+        // should never reach here.
         abort();
     }
     GPR_UNREACHABLE_CODE(return Pending{});
@@ -216,17 +287,20 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   }
 
   void RecvTrailingMetadataReady(grpc_error_handle error) {
+    // If there was an error, we'll put that into the trailing metadata and
+    // proceed as if there was not.
     if (error != GRPC_ERROR_NONE) {
       SetStatusFromError(recv_trailing_metadata_, error);
     }
-
+    // Record that we've got the callback.
     GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kForwarded);
     recv_trailing_state_ = RecvTrailingState::kComplete;
-
+    // Repoll the promise.
     ScopedContext context(this);
     WakeInsideCombiner();
   }
 
+  // Given an error, fill in TrailingMetadata to represent that error.
   void SetStatusFromError(TrailingMetadata* metadata, grpc_error_handle error) {
     grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
     std::string status_details;
@@ -237,10 +311,14 @@ class CallData<ChannelFilter, true> : public BaseCallData {
                   Slice::FromCopiedString(status_details));
   }
 
+  // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner() {
+    GPR_ASSERT(!is_polling_);
+    is_polling_ = true;
     switch (send_initial_state_) {
       case SendInitialState::kQueued:
       case SendInitialState::kForwarded: {
+        // Poll the promise once since we're waiting for it.
         Poll<TrailingMetadata> poll = promise_();
         if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
           // TODO(ctiller): It's possible that a promise may decide to return
@@ -257,6 +335,9 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       } break;
       case SendInitialState::kInitial:
       case SendInitialState::kCancelled:
+        // If we get a response without sending anything, we just propagate that
+        // up. (note: that situation isn't possible once we finish the promise
+        // transition).
         if (recv_trailing_state_ == RecvTrailingState::kComplete) {
           recv_trailing_state_ = RecvTrailingState::kResponded;
           grpc_closure* cb =
@@ -265,15 +346,25 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         }
         break;
     }
+    is_polling_ = false;
   }
 
+  // Queued batch containing at least a send_initial_metadata op.
   grpc_transport_stream_op_batch* send_initial_metadata_batch_ = nullptr;
+  // Pointer to where trailing metadata will be stored.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+  // Closure to call when we're done with the trailing metadata.
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+  // Our closure pointing to RecvTrailingMetadataReadyCallback.
   grpc_closure recv_trailing_metadata_ready_;
+  // Error received during cancellation.
   grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  // State of the send_initial_metadata op.
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
+  // State of the recv_trailing_metadata op.
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
+  // Whether we're currently polling the promise.
+  bool is_polling_ = false;
 };
 
 }  // namespace promise_filter_detail
