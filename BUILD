@@ -3521,7 +3521,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "grpc_secure",
     srcs = [
@@ -3589,7 +3588,6 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_credentials_util",
-        "httpcli_ssl_credentials",
         "grpc_jwt_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_security_base",
@@ -3599,6 +3597,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "httpcli",
+        "httpcli_ssl_credentials",
         "json",
         "ref_counted",
         "ref_counted_ptr",
@@ -3835,9 +3834,9 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_credentials_util",
-        "httpcli_ssl_credentials",
         "grpc_security_base",
         "httpcli",
+        "httpcli_ssl_credentials",
         "json",
         "ref_counted",
         "ref_counted_ptr",
