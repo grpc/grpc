@@ -1231,10 +1231,15 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c \
+    src/core/ext/upb-generated/xds/annotations/v3/security.upb.c \
+    src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c \
     src/core/ext/upb-generated/xds/annotations/v3/status.upb.c \
+    src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c \
     src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
     src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
     src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/extension.upb.c \
     src/core/ext/upb-generated/xds/core/v3/resource.upb.c \
     src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c \
     src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
@@ -1334,10 +1339,15 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
     src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
@@ -1848,9 +1858,16 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/http.upb.c \
+    src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upb-generated/google/protobuf/duration.upb.c \
+    src/core/ext/upb-generated/google/protobuf/empty.upb.c \
+    src/core/ext/upb-generated/google/protobuf/struct.upb.c \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
+    src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+    src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -2829,16 +2846,11 @@ src/core/ext/upb-generated/envoy/type/v3/http.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/percent.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/range.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/google/api/annotations.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/google/api/expr/v1alpha1/checked.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/google/api/expr/v1alpha1/eval.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/google/api/expr/v1alpha1/explain.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/google/api/expr/v1alpha1/value.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/google/api/http.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/google/protobuf/empty.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/google/protobuf/struct.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/google/protobuf/wrappers.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
@@ -2848,10 +2860,15 @@ src/core/ext/upb-generated/udpa/annotations/security.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/annotations/v3/security.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/annotations/v3/status.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/authority.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/context_params.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/extension.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/resource.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c: $(OPENSSL_DEP)
@@ -2949,10 +2966,15 @@ src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c: $(OPENSSL_D
 src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c: $(OPENSSL_DEP)

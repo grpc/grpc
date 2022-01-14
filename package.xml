@@ -482,14 +482,24 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/versioning.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/security.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/security.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/status.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/status.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/authority.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/authority.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/context_params.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/context_params.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/extension.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/extension.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/resource.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/resource.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c" role="src" />
@@ -688,14 +698,24 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/validate/validate.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/validate/validate.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c" role="src" />

@@ -1748,10 +1748,15 @@ add_library(grpc
   src/core/ext/upb-generated/udpa/annotations/status.upb.c
   src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/migrate.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/security.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/sensitive.upb.c
   src/core/ext/upb-generated/xds/annotations/v3/status.upb.c
+  src/core/ext/upb-generated/xds/annotations/v3/versioning.upb.c
   src/core/ext/upb-generated/xds/core/v3/authority.upb.c
   src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
   src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
+  src/core/ext/upb-generated/xds/core/v3/extension.upb.c
   src/core/ext/upb-generated/xds/core/v3/resource.upb.c
   src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
@@ -1851,10 +1856,15 @@ add_library(grpc
   src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
   src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/annotations/v3/migrate.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/annotations/v3/security.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/annotations/v3/sensitive.upbdefs.c
   src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/annotations/v3/versioning.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/extension.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
@@ -2518,9 +2528,16 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
