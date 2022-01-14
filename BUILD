@@ -5286,31 +5286,6 @@ grpc_upb_proto_reflection_library(
     deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
 )
 
-# Once upb code-gen issue is resolved, replace xds_orca_upb with this.
-# grpc_upb_proto_library(
-#     name = "xds_orca_upb",
-#     deps = ["@envoy_api//xds/data/orca/v3:orca_load_report"]
-# )
-
-grpc_cc_library(
-    name = "xds_orca_upb",
-    srcs = [
-        "src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-    ],
-)
-
 grpc_upb_proto_library(
     name = "udpa_annotations_upb",
     deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
@@ -5321,149 +5296,39 @@ grpc_upb_proto_reflection_library(
     deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "xds_annotations_upb",
-    srcs = [
-        "src/core/ext/upb-generated/xds/annotations/v3/status.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/xds/annotations/v3/status.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
+    deps = ["@com_github_cncf_udpa//xds/annotations/v3:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "xds_annotations_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/xds/annotations/v3/status.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "xds_annotations_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//xds/annotations/v3:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "xds_core_upb",
-    srcs = [
-        "src/core/ext/upb-generated/xds/core/v3/authority.upb.c",
-        "src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c",
-        "src/core/ext/upb-generated/xds/core/v3/context_params.upb.c",
-        "src/core/ext/upb-generated/xds/core/v3/resource.upb.c",
-        "src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c",
-        "src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/xds/core/v3/authority.upb.h",
-        "src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.h",
-        "src/core/ext/upb-generated/xds/core/v3/context_params.upb.h",
-        "src/core/ext/upb-generated/xds/core/v3/resource.upb.h",
-        "src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h",
-        "src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-        "protobuf_any_upb",
-        "udpa_annotations_upb",
-        "xds_annotations_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//xds/core/v3:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "xds_core_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c",
-        "src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c",
-        "src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c",
-        "src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c",
-        "src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c",
-        "src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.h",
-        "src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.h",
-        "src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.h",
-        "src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.h",
-        "src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.h",
-        "src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upbdefs",
-        "udpa_annotations_upbdefs",
-        "xds_annotations_upbdefs",
-        "xds_core_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//xds/core/v3:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "xds_type_upb",
-    srcs = [
-        "src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/xds/type/v3/typed_struct.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-        "protobuf_struct_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/xds/type/v3/typed_struct.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upbdefs",
-        "xds_type_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_orca_upb",
+    deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(

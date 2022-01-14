@@ -116,16 +116,7 @@ proto_files=( \
   "envoy/type/v3/http.proto" \
   "envoy/type/v3/percent.proto" \
   "envoy/type/v3/range.proto" \
-  "envoy/type/v3/semantic_version.proto" \
-  "xds/annotations/v3/status.proto" \
-  "xds/core/v3/authority.proto" \
-  "xds/core/v3/collection_entry.proto" \
-  "xds/core/v3/context_params.proto" \
-  "xds/core/v3/resource_locator.proto" \
-  "xds/core/v3/resource_name.proto" \
-  "xds/core/v3/resource.proto" \
-  "xds/data/orca/v3/orca_load_report.proto" \
-  "xds/type/v3/typed_struct.proto")
+  "envoy/type/v3/semantic_version.proto")
 
 INCLUDE_OPTIONS="-I=$PWD/third_party/xds \
   -I=$PWD/third_party/envoy-api \
