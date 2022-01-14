@@ -184,15 +184,15 @@ class HttpCliSSLCredentials : public grpc_channel_credentials {
   HttpCliSSLCredentials() : grpc_channel_credentials("HttpCliSSL") {}
   ~HttpCliSSLCredentials() override {}
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> /*call_creds*/,
+      RefCountedPtr<grpc_call_credentials> /*call_creds*/,
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** /*new_args*/) override {
     const char* pem_root_certs =
-        grpc_core::DefaultSslRootStore::GetPemRootCerts();
+        DefaultSslRootStore::GetPemRootCerts();
     const tsi_ssl_root_certs_store* root_store =
-        grpc_core::DefaultSslRootStore::GetRootStore();
+        DefaultSslRootStore::GetRootStore();
     if (root_store == nullptr) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       return nullptr;
@@ -206,7 +206,7 @@ class HttpCliSSLCredentials : public grpc_channel_credentials {
                                                          root_store, target);
   }
 
-  grpc_core::RefCountedPtr<grpc_channel_credentials>
+  RefCountedPtr<grpc_channel_credentials>
   duplicate_without_call_credentials() override {
     return Ref();
   }
