@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "absl/strings/string_view.h"
+#include "slice_refcount_base.h"
 
 #include <grpc/slice.h>
 
@@ -367,7 +368,7 @@ class Slice : public slice_detail::BaseSlice,
                                     const uint8_t* begin, const uint8_t* end) {
     grpc_slice out;
     out.refcount = r;
-    r->Ref();
+    if (r != grpc_slice_refcount::NoopRefcount()) r->Ref();
     out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
     out.data.refcounted.length = end - begin;
     return Slice(out);
