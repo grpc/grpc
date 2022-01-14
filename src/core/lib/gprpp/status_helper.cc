@@ -83,6 +83,8 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
       return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
     case StatusIntProperty::kLbPolicyDrop:
       return TYPE_URL(TYPE_INT_TAG "lb_policy_drop");
+    case StatusIntProperty::kStreamNetworkState:
+      return TYPE_URL(TYPE_INT_TAG "stream_network_state");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }

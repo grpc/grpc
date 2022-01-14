@@ -2458,6 +2458,39 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
 }
 
+TEST_P(
+    GlobalXdsClientTest,
+    MultipleChannelsShareXdsClientWithResourceUpdateAfterOneChannelGoesAway) {
+  // Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
+  // XdsClient properly handles the case where there are multiple watchers on
+  // the same resource and one of them unsubscribes.
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = default_listener_;
+  listener.set_name(kNewServerName);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  WaitForBackend(0);
+  // Create second channel and tell it to connect to kNewServerName.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  // Now, destroy the new channel, send an EDS update to use a different backend
+  // and test that the channel switches to that backend.
+  channel2.reset();
+  // This sleep is needed to be able to reproduce the bug and to give time for
+  // the buggy unsubscription to take place.
+  // TODO(yashykt): Figure out a way to do this without the sleep.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  })));
+  WaitForBackend(1);
+}
+
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   constexpr char kServerName2[] = "server.other.com";
