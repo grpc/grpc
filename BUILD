@@ -3489,6 +3489,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    language = "c++",
     deps = [
         "config",
         "gpr_base",
@@ -3496,10 +3497,32 @@ grpc_cc_library(
         "grpc_security_base",
         "ref_counted_ptr",
         "sockaddr_utils",
-        "tsi_ssl_credentials",
         "useful",
     ],
 )
+
+grpc_cc_library(
+    name = "grpc_httpcli_security_connector",
+    srcs = [
+        "src/core/lib/http/httpcli_security_connector.cc",
+    ],
+    hdrs = [
+        "src/core/lib/http/httpcli_ssl_credentials.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
+        "grpc_security_base",
+        "ref_counted_ptr",
+        "tsi_ssl_credentials",
+    ],
+)
+
 
 grpc_cc_library(
     name = "grpc_secure",
