@@ -39,9 +39,6 @@
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
 
-/* Expose the parser response type as a httpcli response too */
-typedef struct grpc_http_response grpc_httpcli_response;
-
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
                                          const char* host, grpc_millis deadline,
