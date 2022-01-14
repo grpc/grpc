@@ -167,12 +167,11 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str())));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(uri->authority().c_str()));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -227,12 +226,11 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str())));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(uri->authority().c_str()));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -299,12 +297,11 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str())));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(uri->authority().c_str()));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(

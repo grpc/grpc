@@ -325,12 +325,11 @@ void ExternalAccountCredentials::ExchangeToken(
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
   GPR_ASSERT(http_request_ == nullptr);
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str())));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(uri->authority().c_str()));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -425,12 +424,11 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   // TODO(ctiller): Use the callers resource quota.
   GPR_ASSERT(http_request_ == nullptr);
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str())));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(uri->authority().c_str()));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(

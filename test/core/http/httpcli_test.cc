@@ -163,11 +163,10 @@ TEST_F(HttpRequestTest, Get) {
   gpr_log(GPR_INFO, "requesting from %s", host);
   memset(&req, 0, sizeof(req));
   req.path = const_cast<char*>("/get");
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           "http", args, pops(), &req, NSecondsTime(15),
@@ -191,11 +190,10 @@ TEST_F(HttpRequestTest, Post) {
   gpr_log(GPR_INFO, "posting to %s", host);
   memset(&req, 0, sizeof(req));
   req.path = const_cast<char*>("/post");
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
           "http", args, pops(), &req, "hello", 5, NSecondsTime(15),
@@ -249,12 +247,11 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
       req.path = const_cast<char*>("/get");
-      std::vector<grpc_arg> request_args;
-      request_args.push_back(grpc_channel_arg_string_create(
+      grpc_arg authority_arg = grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443")));
-      grpc_channel_args* args = grpc_channel_args_copy_and_add(
-          nullptr, request_args.data(), request_args.size());
+          const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443"));
+      grpc_channel_args* args =
+          grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               "http", args, pops(), &req, NSecondsTime(15),
@@ -297,12 +294,11 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
       req.path = const_cast<char*>("/get");
-      std::vector<grpc_arg> request_args;
-      request_args.push_back(grpc_channel_arg_string_create(
+      grpc_arg authority_arg = grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(fake_http_server_ptr->address())));
-      grpc_channel_args* args = grpc_channel_args_copy_and_add(
-          nullptr, request_args.data(), request_args.size());
+          const_cast<char*>(fake_http_server_ptr->address()));
+      grpc_channel_args* args =
+          grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               "http", args, pops(), &req, NSecondsTime(15),
@@ -349,12 +345,11 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
       req.path = const_cast<char*>("/get");
-      std::vector<grpc_arg> request_args;
-      request_args.push_back(grpc_channel_arg_string_create(
+      grpc_arg authority_arg = grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(fake_server_address.c_str())));
-      grpc_channel_args* args = grpc_channel_args_copy_and_add(
-          nullptr, request_args.data(), request_args.size());
+          const_cast<char*>(fake_server_address.c_str()));
+      grpc_channel_args* args =
+          grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               "http", args, pops(), &req, NSecondsTime(15),
@@ -401,12 +396,11 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionSuccess) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           pollset_set_to_destroy_eagerly);
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(fake_server_address.c_str())));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(fake_server_address.c_str()));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           "http", args, &wrapped_pollset_set_to_destroy_eagerly, &req,

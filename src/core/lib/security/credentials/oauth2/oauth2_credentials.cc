@@ -389,12 +389,11 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(
+    grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST)));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(
-        nullptr, request_args.data(), request_args.size());
+        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST));
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     http_request_ = grpc_core::HttpRequest::Get(
         "http", args, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
@@ -456,12 +455,11 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST)));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   http_request_ = grpc_core::HttpRequest::Post(
       "https", args, pollent, &request, body.c_str(), body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
@@ -588,12 +586,11 @@ class StsTokenFetcherCredentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(
+    grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(sts_url_.authority().c_str())));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(
-        nullptr, request_args.data(), request_args.size());
+        const_cast<char*>(sts_url_.authority().c_str()));
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     RefCountedPtr<grpc_channel_credentials> http_request_creds;
     if (sts_url_.scheme() == "http") {
       http_request_creds = RefCountedPtr<grpc_channel_credentials>(

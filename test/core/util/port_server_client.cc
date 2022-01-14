@@ -82,12 +82,11 @@ void grpc_free_port_using_server(int port) {
     gpr_asprintf(&path, "/drop/%d", port);
     req.path = path;
 
-    std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(
+    grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(
-        nullptr, request_args.data(), request_args.size());
+        const_cast<char*>(GRPC_PORT_SERVER_ADDRESS));
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     auto http_request = grpc_core::HttpRequest::Get(
         "http", args, &pr.pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
@@ -172,11 +171,10 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     req.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-    std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), pr->server));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(
-        nullptr, request_args.data(), request_args.size());
+    grpc_arg authority_arg = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), pr->server);
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     pr->http_request = grpc_core::HttpRequest::Get(
         "http", args, &pr->pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
@@ -225,12 +223,11 @@ int grpc_pick_port_using_server(void) {
 
     req.path = const_cast<char*>("/get");
 
-    std::vector<grpc_arg> request_args;
-    request_args.push_back(grpc_channel_arg_string_create(
+    grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(
-        nullptr, request_args.data(), request_args.size());
+        const_cast<char*>(GRPC_PORT_SERVER_ADDRESS));
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     auto http_request = grpc_core::HttpRequest::Get(
         "http", args, &pr.pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,

@@ -672,7 +672,7 @@ static void on_openid_config_retrieved(void* user_data,
   memset(&req, 0, sizeof(grpc_http_request));
   const char* jwks_uri;
   const Json* cur;
-  std::vector<grpc_arg> request_args;
+  grpc_arg authority_arg;
   grpc_channel_args* args;
   char* host;
 
@@ -701,10 +701,9 @@ static void on_openid_config_retrieved(void* user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  args = grpc_channel_args_copy_and_add(nullptr, request_args.data(),
-                                        request_args.size());
+  authority_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
+  args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   ctx->http_request = grpc_core::HttpRequest::Get(
       "https", args, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
@@ -774,7 +773,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   grpc_http_request req;
   memset(&req, 0, sizeof(grpc_http_request));
   http_response_index rsp_idx;
-  std::vector<grpc_arg> request_args;
+  grpc_arg authority_arg;
   grpc_channel_args* args;
   char* host;
 
@@ -833,10 +832,9 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  args = grpc_channel_args_copy_and_add(nullptr, request_args.data(),
-                                        request_args.size());
+  authority_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
+  args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   ctx->http_request = grpc_core::HttpRequest::Get(
       "https", args, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
