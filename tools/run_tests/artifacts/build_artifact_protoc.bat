@@ -22,6 +22,8 @@ cd cmake
 mkdir build
 cd build
 
+@rem TODO(jtattermusch): honor GRPC_PROTOC_BUILD_COMPILER_JOBS set by task_runner.py --inner_jobs
+
 cmake -G "%generator%" -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DgRPC_BUILD_MSVC_MP_COUNT=4 ../.. || goto :error
 cmake --build . --target protoc --config Release || goto :error
 cmake --build . --target plugins --config Release || goto :error

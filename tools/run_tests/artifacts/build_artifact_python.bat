@@ -32,6 +32,7 @@ set GRPC_PYTHON_BUILD_WITH_CYTHON=1
 
 @rem Allow build_ext to build C/C++ files in parallel
 @rem by enabling a monkeypatch. It speeds up the build a lot.
+@rem TODO(jtattermusch): honor GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value set by task_runner.py --inner_jobs
 set GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=4
 
 mkdir -p %ARTIFACTS_OUT%
