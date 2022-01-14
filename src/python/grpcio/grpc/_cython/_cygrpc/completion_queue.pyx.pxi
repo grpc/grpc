@@ -1,3 +1,5 @@
+# Copyright 2015 gRPC authors.
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -67,10 +69,6 @@ cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
     if g_gevent_activated:
       # For gevent, completion_queue_next is run in a native thread pool.
       global g_gevent_threadpool
-
-      # TODO: Is this conditional needed?
-      if g_gevent_threadpool is None:
-        g_gevent_threadpool = gevent_hub.get_hub().threadpool
 
       result = g_gevent_threadpool.apply(_internal_latent_event, (latent_event_arg,))
       return result

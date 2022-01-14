@@ -34,7 +34,8 @@ cdef mutex g_greenlets_mu
 cdef bint g_shutdown_greenlets_to_run_queue = False
 
 
-cdef _submit_to_greenlet_queue(object to_call):
+cdef _submit_to_greenlet_queue(object cb, tuple args):
+  cdef tuple to_call = (cb,) + args
   cdef unique_lock[mutex]* lk
   Py_INCREF(to_call)
   with nogil:
@@ -42,11 +43,6 @@ cdef _submit_to_greenlet_queue(object to_call):
     g_greenlets_to_run.push(<void*>(to_call))
     del lk
     g_greenlets_cv.notify_all()
-
-
-# TODO: This wrapper is not necessary.
-def _spawn_greenlet(*args):
-  _submit_to_greenlet_queue(args)
 
 
 cdef object await_next_greenlet():
@@ -73,7 +69,6 @@ def spawn_greenlets():
     fn(*args)
 
 def shutdown_await_next_greenlet():
-  # TODO: Is this global statement necessary?
   global g_shutdown_greenlets_to_run_queue
   cdef unique_lock[mutex]* lk
   with nogil:
@@ -88,8 +83,6 @@ def init_grpc_gevent():
   global g_gevent_threadpool
   global g_gevent_activated
   global g_interrupt_check_period_ms
-
-  # TODO Is this used anymore? If not, consistency in naming.
   global g_gevent_pool
 
   import gevent
@@ -109,9 +102,7 @@ def init_grpc_gevent():
 
   g_gevent_pool.spawn(spawn_greenlets)
 
-  def cb_func(cb, args):
-    _spawn_greenlet(cb, *args)
-  set_async_callback_func(cb_func)
+  set_async_callback_func(_submit_to_greenlet_queue)
 
   # TODO: Document how this all works.
   atexit.register(shutdown_await_next_greenlet)

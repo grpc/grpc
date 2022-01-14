@@ -19,7 +19,6 @@ cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline) excep
 
 cdef _interpret_event(grpc_event c_event)
 
-# TODO: Get rid of this.
 cdef class _LatentEventArg:
   cdef grpc_completion_queue *c_completion_queue
   cdef object deadline
