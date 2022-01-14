@@ -33,16 +33,56 @@
 
 namespace grpc_core {
 
+namespace promise_filter_detail {
+class BaseCallData;
+};
+
+// Small unowned "handle" type to ensure one accessor at a time to metadata.
+// The focus here is to get promises to use the syntax we'd like - we'll
+// probably substitute some other smart pointer later.
+template <typename T>
+class MetadataHandle {
+ public:
+  MetadataHandle() = default;
+
+  MetadataHandle(const MetadataHandle&) = delete;
+  MetadataHandle& operator=(const MetadataHandle&) = delete;
+
+  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
+    other.handle_ = nullptr;
+  }
+  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+
+  T* operator->() const { return handle_; }
+  bool has_value() const { return handle_ != nullptr; }
+
+ private:
+  friend class promise_filter_detail::BaseCallData;
+
+  explicit MetadataHandle(T* handle) : handle_(handle) {}
+  T* Unwrap() {
+    T* result = handle_;
+    handle_ = nullptr;
+    return result;
+  }
+
+  T* handle_ = nullptr;
+};
+
 // Trailing metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using TrailingMetadata = grpc_metadata_batch;
+using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
 
 // Initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using InitialMetadata = grpc_metadata_batch;
+using InitialMetadata = MetadataHandle<grpc_metadata_batch>;
 
 using NextPromiseFactory =
-    std::function<ArenaPromise<TrailingMetadata>(InitialMetadata*)>;
+    std::function<ArenaPromise<TrailingMetadata>(InitialMetadata)>;
 
 namespace promise_filter_detail {
 
@@ -60,6 +100,16 @@ class BaseCallData {
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_) {}
   };
+
+  static MetadataHandle<grpc_metadata_batch> WrapMetadata(
+      grpc_metadata_batch* p) {
+    return MetadataHandle<grpc_metadata_batch>(p);
+  }
+
+  static grpc_metadata_batch* UnwrapMetadata(
+      MetadataHandle<grpc_metadata_batch> p) {
+    return p.Unwrap();
+  }
 
   Arena* const arena_;
   CallCombiner* const call_combiner_;
@@ -200,11 +250,11 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
     // Construct the promise.
     promise_ = filter->MakeCallPromise(
-        send_initial_metadata_batch_->payload->send_initial_metadata
-            .send_initial_metadata,
-        [elem](InitialMetadata* initial_metadata) {
+        WrapMetadata(send_initial_metadata_batch_->payload
+                         ->send_initial_metadata.send_initial_metadata),
+        [elem](InitialMetadata initial_metadata) {
           return static_cast<CallData*>(elem->call_data)
-              ->NextPromiseFactory(elem, initial_metadata);
+              ->NextPromiseFactory(elem, std::move(initial_metadata));
         });
     // Poll once.
     WakeInsideCombiner();
@@ -227,10 +277,10 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   //   - put the modified initial metadata into the batch to be sent down.
   //   - return a wrapper around PollTrailingMetadata as the promise.
   ArenaPromise<TrailingMetadata> NextPromiseFactory(
-      grpc_call_element* elem, InitialMetadata* initial_metadata) {
+      grpc_call_element* elem, InitialMetadata initial_metadata) {
     GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
     send_initial_metadata_batch_->payload->send_initial_metadata
-        .send_initial_metadata = initial_metadata;
+        .send_initial_metadata = UnwrapMetadata(std::move(initial_metadata));
     return ArenaPromise<TrailingMetadata>([elem]() {
       return static_cast<CallData*>(elem->call_data)
           ->PollTrailingMetadata(elem);
@@ -265,13 +315,13 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       case RecvTrailingState::kComplete:
         // We've received trailing metadata: pass it to the promise and allow it
         // to adjust it.
-        return std::move(*recv_trailing_metadata_);
+        return WrapMetadata(recv_trailing_metadata_);
       case RecvTrailingState::kCancelled: {
         // We've been cancelled: synthesize some trailing metadata and pass it
         // to the calling promise for adjustment.
-        TrailingMetadata synthetic(arena_);
-        SetStatusFromError(&synthetic, cancelled_error_);
-        return synthetic;
+        recv_trailing_metadata_->Clear();
+        SetStatusFromError(recv_trailing_metadata_, cancelled_error_);
+        return WrapMetadata(recv_trailing_metadata_);
       }
       case RecvTrailingState::kResponded:
         // We've already responded to the caller: we can't do anything and we
@@ -301,7 +351,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   }
 
   // Given an error, fill in TrailingMetadata to represent that error.
-  void SetStatusFromError(TrailingMetadata* metadata, grpc_error_handle error) {
+  void SetStatusFromError(grpc_metadata_batch* metadata,
+                          grpc_error_handle error) {
     grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
     std::string status_details;
     grpc_error_get_status(error, deadline_, &status_code, &status_details,
@@ -321,12 +372,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         // Poll the promise once since we're waiting for it.
         Poll<TrailingMetadata> poll = promise_();
         if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
-          // TODO(ctiller): It's possible that a promise may decide to return
-          // trailing metadata PRIOR to getting a recv_trailing_metadata op.
-          // In that case we'll need to stash to metadata until such time as
-          // we're ready to send it up.
           GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kComplete);
-          *recv_trailing_metadata_ = std::move(*r);
+          GPR_ASSERT(recv_trailing_metadata_ == UnwrapMetadata(std::move(*r)));
           recv_trailing_state_ = RecvTrailingState::kResponded;
           grpc_closure* cb =
               absl::exchange(original_recv_trailing_metadata_ready_, nullptr);

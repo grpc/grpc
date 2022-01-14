@@ -68,7 +68,7 @@ class ClientAuthorityChannelFilter {
 
   // Construct a promise for once call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
-      InitialMetadata* initial_metadata,
+      InitialMetadata initial_metadata,
       NextPromiseFactory next_promise_factory) {
     // If no authority is set, set the default authority.
     if (initial_metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
@@ -76,7 +76,7 @@ class ClientAuthorityChannelFilter {
     }
     // We have no asynchronous work, so we can just ask the next promise to run,
     // passing down initial_metadata.
-    return next_promise_factory(initial_metadata);
+    return next_promise_factory(std::move(initial_metadata));
   }
 
  private:
