@@ -64,9 +64,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   of the get - work on this entity may be used to progress the get
   //   operation
   // 'request' contains request parameters - these are caller owned and
-  // can be destroyed once the call returns 'deadline' contains a deadline for
-  // the request (or gpr_inf_future) 'on_response' is a callback to report
-  // results to
+  //   can be destroyed once the call returns
+  // 'deadline' contains a deadline for the request (or gpr_inf_future)
+  // 'on_done' is a callback to report results to
   static OrphanablePtr<HttpRequest> Get(
       absl::string_view scheme, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
