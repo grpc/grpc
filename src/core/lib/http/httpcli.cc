@@ -226,8 +226,7 @@ void HttpCli::Orphan() {
   Unref();
 }
 
-void HttpCli::AppendError(grpc_error_handle error)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCli::AppendError(grpc_error_handle error) {
   if (overall_error_ == GRPC_ERROR_NONE) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
@@ -239,8 +238,7 @@ void HttpCli::AppendError(grpc_error_handle error)
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
 }
 
-void HttpCli::OnReadInternal(grpc_error_handle error)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCli::OnReadInternal(grpc_error_handle error) {
   for (size_t i = 0; i < incoming_.count; i++) {
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
@@ -275,7 +273,7 @@ void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
   }
 }
 
-void HttpCli::StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCli::StartWrite() {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
@@ -355,8 +353,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
   }
 }
 
-void HttpCli::NextAddress(grpc_error_handle error)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+void HttpCli::NextAddress(grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }
