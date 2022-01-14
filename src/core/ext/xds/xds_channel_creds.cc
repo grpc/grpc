@@ -14,7 +14,10 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/xds/xds_channel_creds.h"
+
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
 namespace grpc_core {
@@ -24,7 +27,6 @@ namespace {
 using ChannelCredsMap =
     std::map<absl::string_view, std::unique_ptr<XdsChannelCredsImpl>>;
 ChannelCredsMap* g_creds = nullptr;
-
 
 }  // namespace
 

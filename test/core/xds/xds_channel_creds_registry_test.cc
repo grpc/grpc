@@ -32,13 +32,13 @@ namespace {
 
 class TestXdsChannelCredsImpl : public XdsChannelCredsImpl {
  public:
+  absl::string_view creds_type() const override { return "test"; }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
   RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
       const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }
-  bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  absl::string_view creds_type() const override { return "test"; }
 };
 
 TEST(XdsChannelCredsRegistryTest, DefaultCreds) {  // Default creds.
