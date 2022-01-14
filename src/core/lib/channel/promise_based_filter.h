@@ -130,6 +130,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   };
 
   void Cancel(grpc_call_element* elem, grpc_error_handle error) {
+    GRPC_ERROR_UNREF(cancelled_error_);
+    cancelled_error_ = GRPC_ERROR_REF(error);
     promise_ = ArenaPromise<TrailingMetadata>();
     if (send_initial_state_ == SendInitialState::kQueued) {
       send_initial_state_ = SendInitialState::kCancelled;
@@ -138,12 +140,10 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       }
       grpc_transport_stream_op_batch_finish_with_failure(
           absl::exchange(send_initial_metadata_batch_, nullptr),
-          GRPC_ERROR_REF(error), call_combiner_);
+          GRPC_ERROR_REF(cancelled_error_), call_combiner_);
     } else {
       send_initial_state_ = SendInitialState::kCancelled;
     }
-    GRPC_ERROR_UNREF(cancelled_error_);
-    cancelled_error_ = GRPC_ERROR_REF(error);
   }
 
   void StartPromise(grpc_call_element* elem) {
