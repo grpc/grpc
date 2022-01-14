@@ -26,7 +26,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # prerequisites for ruby artifact build on linux
 source tools/internal_ci/helper_scripts/prepare_build_linux_ruby_artifact_rc
 
-tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 6 --inner_jobs 6 || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
