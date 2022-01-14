@@ -37,7 +37,7 @@
 namespace grpc_core {
 namespace testing {
 
-std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv,
+HttpCliTestServer StartHttpCliTestServer(int argc, char** argv,
                                                         bool use_ssl) {
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
