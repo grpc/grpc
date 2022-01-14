@@ -393,10 +393,10 @@ LANG_RELEASE_MATRIX = {
                              testcases_file='python__v1.18.0')),
                 ('v1.41.1',
                  ReleaseInfo(runtimes=['python'],
-                             testcases_file='python__v1.18.0')),
+                             testcases_file='python__v1.41.1')),
                 ('v1.42.0',
                  ReleaseInfo(runtimes=['python'],
-                             testcases_file='python__v1.18.0')),
+                             testcases_file='python__v1.41.1')),
             ]),
     'node':
         OrderedDict([
