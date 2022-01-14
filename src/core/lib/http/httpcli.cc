@@ -315,6 +315,18 @@ void HttpRequest::OnConnected(void* arg, grpc_error_handle error) {
       req->NextAddress(GRPC_ERROR_REF(error));
       return;
     }
+    // TODO(apolcyn): treating nullptr channel_creds_ as insecure is
+    // a hack used to support the port server client (a test utility) in
+    // unsecure builds (when no definition of grpc_insecure_credentials_create
+    // exists). We can remove this hack and unconditionally assume a valid
+    // channel_creds_ object after unsecure builds are deleted, in
+    // https://github.com/grpc/grpc/pull/25586.
+    if (req->channel_creds_ == nullptr) {
+      gpr_log(GPR_DEBUG,
+              "HTTP request skipping handshake because creds are null");
+      req->StartWrite();
+      return;
+    }
     // Find the authority to use in the security connector.
     const char* authority = grpc_channel_args_find_string(
         req->channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);

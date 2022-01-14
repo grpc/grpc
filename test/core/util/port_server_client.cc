@@ -95,7 +95,7 @@ void grpc_free_port_using_server(int port) {
                             grpc_schedule_on_exec_ctx),
         &rsp,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            grpc_insecure_credentials_create()));
+            nullptr /* insecure credentials */));
     http_request->Start();
     grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
@@ -184,7 +184,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                             grpc_schedule_on_exec_ctx),
         &pr->response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            grpc_insecure_credentials_create()));
+            nullptr /* insecure credentials */));
     pr->http_request->Start();
     grpc_channel_args_destroy(args);
     return;
@@ -238,7 +238,7 @@ int grpc_pick_port_using_server(void) {
                             grpc_schedule_on_exec_ctx),
         &pr.response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            grpc_insecure_credentials_create()));
+            nullptr /*insecure credentials*/));
     http_request->Start();
     grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
