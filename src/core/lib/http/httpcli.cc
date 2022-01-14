@@ -38,7 +38,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -63,7 +62,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(absl::string_view scheme,
                                     const grpc_http_request* request,
                                     grpc_millis deadline, grpc_closure* on_done,
                                     grpc_httpcli_response* response,
-                                    Options options) {
+                                    RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host =
       grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
@@ -88,7 +87,8 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response, Options options) {
+    grpc_closure* on_done, grpc_httpcli_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host =
       grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
@@ -105,7 +105,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
       scheme,
       grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
       response, deadline, channel_args, on_done, pollent, name.c_str(),
-      std::move(test_only_generate_response), std::move(options));
+      std::move(test_only_generate_response), std::move(channel_creds));
 }
 
 void HttpCli::SetOverride(grpc_httpcli_get_override get,
@@ -124,20 +124,11 @@ HttpCli::HttpCli(
     : request_text_(request_text),
       deadline_(deadline),
       channel_args_(grpc_channel_args_copy(channel_args)),
-      channel_creds_(options.channel_creds),
+      channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
-  if (channel_creds_ == nullptr) {
-    if (scheme == "http") {
-      channel_creds_ = RefCountedPtr<grpc_channel_credentials>(
-          grpc_insecure_credentials_create());
-    } else {
-      channel_creds_ = RefCountedPtr<grpc_channel_credentials>(
-          CreateHttpCliSSLCredentials());
-    }
-  }
   grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
   grpc_slice_buffer_init(&incoming_);
   grpc_slice_buffer_init(&outgoing_);
@@ -338,7 +329,10 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
         req->channel_creds_->create_security_connector(
             nullptr /*call_creds*/, authority, req->channel_args_,
             &new_args_from_connector);
-    GPR_ASSERT(sc != nullptr);
+    if (sc == nullptr) {
+      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("failed to create security connector", &overall_error_, 1));
+      return;
+    }
     grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         new_args_from_connector != nullptr ? new_args_from_connector

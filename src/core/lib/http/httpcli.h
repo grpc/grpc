@@ -62,13 +62,6 @@ namespace grpc_core {
 //                same content and combining them
 class HttpCli : public InternallyRefCounted<HttpCli> {
  public:
-  struct Options {
-    // Channel creds to use.
-    // If null, will default to SslCreds for "https" scheme or InsecureCreds for
-    // "http" scheme.
-    RefCountedPtr<grpc_channel_credentials> channel_creds;
-  };
-
   // Asynchronously perform a HTTP GET.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the get - work on this entity may be used to progress the get
@@ -82,7 +75,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_polling_entity* pollent, const grpc_http_request* request,
       grpc_millis deadline, grpc_closure* on_done,
       grpc_httpcli_response* response,
-      Options options = Options()) GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds) GRPC_MUST_USE_RESULT;
 
   // Asynchronously perform a HTTP POST.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -100,14 +93,14 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       grpc_polling_entity* pollent, const grpc_http_request* request,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
       grpc_closure* on_done, grpc_httpcli_response* response,
-      Options options = Options()) GRPC_MUST_USE_RESULT;
+      RefCountedPtr<grpc_channel_credentials> channel_creds) GRPC_MUST_USE_RESULT;
 
   HttpCli(absl::string_view scheme, const grpc_slice& request_text,
           grpc_httpcli_response* response, grpc_millis deadline,
           const grpc_channel_args* channel_args, grpc_closure* on_done,
           grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response,
-          Options options);
+          RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   ~HttpCli() override;
 
