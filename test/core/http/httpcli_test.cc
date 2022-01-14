@@ -51,9 +51,9 @@ gpr_subprocess* g_server;
 
 std::vector<std::string> g_subprocess_args;
 
-class HttpCliTest : public ::testing::Test {
+class HttpRequestTest : public ::testing::Test {
  public:
-  HttpCliTest() {
+  HttpRequestTest() {
     grpc_init();
     grpc_core::ExecCtx exec_ctx;
     grpc_pollset* pollset =
@@ -61,7 +61,7 @@ class HttpCliTest : public ::testing::Test {
     grpc_pollset_init(pollset, &mu_);
     pops_ = grpc_polling_entity_create_from_pollset(pollset);
   }
-  ~HttpCliTest() override {
+  ~HttpRequestTest() override {
     {
       grpc_core::ExecCtx exec_ctx;
       grpc_pollset_shutdown(
@@ -96,7 +96,7 @@ class HttpCliTest : public ::testing::Test {
 
  protected:
   static void SetUpTestSuite() {
-    auto test_server = grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv,
+    auto test_server = grpc_core::testing::StartHttpRequestTestServer(g_argc, g_argv,
                                                    false /* use_ssl */);
     g_server = test_server.server;
     g_server_port = test_server.port;
@@ -116,14 +116,14 @@ class HttpCliTest : public ::testing::Test {
 };
 
 struct RequestState {
-  explicit RequestState(HttpCliTest* test) : test(test) {}
+  explicit RequestState(HttpRequestTest* test) : test(test) {}
 
   ~RequestState() {
     grpc_core::ExecCtx exec_ctx;
     grpc_http_response_destroy(&response);
   }
 
-  HttpCliTest* test;
+  HttpRequestTest* test;
   bool done = false;
   grpc_http_response response = {};
 };
@@ -154,7 +154,7 @@ void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
       [request_state]() { request_state->done = true; });
 }
 
-TEST_F(HttpCliTest, Get) {
+TEST_F(HttpRequestTest, Get) {
   RequestState request_state(this);
   grpc_http_request req;
   char* host;
@@ -168,20 +168,20 @@ TEST_F(HttpCliTest, Get) {
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-      grpc_core::HttpCli::Get("http", args, pops(), &req, NSecondsTime(15),
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Get("http", args, pops(), &req, NSecondsTime(15),
                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                   grpc_schedule_on_exec_ctx),
                               &request_state.response,
                               RefCountedPtr<grpc_channel_credentials>(
                                   grpc_insecure_credentials_create()));
-  httpcli->Start();
+  http_request->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
   gpr_free(host);
 }
 
-TEST_F(HttpCliTest, Post) {
+TEST_F(HttpRequestTest, Post) {
   RequestState request_state(this);
   grpc_http_request req;
   char* host;
@@ -195,15 +195,15 @@ TEST_F(HttpCliTest, Post) {
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-      grpc_core::HttpCli::Post("http", args, pops(), &req, "hello", 5,
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Post("http", args, pops(), &req, "hello", 5,
                                NSecondsTime(15),
                                GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                    grpc_schedule_on_exec_ctx),
                                &request_state.response,
                                RefCountedPtr<grpc_channel_credentials>(
                                    grpc_insecure_credentials_create()));
-  httpcli->Start();
+  http_request->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
   gpr_free(host);
@@ -226,7 +226,7 @@ void InjectNonResponsiveDNSServer(ares_channel channel) {
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
+TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
   // Inject an unresponsive DNS server into the resolver's DNS server config
   grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
@@ -254,20 +254,20 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
           const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443")));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, request_args.data(), request_args.size());
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-          grpc_core::HttpCli::Get(
+      grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+          grpc_core::HttpRequest::Get(
               "http", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
-      httpcli->Start();
+      http_request->Start();
       grpc_channel_args_destroy(args);
       std::thread cancel_thread([&httpcli]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        httpcli.reset();
+        http_request.reset();
       });
       PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();
@@ -279,7 +279,7 @@ TEST_F(HttpCliTest, CancelGetDuringDNSResolution) {
   grpc_ares_test_only_inject_config = prev_test_only_inject_config;
 }
 
-TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
+TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
   grpc_core::testing::FakeUdpAndTcpServer fake_http_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
@@ -302,21 +302,21 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
           const_cast<char*>(fake_http_server_ptr->address())));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, request_args.data(), request_args.size());
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-          grpc_core::HttpCli::Get(
+      grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+          grpc_core::HttpRequest::Get(
               "http", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
-      httpcli->Start();
+      http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        httpcli.reset();
+        http_request.reset();
       });
       PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();
@@ -331,7 +331,7 @@ TEST_F(HttpCliTest, CancelGetWhileReadingResponse) {
 // during TCP connection establishment, to make sure there are no crashes/races
 // etc. This test doesn't actually verify that cancellation during TCP setup is
 // timely, though. For that, we would need to fake packet loss in the test.
-TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
+TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   // Grab an unoccupied port but don't listen on it. The goal
   // here is just to have a server address that will reject
   // TCP connection setups.
@@ -354,20 +354,20 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
           const_cast<char*>(fake_server_address.c_str())));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, request_args.data(), request_args.size());
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-          grpc_core::HttpCli::Get(
+      grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+          grpc_core::HttpRequest::Get(
               "http", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
-      httpcli->Start();
+      http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli]() {
         grpc_core::ExecCtx exec_ctx;
-        httpcli.reset();
+        http_request.reset();
       });
       PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();
@@ -382,7 +382,7 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionFailure) {
 // during TCP connection establishment, to make sure there are no crashes/races
 // etc. This test doesn't actually verify that cancellation during TCP setup is
 // timely, though. For that, we would need to fake packet loss in the test.
-TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
+TEST_F(HttpRequestTest, CancelGetRacesWithConnectionSuccess) {
   // Grab an unoccupied port but don't listen on it. The goal
   // here is just to have a server address that will reject
   // TCP connection setups.
@@ -406,8 +406,8 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
       const_cast<char*>(fake_server_address.c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-      grpc_core::HttpCli::Get(
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Get(
           "http", args, &wrapped_pollset_set_to_destroy_eagerly, &req,
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
@@ -415,10 +415,10 @@ TEST_F(HttpCliTest, CancelGetRacesWithConnectionSuccess) {
           &request_state.response,
           RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
-  httpcli->Start();
+  http_request->Start();
   grpc_channel_args_destroy(args);
   exec_ctx.Flush();
-  httpcli.reset();  // cancel the request
+  http_request.reset();  // cancel the request
   exec_ctx.Flush();
   // because we're cancelling the request during TCP connection establishment,
   // we can be certain that our on_done callback has already ran

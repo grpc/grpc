@@ -395,14 +395,14 @@ class grpc_compute_engine_token_fetcher_credentials
         const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, request_args.data(), request_args.size());
-    httpcli_ = grpc_core::HttpCli::Get(
+    http_request_ = grpc_core::HttpRequest::Get(
         "http", args, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
-    httpcli_->Start();
+    http_request_->Start();
     grpc_channel_args_destroy(args);
   }
 
@@ -414,7 +414,7 @@ class grpc_compute_engine_token_fetcher_credentials
 
  private:
   grpc_closure http_get_cb_closure_;
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli_;
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
 };
 
 }  // namespace
@@ -462,12 +462,12 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
       const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST)));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  httpcli_ = grpc_core::HttpCli::Post(
+  http_request_ = grpc_core::HttpRequest::Post(
       "https", args, pollent, &request, body.c_str(), body.size(), deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                         grpc_schedule_on_exec_ctx),
-      &metadata_req->response, grpc_core::CreateHttpCliSSLCredentials());
-  httpcli_->Start();
+      &metadata_req->response, grpc_core::CreateHttpRequestSSLCredentials());
+  http_request_->Start();
   grpc_channel_args_destroy(args);
 }
 
@@ -594,19 +594,19 @@ class StsTokenFetcherCredentials
         const_cast<char*>(sts_url_.authority().c_str())));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, request_args.data(), request_args.size());
-    RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+    RefCountedPtr<grpc_channel_credentials> http_request_creds;
     if (sts_url_.scheme() == "http") {
-      httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+      http_request_creds = RefCountedPtr<grpc_channel_credentials>(
           grpc_insecure_credentials_create());
     } else {
-      httpcli_creds = CreateHttpCliSSLCredentials();
+      http_request_creds = CreateHttpRequestSSLCredentials();
     }
-    httpcli_ = HttpCli::Post(
+    http_request_ = HttpRequest::Post(
         sts_url_.scheme(), args, pollent, &request, body, body_length, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
-        &metadata_req->response, std::move(httpcli_creds));
-    httpcli_->Start();
+        &metadata_req->response, std::move(http_request_creds));
+    http_request_->Start();
     grpc_channel_args_destroy(args);
     gpr_free(body);
   }
@@ -663,7 +663,7 @@ class StsTokenFetcherCredentials
   UniquePtr<char> subject_token_type_;
   UniquePtr<char> actor_token_path_;
   UniquePtr<char> actor_token_type_;
-  OrphanablePtr<HttpCli> httpcli_;
+  OrphanablePtr<HttpRequest> http_request_;
 };
 
 }  // namespace

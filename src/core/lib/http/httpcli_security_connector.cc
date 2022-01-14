@@ -179,10 +179,10 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
 
 namespace grpc_core {
 
-class HttpCliSSLCredentials : public grpc_channel_credentials {
+class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
-  HttpCliSSLCredentials() : grpc_channel_credentials("HttpCliSSL") {}
-  ~HttpCliSSLCredentials() override {}
+  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpCliSSL") {}
+  ~HttpRequestSSLCredentials() override {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
@@ -214,8 +214,8 @@ class HttpCliSSLCredentials : public grpc_channel_credentials {
   }
 };
 
-RefCountedPtr<grpc_channel_credentials> CreateHttpCliSSLCredentials() {
-  return MakeRefCounted<HttpCliSSLCredentials>();
+RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
+  return MakeRefCounted<HttpRequestSSLCredentials>();
 }
 
 }  // namespace grpc_core

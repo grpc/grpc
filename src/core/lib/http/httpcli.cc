@@ -56,7 +56,7 @@ grpc_httpcli_post_override g_post_override;
 
 }  // namespace
 
-OrphanablePtr<HttpCli> HttpCli::Get(
+OrphanablePtr<HttpRequest> HttpCli::Get(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
@@ -75,13 +75,13 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     };
   }
   std::string name = absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
-  return MakeOrphanable<HttpCli>(
+  return MakeOrphanable<HttpRequest>(
       scheme, grpc_httpcli_format_get_request(request, host), response,
       deadline, channel_args, on_done, pollent, name.c_str(),
       std::move(test_only_generate_response), std::move(channel_creds));
 }
 
-OrphanablePtr<HttpCli> HttpCli::Post(
+OrphanablePtr<HttpRequest> HttpCli::Post(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
@@ -99,20 +99,20 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     };
   }
   std::string name = absl::StrFormat("HTTP:POST:%s:%s", host, request->path);
-  return MakeOrphanable<HttpCli>(
+  return MakeOrphanable<HttpRequest>(
       scheme,
       grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
       response, deadline, channel_args, on_done, pollent, name.c_str(),
       std::move(test_only_generate_response), std::move(channel_creds));
 }
 
-void HttpCli::SetOverride(grpc_httpcli_get_override get,
+void HttpRequest::SetOverride(grpc_httpcli_get_override get,
                           grpc_httpcli_post_override post) {
   g_get_override = get;
   g_post_override = post;
 }
 
-HttpCli::HttpCli(
+HttpRequest::HttpCli(
     absl::string_view scheme, const grpc_slice& request_text,
     grpc_http_response* response, grpc_millis deadline,
     const grpc_channel_args* channel_args, grpc_closure* on_done,
@@ -170,10 +170,10 @@ HttpCli::HttpCli(
   GPR_ASSERT(authority != nullptr);
   dns_request_ = GetDNSResolver()->ResolveName(
       authority, scheme, pollset_set_,
-      absl::bind_front(&HttpCli::OnResolved, this));
+      absl::bind_front(&HttpRequest::OnResolved, this));
 }
 
-HttpCli::~HttpCli() {
+HttpRequest::~HttpCli() {
   grpc_channel_args_destroy(channel_args_);
   grpc_http_parser_destroy(&parser_);
   if (own_endpoint_ && ep_ != nullptr) {
@@ -187,7 +187,7 @@ HttpCli::~HttpCli() {
   grpc_pollset_set_destroy(pollset_set_);
 }
 
-void HttpCli::Start() {
+void HttpRequest::Start() {
   MutexLock lock(&mu_);
   if (test_only_generate_response_.has_value()) {
     test_only_generate_response_.value()();
@@ -197,7 +197,7 @@ void HttpCli::Start() {
   dns_request_->Start();
 }
 
-void HttpCli::Orphan() {
+void HttpRequest::Orphan() {
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(!cancelled_);
@@ -226,7 +226,7 @@ void HttpCli::Orphan() {
   Unref();
 }
 
-void HttpCli::AppendError(grpc_error_handle error) {
+void HttpRequest::AppendError(grpc_error_handle error) {
   if (overall_error_ == GRPC_ERROR_NONE) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
@@ -238,7 +238,7 @@ void HttpCli::AppendError(grpc_error_handle error) {
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
 }
 
-void HttpCli::OnReadInternal(grpc_error_handle error) {
+void HttpRequest::OnReadInternal(grpc_error_handle error) {
   for (size_t i = 0; i < incoming_.count; i++) {
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
@@ -262,9 +262,9 @@ void HttpCli::OnReadInternal(grpc_error_handle error) {
   }
 }
 
-void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
+void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
                                                       grpc_error_handle error) {
-  RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(arg));
+  RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(arg));
   MutexLock lock(&req->mu_);
   if (error == GRPC_ERROR_NONE && !req->cancelled_) {
     req->OnWritten();
@@ -273,16 +273,16 @@ void HttpCli::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
   }
 }
 
-void HttpCli::StartWrite() {
+void HttpRequest::StartWrite() {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
   grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
 }
 
-void HttpCli::OnHandshakeDone(void* arg, grpc_error_handle error) {
+void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
-  RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(args->user_data));
+  RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(args->user_data));
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
   if (error != GRPC_ERROR_NONE || req->cancelled_) {
@@ -300,8 +300,8 @@ void HttpCli::OnHandshakeDone(void* arg, grpc_error_handle error) {
   req->StartWrite();
 }
 
-void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
-  RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(arg));
+void HttpRequest::OnConnected(void* arg, grpc_error_handle error) {
+  RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(arg));
   {
     MutexLock lock(&req->mu_);
     req->connecting_ = false;
@@ -353,7 +353,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
   }
 }
 
-void HttpCli::NextAddress(grpc_error_handle error) {
+void HttpRequest::NextAddress(grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     AppendError(error);
   }
@@ -376,9 +376,9 @@ void HttpCli::NextAddress(grpc_error_handle error) {
                           deadline_);
 }
 
-void HttpCli::OnResolved(
+void HttpRequest::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-  RefCountedPtr<HttpCli> unreffer(this);
+  RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
   dns_request_.reset();
   if (!addresses_or.ok()) {

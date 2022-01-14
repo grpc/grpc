@@ -97,7 +97,7 @@ class HttpsCliTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     auto test_server =
-        grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv,
+        grpc_core::testing::StartHttpRequestTestServer(g_argc, g_argv,
                                                    true /* use_ssl */);
     g_server = test_server.server;
     g_server_port = test_server.port;
@@ -172,13 +172,13 @@ TEST_F(HttpsCliTest, Get) {
       const_cast<char*>("foo.test.google.fr")));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-      grpc_core::HttpCli::Get("https", args, pops(), &req, NSecondsTime(15),
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Get("https", args, pops(), &req, NSecondsTime(15),
                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                                                   grpc_schedule_on_exec_ctx),
                               &request_state.response,
-                              grpc_core::CreateHttpCliSSLCredentials());
-  httpcli->Start();
+                              grpc_core::CreateHttpRequestSSLCredentials());
+  http_request->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
   gpr_free(host);
@@ -201,13 +201,13 @@ TEST_F(HttpsCliTest, Post) {
       const_cast<char*>("foo.test.google.fr")));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-      grpc_core::HttpCli::Post(
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Post(
           "https", args, pops(), &req, "hello", 5, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
-          &request_state.response, grpc_core::CreateHttpCliSSLCredentials());
-  httpcli->Start();
+          &request_state.response, grpc_core::CreateHttpRequestSSLCredentials());
+  http_request->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
   gpr_free(host);
@@ -239,20 +239,20 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
           const_cast<char*>("foo.test.google.fr")));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, request_args.data(), request_args.size());
-      grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli =
-          grpc_core::HttpCli::Get(
+      grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+          grpc_core::HttpRequest::Get(
               "https", args, pops(), &req, NSecondsTime(15),
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
-              grpc_core::CreateHttpCliSSLCredentials());
-      httpcli->Start();
+              grpc_core::CreateHttpRequestSSLCredentials());
+      http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&httpcli]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
-        httpcli.reset();
+        http_request.reset();
       });
       PollUntil([&request_state]() { return request_state.done; });
       cancel_thread.join();

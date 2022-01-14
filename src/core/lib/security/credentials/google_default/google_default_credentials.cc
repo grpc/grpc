@@ -190,7 +190,7 @@ static int is_metadata_server_reachable() {
       const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST)));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  auto httpcli = grpc_core::HttpCli::Get(
+  auto http_request = grpc_core::HttpRequest::Get(
       "http", args, &detector.pollent, &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
@@ -198,7 +198,7 @@ static int is_metadata_server_reachable() {
       &detector.response,
       grpc_core::RefCountedPtr<grpc_channel_credentials>(
           grpc_insecure_credentials_create()));
-  httpcli->Start();
+  http_request->Start();
   grpc_channel_args_destroy(args);
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
@@ -215,7 +215,7 @@ static int is_metadata_server_reachable() {
     }
   }
   gpr_mu_unlock(g_polling_mu);
-  httpcli.reset();
+  http_request.reset();
   GRPC_CLOSURE_INIT(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),
                     grpc_schedule_on_exec_ctx);

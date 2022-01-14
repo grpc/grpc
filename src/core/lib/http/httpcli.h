@@ -57,7 +57,7 @@ namespace grpc_core {
 // if it's in flight).
 // TODO(ctiller): allow caching and capturing multiple requests for the
 //                same content and combining them
-class HttpCli : public InternallyRefCounted<HttpCli> {
+class HttpRequest : public InternallyRefCounted<HttpCli> {
  public:
   // Asynchronously perform a HTTP GET.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -67,7 +67,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // can be destroyed once the call returns 'deadline' contains a deadline for
   // the request (or gpr_inf_future) 'on_response' is a callback to report
   // results to
-  static OrphanablePtr<HttpCli> Get(
+  static OrphanablePtr<HttpRequest> Get(
       absl::string_view scheme, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
       grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
@@ -85,7 +85,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // 'deadline' contains a deadline for the request (or gpr_inf_future)
   // 'on_done' is a callback to report results to
   // Does not support ?var1=val1&var2=val2 in the path.
-  static OrphanablePtr<HttpCli> Post(
+  static OrphanablePtr<HttpRequest> Post(
       absl::string_view scheme, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
       const char* body_bytes, size_t body_size, grpc_millis deadline,
@@ -93,14 +93,14 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 
-  HttpCli(absl::string_view scheme, const grpc_slice& request_text,
+  HttpRequest(absl::string_view scheme, const grpc_slice& request_text,
           grpc_http_response* response, grpc_millis deadline,
           const grpc_channel_args* channel_args, grpc_closure* on_done,
           grpc_polling_entity* pollent, const char* name,
           absl::optional<std::function<void()>> test_only_generate_response,
           RefCountedPtr<grpc_channel_credentials> channel_creds);
 
-  ~HttpCli() override;
+  ~HttpRequest() override;
 
   void Start();
 
@@ -123,7 +123,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
-    HttpCli* req = static_cast<HttpCli*>(user_data);
+    HttpRequest* req = static_cast<HttpCli*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_on_read_after_schedule_on_exec_ctx_,
                  GRPC_ERROR_REF(error));
@@ -132,7 +132,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   // Needed since OnRead may be called inline from grpc_endpoint_read
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
                                                    grpc_error_handle error) {
-    RefCountedPtr<HttpCli> req(static_cast<HttpCli*>(user_data));
+    RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(user_data));
     MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
@@ -143,7 +143,7 @@ class HttpCli : public InternallyRefCounted<HttpCli> {
   void OnWritten() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { DoRead(); }
 
   static void DoneWrite(void* arg, grpc_error_handle error) {
-    HttpCli* req = static_cast<HttpCli*>(arg);
+    HttpRequest* req = static_cast<HttpCli*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_done_write_after_schedule_on_exec_ctx_,
                  GRPC_ERROR_REF(error));

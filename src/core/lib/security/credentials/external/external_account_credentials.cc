@@ -324,25 +324,25 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
-  GPR_ASSERT(httpcli_ == nullptr);
+  GPR_ASSERT(http_request_ == nullptr);
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
-    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    httpcli_creds = CreateHttpCliSSLCredentials();
+    http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  httpcli_ =
-      HttpCli::Post(uri->scheme(), args, ctx_->pollent, &request, body.c_str(),
+  http_request_ =
+      HttpRequest::Post(uri->scheme(), args, ctx_->pollent, &request, body.c_str(),
                     body.size(), ctx_->deadline, &ctx_->closure,
-                    &ctx_->response, std::move(httpcli_creds));
-  httpcli_->Start();
+                    &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
@@ -356,7 +356,7 @@ void ExternalAccountCredentials::OnExchangeToken(void* arg,
 
 void ExternalAccountCredentials::OnExchangeTokenInternal(
     grpc_error_handle error) {
-  httpcli_.reset();
+  http_request_.reset();
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -424,25 +424,25 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   // TODO(ctiller): Use the callers resource quota.
-  GPR_ASSERT(httpcli_ == nullptr);
+  GPR_ASSERT(http_request_ == nullptr);
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
-    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    httpcli_creds = CreateHttpCliSSLCredentials();
+    http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  httpcli_ =
-      HttpCli::Post(uri->scheme(), args, ctx_->pollent, &request, body.c_str(),
+  http_request_ =
+      HttpRequest::Post(uri->scheme(), args, ctx_->pollent, &request, body.c_str(),
                     body.size(), ctx_->deadline, &ctx_->closure,
-                    &ctx_->response, std::move(httpcli_creds));
-  httpcli_->Start();
+                    &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
@@ -456,7 +456,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccount(
 
 void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
     grpc_error_handle error) {
-  httpcli_.reset();
+  http_request_.reset();
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
     return;

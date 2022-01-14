@@ -24,12 +24,12 @@
 namespace grpc_core {
 namespace testing {
 
-struct HttpCliTestServer {
+struct HttpRequestTestServer {
   gpr_subprocess* server;
   int port;
 };
 
-HttpCliTestServer StartHttpCliTestServer(int argc, char** argv, bool use_ssl);
+HttpRequestTestServer StartHttpCliTestServer(int argc, char** argv, bool use_ssl);
 
 }  // namespace testing
 }  // namespace grpc_core

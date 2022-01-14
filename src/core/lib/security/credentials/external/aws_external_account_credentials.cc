@@ -173,17 +173,17 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
-    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    httpcli_creds = CreateHttpCliSSLCredentials();
+    http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  httpcli_ =
-      HttpCli::Get(uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
-                   &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
-  httpcli_->Start();
+  http_request_ =
+      HttpRequest::Get(uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+                   &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
@@ -233,17 +233,17 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
-    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    httpcli_creds = CreateHttpCliSSLCredentials();
+    http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  httpcli_ =
-      HttpCli::Get(uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
-                   &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
-  httpcli_->Start();
+  http_request_ =
+      HttpRequest::Get(uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+                   &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
@@ -305,17 +305,17 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
       const_cast<char*>(uri->authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
-    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    httpcli_creds = CreateHttpCliSSLCredentials();
+    http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  httpcli_ =
-      HttpCli::Get(uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
-                   &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
-  httpcli_->Start();
+  http_request_ =
+      HttpRequest::Get(uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+                   &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }

@@ -88,7 +88,7 @@ void grpc_free_port_using_server(int port) {
         const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, request_args.data(), request_args.size());
-    auto httpcli = grpc_core::HttpCli::Get(
+    auto http_request = grpc_core::HttpRequest::Get(
         "http", args, &pr.pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
@@ -96,7 +96,7 @@ void grpc_free_port_using_server(int port) {
         &rsp,
         RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
-    httpcli->Start();
+    http_request->Start();
     grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
@@ -128,14 +128,14 @@ typedef struct portreq {
   int retries = 0;
   char* server = nullptr;
   grpc_http_response response = {};
-  grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli;
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> httpcli;
 } portreq;
 
 static void got_port_from_server(void* arg, grpc_error_handle error) {
   size_t i;
   int port = 0;
   portreq* pr = static_cast<portreq*>(arg);
-  pr->httpcli.reset();
+  pr->http_request.reset();
   int failed = 0;
   grpc_http_response* response = &pr->response;
 
@@ -177,7 +177,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), pr->server));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, request_args.data(), request_args.size());
-    pr->httpcli = grpc_core::HttpCli::Get(
+    pr->http_request = grpc_core::HttpRequest::Get(
         "http", args, &pr->pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
@@ -185,7 +185,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
         &pr->response,
         RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
-    pr->httpcli->Start();
+    pr->http_request->Start();
     grpc_channel_args_destroy(args);
     return;
   }
@@ -231,7 +231,7 @@ int grpc_pick_port_using_server(void) {
         const_cast<char*>(GRPC_PORT_SERVER_ADDRESS)));
     grpc_channel_args* args = grpc_channel_args_copy_and_add(
         nullptr, request_args.data(), request_args.size());
-    auto httpcli = grpc_core::HttpCli::Get(
+    auto http_request = grpc_core::HttpRequest::Get(
         "http", args, &pr.pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
@@ -239,7 +239,7 @@ int grpc_pick_port_using_server(void) {
         &pr.response,
         RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
-    httpcli->Start();
+    http_request->Start();
     grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);

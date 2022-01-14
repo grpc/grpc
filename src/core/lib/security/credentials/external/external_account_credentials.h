@@ -107,7 +107,7 @@ class ExternalAccountCredentials
   Options options_;
   std::vector<std::string> scopes_;
 
-  OrphanablePtr<HttpCli> httpcli_;
+  OrphanablePtr<HttpRequest> http_request_;
   HTTPRequestContext* ctx_ = nullptr;
   grpc_credentials_metadata_request* metadata_req_ = nullptr;
   grpc_iomgr_cb_func response_cb_ = nullptr;

@@ -141,25 +141,25 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
-  GPR_ASSERT(httpcli_ == nullptr);
+  GPR_ASSERT(http_request_ == nullptr);
   std::vector<grpc_arg> request_args;
   request_args.push_back(grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>(url_.authority().c_str())));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
-  RefCountedPtr<grpc_channel_credentials> httpcli_creds;
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (url_.scheme() == "http") {
-    httpcli_creds = RefCountedPtr<grpc_channel_credentials>(
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   } else {
-    httpcli_creds =
-        RefCountedPtr<grpc_channel_credentials>(CreateHttpCliSSLCredentials());
+    http_request_creds =
+        RefCountedPtr<grpc_channel_credentials>(CreateHttpRequestSSLCredentials());
   }
-  httpcli_ =
-      HttpCli::Get(url_.scheme(), args, ctx_->pollent, &request, ctx_->deadline,
-                   &ctx_->closure, &ctx_->response, std::move(httpcli_creds));
-  httpcli_->Start();
+  http_request_ =
+      HttpRequest::Get(url_.scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+                   &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
@@ -173,7 +173,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectToken(
 
 void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
     grpc_error_handle error) {
-  httpcli_.reset();
+  http_request_.reset();
   if (error != GRPC_ERROR_NONE) {
     FinishRetrieveSubjectToken("", error);
     return;

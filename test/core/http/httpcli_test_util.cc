@@ -37,7 +37,7 @@
 namespace grpc_core {
 namespace testing {
 
-HttpCliTestServer StartHttpCliTestServer(int argc, char** argv,
+HttpRequestTestServer StartHttpCliTestServer(int argc, char** argv,
                                                         bool use_ssl) {
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
@@ -84,9 +84,9 @@ HttpCliTestServer StartHttpCliTestServer(int argc, char** argv,
     GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, pem_file);
     gpr_free(pem_file);
   }
-  gpr_log(GPR_INFO, "starting HttpCli test server subprocess:");
+  gpr_log(GPR_INFO, "starting HttpRequest test server subprocess:");
   for (size_t i = 0; i < args.size(); i++) {
-    gpr_log(GPR_INFO, "  HttpCli test server subprocess argv[%ld]: %s", i,
+    gpr_log(GPR_INFO, "  HttpRequest test server subprocess argv[%ld]: %s", i,
             args[i]);
   }
   gpr_subprocess* server =
@@ -98,7 +98,7 @@ HttpCliTestServer StartHttpCliTestServer(int argc, char** argv,
   gpr_free(root);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
-  HttpCliTestServer result;
+  HttpRequestTestServer result;
   result.server = server;
   result.port = server_port;
   return result;
