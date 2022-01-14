@@ -23,6 +23,7 @@
 #include "channel_stack.h"
 
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
@@ -46,7 +47,9 @@ namespace promise_filter_detail {
 class BaseCallData {
  public:
   explicit BaseCallData(const grpc_call_element_args* args)
-      : arena_(args->arena), deadline_(args->deadline) {}
+      : arena_(args->arena),
+        call_combiner_(args->call_combiner),
+        deadline_(args->deadline) {}
 
  protected:
   class ScopedContext : public promise_detail::Context<Arena> {
@@ -56,9 +59,9 @@ class BaseCallData {
   };
 
   Arena* const arena_;
+  CallCombiner* const call_combiner_;
   const grpc_millis deadline_;
-  ArenaPromise<TrailingMetadata> promise_ =
-      ArenaPromise<TrailingMetadata>(Never<TrailingMetadata>());
+  ArenaPromise<TrailingMetadata> promise_;
 };
 
 template <class ChannelFilter, bool kIsClient = ChannelFilter::is_client()>
@@ -68,105 +71,207 @@ template <class ChannelFilter>
 class CallData<ChannelFilter, true> : public BaseCallData {
  public:
   explicit CallData(const grpc_call_element_args* args) : BaseCallData(args) {
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadata,
-                      this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                      RecvTrailingMetadataReadyCallback, this,
+                      grpc_schedule_on_exec_ctx);
   }
 
+  ~CallData() { GRPC_ERROR_UNREF(cancelled_error_); }
+
   void Op(grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-    gpr_log(GPR_INFO, "OP: %s",
-            grpc_transport_stream_op_batch_string(op).c_str());
     ScopedContext context(this);
-    ChannelFilter* filter = static_cast<ChannelFilter*>(elem->channel_data);
-    if (op->recv_trailing_metadata) {
-      recv_trailing_metadata_ =
-          op->payload->recv_trailing_metadata.recv_trailing_metadata;
-      original_recv_trailing_metadata_ready_ =
-          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-      op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-          &recv_trailing_metadata_ready_;
-      if (!op->send_initial_metadata) {
-        WakeInsideCombiner();
-      }
-    }
-    if (op->send_initial_metadata) {
-      GPR_ASSERT(send_initial_metadata_op_ == nullptr);
-      send_initial_metadata_op_ = op;
-      promise_ = filter->MakeCallPromise(
-          op->payload->send_initial_metadata.send_initial_metadata,
-          [elem](InitialMetadata* initial_metadata) {
-            CallData* self = static_cast<CallData*>(elem->call_data);
-            auto* op = absl::exchange(self->send_initial_metadata_op_, nullptr);
-            GPR_ASSERT(op != nullptr);
-            op->payload->send_initial_metadata.send_initial_metadata =
-                initial_metadata;
-            grpc_call_next_op(elem, op);
-            return ArenaPromise<TrailingMetadata>(
-                [elem]() -> Poll<TrailingMetadata> {
-                  CallData* self = static_cast<CallData*>(elem->call_data);
-                  if (self->recieved_trailing_metadata_) {
-                    gpr_log(
-                        GPR_INFO, "GOT TRAILING METADATA: %s",
-                        self->recv_trailing_metadata_->DebugString().c_str());
-                    return std::move(*self->recv_trailing_metadata_);
-                  }
-                  return Pending{};
-                });
-          });
-      WakeInsideCombiner();
+
+    if (op->cancel_stream) {
+      GPR_ASSERT(!op->send_initial_metadata && !op->send_trailing_metadata &&
+                 !op->send_message && !op->recv_initial_metadata &&
+                 !op->recv_message && !op->recv_trailing_metadata);
+      Cancel(elem, op->payload->cancel_stream.cancel_error);
+      grpc_call_next_op(elem, op);
       return;
     }
-    if (op->cancel_stream) {
-      promise_ =
-          ArenaPromise<TrailingMetadata>([elem]() -> Poll<TrailingMetadata> {
-            CallData* self = static_cast<CallData*>(elem->call_data);
-            if (self->recieved_trailing_metadata_) {
-              return std::move(*self->recv_trailing_metadata_);
-            }
-            return Pending{};
-          });
+
+    if (op->send_initial_metadata) {
+      if (send_initial_state_ == SendInitialState::kCancelled) {
+        grpc_transport_stream_op_batch_finish_with_failure(
+            op, GRPC_ERROR_REF(cancelled_error_), call_combiner_);
+        return;
+      }
+      GPR_ASSERT(send_initial_state_ == SendInitialState::kInitial);
+      send_initial_state_ = SendInitialState::kQueued;
+      if (op->recv_trailing_metadata) {
+        GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
+        recv_trailing_state_ = RecvTrailingState::kQueued;
+      }
+      send_initial_metadata_batch_ = op;
+      StartPromise(elem);
+      return;
     }
+
+    if (op->recv_trailing_metadata) {
+      GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
+      recv_trailing_state_ = RecvTrailingState::kForwarded;
+      HookRecvTrailingMetadata(op);
+    }
+
     grpc_call_next_op(elem, op);
   }
 
  private:
-  static void RecvTrailingMetadata(void* arg, grpc_error_handle error) {
-    gpr_log(GPR_INFO, "RecvTrailingMetadata: %s", grpc_error_string(error));
-    CallData* self = static_cast<CallData*>(arg);
-    if (error != GRPC_ERROR_NONE) {
-      grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
-      std::string status_details;
-      grpc_error_get_status(error, self->deadline_, &status_code,
-                            &status_details, nullptr, nullptr);
-      self->recv_trailing_metadata_->Set(GrpcStatusMetadata(), status_code);
-      self->recv_trailing_metadata_->Set(
-          GrpcMessageMetadata(), Slice::FromCopiedString(status_details));
+  enum class SendInitialState { kInitial, kQueued, kForwarded, kCancelled };
+  enum class RecvTrailingState {
+    kInitial,
+    kQueued,
+    kForwarded,
+    kComplete,
+    kResponded,
+    kCancelled
+  };
+
+  void Cancel(grpc_call_element* elem, grpc_error_handle error) {
+    promise_ = ArenaPromise<TrailingMetadata>();
+    if (send_initial_state_ == SendInitialState::kQueued) {
+      send_initial_state_ = SendInitialState::kCancelled;
+      if (recv_trailing_state_ == RecvTrailingState::kQueued) {
+        recv_trailing_state_ = RecvTrailingState::kCancelled;
+      }
+      grpc_transport_stream_op_batch_finish_with_failure(
+          absl::exchange(send_initial_metadata_batch_, nullptr),
+          GRPC_ERROR_REF(error), call_combiner_);
+    } else {
+      send_initial_state_ = SendInitialState::kCancelled;
     }
-    ScopedContext context(self);
-    GPR_ASSERT(!self->recieved_trailing_metadata_);
-    self->recieved_trailing_metadata_ = true;
-    self->WakeInsideCombiner();
+    GRPC_ERROR_UNREF(cancelled_error_);
+    cancelled_error_ = GRPC_ERROR_REF(error);
+  }
+
+  void StartPromise(grpc_call_element* elem) {
+    GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
+
+    ChannelFilter* filter = static_cast<ChannelFilter*>(elem->channel_data);
+
+    promise_ = filter->MakeCallPromise(
+        send_initial_metadata_batch_->payload->send_initial_metadata
+            .send_initial_metadata,
+        [elem](InitialMetadata* initial_metadata) {
+          return static_cast<CallData*>(elem->call_data)
+              ->NextPromiseFactory(elem, initial_metadata);
+        });
+    WakeInsideCombiner();
+  }
+
+  void HookRecvTrailingMetadata(grpc_transport_stream_op_batch* op) {
+    recv_trailing_metadata_ =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata;
+    original_recv_trailing_metadata_ready_ =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
+  }
+
+  ArenaPromise<TrailingMetadata> NextPromiseFactory(
+      grpc_call_element* elem, InitialMetadata* initial_metadata) {
+    GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
+    send_initial_metadata_batch_->payload->send_initial_metadata
+        .send_initial_metadata = initial_metadata;
+    return ArenaPromise<TrailingMetadata>([elem]() {
+      return static_cast<CallData*>(elem->call_data)
+          ->PollTrailingMetadata(elem);
+    });
+  }
+
+  Poll<TrailingMetadata> PollTrailingMetadata(grpc_call_element* elem) {
+    if (send_initial_state_ == SendInitialState::kQueued) {
+      auto* op = absl::exchange(send_initial_metadata_batch_, nullptr);
+      GPR_ASSERT(op != nullptr);
+      send_initial_state_ = SendInitialState::kForwarded;
+      if (recv_trailing_state_ == RecvTrailingState::kQueued) {
+        HookRecvTrailingMetadata(op);
+        recv_trailing_state_ = RecvTrailingState::kForwarded;
+      }
+      grpc_call_next_op(elem, op);
+    }
+    switch (recv_trailing_state_) {
+      case RecvTrailingState::kInitial:
+      case RecvTrailingState::kQueued:
+      case RecvTrailingState::kForwarded:
+        return Pending{};
+      case RecvTrailingState::kComplete:
+        return std::move(*recv_trailing_metadata_);
+      case RecvTrailingState::kCancelled: {
+        TrailingMetadata synthetic(arena_);
+        SetStatusFromError(&synthetic, cancelled_error_);
+        return synthetic;
+      }
+      case RecvTrailingState::kResponded:
+        abort();
+    }
+    GPR_UNREACHABLE_CODE(return Pending{});
+  }
+
+  static void RecvTrailingMetadataReadyCallback(void* arg,
+                                                grpc_error_handle error) {
+    static_cast<CallData*>(arg)->RecvTrailingMetadataReady(error);
+  }
+
+  void RecvTrailingMetadataReady(grpc_error_handle error) {
+    if (error != GRPC_ERROR_NONE) {
+      SetStatusFromError(recv_trailing_metadata_, error);
+    }
+
+    GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kForwarded);
+    recv_trailing_state_ = RecvTrailingState::kComplete;
+
+    ScopedContext context(this);
+    WakeInsideCombiner();
+  }
+
+  void SetStatusFromError(TrailingMetadata* metadata, grpc_error_handle error) {
+    grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
+    std::string status_details;
+    grpc_error_get_status(error, deadline_, &status_code, &status_details,
+                          nullptr, nullptr);
+    metadata->Set(GrpcStatusMetadata(), status_code);
+    metadata->Set(GrpcMessageMetadata(),
+                  Slice::FromCopiedString(status_details));
   }
 
   void WakeInsideCombiner() {
-    if (original_recv_trailing_metadata_ready_ != nullptr) {
-      Poll<TrailingMetadata> poll = promise_();
-      if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
-        gpr_log(GPR_INFO, "FINISHED PROMISE: %s", r->DebugString().c_str());
-        *recv_trailing_metadata_ = std::move(*r);
-        gpr_log(GPR_INFO, "CONTINUE UP: %s",
-                recv_trailing_metadata_->DebugString().c_str());
-        grpc_closure* cb =
-            absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
-        Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
-      }
+    switch (send_initial_state_) {
+      case SendInitialState::kQueued:
+      case SendInitialState::kForwarded: {
+        Poll<TrailingMetadata> poll = promise_();
+        if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
+          // TODO(ctiller): It's possible that a promise may decide to return
+          // trailing metadata PRIOR to getting a recv_trailing_metadata op.
+          // In that case we'll need to stash to metadata until such time as
+          // we're ready to send it up.
+          GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kComplete);
+          *recv_trailing_metadata_ = std::move(*r);
+          recv_trailing_state_ = RecvTrailingState::kResponded;
+          grpc_closure* cb =
+              absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
+          Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+        }
+      } break;
+      case SendInitialState::kInitial:
+      case SendInitialState::kCancelled:
+        if (recv_trailing_state_ == RecvTrailingState::kComplete) {
+          recv_trailing_state_ = RecvTrailingState::kResponded;
+          grpc_closure* cb =
+              absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
+          Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+        }
+        break;
     }
   }
 
-  grpc_transport_stream_op_batch* send_initial_metadata_op_ = nullptr;
+  grpc_transport_stream_op_batch* send_initial_metadata_batch_ = nullptr;
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
-  bool recieved_trailing_metadata_ = false;
+  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  SendInitialState send_initial_state_ = SendInitialState::kInitial;
+  RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
 };
 
 }  // namespace promise_filter_detail
