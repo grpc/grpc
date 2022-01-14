@@ -30,7 +30,7 @@ struct HttpRequestTestServer {
 };
 
 HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
-                                             bool use_ssl);
+                                                 bool use_ssl);
 
 }  // namespace testing
 }  // namespace grpc_core
