@@ -104,18 +104,3 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
-
-grpc_cc_test(
-    name = "google_c2p_resolver_test",
-    srcs = ["google_c2p_resolver_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//test/core/util:fake_udp_and_tcp_server",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)
