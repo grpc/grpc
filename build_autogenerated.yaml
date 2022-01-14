@@ -1871,7 +1871,6 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
-  - src/core/lib/http/httpcli_ssl_credentials.h
   - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
@@ -1982,17 +1981,11 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
-  - src/core/lib/security/credentials/tls/tls_utils.h
-  - src/core/lib/security/security_connector/load_system_roots.h
-  - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/security_connector.h
-  - src/core/lib/security/security_connector/ssl_utils.h
-  - src/core/lib/security/security_connector/ssl_utils_config.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
-  - src/core/lib/security/util/json_util.h
   - src/core/lib/service_config/service_config.h
   - src/core/lib/service_config/service_config_call_data.h
   - src/core/lib/service_config/service_config_parser.h
@@ -2032,10 +2025,6 @@ libs:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
-  - src/core/tsi/ssl/session_cache/ssl_session.h
-  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
-  - src/core/tsi/ssl_transport_security.h
-  - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
@@ -2171,7 +2160,6 @@ libs:
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/httpcli_security_connector.cc
   - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
@@ -2285,18 +2273,12 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
-  - src/core/lib/security/credentials/tls/tls_utils.cc
-  - src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/security_connector.cc
-  - src/core/lib/security/security_connector/ssl_utils.cc
-  - src/core/lib/security/security_connector/ssl_utils_config.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
-  - src/core/lib/security/util/json_util.cc
   - src/core/lib/service_config/service_config.cc
   - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/b64.cc
@@ -2341,10 +2323,6 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
   - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
-  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -2355,7 +2333,6 @@ libs:
   - absl/types:variant
   - absl/utility:utility
   - gpr
-  - libssl
   - address_sorting
   baselib: true
   generate_plugin_registry: true
@@ -5938,17 +5915,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: google_c2p_resolver_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/util/fake_udp_and_tcp_server.h
-  src:
-  - test/core/client_channel/resolvers/google_c2p_resolver_test.cc
-  - test/core/util/fake_udp_and_tcp_server.cc
-  deps:
-  - grpc++_test_util
 - name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
   build: test

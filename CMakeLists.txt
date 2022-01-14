@@ -864,7 +864,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx global_config_env_test)
   endif()
   add_dependencies(buildtests_cxx global_config_test)
-  add_dependencies(buildtests_cxx google_c2p_resolver_test)
   add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx grpc_authorization_engine_test)
   add_dependencies(buildtests_cxx grpc_authorization_policy_provider_test)
@@ -2546,7 +2545,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
-  src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
@@ -2660,18 +2658,12 @@ add_library(grpc_unsecure
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
-  src/core/lib/security/credentials/tls/tls_utils.cc
-  src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/security_connector.cc
-  src/core/lib/security/security_connector/ssl_utils.cc
-  src/core/lib/security/security_connector/ssl_utils_config.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
-  src/core/lib/security/util/json_util.cc
   src/core/lib/service_config/service_config.cc
   src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
@@ -2716,10 +2708,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
@@ -2768,7 +2756,6 @@ target_link_libraries(grpc_unsecure
   absl::variant
   absl::utility
   gpr
-  ${_gRPC_SSL_LIBRARIES}
   address_sorting
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -10803,42 +10790,6 @@ target_link_libraries(global_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(google_c2p_resolver_test
-  test/core/client_channel/resolvers/google_c2p_resolver_test.cc
-  test/core/util/fake_udp_and_tcp_server.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(google_c2p_resolver_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(google_c2p_resolver_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
 )
 
 
