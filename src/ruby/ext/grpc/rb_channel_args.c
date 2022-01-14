@@ -111,6 +111,8 @@ typedef struct channel_convert_params {
 static VALUE grpc_rb_hash_convert_to_channel_args0(VALUE as_value) {
   ID id_size = rb_intern("size");
   VALUE grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cChannelArgs);
+
   channel_convert_params* params = (channel_convert_params*)as_value;
   size_t num_args = 0;
 

@@ -801,6 +801,8 @@ static void Init_grpc_connectivity_states() {
 
 void Init_grpc_channel() {
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cChannelArgs);
+
   grpc_rb_cChannel =
       rb_define_class_under(grpc_rb_mGrpcCore, "Channel", rb_cObject);
 

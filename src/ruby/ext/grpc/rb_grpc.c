@@ -198,6 +198,8 @@ static void Init_grpc_time_consts() {
       rb_define_module_under(grpc_rb_mGrpcCore, "TimeConsts");
   grpc_rb_cTimeVal =
       rb_define_class_under(grpc_rb_mGrpcCore, "TimeSpec", rb_cObject);
+  rb_undef_alloc_func(grpc_rb_cTimeVal);
+
   zero_realtime = gpr_time_0(GPR_CLOCK_REALTIME);
   inf_future_realtime = gpr_inf_future(GPR_CLOCK_REALTIME);
   inf_past_realtime = gpr_inf_past(GPR_CLOCK_REALTIME);
