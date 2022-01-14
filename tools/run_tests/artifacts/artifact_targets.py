@@ -210,14 +210,17 @@ class RubyArtifact:
         return []
 
     def build_jobspec(self, inner_jobs=None):
-        # TODO(jtattermusch): honor inner_jobs arg for this task.
-        del inner_jobs
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building native extension
+            environ['GRPC_RUBY_BUILD_PROCS'] = str(inner_jobs)
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=90 * 60)
+            timeout_seconds=90 * 60,
+            environ=environ)
 
 
 class CSharpExtArtifact:
@@ -376,9 +379,19 @@ class ProtocArtifact:
         return self.name
 
 
+def _reorder_targets_for_build_speed(targets):
+    """Reorder targets to achieve optimal build speed"""
+    # ruby artifact build builds multiple artifacts at once, so make sure
+    # we start building ruby artifacts first, so that they don't end up
+    # being a long tail once everything else finishes.
+    return list(
+        sorted(targets,
+               key=lambda target: 0 if target.name.startswith('ruby_') else 1))
+
+
 def targets():
     """Gets list of supported targets"""
-    return [
+    return _reorder_targets_for_build_speed([
         ProtocArtifact('linux', 'x64', presubmit=True),
         ProtocArtifact('linux', 'x86', presubmit=True),
         ProtocArtifact('linux', 'aarch64', presubmit=True),
@@ -448,4 +461,4 @@ def targets():
         RubyArtifact('macos', 'x64', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True)
-    ]
+    ])
