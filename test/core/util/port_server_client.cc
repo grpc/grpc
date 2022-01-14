@@ -59,7 +59,7 @@ static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
 
 void grpc_free_port_using_server(int port) {
   grpc_http_request req;
-  grpc_httpcli_response rsp;
+  grpc_http_response rsp;
   freereq pr;
   char* path;
   grpc_closure* shutdown_closure;
@@ -127,7 +127,7 @@ typedef struct portreq {
   int port = 0;
   int retries = 0;
   char* server = nullptr;
-  grpc_httpcli_response response = {};
+  grpc_http_response response = {};
   grpc_core::OrphanablePtr<grpc_core::HttpCli> httpcli;
 } portreq;
 
@@ -137,7 +137,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   portreq* pr = static_cast<portreq*>(arg);
   pr->httpcli.reset();
   int failed = 0;
-  grpc_httpcli_response* response = &pr->response;
+  grpc_http_response* response = &pr->response;
 
   if (error != GRPC_ERROR_NONE) {
     failed = 1;

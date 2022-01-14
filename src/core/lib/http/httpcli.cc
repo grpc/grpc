@@ -60,7 +60,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     grpc_millis deadline, grpc_closure* on_done,
-    grpc_httpcli_response* response,
+    grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host =
@@ -86,7 +86,7 @@ OrphanablePtr<HttpCli> HttpCli::Post(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response,
+    grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   const char* host =
@@ -115,7 +115,7 @@ void HttpCli::SetOverride(grpc_httpcli_get_override get,
 
 HttpCli::HttpCli(
     absl::string_view scheme, const grpc_slice& request_text,
-    grpc_httpcli_response* response, grpc_millis deadline,
+    grpc_http_response* response, grpc_millis deadline,
     const grpc_channel_args* channel_args, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response,

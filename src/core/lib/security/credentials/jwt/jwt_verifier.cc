@@ -399,7 +399,7 @@ struct grpc_jwt_verifier {
   size_t allocated_mappings;
 };
 
-static Json json_from_http(const grpc_httpcli_response* response) {
+static Json json_from_http(const grpc_http_response* response) {
   if (response == nullptr) {
     gpr_log(GPR_ERROR, "HTTP response is NULL.");
     return Json();  // JSON null

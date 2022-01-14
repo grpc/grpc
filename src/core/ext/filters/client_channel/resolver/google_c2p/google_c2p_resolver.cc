@@ -67,7 +67,7 @@ class GoogleCloud2ProdResolver : public Resolver {
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
     OrphanablePtr<HttpCli> httpcli_;
-    grpc_httpcli_response response_;
+    grpc_http_response response_;
     grpc_closure on_done_;
     std::atomic<bool> on_done_called_{false};
   };
