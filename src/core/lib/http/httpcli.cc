@@ -164,7 +164,7 @@ HttpRequest::HttpRequest(
           .channel_args_preconditioning()
           .PreconditionChannelArgs(prev_channel_args));
   grpc_channel_args_destroy(prev_channel_args);
-  // start DNS resolution
+  // Create the DNS resolver. We'll start resolving when Start is called.
   const char* authority =
       grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(authority != nullptr);
