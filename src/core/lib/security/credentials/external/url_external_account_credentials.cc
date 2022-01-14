@@ -21,7 +21,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
-#include "src/core/lib/http/httpcli_ssl_credentials"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 
 namespace grpc_core {
 

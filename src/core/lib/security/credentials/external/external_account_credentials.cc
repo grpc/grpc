@@ -25,6 +25,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
