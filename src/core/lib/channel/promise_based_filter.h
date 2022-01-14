@@ -19,12 +19,14 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/utility/utility.h"
-#include "channel_stack.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
