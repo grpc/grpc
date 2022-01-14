@@ -708,16 +708,17 @@ static int compute_engine_httpcli_get_failure_override(
 }
 
 static int httpcli_post_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/, const char* /*body_bytes*/,
-    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_httpcli_response* /*response*/) {
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    const char* /*body_bytes*/, size_t /*body_size*/, grpc_millis /*deadline*/,
+    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }
 
 static int httpcli_get_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/, grpc_millis /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP GET should not be called" == nullptr);
   return 1;
 }
@@ -809,13 +810,10 @@ static int refresh_token_httpcli_post_success(
   return 1;
 }
 
-static int token_httpcli_post_failure(const grpc_http_request* /*request*/,
-                                      const char* /*host*/,
-                                      const char* /*body*/,
-                                      size_t /*body_size*/,
-                                      grpc_millis /*deadline*/,
-                                      grpc_closure* on_done,
-                                      grpc_httpcli_response* response) {
+static int token_httpcli_post_failure(
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    const char* /*body*/, size_t /*body_size*/, grpc_millis /*deadline*/,
+    grpc_closure* on_done, grpc_httpcli_response* response) {
   *response = http_response(403, "Not Authorized.");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -2174,9 +2172,9 @@ static int external_account_creds_httpcli_post_success(
 
 static int
 external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_http_request* request, const char* /*host*/, const char* /*body*/,
-    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* on_done,
-    grpc_httpcli_response* response) {
+    const grpc_http_request* request, const char* /*host*/,
+    const char* /*body*/, size_t /*body_size*/, grpc_millis /*deadline*/,
+    grpc_closure* on_done, grpc_httpcli_response* response) {
   if (strcmp(request->path, "/token") == 0) {
     *response = http_response(200,
                               "{\"not_access_token\":\"not_access_token\","
@@ -2192,8 +2190,9 @@ external_account_creds_httpcli_post_failure_token_exchange_response_missing_acce
 }
 
 static int url_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* /*host*/, grpc_millis /*deadline*/,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+    const grpc_http_request* request, const char* /*host*/,
+    grpc_millis /*deadline*/, grpc_closure* on_done,
+    grpc_httpcli_response* response) {
   if (strcmp(request->path, "/generate_subject_token_format_text") == 0) {
     *response = http_response(
         200,
@@ -2247,8 +2246,9 @@ static void validate_aws_external_account_creds_token_exchage_request(
 }
 
 static int aws_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* /*host*/, grpc_millis /*deadline*/,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
+    const grpc_http_request* request, const char* /*host*/,
+    grpc_millis /*deadline*/, grpc_closure* on_done,
+    grpc_httpcli_response* response) {
   if (strcmp(request->path, "/region_url") == 0) {
     *response = http_response(200, "test_regionz");
   } else if (strcmp(request->path, "/url") == 0) {
@@ -2264,12 +2264,12 @@ static int aws_external_account_creds_httpcli_get_success(
 }
 
 static int aws_external_account_creds_httpcli_post_success(
-    const grpc_http_request* request, const char* host, const char* body, size_t body_size,
-    grpc_millis /*deadline*/, grpc_closure* on_done,
+    const grpc_http_request* request, const char* host, const char* body,
+    size_t body_size, grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_httpcli_response* response) {
   if (strcmp(request->path, "/token") == 0) {
-    validate_aws_external_account_creds_token_exchage_request(request, host, body,
-                                                              body_size, true);
+    validate_aws_external_account_creds_token_exchage_request(
+        request, host, body, body_size, true);
     *response = http_response(
         200, valid_external_account_creds_token_exchange_response);
   }
