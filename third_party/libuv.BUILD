@@ -324,3 +324,37 @@ cc_library(
         "//visibility:public",
     ],
 )
+
+cc_library(
+    name = "libuv_test",
+    srcs = [
+       "test/test-timer.c",
+       "test/test-timer-again.c",
+       "test/test-timer-from-check.c",
+    ],
+    hdrs = [
+        "test/runner.h",
+        "test/runner-unix.h",
+        "test/task.h",
+    ],
+    includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        ":libuv"
+    ],
+    linkopts = select({
+        ":windows": [
+            "-Xcrosstool-compilation-mode=$(COMPILATION_MODE)",
+            "-Wl,Iphlpapi.lib",
+            "-Wl,Psapi.lib",
+            "-Wl,User32.lib",
+            "-Wl,Userenv.lib",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = [
+        "//visibility:public",
+    ],
+)

@@ -37,6 +37,7 @@ objc_library(
     srcs = glob(["*.m"]),
     deps = [
         "//external:libuv",
+        "//external:libuv_test",
     ],
 )
 
