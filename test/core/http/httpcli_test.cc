@@ -195,7 +195,8 @@ TEST_F(HttpRequestTest, Get) {
               grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -222,7 +223,8 @@ TEST_F(HttpRequestTest, Post) {
               grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -287,7 +289,8 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       });
       // Poll with a deadline explicitly lower than the request timeout, so
       // that we know that the request timeout isn't just kicking in.
-      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+      PollUntil([&request_state]() { return request_state.done; },
+                AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }
@@ -345,7 +348,8 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       });
       // Poll with a deadline explicitly lower than the request timeout, so
       // that we know that the request timeout isn't just kicking in.
-      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+      PollUntil([&request_state]() { return request_state.done; },
+                AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }
@@ -354,10 +358,11 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
   }
 }
 
-// The main point of this test is just to exercise the machinery around cancellation
-// during TCP connection establishment, to make sure there are no crashes/races
-// etc. This test doesn't actually verify that cancellation during TCP setup is
-// happening, though. For that, we would need to induce packet loss in the test.
+// The main point of this test is just to exercise the machinery around
+// cancellation during TCP connection establishment, to make sure there are no
+// crashes/races etc. This test doesn't actually verify that cancellation during
+// TCP setup is happening, though. For that, we would need to induce packet loss
+// in the test.
 TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   // Grab an unoccupied port but don't listen on it. The goal
   // here is just to have a server address that will reject
@@ -413,7 +418,8 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       });
       // Poll with a deadline explicitly lower than the request timeout, so
       // that we know that the request timeout isn't just kicking in.
-      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+      PollUntil([&request_state]() { return request_state.done; },
+                AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }
@@ -444,8 +450,8 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   memset(&req, 0, sizeof(req));
   req.path = const_cast<char*>("/get");
   request_state.pollset_set_to_destroy_eagerly = grpc_pollset_set_create();
-  grpc_polling_entity_add_to_pollset_set(pops(),
-                                         request_state.pollset_set_to_destroy_eagerly);
+  grpc_polling_entity_add_to_pollset_set(
+      pops(), request_state.pollset_set_to_destroy_eagerly);
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           request_state.pollset_set_to_destroy_eagerly);

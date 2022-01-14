@@ -185,7 +185,8 @@ TEST_F(HttpsCliTest, Get) {
           grpc_core::CreateHttpRequestSSLCredentials());
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -215,7 +216,8 @@ TEST_F(HttpsCliTest, Post) {
           grpc_core::CreateHttpRequestSSLCredentials());
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -276,7 +278,8 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       });
       // Poll with a deadline explicitly lower than the request timeout, so
       // that we know that the request timeout isn't just kicking in.
-      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
+      PollUntil([&request_state]() { return request_state.done; },
+                AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }

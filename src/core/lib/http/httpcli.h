@@ -60,6 +60,9 @@ namespace grpc_core {
 class HttpRequest : public InternallyRefCounted<HttpRequest> {
  public:
   // Asynchronously perform a HTTP GET.
+  // 'scheme' can be "http" or "https", for insecure/secure respectively.
+  // 'args' are channel args for the request. GRPC_ARG_DEFAULT_AUTHORITY is
+  //   required and is used as the target host for the request.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the get - work on this entity may be used to progress the get
   //   operation
@@ -67,6 +70,14 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   can be destroyed once the call returns
   // 'deadline' contains a deadline for the request (or gpr_inf_future)
   // 'on_done' is a callback to report results to
+  // 'channel_creds' are used to configurably secure the connection.
+  //   For insecure requests, use grpc_insecure_credentials_create.
+  //   For secure requests, use CreateHttpRequestSSLCredentials().
+  //   nullptr is treated as insecure credentials.
+  //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
+  //   are removed.
+  //   TODO(apolcyn): make this param optional and by default autodetected
+  //   based on the scheme after unsecure builds are removed.
   static OrphanablePtr<HttpRequest> Get(
       absl::string_view scheme, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
@@ -75,6 +86,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
       GRPC_MUST_USE_RESULT;
 
   // Asynchronously perform a HTTP POST.
+  // 'scheme' can be "http" or "https", for insecure/secure respectively.
+  // 'args' are channel args for the request. GRPC_ARG_DEFAULT_AUTHORITY is
+  //   required and is used as the target host for the request.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the post - work on this entity may be used to progress the post
   //   operation
@@ -84,6 +98,14 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   When there is no body, pass in NULL as body_bytes.
   // 'deadline' contains a deadline for the request (or gpr_inf_future)
   // 'on_done' is a callback to report results to
+  // 'channel_creds' are used to configurably secure the connection.
+  //   For insecure requests, use grpc_insecure_credentials_create.
+  //   For secure requests, use CreateHttpRequestSSLCredentials().
+  //   nullptr is treated as insecure credentials.
+  //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
+  //   are removed.
+  //   TODO(apolcyn): make this param optional and by default autodetected
+  //   based on the scheme after unsecure builds are removed.
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpRequest> Post(
       absl::string_view scheme, const grpc_channel_args* args,
