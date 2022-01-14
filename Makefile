@@ -1348,6 +1348,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
+    src/core/ext/xds/xds_channel_creds.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
@@ -2961,6 +2962,7 @@ src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_channel_creds.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_channel_stack_modifier.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
