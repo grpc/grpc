@@ -26,8 +26,12 @@
 namespace grpc_core {
 namespace testing {
 
-std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv,
-                                                        bool use_ssl);
+struct HttpCliTestServer {
+  gpr_subprocess* server;
+  int port;
+};
+
+HttpCliTestServer StartHttpCliTestServer(int argc, char** argv, bool use_ssl);
 
 }  // namespace testing
 }  // namespace grpc_core

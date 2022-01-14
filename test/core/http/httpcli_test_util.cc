@@ -98,7 +98,10 @@ std::tuple<gpr_subprocess*, int> StartHttpCliTestServer(int argc, char** argv,
   gpr_free(root);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
-  return std::make_tuple(server, server_port);
+  HttpCliTestServer result;
+  result.server = server;
+  result.port = server_port;
+  return result;
 }
 
 }  // namespace testing

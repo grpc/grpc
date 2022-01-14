@@ -96,11 +96,10 @@ class HttpCliTest : public ::testing::Test {
 
  protected:
   static void SetUpTestSuite() {
-    std::tuple<gpr_subprocess*, int> server_and_port =
-        grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv,
+    auto test_server = grpc_core::testing::StartHttpCliTestServer(g_argc, g_argv,
                                                    false /* use_ssl */);
-    g_server = std::get<0>(server_and_port);
-    g_server_port = std::get<1>(server_and_port);
+    g_server = test_server.server;
+    g_server_port = test_server.port;
   }
 
   static void TearDownTestSuite() { gpr_subprocess_destroy(g_server); }
