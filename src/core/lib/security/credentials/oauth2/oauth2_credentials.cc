@@ -399,7 +399,7 @@ class grpc_compute_engine_token_fetcher_credentials
         "http", args, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
-        &metadata_req->response, grpc_insecure_credentials_create());
+        &metadata_req->response, RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create()));
     httpcli_->Start();
     grpc_channel_args_destroy(args);
   }

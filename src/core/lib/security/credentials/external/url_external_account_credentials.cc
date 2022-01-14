@@ -21,6 +21,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
+#include "src/core/lib/http/httpcli_ssl_credentials"
+
 namespace grpc_core {
 
 RefCountedPtr<UrlExternalAccountCredentials>
@@ -149,7 +151,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   RefCountedPtr<grpc_channel_credentials> httpcli_creds;
   if (url_.scheme() == "http") {
     httpcli_creds = RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create());
-  else {
+  } else {
     httpcli_creds = RefCountedPtr<grpc_channel_credentials>(CreateHttpCliSSLCredentials());
   }
   httpcli_ = HttpCli::Get(url_.scheme(), args, ctx_->pollent, &request,

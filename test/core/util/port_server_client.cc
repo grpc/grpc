@@ -93,7 +93,7 @@ void grpc_free_port_using_server(int port) {
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
-        &rsp, grpc_insecure_credentials_create());
+        &rsp, RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create()));
     httpcli->Start();
     grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
@@ -180,7 +180,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
-        &pr->response, grpc_insecure_credentials_create());
+        &pr->response, RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create()));
     pr->httpcli->Start();
     grpc_channel_args_destroy(args);
     return;
@@ -232,7 +232,7 @@ int grpc_pick_port_using_server(void) {
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
-        &pr.response, grpc_insecure_credentials_create());
+        &pr.response, RefCountedPtr<grpc_channel_credentials>(grpc_insecure_credentials_create()));
     httpcli->Start();
     grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();

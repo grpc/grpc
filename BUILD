@@ -3475,13 +3475,11 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
-        "src/core/lib/http/httpcli_security_connector.cc",
         "src/core/lib/http/parser.cc",
     ],
     hdrs = [
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
-        "src/core/lib/http/httpcli_ssl_credentials.h",
         "src/core/lib/http/parser.h",
     ],
     external_deps = [
@@ -3502,7 +3500,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_httpcli_security_connector",
+    name = "httpcli_ssl_credentials",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
     ],
@@ -3591,7 +3589,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_credentials_util",
-        "grpc_httpcli_security_connector",
+        "httpcli_ssl_credentials",
         "grpc_jwt_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_security_base",
@@ -3837,7 +3835,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_credentials_util",
-        "grpc_httpcli_security_connector",
+        "httpcli_ssl_credentials",
         "grpc_security_base",
         "httpcli",
         "json",

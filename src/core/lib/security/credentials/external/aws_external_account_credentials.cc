@@ -22,7 +22,7 @@
 #include "absl/strings/str_replace.h"
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/http/http_ssl_credentials.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 
 namespace grpc_core {
 

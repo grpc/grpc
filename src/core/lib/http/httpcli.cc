@@ -80,7 +80,7 @@ OrphanablePtr<HttpCli> HttpCli::Get(absl::string_view scheme,
   return MakeOrphanable<HttpCli>(
       scheme, grpc_httpcli_format_get_request(request, host), response,
       deadline, channel_args, on_done, pollent, name.c_str(),
-      std::move(test_only_generate_response), std::move(options));
+      std::move(test_only_generate_response), std::move(channel_creds));
 }
 
 OrphanablePtr<HttpCli> HttpCli::Post(
@@ -120,7 +120,7 @@ HttpCli::HttpCli(
     const grpc_channel_args* channel_args, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response,
-    Options options)
+    RefCountedPtr<grpc_channel_credentials> channel_creds)
     : request_text_(request_text),
       deadline_(deadline),
       channel_args_(grpc_channel_args_copy(channel_args)),
@@ -330,7 +330,7 @@ void HttpCli::OnConnected(void* arg, grpc_error_handle error) {
             nullptr /*call_creds*/, authority, req->channel_args_,
             &new_args_from_connector);
     if (sc == nullptr) {
-      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("failed to create security connector", &overall_error_, 1));
+      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("failed to create security connector", &req->overall_error_, 1));
       return;
     }
     grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
