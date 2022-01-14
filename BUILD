@@ -3461,12 +3461,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "alts_util",
-        "httpcli",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver",
         "grpc_xds_client",
+        "httpcli",
     ],
 )
 
@@ -3475,14 +3475,14 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
-        "src/core/lib/http/parser.cc",
         "src/core/lib/http/httpcli_security_connector.cc",
+        "src/core/lib/http/parser.cc",
     ],
     hdrs = [
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
-        "src/core/lib/http/parser.h",
         "src/core/lib/http/httpcli_ssl_credentials.h",
+        "src/core/lib/http/parser.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
