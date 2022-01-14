@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_HTTP_HTTPCLI_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_HTTP_HTTPCLI_SECURITY_CONNECTOR_H
+#ifndef GRPC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H
+#define GRPC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,4 +35,4 @@ RefCountedPtr<grpc_channel_credentials> CreateHttpCliSSLCredentials();
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_SECURITY_CONNECTOR_H */
+#endif /* GRPC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H */
