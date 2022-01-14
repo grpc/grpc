@@ -44,6 +44,10 @@ grpc_millis NSecondsTime(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
+absl::Time AbslDeadlineSeconds(int s) {
+  return grpc_core::ToAbslTime(grpc_timeout_seconds_to_deadline(s));
+}
+
 int g_argc;
 char** g_argv;
 int g_server_port;
@@ -79,9 +83,10 @@ class HttpsCliTest : public ::testing::Test {
         grpc_pollset_kick(grpc_polling_entity_pollset(&pops_), nullptr)));
   }
 
-  void PollUntil(const std::function<bool()>& predicate) {
+  void PollUntil(const std::function<bool()>& predicate, absl::Time deadline) {
     gpr_mu_lock(mu_);
     while (!predicate()) {
+      GPR_ASSERT(absl::Now() < deadline);
       grpc_pollset_worker* worker = nullptr;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&pops_),
@@ -144,7 +149,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
       [request_state]() { request_state->done = true; });
 }
 
-void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
+void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
@@ -180,7 +185,7 @@ TEST_F(HttpsCliTest, Get) {
           grpc_core::CreateHttpRequestSSLCredentials());
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; });
+  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -210,15 +215,23 @@ TEST_F(HttpsCliTest, Post) {
           grpc_core::CreateHttpRequestSSLCredentials());
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; });
+  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
+// The goal of this test is to make sure that we can cancel HTTP requests
+// while they're waiting for a response from the server to finish their
+// SSL handshakes. Note that the main focus of this test is to just exercise
+// the relevant code paths and make sure there aren't any crashes etc., rather
+// than to make sure that cancellation happens in a timely manner.
 TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
+  // Start up a fake TCP server which accepts connections and then hangs,
+  // i.e. it won't send any bytes back to the client.
   grpc_core::testing::FakeUdpAndTcpServer fake_http_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  // Use multiple threads to try to trigger races etc.
   int kNumThreads = 100;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
@@ -242,20 +255,28 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
           nullptr, request_args.data(), request_args.size());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "https", args, pops(), &req, NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
+              "https", args, pops(), &req, NSecondsTime(120),
+              GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               grpc_core::CreateHttpRequestSSLCredentials());
+      // Start a request. It will establish a TCP connection to the
+      // server and then begin an SSL handshake. The server won't send
+      // anything back though, so it will be stuck in its SSL handshake,
+      // waiting for the firt response from the server.
       http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&http_request]() {
+        // Give one second to let the client get into the middle of its
+        // SSL handshake, and then cancel the request.
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
       });
-      PollUntil([&request_state]() { return request_state.done; });
+      // Poll with a deadline explicitly lower than the request timeout, so
+      // that we know that the request timeout isn't just kicking in.
+      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }

@@ -44,6 +44,10 @@ grpc_millis NSecondsTime(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
+absl::Time AbslDeadlineSeconds(int s) {
+  return grpc_core::ToAbslTime(grpc_timeout_seconds_to_deadline(s));
+}
+
 int g_argc;
 char** g_argv;
 int g_server_port;
@@ -79,9 +83,10 @@ class HttpRequestTest : public ::testing::Test {
         grpc_pollset_kick(grpc_polling_entity_pollset(&pops_), nullptr)));
   }
 
-  void PollUntil(const std::function<bool()>& predicate) {
+  void PollUntil(const std::function<bool()>& predicate, absl::Time deadline) {
     gpr_mu_lock(mu_);
     while (!predicate()) {
+      GPR_ASSERT(absl::Now() < deadline);
       grpc_pollset_worker* worker = nullptr;
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&pops_),
@@ -126,10 +131,17 @@ struct RequestState {
   HttpRequestTest* test;
   bool done = false;
   grpc_http_response response = {};
+  grpc_pollset_set* pollset_set_to_destroy_eagerly = nullptr;
 };
 
 void OnFinish(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
+  if (request_state->pollset_set_to_destroy_eagerly != nullptr) {
+    // Destroy the request's polling entity param. The goal is to try to catch a
+    // bug where we might still be referencing the polling entity by
+    // a pending TCP connect.
+    grpc_pollset_set_destroy(request_state->pollset_set_to_destroy_eagerly);
+  }
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
@@ -144,8 +156,14 @@ void OnFinish(void* arg, grpc_error_handle error) {
       [request_state]() { request_state->done = true; });
 }
 
-void OnFinishExpectCancelled(void* arg, grpc_error_handle error) {
+void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
+  if (request_state->pollset_set_to_destroy_eagerly != nullptr) {
+    // Destroy the request's polling entity param. The goal is to try to catch a
+    // bug where we might still be referencing the polling entity by
+    // a pending TCP connect.
+    grpc_pollset_set_destroy(request_state->pollset_set_to_destroy_eagerly);
+  }
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_error_std_string(error).c_str());
@@ -177,7 +195,7 @@ TEST_F(HttpRequestTest, Get) {
               grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; });
+  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -204,7 +222,7 @@ TEST_F(HttpRequestTest, Post) {
               grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);
-  PollUntil([&request_state]() { return request_state.done; });
+  PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
   gpr_free(host);
 }
 
@@ -254,8 +272,8 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
           grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "http", args, pops(), &req, NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
+              "http", args, pops(), &req, NSecondsTime(120),
+              GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               grpc_core::RefCountedPtr<grpc_channel_credentials>(
@@ -267,7 +285,9 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
       });
-      PollUntil([&request_state]() { return request_state.done; });
+      // Poll with a deadline explicitly lower than the request timeout, so
+      // that we know that the request timeout isn't just kicking in.
+      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }
@@ -278,10 +298,18 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
 }
 
 TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
+  // Start up a fake HTTP server which just accepts connections
+  // and then hangs, i.e. does not send back any bytes to the client.
+  // The goal here is to get the client to connect to this fake server
+  // and send a request, and then sit waiting for a response. Then, a
+  // separate thread will cancel the HTTP request, and that should let it
+  // complete.
   grpc_core::testing::FakeUdpAndTcpServer fake_http_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
           kWaitForClientToSendFirstBytes,
       grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  // Run the same test on several threads in parallel to try to trigger races
+  // etc.
   int kNumThreads = 100;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
@@ -301,8 +329,8 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
           grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "http", args, pops(), &req, NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
+              "http", args, pops(), &req, NSecondsTime(120),
+              GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               grpc_core::RefCountedPtr<grpc_channel_credentials>(
@@ -315,7 +343,9 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
       });
-      PollUntil([&request_state]() { return request_state.done; });
+      // Poll with a deadline explicitly lower than the request timeout, so
+      // that we know that the request timeout isn't just kicking in.
+      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }
@@ -324,17 +354,25 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
   }
 }
 
-// The point of this test is just to exercise the machinery around cancellation
+// The main point of this test is just to exercise the machinery around cancellation
 // during TCP connection establishment, to make sure there are no crashes/races
 // etc. This test doesn't actually verify that cancellation during TCP setup is
-// timely, though. For that, we would need to fake packet loss in the test.
+// happening, though. For that, we would need to induce packet loss in the test.
 TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   // Grab an unoccupied port but don't listen on it. The goal
   // here is just to have a server address that will reject
   // TCP connection setups.
+  // Note that because the server is rejecting TCP connections, we
+  // don't really need to cancel the HTTP requests in this test case
+  // in order for them proceeed i.e. in order for them to pass. The test
+  // is still beneficial though because it can exercise the same code paths
+  // that would get taken if the HTTP request was cancelled while the TCP
+  // connect attempt was actually hanging.
   int fake_server_port = grpc_pick_unused_port_or_die();
   std::string fake_server_address =
       absl::StrCat("[::1]:", std::to_string(fake_server_port));
+  // Run the same test on several threads in parallel to try to trigger races
+  // etc.
   int kNumThreads = 100;
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
@@ -352,20 +390,30 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
           grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "http", args, pops(), &req, NSecondsTime(15),
-              GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
+              "http", args, pops(), &req, NSecondsTime(120),
+              GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               grpc_core::RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
+      // Start the HTTP request. We will ~immediately begin a TCP connect
+      // attempt because there's no name to resolve.
       http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
+      // Spawn a separate thread which ~immediately cancels the HTTP request.
+      // Note that even though the server is rejecting TCP connections, it can
+      // still take some time for the client to receive that rejection. So
+      // cancelling the request now can trigger the code paths that would get
+      // taken if the TCP connection was truly hanging e.g. from  packet loss.
+      // The goal is just to make sure there are no crashes, races, etc.
       std::thread cancel_thread([&http_request]() {
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
       });
-      PollUntil([&request_state]() { return request_state.done; });
+      // Poll with a deadline explicitly lower than the request timeout, so
+      // that we know that the request timeout isn't just kicking in.
+      PollUntil([&request_state]() { return request_state.done; }, AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }
@@ -374,14 +422,19 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
   }
 }
 
-// The point of this test is just to exercise the machinery around cancellation
-// during TCP connection establishment, to make sure there are no crashes/races
-// etc. This test doesn't actually verify that cancellation during TCP setup is
-// timely, though. For that, we would need to fake packet loss in the test.
-TEST_F(HttpRequestTest, CancelGetRacesWithConnectionSuccess) {
+// The pollent parameter passed to HttpRequest::Get or Post is owned by
+// the caller and must not be referenced by the HttpRequest after the
+// requests's on_done callback is invoked. This test verifies that this
+// isn't happening by destroying the request's pollset set within the
+// on_done callback.
+TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   // Grab an unoccupied port but don't listen on it. The goal
   // here is just to have a server address that will reject
   // TCP connection setups.
+  // Note that we could have used a different server for this test case, e.g.
+  // one which accepts TCP connections. All we need here is something for the
+  // client to connect to, since it will be cancelled roughly during the
+  // connection attempt anyways.
   int fake_server_port = grpc_pick_unused_port_or_die();
   std::string fake_server_address =
       absl::StrCat("[::1]:", std::to_string(fake_server_port));
@@ -390,12 +443,12 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionSuccess) {
   grpc_core::ExecCtx exec_ctx;
   memset(&req, 0, sizeof(req));
   req.path = const_cast<char*>("/get");
-  grpc_pollset_set* pollset_set_to_destroy_eagerly = grpc_pollset_set_create();
+  request_state.pollset_set_to_destroy_eagerly = grpc_pollset_set_create();
   grpc_polling_entity_add_to_pollset_set(pops(),
-                                         pollset_set_to_destroy_eagerly);
+                                         request_state.pollset_set_to_destroy_eagerly);
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
-          pollset_set_to_destroy_eagerly);
+          request_state.pollset_set_to_destroy_eagerly);
   grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>(fake_server_address.c_str()));
@@ -405,25 +458,20 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionSuccess) {
       grpc_core::HttpRequest::Get(
           "http", args, &wrapped_pollset_set_to_destroy_eagerly, &req,
           NSecondsTime(15),
-          GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
+          GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
           grpc_core::RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
+  // Start the HTTP request. We'll start the TCP connect attempt right away.
   http_request->Start();
   grpc_channel_args_destroy(args);
   exec_ctx.Flush();
   http_request.reset();  // cancel the request
-  exec_ctx.Flush();
-  // because we're cancelling the request during TCP connection establishment,
-  // we can be certain that our on_done callback has already ran
-  GPR_ASSERT(request_state.done);
-  // Destroy the request's polling entity param. The goal is to try to catch a
-  // bug where we might still be referencing the polling entity by
-  // a pending TCP connect.
-  gpr_log(GPR_DEBUG, "apolcyn begin destroy pollset set");
-  grpc_pollset_set_destroy(pollset_set_to_destroy_eagerly);
-  gpr_log(GPR_DEBUG, "apolcyn finish destroy pollset set");
+  // Since the request was cancelled, the on_done callback should be flushed
+  // out on the ExecCtx flush below. When the on_done callback is ran, it will
+  // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. Thus, we
+  // can't poll on that pollset here.
   exec_ctx.Flush();
 }
 
