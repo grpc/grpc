@@ -57,7 +57,7 @@ namespace grpc_core {
 // if it's in flight).
 // TODO(ctiller): allow caching and capturing multiple requests for the
 //                same content and combining them
-class HttpRequest : public InternallyRefCounted<HttpCli> {
+class HttpRequest : public InternallyRefCounted<HttpRequest> {
  public:
   // Asynchronously perform a HTTP GET.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -94,11 +94,11 @@ class HttpRequest : public InternallyRefCounted<HttpCli> {
       GRPC_MUST_USE_RESULT;
 
   HttpRequest(absl::string_view scheme, const grpc_slice& request_text,
-          grpc_http_response* response, grpc_millis deadline,
-          const grpc_channel_args* channel_args, grpc_closure* on_done,
-          grpc_polling_entity* pollent, const char* name,
-          absl::optional<std::function<void()>> test_only_generate_response,
-          RefCountedPtr<grpc_channel_credentials> channel_creds);
+              grpc_http_response* response, grpc_millis deadline,
+              const grpc_channel_args* channel_args, grpc_closure* on_done,
+              grpc_polling_entity* pollent, const char* name,
+              absl::optional<std::function<void()>> test_only_generate_response,
+              RefCountedPtr<grpc_channel_credentials> channel_creds);
 
   ~HttpRequest() override;
 
@@ -123,7 +123,7 @@ class HttpRequest : public InternallyRefCounted<HttpCli> {
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
-    HttpRequest* req = static_cast<HttpCli*>(user_data);
+    HttpRequest* req = static_cast<HttpRequest*>(user_data);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_on_read_after_schedule_on_exec_ctx_,
                  GRPC_ERROR_REF(error));
@@ -132,7 +132,7 @@ class HttpRequest : public InternallyRefCounted<HttpCli> {
   // Needed since OnRead may be called inline from grpc_endpoint_read
   static void ContinueOnReadAfterScheduleOnExecCtx(void* user_data,
                                                    grpc_error_handle error) {
-    RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(user_data));
+    RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(user_data));
     MutexLock lock(&req->mu_);
     req->OnReadInternal(error);
   }
@@ -143,7 +143,7 @@ class HttpRequest : public InternallyRefCounted<HttpCli> {
   void OnWritten() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { DoRead(); }
 
   static void DoneWrite(void* arg, grpc_error_handle error) {
-    HttpRequest* req = static_cast<HttpCli*>(arg);
+    HttpRequest* req = static_cast<HttpRequest*>(arg);
     ExecCtx::Run(DEBUG_LOCATION,
                  &req->continue_done_write_after_schedule_on_exec_ctx_,
                  GRPC_ERROR_REF(error));

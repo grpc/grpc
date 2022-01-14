@@ -96,8 +96,8 @@ class HttpRequestTest : public ::testing::Test {
 
  protected:
   static void SetUpTestSuite() {
-    auto test_server = grpc_core::testing::StartHttpRequestTestServer(g_argc, g_argv,
-                                                   false /* use_ssl */);
+    auto test_server = grpc_core::testing::StartHttpRequestTestServer(
+        g_argc, g_argv, false /* use_ssl */);
     g_server = test_server.server;
     g_server_port = test_server.port;
   }
@@ -169,12 +169,13 @@ TEST_F(HttpRequestTest, Get) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
-      grpc_core::HttpRequest::Get("http", args, pops(), &req, NSecondsTime(15),
-                              GRPC_CLOSURE_CREATE(OnFinish, &request_state,
-                                                  grpc_schedule_on_exec_ctx),
-                              &request_state.response,
-                              RefCountedPtr<grpc_channel_credentials>(
-                                  grpc_insecure_credentials_create()));
+      grpc_core::HttpRequest::Get(
+          "http", args, pops(), &req, NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_state,
+                              grpc_schedule_on_exec_ctx),
+          &request_state.response,
+          grpc_core::RefCountedPtr<grpc_channel_credentials>(
+              grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -196,13 +197,13 @@ TEST_F(HttpRequestTest, Post) {
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
       nullptr, request_args.data(), request_args.size());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
-      grpc_core::HttpRequest::Post("http", args, pops(), &req, "hello", 5,
-                               NSecondsTime(15),
-                               GRPC_CLOSURE_CREATE(OnFinish, &request_state,
-                                                   grpc_schedule_on_exec_ctx),
-                               &request_state.response,
-                               RefCountedPtr<grpc_channel_credentials>(
-                                   grpc_insecure_credentials_create()));
+      grpc_core::HttpRequest::Post(
+          "http", args, pops(), &req, "hello", 5, NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinish, &request_state,
+                              grpc_schedule_on_exec_ctx),
+          &request_state.response,
+          grpc_core::RefCountedPtr<grpc_channel_credentials>(
+              grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; });
@@ -260,11 +261,11 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
-              RefCountedPtr<grpc_channel_credentials>(
+              grpc_core::RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
       http_request->Start();
       grpc_channel_args_destroy(args);
-      std::thread cancel_thread([&httpcli]() {
+      std::thread cancel_thread([&http_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
@@ -308,12 +309,12 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
-              RefCountedPtr<grpc_channel_credentials>(
+              grpc_core::RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
       http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
-      std::thread cancel_thread([&httpcli]() {
+      std::thread cancel_thread([&http_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
@@ -360,12 +361,12 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
               GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
-              RefCountedPtr<grpc_channel_credentials>(
+              grpc_core::RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
       http_request->Start();
       grpc_channel_args_destroy(args);
       exec_ctx.Flush();
-      std::thread cancel_thread([&httpcli]() {
+      std::thread cancel_thread([&http_request]() {
         grpc_core::ExecCtx exec_ctx;
         http_request.reset();
       });
@@ -413,7 +414,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionSuccess) {
           GRPC_CLOSURE_CREATE(OnFinishExpectCancelled, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
-          RefCountedPtr<grpc_channel_credentials>(
+          grpc_core::RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_channel_args_destroy(args);

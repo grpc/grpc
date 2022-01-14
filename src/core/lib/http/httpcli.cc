@@ -56,7 +56,7 @@ grpc_httpcli_post_override g_post_override;
 
 }  // namespace
 
-OrphanablePtr<HttpRequest> HttpCli::Get(
+OrphanablePtr<HttpRequest> HttpRequest::Get(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
@@ -81,7 +81,7 @@ OrphanablePtr<HttpRequest> HttpCli::Get(
       std::move(test_only_generate_response), std::move(channel_creds));
 }
 
-OrphanablePtr<HttpRequest> HttpCli::Post(
+OrphanablePtr<HttpRequest> HttpRequest::Post(
     absl::string_view scheme, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     const char* body_bytes, size_t body_size, grpc_millis deadline,
@@ -107,12 +107,12 @@ OrphanablePtr<HttpRequest> HttpCli::Post(
 }
 
 void HttpRequest::SetOverride(grpc_httpcli_get_override get,
-                          grpc_httpcli_post_override post) {
+                              grpc_httpcli_post_override post) {
   g_get_override = get;
   g_post_override = post;
 }
 
-HttpRequest::HttpCli(
+HttpRequest::HttpRequest(
     absl::string_view scheme, const grpc_slice& request_text,
     grpc_http_response* response, grpc_millis deadline,
     const grpc_channel_args* channel_args, grpc_closure* on_done,
@@ -173,7 +173,7 @@ HttpRequest::HttpCli(
       absl::bind_front(&HttpRequest::OnResolved, this));
 }
 
-HttpRequest::~HttpCli() {
+HttpRequest::~HttpRequest() {
   grpc_channel_args_destroy(channel_args_);
   grpc_http_parser_destroy(&parser_);
   if (own_endpoint_ && ep_ != nullptr) {
@@ -262,9 +262,9 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
   }
 }
 
-void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
-                                                      grpc_error_handle error) {
-  RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(arg));
+void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
+    void* arg, grpc_error_handle error) {
+  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
   MutexLock lock(&req->mu_);
   if (error == GRPC_ERROR_NONE && !req->cancelled_) {
     req->OnWritten();
@@ -282,7 +282,7 @@ void HttpRequest::StartWrite() {
 
 void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
-  RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(args->user_data));
+  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
   if (error != GRPC_ERROR_NONE || req->cancelled_) {
@@ -301,7 +301,7 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
 }
 
 void HttpRequest::OnConnected(void* arg, grpc_error_handle error) {
-  RefCountedPtr<HttpRequest> req(static_cast<HttpCli*>(arg));
+  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
   {
     MutexLock lock(&req->mu_);
     req->connecting_ = false;

@@ -338,10 +338,10 @@ void ExternalAccountCredentials::ExchangeToken(
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  http_request_ =
-      HttpRequest::Post(uri->scheme(), args, ctx_->pollent, &request, body.c_str(),
-                    body.size(), ctx_->deadline, &ctx_->closure,
-                    &ctx_->response, std::move(http_request_creds));
+  http_request_ = HttpRequest::Post(
+      uri->scheme(), args, ctx_->pollent, &request, body.c_str(), body.size(),
+      ctx_->deadline, &ctx_->closure, &ctx_->response,
+      std::move(http_request_creds));
   http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
@@ -438,10 +438,10 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  http_request_ =
-      HttpRequest::Post(uri->scheme(), args, ctx_->pollent, &request, body.c_str(),
-                    body.size(), ctx_->deadline, &ctx_->closure,
-                    &ctx_->response, std::move(http_request_creds));
+  http_request_ = HttpRequest::Post(
+      uri->scheme(), args, ctx_->pollent, &request, body.c_str(), body.size(),
+      ctx_->deadline, &ctx_->closure, &ctx_->response,
+      std::move(http_request_creds));
   http_request_->Start();
   grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);

@@ -738,15 +738,16 @@ static void test_compute_engine_creds_success() {
   /* First request: http get should be called. */
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
-  grpc_core::HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
-                                  httpcli_post_should_not_be_called);
+  grpc_core::HttpRequest::SetOverride(
+      compute_engine_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
   state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -769,8 +770,9 @@ static void test_compute_engine_creds_failure(void) {
                                             nullptr, nullptr};
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
-  grpc_core::HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
-                                  httpcli_post_should_not_be_called);
+  grpc_core::HttpRequest::SetOverride(
+      compute_engine_httpcli_get_failure_override,
+      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   GPR_ASSERT(
       strcmp(creds->debug_string().c_str(), expected_creds_debug_string) == 0);
@@ -836,14 +838,14 @@ static void test_refresh_token_creds_success(void) {
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  refresh_token_httpcli_post_success);
+                                      refresh_token_httpcli_post_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
   state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(
@@ -867,7 +869,7 @@ static void test_refresh_token_creds_failure(void) {
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  token_httpcli_post_failure);
+                                      token_httpcli_post_failure);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   GPR_ASSERT(
       strcmp(creds->debug_string().c_str(), expected_creds_debug_string) == 0);
@@ -1094,14 +1096,14 @@ static void test_sts_creds_success(void) {
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  sts_token_httpcli_post_success);
+                                      sts_token_httpcli_post_success);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Second request: the cached token should be served directly. */
   state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(
@@ -1139,7 +1141,7 @@ static void test_sts_creds_token_file_not_found(void) {
           "Error occurred when fetching oauth2 token."),
       {});
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -1187,7 +1189,7 @@ static void test_sts_creds_no_actor_token_success(void) {
   /* Second request: the cached token should be served directly. */
   state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(
@@ -1223,7 +1225,7 @@ static void test_sts_creds_load_token_failure(void) {
   };
   grpc_call_credentials* creds = grpc_sts_credentials_create(&options, nullptr);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   GPR_ASSERT(
       strcmp(creds->debug_string().c_str(), expected_creds_debug_string) == 0);
@@ -1259,7 +1261,7 @@ static void test_sts_creds_http_failure(void) {
   grpc_call_credentials* creds =
       grpc_sts_credentials_create(&valid_options, nullptr);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  token_httpcli_post_failure);
+                                      token_httpcli_post_failure);
   state->RunRequestMetadataTest(creds, auth_md_ctx);
   GPR_ASSERT(
       strcmp(creds->debug_string().c_str(), expected_creds_debug_string) == 0);
@@ -1625,8 +1627,9 @@ static void test_google_default_creds_gce(void) {
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(creds->call_creds() != nullptr);
-  grpc_core::HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
-                                  httpcli_post_should_not_be_called);
+  grpc_core::HttpRequest::SetOverride(
+      compute_engine_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds->mutable_call_creds(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
 
@@ -1663,8 +1666,9 @@ static void test_google_default_creds_non_gce(void) {
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(creds->call_creds() != nullptr);
-  grpc_core::HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
-                                  httpcli_post_should_not_be_called);
+  grpc_core::HttpRequest::SetOverride(
+      compute_engine_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(creds->mutable_call_creds(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
@@ -1731,8 +1735,9 @@ static void test_google_default_creds_call_creds_specified(void) {
   GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   GPR_ASSERT(channel_creds != nullptr);
   GPR_ASSERT(channel_creds->call_creds() != nullptr);
-  grpc_core::HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
-                                  httpcli_post_should_not_be_called);
+  grpc_core::HttpRequest::SetOverride(
+      compute_engine_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(channel_creds->mutable_call_creds(),
                                 auth_md_ctx);
 
@@ -2319,14 +2324,15 @@ static void test_external_account_creds_success(void) {
   /* First request: http put should be called. */
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
-  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  external_account_creds_httpcli_post_success);
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   /* Second request: the cached token should be served directly. */
   state = RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
@@ -2355,8 +2361,9 @@ static void test_external_account_creds_success_with_url_encode(void) {
   TestExternalAccountCredentials creds(options, {});
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
-  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  external_account_creds_httpcli_post_success);
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
@@ -2389,8 +2396,9 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
   /* First request: http put should be called. */
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
-  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  external_account_creds_httpcli_post_success);
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(&creds, auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
@@ -2416,7 +2424,7 @@ static void test_external_account_creds_failure_invalid_token_url(void) {
   };
   TestExternalAccountCredentials creds(options, {});
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Invalid token url: invalid_token_url.");
   grpc_error_handle expected_error =
@@ -2451,8 +2459,9 @@ test_external_account_creds_failure_invalid_service_account_impersonation_url(
       "",  // workforce_pool_user_project;
   };
   TestExternalAccountCredentials creds(options, {});
-  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  external_account_creds_httpcli_post_success);
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_success);
   grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Invalid service account impersonation url: "
       "invalid_service_account_impersonation_url.");
@@ -2687,8 +2696,9 @@ static void test_file_external_account_creds_success_format_text(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
-  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  external_account_creds_httpcli_post_success);
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
@@ -2738,8 +2748,9 @@ static void test_file_external_account_creds_success_format_json(void) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
-  grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  external_account_creds_httpcli_post_success);
+  grpc_core::HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_success);
   state->RunRequestMetadataTest(creds.get(), auth_md_ctx);
   grpc_core::ExecCtx::Get()->Flush();
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
@@ -2773,7 +2784,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to load file");
   grpc_error_handle expected_error =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -2824,7 +2835,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_core::HttpRequest::SetOverride(httpcli_get_should_not_be_called,
-                                  httpcli_post_should_not_be_called);
+                                      httpcli_post_should_not_be_called);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "The content of the file is not a valid json object.");
   grpc_error_handle expected_error =

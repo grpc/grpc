@@ -181,7 +181,7 @@ namespace grpc_core {
 
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
-  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpCliSSL") {}
+  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpRequestSSL") {}
   ~HttpRequestSSLCredentials() override {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(

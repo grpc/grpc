@@ -26,7 +26,7 @@
 namespace grpc_core {
 
 // Creates a channel credentials suitable for use with the
-// HttpRequest::Get and HttpCli::Post APIs. Notably, this allows
+// HttpRequest::Get and HttpRequest::Post APIs. Notably, this allows
 // HTTP1 requests to use secure connections without ALPN (as the
 // typicaly gRPC SSL credentials do).
 //

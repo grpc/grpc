@@ -29,7 +29,8 @@ struct HttpRequestTestServer {
   int port;
 };
 
-HttpRequestTestServer StartHttpCliTestServer(int argc, char** argv, bool use_ssl);
+HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
+                                             bool use_ssl);
 
 }  // namespace testing
 }  // namespace grpc_core

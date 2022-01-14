@@ -134,11 +134,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.hdr_count = 1;
   request.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
-  http_request_ = HttpRequest::Get("http", args, pollent, &request,
-                          ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                          &on_done_, &response_,
-                          RefCountedPtr<grpc_channel_credentials>(
-                              grpc_insecure_credentials_create()));
+  http_request_ =
+      HttpRequest::Get("http", args, pollent, &request,
+                       ExecCtx::Get()->Now() + 10000,  // 10s timeout
+                       &on_done_, &response_,
+                       RefCountedPtr<grpc_channel_credentials>(
+                           grpc_insecure_credentials_create()));
   http_request_->Start();
 }
 

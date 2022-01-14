@@ -37,8 +37,8 @@
 namespace grpc_core {
 namespace testing {
 
-HttpRequestTestServer StartHttpCliTestServer(int argc, char** argv,
-                                                        bool use_ssl) {
+HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
+                                             bool use_ssl) {
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
   std::vector<char*> args;
