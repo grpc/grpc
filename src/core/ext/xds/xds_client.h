@@ -189,7 +189,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LrsCallState* lrs_calld() const;
 
     void MaybeStartLrsCall();
-    void StopLrsCall();
+    void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     bool HasAdsCall() const;
     bool HasActiveAdsCall() const;

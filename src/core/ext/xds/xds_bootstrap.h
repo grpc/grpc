@@ -83,24 +83,7 @@ class XdsBootstrap {
       return false;
     }
 
-    Json::Object ToJson() const {
-      Json::Object channel_creds_json{{"type", channel_creds_type}};
-      if (channel_creds_config.type() != Json::Type::JSON_NULL) {
-        channel_creds_json["config"] = channel_creds_config;
-      }
-      Json::Object json{
-          {"server_uri", server_uri},
-          {"channel_creds", Json::Array{std::move(channel_creds_json)}},
-      };
-      if (!server_features.empty()) {
-        Json::Array server_features_json;
-        for (auto& feature : server_features) {
-          server_features_json.emplace_back(feature);
-        }
-        json["server_features"] = std::move(server_features_json);
-      }
-      return json;
-    }
+    Json::Object ToJson() const;
 
     bool ShouldUseV3() const;
   };

@@ -508,11 +508,15 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
+  // The xDS server info is not actually needed here, so we seed it with an
+  // empty value.
+  XdsBootstrap::XdsServer empty_server;
   const XdsEncodingContext context = {client_,
-                                      // Temporary XdsServer which will go out
-                                      // of scope but will never be used.
-                                      XdsBootstrap::XdsServer(), tracer_,
-                                      symtab_->ptr(), arena.ptr(), false,
+                                      empty_server,
+                                      tracer_,
+                                      symtab_->ptr(),
+                                      arena.ptr(),
+                                      false,
                                       certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
@@ -635,11 +639,15 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
+  // The xDS server info is not actually needed here, so we seed it with an
+  // empty value.
+  XdsBootstrap::XdsServer empty_server;
   const XdsEncodingContext context = {client_,
-                                      // Temporary XdsServer which will go out
-                                      // of scope but will never be used.
-                                      XdsBootstrap::XdsServer(), tracer_,
-                                      symtab_->ptr(), arena.ptr(), true,
+                                      empty_server,
+                                      tracer_,
+                                      symtab_->ptr(),
+                                      arena.ptr(),
+                                      true,
                                       certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
