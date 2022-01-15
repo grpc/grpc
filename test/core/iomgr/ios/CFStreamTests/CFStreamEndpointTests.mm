@@ -28,6 +28,7 @@
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"

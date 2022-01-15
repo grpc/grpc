@@ -57,8 +57,8 @@ class InternalRequest {
                   ResourceQuotaRefPtr resource_quota, absl::string_view host,
                   absl::string_view ssl_host_override, grpc_millis deadline,
                   const grpc_httpcli_handshaker* handshaker,
-                  grpc_closure* on_done, grpc_httpcli_context* context,
-                  grpc_polling_entity* pollent, const char* name)
+                  grpc_closure* on_done, grpc_polling_entity* pollent,
+                  const char* name)
       : request_text_(request_text),
         resource_quota_(std::move(resource_quota)),
         host_(host),
@@ -66,8 +66,8 @@ class InternalRequest {
         deadline_(deadline),
         handshaker_(handshaker),
         on_done_(on_done),
-        context_(context),
-        pollent_(pollent) {
+        pollent_(pollent),
+        pollset_set_(grpc_pollset_set_create()) {
     grpc_http_parser_init(&parser_, GRPC_HTTP_RESPONSE, response);
     grpc_slice_buffer_init(&incoming_);
     grpc_slice_buffer_init(&outgoing_);
@@ -76,9 +76,9 @@ class InternalRequest {
     GRPC_CLOSURE_INIT(&on_read_, OnRead, this, grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&done_write_, DoneWrite, this, grpc_schedule_on_exec_ctx);
     GPR_ASSERT(pollent);
-    grpc_polling_entity_add_to_pollset_set(pollent_, context->pollset_set);
+    grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
     dns_request_ = GetDNSResolver()->ResolveName(
-        host_.c_str(), handshaker_->default_port, context_->pollset_set,
+        host_.c_str(), handshaker_->default_port, pollset_set_,
         absl::bind_front(&InternalRequest::OnResolved, this));
     dns_request_->Start();
   }
@@ -93,11 +93,12 @@ class InternalRequest {
     grpc_slice_buffer_destroy_internal(&incoming_);
     grpc_slice_buffer_destroy_internal(&outgoing_);
     GRPC_ERROR_UNREF(overall_error_);
+    grpc_pollset_set_destroy(pollset_set_);
   }
 
  private:
   void Finish(grpc_error_handle error) {
-    grpc_polling_entity_del_from_pollset_set(pollent_, context_->pollset_set);
+    grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
     delete this;
   }
@@ -210,8 +211,8 @@ class InternalRequest {
     auto* args = CoreConfiguration::Get()
                      .channel_args_preconditioning()
                      .PreconditionChannelArgs(&channel_args);
-    grpc_tcp_client_connect(&connected_, &ep_, context_->pollset_set, args,
-                            addr, deadline_);
+    grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, args, addr,
+                            deadline_);
     grpc_channel_args_destroy(args);
   }
 
@@ -239,8 +240,8 @@ class InternalRequest {
   int have_read_byte_ = 0;
   const grpc_httpcli_handshaker* handshaker_;
   grpc_closure* on_done_;
-  grpc_httpcli_context* context_;
   grpc_polling_entity* pollent_;
+  grpc_pollset_set* pollset_set_;
   grpc_iomgr_object iomgr_obj_;
   grpc_slice_buffer incoming_;
   grpc_slice_buffer outgoing_;
@@ -267,17 +268,8 @@ static void plaintext_handshake(void* arg, grpc_endpoint* endpoint,
 const grpc_httpcli_handshaker grpc_httpcli_plaintext = {"http",
                                                         plaintext_handshake};
 
-void grpc_httpcli_context_init(grpc_httpcli_context* context) {
-  context->pollset_set = grpc_pollset_set_create();
-}
-
-void grpc_httpcli_context_destroy(grpc_httpcli_context* context) {
-  grpc_pollset_set_destroy(context->pollset_set);
-}
-
 static void internal_request_begin(
-    grpc_httpcli_context* context, grpc_polling_entity* pollent,
-    grpc_core::ResourceQuotaRefPtr resource_quota,
+    grpc_polling_entity* pollent, grpc_core::ResourceQuotaRefPtr resource_quota,
     const grpc_httpcli_request* request, grpc_millis deadline,
     grpc_closure* on_done, grpc_httpcli_response* response, const char* name,
     const grpc_slice& request_text) {
@@ -285,11 +277,10 @@ static void internal_request_begin(
       request_text, response, std::move(resource_quota), request->host,
       request->ssl_host_override, deadline,
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext,
-      on_done, context, pollent, name);
+      on_done, pollent, name);
 }
 
-void grpc_httpcli_get(grpc_httpcli_context* context,
-                      grpc_polling_entity* pollent,
+void grpc_httpcli_get(grpc_polling_entity* pollent,
                       grpc_core::ResourceQuotaRefPtr resource_quota,
                       const grpc_httpcli_request* request, grpc_millis deadline,
                       grpc_closure* on_done, grpc_httpcli_response* response) {
@@ -298,13 +289,12 @@ void grpc_httpcli_get(grpc_httpcli_context* context,
   }
   std::string name =
       absl::StrFormat("HTTP:GET:%s:%s", request->host, request->http.path);
-  internal_request_begin(context, pollent, std::move(resource_quota), request,
-                         deadline, on_done, response, name.c_str(),
+  internal_request_begin(pollent, std::move(resource_quota), request, deadline,
+                         on_done, response, name.c_str(),
                          grpc_httpcli_format_get_request(request));
 }
 
-void grpc_httpcli_post(grpc_httpcli_context* context,
-                       grpc_polling_entity* pollent,
+void grpc_httpcli_post(grpc_polling_entity* pollent,
                        grpc_core::ResourceQuotaRefPtr resource_quota,
                        const grpc_httpcli_request* request,
                        const char* body_bytes, size_t body_size,
@@ -317,8 +307,8 @@ void grpc_httpcli_post(grpc_httpcli_context* context,
   std::string name =
       absl::StrFormat("HTTP:POST:%s:%s", request->host, request->http.path);
   internal_request_begin(
-      context, pollent, std::move(resource_quota), request, deadline, on_done,
-      response, name.c_str(),
+      pollent, std::move(resource_quota), request, deadline, on_done, response,
+      name.c_str(),
       grpc_httpcli_format_post_request(request, body_bytes, body_size));
 }
 
