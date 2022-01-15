@@ -345,8 +345,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->write_info;
   unsigned i;
-  DWORD bytes_sent;
-  DWORD bytes_to_send = 0;
+  DWORD bytes_sent = 0;
   int status;
   WSABUF local_buffers[MAX_WSABUF_COUNT];
   WSABUF* allocated = NULL;
@@ -383,7 +382,6 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   for (i = 0; i < tcp->write_slices->count; i++) {
     len = GRPC_SLICE_LENGTH(tcp->write_slices->slices[i]);
     GPR_ASSERT(len <= ULONG_MAX);
-    bytes_to_send += len;
     buffers[i].len = (ULONG)len;
     buffers[i].buf = (char*)GRPC_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }
@@ -396,9 +394,10 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   /* We would kind of expect to get a WSAEWOULDBLOCK here, especially on a busy
      connection that has its send queue filled up. But if we don't, then we can
      avoid doing an async write operation at all. */
-  if (info->wsa_error != WSAEWOULDBLOCK && bytes_sent == bytes_to_send) {
+  if (info->wsa_error != WSAEWOULDBLOCK &&
+      bytes_sent == tcp->write_slices->length) {
     gpr_log(GPR_DEBUG, "BLOCKING WRITE COMPLETED %p (peer=%s): %d of %d", tcp,
-            tcp->peer_string.c_str(), bytes_sent, bytes_to_send);
+            tcp->peer_string.c_str(), bytes_sent, tcp->write_slices->length);
 
     grpc_error_handle error = status == 0
                                   ? GRPC_ERROR_NONE
@@ -414,8 +413,6 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   
   /* We may allready have sent a part, skip and correct te buffers.*/
   while (bytes_sent > 0 && count > 0) {
-    gpr_log(GPR_DEBUG, "WRITE REST %p (peer=%s):  %d triming %d blocks", tcp,
-            tcp->peer_string.c_str(), bytes_sent, count);
     if (buffers->len > bytes_sent) {
       /* The rest of this part*/
       tcp->write_slices->length -= bytes_sent;
@@ -434,19 +431,12 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
      operation, this time asynchronously. */
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
-  gpr_log(GPR_DEBUG, "WSASend REST %p (peer=%s):  sending %d blocks", tcp,
-          tcp->peer_string.c_str(), count);
   status = WSASend(socket->socket, buffers, count,
                    &bytes_sent, 0, &socket->write_info.overlapped, NULL);
-  gpr_log(GPR_DEBUG, "WSASend Status %p (peer=%s):  status %d", tcp,
-          tcp->peer_string.c_str(), status);
   if (allocated) gpr_free(allocated);
 
   if (status != 0) {
     int wsa_error = WSAGetLastError();
-    gpr_log(GPR_DEBUG,
-            "WSASend Error %p (peer=%s):  status %d, wsa_error %d",
-            tcp, tcp->peer_string.c_str(), status, wsa_error);
     if (wsa_error != WSA_IO_PENDING) {
       TCP_UNREF(tcp, "write");
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
@@ -457,11 +447,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
   /* As all is now setup, we can now ask for the IOCP notification. It may
      trigger the callback immediately however, but no matter. */
-  gpr_log(GPR_DEBUG, "WSASend WAIT IOComplete %p (peer=%s)", tcp,
-          tcp->peer_string.c_str());
   grpc_socket_notify_on_write(socket, &tcp->on_write);
-  gpr_log(GPR_DEBUG, "WSASend READY IOComplete %p (peer=%s)", tcp,
-          tcp->peer_string.c_str());
 }
 
 static void win_add_to_pollset(grpc_endpoint* ep, grpc_pollset* ps) {
