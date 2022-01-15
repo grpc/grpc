@@ -367,7 +367,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner() {
     GPR_ASSERT(!is_polling_);
-    GRPC_CALL_STACK_REF(owning_call_, __PRETTY_FUNCTION__);
+    GRPC_CALL_STACK_REF(owning_call_, "PromiseCallData");
     is_polling_ = true;
     switch (send_initial_state_) {
       case SendInitialState::kQueued:
@@ -397,7 +397,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         break;
     }
     is_polling_ = false;
-    GRPC_CALL_STACK_UNREF(owning_call_, __PRETTY_FUNCTION__);
+    GRPC_CALL_STACK_UNREF(owning_call_, "PromiseCallData");
   }
 
   // Queued batch containing at least a send_initial_metadata op.
