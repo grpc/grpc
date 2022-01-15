@@ -410,7 +410,7 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   TCP_REF(tcp, "write");
 
   DWORD count = (DWORD)tcp->write_slices->count;
-  
+
   /* We may allready have sent a part, skip and correct te buffers.*/
   while (bytes_sent > 0 && count > 0) {
     if (buffers->len > bytes_sent) {
@@ -431,8 +431,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
      operation, this time asynchronously. */
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
-  status = WSASend(socket->socket, buffers, count,
-                   &bytes_sent, 0, &socket->write_info.overlapped, NULL);
+  status = WSASend(socket->socket, buffers, count, &bytes_sent, 0,
+                   &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
 
   if (status != 0) {
