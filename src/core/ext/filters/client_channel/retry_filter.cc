@@ -235,7 +235,7 @@ class RetryFilter::CallData {
         : public RefCounted<BatchData, PolymorphicRefCount, kUnrefCallDtor> {
      public:
       BatchData(RefCountedPtr<CallAttempt> call_attempt, int refcount,
-                bool set_on_complete);
+                bool set_on_complete, bool allocate_payload);
       ~BatchData() override;
 
       grpc_transport_stream_op_batch* batch() { return &batch_; }
@@ -349,9 +349,11 @@ class RetryFilter::CallData {
     // specified refcount.  If set_on_complete is true, the batch's
     // on_complete callback will be set to point to on_complete();
     // otherwise, the batch's on_complete callback will be null.
-    BatchData* CreateBatch(int refcount, bool set_on_complete) {
+    BatchData* CreateBatch(int refcount, bool set_on_complete,
+                           bool allocate_payload) {
       return calld_->arena_->New<BatchData>(Ref(DEBUG_LOCATION, "CreateBatch"),
-                                            refcount, set_on_complete);
+                                            refcount, set_on_complete,
+                                            allocate_payload);
     }
 
     // If there are any cached send ops that need to be replayed on this
@@ -785,7 +787,8 @@ RetryFilter::CallData::CallAttempt::MaybeCreateBatchForReplay() {
               "send_initial_metadata op",
               calld_->chand_, calld_, this);
     }
-    replay_batch_data = CreateBatch(1, true /* set_on_complete */);
+    replay_batch_data = CreateBatch(1, true /* set_on_complete */,
+                                    false /* allocate_payload */);
     replay_batch_data->AddRetriableSendInitialMetadataOp();
   }
   // send_message.
@@ -800,7 +803,8 @@ RetryFilter::CallData::CallAttempt::MaybeCreateBatchForReplay() {
               calld_->chand_, calld_, this);
     }
     if (replay_batch_data == nullptr) {
-      replay_batch_data = CreateBatch(1, true /* set_on_complete */);
+      replay_batch_data = CreateBatch(1, true /* set_on_complete */,
+                                      false /* allocate_payload */);
     }
     replay_batch_data->AddRetriableSendMessageOp();
   }
@@ -819,7 +823,8 @@ RetryFilter::CallData::CallAttempt::MaybeCreateBatchForReplay() {
               calld_->chand_, calld_, this);
     }
     if (replay_batch_data == nullptr) {
-      replay_batch_data = CreateBatch(1, true /* set_on_complete */);
+      replay_batch_data = CreateBatch(1, true /* set_on_complete */,
+                                      false /* allocate_payload */);
     }
     replay_batch_data->AddRetriableSendTrailingMetadataOp();
   }
@@ -865,7 +870,8 @@ void RetryFilter::CallData::CallAttempt::
   // once for the recv_trailing_metadata_ready callback when the batch
   // completes, and again when we actually get a recv_trailing_metadata
   // op from the surface.
-  BatchData* batch_data = CreateBatch(2, false /* set_on_complete */);
+  BatchData* batch_data =
+      CreateBatch(2, false /* set_on_complete */, false /* allocate_payload */);
   batch_data->AddRetriableRecvTrailingMetadataOp();
   recv_trailing_metadata_internal_batch_.reset(batch_data);
   AddClosureForBatch(batch_data->batch(),
@@ -874,7 +880,8 @@ void RetryFilter::CallData::CallAttempt::
 
 void RetryFilter::CallData::CallAttempt::AddBatchForCancelOp(
     grpc_error_handle error, CallCombinerClosureList* closures) {
-  BatchData* cancel_batch_data = CreateBatch(1, /*set_on_complete=*/true);
+  BatchData* cancel_batch_data =
+      CreateBatch(1, /*set_on_complete=*/true, /*allocate_payload=*/true);
   cancel_batch_data->AddCancelStreamOp(error);
   AddClosureForBatch(cancel_batch_data->batch(),
                      "start cancellation batch on call attempt", closures);
@@ -984,7 +991,8 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
     }
     // Create batch with the right number of callbacks.
     BatchData* batch_data =
-        CreateBatch(num_callbacks, has_send_ops /* set_on_complete */);
+        CreateBatch(num_callbacks, has_send_ops /* set_on_complete */,
+                    false /* allocate_payload */);
     // Cache send ops if needed.
     calld_->MaybeCacheSendOpsForBatch(pending);
     // send_initial_metadata.
@@ -1265,7 +1273,8 @@ void RetryFilter::CallData::CallAttempt::MaybeCancelPerAttemptRecvTimer() {
 //
 
 RetryFilter::CallData::CallAttempt::BatchData::BatchData(
-    RefCountedPtr<CallAttempt> attempt, int refcount, bool set_on_complete)
+    RefCountedPtr<CallAttempt> attempt, int refcount, bool set_on_complete,
+    bool allocate_payload)
     : RefCounted(
           GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) ? "BatchData" : nullptr,
           refcount),
@@ -1283,7 +1292,13 @@ RetryFilter::CallData::CallAttempt::BatchData::BatchData(
   // recv_initial_metadata and recv_message ops on a call attempt that has
   // been abandoned.
   GRPC_CALL_STACK_REF(call_attempt_->calld_->owning_call_, "Retry BatchData");
-  batch_.payload = &call_attempt_->batch_payload_;
+  if (allocate_payload) {
+    batch_.payload = call_attempt_->calld_->arena_
+                         ->New<grpc_transport_stream_op_batch_payload>(
+                             call_attempt_->batch_payload_.context);
+  } else {
+    batch_.payload = &call_attempt_->batch_payload_;
+  }
   if (set_on_complete) {
     GRPC_CLOSURE_INIT(&on_complete_, OnComplete, this, nullptr);
     batch_.on_complete = &on_complete_;

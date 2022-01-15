@@ -96,7 +96,9 @@ std::string grpc_transport_stream_op_batch_string(
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
         " CANCEL:",
-        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
+        absl::StrFormat(
+            "%p", static_cast<void*>(op->payload->cancel_stream.cancel_error)),
+        ":", grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");
