@@ -92,6 +92,7 @@ class BaseCallData {
   explicit BaseCallData(const grpc_call_element_args* args)
       : arena_(args->arena),
         call_combiner_(args->call_combiner),
+        owning_call_(args->call_stack),
         deadline_(args->deadline) {}
 
  protected:
@@ -113,6 +114,7 @@ class BaseCallData {
 
   Arena* const arena_;
   CallCombiner* const call_combiner_;
+  grpc_call_stack* const owning_call_;
   const grpc_millis deadline_;
   ArenaPromise<TrailingMetadata> promise_;
 };
@@ -365,6 +367,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner() {
     GPR_ASSERT(!is_polling_);
+    GRPC_CALL_STACK_REF(owning_call_, __PRETTY_FUNCTION__);
     is_polling_ = true;
     switch (send_initial_state_) {
       case SendInitialState::kQueued:
@@ -394,6 +397,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         break;
     }
     is_polling_ = false;
+    GRPC_CALL_STACK_UNREF(owning_call_, __PRETTY_FUNCTION__);
   }
 
   // Queued batch containing at least a send_initial_metadata op.
