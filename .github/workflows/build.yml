@@ -1,0 +1,31 @@
+name: Build and Test
+
+on: [push, pull_request]
+
+jobs:
+  bazel-windows:
+    env:
+      USE_BAZEL_VERSION: 6.0.0-pre.20211215.3
+    strategy:
+      matrix:
+        os: [windows-2019]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Select Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          architecture: 'x86' # optional x64 or x86. Defaults to x64 if not specified
+      - name: Build
+        run: |
+          bazel version 
+          pip install "setuptools>=60.5.0"
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Build
+        run: |
+          bazel build :all 
+          pip install -r requirements.txt
+          python setup.py build
