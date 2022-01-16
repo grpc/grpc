@@ -32,9 +32,9 @@ class EvaluateArgsTest : public ::testing::Test {
 
 TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetPath(), nullptr);
-  EXPECT_EQ(args.GetMethod(), nullptr);
-  EXPECT_EQ(args.GetAuthority(), nullptr);
+  EXPECT_EQ(args.GetPath(), std::string_view());
+  EXPECT_EQ(args.GetMethod(), std::string_view());
+  EXPECT_EQ(args.GetAuthority(), std::string_view());
   EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
