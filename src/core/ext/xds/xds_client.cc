@@ -581,7 +581,7 @@ void XdsClient::ChannelState::MaybeStartLrsCall() {
 }
 
 void XdsClient::ChannelState::StopLrsCallLocked() {
-  xds_client_->xds_server_load_report_map_.erase(server_);
+  xds_client_->xds_load_report_server_map_.erase(server_);
   lrs_calld_.reset();
 }
 
@@ -1395,11 +1395,11 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   const bool old_val = last_report_counters_were_zero_;
   last_report_counters_were_zero_ = LoadReportCountersAreZero(snapshot);
   if (old_val && last_report_counters_were_zero_) {
-    auto it = xds_client()->xds_server_load_report_map_.find(
+    auto it = xds_client()->xds_load_report_server_map_.find(
         parent_->chand()->server_);
-    if (it == xds_client()->xds_server_load_report_map_.end() ||
-        it->second.empty()) {
-      parent_->chand()->StopLrsCallLocked();
+    if (it == xds_client()->xds_load_report_server_map_.end() ||
+        it->second.load_report_map.empty()) {
+      it->second.channel_state->StopLrsCallLocked();
       return true;
     }
     ScheduleNextReportLocked();
@@ -1446,10 +1446,10 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
   parent_->send_message_payload_ = nullptr;
   // If there are no more registered stats to report, cancel the call.
   auto it =
-      xds_client()->xds_server_load_report_map_.find(parent_->chand()->server_);
-  if (it == xds_client()->xds_server_load_report_map_.end() ||
-      it->second.empty()) {
-    parent_->chand()->StopLrsCallLocked();
+      xds_client()->xds_load_report_server_map_.find(parent_->chand()->server_);
+  if (it == xds_client()->xds_load_report_server_map_.end() ||
+      it->second.load_report_map.empty()) {
+    it->second.channel_state->StopLrsCallLocked();
     GRPC_ERROR_UNREF(error);
     return true;
   }
@@ -1764,7 +1764,7 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceivedLocked(
   }
   // Ignore status from a stale call.
   if (IsCurrentCallOnChannel()) {
-    GPR_ASSERT(!xds_client()->shutting_down_);
+    // GPR_ASSERT(!xds_client()->shutting_down_);
     // Try to restart the call.
     parent_->OnCallFinishedLocked();
   }
@@ -2055,11 +2055,15 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
   // XdsBootstrap::XdsServer and strings
   // in the load_report_map_ key, so that they have the same lifetime.
   auto map_it =
-      xds_server_load_report_map_
-          .emplace(std::make_pair(std::move(map_key), LoadReportMap()))
+      xds_load_report_server_map_
+          .emplace(std::make_pair(std::move(map_key), LoadReportServer()))
           .first;
+  if (map_it->second.channel_state == nullptr) {
+    map_it->second.channel_state = GetOrCreateChannelStateLocked(xds_server);
+  }
   auto load_report_it =
-      map_it->second.emplace(std::make_pair(std::move(key), LoadReportState()))
+      map_it->second.load_report_map
+          .emplace(std::make_pair(std::move(key), LoadReportState()))
           .first;
   LoadReportState& load_report_state = load_report_it->second;
   RefCountedPtr<XdsClusterDropStats> cluster_drop_stats;
@@ -2093,11 +2097,11 @@ void XdsClient::RemoveClusterDropStats(
     absl::string_view eds_service_name,
     XdsClusterDropStats* cluster_drop_stats) {
   MutexLock lock(&mu_);
-  auto map_it = xds_server_load_report_map_.find(xds_server);
-  if (map_it == xds_server_load_report_map_.end()) return;
-  auto load_report_it = map_it->second.find(
+  auto map_it = xds_load_report_server_map_.find(xds_server);
+  if (map_it == xds_load_report_server_map_.end()) return;
+  auto load_report_it = map_it->second.load_report_map.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == map_it->second.end()) return;
+  if (load_report_it == map_it->second.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   if (load_report_state.drop_stats == cluster_drop_stats) {
     // Record final snapshot in deleted_drop_stats, which will be
@@ -2122,11 +2126,15 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
   // XdsBootstrap::XdsServer and strings
   // in the load_report_map_ key, so that they have the same lifetime.
   auto map_it =
-      xds_server_load_report_map_
-          .emplace(std::make_pair(std::move(map_key), LoadReportMap()))
+      xds_load_report_server_map_
+          .emplace(std::make_pair(std::move(map_key), LoadReportServer()))
           .first;
+  if (map_it->second.channel_state == nullptr) {
+    map_it->second.channel_state = GetOrCreateChannelStateLocked(xds_server);
+  }
   auto load_report_it =
-      map_it->second.emplace(std::make_pair(std::move(key), LoadReportState()))
+      map_it->second.load_report_map
+          .emplace(std::make_pair(std::move(key), LoadReportState()))
           .first;
   LoadReportState& load_report_state = load_report_it->second;
   LoadReportState::LocalityState& locality_state =
@@ -2163,11 +2171,11 @@ void XdsClient::RemoveClusterLocalityStats(
     const RefCountedPtr<XdsLocalityName>& locality,
     XdsClusterLocalityStats* cluster_locality_stats) {
   MutexLock lock(&mu_);
-  auto map_it = xds_server_load_report_map_.find(xds_server);
-  if (map_it == xds_server_load_report_map_.end()) return;
-  auto load_report_it = map_it->second.find(
+  auto map_it = xds_load_report_server_map_.find(xds_server);
+  if (map_it == xds_load_report_server_map_.end()) return;
+  auto load_report_it = map_it->second.load_report_map.find(
       std::make_pair(std::string(cluster_name), std::string(eds_service_name)));
-  if (load_report_it == map_it->second.end()) return;
+  if (load_report_it == map_it->second.load_report_map.end()) return;
   LoadReportState& load_report_state = load_report_it->second;
   auto locality_it = load_report_state.locality_stats.find(locality);
   if (locality_it == load_report_state.locality_stats.end()) return;
@@ -2218,10 +2226,10 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     gpr_log(GPR_INFO, "[xds_client %p] start building load report", this);
   }
   XdsApi::ClusterLoadReportMap snapshot_map;
-  auto map_it = xds_server_load_report_map_.find(xds_server);
-  if (map_it == xds_server_load_report_map_.end()) return snapshot_map;
-  for (auto load_report_it = map_it->second.begin();
-       load_report_it != map_it->second.end();) {
+  auto map_it = xds_load_report_server_map_.find(xds_server);
+  if (map_it == xds_load_report_server_map_.end()) return snapshot_map;
+  for (auto load_report_it = map_it->second.load_report_map.begin();
+       load_report_it != map_it->second.load_report_map.end();) {
     // Cluster key is cluster and EDS service name.
     const auto& cluster_key = load_report_it->first;
     LoadReportState& load_report = load_report_it->second;
@@ -2288,7 +2296,8 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     if (load_report.locality_stats.empty() &&
         load_report.drop_stats == nullptr) {
       load_report_it =
-          xds_server_load_report_map_[xds_server].erase(load_report_it);
+          xds_load_report_server_map_[xds_server].load_report_map.erase(
+              load_report_it);
     } else {
       ++load_report_it;
     }

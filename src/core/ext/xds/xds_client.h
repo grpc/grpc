@@ -309,8 +309,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
   using LoadReportMap = std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>;
-  std::map<XdsBootstrap::XdsServer, LoadReportMap> xds_server_load_report_map_
-      ABSL_GUARDED_BY(mu_);
+  struct LoadReportServer {
+    RefCountedPtr<ChannelState> channel_state;
+    LoadReportMap load_report_map;
+  };
+  std::map<XdsBootstrap::XdsServer, LoadReportServer>
+      xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().
