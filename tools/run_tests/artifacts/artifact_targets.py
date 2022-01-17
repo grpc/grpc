@@ -458,7 +458,6 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python39'),
         PythonArtifact('windows', 'x64', 'Python310', presubmit=True),
         RubyArtifact('linux', 'x64', presubmit=True),
-        RubyArtifact('macos', 'x64', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True)
     ])
