@@ -43,4 +43,4 @@
 - 1.41 'g' stands for ['goat'](https://github.com/grpc/grpc/tree/v1.41.x)
 - 1.42 'g' stands for ['granola'](https://github.com/grpc/grpc/tree/v1.42.x)
 - 1.43 'g' stands for ['green'](https://github.com/grpc/grpc/tree/v1.43.x)
-- 1.44 'g' stands for ['great'](https://github.com/grpc/grpc/tree/master)
+- 1.44 'g' stands for ['great'](https://github.com/grpc/grpc/tree/v1.44.x)
