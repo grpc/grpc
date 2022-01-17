@@ -322,8 +322,11 @@ class CppDistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
-        # TODO(jtattermusch): honor inner_jobs arg for this task.
-        del inner_jobs
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs for the C++ build
+            environ['GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS'] = str(inner_jobs)
+
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
