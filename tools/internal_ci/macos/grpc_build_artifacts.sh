@@ -34,9 +34,16 @@ python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
 
+# try speeding up builds with ccache
+brew install ccache || true
+export PATH="/usr/local/opt/ccache/libexec:$PATH"
+
 tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 2 || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+
+# useful for seeing is ccache was helpful
+ccache --show-stats || true
 
 if [ "$FAILED" != "" ]
 then
