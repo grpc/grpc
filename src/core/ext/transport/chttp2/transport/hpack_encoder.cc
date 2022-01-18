@@ -25,8 +25,8 @@
 
 #include <cstdint>
 
-#include "hpack_constants.h"
-#include "hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
 /* This is here for grpc_is_binary_header
  * TODO(murgatroid99): Remove this

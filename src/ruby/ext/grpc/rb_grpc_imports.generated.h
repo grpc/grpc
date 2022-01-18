@@ -611,9 +611,6 @@ extern grpc_slice_malloc_type grpc_slice_malloc_import;
 typedef grpc_slice(*grpc_slice_malloc_large_type)(size_t length);
 extern grpc_slice_malloc_large_type grpc_slice_malloc_large_import;
 #define grpc_slice_malloc_large grpc_slice_malloc_large_import
-typedef grpc_slice(*grpc_slice_intern_type)(grpc_slice slice);
-extern grpc_slice_intern_type grpc_slice_intern_import;
-#define grpc_slice_intern grpc_slice_intern_import
 typedef grpc_slice(*grpc_slice_from_copied_string_type)(const char* source);
 extern grpc_slice_from_copied_string_type grpc_slice_from_copied_string_import;
 #define grpc_slice_from_copied_string grpc_slice_from_copied_string_import
@@ -644,12 +641,6 @@ extern grpc_slice_split_head_type grpc_slice_split_head_import;
 typedef grpc_slice(*grpc_empty_slice_type)(void);
 extern grpc_empty_slice_type grpc_empty_slice_import;
 #define grpc_empty_slice grpc_empty_slice_import
-typedef uint32_t(*grpc_slice_default_hash_impl_type)(grpc_slice s);
-extern grpc_slice_default_hash_impl_type grpc_slice_default_hash_impl_import;
-#define grpc_slice_default_hash_impl grpc_slice_default_hash_impl_import
-typedef int(*grpc_slice_default_eq_impl_type)(grpc_slice a, grpc_slice b);
-extern grpc_slice_default_eq_impl_type grpc_slice_default_eq_impl_import;
-#define grpc_slice_default_eq_impl grpc_slice_default_eq_impl_import
 typedef int(*grpc_slice_eq_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_eq_type grpc_slice_eq_import;
 #define grpc_slice_eq grpc_slice_eq_import
@@ -671,9 +662,6 @@ extern grpc_slice_chr_type grpc_slice_chr_import;
 typedef int(*grpc_slice_slice_type)(grpc_slice haystack, grpc_slice needle);
 extern grpc_slice_slice_type grpc_slice_slice_import;
 #define grpc_slice_slice grpc_slice_slice_import
-typedef uint32_t(*grpc_slice_hash_type)(grpc_slice s);
-extern grpc_slice_hash_type grpc_slice_hash_import;
-#define grpc_slice_hash grpc_slice_hash_import
 typedef int(*grpc_slice_is_equivalent_type)(grpc_slice a, grpc_slice b);
 extern grpc_slice_is_equivalent_type grpc_slice_is_equivalent_import;
 #define grpc_slice_is_equivalent grpc_slice_is_equivalent_import

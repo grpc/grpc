@@ -94,6 +94,12 @@ void DestroySliceValue(const Buffer& value);
 // Destroy a trivial memento (empty function).
 void DestroyTrivialMemento(const Buffer& value);
 
+// Set a slice value in a container
+template <Slice (*MementoToValue)(Slice)>
+void SetSliceValue(Slice* set, const Buffer& value) {
+  *set = MementoToValue(SliceFromBuffer(value));
+}
+
 }  // namespace metadata_detail
 
 // A parsed metadata value.
@@ -179,13 +185,15 @@ class ParsedMetadata {
     ParsedMetadata result;
     result.vtable_ = vtable_;
     result.value_ = value_;
-    result.transport_size_ =
-        TransportSize(vtable_->key(value_).length(), value.length());
+    result.transport_size_ = TransportSize(key().length(), value.length());
     vtable_->with_new_value(&value, on_error, &result);
     return result;
   }
   std::string DebugString() const { return vtable_->debug_string(value_); }
-  absl::string_view key() const { return vtable_->key(value_); }
+  absl::string_view key() const {
+    if (vtable_->key == nullptr) return vtable_->key_value;
+    return vtable_->key(value_);
+  }
 
   // TODO(ctiller): move to transport
   static uint32_t TransportSize(uint32_t key_size, uint32_t value_size) {
@@ -205,6 +213,8 @@ class ParsedMetadata {
                                  MetadataParseErrorFn on_error,
                                  ParsedMetadata* result);
     std::string (*const debug_string)(const Buffer& value);
+    // The key - if key is null, use key_value, otherwise call key.
+    absl::string_view key_value;
     absl::string_view (*const key)(const Buffer& value);
   };
 
@@ -254,7 +264,8 @@ ParsedMetadata<MetadataContainer>::EmptyVTable() {
       // debug_string
       [](const Buffer&) -> std::string { return "empty"; },
       // key
-      [](const Buffer&) -> absl::string_view { return ""; },
+      "",
+      nullptr,
   };
   return &vtable;
 }
@@ -285,7 +296,8 @@ ParsedMetadata<MetadataContainer>::TrivialTraitVTable() {
             Which::DisplayValue);
       },
       // key
-      [](const Buffer&) { return Which::key(); },
+      Which::key(),
+      nullptr,
   };
   return &vtable;
 }
@@ -318,7 +330,8 @@ ParsedMetadata<MetadataContainer>::NonTrivialTraitVTable() {
             Which::DisplayValue);
       },
       // key
-      [](const Buffer&) { return Which::key(); },
+      Which::key(),
+      nullptr,
   };
   return &vtable;
 }
@@ -333,8 +346,8 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
       metadata_detail::DestroySliceValue,
       // set
       [](const Buffer& value, MetadataContainer* map) {
-        map->Set(Which(), Which::MementoToValue(
-                              metadata_detail::SliceFromBuffer(value)));
+        metadata_detail::SetSliceValue<Which::MementoToValue>(
+            map->GetOrCreatePointer(Which()), value);
       },
       // with_new_value
       WithNewValueSetSlice<Which::ParseMemento>,
@@ -345,7 +358,8 @@ ParsedMetadata<MetadataContainer>::SliceTraitVTable() {
             Which::DisplayValue);
       },
       // key
-      [](const Buffer&) { return Which::key(); },
+      Which::key(),
+      nullptr,
   };
   return &vtable;
 }
@@ -378,8 +392,8 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
     return static_cast<KV*>(value.pointer)->first.as_string_view();
   };
   static const VTable vtable[2] = {
-      {false, destroy, set, with_new_value, debug_string, key_fn},
-      {true, destroy, set, with_new_value, debug_string, key_fn},
+      {false, destroy, set, with_new_value, debug_string, "", key_fn},
+      {true, destroy, set, with_new_value, debug_string, "", key_fn},
   };
   return &vtable[absl::EndsWith(key, "-bin")];
 }

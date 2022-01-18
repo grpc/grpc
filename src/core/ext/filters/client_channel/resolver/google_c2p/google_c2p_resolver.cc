@@ -61,7 +61,6 @@ class GoogleCloud2ProdResolver : public Resolver {
                         grpc_error_handle error) = 0;
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
-    grpc_httpcli_context context_;
     grpc_httpcli_response response_;
     grpc_closure on_done_;
     std::atomic<bool> on_done_called_{false};
@@ -115,7 +114,6 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
     RefCountedPtr<GoogleCloud2ProdResolver> resolver, const char* path,
     grpc_polling_entity* pollent)
     : resolver_(std::move(resolver)) {
-  grpc_httpcli_context_init(&context_);
   // Start HTTP request.
   GRPC_CLOSURE_INIT(&on_done_, OnHttpRequestDone, this, nullptr);
   Ref().release();  // Ref held by callback.
@@ -129,13 +127,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.http.hdrs = &header;
   // TODO(ctiller): share the quota from whomever instantiates this!
   grpc_httpcli_get(
-      &context_, pollent, ResourceQuota::Default(), &request,
+      pollent, ResourceQuota::Default(), &request,
       ExecCtx::Get()->Now() + Duration::Seconds(10),  // 10s timeout
       &on_done_, &response_);
 }
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {
-  grpc_httpcli_context_destroy(&context_);
   grpc_http_response_destroy(&response_);
 }
 

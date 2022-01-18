@@ -966,7 +966,8 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
+  grpc_channel_stack_builder* builder =
+      grpc_channel_stack_builder_create("subchannel");
   grpc_channel_stack_builder_set_channel_arguments(
       builder, connecting_result_.channel_args);
   grpc_channel_stack_builder_set_transport(builder,

@@ -36,7 +36,7 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -123,11 +123,10 @@ static void AssignMetadata(grpc_metadata_batch* mb,
   mb->Clear();
   for (auto& p : md) {
     mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second),
-               [&](absl::string_view error, const grpc_core::Slice& value) {
-                 gpr_log(GPR_DEBUG, "Failed to parse metadata: %s",
-                         absl::StrCat("key=", p.first, " error=", error,
-                                      " value=", value.as_string_view())
-                             .c_str());
+               [&](absl::string_view error, const grpc_core::Slice&) {
+                 gpr_log(
+                     GPR_DEBUG, "Failed to parse metadata: %s",
+                     absl::StrCat("key=", p.first, " error=", error).c_str());
                });
   }
 }
@@ -330,8 +329,6 @@ class MetadataEncoder {
               const grpc_core::Slice& value_slice) {
     absl::string_view key = key_slice.as_string_view();
     absl::string_view value = value_slice.as_string_view();
-    gpr_log(GPR_INFO, "send metadata key-value %s",
-            absl::StrCat(key, " ", value).c_str());
     init_md_->emplace_back(std::string(key), std::string(value));
   }
 
@@ -456,7 +453,6 @@ static void perform_stream_op_locked(void* stream_op,
       message_data += std::string(reinterpret_cast<char*>(p), len);
       grpc_slice_unref_internal(message_slice);
     }
-    gpr_log(GPR_INFO, "message_data = %s", message_data.c_str());
     tx.SetData(message_data);
     // TODO(b/192369787): Are we supposed to reset here to avoid
     // use-after-free issue in call.cc?

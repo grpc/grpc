@@ -410,11 +410,10 @@ static void convert_cronet_array_to_metadata(
     grpc_slice value;
     if (absl::EndsWith(header_array->headers[i].key, "-bin")) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
-      value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
-          value, grpc_chttp2_base64_infer_length_after_decode(value)));
+      value = grpc_chttp2_base64_decode_with_length(
+          value, grpc_chttp2_base64_infer_length_after_decode(value));
     } else {
-      value = grpc_slice_intern(
-          grpc_slice_from_static_string(header_array->headers[i].value));
+      value = grpc_slice_from_static_string(header_array->headers[i].value);
     }
     mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
                 [&](absl::string_view error, const grpc_core::Slice& value) {
@@ -761,7 +760,7 @@ class CronetMetadataEncoder {
               const grpc_core::Slice& value_slice) {
     char* key = grpc_slice_to_c_string(key_slice.c_slice());
     char* value;
-    if (grpc_is_binary_header_internal(value_slice.c_slice())) {
+    if (grpc_is_binary_header_internal(key_slice.c_slice())) {
       grpc_slice wire_value = grpc_chttp2_base64_encode(value_slice.c_slice());
       value = grpc_slice_to_c_string(wire_value);
       grpc_slice_unref_internal(wire_value);

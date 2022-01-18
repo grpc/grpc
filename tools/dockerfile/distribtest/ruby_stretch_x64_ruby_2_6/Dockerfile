@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:stretch
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
+  gnupg2 \
+  procps \
   curl \
   gcc && apt-get clean
 
@@ -23,7 +25,7 @@ RUN apt-get update && apt-get install -y \
 # Ruby dependencies
 
 # Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+RUN gpg2 --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.6

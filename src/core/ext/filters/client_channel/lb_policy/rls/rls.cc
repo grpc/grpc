@@ -94,7 +94,7 @@ const double kCacheBackoffJitter = 0.2;
 const Duration kCacheBackoffMax = Duration::Minutes(2);
 const Duration kDefaultThrottleWindowSize = Duration::Seconds(30);
 const double kDefaultThrottleRatioForSuccesses = 2.0;
-const int kDefaultThrottlePaddings = 8;
+const int kDefaultThrottlePadding = 8;
 const Duration kCacheCleanupTimerInterval = Duration::Minutes(1);
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
@@ -554,8 +554,13 @@ class RlsLb : public LoadBalancingPolicy {
     // Throttle state for RLS requests.
     class Throttle {
      public:
-      explicit Throttle(int window_size_seconds = 0,
-                        double ratio_for_successes = 0, int paddings = 0);
+      explicit Throttle(
+          Duration window_size = kDefaultThrottleWindowSize,
+          float ratio_for_successes = kDefaultThrottleRatioForSuccesses,
+          int padding = kDefaultThrottlePadding)
+          : window_size_(window_size),
+            ratio_for_successes_(ratio_for_successes),
+            padding_(padding) {}
 
       bool ShouldThrottle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
@@ -565,13 +570,13 @@ class RlsLb : public LoadBalancingPolicy {
      private:
       Duration window_size_;
       double ratio_for_successes_;
-      int paddings_;
+      int padding_;
 
       // Logged timestamp of requests.
       std::deque<Timestamp> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
 
-      // Logged timestamp of responses that were successful.
-      std::deque<Timestamp> successes_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      // Logged timestamps of failures.
+      std::deque<Timestamp> failures_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
@@ -1456,42 +1461,40 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 // RlsLb::RlsChannel::Throttle
 //
 
-RlsLb::RlsChannel::Throttle::Throttle(int window_size_seconds,
-                                      double ratio_for_successes,
-                                      int paddings) {
-  GPR_DEBUG_ASSERT(window_size_seconds >= 0);
-  GPR_DEBUG_ASSERT(ratio_for_successes >= 0);
-  GPR_DEBUG_ASSERT(paddings >= 0);
-  window_size_ = window_size_seconds == 0
-                     ? Duration::Seconds(window_size_seconds)
-                     : kDefaultThrottleWindowSize;
-  ratio_for_successes_ = ratio_for_successes == 0
-                             ? kDefaultThrottleRatioForSuccesses
-                             : ratio_for_successes;
-  paddings_ = paddings == 0 ? kDefaultThrottlePaddings : paddings;
-}
-
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
   Timestamp now = ExecCtx::Get()->Now();
   while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
-  while (!successes_.empty() && now - successes_.front() > window_size_) {
-    successes_.pop_front();
+  while (!failures_.empty() && now - failures_.front() > window_size_) {
+    failures_.pop_front();
   }
-  int successes = successes_.size();
-  int requests = requests_.size();
-  bool result = ((rand() % (requests + paddings_)) <
-                 static_cast<double>(requests) -
-                     static_cast<double>(successes) * ratio_for_successes_);
-  requests_.push_back(now);
-  return result;
+  // Compute probability of throttling.
+  float num_requests = requests_.size();
+  float num_successes = num_requests - failures_.size();
+  // Note: it's possible that this ratio will be negative, in which case
+  // no throttling will be done.
+  float throttle_probability =
+      (num_requests - (num_successes * ratio_for_successes_)) /
+      (num_requests + padding_);
+  // Generate a random number for the request.
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_real_distribution<float> dist(0, 1.0);
+  // Check if we should throttle the request.
+  bool throttle = dist(mt) < throttle_probability;
+  // If we're throttling, record the request and the failure.
+  if (throttle) {
+    requests_.push_back(now);
+    failures_.push_back(now);
+  }
+  return throttle;
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  if (success) {
-    successes_.push_back(ExecCtx::Get()->Now());
-  }
+  Timestamp now = ExecCtx::Get()->Now();
+  requests_.push_back(now);
+  if (!success) failures_.push_back(now);
 }
 
 //
@@ -1760,7 +1763,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
-    rls_channel_->ReportResponseLocked(!response.status.ok());
+    rls_channel_->ReportResponseLocked(response.status.ok());
     Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
     child_policies_to_finish_update = cache_entry->OnRlsResponseLocked(
         std::move(response), std::move(backoff_state_));

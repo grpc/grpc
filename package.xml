@@ -719,6 +719,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
@@ -1226,7 +1228,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_buffer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_intern.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
@@ -1235,7 +1236,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_split.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/builtins.cc" role="src" />

@@ -58,7 +58,6 @@ static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
 }
 
 void grpc_free_port_using_server(int port) {
-  grpc_httpcli_context context;
   grpc_httpcli_request req;
   grpc_httpcli_response rsp;
   freereq pr;
@@ -84,9 +83,8 @@ void grpc_free_port_using_server(int port) {
     gpr_asprintf(&path, "/drop/%d", port);
     req.http.path = path;
 
-    grpc_httpcli_context_init(&context);
     grpc_httpcli_get(
-        &context, &pr.pops, grpc_core::ResourceQuota::Default(), &req,
+        &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(30),
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
@@ -105,7 +103,6 @@ void grpc_free_port_using_server(int port) {
     }
     gpr_mu_unlock(pr.mu);
 
-    grpc_httpcli_context_destroy(&context);
     grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                           shutdown_closure);
 
@@ -121,7 +118,6 @@ typedef struct portreq {
   int port = 0;
   int retries = 0;
   char* server = nullptr;
-  grpc_httpcli_context* ctx = nullptr;
   grpc_httpcli_response response = {};
 } portreq;
 
@@ -167,7 +163,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
     grpc_httpcli_get(
-        pr->ctx, &pr->pops, grpc_core::ResourceQuota::Default(), &req,
+        &pr->pops, grpc_core::ResourceQuota::Default(), &req,
         grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(30),
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
@@ -190,7 +186,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 }
 
 int grpc_pick_port_using_server(void) {
-  grpc_httpcli_context context;
   grpc_httpcli_request req;
   portreq pr;
   grpc_closure* shutdown_closure;
@@ -208,14 +203,12 @@ int grpc_pick_port_using_server(void) {
                                            grpc_schedule_on_exec_ctx);
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
-    pr.ctx = &context;
 
     req.host = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
     req.http.path = const_cast<char*>("/get");
 
-    grpc_httpcli_context_init(&context);
     grpc_httpcli_get(
-        &context, &pr.pops, grpc_core::ResourceQuota::Default(), &req,
+        &pr.pops, grpc_core::ResourceQuota::Default(), &req,
         grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(30),
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
@@ -235,7 +228,6 @@ int grpc_pick_port_using_server(void) {
     gpr_mu_unlock(pr.mu);
 
     grpc_http_response_destroy(&pr.response);
-    grpc_httpcli_context_destroy(&context);
     grpc_pollset_shutdown(grpc_polling_entity_pollset(&pr.pops),
                           shutdown_closure);
 

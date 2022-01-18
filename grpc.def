@@ -189,7 +189,6 @@ EXPORTS
     grpc_slice_new_with_len
     grpc_slice_malloc
     grpc_slice_malloc_large
-    grpc_slice_intern
     grpc_slice_from_copied_string
     grpc_slice_from_copied_buffer
     grpc_slice_from_static_string
@@ -200,8 +199,6 @@ EXPORTS
     grpc_slice_split_tail_maybe_ref
     grpc_slice_split_head
     grpc_empty_slice
-    grpc_slice_default_hash_impl
-    grpc_slice_default_eq_impl
     grpc_slice_eq
     grpc_slice_cmp
     grpc_slice_str_cmp
@@ -209,7 +206,6 @@ EXPORTS
     grpc_slice_rchr
     grpc_slice_chr
     grpc_slice_slice
-    grpc_slice_hash
     grpc_slice_is_equivalent
     grpc_slice_dup
     grpc_slice_to_c_string

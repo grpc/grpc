@@ -180,6 +180,9 @@ class CrlSslTransportSecurityTest
                                        ? expect_server_success
                                        : !use_revoked_server_cert_;
 #else
+      // If using OpenSSL version < 1.1, the CRL revocation won't be enabled
+      // anyways, so we always expect the connection to be successful.
+      expect_server_success = true;
       bool expect_client_success = expect_server_success;
 #endif
       tsi_peer peer;

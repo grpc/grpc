@@ -82,6 +82,8 @@ desc 'Build the Windows gRPC DLLs for Ruby'
 task 'dlls' do
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
+  # use env variable to set artifact build paralellism
+  nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
@@ -93,6 +95,8 @@ task 'dlls' do
   env += 'EMBED_CARES=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
+  env += "GRPC_RUBY_BUILD_PROCS=#{nproc_override} "
+
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
@@ -105,7 +109,7 @@ task 'dlls' do
     env_comp += "LDXX=#{opt[:cross]}-g++ "
     run_rake_compiler(opt[:platform], <<~EOT)
       gem update --system --no-document && \
-      #{env} #{env_comp} make -j`nproc` #{out} && \
+      #{env} #{env_comp} make -j#{nproc_override} #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
       cp #{out} #{opt[:out]}
     EOT
@@ -117,7 +121,7 @@ task 'gem:native' do
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0', '2.4.0'].join(':')
+  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
 
   if RUBY_PLATFORM =~ /darwin/
     FileUtils.touch 'grpc_c.32.ruby'
@@ -129,6 +133,9 @@ task 'gem:native' do
     end
     system "bundle exec rake cross native gem RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
+    # use env variable to set artifact build paralellism
+    nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
+
     Rake::Task['dlls'].execute
     ['x86-mingw32', 'x64-mingw32'].each do |plat|
       run_rake_compiler(plat, <<~EOT)
@@ -138,7 +145,8 @@ task 'gem:native' do
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
-          GRPC_CONFIG=#{grpc_config}
+          GRPC_CONFIG=#{grpc_config} \
+          GRPC_RUBY_BUILD_PROCS=#{nproc_override}
       EOT
     end
     # Truncate grpc_c.*.ruby files because they're for Windows only.
@@ -152,7 +160,8 @@ task 'gem:native' do
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
-          GRPC_CONFIG=#{grpc_config}
+          GRPC_CONFIG=#{grpc_config} \
+          GRPC_RUBY_BUILD_PROCS=#{nproc_override}
       EOT
     end
   end

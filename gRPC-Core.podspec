@@ -169,7 +169,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.23'
+    ss.dependency 'BoringSSL-GRPC', '0.0.24'
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -820,6 +820,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_certificate_provider.cc',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_creds.cc',
+                      'src/core/ext/xds/xds_channel_creds.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.cc',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',
@@ -1327,7 +1329,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice.h',
                       'src/core/lib/slice/slice_api.cc',
                       'src/core/lib/slice/slice_buffer.cc',
-                      'src/core/lib/slice/slice_intern.cc',
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
@@ -1336,7 +1337,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/slice/slice_utils.h',
                       'src/core/lib/surface/api_trace.cc',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/builtins.cc',
@@ -1830,6 +1830,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_creds.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
@@ -2080,7 +2081,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_refcount_base.h',
                               'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',

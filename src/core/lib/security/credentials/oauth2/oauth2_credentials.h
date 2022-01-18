@@ -91,7 +91,6 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
 
  protected:
   virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
-                            grpc_httpcli_context* httpcli_context,
                             grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                             grpc_core::Timestamp deadline) = 0;
 
@@ -101,7 +100,6 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   gpr_timespec token_expiration_;
   bool token_fetch_pending_ = false;
   grpc_oauth2_pending_get_request_metadata* pending_requests_ = nullptr;
-  grpc_httpcli_context httpcli_context_;
   grpc_polling_entity pollent_;
 };
 
@@ -121,7 +119,6 @@ class grpc_google_refresh_token_credentials final
 
  protected:
   void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
                     grpc_core::Timestamp deadline) override;
 
