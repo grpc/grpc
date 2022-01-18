@@ -61,8 +61,7 @@ class ExternalAccountCredentials
   // This is a helper struct to pass information between multiple callback based
   // asynchronous calls.
   struct HTTPRequestContext {
-    HTTPRequestContext(grpc_polling_entity* pollent,
-                       Timestamp deadline)
+    HTTPRequestContext(grpc_polling_entity* pollent, Timestamp deadline)
         : pollent(pollent), deadline(deadline) {}
     ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
