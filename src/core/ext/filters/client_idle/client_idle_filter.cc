@@ -49,11 +49,13 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 namespace {
 
 Duration GetClientIdleTimeout(const grpc_channel_args* args) {
-  return Duration::Milliseconds(std::max(
+  auto millis = std::max(
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
           {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}),
-      MIN_IDLE_TIMEOUT_MS));
+      MIN_IDLE_TIMEOUT_MS);
+  if (millis == INT_MAX) return Duration::Infinity();
+  return Duration::Milliseconds(millis);
 }
 
 class ChannelData {
