@@ -57,17 +57,22 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
             "file: %s",
             grpc_error_std_string(error).c_str());
   }
-  cache_->tls_session_key_logger_map_.insert(
-      std::pair<std::string, TlsSessionKeyLogger*>(
-          tls_session_key_log_file_path_, this));
+  cache_->tls_session_key_logger_map_.emplace(tls_session_key_log_file_path_,
+                                              this);
 };
 
 TlsSessionKeyLoggerCache::TlsSessionKeyLogger::~TlsSessionKeyLogger() {
-  grpc_core::MutexLock lock(&lock_);
-  if (fd_ != nullptr) fclose(fd_);
+  {
+    grpc_core::MutexLock lock(&lock_);
+    if (fd_ != nullptr) fclose(fd_);
+  }
   {
     grpc_core::MutexLock lock(g_tls_session_key_log_cache_mu);
-    cache_->tls_session_key_logger_map_.erase(tls_session_key_log_file_path_);
+    auto it = cache_->tls_session_key_logger_map_.find(
+        tls_session_key_log_file_path_);
+    if (it != cache_->tls_session_key_logger_map_.end() && it->second == this) {
+      cache_->tls_session_key_logger_map_.erase(it);
+    }
   }
 }
 
@@ -91,8 +96,8 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
   }
 }
 
-TlsSessionKeyLoggerCache::TlsSessionKeyLoggerCache() {
-  // constructor is already called under the lock g_tls_session_key_log_cache_mu
+TlsSessionKeyLoggerCache::TlsSessionKeyLoggerCache()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(g_tls_session_key_log_cache_mu) {
   g_cache_instance = this;
 }
 
@@ -104,10 +109,10 @@ TlsSessionKeyLoggerCache::~TlsSessionKeyLoggerCache() {
 grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
     std::string tls_session_key_log_file_path) {
   gpr_once_init(&g_cache_mutex_init, do_cache_mutex_init);
+  GPR_DEBUG_ASSERT(g_tls_session_key_log_cache_mu != nullptr);
   if (tls_session_key_log_file_path.empty()) {
     return nullptr;
   }
-  GPR_DEBUG_ASSERT(g_tls_session_key_log_cache_mu != nullptr);
   {
     grpc_core::MutexLock lock(g_tls_session_key_log_cache_mu);
     grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache;
@@ -121,7 +126,10 @@ grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
     auto it =
         cache->tls_session_key_logger_map_.find(tls_session_key_log_file_path);
     if (it != cache->tls_session_key_logger_map_.end()) {
-      return it->second->Ref();
+      // Avoid a race condition if the destructor of the tls key logger
+      // of interest is currently executing.
+      auto key_logger = it->second->RefIfNonZero();
+      if (key_logger != nullptr) return key_logger;
     }
     // Not found in cache, so create new entry.
     // This will automatically add itself to tls_session_key_logger_map_.
