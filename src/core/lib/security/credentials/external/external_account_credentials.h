@@ -62,7 +62,7 @@ class ExternalAccountCredentials
   // asynchronous calls.
   struct HTTPRequestContext {
     HTTPRequestContext(grpc_polling_entity* pollent,
-                       grpc_core::Timestamp deadline)
+                       Timestamp deadline)
         : pollent(pollent), deadline(deadline) {}
     ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
