@@ -89,8 +89,9 @@ namespace promise_filter_detail {
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData {
  public:
-  explicit BaseCallData(const grpc_call_element_args* args)
-      : arena_(args->arena),
+  BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args)
+      : elem_(elem),
+        arena_(args->arena),
         call_combiner_(args->call_combiner),
         owning_call_(args->call_stack),
         deadline_(args->deadline) {}
@@ -112,6 +113,7 @@ class BaseCallData {
     return p.Unwrap();
   }
 
+  grpc_call_element* const elem_;
   Arena* const arena_;
   CallCombiner* const call_combiner_;
   grpc_call_stack* const owning_call_;
@@ -129,7 +131,8 @@ class CallData;
 template <class ChannelFilter>
 class CallData<ChannelFilter, true> : public BaseCallData {
  public:
-  explicit CallData(const grpc_call_element_args* args) : BaseCallData(args) {
+  CallData(grpc_call_element* elem, const grpc_call_element_args* args)
+      : BaseCallData(elem, args) {
     GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                       RecvTrailingMetadataReadyCallback, this,
                       grpc_schedule_on_exec_ctx);
@@ -141,7 +144,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   }
 
   // Handle one grpc_transport_stream_op_batch
-  void Op(grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+  void Op(grpc_transport_stream_op_batch* op) {
     // Fake out the activity based context.
     ScopedContext context(this);
 
@@ -152,7 +155,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
                  !op->send_message && !op->recv_initial_metadata &&
                  !op->recv_message && !op->recv_trailing_metadata);
       Cancel(op->payload->cancel_stream.cancel_error);
-      grpc_call_next_op(elem, op);
+      grpc_call_next_op(elem_, op);
       return;
     }
 
@@ -177,7 +180,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       // This is the queuing!
       send_initial_metadata_batch_ = op;
       // And kick start the promise.
-      StartPromise(elem);
+      StartPromise();
       return;
     }
 
@@ -189,7 +192,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       HookRecvTrailingMetadata(op);
     }
 
-    grpc_call_next_op(elem, op);
+    grpc_call_next_op(elem_, op);
   }
 
  private:
@@ -249,17 +252,16 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
-  void StartPromise(grpc_call_element* elem) {
+  void StartPromise() {
     GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-    ChannelFilter* filter = static_cast<ChannelFilter*>(elem->channel_data);
+    ChannelFilter* filter = static_cast<ChannelFilter*>(elem_->channel_data);
 
     // Construct the promise.
     promise_ = filter->MakeCallPromise(
         WrapMetadata(send_initial_metadata_batch_->payload
                          ->send_initial_metadata.send_initial_metadata),
-        [elem](InitialMetadata initial_metadata) {
-          return static_cast<CallData*>(elem->call_data)
-              ->NextPromiseFactory(elem, std::move(initial_metadata));
+        [this](InitialMetadata initial_metadata) {
+          return NextPromiseFactory(std::move(initial_metadata));
         });
     // Poll once.
     WakeInsideCombiner();
@@ -282,32 +284,29 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   //   - put the modified initial metadata into the batch to be sent down.
   //   - return a wrapper around PollTrailingMetadata as the promise.
   ArenaPromise<TrailingMetadata> NextPromiseFactory(
-      grpc_call_element* elem, InitialMetadata initial_metadata) {
+      InitialMetadata initial_metadata) {
     GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
     send_initial_metadata_batch_->payload->send_initial_metadata
         .send_initial_metadata = UnwrapMetadata(std::move(initial_metadata));
-    return ArenaPromise<TrailingMetadata>([elem]() {
-      return static_cast<CallData*>(elem->call_data)
-          ->PollTrailingMetadata(elem);
-    });
+    return ArenaPromise<TrailingMetadata>(
+        [this]() { return PollTrailingMetadata(); });
   }
 
   // Wrapper to make it look like we're calling the next filter as a promise.
   // First poll: send the send_initial_metadata op down the stack.
   // All polls: await receiving the trailing metadata, then return it to the
   // application.
-  Poll<TrailingMetadata> PollTrailingMetadata(grpc_call_element* elem) {
+  Poll<TrailingMetadata> PollTrailingMetadata() {
     if (send_initial_state_ == SendInitialState::kQueued) {
       // First poll: pass the send_initial_metadata op down the stack.
-      auto* op = absl::exchange(send_initial_metadata_batch_, nullptr);
-      GPR_ASSERT(op != nullptr);
+      GPR_ASSERT(send_initial_metadata_batch_ != nullptr);
       send_initial_state_ = SendInitialState::kForwarded;
       if (recv_trailing_state_ == RecvTrailingState::kQueued) {
         // (and the recv_trailing_metadata op if it's part of the queuing)
-        HookRecvTrailingMetadata(op);
+        HookRecvTrailingMetadata(send_initial_metadata_batch_);
         recv_trailing_state_ = RecvTrailingState::kForwarded;
       }
-      grpc_call_next_op(elem, op);
+      forward_send_initial_metadata_ = true;
     }
     switch (recv_trailing_state_) {
       case RecvTrailingState::kInitial:
@@ -398,6 +397,10 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         break;
     }
     is_polling_ = false;
+    if (absl::exchange(forward_send_initial_metadata_, false)) {
+      grpc_call_next_op(elem_,
+                        absl::exchange(send_initial_metadata_batch_, nullptr));
+    }
     if (call_closure != nullptr) {
       Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_NONE);
     }
@@ -419,6 +422,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Whether we're currently polling the promise.
   bool is_polling_ = false;
+  // Whether we should forward send initial metadata after polling?
+  bool forward_send_initial_metadata_ = false;
 };
 
 }  // namespace promise_filter_detail
@@ -442,7 +447,7 @@ grpc_channel_filter MakePromiseBasedFilter() {
   return grpc_channel_filter{
       // start_transport_stream_op_batch
       [](grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-        static_cast<CallData*>(elem->call_data)->Op(elem, op);
+        static_cast<CallData*>(elem->call_data)->Op(op);
       },
       // start_transport_op - for now unsupported
       grpc_channel_next_op,
@@ -450,7 +455,7 @@ grpc_channel_filter MakePromiseBasedFilter() {
       sizeof(CallData),
       // init_call_elem
       [](grpc_call_element* elem, const grpc_call_element_args* args) {
-        new (elem->call_data) CallData(args);
+        new (elem->call_data) CallData(elem, args);
         return GRPC_ERROR_NONE;
       },
       // set_pollset_or_pollset_set
