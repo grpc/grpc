@@ -325,7 +325,8 @@ class CppDistribTest(object):
         environ = {}
         if inner_jobs is not None:
             # set number of parallel jobs for the C++ build
-            environ['GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS'] = str(inner_jobs)
+            environ['GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS'] = str(
+                inner_jobs)
 
         if self.platform == 'linux':
             return create_docker_jobspec(
