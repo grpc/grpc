@@ -38,12 +38,22 @@ python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
 brew install ccache || true
 export PATH="/usr/local/opt/ccache/libexec:$PATH"
 
-tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 2 || FAILED="true"
-
-tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+tools/run_tests/task_runner.py -f artifact macos python3.6 ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 || FAILED="true"
 
 # useful for seeing is ccache was helpful
 ccache --show-stats || true
+ccache -z || true
+
+
+tools/run_tests/task_runner.py -f artifact macos python3.10 ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 || FAILED="true"
+
+# useful for seeing is ccache was helpful
+ccache --show-stats || true
+ccache -z || true
+
+tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+
+
 
 if [ "$FAILED" != "" ]
 then
