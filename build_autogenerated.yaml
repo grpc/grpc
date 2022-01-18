@@ -935,7 +935,6 @@ libs:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -1536,7 +1535,6 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -1995,7 +1993,6 @@ libs:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -2272,7 +2269,6 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -3774,7 +3770,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4025,15 +4020,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: slice_intern_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_intern_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: slice_split_test
   build: test
   language: c
@@ -4056,7 +4042,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
@@ -4534,7 +4519,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5027,7 +5011,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5660,7 +5643,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/iomgr/combiner.cc
@@ -5870,7 +5852,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6635,7 +6616,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6941,7 +6921,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7294,7 +7273,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -7731,7 +7709,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc

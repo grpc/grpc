@@ -2027,7 +2027,6 @@ src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice.h \
 src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
-src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
@@ -2036,7 +2035,6 @@ src/core/lib/slice/slice_split.cc \
 src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
-src/core/lib/slice/slice_utils.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
