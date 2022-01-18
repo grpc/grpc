@@ -113,8 +113,7 @@ void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
       1, (options));
   // Tls session key logging is assumed to be enabled if the specified log
   // file is non-empty.
-  gpr_log(GPR_INFO,
-          "Enabling TLS session key logging with keys stored at: %s",
+  gpr_log(GPR_INFO, "Enabling TLS session key logging with keys stored at: %s",
           path ? path : "");
   options->set_tls_session_key_log_file_path(path ? path : "");
 }

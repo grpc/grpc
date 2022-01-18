@@ -38,15 +38,15 @@ gpr_once g_cache_mutex_init = GPR_ONCE_INIT;
 grpc_core::Mutex* g_tls_session_key_log_cache_mu = nullptr;
 // A pointer to a global singleton instance.
 TlsSessionKeyLoggerCache* g_cache_instance
-  ABSL_GUARDED_BY(g_tls_session_key_log_cache_mu) = nullptr;
+    ABSL_GUARDED_BY(g_tls_session_key_log_cache_mu) = nullptr;
 
 void do_cache_mutex_init(void) {
   g_tls_session_key_log_cache_mu = new grpc_core::Mutex();
 }
 
-} // namespace
+}  // namespace
 
-TlsSessionKeyLoggerCache ::TlsSessionKeyLogger::TlsSessionKeyLogger(
+TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
     std::string tls_session_key_log_file_path,
     grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache)
     : tls_session_key_log_file_path_(std::move(tls_session_key_log_file_path)),
@@ -62,11 +62,11 @@ TlsSessionKeyLoggerCache ::TlsSessionKeyLogger::TlsSessionKeyLogger(
             grpc_error_std_string(error).c_str());
   }
   cache_->tls_session_key_logger_map_.insert(
-        std::pair<std::string, TlsSessionKeyLogger*>(
-            tls_session_key_log_file_path_, this));
+      std::pair<std::string, TlsSessionKeyLogger*>(
+          tls_session_key_log_file_path_, this));
 };
 
-TlsSessionKeyLoggerCache ::TlsSessionKeyLogger::~TlsSessionKeyLogger() {
+TlsSessionKeyLoggerCache::TlsSessionKeyLogger::~TlsSessionKeyLogger() {
   grpc_core::MutexLock lock(&lock_);
   if (fd_ != nullptr) fclose(fd_);
   {
@@ -75,14 +75,14 @@ TlsSessionKeyLoggerCache ::TlsSessionKeyLogger::~TlsSessionKeyLogger() {
   }
 }
 
-void TlsSessionKeyLoggerCache ::TlsSessionKeyLogger::LogSessionKeys(
+void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
     SSL_CTX* /* ssl_context */, const std::string& session_keys_info) {
   grpc_core::MutexLock lock(&lock_);
   if (fd_ == nullptr || session_keys_info.empty()) return;
   // Append to key log file under lock
-  bool err = fwrite((session_keys_info + "\r\n").c_str(), sizeof(char),
-                session_keys_info.length() + 1,
-                fd_) < session_keys_info.length();
+  bool err =
+      fwrite((session_keys_info + "\r\n").c_str(), sizeof(char),
+             session_keys_info.length() + 1, fd_) < session_keys_info.length();
 
   if (err) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
@@ -122,9 +122,10 @@ grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
       cache = g_cache_instance->Ref();
     }
     // Check cache for entry.
-    auto it = cache->tls_session_key_logger_map_.find(
-      tls_session_key_log_file_path);
-    if (it != cache->tls_session_key_logger_map_.end()) return it->second->Ref();
+    auto it =
+        cache->tls_session_key_logger_map_.find(tls_session_key_log_file_path);
+    if (it != cache->tls_session_key_logger_map_.end())
+      return it->second->Ref();
     // Not found in cache, so create new entry.
     // This will automatically add itself to tls_session_key_logger_map_.
     return grpc_core::MakeRefCounted<TlsSessionKeyLogger>(

@@ -41,7 +41,7 @@ extern "C" {
 namespace tsi {
 
 class TlsSessionKeyLoggerCache
-  : public grpc_core::RefCounted<TlsSessionKeyLoggerCache> {
+    : public grpc_core::RefCounted<TlsSessionKeyLoggerCache> {
  public:
   TlsSessionKeyLoggerCache();
   ~TlsSessionKeyLoggerCache();
@@ -53,8 +53,9 @@ class TlsSessionKeyLoggerCache
       : public grpc_core::RefCounted<TlsSessionKeyLogger> {
    public:
     // Instantiates a TlsSessionKeyLogger instance bound to a specific path.
-    TlsSessionKeyLogger(std::string tls_session_key_log_file_path,
-                        grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache);
+    TlsSessionKeyLogger(
+        std::string tls_session_key_log_file_path,
+        grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache);
     ~TlsSessionKeyLogger() override;
 
     // Not copyable nor assignable.
@@ -69,7 +70,7 @@ class TlsSessionKeyLoggerCache
 
    private:
     grpc_core::Mutex lock_;  // protects appends to file
-    FILE* fd_ ABSL_GUARDED_BY(lock_) ;
+    FILE* fd_ ABSL_GUARDED_BY(lock_);
     std::string tls_session_key_log_file_path_;
     grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache_;
   };
