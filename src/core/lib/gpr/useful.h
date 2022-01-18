@@ -106,6 +106,10 @@ constexpr size_t HashPointer(T* p, size_t range) {
          range;
 }
 
+inline uint32_t MixHash32(uint32_t a, uint32_t b) {
+  return RotateLeft(a, 2u) ^ b;
+}
+
 }  // namespace grpc_core
 
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))

@@ -32,7 +32,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 static void hs_recv_initial_metadata_ready(void* user_data,
                                            grpc_error_handle err);

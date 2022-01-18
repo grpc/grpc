@@ -920,6 +920,16 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * If set, gRPC will read all hashed x.509 CRL files in the directory and
+ * enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
+ * version > 1.1.
+ * It is used for experimental purpose for now and subject to change.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
+    grpc_tls_credentials_options* options, const char* crl_directory);
 
 /**
  * EXPERIMENTAL API - Subject to change

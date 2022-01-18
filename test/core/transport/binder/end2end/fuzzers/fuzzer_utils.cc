@@ -133,11 +133,11 @@ void FuzzingLoop(
   wire_reader_ref = nullptr;
 }
 
-TranasctionReceiverForFuzzing::TranasctionReceiverForFuzzing(
+TransactionReceiverForFuzzing::TransactionReceiverForFuzzing(
     binder_transport_fuzzer::IncomingParcels incoming_parcels,
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) {
-  gpr_log(GPR_INFO, "Construct TranasctionReceiverForFuzzing");
+  gpr_log(GPR_INFO, "Construct TransactionReceiverForFuzzing");
   CreateFuzzingThread(FuzzingLoop, std::move(incoming_parcels),
                       std::move(wire_reader_ref), std::move(cb));
 }
@@ -145,7 +145,7 @@ TranasctionReceiverForFuzzing::TranasctionReceiverForFuzzing(
 std::unique_ptr<TransactionReceiver> BinderForFuzzing::ConstructTxReceiver(
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) const {
-  auto tx_receiver = absl::make_unique<TranasctionReceiverForFuzzing>(
+  auto tx_receiver = absl::make_unique<TransactionReceiverForFuzzing>(
       incoming_parcels_, wire_reader_ref, cb);
   return tx_receiver;
 }

@@ -118,8 +118,13 @@ class PythonArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
         environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building native extension
+            # building the native extension is the most time-consuming part of the build
+            environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
+
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
@@ -204,13 +209,18 @@ class RubyArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building native extension
+            environ['GRPC_RUBY_BUILD_PROCS'] = str(inner_jobs)
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
         return create_jobspec(
             self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
             use_workspace=True,
-            timeout_seconds=90 * 60)
+            timeout_seconds=90 * 60,
+            environ=environ)
 
 
 class CSharpExtArtifact:
@@ -231,26 +241,34 @@ class CSharpExtArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building native extension
+            environ['GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
+
         if self.arch == 'android':
+            environ['ANDROID_ABI'] = self.arch_abi
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/grpc_artifact_android_ndk',
                 'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ={'ANDROID_ABI': self.arch_abi})
+                environ=environ)
         elif self.arch == 'ios':
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
                 timeout_seconds=60 * 60,
-                use_workspace=True)
+                use_workspace=True,
+                environ=environ)
         elif self.platform == 'windows':
             return create_jobspec(self.name, [
                 'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
                 self.arch
             ],
                                   timeout_seconds=45 * 60,
-                                  use_workspace=True)
+                                  use_workspace=True,
+                                  environ=environ)
         else:
             if self.platform == 'linux':
                 dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
@@ -260,14 +278,17 @@ class CSharpExtArtifact:
                     # give us both ready to use crosscompiler and sufficient backward compatibility
                     dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
-                    self.name, dockerfile_dir,
-                    'tools/run_tests/artifacts/build_artifact_csharp.sh')
+                    self.name,
+                    dockerfile_dir,
+                    'tools/run_tests/artifacts/build_artifact_csharp.sh',
+                    environ=environ)
             else:
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
                     timeout_seconds=45 * 60,
-                    use_workspace=True)
+                    use_workspace=True,
+                    environ=environ)
 
     def __str__(self):
         return self.name
@@ -287,7 +308,8 @@ class PHPArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as PHP artifact build is basically just packing an archive
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -313,9 +335,15 @@ class ProtocArtifact:
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs when building protoc
+            environ['GRPC_PROTOC_BUILD_COMPILER_JOBS'] = str(inner_jobs)
+
         if self.platform != 'windows':
-            environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
+            environ['CXXFLAGS'] = ''
+            environ['LDFLAGS'] = ''
             if self.platform == 'linux':
                 dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
                     self.arch)
@@ -340,19 +368,30 @@ class ProtocArtifact:
                     use_workspace=True)
         else:
             generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
+            environ['generator'] = generator
             return create_jobspec(
                 self.name,
                 ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
-                environ={'generator': generator},
+                environ=environ,
                 use_workspace=True)
 
     def __str__(self):
         return self.name
 
 
+def _reorder_targets_for_build_speed(targets):
+    """Reorder targets to achieve optimal build speed"""
+    # ruby artifact build builds multiple artifacts at once, so make sure
+    # we start building ruby artifacts first, so that they don't end up
+    # being a long tail once everything else finishes.
+    return list(
+        sorted(targets,
+               key=lambda target: 0 if target.name.startswith('ruby_') else 1))
+
+
 def targets():
     """Gets list of supported targets"""
-    return [
+    return _reorder_targets_for_build_speed([
         ProtocArtifact('linux', 'x64', presubmit=True),
         ProtocArtifact('linux', 'x86', presubmit=True),
         ProtocArtifact('linux', 'aarch64', presubmit=True),
@@ -422,4 +461,4 @@ def targets():
         RubyArtifact('macos', 'x64', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True)
-    ]
+    ])

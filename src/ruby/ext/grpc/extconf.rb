@@ -69,7 +69,7 @@ ENV['BUILDDIR'] = output_dir
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
-  nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
+  nproc = Etc.nprocessors if Etc.respond_to? :nprocessors
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS']
   unless nproc_override.nil? or nproc_override.size == 0
     nproc = nproc_override

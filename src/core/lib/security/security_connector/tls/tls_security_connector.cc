@@ -34,7 +34,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -546,7 +545,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
-      tls_session_key_logger_.get(), &client_handshaker_factory_);
+      tls_session_key_logger_.get(), options_->crl_directory().c_str(),
+      &client_handshaker_factory_);
   /* Free memory. */
   if (pem_key_cert_pair != nullptr) {
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
@@ -822,7 +822,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
       options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
-      tls_session_key_logger_.get(), &server_handshaker_factory_);
+      tls_session_key_logger_.get(), options_->crl_directory().c_str(),
+      &server_handshaker_factory_);
   /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);

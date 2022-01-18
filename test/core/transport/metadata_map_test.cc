@@ -27,19 +27,28 @@ namespace testing {
 static auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
+struct EmptyMetadataMap : public MetadataMap<EmptyMetadataMap> {
+  using MetadataMap<EmptyMetadataMap>::MetadataMap;
+};
+
+struct TimeoutOnlyMetadataMap
+    : public MetadataMap<TimeoutOnlyMetadataMap, GrpcTimeoutMetadata> {
+  using MetadataMap<TimeoutOnlyMetadataMap, GrpcTimeoutMetadata>::MetadataMap;
+};
+
 TEST(MetadataMapTest, Noop) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
-  MetadataMap<>(arena.get());
+  EmptyMetadataMap(arena.get());
 }
 
 TEST(MetadataMapTest, NoopWithDeadline) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
-  MetadataMap<GrpcTimeoutMetadata>(arena.get());
+  TimeoutOnlyMetadataMap(arena.get());
 }
 
 TEST(MetadataMapTest, SimpleOps) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
-  MetadataMap<GrpcTimeoutMetadata> map(arena.get());
+  TimeoutOnlyMetadataMap map(arena.get());
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
   map.Set(GrpcTimeoutMetadata(), 1234);
@@ -58,10 +67,9 @@ class FakeEncoder {
  public:
   std::string output() { return output_; }
 
-  void Encode(grpc_mdelem md) {
-    output_ +=
-        absl::StrCat("LEGACY CALL: key=", StringViewFromSlice(GRPC_MDKEY(md)),
-                     " value=", StringViewFromSlice(GRPC_MDVALUE(md)), "\n");
+  void Encode(const Slice& key, const Slice& value) {
+    output_ += absl::StrCat("UNKNOWN METADATUM: key=", key.as_string_view(),
+                            " value=", value.as_string_view(), "\n");
   }
 
   void Encode(GrpcTimeoutMetadata, grpc_millis deadline) {
@@ -75,7 +83,7 @@ class FakeEncoder {
 TEST(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
-  MetadataMap<GrpcTimeoutMetadata> map(arena.get());
+  TimeoutOnlyMetadataMap map(arena.get());
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
 }
@@ -83,7 +91,7 @@ TEST(MetadataMapTest, EmptyEncodeTest) {
 TEST(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, g_memory_allocator);
-  MetadataMap<GrpcTimeoutMetadata> map(arena.get());
+  TimeoutOnlyMetadataMap map(arena.get());
   map.Set(GrpcTimeoutMetadata(), 1234);
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "grpc-timeout: deadline=1234\n");

@@ -29,20 +29,21 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
  public:
   grpc_google_iam_credentials(const char* token,
                               const char* authority_selector);
-  ~grpc_google_iam_credentials() override;
 
   bool get_request_metadata(grpc_polling_entity* pollent,
                             grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
+                            grpc_core::CredentialsMetadataArray* md_array,
                             grpc_closure* on_request_metadata,
                             grpc_error_handle* error) override;
 
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
   std::string debug_string() override { return debug_string_; }
 
  private:
-  grpc_credentials_mdelem_array md_array_;
+  const absl::optional<grpc_core::Slice> token_;
+  const grpc_core::Slice authority_selector_;
   const std::string debug_string_;
 };
 
