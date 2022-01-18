@@ -21,6 +21,12 @@ export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# each python artifact is built in separate workspace, and absolute paths differences
+# would prevent ccache hits.
+# Also the '-g' option requires CCACHE_NOHASHDIR=1.
+export CCACHE_BASEDIR="$(pwd)"
+export CCACHE_NOHASHDIR=1
+
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade wheel
 
