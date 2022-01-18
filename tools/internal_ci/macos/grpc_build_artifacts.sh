@@ -44,6 +44,17 @@ tools/run_tests/task_runner.py -f artifact macos python3.6 ${TASK_RUNNER_EXTRA_F
 ccache --show-stats || true
 ccache -z || true
 
+tools/run_tests/task_runner.py -f artifact macos python3.7 ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 || FAILED="true"
+
+# useful for seeing is ccache was helpful
+ccache --show-stats || true
+ccache -z || true
+
+tools/run_tests/task_runner.py -f artifact macos python3.6 ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 || FAILED="true"
+
+# useful for seeing is ccache was helpful
+ccache --show-stats || true
+ccache -z || true
 
 tools/run_tests/task_runner.py -f artifact macos python3.10 ${TASK_RUNNER_EXTRA_FILTERS} -j 2 --inner_jobs 4 || FAILED="true"
 
