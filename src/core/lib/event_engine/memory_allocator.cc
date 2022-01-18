@@ -26,24 +26,28 @@ namespace {
 
 // Reference count for a slice allocated by MemoryAllocator::MakeSlice.
 // Takes care of releasing memory back when the slice is destroyed.
-class SliceRefCount : public grpc_slice_refcount {
+class SliceRefCount {
  public:
+  static void Destroy(void* p) {
+    auto* rc = static_cast<SliceRefCount*>(p);
+    rc->~SliceRefCount();
+    gpr_free(rc);
+  }
   SliceRefCount(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
                 size_t size)
-      : grpc_slice_refcount(Destroy),
+      : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
+              &base_),
         allocator_(std::move(allocator)),
         size_(size) {
     // Nothing to do here.
   }
   ~SliceRefCount() { allocator_->Release(size_); }
 
- private:
-  static void Destroy(grpc_slice_refcount* p) {
-    auto* rc = static_cast<SliceRefCount*>(p);
-    rc->~SliceRefCount();
-    gpr_free(rc);
-  }
+  grpc_slice_refcount* base_refcount() { return &base_; }
 
+ private:
+  grpc_slice_refcount base_;
+  std::atomic<size_t> refs_{1};
   std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
   size_t size_;
 };
@@ -55,7 +59,7 @@ grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
   void* p = gpr_malloc(size);
   new (p) SliceRefCount(allocator_, size);
   grpc_slice slice;
-  slice.refcount = static_cast<SliceRefCount*>(p);
+  slice.refcount = static_cast<SliceRefCount*>(p)->base_refcount();
   slice.data.refcounted.bytes =
       static_cast<uint8_t*>(p) + sizeof(SliceRefCount);
   slice.data.refcounted.length = size - sizeof(SliceRefCount);

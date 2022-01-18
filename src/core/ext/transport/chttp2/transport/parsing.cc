@@ -28,8 +28,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"

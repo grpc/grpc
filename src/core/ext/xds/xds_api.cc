@@ -57,7 +57,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {

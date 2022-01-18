@@ -410,10 +410,11 @@ static void convert_cronet_array_to_metadata(
     grpc_slice value;
     if (absl::EndsWith(header_array->headers[i].key, "-bin")) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
-      value = grpc_chttp2_base64_decode_with_length(
-          value, grpc_chttp2_base64_infer_length_after_decode(value));
+      value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
+          value, grpc_chttp2_base64_infer_length_after_decode(value)));
     } else {
-      value = grpc_slice_from_static_string(header_array->headers[i].value);
+      value = grpc_slice_intern(
+          grpc_slice_from_static_string(header_array->headers[i].value));
     }
     mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
                 [&](absl::string_view error, const grpc_core::Slice& value) {

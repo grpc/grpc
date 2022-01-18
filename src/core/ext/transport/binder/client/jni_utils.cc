@@ -87,6 +87,24 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
                             env->NewStringUTF(std::string(conn_id).c_str()));
 }
 
+bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2) {
+  const std::string method = "isSignatureMatch";
+  const std::string type = "(Landroid/content/Context;II)Z";
+
+  jclass cl = FindNativeConnectionHelper(env);
+  if (cl == nullptr) {
+    return false;
+  }
+
+  jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
+  if (mid == nullptr) {
+    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+  }
+
+  jboolean result = env->CallStaticBooleanMethod(cl, mid, context, uid1, uid2);
+  return result == JNI_TRUE;
+}
+
 }  // namespace grpc_binder
 
 #endif
