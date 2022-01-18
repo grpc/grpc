@@ -877,12 +877,18 @@ class CSharpLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
+        _check_compiler(self.args.compiler, ['default', 'coreclr', 'mono'])
+        if self.args.compiler == 'default':
+            # test both runtimes by default
+            self.test_runtimes = ['coreclr', 'mono']
+        else:
+            # only test the specified runtime
+            self.test_runtimes = [self.args.compiler]
+
         if self.platform == 'windows':
-            _check_compiler(self.args.compiler, ['default', 'coreclr'])
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
         else:
-            _check_compiler(self.args.compiler, ['default', 'coreclr'])
             self._docker_distro = 'buster'
 
     def test_specs(self):
@@ -891,28 +897,28 @@ class CSharpLanguage(object):
 
         msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
         nunit_args = ['--labels=All', '--noresult', '--workers=1']
-        assembly_subdir = 'bin/%s' % msbuild_config
-        assembly_extension = '.exe'
-
-        if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp3.1'
-            runtime_cmd = ['dotnet', 'exec']
-            assembly_extension = '.dll'
-        else:
-            assembly_subdir += '/net45'
-            if self.platform == 'windows':
-                runtime_cmd = []
-            elif self.platform == 'mac':
-                # mono before version 5.2 on MacOS defaults to 32bit runtime
-                runtime_cmd = ['mono', '--arch=64']
-            else:
-                runtime_cmd = ['mono']
 
         specs = []
-        for assembly in six.iterkeys(tests_by_assembly):
-            assembly_file = 'src/csharp/%s/%s/%s%s' % (
-                assembly, assembly_subdir, assembly, assembly_extension)
-            if self.config.build_config != 'gcov' or self.platform != 'windows':
+        for test_runtime in self.test_runtimes:
+            if self.args.compiler == 'coreclr':
+                assembly_extension = '.dll'
+                assembly_subdir = 'bin/%s/netcoreapp3.1' % msbuild_config
+                runtime_cmd = ['dotnet', 'exec']
+            else:
+                assembly_extension = '.exe'
+                assembly_subdir = 'bin/%s/net45' % msbuild_config
+                if self.platform == 'windows':
+                    runtime_cmd = []
+                elif self.platform == 'mac':
+                    # mono before version 5.2 on MacOS defaults to 32bit runtime
+                    runtime_cmd = ['mono', '--arch=64']
+                else:
+                    runtime_cmd = ['mono']
+
+            for assembly in six.iterkeys(tests_by_assembly):
+                assembly_file = 'src/csharp/%s/%s/%s%s' % (
+                    assembly, assembly_subdir, assembly, assembly_extension)
+
                 # normally, run each test as a separate process
                 for test in tests_by_assembly[assembly]:
                     cmdline = runtime_cmd + [assembly_file,
@@ -920,28 +926,8 @@ class CSharpLanguage(object):
                     specs.append(
                         self.config.job_spec(
                             cmdline,
-                            shortname='csharp.%s' % test,
+                            shortname='csharp.%s.%s' % (test_runtime, test),
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-            else:
-                # For C# test coverage, run all tests from the same assembly at once
-                # using OpenCover.Console (only works on Windows).
-                cmdline = [
-                    'src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
-                    '-target:%s' % assembly_file, '-targetdir:src\\csharp',
-                    '-targetargs:%s' % ' '.join(nunit_args),
-                    '-filter:+[Grpc.Core]*', '-register:user',
-                    '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly
-                ]
-
-                # set really high cpu_cost to make sure instances of OpenCover.Console run exclusively
-                # to prevent problems with registering the profiler.
-                run_exclusive = 1000000
-                specs.append(
-                    self.config.job_spec(cmdline,
-                                         shortname='csharp.coverage.%s' %
-                                         assembly,
-                                         cpu_cost=run_exclusive,
-                                         environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return specs
 
     def pre_build_steps(self):
@@ -1420,6 +1406,7 @@ argp.add_argument(
         'cmake_vs2015',
         'cmake_vs2017',
         'cmake_vs2019',
+        'mono',
     ],
     default='default',
     help=
