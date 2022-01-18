@@ -247,7 +247,8 @@ PriorityLb::PriorityLb(Args args)
       child_failover_timeout_(
           Duration::Milliseconds(grpc_channel_args_find_integer(
               args.args, GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS,
-              {kDefaultChildFailoverTimeout.millis(), 0, INT_MAX}))) {
+              {static_cast<int>(kDefaultChildFailoverTimeout.millis()), 0,
+               INT_MAX}))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] created", this);
   }
