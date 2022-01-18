@@ -120,8 +120,9 @@ grpc_core::RefCountedPtr<TlsSessionKeyLogger> TlsSessionKeyLoggerCache::Get(
     // Check cache for entry.
     auto it =
         cache->tls_session_key_logger_map_.find(tls_session_key_log_file_path);
-    if (it != cache->tls_session_key_logger_map_.end())
+    if (it != cache->tls_session_key_logger_map_.end()) {
       return it->second->Ref();
+    }
     // Not found in cache, so create new entry.
     // This will automatically add itself to tls_session_key_logger_map_.
     return grpc_core::MakeRefCounted<TlsSessionKeyLogger>(
