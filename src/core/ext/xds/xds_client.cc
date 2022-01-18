@@ -2082,7 +2082,7 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
   auto server = xds_server_channel_map_.find(map_it->first);
-  if (server != xds_server_channel_map_.end()) {
+  if (bootstrap_->XdsServerExists(server->first)) {
     // xds server passed in is found, ok to use
     gpr_log(GPR_INFO, "donna found server make MaybeStartLrsCall");
     server->second->MaybeStartLrsCall();
@@ -2155,7 +2155,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
     locality_state.locality_stats = cluster_locality_stats.get();
   }
   auto server = xds_server_channel_map_.find(map_it->first);
-  if (server != xds_server_channel_map_.end()) {
+  if (bootstrap_->XdsServerExists(server->first)) {
     // xds server passed in is found, ok to use
     gpr_log(GPR_INFO, "donna found server make MaybeStartLrsCall");
     server->second->MaybeStartLrsCall();

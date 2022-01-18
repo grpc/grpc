@@ -293,6 +293,17 @@ const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
   return nullptr;
 }
 
+const bool XdsBootstrap::XdsServerExists(
+    const XdsBootstrap::XdsServer& server) const {
+  if (server == servers_[0]) return true;
+  for (auto& authority : authorities_) {
+    for (auto& xds_server : authority.second.xds_servers) {
+      if (server == xds_server) return true;
+    }
+  }
+  return false;
+}
+
 grpc_error_handle XdsBootstrap::ParseXdsServerList(
     Json* json, absl::InlinedVector<XdsServer, 1>* servers) {
   std::vector<grpc_error_handle> error_list;
