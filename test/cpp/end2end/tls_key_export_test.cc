@@ -29,7 +29,6 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -120,8 +119,6 @@ int CountOccurrencesInFileContents(std::string file_contents,
 
 class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
  protected:
-  TlsKeyLoggingEnd2EndTest() = default;
-
   std::string CreateTmpFile() {
     char* name = nullptr;
     FILE* file_descriptor = gpr_tmpfile("GrpcTlsKeyLoggerTest", &name);

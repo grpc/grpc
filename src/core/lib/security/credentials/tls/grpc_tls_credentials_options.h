@@ -25,13 +25,11 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 
 // Contains configurable options specified by callers to configure their certain
 // security features supported in TLS.
@@ -61,15 +59,12 @@ struct grpc_tls_credentials_options
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
-<<<<<<< HEAD
   // Returns the previously set tls session key log file path.
   const std::string& tls_session_key_log_file_path() {
     return tls_session_key_log_file_path_;
   }
-=======
   const std::string& crl_directory() { return crl_directory_; }
 
->>>>>>> master
   // Setters for member fields.
   void set_cert_request_type(
       const grpc_ssl_client_certificate_request_type type) {
@@ -144,11 +139,8 @@ struct grpc_tls_credentials_options
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
-<<<<<<< HEAD
   std::string tls_session_key_log_file_path_;
-=======
   std::string crl_directory_;
->>>>>>> master
 };
 
 #endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

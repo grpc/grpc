@@ -40,18 +40,12 @@ extern "C" {
 
 namespace tsi {
 
-class TlsSessionKeyLoggerCache {
+class TlsSessionKeyLoggerCache
+  : public grpc_core::RefCounted<TlsSessionKeyLoggerCache> {
  public:
-  TlsSessionKeyLoggerCache() : ref_count_{0} {};
+  TlsSessionKeyLoggerCache();
   ~TlsSessionKeyLoggerCache();
 
-  void Ref() { ++ref_count_; }
-
-  void Unref() {
-    if (--ref_count_ == 0) {
-      delete this;
-    }
-  }
   // A helper class which facilitates appending Tls session keys into a file.
   // The instance is bound to a file meaning only one instance of this object
   // can ever exist for a given file path.
@@ -59,8 +53,8 @@ class TlsSessionKeyLoggerCache {
       : public grpc_core::RefCounted<TlsSessionKeyLogger> {
    public:
     // Instantiates a TlsSessionKeyLogger instance bound to a specific path.
-    explicit TlsSessionKeyLogger(std::string tls_session_key_log_file_path,
-                                 TlsSessionKeyLoggerCache* cache);
+    TlsSessionKeyLogger(std::string tls_session_key_log_file_path,
+                        grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache);
     ~TlsSessionKeyLogger() override;
 
     // Not copyable nor assignable.
@@ -74,22 +68,16 @@ class TlsSessionKeyLoggerCache {
                         const std::string& session_keys_info);
 
    private:
-    FILE* fd_;
     grpc_core::Mutex lock_;  // protects appends to file
+    FILE* fd_ ABSL_GUARDED_BY(lock_) ;
     std::string tls_session_key_log_file_path_;
-    TlsSessionKeyLoggerCache* cache_;
+    grpc_core::RefCountedPtr<TlsSessionKeyLoggerCache> cache_;
   };
   // Creates and returns a TlsSessionKeyLogger instance.
   static grpc_core::RefCountedPtr<TlsSessionKeyLogger> Get(
       std::string tls_session_key_log_file_path);
 
  private:
-  // Internal method which creates a new TlsSessionKeyLogger instance bound to
-  // the specified file path.
-  grpc_core::RefCountedPtr<TlsSessionKeyLogger> CreateTlsSessionKeyLogger(
-      std::string tls_session_key_log_file_path);
-
-  std::atomic<int> ref_count_;
   std::map<std::string, TlsSessionKeyLogger*> tls_session_key_logger_map_;
 };
 

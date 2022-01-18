@@ -262,13 +262,11 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
       overridden_target_name_(
           overridden_target_name == nullptr ? "" : overridden_target_name),
       ssl_session_cache_(ssl_session_cache) {
-  if (options_ != nullptr) {
-    std::string tls_session_key_log_file_path =
-        options_->tls_session_key_log_file_path();
-    if (!tls_session_key_log_file_path.empty()) {
-      tls_session_key_logger_ =
-          tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
-    }
+  const std::string& tls_session_key_log_file_path =
+      options_->tls_session_key_log_file_path();
+  if (!tls_session_key_log_file_path.empty()) {
+    tls_session_key_logger_ =
+        tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
   }
   if (ssl_session_cache_ != nullptr) {
     tsi_ssl_session_cache_ref(ssl_session_cache_);
@@ -581,13 +579,11 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
     : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
                                      std::move(server_creds)),
       options_(std::move(options)) {
-  if (options_ != nullptr) {
-    std::string tls_session_key_log_file_path =
-        options_->tls_session_key_log_file_path();
-    if (!tls_session_key_log_file_path.empty()) {
-      tls_session_key_logger_ =
-          tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
-    }
+  const std::string& tls_session_key_log_file_path =
+      options_->tls_session_key_log_file_path();
+  if (!tls_session_key_log_file_path.empty()) {
+    tls_session_key_logger_ =
+        tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
   }
   // Create a watcher.
   auto watcher_ptr = absl::make_unique<TlsServerCertificateWatcher>(this);

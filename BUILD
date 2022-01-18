@@ -3753,6 +3753,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
         "src/core/tsi/ssl_transport_security.cc",
@@ -3761,6 +3762,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
     ],
@@ -4348,28 +4350,10 @@ grpc_cc_library(
     srcs = [
         "src/core/tsi/fake_transport_security.cc",
         "src/core/tsi/local_transport_security.cc",
-<<<<<<< HEAD
-        "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
-        "src/core/tsi/ssl_transport_security.cc",
-        "src/core/tsi/transport_security_grpc.cc",
-=======
->>>>>>> master
     ],
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/local_transport_security.h",
-<<<<<<< HEAD
-        "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
-        "src/core/tsi/ssl/session_cache/ssl_session.h",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
-        "src/core/tsi/ssl_transport_security.h",
-        "src/core/tsi/ssl_types.h",
-        "src/core/tsi/transport_security_grpc.h",
-=======
->>>>>>> master
     ],
     external_deps = [
         "libssl",

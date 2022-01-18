@@ -2014,9 +2014,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->key_logger != nullptr) {
-    // Unref is manually called on factory destruction
-    impl->key_logger =
-        reinterpret_cast<TlsSessionKeyLogger*>(options->key_logger)->Ref();
+    impl->key_logger = options->key_logger->Ref();
     // SSL_CTX_set_keylog_callback is set here to register callback
     // when ssl/tls handshakes complete.
     SSL_CTX_set_keylog_callback(
@@ -2184,9 +2182,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   }
 
   if (options->key_logger != nullptr) {
-    // Unref is manually called on factory destruction.
-    impl->key_logger =
-        reinterpret_cast<TlsSessionKeyLogger*>(options->key_logger)->Ref();
+    impl->key_logger = options->key_logger->Ref();
   }
 
   for (i = 0; i < options->num_key_cert_pairs; i++) {
