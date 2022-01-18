@@ -358,8 +358,7 @@ size_t SumSlice(const Slice& slice) {
 
 TEST(SliceTest, ExternalAsOwned) {
   auto external_string = absl::make_unique<std::string>(RandomString(1024));
-  Slice slice(ExternallyManagedSlice(external_string->data(),
-                                     external_string->length()));
+  Slice slice = Slice::FromExternalString(*external_string);
   const auto initial_sum = SumSlice(slice);
   Slice owned = slice.AsOwned();
   EXPECT_EQ(initial_sum, SumSlice(owned));
@@ -375,9 +374,7 @@ TEST(SliceTest, ExternalAsOwned) {
 TEST(SliceTest, ExternalTakeOwned) {
   std::unique_ptr<std::string> external_string(
       new std::string(RandomString(1024)));
-  SumSlice(Slice(ExternallyManagedSlice(external_string->data(),
-                                        external_string->length()))
-               .TakeOwned());
+  SumSlice(Slice::FromExternalString(*external_string).TakeOwned());
 }
 
 TEST(SliceTest, StaticSlice) {
