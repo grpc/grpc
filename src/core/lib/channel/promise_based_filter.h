@@ -135,7 +135,10 @@ class CallData<ChannelFilter, true> : public BaseCallData {
                       grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() { GRPC_ERROR_UNREF(cancelled_error_); }
+  ~CallData() {
+    GPR_ASSERT(!is_polling_);
+    GRPC_ERROR_UNREF(cancelled_error_);
+  }
 
   // Handle one grpc_transport_stream_op_batch
   void Op(grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
@@ -367,7 +370,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner() {
     GPR_ASSERT(!is_polling_);
-    GRPC_CALL_STACK_REF(owning_call_, "PromiseCallData");
+    grpc_closure* call_closure = nullptr;
     is_polling_ = true;
     switch (send_initial_state_) {
       case SendInitialState::kQueued:
@@ -378,9 +381,8 @@ class CallData<ChannelFilter, true> : public BaseCallData {
           GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kComplete);
           GPR_ASSERT(recv_trailing_metadata_ == UnwrapMetadata(std::move(*r)));
           recv_trailing_state_ = RecvTrailingState::kResponded;
-          grpc_closure* cb =
+          call_closure =
               absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
-          Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
         }
       } break;
       case SendInitialState::kInitial:
@@ -390,14 +392,15 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         // transition).
         if (recv_trailing_state_ == RecvTrailingState::kComplete) {
           recv_trailing_state_ = RecvTrailingState::kResponded;
-          grpc_closure* cb =
+          call_closure =
               absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
-          Closure::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
         }
         break;
     }
     is_polling_ = false;
-    GRPC_CALL_STACK_UNREF(owning_call_, "PromiseCallData");
+    if (call_closure != nullptr) {
+      Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_NONE);
+    }
   }
 
   // Queued batch containing at least a send_initial_metadata op.
