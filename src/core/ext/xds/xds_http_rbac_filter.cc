@@ -24,6 +24,7 @@
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.upb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h"
+#include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/matcher/v3/path.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
@@ -181,6 +182,17 @@ Json ParseCidrRangeToJson(const envoy_config_core_v3_CidrRange* range) {
   return json;
 }
 
+Json ParseMetadataMatcherToJson(
+    const envoy_type_matcher_v3_MetadataMatcher* metadata_matcher) {
+  Json::Object json;
+  // The fields "filter", "path" and "value" are irrelevant to gRPC as per
+  // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md and are not
+  // being parsed.
+  json.emplace("invert",
+               envoy_type_matcher_v3_MetadataMatcher_invert(metadata_matcher));
+  return json;
+}
+
 absl::StatusOr<Json> ParsePermissionToJson(
     const envoy_config_rbac_v3_Permission* permission) {
   Json::Object permission_json;
@@ -251,9 +263,9 @@ absl::StatusOr<Json> ParsePermissionToJson(
         "destinationPort",
         envoy_config_rbac_v3_Permission_destination_port(permission));
   } else if (envoy_config_rbac_v3_Permission_has_metadata(permission)) {
-    // Not parsing metadata even if its present since it is not relevant to
-    // gRPC.
-    permission_json.emplace("metadata", Json::Object());
+    permission_json.emplace(
+        "metadata", ParseMetadataMatcherToJson(
+                        envoy_config_rbac_v3_Permission_metadata(permission)));
   } else if (envoy_config_rbac_v3_Permission_has_not_rule(permission)) {
     auto not_rule_json = ParsePermissionToJson(
         envoy_config_rbac_v3_Permission_not_rule(permission));
@@ -365,9 +377,9 @@ absl::StatusOr<Json> ParsePrincipalToJson(
     }
     principal_json.emplace("urlPath", std::move(*url_path_json));
   } else if (envoy_config_rbac_v3_Principal_has_metadata(principal)) {
-    // Not parsing metadata even if its present since it is not relevant to
-    // gRPC.
-    principal_json.emplace("metadata", Json::Object());
+    principal_json.emplace(
+        "metadata", ParseMetadataMatcherToJson(
+                        envoy_config_rbac_v3_Principal_metadata(principal)));
   } else if (envoy_config_rbac_v3_Principal_has_not_id(principal)) {
     auto not_id_json =
         ParsePrincipalToJson(envoy_config_rbac_v3_Principal_not_id(principal));
