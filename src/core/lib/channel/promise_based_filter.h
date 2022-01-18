@@ -148,7 +148,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       GPR_ASSERT(!op->send_initial_metadata && !op->send_trailing_metadata &&
                  !op->send_message && !op->recv_initial_metadata &&
                  !op->recv_message && !op->recv_trailing_metadata);
-      Cancel(elem, op->payload->cancel_stream.cancel_error);
+      Cancel(op->payload->cancel_stream.cancel_error);
       grpc_call_next_op(elem, op);
       return;
     }
@@ -223,7 +223,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   };
 
   // Handle cancellation.
-  void Cancel(grpc_call_element* elem, grpc_error_handle error) {
+  void Cancel(grpc_error_handle error) {
     // Track the latest reason for cancellation.
     GRPC_ERROR_UNREF(cancelled_error_);
     cancelled_error_ = GRPC_ERROR_REF(error);
