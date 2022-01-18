@@ -36,8 +36,8 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
-#include "xds_common_types.h"
 
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
