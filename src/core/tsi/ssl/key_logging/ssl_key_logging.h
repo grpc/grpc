@@ -40,7 +40,7 @@ class TlsSessionKeyLoggerCache
     : public grpc_core::RefCounted<TlsSessionKeyLoggerCache> {
  public:
   TlsSessionKeyLoggerCache();
-  ~TlsSessionKeyLoggerCache();
+  ~TlsSessionKeyLoggerCache() override;
 
   // A helper class which facilitates appending Tls session keys into a file.
   // The instance is bound to a file meaning only one instance of this object
