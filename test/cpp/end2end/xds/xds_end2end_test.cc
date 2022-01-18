@@ -10465,6 +10465,33 @@ TEST_P(XdsRbacTestWithActionPermutations,
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations, MetadataPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->mutable_metadata();
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // Test metadata with inverted match
+  policy.clear_permissions();
+  policy.add_permissions()->mutable_metadata()->set_invert(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -10752,6 +10779,37 @@ TEST_P(XdsRbacTestWithActionPermutations,
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionRemoteIpPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* range = policy.add_principals()->mutable_remote_ip();
+  range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // Change the policy itself for a negative test where there is no match.
+  policy.clear_principals();
+  range = policy.add_principals()->mutable_remote_ip();
+  range->set_address_prefix(ipv6_only_ ? "::2" : "127.0.0.2");
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
@@ -10787,6 +10845,33 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
       grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_,
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMetadataPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_principals()->mutable_metadata();
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // Test metadata with inverted match
+  policy.clear_principals();
+  policy.add_principals()->mutable_metadata()->set_invert(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
 }

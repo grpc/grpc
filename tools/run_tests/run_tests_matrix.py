@@ -201,20 +201,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # C# tests on .NET desktop/mono
+    # C# tests (both on .NET desktop/mono and .NET core)
     test_jobs += _generate_jobs(languages=['csharp'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                labels=['basictests', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
-    # C# tests on .NET core
-    test_jobs += _generate_jobs(languages=['csharp'],
-                                configs=['dbg', 'opt'],
-                                platforms=['linux', 'macos', 'windows'],
-                                arch='default',
-                                compiler='coreclr',
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],

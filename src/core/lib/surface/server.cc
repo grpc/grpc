@@ -982,19 +982,7 @@ class Server::ChannelData::ConnectivityWatcher
 //
 
 Server::ChannelData::~ChannelData() {
-  if (registered_methods_ != nullptr) {
-    for (const ChannelRegisteredMethod& crm : *registered_methods_) {
-      grpc_slice_unref_internal(crm.method);
-      GPR_DEBUG_ASSERT(crm.method.refcount == &kNoopRefcount ||
-                       crm.method.refcount == nullptr);
-      if (crm.has_host) {
-        grpc_slice_unref_internal(crm.host);
-        GPR_DEBUG_ASSERT(crm.host.refcount == &kNoopRefcount ||
-                         crm.host.refcount == nullptr);
-      }
-    }
-    registered_methods_.reset();
-  }
+  registered_methods_.reset();
   if (server_ != nullptr) {
     if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
       server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
@@ -1027,11 +1015,11 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     registered_methods_ =
         absl::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
-      ExternallyManagedSlice host;
-      ExternallyManagedSlice method(rm->method.c_str());
+      Slice host;
+      Slice method = Slice::FromExternalString(rm->method);
       const bool has_host = !rm->host.empty();
       if (has_host) {
-        host = ExternallyManagedSlice(rm->host.c_str());
+        host = Slice::FromExternalString(rm->host.c_str());
       }
       uint32_t hash = MixHash32(has_host ? host.Hash() : 0, method.Hash());
       uint32_t probes = 0;
@@ -1046,9 +1034,9 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
       crm->flags = rm->flags;
       crm->has_host = has_host;
       if (has_host) {
-        crm->host = host;
+        crm->host = std::move(host);
       }
-      crm->method = method;
+      crm->method = std::move(method);
     }
     GPR_ASSERT(slots <= UINT32_MAX);
     registered_method_max_probes_ = max_probes;

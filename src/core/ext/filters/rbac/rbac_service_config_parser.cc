@@ -262,8 +262,16 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
     permission = Rbac::Permission::MakeDestPortPermission(port);
   } else if (ParseJsonObjectField(permission_json, "metadata", &inner_json,
                                   error_list, /*required=*/false)) {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cannot handle metadata"));
+    std::vector<grpc_error_handle> metadata_error_list;
+    bool invert = false;
+    ParseJsonObjectField(*inner_json, "invert", &invert, &metadata_error_list,
+                         /*required=*/false);
+    if (metadata_error_list.empty()) {
+      permission = Rbac::Permission::MakeMetadataPermission(invert);
+    } else {
+      error_list->push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("metadata", &metadata_error_list));
+    }
   } else if (ParseJsonObjectField(permission_json, "notRule", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> not_rule_error_list;
@@ -430,8 +438,16 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
     }
   } else if (ParseJsonObjectField(principal_json, "metadata", &inner_json,
                                   error_list, /*required=*/false)) {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cannot handle metadata"));
+    std::vector<grpc_error_handle> metadata_error_list;
+    bool invert = false;
+    ParseJsonObjectField(*inner_json, "invert", &invert, &metadata_error_list,
+                         /*required=*/false);
+    if (metadata_error_list.empty()) {
+      principal = Rbac::Principal::MakeMetadataPrincipal(invert);
+    } else {
+      error_list->push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("metadata", &metadata_error_list));
+    }
   } else if (ParseJsonObjectField(principal_json, "notId", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> not_rule_error_list;
