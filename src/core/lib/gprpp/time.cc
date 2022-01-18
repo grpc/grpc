@@ -84,6 +84,7 @@ gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
 }
 
 int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
+  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
