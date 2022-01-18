@@ -291,10 +291,7 @@ static void start_max_age_grace_timer_after_goaway_op(
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_grace_timer");
     grpc_timer_init(
         &chand->max_age_grace_timer,
-        chand->max_connection_age_grace == grpc_core::Duration::Infinity()
-            ? grpc_core::Timestamp::InfFuture()
-            : grpc_core::ExecCtx::Get()->Now() +
-                  chand->max_connection_age_grace,
+        grpc_core::ExecCtx::Get()->Now() + chand->max_connection_age_grace,
         &chand->force_close_max_age_channel);
   }
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack,
@@ -469,7 +466,7 @@ static grpc_error_handle max_age_init_channel_elem(
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
           {DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0, INT_MAX});
-      chand->max_connection_idle =
+      chand->max_connection_age_grace =
           value == INT_MAX ? grpc_core::Duration::Infinity()
                            : grpc_core::Duration::Milliseconds(value);
     } else if (0 == strcmp(args->channel_args->args[i].key,
