@@ -178,7 +178,6 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
       std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
-  grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
 
@@ -232,7 +231,6 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
       std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
-  grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
 
@@ -298,7 +296,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
       std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
-  grpc_channel_args_destroy(args);
   grpc_http_request_destroy(&request);
 }
 

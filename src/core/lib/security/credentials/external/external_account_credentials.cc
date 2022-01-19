@@ -320,8 +320,8 @@ void ExternalAccountCredentials::ExchangeToken(
   body_parts.push_back(absl::StrFormat(
       "options=%s", UrlEncode(addtional_options_json.Dump()).c_str()));
   std::string body = absl::StrJoin(body_parts, "&");
-  request.body = body.c_str();
-  request.body_length = body.size(); 
+  request.body = const_cast<char*>(body.c_str());
+  request.body_length = body.size();
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
@@ -413,7 +413,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   request.hdrs = headers;
   std::string scope = absl::StrJoin(scopes_, " ");
   std::string body = absl::StrFormat("scope=%s", scope);
-  request.body = body.c_str();
+  request.body = const_cast<char*>(body.c_str());
   request.body_length = body.size();
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};

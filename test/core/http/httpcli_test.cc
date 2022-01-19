@@ -179,7 +179,7 @@ TEST_F(HttpRequestTest, Get) {
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  auto uri = URI::Create("http", host, "/get", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
@@ -192,20 +192,18 @@ TEST_F(HttpRequestTest, Get) {
   http_request->Start();
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
-  gpr_free(host);
 }
 
 TEST_F(HttpRequestTest, Post) {
   RequestState request_state(this);
   grpc_http_request req;
-  char* host;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "posting to %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  req.body = "hello";
+  req.body = const_cast<char*>("hello");
   req.body_length = 5;
-  auto uri = URI::Create("http", host, "/post", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", host, "/post", {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
@@ -216,10 +214,8 @@ TEST_F(HttpRequestTest, Post) {
           grpc_core::RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
   http_request->Start();
-  grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
-  gpr_free(host);
 }
 
 int g_fake_non_responsive_dns_server_port;
@@ -259,8 +255,8 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       RequestState request_state(this);
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
-      memset(&req, 0, sizeof("http"req));
-      auto uri = URI::Create("http", "dont-care-since-wont-be-resolved.test.com:443", "/get", {} /* query params */, "" /* fragment */);
+      memset(&req, 0, sizeof(grpc_http_request));
+      auto uri = grpc_core::URI::Create("http", "dont-care-since-wont-be-resolved.test.com:443", "/get", {} /* query params */, "" /* fragment */);
       GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
@@ -313,7 +309,7 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = URI::Create("http", fake_http_server_ptr->address(), "/get", {} /* query params */, "" /* fragment */);
+      auto uri = grpc_core::URI::Create("http", fake_http_server_ptr->address(), "/get", {} /* query params */, "" /* fragment */);
       GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
@@ -371,7 +367,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = URI::Create("http", fake_server_address, "/get", /* query params */, "" /* fragment */);
+      auto uri = grpc_core::URI::Create("http", fake_server_address, "/get", {} /* query params */, "" /* fragment */);
       GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
@@ -434,7 +430,7 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           request_state.pollset_set_to_destroy_eagerly);
-  auto uri = URI::Create("http", fake_server_address, "/get", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", fake_server_address, "/get", {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(

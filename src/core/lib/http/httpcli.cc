@@ -68,11 +68,11 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
       // Note that capturing request here assumes it will remain alive
       // until after Start is called. This avoids making a copy as this
       // code path is only used for test mocks.
-      g_get_override(request, uri.authority(), deadline, on_done, response);
+      g_get_override(request, uri.authority().c_str(), deadline, on_done, response);
     };
   }
   std::string name = absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_get_request(request, uri.authority());
+  const grpc_slice request_text = grpc_httpcli_format_get_request(request, uri.authority().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response,
       deadline, channel_args, on_done, pollent, name.c_str(),
@@ -85,15 +85,14 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
     grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  GPR_ASSERT(host != nullptr);
   if (g_post_override != nullptr) {
     test_only_generate_response = [request, uri, deadline, on_done, response]() {
-      g_post_override(request, uri.authority(), request.body, request.body_length, deadline, on_done,
+      g_post_override(request, uri.authority().c_str(), request->body, request->body_length, deadline, on_done,
                       response);
     };
   }
   std::string name = absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_post_request(request, uri.authority());
+  const grpc_slice request_text = grpc_httpcli_format_post_request(request, uri.authority().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text,
       response, deadline, channel_args, on_done, pollent, name.c_str(),
@@ -116,9 +115,9 @@ HttpRequest::HttpRequest(
     : uri_(std::move(uri)),
       request_text_(request_text),
       deadline_(deadline),
-      channel_args_(CoreConfiguration::Get()
+      channel_args_(const_cast<grpc_channel_args*>(CoreConfiguration::Get()
                              .channel_args_preconditioning()
-                             .PreconditionChannelArgs(channel_args)),
+                             .PreconditionChannelArgs(channel_args))),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
@@ -300,7 +299,7 @@ void HttpRequest::OnConnected(void* arg, grpc_error_handle error) {
   grpc_channel_args* new_args_from_connector = nullptr;
   RefCountedPtr<grpc_channel_security_connector> sc =
       req->channel_creds_->create_security_connector(
-          nullptr /*call_creds*/, req->uri_.authority.c_str(), req->channel_args_,
+          nullptr /*call_creds*/, req->uri_.authority().c_str(), req->channel_args_,
           &new_args_from_connector);
   if (sc == nullptr) {
     req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(

@@ -183,7 +183,7 @@ static int is_metadata_server_reachable() {
   detector.is_done = 0;
   detector.success = 0;
   memset(&request, 0, sizeof(grpc_http_request));
-  auto uri = URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/", {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok()); // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
@@ -194,7 +194,6 @@ static int is_metadata_server_reachable() {
       grpc_core::RefCountedPtr<grpc_channel_credentials>(
           grpc_insecure_credentials_create()));
   http_request->Start();
-  grpc_channel_args_destroy(args);
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
     called once for the lifetime of the process by the default credentials. */

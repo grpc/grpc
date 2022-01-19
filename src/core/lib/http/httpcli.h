@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
@@ -102,13 +103,13 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   are removed.
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpRequest> Post(
-      URI uri, absl::string_view scheme, const grpc_channel_args* args,
+      URI uri, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
       grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 
-  HttpRequest(absl::string_view scheme, const grpc_slice& request_text,
+  HttpRequest(URI uri, const grpc_slice& request_text,
               grpc_http_response* response, grpc_millis deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
               grpc_polling_entity* pollent, const char* name,

@@ -25,6 +25,8 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/resource_quota/api.h"
 
 namespace grpc_core {
 
@@ -274,13 +276,15 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  grpc_channel_args* args_with_resource_quota = CoreConfiguration::Get()
+  grpc_channel_args* args_with_resource_quota = const_cast<grpc_channel_args*>(CoreConfiguration::Get()
       .channel_args_preconditioning()
       .PreconditionChannelArgs(channel_args_));
-  grpc_arg resource_quota_arg = ResourceQuota::MakeArg(ResourceQuotaFromChannelArgs(args_with_resource_quota).get());
+  grpc_arg resource_quota_arg = grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
+      ResourceQuotaFromChannelArgs(args_with_resource_quota).get(),
+      grpc_resource_quota_arg_vtable());
   grpc_channel_args* request_args = grpc_channel_args_copy_and_add(
       channel_args_, &resource_quota_arg, 1);
-      request_args.data(), request_args.size());
   zone_query_ = MakeOrphanable<ZoneQuery>(request_args, Ref(), &pollent_);
   ipv6_query_ = MakeOrphanable<IPv6Query>(request_args, Ref(), &pollent_);
   grpc_channel_args_destroy(request_args);

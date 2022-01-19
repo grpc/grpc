@@ -388,7 +388,7 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    auto uri = URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST, GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH, {} /* query params */, "" /* fragment */);
+    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST, GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH, {} /* query params */, "" /* fragment */);
     GPR_ASSERT(uri.ok()); // params are hardcoded
     http_request_ = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
@@ -398,7 +398,6 @@ class grpc_compute_engine_token_fetcher_credentials
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
     http_request_->Start();
-    grpc_channel_args_destroy(args);
   }
 
   std::string debug_string() override {
@@ -447,12 +446,12 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   memset(&request, 0, sizeof(grpc_http_request));
   request.hdr_count = 1;
   request.hdrs = &header;
-  request.body = body.c_str();
+  request.body = const_cast<char*>(body.c_str());
   request.body_length = body.size();
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  auto uri = URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH, {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH, {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok()); // params are hardcoded
   http_request_ = grpc_core::HttpRequest::Post(
       std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
@@ -460,7 +459,6 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
                         grpc_schedule_on_exec_ctx),
       &metadata_req->response, grpc_core::CreateHttpRequestSSLCredentials());
   http_request_->Start();
-  grpc_channel_args_destroy(args);
 }
 
 grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(

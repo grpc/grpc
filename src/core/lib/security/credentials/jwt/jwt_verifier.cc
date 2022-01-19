@@ -674,7 +674,7 @@ static void on_openid_config_retrieved(void* user_data,
   const Json* cur;
   grpc_arg authority_arg;
   grpc_channel_args* args;
-  absl::StatusOr<URI> uri;
+  absl::StatusOr<grpc_core::URI> uri;
   char* host;
   char* path;
 
@@ -703,7 +703,7 @@ static void on_openid_config_retrieved(void* user_data,
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  uri = URI::Create("https", host, path, {} /* query params /*/, "" /* fragment */);
+  uri = grpc_core::URI::Create("https", host, path, {} /* query params /*/, "" /* fragment */);
   if (!uri.ok()) {
     goto error;
   }
@@ -779,7 +779,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   grpc_arg authority_arg;
   char* host;
   char* path;
-  absl::StatusOr<URI> uri;
+  absl::StatusOr<grpc_core::URI> uri;
 
   GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
              ctx->claims != nullptr);
@@ -836,7 +836,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  uri = URI::Create("https", host, path, {} /* query params */, "" /* fragment */);
+  uri = grpc_core::URI::Create("https", host, path, {} /* query params */, "" /* fragment */);
   if (!uri.ok()) {
     goto error;
   }
@@ -845,7 +845,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx], grpc_core::CreateHttpRequestSSLCredentials());
   ctx->http_request->Start();
-  grpc_channel_args_destroy(args);
   gpr_free(host);
   gpr_free(path);
   return;
