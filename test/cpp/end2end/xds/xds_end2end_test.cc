@@ -768,7 +768,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     default_cluster_.set_name(kDefaultClusterName);
     default_cluster_.set_type(Cluster::EDS);
     auto* eds_config = default_cluster_.mutable_eds_cluster_config();
-    eds_config->mutable_eds_config()->mutable_ads();
+    eds_config->mutable_eds_config()->mutable_self();
     eds_config->set_service_name(kDefaultEdsServiceName);
     default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
     if (GetParam().enable_load_reporting()) {
@@ -1432,7 +1432,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_rds_testing()) {
       auto* rds = http_connection_manager.mutable_rds();
       rds->set_route_config_name(route_config.name());
-      rds->mutable_config_source()->mutable_ads();
+      rds->mutable_config_source()->mutable_self();
       balancer->ads_service()->SetRdsResource(route_config);
     } else {
       *http_connection_manager.mutable_route_config() = route_config;
@@ -2227,7 +2227,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       &http_connection_manager);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
@@ -2969,15 +2969,15 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
 
 // Tests that LDS client should send a NACK if the rds message in the
 // http_connection_manager has a config_source field that does not specify
-// ADS.
-TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
+// ADS or SELF.
+TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_self();
+  rds->mutable_config_source()->set_path("/foo/bar");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
@@ -2985,7 +2985,29 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
-                                   "RDS does not specify ADS."));
+                                   "RDS does not specify ADS or SELF."));
+}
+
+// Tests that LDS client accepts the rds message in the
+// http_connection_manager with a config_source field that specifies ADS.
+TEST_P(LdsTest, AcceptsRdsConfigSourceOfTypeAds) {
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends();
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that we NACK non-terminal filters at the end of the list.
@@ -6465,15 +6487,29 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
-// is other than ADS.
-TEST_P(CdsTest, WrongEdsConfig) {
+// is other than ADS or SELF.
+TEST_P(CdsTest, EdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->set_path(
+      "/foo/bar");
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state = WaitForCdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("EDS ConfigSource is not ADS."));
+              ::testing::HasSubstr("EDS ConfigSource is not ADS or SELF."));
+}
+
+// Tests that CDS client accepts an eds_config of type ADS.
+TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends();
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that CDS client should send a NACK if the lb_policy in CDS response
@@ -9851,7 +9887,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
       ServerHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultServerRouteConfigurationName);
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -9874,7 +9910,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
       ServerHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name("unknown_server_route_config");
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -9900,7 +9936,7 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
       ServerHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(new_route_config.name());
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   // Set another filter chain with another route config name
@@ -11075,7 +11111,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
       ClientHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name("rds_resource_does_not_exist");
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   WaitForAllBackends();
