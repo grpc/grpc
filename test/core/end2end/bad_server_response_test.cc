@@ -340,7 +340,6 @@ static void run_test(bool http2_response, bool send_settings,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-
   /* status defined in hpack static table */
   run_test(true, true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
@@ -370,7 +369,8 @@ int main(int argc, char** argv) {
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
   run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-  /* unparseable response. RPC should fail immediately due to a connect failure.
+  /* unparseable response. RPC should fail immediately due to a connect
+   * failure.
    */
   run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
@@ -378,7 +378,6 @@ int main(int argc, char** argv) {
   /* http1 response. RPC should fail immediately due to a connect failure. */
   run_test(false, false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);
-
   /* http2 response without sending a SETTINGs frame. RPC should fail with
    * DEADLINE_EXCEEDED since the RPC deadline is lower than the connection
    * attempt deadline. */

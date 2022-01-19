@@ -251,10 +251,10 @@ int main(int argc, char** argv) {
     /* Set g_start_time back 25 days. */
     /* We set g_start_time here in case there are any initialization
         dependencies that use g_start_time. */
-    grpc_core::TestOnlySetProcessEpoch(
-        gpr_time_sub(gpr_now(gpr_clock_type::GPR_CLOCK_MONOTONIC),
-                     gpr_time_from_hours(kHoursIn25Days,
-                                         gpr_clock_type::GPR_CLOCK_MONOTONIC)));
+    grpc_core::TestOnlySetProcessEpoch(gpr_time_sub(
+        gpr_now(gpr_clock_type::GPR_CLOCK_MONOTONIC),
+        gpr_time_add(gpr_time_from_hours(kHoursIn25Days, GPR_TIMESPAN),
+                     gpr_time_from_seconds(10, GPR_TIMESPAN))));
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();

@@ -32,9 +32,22 @@ std::atomic<int64_t> g_process_epoch_seconds;
 std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
 
 GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
-  const gpr_cycle_counter cycles_start = gpr_get_cycle_counter();
-  int64_t process_epoch_seconds = gpr_now(GPR_CLOCK_MONOTONIC).tv_sec;
-  const gpr_cycle_counter cycles_end = gpr_get_cycle_counter();
+  gpr_cycle_counter cycles_start;
+  gpr_cycle_counter cycles_end;
+  int64_t process_epoch_seconds;
+
+  for (int i = 0; i < 11; i++) {
+    cycles_start = gpr_get_cycle_counter();
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    cycles_end = gpr_get_cycle_counter();
+    process_epoch_seconds = now.tv_sec;
+    if (process_epoch_seconds != 0) {
+      break;
+    }
+    gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
+  }
+
+  // Time does not seem to be increasing from zero...
   GPR_ASSERT(process_epoch_seconds != 0);
   int64_t expected = 0;
   gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
@@ -90,7 +103,9 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
                  static_cast<double>(GPR_NS_PER_SEC);
-  if (x < 0) return 0;
+  if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
+    return std::numeric_limits<int64_t>::min();
+  }
   if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
     return std::numeric_limits<int64_t>::max();
   }
