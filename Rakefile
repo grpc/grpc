@@ -78,29 +78,25 @@ namespace :suite do
   end
 end
 
-desc 'Build the Windows gRPC DLLs for Ruby. Optionally one can pass argument to build only dll for given platform.'
+desc 'Build the Windows gRPC DLLs for Ruby. The argument contains the list of platforms for which to build dll. Empty placeholder files will be created for platforms that were not selected.'
 task 'dlls', [:plat] do |t, args|
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
   # use env variable to set artifact build paralellism
   nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
-  selected_plat = "#{args[:plat]}"
+  plat_list = args[:plat]
 
+  build_configs = []
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
-
-  if selected_plat.empty?
-    build_configs = [w64, w32]
-  elsif selected_plat == 'x64-mingw32'
-    build_configs = [w64]
-    # touch grpc_c.*.ruby for skipped configs
-    FileUtils.touch 'grpc_c.32.ruby'
-  elsif selected_plat == 'x86-mingw32'
-    build_configs = [w32]
-    # touch grpc_c.*.ruby for skipped configs
-    FileUtils.touch 'grpc_c.64.ruby'
-  else
-    fail "Unsupported platform '#{selected_plat}' passed as an argument."
+  [w64, w32].each do |config|
+    if plat_list.include?(config[:platform])
+      # build the DLL (as grpc_c.*.ruby)
+      build_configs.append(config)
+    else
+      # create an empty grpc_c.*.ruby file as a placeholder
+      FileUtils.touch config[:out]
+    end
   end
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
@@ -177,14 +173,8 @@ task 'gem:native', [:plat] do |t, args|
       end
     end
 
-    if !windows_platforms.empty?
-      if windows_platforms.length() == 1
-        # TODO: handle touching grpc_c.*
-        Rake::Task['dlls'].execute(plat: windows_platforms[0])
-      else
-        Rake::Task['dlls'].execute
-      end
-    end
+    # Create the windows dlls or create the empty placeholders
+    Rake::Task['dlls'].execute(plat: windows_platforms)
 
     windows_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
@@ -199,11 +189,9 @@ task 'gem:native', [:plat] do |t, args|
       EOT
     end
 
-    # Truncate grpc_c.*.ruby files because they're for Windows only.
-    # Touch them first to make sure they exist even if windows build haven't run previously.
-    FileUtils.touch 'grpc_c.32.ruby'
+    # Truncate grpc_c.*.ruby files because they're for Windows only and we don't want
+    # them to take up space in the gems that don't target windows.
     File.truncate('grpc_c.32.ruby', 0)
-    FileUtils.touch 'grpc_c.64.ruby'
     File.truncate('grpc_c.64.ruby', 0)
 
     unix_platforms.each do |plat|
