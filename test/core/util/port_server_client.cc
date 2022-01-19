@@ -165,7 +165,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     pr->retries++;
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-    std::string path = absl::StrFormat("/drop/%d", port);
     auto uri = grpc_core::URI::Create("http", pr->server, "/get", {} /* query params */, "" /* fragment */);
     GPR_ASSERT(uri.ok());
     pr->http_request = grpc_core::HttpRequest::Get(
@@ -212,7 +211,6 @@ int grpc_pick_port_using_server(void) {
                                            grpc_schedule_on_exec_ctx);
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
-    std::string path = absl::StrFormat("/drop/%d", pr.port);
     auto uri = grpc_core::URI::Create("http", GRPC_PORT_SERVER_ADDRESS, "/get", {} /* query params */, "" /* fragment */);
     GPR_ASSERT(uri.ok());
     auto http_request = grpc_core::HttpRequest::Get(

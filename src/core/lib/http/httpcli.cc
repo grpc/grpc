@@ -72,7 +72,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
     };
   }
   std::string name = absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_get_request(request, uri.authority().c_str());
+  const grpc_slice request_text = grpc_httpcli_format_get_request(request, uri.authority().c_str(), uri.path().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text, response,
       deadline, channel_args, on_done, pollent, name.c_str(),
@@ -92,7 +92,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
     };
   }
   std::string name = absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
-  const grpc_slice request_text = grpc_httpcli_format_post_request(request, uri.authority().c_str());
+  const grpc_slice request_text = grpc_httpcli_format_post_request(request, uri.authority().c_str(), uri.path().c_str());
   return MakeOrphanable<HttpRequest>(
       std::move(uri), request_text,
       response, deadline, channel_args, on_done, pollent, name.c_str(),

@@ -204,7 +204,7 @@ TEST_F(HttpsCliTest, Post) {
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
-          std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(15),
+          std::move(*uri), args /* channel args */, pops(), &req, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
