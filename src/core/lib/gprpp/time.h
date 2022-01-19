@@ -82,6 +82,8 @@ class Timestamp {
 
   gpr_timespec as_timespec(gpr_clock_type type) const;
 
+  std::string ToString() const;
+
  private:
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 

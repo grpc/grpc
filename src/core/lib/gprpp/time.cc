@@ -19,6 +19,7 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <string>
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -103,11 +104,16 @@ Timestamp::Timestamp(gpr_timespec ts)
           gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime()))) {}
 
 Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
-  return Timestamp(gpr_cycle_counter_sub(c, StartCycleCounter()));
+  return Timestamp::FromMillisecondsAfterProcessEpoch(
+      TimespanToMillisRoundUp(gpr_cycle_counter_sub(c, StartCycleCounter())));
 }
 
 gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
   return MillisecondsAsTimespec(millis_, clock_type);
+}
+
+std::string Timestamp::ToString() const {
+  return "@" + std::to_string(millis_) + "ms";
 }
 
 gpr_timespec Duration::as_timespec() const {
