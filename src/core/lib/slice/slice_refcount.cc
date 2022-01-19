@@ -15,19 +15,3 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_refcount.h"
-
-#include <random>
-
-namespace grpc_core {
-
-uint32_t g_hash_seed = []() {
-  std::random_device rd;
-  std::uniform_int_distribution<uint32_t> dist;
-  return dist(rd);
-}();
-
-}  // namespace grpc_core
-
-void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
-  grpc_core::g_hash_seed = seed;
-}

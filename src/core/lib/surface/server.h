@@ -176,8 +176,8 @@ class Server : public InternallyRefCounted<Server>,
     RegisteredMethod* server_registered_method = nullptr;
     uint32_t flags;
     bool has_host;
-    Slice method;
-    Slice host;
+    ExternallyManagedSlice method;
+    ExternallyManagedSlice host;
   };
 
   class RequestMatcherInterface;

@@ -25,8 +25,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
 // They aim to keep you safe by providing strong guarantees around lifetime and
@@ -105,8 +103,6 @@ class BaseSlice {
     return grpc_slice_is_equivalent(slice_, other.slice_);
   }
 
-  uint32_t Hash() const { return grpc_slice_hash_internal(slice_); }
-
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
   explicit BaseSlice(const grpc_slice& slice) : slice_(slice) {}
@@ -166,7 +162,7 @@ inline bool operator!=(const grpc_slice& a, const BaseSlice& b) {
 template <typename Out>
 struct CopyConstructors {
   static Out FromCopiedString(const char* s) {
-    return FromCopiedBuffer(s, strlen(s));
+    return Out(grpc_slice_from_copied_string(s));
   }
   static Out FromCopiedString(absl::string_view s) {
     return FromCopiedBuffer(s.data(), s.size());
@@ -175,7 +171,7 @@ struct CopyConstructors {
     return Out(grpc_slice_from_cpp_string(std::move(s)));
   }
   static Out FromCopiedBuffer(const char* p, size_t len) {
-    return Out(grpc_slice_from_copied_buffer(p, len));
+    return Out(UnmanagedMemorySlice(p, len));
   }
 
   template <typename Buffer>
@@ -194,20 +190,11 @@ struct CopyConstructors {
 template <typename Out>
 struct StaticConstructors {
   static Out FromStaticString(const char* s) {
-    return FromStaticBuffer(s, strlen(s));
+    return Out(grpc_slice_from_static_string(s));
   }
 
   static Out FromStaticString(absl::string_view s) {
-    return FromStaticBuffer(s.data(), s.size());
-  }
-
-  static Out FromStaticBuffer(const void* s, size_t len) {
-    grpc_slice slice;
-    slice.refcount = grpc_slice_refcount::NoopRefcount();
-    slice.data.refcounted.bytes =
-        const_cast<uint8_t*>(static_cast<const uint8_t*>(s));
-    slice.data.refcounted.length = len;
-    return Out(slice);
+    return Out(ExternallyManagedSlice(s.data(), s.size()));
   }
 };
 
@@ -219,8 +206,11 @@ class StaticSlice : public slice_detail::BaseSlice,
   StaticSlice() = default;
   explicit StaticSlice(const grpc_slice& slice)
       : slice_detail::BaseSlice(slice) {
-    GPR_DEBUG_ASSERT(slice.refcount == grpc_slice_refcount::NoopRefcount());
+    GPR_DEBUG_ASSERT(slice.refcount->GetType() ==
+                     grpc_slice_refcount::Type::NOP);
   }
+  explicit StaticSlice(const StaticMetadataSlice& slice)
+      : slice_detail::BaseSlice(slice) {}
 
   StaticSlice(const StaticSlice& other)
       : slice_detail::BaseSlice(other.c_slice()) {}
@@ -242,7 +232,8 @@ class MutableSlice : public slice_detail::BaseSlice,
   MutableSlice() = default;
   explicit MutableSlice(const grpc_slice& slice)
       : slice_detail::BaseSlice(slice) {
-    GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
+    GPR_DEBUG_ASSERT(slice.refcount == nullptr ||
+                     slice.refcount->IsRegularUnique());
   }
   ~MutableSlice() { grpc_slice_unref_internal(c_slice()); }
 
@@ -306,7 +297,7 @@ class Slice : public slice_detail::BaseSlice,
     if (c_slice().refcount == nullptr) {
       return Slice(c_slice());
     }
-    if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
+    if (c_slice().refcount->GetType() == grpc_slice_refcount::Type::NOP) {
       return Slice(grpc_slice_copy(c_slice()));
     }
     return Slice(TakeCSlice());
@@ -318,7 +309,7 @@ class Slice : public slice_detail::BaseSlice,
     if (c_slice().refcount == nullptr) {
       return Slice(c_slice());
     }
-    if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
+    if (c_slice().refcount->GetType() == grpc_slice_refcount::Type::NOP) {
       return Slice(grpc_slice_copy(c_slice()));
     }
     return Slice(grpc_slice_ref_internal(c_slice()));
@@ -336,8 +327,8 @@ class Slice : public slice_detail::BaseSlice,
     if (c_slice().refcount == nullptr) {
       return MutableSlice(c_slice());
     }
-    if (c_slice().refcount != grpc_slice_refcount::NoopRefcount() &&
-        c_slice().refcount->IsUnique()) {
+    if (c_slice().refcount->GetType() == grpc_slice_refcount::Type::REGULAR &&
+        c_slice().refcount->IsRegularUnique()) {
       return MutableSlice(TakeCSlice());
     }
     return MutableSlice(grpc_slice_copy(c_slice()));
@@ -368,14 +359,10 @@ class Slice : public slice_detail::BaseSlice,
                                     const uint8_t* begin, const uint8_t* end) {
     grpc_slice out;
     out.refcount = r;
-    if (r != grpc_slice_refcount::NoopRefcount()) r->Ref();
+    r->Ref();
     out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
     out.data.refcounted.length = end - begin;
     return Slice(out);
-  }
-
-  static Slice FromExternalString(absl::string_view str) {
-    return FromStaticString(str);
   }
 };
 
