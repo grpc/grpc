@@ -42,11 +42,12 @@
 
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
-                                         const char* host, grpc_millis deadline,
+                                         const char* host, const char* path,
+                                         grpc_millis deadline,
                                          grpc_closure* on_complete,
                                          grpc_http_response* response);
 typedef int (*grpc_httpcli_post_override)(
-    const grpc_http_request* request, const char* host, const char* body_bytes,
+    const grpc_http_request* request, const char* host, const char* path, const char* body_bytes,
     size_t body_size, grpc_millis deadline, grpc_closure* on_complete,
     grpc_http_response* response);
 
