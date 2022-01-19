@@ -198,11 +198,11 @@ class PythonArtifact:
 class RubyArtifact:
     """Builds ruby native gem."""
 
-    def __init__(self, platform, arch, presubmit=False):
-        self.name = 'ruby_native_gem_%s_%s' % (platform, arch)
+    def __init__(self, platform, gem_platform, presubmit=False):
+        self.name = 'ruby_native_gem_%s_%s' % (platform, gem_platform)
         self.platform = platform
-        self.arch = arch
-        self.labels = ['artifact', 'ruby', platform, arch]
+        self.gem_platform = gem_platform
+        self.labels = ['artifact', 'ruby', platform, gem_platform]
         if presubmit:
             self.labels.append('presubmit')
 
@@ -216,11 +216,13 @@ class RubyArtifact:
             environ['GRPC_RUBY_BUILD_PROCS'] = str(inner_jobs)
         # Ruby build uses docker internally and docker cannot be nested.
         # We are using a custom workspace instead.
-        return create_jobspec(
-            self.name, ['tools/run_tests/artifacts/build_artifact_ruby.sh'],
-            use_workspace=True,
-            timeout_seconds=90 * 60,
-            environ=environ)
+        return create_jobspec(self.name, [
+            'tools/run_tests/artifacts/build_artifact_ruby.sh',
+            self.gem_platform
+        ],
+                              use_workspace=True,
+                              timeout_seconds=90 * 60,
+                              environ=environ)
 
 
 class CSharpExtArtifact:
@@ -457,8 +459,13 @@ def targets():
         PythonArtifact('windows', 'x64', 'Python38'),
         PythonArtifact('windows', 'x64', 'Python39'),
         PythonArtifact('windows', 'x64', 'Python310', presubmit=True),
-        RubyArtifact('linux', 'x64', presubmit=True),
-        RubyArtifact('macos', 'x64', presubmit=True),
+        RubyArtifact('linux', 'x86-mingw32', presubmit=True),
+        RubyArtifact('linux', 'x64-mingw32', presubmit=True),
+        RubyArtifact('linux', 'x86_64-linux', presubmit=True),
+        RubyArtifact('linux', 'x86-linux', presubmit=True),
+        RubyArtifact('linux', 'x86_64-darwin', presubmit=True),
+        RubyArtifact('linux', 'arm64-darwin', presubmit=True),
+        RubyArtifact('macos', 'darwin', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
-        PHPArtifact('macos', 'x64', presubmit=True)
+        PHPArtifact('macos', 'x64', presubmit=True),
     ])
