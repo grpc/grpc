@@ -81,4 +81,6 @@ package envoy.type.matcher.v3;
 
 // [#next-major-version: MetadataMatcher should use StructMatcher]
 message MetadataMatcher {
+  // If true, the match result will be inverted.
+  bool invert = 4;
 }
