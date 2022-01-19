@@ -128,7 +128,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
     if (len > 0) {
       op->send_trailing_metadata()->batch()->Set(
           grpc_core::GrpcServerStatsBinMetadata(),
-          grpc_core::Slice::FromCopiedBuffer(stats_buf_, len));
+          grpc_core::Slice(grpc_core::UnmanagedMemorySlice(stats_buf_, len)));
     }
   }
   // Call next op.
