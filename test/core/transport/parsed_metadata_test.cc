@@ -220,6 +220,9 @@ TEST(KeyValueTest, Simple) {
   p.reset();
   EXPECT_EQ(p2.DebugString(), "key: some_other_value");
   EXPECT_EQ(p2.transport_size(), 51);
+  PM p3 = std::move(p2);
+  EXPECT_EQ(p3.DebugString(), "key: some_other_value");
+  EXPECT_EQ(p3.transport_size(), 51);
 }
 
 }  // namespace testing
