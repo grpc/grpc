@@ -193,7 +193,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   }
 };
 
-} // namespace
+}  // namespace
 
 RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
   return MakeRefCounted<HttpRequestSSLCredentials>();

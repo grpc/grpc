@@ -33,9 +33,9 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 /* User agent this library reports */
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -78,9 +78,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   TODO(yihuaz): disallow nullptr as a value after unsecure builds
   //   are removed.
   static OrphanablePtr<HttpRequest> Get(
-      URI uri, const grpc_channel_args* args,
-      grpc_polling_entity* pollent, const grpc_http_request* request,
-      grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
+      URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
+      const grpc_http_request* request, grpc_millis deadline,
+      grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 
@@ -103,9 +103,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   are removed.
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpRequest> Post(
-      URI uri, const grpc_channel_args* args,
-      grpc_polling_entity* pollent, const grpc_http_request* request,
-      grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
+      URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
+      const grpc_http_request* request, grpc_millis deadline,
+      grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 

@@ -316,8 +316,8 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   gpr_mu_unlock(&mu_);
   if (start_fetch) {
     Ref().release();
-    fetch_oauth2(new grpc_credentials_metadata_request(this->Ref()),
-                 &pollent_, on_oauth2_token_fetcher_http_response,
+    fetch_oauth2(new grpc_credentials_metadata_request(this->Ref()), &pollent_,
+                 on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
   return false;
@@ -388,10 +388,13 @@ class grpc_compute_engine_token_fetcher_credentials
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST, GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH, {} /* query params */, "" /* fragment */);
-    GPR_ASSERT(uri.ok()); // params are hardcoded
+    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
+                                      GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
+                                      {} /* query params */, "" /* fragment */);
+    GPR_ASSERT(uri.ok());  // params are hardcoded
     http_request_ = grpc_core::HttpRequest::Get(
-        std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
+        std::move(*uri), nullptr /* channel args */, pollent, &request,
+        deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response,
@@ -451,8 +454,10 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH, {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok()); // params are hardcoded
+  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
+                                    GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
+                                    {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());  // params are hardcoded
   http_request_ = grpc_core::HttpRequest::Post(
       std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,

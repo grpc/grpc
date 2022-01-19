@@ -169,9 +169,10 @@ TEST_F(HttpsCliTest, Get) {
   grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       const_cast<char*>("foo.test.google.fr"));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, &ssl_override_arg, 1);
-  auto uri = grpc_core::URI::Create("https", host, "/get", {} /* query params */, "" /* fragment */);
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &ssl_override_arg, 1);
+  auto uri = grpc_core::URI::Create("https", host, "/get",
+                                    {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
@@ -198,13 +199,15 @@ TEST_F(HttpsCliTest, Post) {
   grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       const_cast<char*>("foo.test.google.fr"));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, &ssl_override_arg, 1);
-  auto uri = grpc_core::URI::Create("https", host, "/post", {} /* query params */, "" /* fragment */);
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(nullptr, &ssl_override_arg, 1);
+  auto uri = grpc_core::URI::Create("https", host, "/post",
+                                    {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
-          std::move(*uri), args /* channel args */, pops(), &req, NSecondsTime(15),
+          std::move(*uri), args /* channel args */, pops(), &req,
+          NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
@@ -242,9 +245,11 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
           const_cast<char*>("foo.test.google.fr"));
-      grpc_channel_args* args = grpc_channel_args_copy_and_add(
-          nullptr, &ssl_override_arg, 1);
-      auto uri = grpc_core::URI::Create("https", fake_http_server_ptr->address(), "/get", {} /* query params */, "" /* fragment */);
+      grpc_channel_args* args =
+          grpc_channel_args_copy_and_add(nullptr, &ssl_override_arg, 1);
+      auto uri = grpc_core::URI::Create(
+          "https", fake_http_server_ptr->address(), "/get",
+          {} /* query params */, "" /* fragment */);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), args, pops(), &req, NSecondsTime(120),

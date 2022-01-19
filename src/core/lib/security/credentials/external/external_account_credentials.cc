@@ -334,9 +334,8 @@ void ExternalAccountCredentials::ExchangeToken(
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ = HttpRequest::Post(
-      std::move(*uri), nullptr, ctx_->pollent, &request,
-      ctx_->deadline, &ctx_->closure, &ctx_->response,
-      std::move(http_request_creds));
+      std::move(*uri), nullptr, ctx_->pollent, &request, ctx_->deadline,
+      &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);
 }
@@ -428,9 +427,8 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ = HttpRequest::Post(
-      std::move(*uri), nullptr, ctx_->pollent, &request,
-      ctx_->deadline, &ctx_->closure, &ctx_->response,
-      std::move(http_request_creds));
+      std::move(*uri), nullptr, ctx_->pollent, &request, ctx_->deadline,
+      &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);
 }

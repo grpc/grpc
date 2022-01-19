@@ -34,4 +34,4 @@ RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials();
 
 }  // namespace grpc_core
 
-#endif // GRPC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H
+#endif  // GRPC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H

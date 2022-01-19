@@ -36,7 +36,8 @@
 #include "src/core/lib/gpr/string.h"
 
 static void fill_common_header(const grpc_http_request* request,
-                               const char* host, const char* path, bool connection_close,
+                               const char* host, const char* path,
+                               bool connection_close,
                                std::vector<std::string>* buf) {
   buf->push_back(path);
   buf->push_back(" HTTP/1.0\r\n");
@@ -66,7 +67,8 @@ grpc_slice grpc_httpcli_format_get_request(const grpc_http_request* request,
 }
 
 grpc_slice grpc_httpcli_format_post_request(const grpc_http_request* request,
-                                            const char* host, const char* path) {
+                                            const char* host,
+                                            const char* path) {
   std::vector<std::string> out;
   out.push_back("POST ");
   fill_common_header(request, host, path, true, &out);
@@ -81,19 +83,22 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_http_request* request,
     if (!has_content_type) {
       out.push_back("Content-Type: text/plain\r\n");
     }
-    out.push_back(absl::StrFormat("Content-Length: %lu\r\n",
-                                  static_cast<unsigned long>(request->body_length)));
+    out.push_back(
+        absl::StrFormat("Content-Length: %lu\r\n",
+                        static_cast<unsigned long>(request->body_length)));
   }
   out.push_back("\r\n");
   std::string req = absl::StrJoin(out, "");
   if (request->body != nullptr) {
-    absl::StrAppend(&req, absl::string_view(request->body, request->body_length));
+    absl::StrAppend(&req,
+                    absl::string_view(request->body, request->body_length));
   }
   return grpc_slice_from_copied_buffer(req.data(), req.size());
 }
 
 grpc_slice grpc_httpcli_format_connect_request(const grpc_http_request* request,
-                                               const char* host, const char* path) {
+                                               const char* host,
+                                               const char* path) {
   std::vector<std::string> out;
   out.push_back("CONNECT ");
   fill_common_header(request, host, path, false, &out);

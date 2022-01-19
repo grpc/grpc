@@ -179,11 +179,13 @@ TEST_F(HttpRequestTest, Get) {
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
   gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
+                                    "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
-          std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(15),
+          std::move(*uri), nullptr /* channel args */, pops(), &req,
+          NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
@@ -203,11 +205,13 @@ TEST_F(HttpRequestTest, Post) {
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
   req.body_length = 5;
-  auto uri = grpc_core::URI::Create("http", host, "/post", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", host, "/post",
+                                    {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
-          std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(15),
+          std::move(*uri), nullptr /* channel args */, pops(), &req,
+          NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
@@ -256,11 +260,14 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(grpc_http_request));
-      auto uri = grpc_core::URI::Create("http", "dont-care-since-wont-be-resolved.test.com:443", "/get", {} /* query params */, "" /* fragment */);
+      auto uri = grpc_core::URI::Create(
+          "http", "dont-care-since-wont-be-resolved.test.com:443", "/get",
+          {} /* query params */, "" /* fragment */);
       GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(120),
+              std::move(*uri), nullptr /* channel args */, pops(), &req,
+              NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
@@ -309,11 +316,14 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = grpc_core::URI::Create("http", fake_http_server_ptr->address(), "/get", {} /* query params */, "" /* fragment */);
+      auto uri = grpc_core::URI::Create("http", fake_http_server_ptr->address(),
+                                        "/get", {} /* query params */,
+                                        "" /* fragment */);
       GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(120),
+              std::move(*uri), nullptr /* channel args */, pops(), &req,
+              NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
@@ -367,11 +377,14 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = grpc_core::URI::Create("http", fake_server_address, "/get", {} /* query params */, "" /* fragment */);
+      auto uri =
+          grpc_core::URI::Create("http", fake_server_address, "/get",
+                                 {} /* query params */, "" /* fragment */);
       GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(120),
+              std::move(*uri), nullptr /* channel args */, pops(), &req,
+              NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
@@ -430,12 +443,13 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           request_state.pollset_set_to_destroy_eagerly);
-  auto uri = grpc_core::URI::Create("http", fake_server_address, "/get", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", fake_server_address, "/get",
+                                    {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
-          std::move(*uri), nullptr /* channel args */, &wrapped_pollset_set_to_destroy_eagerly, &req,
-          NSecondsTime(15),
+          std::move(*uri), nullptr /* channel args */,
+          &wrapped_pollset_set_to_destroy_eagerly, &req, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,

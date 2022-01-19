@@ -174,9 +174,10 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  http_request_ = HttpRequest::Get(
-      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
-      &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);
 }
@@ -227,9 +228,10 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  http_request_ = HttpRequest::Get(
-      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
-      &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);
 }
@@ -292,9 +294,10 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
-  http_request_ = HttpRequest::Get(
-      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
-      &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);
 }
