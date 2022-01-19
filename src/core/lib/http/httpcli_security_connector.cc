@@ -72,7 +72,7 @@ class grpc_httpcli_ssl_channel_security_connector final
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /*interested_parties*/,
-                       grpc_core::HandshakeManager* handshake_mgr) override {
+                       HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;
     if (handshaker_factory_ != nullptr) {
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -83,7 +83,7 @@ class grpc_httpcli_ssl_channel_security_connector final
       }
     }
     handshake_mgr->Add(
-        grpc_core::SecurityHandshakerCreate(handshaker, this, args));
+        SecurityHandshakerCreate(handshaker, this, args));
   }
 
   tsi_ssl_client_handshaker_factory* handshaker_factory() const {
@@ -91,7 +91,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* /*auth_context*/,
+                  RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
     grpc_error_handle error = GRPC_ERROR_NONE;
 
@@ -101,7 +101,7 @@ class grpc_httpcli_ssl_channel_security_connector final
       error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "Peer name ", secure_peer_name_, " is not in peer certificate"));
     }
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
 
@@ -137,7 +137,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   char* secure_peer_name_;
 };
 
-static grpc_core::RefCountedPtr<grpc_channel_security_connector>
+static RefCountedPtr<grpc_channel_security_connector>
 httpcli_ssl_channel_security_connector_create(
     const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
     const char* secure_peer_name) {
@@ -146,8 +146,8 @@ httpcli_ssl_channel_security_connector_create(
             "Cannot assert a secure peer name without a trust root.");
     return nullptr;
   }
-  grpc_core::RefCountedPtr<grpc_httpcli_ssl_channel_security_connector> c =
-      grpc_core::MakeRefCounted<grpc_httpcli_ssl_channel_security_connector>(
+  RefCountedPtr<grpc_httpcli_ssl_channel_security_connector> c =
+      MakeRefCounted<grpc_httpcli_ssl_channel_security_connector>(
           secure_peer_name == nullptr ? nullptr : gpr_strdup(secure_peer_name));
   tsi_result result = c->InitHandshakerFactory(pem_root_certs, root_store);
   if (result != TSI_OK) {
