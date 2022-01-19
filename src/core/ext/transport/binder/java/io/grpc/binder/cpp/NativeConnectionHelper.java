@@ -15,7 +15,9 @@
 package io.grpc.binder.cpp;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
+import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,6 +34,19 @@ final class NativeConnectionHelper {
     // TODO(mingcl): Assert that connId is unique
     s.put(connId, new GrpcBinderConnection(context, connId));
     s.get(connId).tryConnect(pkg, cls);
+  }
+
+  // Returns true if the packages signature of the 2 UIDs match.
+  // `context` is used to get PackageManager
+  static boolean isSignatureMatch(Context context, int uid1, int uid2) {
+    int result = context.getPackageManager().checkSignatures(uid1, uid2);
+    if (result == PackageManager.SIGNATURE_MATCH) {
+      return true;
+    }
+    Log.e(
+        "NativeConnectionHelper",
+        "Signatures does not match. checkSignature return value = " + result);
+    return false;
   }
 
   static Parcel getEmptyParcel() {

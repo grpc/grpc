@@ -719,6 +719,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
@@ -1335,6 +1337,8 @@
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />

@@ -409,6 +409,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
@@ -442,6 +443,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   options.cipher_suites = grpc_get_ssl_cipher_suites();
   options.session_cache = ssl_session_cache;
+  options.key_logger = tls_session_key_logger;
   options.skip_server_certificate_verification =
       skip_server_certificate_verification;
   options.min_tls_version = min_tls_version;
@@ -464,6 +466,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
@@ -480,6 +483,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
   options.min_tls_version = min_tls_version;
   options.max_tls_version = max_tls_version;
+  options.key_logger = tls_session_key_logger;
   options.crl_directory = crl_directory;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,

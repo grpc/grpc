@@ -27,6 +27,9 @@ wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.
 sh cmake-linux.sh -- --skip-license --prefix=/usr
 rm cmake-linux.sh
 
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
+
 # Build helloworld example.
 # This uses CMake's FetchContent module to download gRPC and its dependencies
 # and add it to the helloworld project as a subdirectory.
@@ -41,5 +44,5 @@ cmake \
   -DGRPC_FETCHCONTENT=ON \
   -DFETCHCONTENT_SOURCE_DIR_GRPC="$grpc_dir" \
   ../..
-make -j4
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd

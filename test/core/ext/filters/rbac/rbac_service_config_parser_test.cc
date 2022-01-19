@@ -304,6 +304,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
       "              {\"urlPath\":{\"path\":{\"exact\":\"\"}}},\n"
       "              {\"destinationIp\":{\"addressPrefix\":\"::1\"}},\n"
       "              {\"destinationPort\":1234},\n"
+      "              {\"metadata\":{\"invert\":true}},\n"
       "              {\"notRule\":{\"any\":true}},\n"
       "              {\"requestedServerName\":{\"exact\":\"\"}}\n"
       "            ],\n"
@@ -318,6 +319,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
       "              {\"remoteIp\":{\"addressPrefix\":\"::1\"}},\n"
       "              {\"header\":{\"name\":\"name\", \"exactMatch\":\"\"}},\n"
       "              {\"urlPath\":{\"path\":{\"exact\":\"\"}}},\n"
+      "              {\"metadata\":{\"invert\":true}},\n"
       "              {\"notId\":{\"any\":true}}\n"
       "            ]\n"
       "          }\n"
@@ -362,6 +364,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
       "              {\"urlPath\":1234},\n"
       "              {\"destinationIp\":1234},\n"
       "              {\"destinationPort\":\"port\"},\n"
+      "              {\"metadata\":1234},\n"
       "              {\"notRule\":1234},\n"
       "              {\"requestedServerName\":1234}\n"
       "            ],\n"
@@ -375,6 +378,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
       "              {\"remoteIp\":1234},\n"
       "              {\"header\":1234},\n"
       "              {\"urlPath\":1234},\n"
+      "              {\"metadata\":1234},\n"
       "              {\"notId\":1234}\n"
       "            ]\n"
       "          }\n"
@@ -408,8 +412,10 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
           "permissions\\[6\\]" CHILD_ERROR_TAG
           "field:destinationPort error:type should be NUMBER.*"
           "permissions\\[7\\]" CHILD_ERROR_TAG
-          "field:notRule error:type should be OBJECT.*"
+          "field:metadata error:type should be OBJECT.*"
           "permissions\\[8\\]" CHILD_ERROR_TAG
+          "field:notRule error:type should be OBJECT.*"
+          "permissions\\[9\\]" CHILD_ERROR_TAG
           "field:requestedServerName error:type should be OBJECT.*"
           "principals\\[0\\]" CHILD_ERROR_TAG
           "field:andIds error:type should be OBJECT.*"
@@ -430,6 +436,8 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
           "principals\\[8\\]" CHILD_ERROR_TAG
           "field:urlPath error:type should be OBJECT.*"
           "principals\\[9\\]" CHILD_ERROR_TAG
+          "field:metadata error:type should be OBJECT.*"
+          "principals\\[10\\]" CHILD_ERROR_TAG
           "field:notId error:type should be OBJECT.*"));
   GRPC_ERROR_UNREF(error);
 }

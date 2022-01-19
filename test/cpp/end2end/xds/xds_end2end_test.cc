@@ -768,7 +768,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     default_cluster_.set_name(kDefaultClusterName);
     default_cluster_.set_type(Cluster::EDS);
     auto* eds_config = default_cluster_.mutable_eds_cluster_config();
-    eds_config->mutable_eds_config()->mutable_ads();
+    eds_config->mutable_eds_config()->mutable_self();
     eds_config->set_service_name(kDefaultEdsServiceName);
     default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
     if (GetParam().enable_load_reporting()) {
@@ -913,6 +913,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       const char* xds_authority = "",
       grpc_channel_args* xds_channel_args = nullptr) {
     ChannelArguments args;
+    // TODO(roth): Remove this once we enable retries by default internally.
+    args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
@@ -1430,7 +1432,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_rds_testing()) {
       auto* rds = http_connection_manager.mutable_rds();
       rds->set_route_config_name(route_config.name());
-      rds->mutable_config_source()->mutable_ads();
+      rds->mutable_config_source()->mutable_self();
       balancer->ads_service()->SetRdsResource(route_config);
     } else {
       *http_connection_manager.mutable_route_config() = route_config;
@@ -2225,7 +2227,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       &http_connection_manager);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
@@ -2456,6 +2458,39 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
+}
+
+TEST_P(
+    GlobalXdsClientTest,
+    MultipleChannelsShareXdsClientWithResourceUpdateAfterOneChannelGoesAway) {
+  // Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
+  // XdsClient properly handles the case where there are multiple watchers on
+  // the same resource and one of them unsubscribes.
+  const char* kNewServerName = "new-server.example.com";
+  Listener listener = default_listener_;
+  listener.set_name(kNewServerName);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  })));
+  WaitForBackend(0);
+  // Create second channel and tell it to connect to kNewServerName.
+  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  // Now, destroy the new channel, send an EDS update to use a different backend
+  // and test that the channel switches to that backend.
+  channel2.reset();
+  // This sleep is needed to be able to reproduce the bug and to give time for
+  // the buggy unsubscription to take place.
+  // TODO(yashykt): Figure out a way to do this without the sleep.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  })));
+  WaitForBackend(1);
 }
 
 // Tests that the NACK for multiple bad LDS resources includes both errors.
@@ -3051,15 +3086,15 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
 
 // Tests that LDS client should send a NACK if the rds message in the
 // http_connection_manager has a config_source field that does not specify
-// ADS.
-TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
+// ADS or SELF.
+TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
       &http_connection_manager);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_self();
+  rds->mutable_config_source()->set_path("/foo/bar");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
@@ -3067,7 +3102,29 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
-                                   "RDS does not specify ADS."));
+                                   "RDS does not specify ADS or SELF."));
+}
+
+// Tests that LDS client accepts the rds message in the
+// http_connection_manager with a config_source field that specifies ADS.
+TEST_P(LdsTest, AcceptsRdsConfigSourceOfTypeAds) {
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* rds = http_connection_manager.mutable_rds();
+  rds->set_route_config_name(kDefaultRouteConfigurationName);
+  rds->mutable_config_source()->mutable_ads();
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(balancer_.get(), listener,
+                                   default_route_config_);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends();
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that we NACK non-terminal filters at the end of the list.
@@ -6547,15 +6604,29 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
-// is other than ADS.
-TEST_P(CdsTest, WrongEdsConfig) {
+// is other than ADS or SELF.
+TEST_P(CdsTest, EdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->set_path(
+      "/foo/bar");
   balancer_->ads_service()->SetCdsResource(cluster);
   const auto response_state = WaitForCdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("EDS ConfigSource is not ADS."));
+              ::testing::HasSubstr("EDS ConfigSource is not ADS or SELF."));
+}
+
+// Tests that CDS client accepts an eds_config of type ADS.
+TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends();
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 // Tests that CDS client should send a NACK if the lb_policy in CDS response
@@ -9933,7 +10004,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNonDefaultFilterChain) {
       ServerHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(kDefaultServerRouteConfigurationName);
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -9956,7 +10027,7 @@ TEST_P(XdsServerRdsTest, NonInlineRouteConfigurationNotAvailable) {
       ServerHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name("unknown_server_route_config");
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -9982,7 +10053,7 @@ TEST_P(XdsServerRdsTest, MultipleRouteConfigurations) {
       ServerHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name(new_route_config.name());
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       http_connection_manager);
   // Set another filter chain with another route config name
@@ -10547,6 +10618,33 @@ TEST_P(XdsRbacTestWithActionPermutations,
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations, MetadataPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_permissions()->mutable_metadata();
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // Test metadata with inverted match
+  policy.clear_permissions();
+  policy.add_permissions()->mutable_metadata()->set_invert(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, ReqServerNamePermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -10834,6 +10932,37 @@ TEST_P(XdsRbacTestWithActionPermutations,
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionRemoteIpPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* range = policy.add_principals()->mutable_remote_ip();
+  range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // Change the policy itself for a negative test where there is no match.
+  policy.clear_principals();
+  range = policy.add_principals()->mutable_remote_ip();
+  range->set_address_prefix(ipv6_only_ ? "::2" : "127.0.0.2");
+  range->mutable_prefix_len()->set_value(ipv6_only_ ? 128 : 32);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
   FakeCertificateProvider::CertDataMap fake1_cert_map = {
       {"", {root_cert_, identity_pair_}}};
@@ -10869,6 +10998,33 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionAuthenticatedPrincipal) {
       grpc::StatusCode::OK);
   SendRpc([this]() { return CreateMtlsChannel(); },
           server_authenticated_identity_, client_authenticated_identity_,
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMetadataPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  policy.add_principals()->mutable_metadata();
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // Test metadata with inverted match
+  policy.clear_principals();
+  policy.add_principals()->mutable_metadata()->set_invert(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
 }
@@ -11072,7 +11228,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
       ClientHcmAccessor().Unpack(listener);
   auto* rds = http_connection_manager.mutable_rds();
   rds->set_route_config_name("rds_resource_does_not_exist");
-  rds->mutable_config_source()->mutable_ads();
+  rds->mutable_config_source()->mutable_self();
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   WaitForAllBackends();

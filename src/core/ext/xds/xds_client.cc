@@ -36,6 +36,7 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
+#include "src/core/ext/xds/xds_channel_creds.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
@@ -511,8 +512,8 @@ namespace {
 grpc_channel* CreateXdsChannel(grpc_channel_args* args,
                                const XdsBootstrap::XdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
-      XdsChannelCredsRegistry::MakeChannelCreds(server.channel_creds_type,
-                                                server.channel_creds_config);
+      XdsChannelCredsRegistry::CreateXdsChannelCreds(
+          server.channel_creds_type, server.channel_creds_config);
   return grpc_secure_channel_create(channel_creds.get(),
                                     server.server_uri.c_str(), args, nullptr);
 }
@@ -1965,10 +1966,10 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   ResourceState& resource_state = resource_it->second;
   // Remove watcher.
   resource_state.watchers.erase(watcher);
-  authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
-                                                   delay_unsubscription);
   // Clean up empty map entries, if any.
   if (resource_state.watchers.empty()) {
+    authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
+                                                     delay_unsubscription);
     type_map.erase(resource_it);
     if (type_map.empty()) {
       authority_state.resource_map.erase(type_it);
@@ -2333,6 +2334,7 @@ std::string XdsClient::DumpClientConfigBinary() {
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
+  XdsChannelCredsRegistry::Init();
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does
@@ -2342,6 +2344,7 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   g_fallback_bootstrap_config = nullptr;
   delete g_mu;
   g_mu = nullptr;
+  XdsChannelCredsRegistry::Shutdown();
   XdsHttpFilterRegistry::Shutdown();
 }
 

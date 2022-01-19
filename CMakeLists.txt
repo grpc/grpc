@@ -1009,6 +1009,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timeout_encoding_test)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
+  add_dependencies(buildtests_cxx tls_key_export_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx tls_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
@@ -1030,6 +1031,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx xds_bootstrap_test)
   add_dependencies(buildtests_cxx xds_certificate_provider_test)
+  add_dependencies(buildtests_cxx xds_channel_creds_registry_test)
   add_dependencies(buildtests_cxx xds_credentials_end2end_test)
   add_dependencies(buildtests_cxx xds_credentials_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1088,6 +1090,7 @@ target_link_libraries(address_sorting
 if(gRPC_INSTALL)
   install(TARGETS address_sorting EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -1528,6 +1531,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS gpr EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -1861,6 +1865,7 @@ add_library(grpc
   src/core/ext/xds/xds_api.cc
   src/core/ext/xds/xds_bootstrap.cc
   src/core/ext/xds/xds_certificate_provider.cc
+  src/core/ext/xds/xds_channel_creds.cc
   src/core/ext/xds/xds_channel_stack_modifier.cc
   src/core/ext/xds/xds_client.cc
   src/core/ext/xds/xds_client_stats.cc
@@ -2136,6 +2141,7 @@ add_library(grpc
   src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
+  src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -2229,6 +2235,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -2511,6 +2518,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/protobuf/duration.upb.c
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
@@ -2782,6 +2790,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3165,6 +3174,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc++ EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3228,6 +3238,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc++_alts EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3289,6 +3300,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc++_error_details EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3358,6 +3370,7 @@ if(gRPC_BUILD_CODEGEN)
 if(gRPC_INSTALL)
   install(TARGETS grpc++_reflection EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3814,6 +3827,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc++_unsecure EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3881,6 +3895,7 @@ endforeach()
 if(gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -3953,6 +3968,7 @@ if(gRPC_BUILD_CODEGEN)
 if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -4012,6 +4028,7 @@ target_link_libraries(upb
 if(gRPC_INSTALL)
   install(TARGETS upb EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11035,6 +11052,7 @@ target_link_libraries(grpc_cpp_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11074,6 +11092,7 @@ target_link_libraries(grpc_csharp_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11113,6 +11132,7 @@ target_link_libraries(grpc_node_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_node_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11152,6 +11172,7 @@ target_link_libraries(grpc_objective_c_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11191,6 +11212,7 @@ target_link_libraries(grpc_php_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11230,6 +11252,7 @@ target_link_libraries(grpc_python_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -11269,6 +11292,7 @@ target_link_libraries(grpc_ruby_plugin
 if(gRPC_INSTALL)
   install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
@@ -15915,6 +15939,53 @@ target_link_libraries(tls_certificate_verifier_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(tls_key_export_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  test/cpp/end2end/tls_key_export_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(tls_key_export_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(tls_key_export_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(tls_security_connector_test
   test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16717,6 +16788,41 @@ target_include_directories(xds_certificate_provider_test
 )
 
 target_link_libraries(xds_certificate_provider_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_channel_creds_registry_test
+  test/core/xds/xds_channel_creds_registry_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(xds_channel_creds_registry_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_channel_creds_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
