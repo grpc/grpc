@@ -2545,7 +2545,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  protected:
-  XdsFederationTest() : XdsEnd2endTest(2, 100, 0, true) {
+  XdsFederationTest() : XdsEnd2endTest(2, 3, 0, true) {
     authority_balancer_ = CreateAndStartBalancer();
   }
 
@@ -2766,6 +2766,123 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   // server.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+}
+
+// Channel is created with URI "xds://xds.example.com/server.example.com".
+// Bootstrap entry for that authority specifies a client listener name template.
+// Sending traffic to both default balancer and authority balancer and checking
+// load reporting with each one.
+TEST_P(XdsFederationTest, FederationMultipleLoadReportingTest) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* kAuthority = "xds.example.com";
+  const char* kNewServerName = "whee%/server.example.com";
+  const char* kNewListenerTemplate =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/%s?psm_project_id=1234";
+  const char* kNewListenerName =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "client/whee%25/server.example.com?psm_project_id=1234";
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
+  const char* kNewEdsServiceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "cluster_name";
+  const size_t num_rpc_to_default_balancer = 5;
+  const size_t num_rpc_to_authority_balancer = 10;
+  BootstrapBuilder builder = BootstrapBuilder();
+  builder.AddAuthority(kAuthority,
+                       absl::StrCat("localhost:", authority_balancer_->port()),
+                       kNewListenerTemplate);
+  CreateClientsAndServers(builder);
+  StartAllBackends();
+  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
+  // and RPCs sent using the new stub go to backend 1.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  authority_balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsServiceName));
+  authority_balancer_->lrs_service()->set_cluster_names({kNewClusterName});
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_lrs_server()->mutable_self();
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New Route
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  // New Listener
+  Listener listener = default_listener_;
+  listener.set_name(kNewListenerName);
+  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
+                                   new_route_config);
+  // Ensure update has reached and send 10 RPCs to the current stub.
+  size_t num_warmup_rpcs = WaitForAllBackends(0, 1);
+  CheckRpcSendOk(num_rpc_to_default_balancer);
+  // Create second channel to new target uri and send 1 RPC .
+  auto channel2 =
+      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(
+      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  for (size_t i = 0; i < num_rpc_to_authority_balancer; ++i) {
+    ClientContext context;
+    EchoRequest request;
+    request.set_message(kRequestMessage);
+    EchoResponse response;
+    grpc::Status status = stub2->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+  }
+  /* Each backend should have received the expected number of RPCs,
+   * and the load report also reflect the correct numbers.
+   */
+  EXPECT_EQ(num_rpc_to_authority_balancer,
+            backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(num_rpc_to_default_balancer,
+            backends_[0]->backend_service()->request_count());
+  /* Load report for authority LRS.*/
+  std::vector<ClientStats> authority_load_report =
+      authority_balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(authority_load_report.size(), 1UL);
+  ClientStats& authority_client_stats = authority_load_report.front();
+  EXPECT_EQ(num_rpc_to_authority_balancer,
+            authority_client_stats.total_successful_requests());
+  EXPECT_EQ(0U, authority_client_stats.total_requests_in_progress());
+  EXPECT_EQ(num_rpc_to_authority_balancer,
+            authority_client_stats.total_issued_requests());
+  EXPECT_EQ(0U, authority_client_stats.total_error_requests());
+  EXPECT_EQ(0U, authority_client_stats.total_dropped_requests());
+  EXPECT_EQ(1U, authority_balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, authority_balancer_->lrs_service()->response_count());
+  EXPECT_EQ(1U, authority_balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, authority_balancer_->lrs_service()->response_count());
+  /* Load report for default LRS.*/
+  std::vector<ClientStats> default_load_report =
+      balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(default_load_report.size(), 1UL);
+  ClientStats& default_client_stats = default_load_report.front();
+  EXPECT_EQ(num_warmup_rpcs + num_rpc_to_default_balancer,
+            default_client_stats.total_successful_requests());
+  EXPECT_EQ(0U, default_client_stats.total_requests_in_progress());
+  EXPECT_EQ(num_warmup_rpcs + num_rpc_to_default_balancer,
+            default_client_stats.total_issued_requests());
+  EXPECT_EQ(0U, default_client_stats.total_error_requests());
+  EXPECT_EQ(0U, default_client_stats.total_dropped_requests());
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -13371,14 +13488,13 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsFederationTest,
-    ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-            .set_enable_load_reporting(),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-            .set_enable_rds_testing()),
+    ::testing::Values(TestType()
+                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+                          .set_enable_load_reporting(),
+                      TestType()
+                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+                          .set_enable_load_reporting()
+                          .set_enable_rds_testing()),
     &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(
