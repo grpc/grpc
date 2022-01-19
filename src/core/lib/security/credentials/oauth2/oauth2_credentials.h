@@ -73,17 +73,6 @@ struct grpc_credentials_metadata_request {
   grpc_http_response response;
 };
 
-inline grpc_credentials_metadata_request*
-grpc_credentials_metadata_request_create(
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds) {
-  return new grpc_credentials_metadata_request(std::move(creds));
-}
-
-inline void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request* r) {
-  delete r;
-}
-
 struct grpc_oauth2_pending_get_request_metadata {
   grpc_core::CredentialsMetadataArray* md_array;
   grpc_closure* on_request_metadata;

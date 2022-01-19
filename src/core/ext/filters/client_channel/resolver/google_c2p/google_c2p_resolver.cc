@@ -133,9 +133,11 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   request.path = const_cast<char*>(path);
   request.hdr_count = 1;
   request.hdrs = &header;
+  auto uri = URI::Create("http", "metadata.google.internal.", path, {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok()); // params are hardcoded
   // TODO(ctiller): share the quota from whomever instantiates this!
   http_request_ =
-      HttpRequest::Get("http", args, pollent, &request,
+      HttpRequest::Get(std::move(*uri), args, pollent, &request,
                        ExecCtx::Get()->Now() + 10000,  // 10s timeout
                        &on_done_, &response_,
                        RefCountedPtr<grpc_channel_credentials>(
@@ -272,17 +274,17 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  std::vector<const char*> args_to_remove = {GRPC_ARG_DEFAULT_AUTHORITY};
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("metadata.google.internal.")));
-  grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
-      channel_args_, args_to_remove.data(), args_to_remove.size(),
+  grpc_channel_args* args_with_resource_quota = CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(channel_args_));
+  grpc_arg resource_quota_arg = ResourceQuota::MakeArg(ResourceQuotaFromChannelArgs(args_with_resource_quota).get());
+  grpc_channel_args* request_args = grpc_channel_args_copy_and_add(
+      channel_args_, &resource_quota_arg, 1);
       request_args.data(), request_args.size());
-  zone_query_ = MakeOrphanable<ZoneQuery>(args, Ref(), &pollent_);
-  ipv6_query_ = MakeOrphanable<IPv6Query>(args, Ref(), &pollent_);
-  grpc_channel_args_destroy(args);
+  zone_query_ = MakeOrphanable<ZoneQuery>(request_args, Ref(), &pollent_);
+  ipv6_query_ = MakeOrphanable<IPv6Query>(request_args, Ref(), &pollent_);
+  grpc_channel_args_destroy(request_args);
+  grpc_channel_args_destroy(args_with_resource_quota);
 }
 
 void GoogleCloud2ProdResolver::RequestReresolutionLocked() {

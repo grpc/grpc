@@ -28,9 +28,7 @@
 grpc_slice grpc_httpcli_format_get_request(const grpc_http_request* request,
                                            const char* host);
 grpc_slice grpc_httpcli_format_post_request(const grpc_http_request* request,
-                                            const char* host,
-                                            const char* body_bytes,
-                                            size_t body_size);
+                                            const char* host);
 grpc_slice grpc_httpcli_format_connect_request(const grpc_http_request* request,
                                                const char* host);
 

@@ -79,16 +79,11 @@ void grpc_free_port_using_server(int port) {
     shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
                                            grpc_schedule_on_exec_ctx);
 
-    gpr_asprintf(&path, "/drop/%d", port);
-    req.path = path;
-
-    grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(GRPC_PORT_SERVER_ADDRESS));
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+    std::string path = absl::StrFormat("/drop/%d", port);
+    auto uri = URI::Create("https", GRPC_PORT_SERVER_ADDRESS, path, /* query params */, "" /* fragment */);
+    GPR_ASSERT(uri.ok());
     auto http_request = grpc_core::HttpRequest::Get(
-        "http", args, &pr.pops, &req,
+        std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(freed_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
@@ -96,7 +91,6 @@ void grpc_free_port_using_server(int port) {
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             nullptr /* insecure credentials */));
     http_request->Start();
-    grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (!pr.done) {
@@ -168,15 +162,13 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
                 1000.0 * (1 + pow(1.3, pr->retries) * rand() / RAND_MAX)),
             GPR_TIMESPAN)));
     pr->retries++;
-    req.path = const_cast<char*>("/get");
     grpc_http_response_destroy(&pr->response);
     pr->response = {};
-    grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), pr->server);
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+    std::string path = absl::StrFormat("/drop/%d", port);
+    auto uri = URI::Create("http", pr->server, "/get", /* query params */, "" /* fragment */);
+    GPR_ASSERT(uri.ok());
     pr->http_request = grpc_core::HttpRequest::Get(
-        "http", args, &pr->pops, &req,
+        std::move(*uri), nullptr /* channel args */, &pr->pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, pr,
                             grpc_schedule_on_exec_ctx),
@@ -184,7 +176,6 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             nullptr /* insecure credentials */));
     pr->http_request->Start();
-    grpc_channel_args_destroy(args);
     return;
   }
   GPR_ASSERT(response);
@@ -220,16 +211,11 @@ int grpc_pick_port_using_server(void) {
                                            grpc_schedule_on_exec_ctx);
     pr.port = -1;
     pr.server = const_cast<char*>(GRPC_PORT_SERVER_ADDRESS);
-
-    req.path = const_cast<char*>("/get");
-
-    grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(GRPC_PORT_SERVER_ADDRESS));
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+    std::string path = absl::StrFormat("/drop/%d", port);
+    auto uri = URI::Create("http", GRPC_PORT_SERVER_ADDRESS, "/get", /* query params */, "" /* fragment */);
+    GPR_ASSERT(uri.ok());
     auto http_request = grpc_core::HttpRequest::Get(
-        "http", args, &pr.pops, &req,
+        std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
         grpc_core::ExecCtx::Get()->Now() + 30 * GPR_MS_PER_SEC,
         GRPC_CLOSURE_CREATE(got_port_from_server, &pr,
                             grpc_schedule_on_exec_ctx),
@@ -237,7 +223,6 @@ int grpc_pick_port_using_server(void) {
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             nullptr /*insecure credentials*/));
     http_request->Start();
-    grpc_channel_args_destroy(args);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(pr.mu);
     while (pr.port == -1) {

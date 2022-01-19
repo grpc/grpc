@@ -74,12 +74,10 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   For insecure requests, use grpc_insecure_credentials_create.
   //   For secure requests, use CreateHttpRequestSSLCredentials().
   //   nullptr is treated as insecure credentials.
-  //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
+  //   TODO(yihuaz): disallow nullptr as a value after unsecure builds
   //   are removed.
-  //   TODO(apolcyn): make this param optional and by default autodetected
-  //   based on the scheme after unsecure builds are removed.
   static OrphanablePtr<HttpRequest> Get(
-      absl::string_view scheme, const grpc_channel_args* args,
+      URI uri, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
       grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
@@ -94,8 +92,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   operation
   // 'request' contains request parameters - these are caller owned and can be
   //   destroyed once the call returns
-  // 'body_bytes' and 'body_size' specify the payload for the post.
-  //   When there is no body, pass in NULL as body_bytes.
   // 'deadline' contains a deadline for the request (or gpr_inf_future)
   // 'on_done' is a callback to report results to
   // 'channel_creds' are used to configurably secure the connection.
@@ -104,14 +100,11 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   nullptr is treated as insecure credentials.
   //   TODO(apolcyn): disallow nullptr as a value after unsecure builds
   //   are removed.
-  //   TODO(apolcyn): make this param optional and by default autodetected
-  //   based on the scheme after unsecure builds are removed.
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpRequest> Post(
-      absl::string_view scheme, const grpc_channel_args* args,
+      URI uri, absl::string_view scheme, const grpc_channel_args* args,
       grpc_polling_entity* pollent, const grpc_http_request* request,
-      const char* body_bytes, size_t body_size, grpc_millis deadline,
-      grpc_closure* on_done, grpc_http_response* response,
+      grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 
@@ -186,8 +179,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
-  const grpc_slice request_text_;
   const grpc_millis deadline_;
+  const URI uri_;
+  const grpc_slice request_text_;
   grpc_channel_args* channel_args_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_closure on_read_;

@@ -175,26 +175,21 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
 TEST_F(HttpRequestTest, Get) {
   RequestState request_state(this);
   grpc_http_request req;
-  char* host;
   grpc_core::ExecCtx exec_ctx;
-  gpr_asprintf(&host, "localhost:%d", g_server_port);
-  gpr_log(GPR_INFO, "requesting from %s", host);
+  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  req.path = const_cast<char*>("/get");
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  auto uri = URI::Create("http", host, "/get", {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
-          "http", args, pops(), &req, NSecondsTime(15),
+          std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
           grpc_core::RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
   http_request->Start();
-  grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
   gpr_free(host);
@@ -205,17 +200,16 @@ TEST_F(HttpRequestTest, Post) {
   grpc_http_request req;
   char* host;
   grpc_core::ExecCtx exec_ctx;
-  gpr_asprintf(&host, "localhost:%d", g_server_port);
-  gpr_log(GPR_INFO, "posting to %s", host);
+  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  gpr_log(GPR_INFO, "posting to %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  req.path = const_cast<char*>("/post");
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  req.body = "hello";
+  req.body_length = 5;
+  auto uri = URI::Create("http", host, "/post", {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
-          "http", args, pops(), &req, "hello", 5, NSecondsTime(15),
+          std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
@@ -265,23 +259,18 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       RequestState request_state(this);
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
-      memset(&req, 0, sizeof(req));
-      req.path = const_cast<char*>("/get");
-      grpc_arg authority_arg = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>("dont-care-since-wont-be-resolved.test.com:443"));
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+      memset(&req, 0, sizeof("http"req));
+      auto uri = URI::Create("http", "dont-care-since-wont-be-resolved.test.com:443", "/get", {} /* query params */, "" /* fragment */);
+      GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "http", args, pops(), &req, NSecondsTime(120),
+              std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               grpc_core::RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
       http_request->Start();
-      grpc_channel_args_destroy(args);
       std::thread cancel_thread([&http_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
         grpc_core::ExecCtx exec_ctx;
@@ -324,22 +313,17 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.path = const_cast<char*>("/get");
-      grpc_arg authority_arg = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(fake_http_server_ptr->address()));
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+      auto uri = URI::Create("http", fake_http_server_ptr->address(), "/get", {} /* query params */, "" /* fragment */);
+      GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "http", args, pops(), &req, NSecondsTime(120),
+              std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
               grpc_core::RefCountedPtr<grpc_channel_credentials>(
                   grpc_insecure_credentials_create()));
       http_request->Start();
-      grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       std::thread cancel_thread([&http_request]() {
         gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -387,15 +371,11 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.path = const_cast<char*>("/get");
-      grpc_arg authority_arg = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(fake_server_address.c_str()));
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+      auto uri = URI::Create("http", fake_server_address, "/get", /* query params */, "" /* fragment */);
+      GPR_ASSERT(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "http", args, pops(), &req, NSecondsTime(120),
+              std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,
@@ -404,7 +384,6 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       // Start the HTTP request. We will ~immediately begin a TCP connect
       // attempt because there's no name to resolve.
       http_request->Start();
-      grpc_channel_args_destroy(args);
       exec_ctx.Flush();
       // Spawn a separate thread which ~immediately cancels the HTTP request.
       // Note that even though the server is rejecting TCP connections, it can
@@ -455,14 +434,11 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           request_state.pollset_set_to_destroy_eagerly);
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(fake_server_address.c_str()));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  auto uri = URI::Create("http", fake_server_address, "/get", {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
-          "http", args, &wrapped_pollset_set_to_destroy_eagerly, &req,
+          std::move(*uri), nullptr /* channel args */, &wrapped_pollset_set_to_destroy_eagerly, &req,
           NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                               grpc_schedule_on_exec_ctx),
@@ -471,7 +447,6 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
               grpc_insecure_credentials_create()));
   // Start the HTTP request. We'll start the TCP connect attempt right away.
   http_request->Start();
-  grpc_channel_args_destroy(args);
   exec_ctx.Flush();
   http_request.reset();  // cancel the request
   // Since the request was cancelled, the on_done callback should be flushed

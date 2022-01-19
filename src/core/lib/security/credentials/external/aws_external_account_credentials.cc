@@ -167,11 +167,6 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str()));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -180,7 +175,7 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ = HttpRequest::Get(
-      uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_channel_args_destroy(args);
@@ -226,11 +221,6 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str()));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -239,7 +229,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ = HttpRequest::Get(
-      uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_channel_args_destroy(args);
@@ -297,11 +287,6 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(uri->authority().c_str()));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -310,7 +295,7 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ = HttpRequest::Get(
-      uri->scheme(), args, ctx_->pollent, &request, ctx_->deadline,
+      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_channel_args_destroy(args);

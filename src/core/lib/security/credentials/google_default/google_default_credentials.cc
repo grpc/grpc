@@ -183,14 +183,10 @@ static int is_metadata_server_reachable() {
   detector.is_done = 0;
   detector.success = 0;
   memset(&request, 0, sizeof(grpc_http_request));
-  request.path = const_cast<char*>("/");
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  auto uri = URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/", {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok()); // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
-      "http", args, &detector.pollent, &request,
+      std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),

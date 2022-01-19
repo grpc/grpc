@@ -54,8 +54,8 @@ static void test_format_post_request(void) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
   grpc_http_request req;
   grpc_slice slice;
-  char body_bytes[] = "fake body";
-  size_t body_len = 9;
+  req.body = "fake body";
+  req.body_length = 9;
 
   const char* host = "example.com";
   memset(&req, 0, sizeof(req));
@@ -63,7 +63,7 @@ static void test_format_post_request(void) {
   req.hdr_count = 1;
   req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_post_request(&req, host, body_bytes, body_len);
+  slice = grpc_httpcli_format_post_request(&req, host);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
                                      "POST /index.html HTTP/1.0\r\n"
@@ -91,7 +91,7 @@ static void test_format_post_request_no_body(void) {
   req.hdr_count = 1;
   req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_post_request(&req, host, nullptr, 0);
+  slice = grpc_httpcli_format_post_request(&req, host);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
                                      "POST /index.html HTTP/1.0\r\n"
@@ -109,8 +109,8 @@ static void test_format_post_request_content_type_override(void) {
   grpc_http_header hdrs[2];
   grpc_http_request req;
   grpc_slice slice;
-  char body_bytes[] = "fake%20body";
-  size_t body_len = 11;
+  req.body = "fake%20body";
+  req.body_length = 11;
 
   const char* host = "example.com";
   hdrs[0].key = const_cast<char*>("x-yz");
@@ -122,7 +122,7 @@ static void test_format_post_request_content_type_override(void) {
   req.hdr_count = 2;
   req.hdrs = hdrs;
 
-  slice = grpc_httpcli_format_post_request(&req, host, body_bytes, body_len);
+  slice = grpc_httpcli_format_post_request(&req, host);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(
                       slice,

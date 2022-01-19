@@ -57,51 +57,45 @@ grpc_httpcli_post_override g_post_override;
 }  // namespace
 
 OrphanablePtr<HttpRequest> HttpRequest::Get(
-    absl::string_view scheme, const grpc_channel_args* channel_args,
+    URI uri, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
     grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  const char* host =
-      grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(host != nullptr);
   if (g_get_override != nullptr) {
-    test_only_generate_response = [request, host, deadline, on_done,
+    test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
       // Note that capturing request here assumes it will remain alive
       // until after Start is called. This avoids making a copy as this
       // code path is only used for test mocks.
-      g_get_override(request, host, deadline, on_done, response);
+      g_get_override(request, uri.authority(), deadline, on_done, response);
     };
   }
-  std::string name = absl::StrFormat("HTTP:GET:%s:%s", host, request->path);
+  std::string name = absl::StrFormat("HTTP:GET:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_get_request(request, uri.authority());
   return MakeOrphanable<HttpRequest>(
-      scheme, grpc_httpcli_format_get_request(request, host), response,
+      std::move(uri), request_text, response,
       deadline, channel_args, on_done, pollent, name.c_str(),
       std::move(test_only_generate_response), std::move(channel_creds));
 }
 
 OrphanablePtr<HttpRequest> HttpRequest::Post(
-    absl::string_view scheme, const grpc_channel_args* channel_args,
+    URI uri, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
-    const char* body_bytes, size_t body_size, grpc_millis deadline,
-    grpc_closure* on_done, grpc_http_response* response,
+    grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
-  const char* host =
-      grpc_channel_args_find_string(channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   GPR_ASSERT(host != nullptr);
   if (g_post_override != nullptr) {
-    test_only_generate_response = [request, host, body_bytes, body_size,
-                                   deadline, on_done, response]() {
-      g_post_override(request, host, body_bytes, body_size, deadline, on_done,
+    test_only_generate_response = [request, uri, deadline, on_done, response]() {
+      g_post_override(request, uri.authority(), request.body, request.body_length, deadline, on_done,
                       response);
     };
   }
-  std::string name = absl::StrFormat("HTTP:POST:%s:%s", host, request->path);
+  std::string name = absl::StrFormat("HTTP:POST:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_post_request(request, uri.authority());
   return MakeOrphanable<HttpRequest>(
-      scheme,
-      grpc_httpcli_format_post_request(request, host, body_bytes, body_size),
+      std::move(uri), request_text,
       response, deadline, channel_args, on_done, pollent, name.c_str(),
       std::move(test_only_generate_response), std::move(channel_creds));
 }
@@ -113,17 +107,21 @@ void HttpRequest::SetOverride(grpc_httpcli_get_override get,
 }
 
 HttpRequest::HttpRequest(
-    absl::string_view scheme, const grpc_slice& request_text,
+    URI uri, const grpc_slice& request_text,
     grpc_http_response* response, grpc_millis deadline,
     const grpc_channel_args* channel_args, grpc_closure* on_done,
     grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response,
     RefCountedPtr<grpc_channel_credentials> channel_creds)
-    : request_text_(request_text),
+    : uri_(std::move(uri)),
+      request_text_(request_text),
       deadline_(deadline),
-      channel_args_(grpc_channel_args_copy(channel_args)),
+      channel_args_(CoreConfiguration::Get()
+                             .channel_args_preconditioning()
+                             .PreconditionChannelArgs(channel_args)),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
+      resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)) {
@@ -141,35 +139,9 @@ HttpRequest::HttpRequest(
                     grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
-  // maybe configure a default resource quota
-  ResourceQuota* existing_resource_quota =
-      grpc_channel_args_find_pointer<ResourceQuota>(channel_args_,
-                                                    GRPC_ARG_RESOURCE_QUOTA);
-  ResourceQuotaRefPtr resource_quota;
-  if (existing_resource_quota != nullptr) {
-    resource_quota_ = existing_resource_quota->Ref();
-  } else {
-    resource_quota_ = ResourceQuota::Default();
-  }
-  grpc_arg rq_arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resource_quota_->c_ptr(),
-      grpc_resource_quota_arg_vtable());
-  grpc_channel_args* prev_channel_args = channel_args_;
-  channel_args_ = grpc_channel_args_copy_and_add(channel_args_, &rq_arg, 1);
-  grpc_channel_args_destroy(prev_channel_args);
-  prev_channel_args = channel_args_;
-  // TODO(apolcyn): is here the right place to precondition channel args?
-  channel_args_ = const_cast<grpc_channel_args*>(
-      CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(prev_channel_args));
-  grpc_channel_args_destroy(prev_channel_args);
   // Create the DNS resolver. We'll start resolving when Start is called.
-  const char* authority =
-      grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(authority != nullptr);
   dns_request_ = GetDNSResolver()->ResolveName(
-      authority, scheme, pollset_set_,
+      uri_.authority(), uri_.scheme(), pollset_set_,
       absl::bind_front(&HttpRequest::OnResolved, this));
 }
 
@@ -288,9 +260,7 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE || req->cancelled_) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
-    // TODO(apolcyn): improve the following error message
-    req->NextAddress(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexplained handshake failure"));
+    req->NextAddress(GRPC_ERROR_REF(error));
     return;
   }
   grpc_channel_args_destroy(args->args);
@@ -302,67 +272,61 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
 
 void HttpRequest::OnConnected(void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
-  {
-    MutexLock lock(&req->mu_);
-    req->connecting_ = false;
-    req->own_endpoint_ = true;
-    if (req->cancelled_) {
-      // since we were cancelled while connecting, Finish has already
-      // been called.
-      return;
-    }
-    if (!req->ep_) {
-      req->NextAddress(GRPC_ERROR_REF(error));
-      return;
-    }
-    // TODO(apolcyn): treating nullptr channel_creds_ as insecure is
-    // a hack used to support the port server client (a test utility) in
-    // unsecure builds (when no definition of grpc_insecure_credentials_create
-    // exists). We can remove this hack and unconditionally assume a valid
-    // channel_creds_ object after unsecure builds are deleted, in
-    // https://github.com/grpc/grpc/pull/25586.
-    if (req->channel_creds_ == nullptr) {
-      gpr_log(GPR_DEBUG,
-              "HTTP request skipping handshake because creds are null");
-      req->StartWrite();
-      return;
-    }
-    // Find the authority to use in the security connector.
-    const char* authority = grpc_channel_args_find_string(
-        req->channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
-    GPR_ASSERT(authority != nullptr);
-    // Create the security connector using the credentials and target name.
-    grpc_channel_args* new_args_from_connector = nullptr;
-    RefCountedPtr<grpc_channel_security_connector> sc =
-        req->channel_creds_->create_security_connector(
-            nullptr /*call_creds*/, authority, req->channel_args_,
-            &new_args_from_connector);
-    if (sc == nullptr) {
-      req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "failed to create security connector", &req->overall_error_, 1));
-      return;
-    }
-    grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-        new_args_from_connector != nullptr ? new_args_from_connector
-                                           : req->channel_args_,
-        &security_connector_arg, 1);
-    grpc_channel_args_destroy(new_args_from_connector);
-    // Start the handshake
-    req->handshake_mgr_ = MakeRefCounted<HandshakeManager>();
-    CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-        HANDSHAKER_CLIENT, new_args, req->pollset_set_,
-        req->handshake_mgr_.get());
-    req->Ref().release();  // ref held by pending handshake
-    grpc_endpoint* ep = req->ep_;
-    req->ep_ = nullptr;
-    req->own_endpoint_ = false;
-    req->handshake_mgr_->DoHandshake(ep, new_args, req->deadline_,
-                                     /*acceptor=*/nullptr, OnHandshakeDone,
-                                     /*user_data=*/req.get());
-    sc.reset(DEBUG_LOCATION, "httpcli");
-    grpc_channel_args_destroy(new_args);
+  MutexLock lock(&req->mu_);
+  req->connecting_ = false;
+  req->own_endpoint_ = true;
+  if (req->cancelled_) {
+    // since we were cancelled while connecting, Finish has already
+    // been called.
+    return;
   }
+  if (!req->ep_) {
+    req->NextAddress(GRPC_ERROR_REF(error));
+    return;
+  }
+  // TODO(yihuaz): treating nullptr channel_creds_ as insecure is
+  // a hack used to support the port server client (a test utility) in
+  // unsecure builds (when no definition of grpc_insecure_credentials_create
+  // exists). We can remove this hack and unconditionally assume a valid
+  // channel_creds_ object after unsecure builds are deleted, in
+  // https://github.com/grpc/grpc/pull/25586.
+  if (req->channel_creds_ == nullptr) {
+    gpr_log(GPR_DEBUG,
+            "HTTP request skipping handshake because creds are null");
+    req->StartWrite();
+    return;
+  }
+  // Create the security connector using the credentials and target name.
+  grpc_channel_args* new_args_from_connector = nullptr;
+  RefCountedPtr<grpc_channel_security_connector> sc =
+      req->channel_creds_->create_security_connector(
+          nullptr /*call_creds*/, req->uri_.authority.c_str(), req->channel_args_,
+          &new_args_from_connector);
+  if (sc == nullptr) {
+    req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "failed to create security connector", &req->overall_error_, 1));
+    return;
+  }
+  grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      new_args_from_connector != nullptr ? new_args_from_connector
+                                         : req->channel_args_,
+      &security_connector_arg, 1);
+  grpc_channel_args_destroy(new_args_from_connector);
+  // Start the handshake
+  req->handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_CLIENT, new_args, req->pollset_set_,
+      req->handshake_mgr_.get());
+  req->Ref().release();  // ref held by pending handshake
+  grpc_endpoint* ep = req->ep_;
+  req->ep_ = nullptr;
+  req->own_endpoint_ = false;
+  req->handshake_mgr_->DoHandshake(ep, new_args, req->deadline_,
+                                   /*acceptor=*/nullptr, OnHandshakeDone,
+                                   /*user_data=*/req.get());
+  sc.reset(DEBUG_LOCATION, "httpcli");
+  grpc_channel_args_destroy(new_args);
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {

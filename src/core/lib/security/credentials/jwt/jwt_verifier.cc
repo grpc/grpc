@@ -674,7 +674,9 @@ static void on_openid_config_retrieved(void* user_data,
   const Json* cur;
   grpc_arg authority_arg;
   grpc_channel_args* args;
+  absl::StatusOr<URI> uri;
   char* host;
+  char* path;
 
   /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time. */
   if (json.type() == Json::Type::JSON_NULL) goto error;
@@ -691,21 +693,22 @@ static void on_openid_config_retrieved(void* user_data,
   }
   jwks_uri += 8;
   host = gpr_strdup(jwks_uri);
-  req.path = const_cast<char*>(strchr(jwks_uri, '/'));
-  if (req.path == nullptr) {
-    req.path = const_cast<char*>("");
+  path = const_cast<char*>(strchr(jwks_uri, '/'));
+  if (path == nullptr) {
+    path = const_cast<char*>("");
   } else {
-    *(host + (req.path - jwks_uri)) = '\0';
+    *(host + (path - jwks_uri)) = '\0';
   }
 
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
-  args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  uri = URI::Create("https", host, path, {} /* query params /*/, "" /* fragment */);
+  if (!uri.ok()) {
+    goto error;
+  }
   ctx->http_request = grpc_core::HttpRequest::Get(
-      "https", args, &ctx->pollent, &req,
+      std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
       &ctx->responses[HTTP_RESPONSE_KEYS],
@@ -774,8 +777,9 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   memset(&req, 0, sizeof(grpc_http_request));
   http_response_index rsp_idx;
   grpc_arg authority_arg;
-  grpc_channel_args* args;
   char* host;
+  char* path;
+  absl::StatusOr<URI> uri;
 
   GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
              ctx->claims != nullptr);
@@ -806,10 +810,10 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
     host = gpr_strdup(mapping->key_url_prefix);
     path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
-      gpr_asprintf(&req.path, "/%s", iss);
+      gpr_asprintf(&path, "/%s", iss);
     } else {
       *(path_prefix++) = '\0';
-      gpr_asprintf(&req.path, "/%s/%s", path_prefix, iss);
+      gpr_asprintf(&path, "/%s/%s", path_prefix, iss);
     }
     http_cb =
         GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
@@ -818,7 +822,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
     host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
     path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
-      req.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
+      path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
       *(path_prefix++) = 0;
       gpr_asprintf(&req.path, "/%s%s", path_prefix,
@@ -832,17 +836,18 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host);
-  args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  uri = URI::Create("https", host, path, {} /* query params */, "" /* fragment */);
+  if (!uri.ok()) {
+    goto error;
+  }
   ctx->http_request = grpc_core::HttpRequest::Get(
-      "https", args, &ctx->pollent, &req,
+      std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
       &ctx->responses[rsp_idx], grpc_core::CreateHttpRequestSSLCredentials());
   ctx->http_request->Start();
   grpc_channel_args_destroy(args);
   gpr_free(host);
-  gpr_free(req.path);
+  gpr_free(path);
   return;
 
 error:

@@ -162,23 +162,20 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
 TEST_F(HttpsCliTest, Get) {
   RequestState request_state(this);
   grpc_http_request req;
-  char* host;
   grpc_core::ExecCtx exec_ctx;
-  gpr_asprintf(&host, "localhost:%d", g_server_port);
-  gpr_log(GPR_INFO, "requesting from %s", host);
+  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  req.path = const_cast<char*>("/get");
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  request_args.push_back(grpc_channel_arg_string_create(
+  grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      const_cast<char*>("foo.test.google.fr")));
+      const_cast<char*>("foo.test.google.fr"));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      nullptr, &ssl_override_arg, 1);
+  auto uri = URI::Create("https", host, "/get", /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
-          "https", args, pops(), &req, NSecondsTime(15),
+          std::move(*uri), args, pops(), &req, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
@@ -193,23 +190,22 @@ TEST_F(HttpsCliTest, Get) {
 TEST_F(HttpsCliTest, Post) {
   RequestState request_state(this);
   grpc_http_request req;
-  char* host;
   grpc_core::ExecCtx exec_ctx;
-  gpr_asprintf(&host, "localhost:%d", g_server_port);
-  gpr_log(GPR_INFO, "posting to %s", host);
+  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  gpr_log(GPR_INFO, "posting to %s", host.c_str());
   memset(&req, 0, sizeof(req));
-  req.path = const_cast<char*>("/post");
-  std::vector<grpc_arg> request_args;
-  request_args.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), host));
-  request_args.push_back(grpc_channel_arg_string_create(
+  req.body = "hello";
+  req.body_length = 5;
+  grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      const_cast<char*>("foo.test.google.fr")));
+      const_cast<char*>("foo.test.google.fr"));
   grpc_channel_args* args = grpc_channel_args_copy_and_add(
-      nullptr, request_args.data(), request_args.size());
+      nullptr, &ssl_override_arg, 1);
+  auto uri = URI::Create("https", host, "/post", {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
-          "https", args, pops(), &req, "hello", 5, NSecondsTime(15),
+          std::move(*uri), nullptr /* channel args */, pops(), &req, NSecondsTime(15),
           GRPC_CLOSURE_CREATE(OnFinish, &request_state,
                               grpc_schedule_on_exec_ctx),
           &request_state.response,
@@ -218,7 +214,6 @@ TEST_F(HttpsCliTest, Post) {
   grpc_channel_args_destroy(args);
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
-  gpr_free(host);
 }
 
 // The goal of this test is to make sure that we can cancel HTTP requests
@@ -245,19 +240,15 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      req.path = const_cast<char*>("/get");
-      std::vector<grpc_arg> request_args;
-      request_args.push_back(grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(fake_http_server_ptr->address())));
-      request_args.push_back(grpc_channel_arg_string_create(
+      grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-          const_cast<char*>("foo.test.google.fr")));
+          const_cast<char*>("foo.test.google.fr"));
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
-          nullptr, request_args.data(), request_args.size());
+          nullptr, &ssl_override_arg, 1);
+      auto uri = URI::Create("https", fake_http_server_ptr->address(), "/get", /* query params */, "" /* fragment */);
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
-              "https", args, pops(), &req, NSecondsTime(120),
+              std::move(*uri), args, pops(), &req, NSecondsTime(120),
               GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
                                   grpc_schedule_on_exec_ctx),
               &request_state.response,

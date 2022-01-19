@@ -38,6 +38,10 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
+namespace grpc_core {
+
+namespace {
+
 class grpc_httpcli_ssl_channel_security_connector final
     : public grpc_channel_security_connector {
  public:
@@ -154,31 +158,6 @@ httpcli_ssl_channel_security_connector_create(
   return c;
 }
 
-/* handshaker */
-
-struct on_done_closure {
-  void (*func)(void* arg, grpc_endpoint* endpoint);
-  void* arg;
-  grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
-};
-static void on_handshake_done(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
-  on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
-  if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
-            grpc_error_std_string(error).c_str());
-    c->func(c->arg, nullptr);
-  } else {
-    grpc_channel_args_destroy(args->args);
-    grpc_slice_buffer_destroy_internal(args->read_buffer);
-    gpr_free(args->read_buffer);
-    c->func(c->arg, args->endpoint);
-  }
-  delete c;
-}
-
-namespace grpc_core {
-
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
   HttpRequestSSLCredentials() : grpc_channel_credentials("HttpRequestSSL") {}
@@ -213,6 +192,8 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return args;
   }
 };
+
+} // namespace
 
 RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
   return MakeRefCounted<HttpRequestSSLCredentials>();

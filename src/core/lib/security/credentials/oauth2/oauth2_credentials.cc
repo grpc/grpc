@@ -270,7 +270,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
     gpr_free(prev);
   }
   Unref();
-  grpc_credentials_metadata_request_destroy(r);
+  delete r;
 }
 
 bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
@@ -316,7 +316,7 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   gpr_mu_unlock(&mu_);
   if (start_fetch) {
     Ref().release();
-    fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
+    fetch_oauth2(new grpc_credentials_metadata_request(this->Ref()),
                  &pollent_, on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
@@ -383,19 +383,15 @@ class grpc_compute_engine_token_fetcher_credentials
                                const_cast<char*>("Google")};
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
-    request.path = const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
     request.hdr_count = 1;
     request.hdrs = &header;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST));
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+    auto uri = URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST, GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH, {} /* query params */, "" /* fragment */);
+    GPR_ASSERT(uri.ok()); // params are hardcoded
     http_request_ = grpc_core::HttpRequest::Get(
-        "http", args, pollent, &request, deadline,
+        std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response,
@@ -449,19 +445,17 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
       refresh_token_.client_secret, refresh_token_.refresh_token);
   memset(&request, 0, sizeof(grpc_http_request));
-  request.path = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
   request.hdr_count = 1;
   request.hdrs = &header;
+  request.body = body.c_str();
+  request.body_length = body.size();
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  grpc_arg authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST));
-  grpc_channel_args* args =
-      grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
+  auto uri = URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH, {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok()); // params are hardcoded
   http_request_ = grpc_core::HttpRequest::Post(
-      "https", args, pollent, &request, body.c_str(), body.size(), deadline,
+      std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                         grpc_schedule_on_exec_ctx),
       &metadata_req->response, grpc_core::CreateHttpRequestSSLCredentials());
@@ -567,9 +561,9 @@ class StsTokenFetcherCredentials
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
                     grpc_millis deadline) override {
-    char* body = nullptr;
-    size_t body_length = 0;
-    grpc_error_handle err = FillBody(&body, &body_length);
+    grpc_http_request request;
+    memset(&request, 0, sizeof(grpc_http_request));
+    grpc_error_handle err = FillBody(&request.body, &request.body_length);
     if (err != GRPC_ERROR_NONE) {
       response_cb(metadata_req, err);
       GRPC_ERROR_UNREF(err);
@@ -578,19 +572,11 @@ class StsTokenFetcherCredentials
     grpc_http_header header = {
         const_cast<char*>("Content-Type"),
         const_cast<char*>("application/x-www-form-urlencoded")};
-    grpc_http_request request;
-    memset(&request, 0, sizeof(grpc_http_request));
-    request.path = const_cast<char*>(sts_url_.path().c_str());
     request.hdr_count = 1;
     request.hdrs = &header;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>(sts_url_.authority().c_str()));
-    grpc_channel_args* args =
-        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     RefCountedPtr<grpc_channel_credentials> http_request_creds;
     if (sts_url_.scheme() == "http") {
       http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -599,13 +585,12 @@ class StsTokenFetcherCredentials
       http_request_creds = CreateHttpRequestSSLCredentials();
     }
     http_request_ = HttpRequest::Post(
-        sts_url_.scheme(), args, pollent, &request, body, body_length, deadline,
+        sts_url_, nullptr /* channel args */, pollent, &request, deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
         &metadata_req->response, std::move(http_request_creds));
     http_request_->Start();
-    grpc_channel_args_destroy(args);
-    gpr_free(body);
+    gpr_free(request.body);
   }
 
   grpc_error_handle FillBody(char** body, size_t* body_length) {
