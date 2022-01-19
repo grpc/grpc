@@ -180,9 +180,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 
-  const grpc_millis deadline_;
   const URI uri_;
   const grpc_slice request_text_;
+  const grpc_millis deadline_;
   grpc_channel_args* channel_args_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_closure on_read_;

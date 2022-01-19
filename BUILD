@@ -3461,6 +3461,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "alts_util",
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",

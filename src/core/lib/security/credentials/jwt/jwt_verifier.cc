@@ -672,8 +672,6 @@ static void on_openid_config_retrieved(void* user_data,
   memset(&req, 0, sizeof(grpc_http_request));
   const char* jwks_uri;
   const Json* cur;
-  grpc_arg authority_arg;
-  grpc_channel_args* args;
   absl::StatusOr<grpc_core::URI> uri;
   char* host;
   char* path;
@@ -714,7 +712,6 @@ static void on_openid_config_retrieved(void* user_data,
       &ctx->responses[HTTP_RESPONSE_KEYS],
       grpc_core::CreateHttpRequestSSLCredentials());
   ctx->http_request->Start();
-  grpc_channel_args_destroy(args);
   gpr_free(host);
   return;
 
@@ -776,7 +773,6 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   grpc_http_request req;
   memset(&req, 0, sizeof(grpc_http_request));
   http_response_index rsp_idx;
-  grpc_arg authority_arg;
   char* host;
   char* path;
   absl::StatusOr<grpc_core::URI> uri;
@@ -825,7 +821,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
       *(path_prefix++) = 0;
-      gpr_asprintf(&req.path, "/%s%s", path_prefix,
+      gpr_asprintf(&path, "/%s%s", path_prefix,
                    GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
     http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx,
