@@ -136,7 +136,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   char* secure_peer_name_;
 };
 
-static RefCountedPtr<grpc_channel_security_connector>
+RefCountedPtr<grpc_channel_security_connector>
 httpcli_ssl_channel_security_connector_create(
     const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
     const char* secure_peer_name) {
