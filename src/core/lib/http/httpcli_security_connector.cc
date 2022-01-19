@@ -82,8 +82,7 @@ class grpc_httpcli_ssl_channel_security_connector final
                 tsi_result_to_string(result));
       }
     }
-    handshake_mgr->Add(
-        SecurityHandshakerCreate(handshaker, this, args));
+    handshake_mgr->Add(SecurityHandshakerCreate(handshaker, this, args));
   }
 
   tsi_ssl_client_handshaker_factory* handshaker_factory() const {
