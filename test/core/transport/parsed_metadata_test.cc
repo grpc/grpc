@@ -225,6 +225,40 @@ TEST(KeyValueTest, Simple) {
   EXPECT_EQ(p3.transport_size(), 51);
 }
 
+TEST(KeyValueTest, LongKey) {
+  using PM = ParsedMetadata<grpc_metadata_batch>;
+  using PMPtr = std::unique_ptr<PM>;
+  PMPtr p = absl::make_unique<PM>(Slice::FromCopiedString(std::string(60, 'a')),
+                                  Slice::FromCopiedString("value"));
+  EXPECT_EQ(
+      p->DebugString(),
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");
+  EXPECT_EQ(p->transport_size(), 97);
+  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
+                          [](absl::string_view msg, const Slice& value) {
+                            ASSERT_TRUE(false)
+                                << "Should not be called: msg=" << msg
+                                << ", value=" << value.as_string_view();
+                          });
+  EXPECT_EQ(
+      p->DebugString(),
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");
+  EXPECT_EQ(p2.DebugString(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: "
+            "some_other_value");
+  EXPECT_EQ(p2.transport_size(), 108);
+  p.reset();
+  EXPECT_EQ(p2.DebugString(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: "
+            "some_other_value");
+  EXPECT_EQ(p2.transport_size(), 108);
+  PM p3 = std::move(p2);
+  EXPECT_EQ(p3.DebugString(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: "
+            "some_other_value");
+  EXPECT_EQ(p3.transport_size(), 108);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
