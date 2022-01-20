@@ -67,7 +67,7 @@ gRPC.
 ## Performance
 
 See the
-[Performance dashboard](https://performance-dot-grpc-testing.appspot.com/explore?dashboard=5180705743044608)
+[Performance dashboard](https://grafana-dot-grpc-testing.appspot.com/)
 for performance numbers of master branch daily builds.
 
 ## Concepts
