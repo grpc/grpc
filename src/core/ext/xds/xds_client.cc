@@ -2213,8 +2213,9 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
   XdsApi::ClusterLoadReportMap snapshot_map;
   auto server_it = xds_load_report_server_map_.find(xds_server);
   if (server_it == xds_load_report_server_map_.end()) return snapshot_map;
-  for (auto load_report_it = server_it->second.load_report_map.begin();
-       load_report_it != server_it->second.load_report_map.end();) {
+  auto& load_report_map = server_it->second.load_report_map;
+  for (auto load_report_it = load_report_map.begin();
+       load_report_it != load_report_map.end();) {
     // Cluster key is cluster and EDS service name.
     const auto& cluster_key = load_report_it->first;
     LoadReportState& load_report = load_report_it->second;
@@ -2280,9 +2281,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
     // deleted stats objects, remove the entry.
     if (load_report.locality_stats.empty() &&
         load_report.drop_stats == nullptr) {
-      load_report_it =
-          xds_load_report_server_map_[xds_server].load_report_map.erase(
-              load_report_it);
+      load_report_it = load_report_map.erase(load_report_it);
     } else {
       ++load_report_it;
     }

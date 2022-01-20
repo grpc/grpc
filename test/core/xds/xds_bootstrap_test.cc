@@ -738,7 +738,7 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
             0);
 }
 
-TEST(XdsBootstrapTest, ToJsonAndParse) {
+TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* json_str =
       "    {"
@@ -753,14 +753,14 @@ TEST(XdsBootstrapTest, ToJsonAndParse) {
       "    }";
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap::XdsServer xds_server =
       XdsBootstrap::XdsServer::Parse(json, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   Json::Object output = xds_server.ToJson();
   XdsBootstrap::XdsServer output_xds_server =
       XdsBootstrap::XdsServer::Parse(output, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
