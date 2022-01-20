@@ -255,6 +255,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
     grpc_millis last_report_time = ExecCtx::Get()->Now();
   };
 
+  // Load report data.
+  using LoadReportMap = std::map<
+      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+      LoadReportState>;
+
+  struct LoadReportServer {
+    RefCountedPtr<ChannelState> channel_state;
+    LoadReportMap load_report_map;
+  };
+
   class Notifier;
 
   // Sends an error notification to all watchers.
@@ -305,14 +315,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  // Load report data.
-  using LoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      LoadReportState>;
-  struct LoadReportServer {
-    RefCountedPtr<ChannelState> channel_state;
-    LoadReportMap load_report_map;
-  };
   std::map<XdsBootstrap::XdsServer, LoadReportServer>
       xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 

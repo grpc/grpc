@@ -263,7 +263,7 @@ const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
   return nullptr;
 }
 
-const bool XdsBootstrap::XdsServerExists(
+bool XdsBootstrap::XdsServerExists(
     const XdsBootstrap::XdsServer& server) const {
   if (server == servers_[0]) return true;
   for (auto& authority : authorities_) {

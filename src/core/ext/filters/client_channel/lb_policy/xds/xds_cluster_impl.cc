@@ -591,10 +591,17 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
             xds_cluster_impl_policy_->config_->cluster_name(),
             xds_cluster_impl_policy_->config_->eds_service_name(),
             std::move(locality_name));
-    return MakeRefCounted<StatsSubchannelWrapper>(
-        xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(
-            std::move(address), args),
-        std::move(locality_stats));
+    if (locality_stats != nullptr) {
+      return MakeRefCounted<StatsSubchannelWrapper>(
+          xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(
+              std::move(address), args),
+          std::move(locality_stats));
+    } else {
+      gpr_log(GPR_INFO,
+              "[xds_cluster_impl_lb %p] No locality stats object, unable to "
+              "wrap the subchannel",
+              this);
+    }
   }
   // Load reporting not enabled, so don't wrap the subchannel.
   return xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(

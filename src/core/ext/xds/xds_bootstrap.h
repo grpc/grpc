@@ -115,7 +115,7 @@ class XdsBootstrap {
     return certificate_providers_;
   }
   // A util method to check that an xds server exists in this bootstrap file.
-  const bool XdsServerExists(const XdsServer& server) const;
+  bool XdsServerExists(const XdsServer& server) const;
 
  private:
   grpc_error_handle ParseXdsServerList(
