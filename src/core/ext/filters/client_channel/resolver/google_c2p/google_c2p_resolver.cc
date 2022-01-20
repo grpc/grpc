@@ -118,8 +118,9 @@ class GoogleCloud2ProdResolver : public Resolver {
 //
 
 GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
-    ResourceQuotaRefPtr resource_quota, RefCountedPtr<GoogleCloud2ProdResolver> resolver,
-    const char* path, grpc_polling_entity* pollent)
+    ResourceQuotaRefPtr resource_quota,
+    RefCountedPtr<GoogleCloud2ProdResolver> resolver, const char* path,
+    grpc_polling_entity* pollent)
     : resolver_(std::move(resolver)) {
   // Start HTTP request.
   GRPC_CLOSURE_INIT(&on_done_, OnHttpRequestDone, this, nullptr);
@@ -134,9 +135,8 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
                          {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());  // params are hardcoded
   grpc_arg resource_quota_arg = grpc_channel_arg_pointer_create(
-    const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
-    resource_quota.get(),
-    grpc_resource_quota_arg_vtable());
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resource_quota.get(),
+      grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
   http_request_ =
       HttpRequest::Get(std::move(*uri), &args, pollent, &request,
@@ -189,7 +189,8 @@ void GoogleCloud2ProdResolver::MetadataQuery::MaybeCallOnDone(
 //
 
 GoogleCloud2ProdResolver::ZoneQuery::ZoneQuery(
-    ResourceQuotaRefPtr resource_quota, RefCountedPtr<GoogleCloud2ProdResolver> resolver,
+    ResourceQuotaRefPtr resource_quota,
+    RefCountedPtr<GoogleCloud2ProdResolver> resolver,
     grpc_polling_entity* pollent)
     : MetadataQuery(std::move(resource_quota), std::move(resolver),
                     "/computeMetadata/v1/instance/zone", pollent) {}
@@ -221,7 +222,8 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
 //
 
 GoogleCloud2ProdResolver::IPv6Query::IPv6Query(
-    ResourceQuotaRefPtr resource_quota, RefCountedPtr<GoogleCloud2ProdResolver> resolver,
+    ResourceQuotaRefPtr resource_quota,
+    RefCountedPtr<GoogleCloud2ProdResolver> resolver,
     grpc_polling_entity* pollent)
     : MetadataQuery(std::move(resource_quota), std::move(resolver),
                     "/computeMetadata/v1/instance/network-interfaces/0/ipv6s",
