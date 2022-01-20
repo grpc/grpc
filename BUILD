@@ -5056,15 +5056,15 @@ grpc_upb_proto_reflection_library(
     deps = ["@com_google_googleapis//google/api:annotations_proto"],
 )
 
-grpc_upb_proto_library(
-    name = "google_api_expr_upb",
-    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
-)
+#grpc_upb_proto_library(
+#    name = "google_api_expr_upb",
+#    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
+#)
 
-grpc_upb_proto_reflection_library(
-    name = "google_api_expr_upbdefs",
-    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
-)
+#grpc_upb_proto_reflection_library(
+#    name = "google_api_expr_upbdefs",
+#    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
+#)
 
 grpc_upb_proto_library(
     name = "google_rpc_status_upb",
