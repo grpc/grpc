@@ -140,8 +140,7 @@ def get_external_link(file):
                       ('@com_google_googleapis//', ''),
                       ('@com_github_cncf_udpa//', ''),
                       ('@com_envoyproxy_protoc_gen_validate//', ''),
-                      ('@envoy_api//', ''),
-                      ('@opencensus_proto//', '')]
+                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
     for external_link in EXTERNAL_LINKS:
         if file.startswith(external_link[0]):
             return external_link

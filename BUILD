@@ -4968,46 +4968,6 @@ grpc_upb_proto_library(
 )
 
 grpc_upb_proto_library(
-    name = "proto_gen_validate_upb",
-    deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "proto_gen_validate_upbdefs",
-    deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
-)
-
-grpc_upb_proto_library(
-    name = "udpa_annotations_upb",
-    deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "udpa_annotations_upbdefs",
-    deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
-)
-
-grpc_upb_proto_library(
-    name = "xds_annotations_upb",
-    deps = ["@com_github_cncf_udpa//xds/annotations/v3:pkg"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "xds_annotations_upbdefs",
-    deps = ["@com_github_cncf_udpa//xds/annotations/v3:pkg"],
-)
-
-grpc_upb_proto_library(
-    name = "xds_core_upb",
-    deps = ["@com_github_cncf_udpa//xds/core/v3:pkg"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "xds_core_upbdefs",
-    deps = ["@com_github_cncf_udpa//xds/core/v3:pkg"],
-)
-
-grpc_upb_proto_library(
     name = "xds_type_upb",
     deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
 )
@@ -5026,45 +4986,6 @@ grpc_upb_proto_library(
     name = "grpc_health_upb",
     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
-
-WELL_KNOWN_PROTO_TARGETS = [
-    "any",
-    "duration",
-    "empty",
-    "struct",
-    "timestamp",
-    "wrappers",
-]
-
-[grpc_upb_proto_library(
-    name = "protobuf_" + target + "_upb",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
-
-[grpc_upb_proto_reflection_library(
-    name = "protobuf_" + target + "_upbdefs",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
-
-grpc_upb_proto_library(
-    name = "google_api_annotations_upb",
-    deps = ["@com_google_googleapis//google/api:annotations_proto"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "google_api_annotations_upbdefs",
-    deps = ["@com_google_googleapis//google/api:annotations_proto"],
-)
-
-#grpc_upb_proto_library(
-#    name = "google_api_expr_upb",
-#    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
-#)
-
-#grpc_upb_proto_reflection_library(
-#    name = "google_api_expr_upbdefs",
-#    deps = ["@com_google_googleapis//google/api/expr/v1alpha1:expr_proto"],
-#)
 
 grpc_upb_proto_library(
     name = "google_rpc_status_upb",
@@ -5090,6 +5011,25 @@ grpc_upb_proto_library(
     name = "rls_upb",
     deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
 )
+
+WELL_KNOWN_PROTO_TARGETS = [
+    "any",
+    "duration",
+    "empty",
+    "struct",
+    "timestamp",
+    "wrappers",
+]
+
+[grpc_upb_proto_library(
+    name = "protobuf_" + target + "_upb",
+    deps = ["@com_google_protobuf//:" + target + "_proto"],
+) for target in WELL_KNOWN_PROTO_TARGETS]
+
+[grpc_upb_proto_reflection_library(
+    name = "protobuf_" + target + "_upbdefs",
+    deps = ["@com_google_protobuf//:" + target + "_proto"],
+) for target in WELL_KNOWN_PROTO_TARGETS]
 
 grpc_generate_one_off_targets()
 
