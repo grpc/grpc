@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['slicebuffer_1131',['SliceBuffer',['../classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html',1,'grpc_event_engine::experimental']]],
-  ['srvrecord_1132',['SRVRecord',['../structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver_1_1_s_r_v_record.html',1,'grpc_event_engine::experimental::EventEngine::DNSResolver']]]
+  ['reservation_1142',['Reservation',['../classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html',1,'grpc_event_engine::experimental::MemoryAllocator']]],
+  ['resolvedaddress_1143',['ResolvedAddress',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html',1,'grpc_event_engine::experimental::EventEngine']]]
 ];

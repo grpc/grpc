@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">20.0.0</span>
+   &#160;<span id="projectnumber">21.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,12 @@ $(function() {
 <li>Cancel()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">grpc_event_engine::experimental::EventEngine</a>
 </li>
+<li>cancel
+: <a class="el" href="structgrpc__tls__certificate__verifier__external.html#ad107cc92fee39f42179f4ff647469db1">grpc_tls_certificate_verifier_external</a>
+</li>
+<li>CancelConnect()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">grpc_event_engine::experimental::EventEngine</a>
+</li>
 <li>cancelled
 : <a class="el" href="structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__close__on__server.html#a9245c801a7d3efc4ded0a04d680f9088">grpc_op::grpc_op_data::grpc_op_recv_close_on_server</a>
 </li>
@@ -77,12 +83,6 @@ $(function() {
 <li>capacity
 : <a class="el" href="structgrpc__metadata__array.html#a5b293b4f8e734b032b80741abf538a97">grpc_metadata_array</a>
 , <a class="el" href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">grpc_slice_buffer</a>
-</li>
-<li>cb
-: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a77029657f0b1b653fe3694a05b3272dc">grpc_tls_server_authorization_check_arg</a>
-</li>
-<li>cb_user_data
-: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a49f838e2bc8533b18d77e9e31a34033b">grpc_tls_server_authorization_check_arg</a>
 </li>
 <li>cert_chain
 : <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html#a483c3601705853f48dfbc8ee66d5e656">grpc_ssl_pem_key_cert_pair</a>
@@ -102,20 +102,17 @@ $(function() {
 <li>code
 : <a class="el" href="structgrpc__serving__status__update.html#aed86b3804752c7a94c822711379d220f">grpc_serving_status_update</a>
 </li>
+<li>common_name
+: <a class="el" href="structgrpc__tls__custom__verification__check__request_1_1peer__info.html#ad1bfb09dd088bb196ac5f8abc358c8e0">grpc_tls_custom_verification_check_request::peer_info</a>
+</li>
 <li>compression
 : <a class="el" href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a110cdc07225f77ae580e50a8944bcb7c">grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer</a>
 </li>
-<li>config
-: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a682bb119d97a1166dd50001c848f9b38">grpc_tls_server_authorization_check_arg</a>
-</li>
 <li>Connect()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a76ac48e0a52fe6dd24aa86c60348cdfc">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>Container()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a3bafc0cf3260f5fa626c81a6cb45b371">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
-</li>
-<li>context
-: <a class="el" href="structgrpc__tls__server__authorization__check__arg.html#a840309051d10d17392e977812f78254e">grpc_tls_server_authorization_check_arg</a>
 </li>
 <li>copy
 : <a class="el" href="structgrpc__arg__pointer__vtable.html#a1a71527a772bae82735ef8682d0668ad">grpc_arg_pointer_vtable</a>
@@ -139,7 +136,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>CreateMemoryAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#ad77e007b5a4cd90d5496092ed42b4104">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a13cf58d9ec269ca343e3887242074a07">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
 </li>
 <li>ctx
 : <a class="el" href="structgrpc__auth__property__iterator.html#a971904d29fa6f6ca6a853d078cae2f58">grpc_auth_property_iterator</a>
@@ -151,7 +148,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:16 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">20.0.0</span>
+   &#160;<span id="projectnumber">21.0.0</span>
    </div>
   </td>
  </tr>
@@ -71,9 +71,6 @@ $(function() {
 <li>allocate()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a510df8a8b652e178f0da5c3481187c57">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
 </li>
-<li>allocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa17c4998a45965e76a057d3ef204273a">grpc_event_engine::experimental::MemoryAllocator</a>
-</li>
 </ul>
 
 
@@ -88,6 +85,9 @@ $(function() {
 <li>Cancel()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">grpc_event_engine::experimental::EventEngine</a>
 </li>
+<li>CancelConnect()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">grpc_event_engine::experimental::EventEngine</a>
+</li>
 <li>CancelLookup()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af52da243fc5151eb2e3ad0d1dc36e7db">grpc_event_engine::experimental::EventEngine::DNSResolver</a>
 </li>
@@ -95,7 +95,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#a5142b0ccf8177cde2ba8fb3a78a4de08">grpc_event_engine::experimental::EventEngine::Closure</a>
 </li>
 <li>Connect()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a76ac48e0a52fe6dd24aa86c60348cdfc">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>Container()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a3bafc0cf3260f5fa626c81a6cb45b371">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
@@ -104,7 +104,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>CreateMemoryAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#ad77e007b5a4cd90d5496092ed42b4104">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a13cf58d9ec269ca343e3887242074a07">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
 </li>
 </ul>
 
@@ -175,7 +175,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html#ab8d74d1b6b325a4cbc5fa7b63cbe9056">grpc_event_engine::experimental::MemoryRequest</a>
 </li>
 <li>MemoryAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aace3c6897c03b8e2c00f071b4fd21918">grpc_event_engine::experimental::MemoryAllocator</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa0be35a953953ee00ff8dfef5d3a1111">grpc_event_engine::experimental::MemoryAllocator</a>
 </li>
 <li>MemoryAllocatorImpl()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a9e6a8e994d3e67e054d308142dd6dc8c">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
@@ -223,6 +223,9 @@ $(function() {
 <li>Reserve()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a668908d336cf3c21ad6f7dfe7f06739a">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a25ce3988040473e2d481d7380b633113">grpc_event_engine::experimental::MemoryAllocator</a>
+</li>
+<li>Reset()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a033dcd524d488ef75754479c46ee63af">grpc_event_engine::experimental::MemoryAllocator</a>
 </li>
 <li>ResolvedAddress()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac8b476c2acd9c77dd881d29f2a379d5c">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a>
@@ -309,7 +312,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:16 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

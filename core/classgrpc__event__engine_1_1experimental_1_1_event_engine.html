@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">20.0.0</span>
+   &#160;<span id="projectnumber">21.0.0</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,9 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html">Closure</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A custom closure type for <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> task execution.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A handle to a cancellable connection attempt.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html">DNSResolver</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides asynchronous resolution.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -112,9 +115,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a57fe4d3cb961ef56f9f872e18a64f840"><td class="memItemLeft" align="right" valign="top">virtual absl::StatusOr&lt; std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html">Listener</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">CreateListener</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#a4ab93dee16f17ef34fe4ff0f0b95a1ab">Listener::AcceptCallback</a> on_accept, std::function&lt; void(absl::Status)&gt; on_shutdown, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;config, std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html">MemoryAllocatorFactory</a> &gt; memory_allocator_factory)=0</td></tr>
 <tr class="memdesc:a57fe4d3cb961ef56f9f872e18a64f840"><td class="mdescLeft">&#160;</td><td class="mdescRight">Factory method to create a network listener / server.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">More...</a><br /></td></tr>
 <tr class="separator:a57fe4d3cb961ef56f9f872e18a64f840"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a76ac48e0a52fe6dd24aa86c60348cdfc"><td class="memItemLeft" align="right" valign="top">virtual absl::Status&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a76ac48e0a52fe6dd24aa86c60348cdfc">Connect</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">OnConnectCallback</a> on_connect, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;addr, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;args, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> memory_allocator, absl::Time deadline)=0</td></tr>
-<tr class="memdesc:a76ac48e0a52fe6dd24aa86c60348cdfc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a client network connection to a remote network listener.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a76ac48e0a52fe6dd24aa86c60348cdfc">More...</a><br /></td></tr>
-<tr class="separator:a76ac48e0a52fe6dd24aa86c60348cdfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f6d2fe70d8fd254ec4099f6c60b291f"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">Connect</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">OnConnectCallback</a> on_connect, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;addr, const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_endpoint_config.html">EndpointConfig</a> &amp;args, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> memory_allocator, absl::Time deadline)=0</td></tr>
+<tr class="memdesc:a9f6d2fe70d8fd254ec4099f6c60b291f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a client network connection to a remote network listener.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">More...</a><br /></td></tr>
+<tr class="separator:a9f6d2fe70d8fd254ec4099f6c60b291f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad116ce06ec29f65ce4083b226d2d90c8"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">CancelConnect</a> (<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> handle)=0</td></tr>
+<tr class="memdesc:ad116ce06ec29f65ce4083b226d2d90c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request cancellation of a connection attempt.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">More...</a><br /></td></tr>
+<tr class="separator:ad116ce06ec29f65ce4083b226d2d90c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa283885518525b71339f166e15932cd1"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aa283885518525b71339f166e15932cd1">~EventEngine</a> ()=default</td></tr>
 <tr class="memdesc:aa283885518525b71339f166e15932cd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">At time of destruction, the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> must have no active responsibilities.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aa283885518525b71339f166e15932cd1">More...</a><br /></td></tr>
 <tr class="separator:aa283885518525b71339f166e15932cd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -228,8 +234,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a76ac48e0a52fe6dd24aa86c60348cdfc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a76ac48e0a52fe6dd24aa86c60348cdfc">&#9670;&nbsp;</a></span>Connect()</h2>
+<a id="ad116ce06ec29f65ce4083b226d2d90c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad116ce06ec29f65ce4083b226d2d90c8">&#9670;&nbsp;</a></span>CancelConnect()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -238,7 +244,37 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual absl::Status grpc_event_engine::experimental::EventEngine::Connect </td>
+          <td class="memname">virtual bool grpc_event_engine::experimental::EventEngine::CancelConnect </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a>&#160;</td>
+          <td class="paramname"><em>handle</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Request cancellation of a connection attempt. </p>
+<p>If the associated connection has already been completed, it will not be cancelled, and this method will return false.</p>
+<p>If the associated connection has not been completed, it will be cancelled, and this method will return true. The <em>OnConnectCallback</em> will not be called. </p>
+
+</div>
+</div>
+<a id="a9f6d2fe70d8fd254ec4099f6c60b291f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f6d2fe70d8fd254ec4099f6c60b291f">&#9670;&nbsp;</a></span>Connect()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_connection_handle.html">ConnectionHandle</a> grpc_event_engine::experimental::EventEngine::Connect </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad38e4bd2a5559809d16246442460af3d">OnConnectCallback</a>&#160;</td>
           <td class="paramname"><em>on_connect</em>, </td>
@@ -281,7 +317,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates a client network connection to a remote network listener. </p>
-<p>May return an error status immediately if there was a failure in the synchronous part of establishing a connection. In that event, the <em>on_connect</em> callback <em>will not</em> have been executed. Otherwise, it is expected that the <em>on_connect</em> callback will be asynchronously executed exactly once by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a>.</p>
+<p>Even in the event of an error, it is expected that the <em>on_connect</em> callback will be asynchronously executed exactly once by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a>. A connection attempt can be cancelled using the <em>CancelConnect</em> method.</p>
 <p>Implementation Note: it is important that the <em>memory_allocator</em> be used for all read/write buffer allocations in the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine encapsulates all platform-specific behaviors related to low level network I/O,...">EventEngine</a> implementation. This allows gRPC's <em>ResourceQuota</em> system to monitor and control memory usage with graceful degradation mechanisms. Please see the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a></em> API for more information. </p>
 
 </div>
@@ -535,7 +571,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:16 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

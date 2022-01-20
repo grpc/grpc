@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.42.0</span>
+   &#160;<span id="projectnumber">1.43.1</span>
    </div>
   </td>
  </tr>
@@ -86,6 +86,8 @@ Macros</h2></td></tr>
 <tr class="separator:a9f689af6e31c98c996522441cf069da3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afee5e0fade6e0af1954529f1f08afe0c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#afee5e0fade6e0af1954529f1f08afe0c">GRPC_X509_CN_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;x509_common_name&quot;</td></tr>
 <tr class="separator:afee5e0fade6e0af1954529f1f08afe0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a982fc088817a32a03fbc9b27bc514629"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a982fc088817a32a03fbc9b27bc514629">GRPC_X509_SUBJECT_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;x509_subject&quot;</td></tr>
+<tr class="separator:a982fc088817a32a03fbc9b27bc514629"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1412421653b7999544296f56025a0f36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a1412421653b7999544296f56025a0f36">GRPC_X509_SAN_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;x509_subject_alternative_name&quot;</td></tr>
 <tr class="separator:a1412421653b7999544296f56025a0f36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad46c3fd565d6a24eeb25d1fdc342cb28"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#ad46c3fd565d6a24eeb25d1fdc342cb28">GRPC_X509_PEM_CERT_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;x509_pem_cert&quot;</td></tr>
@@ -147,11 +149,6 @@ Enumerations</h2></td></tr>
 <br />
  }</td></tr>
 <tr class="separator:a3c3165c49cd7a359ddb8656aae7e9dd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa4b37b544134e070541912584793446a"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#aa4b37b544134e070541912584793446a">grpc_tls_server_verification_option</a> { <a class="el" href="grpc__security__constants_8h.html#aa4b37b544134e070541912584793446aa2f287b70ed85cf61a025e6c9f82fa785">GRPC_TLS_SERVER_VERIFICATION</a>, 
-<a class="el" href="grpc__security__constants_8h.html#aa4b37b544134e070541912584793446aaeb4cda98070a6fd330b7253843406106">GRPC_TLS_SKIP_HOSTNAME_VERIFICATION</a>, 
-<a class="el" href="grpc__security__constants_8h.html#aa4b37b544134e070541912584793446aa7d9c4e1cd0a8986e4dadb95ef976b72e">GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION</a>
- }</td></tr>
-<tr class="separator:aa4b37b544134e070541912584793446a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31d00ce5c064e1fff4261a6d6298dc11"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> { <a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11a94e03cdcc2f95916c9eaf6ab486ed768">UDS</a> = 0, 
 <a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11acb07333a9323d16e7e2258fe5bb4aed8">LOCAL_TCP</a>
  }</td></tr>
@@ -395,6 +392,20 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
+<a id="a982fc088817a32a03fbc9b27bc514629"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a982fc088817a32a03fbc9b27bc514629">&#9670;&nbsp;</a></span>GRPC_X509_SUBJECT_PROPERTY_NAME</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_X509_SUBJECT_PROPERTY_NAME&#160;&#160;&#160;&quot;x509_subject&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
 <a id="a31d00ce5c064e1fff4261a6d6298dc11"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a31d00ce5c064e1fff4261a6d6298dc11">&#9670;&nbsp;</a></span>grpc_local_connect_type</h2>
@@ -516,29 +527,6 @@ Enumerations</h2></td></tr>
 
 </div>
 </div>
-<a id="aa4b37b544134e070541912584793446a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa4b37b544134e070541912584793446a">&#9670;&nbsp;</a></span>grpc_tls_server_verification_option</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">enum <a class="el" href="grpc__security__constants_8h.html#aa4b37b544134e070541912584793446a">grpc_tls_server_verification_option</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="aa4b37b544134e070541912584793446aa2f287b70ed85cf61a025e6c9f82fa785"></a>GRPC_TLS_SERVER_VERIFICATION&#160;</td><td class="fielddoc"><p>Default option: performs server certificate verification and hostname verification. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aa4b37b544134e070541912584793446aaeb4cda98070a6fd330b7253843406106"></a>GRPC_TLS_SKIP_HOSTNAME_VERIFICATION&#160;</td><td class="fielddoc"><p>Performs server certificate verification, but skips hostname verification Client is responsible for verifying server's identity via server authorization check callback. </p>
-</td></tr>
-<tr><td class="fieldname"><a id="aa4b37b544134e070541912584793446aa7d9c4e1cd0a8986e4dadb95ef976b72e"></a>GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION&#160;</td><td class="fielddoc"><p>Skips both server certificate and hostname verification. </p>
-<p>Client is responsible for verifying server's identity and server's certificate via server authorization check callback. </p>
-</td></tr>
-</table>
-
-</div>
-</div>
 <a id="ab7f46c1753e3601b1de9aa31958748dd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab7f46c1753e3601b1de9aa31958748dd">&#9670;&nbsp;</a></span>grpc_tls_version</h2>
 
@@ -562,7 +550,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

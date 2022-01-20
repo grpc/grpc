@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.42.0</span>
+   &#160;<span id="projectnumber">1.43.1</span>
    </div>
   </td>
  </tr>
@@ -75,9 +75,6 @@ $(function() {
 <li>c_channel_args()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#aef26c9943c9f19c63b2c8e4023096d5e">grpc::ChannelArguments</a>
 </li>
-<li>c_config()
-: <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_config.html#a831fb496c62c3046b86ddf68c032aff9">grpc::experimental::TlsServerAuthorizationCheckConfig</a>
-</li>
 <li>c_credentials_options()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#a3855df30b65ebe6a3b7d8ce23238943c">grpc::experimental::TlsCredentialsOptions</a>
 </li>
@@ -89,6 +86,9 @@ $(function() {
 , <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#ad227ab58a3506acac7b8c3394a88eeff">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a1439dedd4a6879c3ff6d0802d991a22d">grpc::experimental::StaticDataCertificateProvider</a>
 </li>
+<li>c_request()
+: <a class="el" href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html#af14256f7b3532106f3b523209af0168c">grpc::experimental::TlsCustomVerificationCheckRequest</a>
+</li>
 <li>c_resource_quota()
 : <a class="el" href="classgrpc_1_1_resource_quota.html#a1c8f03a21aba636ba5ed2504a0754085">grpc::ResourceQuota</a>
 </li>
@@ -97,6 +97,9 @@ $(function() {
 </li>
 <li>c_slice()
 : <a class="el" href="classgrpc_1_1_slice.html#aa9588693e5faffee49e16fd82956f352">grpc::Slice</a>
+</li>
+<li>c_verifier()
+: <a class="el" href="classgrpc_1_1experimental_1_1_certificate_verifier.html#a6781b51585677cd1267173eba8348b22">grpc::experimental::CertificateVerifier</a>
 </li>
 <li>Call()
 : <a class="el" href="classgrpc_1_1internal_1_1_call.html#ad6f340bd3dafcb61ba77ee1fd92aca4a">grpc::internal::Call</a>
@@ -132,7 +135,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_callback_with_status_tag.html#a90541e7784fd49209cae06ce464446b1">grpc::internal::CallbackWithStatusTag</a>
 </li>
 <li>CallbackWithSuccessTag()
-: <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#ad11c7809c2233ce3d2857304357b61f7">grpc::internal::CallbackWithSuccessTag</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#a9f0971687735c51a6cf900796de6be4b">grpc::internal::CallbackWithSuccessTag</a>
 </li>
 <li>CallCredentials()
 : <a class="el" href="classgrpc_1_1_call_credentials.html#af28714fa5ebfe120cd02f26aaaca595a">grpc::CallCredentials</a>
@@ -160,18 +163,18 @@ $(function() {
 </li>
 <li>Cancel()
 : <a class="el" href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">grpc::Alarm</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_config.html#a362430ec478ff4de5a7c05e05bcd137b">grpc::experimental::TlsServerAuthorizationCheckConfig</a>
-, <a class="el" href="structgrpc_1_1experimental_1_1_tls_server_authorization_check_interface.html#ab44b59a70a37a1cb351fcc403b19bd73">grpc::experimental::TlsServerAuthorizationCheckInterface</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_certificate_verifier.html#a7312acadecd716e3a0c7c4bbcb3e84d1">grpc::experimental::CertificateVerifier</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_external_certificate_verifier.html#a3c6341b38f918b9a99d033287527fe51">grpc::experimental::ExternalCertificateVerifier</a>
 , <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#aab8a579f7dc8429c8d2aa2cd81da910b">grpc_event_engine::experimental::EventEngine</a>
+</li>
+<li>CancelConnect()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#ad116ce06ec29f65ce4083b226d2d90c8">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>cancelled()
 : <a class="el" href="classgrpc_1_1_core_codegen_interface.html#a619a3f96e3cf1d0c87d47e5d6c7822a4">grpc::CoreCodegenInterface</a>
 </li>
 <li>CancelLookup()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html#af52da243fc5151eb2e3ad0d1dc36e7db">grpc_event_engine::experimental::EventEngine::DNSResolver</a>
-</li>
-<li>cb_user_data()
-: <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#adaed24ed666322dec0d9f10c2cb40f7e">grpc::experimental::TlsServerAuthorizationCheckArg</a>
 </li>
 <li>cbegin()
 : <a class="el" href="classgrpc_1_1string__ref.html#ae24b017b9b9df9f13f9a62c92009d82a">grpc::string_ref</a>
@@ -182,6 +185,9 @@ $(function() {
 <li>census_context()
 : <a class="el" href="classgrpc_1_1_client_context.html#aa2eb8c436099ffcd47b3b8308e5f8517">grpc::ClientContext</a>
 , <a class="el" href="classgrpc_1_1_server_context_base.html#ab324b4924bc290138b139a89f9b654a7">grpc::ServerContextBase</a>
+</li>
+<li>CertificateVerifier()
+: <a class="el" href="classgrpc_1_1experimental_1_1_certificate_verifier.html#a9631cd85f3d9663562ab619414da6218">grpc::experimental::CertificateVerifier</a>
 </li>
 <li>ChangeArguments()
 : <a class="el" href="classgrpc_1_1_server_builder_plugin.html#a2ab82b76728b0f768d7a9fca9c0f3726">grpc::ServerBuilderPlugin</a>
@@ -234,7 +240,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_client_recv_status.html#af54ab9159de241c7d8d3a946884a8456">grpc::internal::CallOpClientRecvStatus</a>
 </li>
 <li>ClientRpcInfo()
-: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a42aeb98ab3b464d26b78338f9595122f">grpc::experimental::ClientRpcInfo</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a1bbddf9e41ecd9445376031b66af67c7">grpc::experimental::ClientRpcInfo</a>
 </li>
 <li>ClientSendClose()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_client_send_close.html#a56860a96c2e6f8e34c1f6b29a4988189">grpc::internal::CallOpClientSendClose</a>
@@ -243,7 +249,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_handler.html#a19a0a47a232fc2106af01b2b0b97a286">grpc::internal::ClientStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 </li>
 <li>Closure()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#ae1912de96af78965cc9072bcac2fd5eb">grpc_event_engine::experimental::EventEngine::Closure</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html#a5142b0ccf8177cde2ba8fb3a78a4de08">grpc_event_engine::experimental::EventEngine::Closure</a>
+</li>
+<li>common_name()
+: <a class="el" href="classgrpc_1_1experimental_1_1_tls_custom_verification_check_request.html#a13a8356b3151deff241ef4f23798a783">grpc::experimental::TlsCustomVerificationCheckRequest</a>
 </li>
 <li>compare()
 : <a class="el" href="classgrpc_1_1string__ref.html#a2e3fa91fae8362cd8afd0eb0a7f0174e">grpc::string_ref</a>
@@ -262,10 +271,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_context_base.html#a942b0a431630f987d558550bf9d49dd1">grpc::ServerContextBase</a>
 </li>
 <li>CondVar()
-: <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a33ce590ba2b22d31e37a92f57509b2ef">grpc::internal::CondVar</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a3d961f0ea2c7b8929ac1b16f02a8133a">grpc::internal::CondVar</a>
 </li>
 <li>Connect()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a76ac48e0a52fe6dd24aa86c60348cdfc">grpc_event_engine::experimental::EventEngine</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a9f6d2fe70d8fd254ec4099f6c60b291f">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>Container()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_container.html#a6d73f33bf0d7a6b8814baaa76932fd93">grpc_event_engine::experimental::MemoryAllocator::Container&lt; T &gt;</a>
@@ -294,7 +303,8 @@ $(function() {
 : <a class="el" href="classgrpc_1_1string__ref.html#af00ae034a4d72e4e2cb661e858d3e57a">grpc::string_ref</a>
 </li>
 <li>Create()
-: <a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_authorization_policy_provider.html#a00914ffa45c8f12ec75386ea7d9be64c">grpc::experimental::FileWatcherAuthorizationPolicyProvider</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_external_certificate_verifier.html#a9585983d0bd04c7a0a126b5b1cc15359">grpc::experimental::ExternalCertificateVerifier</a>
+, <a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_authorization_policy_provider.html#a00914ffa45c8f12ec75386ea7d9be64c">grpc::experimental::FileWatcherAuthorizationPolicyProvider</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_static_data_authorization_policy_provider.html#a4b5a96db220eb464ae7db3ffa80b2195">grpc::experimental::StaticDataAuthorizationPolicyProvider</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html#a1109f1a4a191d6524237a642c3d98191">grpc::internal::ClientAsyncReaderFactory&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html#acb877cd69b3c041afc2e637eda0e3a7d">grpc::internal::ClientAsyncReaderWriterFactory&lt; W, R &gt;</a>
@@ -316,7 +326,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html#a57fe4d3cb961ef56f9f872e18a64f840">grpc_event_engine::experimental::EventEngine</a>
 </li>
 <li>CreateMemoryAllocator()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#ad77e007b5a4cd90d5496092ed42b4104">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a13cf58d9ec269ca343e3887242074a07">grpc_event_engine::experimental::MemoryAllocatorFactory</a>
 </li>
 <li>CreateReactor()
 : <a class="el" href="classgrpc_1_1_callback_generic_service.html#a0417a54e9986e8279e7d867d6379c6dd">grpc::CallbackGenericService</a>
@@ -334,7 +344,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:19 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

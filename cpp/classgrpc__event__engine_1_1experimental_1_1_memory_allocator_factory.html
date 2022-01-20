@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.42.0</span>
+   &#160;<span id="projectnumber">1.43.1</span>
    </div>
   </td>
  </tr>
@@ -79,9 +79,9 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a3fe1d4c4a49b933e870a469fd0211fd0"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a3fe1d4c4a49b933e870a469fd0211fd0">~MemoryAllocatorFactory</a> ()=default</td></tr>
 <tr class="separator:a3fe1d4c4a49b933e870a469fd0211fd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad77e007b5a4cd90d5496092ed42b4104"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#ad77e007b5a4cd90d5496092ed42b4104">CreateMemoryAllocator</a> ()=0</td></tr>
-<tr class="memdesc:ad77e007b5a4cd90d5496092ed42b4104"><td class="mdescLeft">&#160;</td><td class="mdescRight">On Endpoint creation, call <em>CreateMemoryAllocator</em> to create a new allocator for the endpoint.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#ad77e007b5a4cd90d5496092ed42b4104">More...</a><br /></td></tr>
-<tr class="separator:ad77e007b5a4cd90d5496092ed42b4104"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13cf58d9ec269ca343e3887242074a07"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a13cf58d9ec269ca343e3887242074a07">CreateMemoryAllocator</a> (absl::string_view name)=0</td></tr>
+<tr class="memdesc:a13cf58d9ec269ca343e3887242074a07"><td class="mdescLeft">&#160;</td><td class="mdescRight">On Endpoint creation, call <em>CreateMemoryAllocator</em> to create a new allocator for the endpoint.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#a13cf58d9ec269ca343e3887242074a07">More...</a><br /></td></tr>
+<tr class="separator:a13cf58d9ec269ca343e3887242074a07"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3fe1d4c4a49b933e870a469fd0211fd0"></a>
@@ -110,8 +110,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad77e007b5a4cd90d5496092ed42b4104"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad77e007b5a4cd90d5496092ed42b4104">&#9670;&nbsp;</a></span>CreateMemoryAllocator()</h2>
+<a id="a13cf58d9ec269ca343e3887242074a07"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a13cf58d9ec269ca343e3887242074a07">&#9670;&nbsp;</a></span>CreateMemoryAllocator()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -122,7 +122,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> grpc_event_engine::experimental::MemoryAllocatorFactory::CreateMemoryAllocator </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">absl::string_view&#160;</td>
+          <td class="paramname"><em>name</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -134,7 +135,7 @@ Public Member Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>On Endpoint creation, call <em>CreateMemoryAllocator</em> to create a new allocator for the endpoint. </p>
-<p>Typically we'll want to: auto allocator = factory-&gt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_factory.html#ad77e007b5a4cd90d5496092ed42b4104" title="On Endpoint creation, call CreateMemoryAllocator to create a new allocator for the endpoint.">CreateMemoryAllocator()</a>; auto* endpoint = allocator-&gt;New&lt;MyEndpoint&gt;(std::move(allocator), ...); </p>
+<p><em>name</em> is used to label the memory allocator in debug logs. Typically we'll want to: auto allocator = factory-&gt;CreateMemoryAllocator(peer_address_string); auto* endpoint = allocator-&gt;New&lt;MyEndpoint&gt;(std::move(allocator), ...); </p>
 
 </div>
 </div>
@@ -144,7 +145,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

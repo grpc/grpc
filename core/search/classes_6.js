@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['reservation_1129',['Reservation',['../classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html',1,'grpc_event_engine::experimental::MemoryAllocator']]],
-  ['resolvedaddress_1130',['ResolvedAddress',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html',1,'grpc_event_engine::experimental::EventEngine']]]
+  ['peer_5finfo_1141',['peer_info',['../structgrpc__tls__custom__verification__check__request_1_1peer__info.html',1,'grpc_tls_custom_verification_check_request']]]
 ];

@@ -136,14 +136,14 @@
   <h3 id="constructors">Constructors
   </h3>
   <a id="Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_" data-uid="Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor*"></a>
-  <h4 id="Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_Grpc_Core_Method__0__1__System_String_Grpc_Core_CallOptions_" data-uid="Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.String,Grpc.Core.CallOptions)">ClientInterceptorContext(Method&lt;TRequest, TResponse&gt;, String, CallOptions)</h4>
+  <h4 id="Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_Grpc_Core_Method__0__1__System_Nullable_System_String__Grpc_Core_CallOptions_" data-uid="Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.Nullable{System.String},Grpc.Core.CallOptions)">ClientInterceptorContext(Method&lt;TRequest, TResponse&gt;, Nullable&lt;String&gt;, CallOptions)</h4>
   <div class="markdown level1 summary"><p>Creates a new instance of <a class="xref" href="Grpc.Core.Interceptors.ClientInterceptorContext-2.html">ClientInterceptorContext&lt;TRequest, TResponse&gt;</a>
 with the specified method, host, and call options.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ClientInterceptorContext(Method&lt;TRequest, TResponse&gt; method, string host, CallOptions options)</code></pre>
+    <pre><code class="lang-csharp hljs">public ClientInterceptorContext(Method&lt;TRequest, TResponse&gt; method, string? host, CallOptions options)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -162,7 +162,7 @@ with the specified method, host, and call options.</p>
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td><span class="parametername">host</span></td>
         <td><p>The host to dispatch the current call to.</p>
 </td>
@@ -184,7 +184,7 @@ with the specified method, host, and call options.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public string Host { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public string? Host { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -196,7 +196,7 @@ with the specified method, host, and call options.</p>
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>

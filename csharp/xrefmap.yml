@@ -1187,15 +1187,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncClientStreamingCall
   nameWithType: CallInvoker.AsyncClientStreamingCall
-- uid: Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
-  name: AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions)
-  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncClientStreamingCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions_
-  commentId: M:Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
-  name.vb: AsyncClientStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions)
-  fullName: Grpc.Core.CallInvoker.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions)
-  fullName.vb: Grpc.Core.CallInvoker.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions)
-  nameWithType: CallInvoker.AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions)
-  nameWithType.vb: CallInvoker.AsyncClientStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions)
+- uid: Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions)
+  name: AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions)
+  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncClientStreamingCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions_
+  commentId: M:Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions)
+  name.vb: AsyncClientStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions)
+  fullName: Grpc.Core.CallInvoker.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.Nullable<System.String>, Grpc.Core.CallOptions)
+  fullName.vb: Grpc.Core.CallInvoker.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.Nullable(Of System.String), Grpc.Core.CallOptions)
+  nameWithType: CallInvoker.AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions)
+  nameWithType.vb: CallInvoker.AsyncClientStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions)
 - uid: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall*
   name: AsyncDuplexStreamingCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncDuplexStreamingCall_
@@ -1203,15 +1203,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall
   nameWithType: CallInvoker.AsyncDuplexStreamingCall
-- uid: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
-  name: AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions)
-  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncDuplexStreamingCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions_
-  commentId: M:Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
-  name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions)
-  fullName: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions)
-  fullName.vb: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions)
-  nameWithType: CallInvoker.AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions)
-  nameWithType.vb: CallInvoker.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions)
+- uid: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions)
+  name: AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions)
+  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncDuplexStreamingCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions_
+  commentId: M:Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions)
+  name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions)
+  fullName: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.Nullable<System.String>, Grpc.Core.CallOptions)
+  fullName.vb: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.Nullable(Of System.String), Grpc.Core.CallOptions)
+  nameWithType: CallInvoker.AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions)
+  nameWithType.vb: CallInvoker.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions)
 - uid: Grpc.Core.CallInvoker.AsyncServerStreamingCall*
   name: AsyncServerStreamingCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncServerStreamingCall_
@@ -1219,15 +1219,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncServerStreamingCall
   nameWithType: CallInvoker.AsyncServerStreamingCall
-- uid: Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
-  name: AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions, TRequest)
-  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncServerStreamingCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions___0_
-  commentId: M:Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
-  name.vb: AsyncServerStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions, TRequest)
-  fullName: Grpc.Core.CallInvoker.AsyncServerStreamingCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions, TRequest)
-  fullName.vb: Grpc.Core.CallInvoker.AsyncServerStreamingCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions, TRequest)
-  nameWithType: CallInvoker.AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions, TRequest)
-  nameWithType.vb: CallInvoker.AsyncServerStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions, TRequest)
+- uid: Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)
+  name: AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions, TRequest)
+  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncServerStreamingCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions___0_
+  commentId: M:Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)
+  name.vb: AsyncServerStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions, TRequest)
+  fullName: Grpc.Core.CallInvoker.AsyncServerStreamingCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.Nullable<System.String>, Grpc.Core.CallOptions, TRequest)
+  fullName.vb: Grpc.Core.CallInvoker.AsyncServerStreamingCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.Nullable(Of System.String), Grpc.Core.CallOptions, TRequest)
+  nameWithType: CallInvoker.AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions, TRequest)
+  nameWithType.vb: CallInvoker.AsyncServerStreamingCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions, TRequest)
 - uid: Grpc.Core.CallInvoker.AsyncUnaryCall*
   name: AsyncUnaryCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncUnaryCall_
@@ -1235,15 +1235,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncUnaryCall
   nameWithType: CallInvoker.AsyncUnaryCall
-- uid: Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
-  name: AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions, TRequest)
-  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncUnaryCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions___0_
-  commentId: M:Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
-  name.vb: AsyncUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions, TRequest)
-  fullName: Grpc.Core.CallInvoker.AsyncUnaryCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions, TRequest)
-  fullName.vb: Grpc.Core.CallInvoker.AsyncUnaryCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions, TRequest)
-  nameWithType: CallInvoker.AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions, TRequest)
-  nameWithType.vb: CallInvoker.AsyncUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions, TRequest)
+- uid: Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)
+  name: AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions, TRequest)
+  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncUnaryCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions___0_
+  commentId: M:Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)
+  name.vb: AsyncUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions, TRequest)
+  fullName: Grpc.Core.CallInvoker.AsyncUnaryCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.Nullable<System.String>, Grpc.Core.CallOptions, TRequest)
+  fullName.vb: Grpc.Core.CallInvoker.AsyncUnaryCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.Nullable(Of System.String), Grpc.Core.CallOptions, TRequest)
+  nameWithType: CallInvoker.AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions, TRequest)
+  nameWithType.vb: CallInvoker.AsyncUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions, TRequest)
 - uid: Grpc.Core.CallInvoker.BlockingUnaryCall*
   name: BlockingUnaryCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_BlockingUnaryCall_
@@ -1251,30 +1251,30 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallInvoker.BlockingUnaryCall
   nameWithType: CallInvoker.BlockingUnaryCall
-- uid: Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
-  name: BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions, TRequest)
-  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_BlockingUnaryCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions___0_
-  commentId: M:Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
-  name.vb: BlockingUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions, TRequest)
-  fullName: Grpc.Core.CallInvoker.BlockingUnaryCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions, TRequest)
-  fullName.vb: Grpc.Core.CallInvoker.BlockingUnaryCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions, TRequest)
-  nameWithType: CallInvoker.BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, String, CallOptions, TRequest)
-  nameWithType.vb: CallInvoker.BlockingUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), String, CallOptions, TRequest)
+- uid: Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)
+  name: BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions, TRequest)
+  href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_BlockingUnaryCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions___0_
+  commentId: M:Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)
+  name.vb: BlockingUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions, TRequest)
+  fullName: Grpc.Core.CallInvoker.BlockingUnaryCall<TRequest, TResponse>(Grpc.Core.Method<TRequest, TResponse>, System.Nullable<System.String>, Grpc.Core.CallOptions, TRequest)
+  fullName.vb: Grpc.Core.CallInvoker.BlockingUnaryCall(Of TRequest, TResponse)(Grpc.Core.Method(Of TRequest, TResponse), System.Nullable(Of System.String), Grpc.Core.CallOptions, TRequest)
+  nameWithType: CallInvoker.BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse>, Nullable<String>, CallOptions, TRequest)
+  nameWithType.vb: CallInvoker.BlockingUnaryCall(Of TRequest, TResponse)(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions, TRequest)
 - uid: Grpc.Core.CallOptions
   name: CallOptions
   href: api/Grpc.Core.CallOptions.html
   commentId: T:Grpc.Core.CallOptions
   fullName: Grpc.Core.CallOptions
   nameWithType: CallOptions
-- uid: Grpc.Core.CallOptions.#ctor(Grpc.Core.Metadata,System.Nullable{System.DateTime},System.Threading.CancellationToken,Grpc.Core.WriteOptions,Grpc.Core.ContextPropagationToken,Grpc.Core.CallCredentials)
-  name: CallOptions(Metadata, Nullable<DateTime>, CancellationToken, WriteOptions, ContextPropagationToken, CallCredentials)
-  href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions__ctor_Grpc_Core_Metadata_System_Nullable_System_DateTime__System_Threading_CancellationToken_Grpc_Core_WriteOptions_Grpc_Core_ContextPropagationToken_Grpc_Core_CallCredentials_
-  commentId: M:Grpc.Core.CallOptions.#ctor(Grpc.Core.Metadata,System.Nullable{System.DateTime},System.Threading.CancellationToken,Grpc.Core.WriteOptions,Grpc.Core.ContextPropagationToken,Grpc.Core.CallCredentials)
-  name.vb: CallOptions(Metadata, Nullable(Of DateTime), CancellationToken, WriteOptions, ContextPropagationToken, CallCredentials)
-  fullName: Grpc.Core.CallOptions.CallOptions(Grpc.Core.Metadata, System.Nullable<System.DateTime>, System.Threading.CancellationToken, Grpc.Core.WriteOptions, Grpc.Core.ContextPropagationToken, Grpc.Core.CallCredentials)
-  fullName.vb: Grpc.Core.CallOptions.CallOptions(Grpc.Core.Metadata, System.Nullable(Of System.DateTime), System.Threading.CancellationToken, Grpc.Core.WriteOptions, Grpc.Core.ContextPropagationToken, Grpc.Core.CallCredentials)
-  nameWithType: CallOptions.CallOptions(Metadata, Nullable<DateTime>, CancellationToken, WriteOptions, ContextPropagationToken, CallCredentials)
-  nameWithType.vb: CallOptions.CallOptions(Metadata, Nullable(Of DateTime), CancellationToken, WriteOptions, ContextPropagationToken, CallCredentials)
+- uid: Grpc.Core.CallOptions.#ctor(System.Nullable{Grpc.Core.Metadata},System.Nullable{System.DateTime},System.Threading.CancellationToken,System.Nullable{Grpc.Core.WriteOptions},System.Nullable{Grpc.Core.ContextPropagationToken},System.Nullable{Grpc.Core.CallCredentials})
+  name: CallOptions(Nullable<Metadata>, Nullable<DateTime>, CancellationToken, Nullable<WriteOptions>, Nullable<ContextPropagationToken>, Nullable<CallCredentials>)
+  href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions__ctor_System_Nullable_Grpc_Core_Metadata__System_Nullable_System_DateTime__System_Threading_CancellationToken_System_Nullable_Grpc_Core_WriteOptions__System_Nullable_Grpc_Core_ContextPropagationToken__System_Nullable_Grpc_Core_CallCredentials__
+  commentId: M:Grpc.Core.CallOptions.#ctor(System.Nullable{Grpc.Core.Metadata},System.Nullable{System.DateTime},System.Threading.CancellationToken,System.Nullable{Grpc.Core.WriteOptions},System.Nullable{Grpc.Core.ContextPropagationToken},System.Nullable{Grpc.Core.CallCredentials})
+  name.vb: CallOptions(Nullable(Of Metadata), Nullable(Of DateTime), CancellationToken, Nullable(Of WriteOptions), Nullable(Of ContextPropagationToken), Nullable(Of CallCredentials))
+  fullName: Grpc.Core.CallOptions.CallOptions(System.Nullable<Grpc.Core.Metadata>, System.Nullable<System.DateTime>, System.Threading.CancellationToken, System.Nullable<Grpc.Core.WriteOptions>, System.Nullable<Grpc.Core.ContextPropagationToken>, System.Nullable<Grpc.Core.CallCredentials>)
+  fullName.vb: Grpc.Core.CallOptions.CallOptions(System.Nullable(Of Grpc.Core.Metadata), System.Nullable(Of System.DateTime), System.Threading.CancellationToken, System.Nullable(Of Grpc.Core.WriteOptions), System.Nullable(Of Grpc.Core.ContextPropagationToken), System.Nullable(Of Grpc.Core.CallCredentials))
+  nameWithType: CallOptions.CallOptions(Nullable<Metadata>, Nullable<DateTime>, CancellationToken, Nullable<WriteOptions>, Nullable<ContextPropagationToken>, Nullable<CallCredentials>)
+  nameWithType.vb: CallOptions.CallOptions(Nullable(Of Metadata), Nullable(Of DateTime), CancellationToken, Nullable(Of WriteOptions), Nullable(Of ContextPropagationToken), Nullable(Of CallCredentials))
 - uid: Grpc.Core.CallOptions.#ctor*
   name: CallOptions
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions__ctor_
@@ -1880,12 +1880,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ChannelCredentialsConfiguratorBase.SetInsecureCredentials
   nameWithType: ChannelCredentialsConfiguratorBase.SetInsecureCredentials
-- uid: Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object,System.String,Grpc.Core.KeyCertificatePair,Grpc.Core.VerifyPeerCallback)
-  name: SetSslCredentials(Object, String, KeyCertificatePair, VerifyPeerCallback)
-  href: api/Grpc.Core.ChannelCredentialsConfiguratorBase.html#Grpc_Core_ChannelCredentialsConfiguratorBase_SetSslCredentials_System_Object_System_String_Grpc_Core_KeyCertificatePair_Grpc_Core_VerifyPeerCallback_
-  commentId: M:Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object,System.String,Grpc.Core.KeyCertificatePair,Grpc.Core.VerifyPeerCallback)
-  fullName: Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object, System.String, Grpc.Core.KeyCertificatePair, Grpc.Core.VerifyPeerCallback)
-  nameWithType: ChannelCredentialsConfiguratorBase.SetSslCredentials(Object, String, KeyCertificatePair, VerifyPeerCallback)
+- uid: Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object,System.Nullable{System.String},System.Nullable{Grpc.Core.KeyCertificatePair},System.Nullable{Grpc.Core.VerifyPeerCallback})
+  name: SetSslCredentials(Object, Nullable<String>, Nullable<KeyCertificatePair>, Nullable<VerifyPeerCallback>)
+  href: api/Grpc.Core.ChannelCredentialsConfiguratorBase.html#Grpc_Core_ChannelCredentialsConfiguratorBase_SetSslCredentials_System_Object_System_Nullable_System_String__System_Nullable_Grpc_Core_KeyCertificatePair__System_Nullable_Grpc_Core_VerifyPeerCallback__
+  commentId: M:Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object,System.Nullable{System.String},System.Nullable{Grpc.Core.KeyCertificatePair},System.Nullable{Grpc.Core.VerifyPeerCallback})
+  name.vb: SetSslCredentials(Object, Nullable(Of String), Nullable(Of KeyCertificatePair), Nullable(Of VerifyPeerCallback))
+  fullName: Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object, System.Nullable<System.String>, System.Nullable<Grpc.Core.KeyCertificatePair>, System.Nullable<Grpc.Core.VerifyPeerCallback>)
+  fullName.vb: Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials(System.Object, System.Nullable(Of System.String), System.Nullable(Of Grpc.Core.KeyCertificatePair), System.Nullable(Of Grpc.Core.VerifyPeerCallback))
+  nameWithType: ChannelCredentialsConfiguratorBase.SetSslCredentials(Object, Nullable<String>, Nullable<KeyCertificatePair>, Nullable<VerifyPeerCallback>)
+  nameWithType.vb: ChannelCredentialsConfiguratorBase.SetSslCredentials(Object, Nullable(Of String), Nullable(Of KeyCertificatePair), Nullable(Of VerifyPeerCallback))
 - uid: Grpc.Core.ChannelCredentialsConfiguratorBase.SetSslCredentials*
   name: SetSslCredentials
   href: api/Grpc.Core.ChannelCredentialsConfiguratorBase.html#Grpc_Core_ChannelCredentialsConfiguratorBase_SetSslCredentials_
@@ -2947,15 +2950,15 @@ references:
   fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse)
   nameWithType: ClientInterceptorContext<TRequest, TResponse>
   nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse)
-- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.String,Grpc.Core.CallOptions)
-  name: ClientInterceptorContext(Method<TRequest, TResponse>, String, CallOptions)
-  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_Grpc_Core_Method__0__1__System_String_Grpc_Core_CallOptions_
-  commentId: M:Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.String,Grpc.Core.CallOptions)
-  name.vb: ClientInterceptorContext(Method(Of TRequest, TResponse), String, CallOptions)
-  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions)
-  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions)
-  nameWithType: ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext(Method<TRequest, TResponse>, String, CallOptions)
-  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext(Method(Of TRequest, TResponse), String, CallOptions)
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.Nullable{System.String},Grpc.Core.CallOptions)
+  name: ClientInterceptorContext(Method<TRequest, TResponse>, Nullable<String>, CallOptions)
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_Grpc_Core_Method__0__1__System_Nullable_System_String__Grpc_Core_CallOptions_
+  commentId: M:Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.Nullable{System.String},Grpc.Core.CallOptions)
+  name.vb: ClientInterceptorContext(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions)
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext(Grpc.Core.Method<TRequest, TResponse>, System.Nullable<System.String>, Grpc.Core.CallOptions)
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext(Grpc.Core.Method(Of TRequest, TResponse), System.Nullable(Of System.String), Grpc.Core.CallOptions)
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext(Method<TRequest, TResponse>, Nullable<String>, CallOptions)
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext(Method(Of TRequest, TResponse), Nullable(Of String), CallOptions)
 - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor*
   name: ClientInterceptorContext
   href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_
@@ -4328,19 +4331,6 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.Metadata.GetValue
   nameWithType: Metadata.GetValue
-- uid: Grpc.Core.Metadata.GetValueBytes(System.String)
-  name: GetValueBytes(String)
-  href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_GetValueBytes_System_String_
-  commentId: M:Grpc.Core.Metadata.GetValueBytes(System.String)
-  fullName: Grpc.Core.Metadata.GetValueBytes(System.String)
-  nameWithType: Metadata.GetValueBytes(String)
-- uid: Grpc.Core.Metadata.GetValueBytes*
-  name: GetValueBytes
-  href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_GetValueBytes_
-  commentId: Overload:Grpc.Core.Metadata.GetValueBytes
-  isSpec: "True"
-  fullName: Grpc.Core.Metadata.GetValueBytes
-  nameWithType: Metadata.GetValueBytes
 - uid: Grpc.Core.Metadata.IndexOf(Grpc.Core.Metadata.Entry)
   name: IndexOf(Metadata.Entry)
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_IndexOf_Grpc_Core_Metadata_Entry_
@@ -5022,12 +5012,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.CancellationTokenCore
   nameWithType: ServerCallContext.CancellationTokenCore
-- uid: Grpc.Core.ServerCallContext.CreatePropagationToken(Grpc.Core.ContextPropagationOptions)
-  name: CreatePropagationToken(ContextPropagationOptions)
-  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationToken_Grpc_Core_ContextPropagationOptions_
-  commentId: M:Grpc.Core.ServerCallContext.CreatePropagationToken(Grpc.Core.ContextPropagationOptions)
-  fullName: Grpc.Core.ServerCallContext.CreatePropagationToken(Grpc.Core.ContextPropagationOptions)
-  nameWithType: ServerCallContext.CreatePropagationToken(ContextPropagationOptions)
+- uid: Grpc.Core.ServerCallContext.CreatePropagationToken(System.Nullable{Grpc.Core.ContextPropagationOptions})
+  name: CreatePropagationToken(Nullable<ContextPropagationOptions>)
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationToken_System_Nullable_Grpc_Core_ContextPropagationOptions__
+  commentId: M:Grpc.Core.ServerCallContext.CreatePropagationToken(System.Nullable{Grpc.Core.ContextPropagationOptions})
+  name.vb: CreatePropagationToken(Nullable(Of ContextPropagationOptions))
+  fullName: Grpc.Core.ServerCallContext.CreatePropagationToken(System.Nullable<Grpc.Core.ContextPropagationOptions>)
+  fullName.vb: Grpc.Core.ServerCallContext.CreatePropagationToken(System.Nullable(Of Grpc.Core.ContextPropagationOptions))
+  nameWithType: ServerCallContext.CreatePropagationToken(Nullable<ContextPropagationOptions>)
+  nameWithType.vb: ServerCallContext.CreatePropagationToken(Nullable(Of ContextPropagationOptions))
 - uid: Grpc.Core.ServerCallContext.CreatePropagationToken*
   name: CreatePropagationToken
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationToken_
@@ -5035,12 +5028,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.CreatePropagationToken
   nameWithType: ServerCallContext.CreatePropagationToken
-- uid: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)
-  name: CreatePropagationTokenCore(ContextPropagationOptions)
-  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationTokenCore_Grpc_Core_ContextPropagationOptions_
-  commentId: M:Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)
-  fullName: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(Grpc.Core.ContextPropagationOptions)
-  nameWithType: ServerCallContext.CreatePropagationTokenCore(ContextPropagationOptions)
+- uid: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(System.Nullable{Grpc.Core.ContextPropagationOptions})
+  name: CreatePropagationTokenCore(Nullable<ContextPropagationOptions>)
+  href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationTokenCore_System_Nullable_Grpc_Core_ContextPropagationOptions__
+  commentId: M:Grpc.Core.ServerCallContext.CreatePropagationTokenCore(System.Nullable{Grpc.Core.ContextPropagationOptions})
+  name.vb: CreatePropagationTokenCore(Nullable(Of ContextPropagationOptions))
+  fullName: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(System.Nullable<Grpc.Core.ContextPropagationOptions>)
+  fullName.vb: Grpc.Core.ServerCallContext.CreatePropagationTokenCore(System.Nullable(Of Grpc.Core.ContextPropagationOptions))
+  nameWithType: ServerCallContext.CreatePropagationTokenCore(Nullable<ContextPropagationOptions>)
+  nameWithType.vb: ServerCallContext.CreatePropagationTokenCore(Nullable(Of ContextPropagationOptions))
 - uid: Grpc.Core.ServerCallContext.CreatePropagationTokenCore*
   name: CreatePropagationTokenCore
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationTokenCore_
@@ -5604,6 +5600,15 @@ references:
   commentId: M:Grpc.Core.SslCredentials.#ctor
   fullName: Grpc.Core.SslCredentials.SslCredentials()
   nameWithType: SslCredentials.SslCredentials()
+- uid: Grpc.Core.SslCredentials.#ctor(System.Nullable{System.String},System.Nullable{Grpc.Core.KeyCertificatePair},System.Nullable{Grpc.Core.VerifyPeerCallback})
+  name: SslCredentials(Nullable<String>, Nullable<KeyCertificatePair>, Nullable<VerifyPeerCallback>)
+  href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials__ctor_System_Nullable_System_String__System_Nullable_Grpc_Core_KeyCertificatePair__System_Nullable_Grpc_Core_VerifyPeerCallback__
+  commentId: M:Grpc.Core.SslCredentials.#ctor(System.Nullable{System.String},System.Nullable{Grpc.Core.KeyCertificatePair},System.Nullable{Grpc.Core.VerifyPeerCallback})
+  name.vb: SslCredentials(Nullable(Of String), Nullable(Of KeyCertificatePair), Nullable(Of VerifyPeerCallback))
+  fullName: Grpc.Core.SslCredentials.SslCredentials(System.Nullable<System.String>, System.Nullable<Grpc.Core.KeyCertificatePair>, System.Nullable<Grpc.Core.VerifyPeerCallback>)
+  fullName.vb: Grpc.Core.SslCredentials.SslCredentials(System.Nullable(Of System.String), System.Nullable(Of Grpc.Core.KeyCertificatePair), System.Nullable(Of Grpc.Core.VerifyPeerCallback))
+  nameWithType: SslCredentials.SslCredentials(Nullable<String>, Nullable<KeyCertificatePair>, Nullable<VerifyPeerCallback>)
+  nameWithType.vb: SslCredentials.SslCredentials(Nullable(Of String), Nullable(Of KeyCertificatePair), Nullable(Of VerifyPeerCallback))
 - uid: Grpc.Core.SslCredentials.#ctor(System.String)
   name: SslCredentials(String)
   href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials__ctor_System_String_
@@ -5616,12 +5621,6 @@ references:
   commentId: M:Grpc.Core.SslCredentials.#ctor(System.String,Grpc.Core.KeyCertificatePair)
   fullName: Grpc.Core.SslCredentials.SslCredentials(System.String, Grpc.Core.KeyCertificatePair)
   nameWithType: SslCredentials.SslCredentials(String, KeyCertificatePair)
-- uid: Grpc.Core.SslCredentials.#ctor(System.String,Grpc.Core.KeyCertificatePair,Grpc.Core.VerifyPeerCallback)
-  name: SslCredentials(String, KeyCertificatePair, VerifyPeerCallback)
-  href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials__ctor_System_String_Grpc_Core_KeyCertificatePair_Grpc_Core_VerifyPeerCallback_
-  commentId: M:Grpc.Core.SslCredentials.#ctor(System.String,Grpc.Core.KeyCertificatePair,Grpc.Core.VerifyPeerCallback)
-  fullName: Grpc.Core.SslCredentials.SslCredentials(System.String, Grpc.Core.KeyCertificatePair, Grpc.Core.VerifyPeerCallback)
-  nameWithType: SslCredentials.SslCredentials(String, KeyCertificatePair, VerifyPeerCallback)
 - uid: Grpc.Core.SslCredentials.#ctor*
   name: SslCredentials
   href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials__ctor_
@@ -5772,12 +5771,15 @@ references:
   commentId: M:Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String)
   fullName: Grpc.Core.Status.Status(Grpc.Core.StatusCode, System.String)
   nameWithType: Status.Status(StatusCode, String)
-- uid: Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Exception)
-  name: Status(StatusCode, String, Exception)
-  href: api/Grpc.Core.Status.html#Grpc_Core_Status__ctor_Grpc_Core_StatusCode_System_String_System_Exception_
-  commentId: M:Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Exception)
-  fullName: Grpc.Core.Status.Status(Grpc.Core.StatusCode, System.String, System.Exception)
-  nameWithType: Status.Status(StatusCode, String, Exception)
+- uid: Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Nullable{System.Exception})
+  name: Status(StatusCode, String, Nullable<Exception>)
+  href: api/Grpc.Core.Status.html#Grpc_Core_Status__ctor_Grpc_Core_StatusCode_System_String_System_Nullable_System_Exception__
+  commentId: M:Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Nullable{System.Exception})
+  name.vb: Status(StatusCode, String, Nullable(Of Exception))
+  fullName: Grpc.Core.Status.Status(Grpc.Core.StatusCode, System.String, System.Nullable<System.Exception>)
+  fullName.vb: Grpc.Core.Status.Status(Grpc.Core.StatusCode, System.String, System.Nullable(Of System.Exception))
+  nameWithType: Status.Status(StatusCode, String, Nullable<Exception>)
+  nameWithType.vb: Status.Status(StatusCode, String, Nullable(Of Exception))
 - uid: Grpc.Core.Status.#ctor*
   name: Status
   href: api/Grpc.Core.Status.html#Grpc_Core_Status__ctor_
