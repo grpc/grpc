@@ -469,7 +469,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
       if (drop_stats_ == nullptr) {
         gpr_log(GPR_ERROR,
                 "[xds_cluster_impl_lb %p] Failed to get cluster drop stats for "
-                "LRS server %s, cluster %s, EDS service name %s",
+                "LRS server %s, cluster %s, EDS service name %s, load "
+                "reporting for drops will not be done.",
                 this, config_->lrs_load_reporting_server()->server_uri.c_str(),
                 config_->cluster_name().c_str(),
                 config_->eds_service_name().c_str());
