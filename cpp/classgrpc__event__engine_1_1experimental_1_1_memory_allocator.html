@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.42.0</span>
+   &#160;<span id="projectnumber">1.43.1</span>
    </div>
   </td>
  </tr>
@@ -88,9 +88,11 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aa0be35a953953ee00ff8dfef5d3a1111"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa0be35a953953ee00ff8dfef5d3a1111">MemoryAllocator</a> (std::shared_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a> &gt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa17c4998a45965e76a057d3ef204273a">allocator</a>)</td></tr>
+<tr class="memitem:aa0be35a953953ee00ff8dfef5d3a1111"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa0be35a953953ee00ff8dfef5d3a1111">MemoryAllocator</a> (std::shared_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a> &gt; allocator)</td></tr>
 <tr class="memdesc:aa0be35a953953ee00ff8dfef5d3a1111"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> given an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html" title="Underlying memory allocation interface.">internal::MemoryAllocatorImpl</a> implementation.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa0be35a953953ee00ff8dfef5d3a1111">More...</a><br /></td></tr>
 <tr class="separator:aa0be35a953953ee00ff8dfef5d3a1111"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab1eb1802ed29a783b198d39aca821cfc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#ab1eb1802ed29a783b198d39aca821cfc">MemoryAllocator</a> ()</td></tr>
+<tr class="separator:ab1eb1802ed29a783b198d39aca821cfc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b8216c9544320d49c221719eabdf3bf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a5b8216c9544320d49c221719eabdf3bf">~MemoryAllocator</a> ()</td></tr>
 <tr class="separator:a5b8216c9544320d49c221719eabdf3bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a31845b2373a437139ad7374147a2c045"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a31845b2373a437139ad7374147a2c045">MemoryAllocator</a> (const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> &amp;)=delete</td></tr>
@@ -101,15 +103,15 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aace3c6897c03b8e2c00f071b4fd21918"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab258d5b2457dabe345b0aa302a7a731"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aab258d5b2457dabe345b0aa302a7a731">operator=</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> &amp;&amp;)=default</td></tr>
 <tr class="separator:aab258d5b2457dabe345b0aa302a7a731"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a033dcd524d488ef75754479c46ee63af"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a033dcd524d488ef75754479c46ee63af">Reset</a> ()</td></tr>
+<tr class="memdesc:a033dcd524d488ef75754479c46ee63af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Drop the underlying allocator and make this an empty object.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a033dcd524d488ef75754479c46ee63af">More...</a><br /></td></tr>
+<tr class="separator:a033dcd524d488ef75754479c46ee63af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25ce3988040473e2d481d7380b633113"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a25ce3988040473e2d481d7380b633113">Reserve</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> request)</td></tr>
 <tr class="memdesc:a25ce3988040473e2d481d7380b633113"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve bytes from the quota.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a25ce3988040473e2d481d7380b633113">More...</a><br /></td></tr>
 <tr class="separator:a25ce3988040473e2d481d7380b633113"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a43769606dd08f9043db4f78db106f577"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a43769606dd08f9043db4f78db106f577">Release</a> (size_t n)</td></tr>
 <tr class="memdesc:a43769606dd08f9043db4f78db106f577"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release some bytes that were previously reserved.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a43769606dd08f9043db4f78db106f577">More...</a><br /></td></tr>
 <tr class="separator:a43769606dd08f9043db4f78db106f577"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a06e532891ee52a330d34f27b14bb0370"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a06e532891ee52a330d34f27b14bb0370">get_internal_impl_ptr</a> ()</td></tr>
-<tr class="memdesc:a06e532891ee52a330d34f27b14bb0370"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the underlying implementation.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a06e532891ee52a330d34f27b14bb0370">More...</a><br /></td></tr>
-<tr class="separator:a06e532891ee52a330d34f27b14bb0370"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a874fa8db26947aa13b114352e598c5d4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html">Reservation</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a874fa8db26947aa13b114352e598c5d4">MakeReservation</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> request)</td></tr>
 <tr class="memdesc:a874fa8db26947aa13b114352e598c5d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve bytes from the quota and automatically release them when <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html" title="An automatic releasing reservation of memory.">Reservation</a> is destroyed.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a874fa8db26947aa13b114352e598c5d4">More...</a><br /></td></tr>
 <tr class="separator:a874fa8db26947aa13b114352e598c5d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -127,12 +129,15 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:aa17c4998a45965e76a057d3ef204273a"><td class="memItemLeft" align="right" valign="top">const std::shared_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#aa17c4998a45965e76a057d3ef204273a">allocator</a> ()</td></tr>
-<tr class="separator:aa17c4998a45965e76a057d3ef204273a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06e532891ee52a330d34f27b14bb0370"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a06e532891ee52a330d34f27b14bb0370">get_internal_impl_ptr</a> ()</td></tr>
+<tr class="memdesc:a06e532891ee52a330d34f27b14bb0370"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the underlying implementation.  <a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a06e532891ee52a330d34f27b14bb0370">More...</a><br /></td></tr>
+<tr class="separator:a06e532891ee52a330d34f27b14bb0370"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77d871dbda1b4c14eeacad23a2970818"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a77d871dbda1b4c14eeacad23a2970818">get_internal_impl_ptr</a> () const</td></tr>
+<tr class="separator:a77d871dbda1b4c14eeacad23a2970818"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="aa0be35a953953ee00ff8dfef5d3a1111"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa0be35a953953ee00ff8dfef5d3a1111">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0be35a953953ee00ff8dfef5d3a1111">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -157,6 +162,31 @@ Protected Member Functions</h2></td></tr>
 
 <p>Construct a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> given an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html" title="Underlying memory allocation interface.">internal::MemoryAllocatorImpl</a> implementation. </p>
 <p>The constructed <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> will call MemoryAllocatorImpl::Shutdown() upon destruction. </p>
+
+</div>
+</div>
+<a id="ab1eb1802ed29a783b198d39aca821cfc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab1eb1802ed29a783b198d39aca821cfc">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[2/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc_event_engine::experimental::MemoryAllocator::MemoryAllocator </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -186,7 +216,7 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="a31845b2373a437139ad7374147a2c045"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a31845b2373a437139ad7374147a2c045">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a31845b2373a437139ad7374147a2c045">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -212,7 +242,7 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="aace3c6897c03b8e2c00f071b4fd21918"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aace3c6897c03b8e2c00f071b4fd21918">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aace3c6897c03b8e2c00f071b4fd21918">&#9670;&nbsp;</a></span>MemoryAllocator() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -238,33 +268,8 @@ Protected Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aa17c4998a45965e76a057d3ef204273a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa17c4998a45965e76a057d3ef204273a">&#9670;&nbsp;</a></span>allocator()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">const std::shared_ptr&lt;<a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a>&gt;&amp; grpc_event_engine::experimental::MemoryAllocator::allocator </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a06e532891ee52a330d34f27b14bb0370"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a06e532891ee52a330d34f27b14bb0370">&#9670;&nbsp;</a></span>get_internal_impl_ptr()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a06e532891ee52a330d34f27b14bb0370">&#9670;&nbsp;</a></span>get_internal_impl_ptr() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -281,13 +286,38 @@ Protected Member Functions</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
 <p>Return a pointer to the underlying implementation. </p>
-<p>Note that the interface of said implementatoin is unstable and likely to change at any time. </p>
+<p>Note that the interface of said implementation is unstable and likely to change at any time. </p>
+
+</div>
+</div>
+<a id="a77d871dbda1b4c14eeacad23a2970818"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77d871dbda1b4c14eeacad23a2970818">&#9670;&nbsp;</a></span>get_internal_impl_ptr() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html">internal::MemoryAllocatorImpl</a>* grpc_event_engine::experimental::MemoryAllocator::get_internal_impl_ptr </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -510,13 +540,41 @@ template&lt;typename T , typename... Args&gt; </div>
 
 </div>
 </div>
+<a id="a033dcd524d488ef75754479c46ee63af"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a033dcd524d488ef75754479c46ee63af">&#9670;&nbsp;</a></span>Reset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_event_engine::experimental::MemoryAllocator::Reset </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Drop the underlying allocator and make this an empty object. </p>
+<p>The object will not be usable after this call unless it's a valid allocator is moved into it. </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc/event_engine/<a class="el" href="memory__allocator_8h_source.html">memory_allocator.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Dec 2 2021 18:50:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jan 20 2022 22:09:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

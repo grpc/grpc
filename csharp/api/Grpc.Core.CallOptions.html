@@ -116,13 +116,13 @@
   <h3 id="constructors">Constructors
   </h3>
   <a id="Grpc_Core_CallOptions__ctor_" data-uid="Grpc.Core.CallOptions.#ctor*"></a>
-  <h4 id="Grpc_Core_CallOptions__ctor_Grpc_Core_Metadata_System_Nullable_System_DateTime__System_Threading_CancellationToken_Grpc_Core_WriteOptions_Grpc_Core_ContextPropagationToken_Grpc_Core_CallCredentials_" data-uid="Grpc.Core.CallOptions.#ctor(Grpc.Core.Metadata,System.Nullable{System.DateTime},System.Threading.CancellationToken,Grpc.Core.WriteOptions,Grpc.Core.ContextPropagationToken,Grpc.Core.CallCredentials)">CallOptions(Metadata, Nullable&lt;DateTime&gt;, CancellationToken, WriteOptions, ContextPropagationToken, CallCredentials)</h4>
+  <h4 id="Grpc_Core_CallOptions__ctor_System_Nullable_Grpc_Core_Metadata__System_Nullable_System_DateTime__System_Threading_CancellationToken_System_Nullable_Grpc_Core_WriteOptions__System_Nullable_Grpc_Core_ContextPropagationToken__System_Nullable_Grpc_Core_CallCredentials__" data-uid="Grpc.Core.CallOptions.#ctor(System.Nullable{Grpc.Core.Metadata},System.Nullable{System.DateTime},System.Threading.CancellationToken,System.Nullable{Grpc.Core.WriteOptions},System.Nullable{Grpc.Core.ContextPropagationToken},System.Nullable{Grpc.Core.CallCredentials})">CallOptions(Nullable&lt;Metadata&gt;, Nullable&lt;DateTime&gt;, CancellationToken, Nullable&lt;WriteOptions&gt;, Nullable&lt;ContextPropagationToken&gt;, Nullable&lt;CallCredentials&gt;)</h4>
   <div class="markdown level1 summary"><p>Creates a new instance of <code>CallOptions</code> struct.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public CallOptions(Metadata headers = null, DateTime? deadline = default(DateTime? ), CancellationToken cancellationToken = default(CancellationToken), WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)</code></pre>
+    <pre><code class="lang-csharp hljs">public CallOptions(Metadata? headers = default(Metadata? ), DateTime? deadline = default(DateTime? ), CancellationToken cancellationToken = default(CancellationToken), WriteOptions? writeOptions = default(WriteOptions? ), ContextPropagationToken? propagationToken = default(ContextPropagationToken? ), CallCredentials? credentials = default(CallCredentials? ))</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -135,7 +135,7 @@
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
         <td><span class="parametername">headers</span></td>
         <td><p>Headers to be sent with the call.</p>
 </td>
@@ -153,19 +153,19 @@
 </td>
       </tr>
       <tr>
-        <td><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a>&gt;</td>
         <td><span class="parametername">writeOptions</span></td>
         <td><p>Write options that will be used for this call.</p>
 </td>
       </tr>
       <tr>
-        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a>&gt;</td>
         <td><span class="parametername">propagationToken</span></td>
         <td><p>Context propagation token obtained from <a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a>.</p>
 </td>
       </tr>
       <tr>
-        <td><a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a>&gt;</td>
         <td><span class="parametername">credentials</span></td>
         <td><p>Credentials to use for this call.</p>
 </td>
@@ -211,7 +211,7 @@ the call will finish with <code>StatusCode.Cancelled</code> status.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public CallCredentials Credentials { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public CallCredentials? Credentials { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -223,7 +223,7 @@ the call will finish with <code>StatusCode.Cancelled</code> status.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -259,7 +259,7 @@ the call will finish with <code>StatusCode.Cancelled</code> status.</p>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Metadata Headers { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public Metadata? Headers { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -271,7 +271,7 @@ the call will finish with <code>StatusCode.Cancelled</code> status.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -309,7 +309,7 @@ Note: experimental API that can change or be removed without any prior notice.</
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public ContextPropagationToken PropagationToken { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public ContextPropagationToken? PropagationToken { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -321,7 +321,7 @@ Note: experimental API that can change or be removed without any prior notice.</
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>
@@ -333,7 +333,7 @@ Note: experimental API that can change or be removed without any prior notice.</
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public WriteOptions WriteOptions { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public WriteOptions? WriteOptions { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -345,7 +345,7 @@ Note: experimental API that can change or be removed without any prior notice.</
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></td>
+        <td><span class="xref">System.Nullable</span>&lt;<a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a>&gt;</td>
         <td></td>
       </tr>
     </tbody>

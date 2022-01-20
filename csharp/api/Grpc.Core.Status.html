@@ -146,7 +146,7 @@
     </tbody>
   </table>
   <a id="Grpc_Core_Status__ctor_" data-uid="Grpc.Core.Status.#ctor*"></a>
-  <h4 id="Grpc_Core_Status__ctor_Grpc_Core_StatusCode_System_String_System_Exception_" data-uid="Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Exception)">Status(StatusCode, String, Exception)</h4>
+  <h4 id="Grpc_Core_Status__ctor_Grpc_Core_StatusCode_System_String_System_Nullable_System_Exception__" data-uid="Grpc.Core.Status.#ctor(Grpc.Core.StatusCode,System.String,System.Nullable{System.Exception})">Status(StatusCode, String, Nullable&lt;Exception&gt;)</h4>
   <div class="markdown level1 summary"><p>Creates a new instance of <code>Status</code>.
 Users should not use this constructor, except for creating instances for testing.
 The debug error string should only be populated by gRPC internals.
@@ -155,7 +155,7 @@ Note: experimental API that can change or be removed without any prior notice.</
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Status(StatusCode statusCode, string detail, Exception debugException)</code></pre>
+    <pre><code class="lang-csharp hljs">public Status(StatusCode statusCode, string detail, Exception? debugException)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -180,7 +180,7 @@ Note: experimental API that can change or be removed without any prior notice.</
 </td>
       </tr>
       <tr>
-        <td><span class="xref">System.Exception</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.Exception</span>&gt;</td>
         <td><span class="parametername">debugException</span></td>
         <td><p>Optional internal error details.</p>
 </td>
@@ -251,7 +251,7 @@ Note: experimental API that can change or be removed without any prior notice.</
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public Exception DebugException { get; }</code></pre>
+    <pre><code class="lang-csharp hljs">public Exception? DebugException { get; }</code></pre>
   </div>
   <h5 class="propertyValue">Property Value</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -263,7 +263,7 @@ Note: experimental API that can change or be removed without any prior notice.</
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Exception</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.Exception</span>&gt;</td>
         <td></td>
       </tr>
     </tbody>

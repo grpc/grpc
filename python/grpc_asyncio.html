@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.42.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.43.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
     <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
@@ -32,7 +32,7 @@
 
 
 
-<p class="blurb">1.42.0</p>
+<p class="blurb">1.43.1</p>
 
 
 
@@ -650,7 +650,7 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 <dd class="field-odd"><p>The description of the error.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Optional[str]</p>
+<dd class="field-even"><p><em>Optional</em>[str]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -735,7 +735,7 @@ mapped for &lt;key&gt; is returned.</p>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Union[str, bytes]</p>
+<dd class="field-even"><p><em>Union</em>[str, bytes]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -794,7 +794,7 @@ this would return all items under the desired &lt;key&gt;.</p>
 <dd class="field-odd"><p><strong>key</strong> (<em>str</em>) – </p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>List[Union[str, bytes]]</p>
+<dd class="field-even"><p><em>List</em>[<em>Union</em>[str, bytes]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -881,7 +881,7 @@ remaining for the RPC to complete before it is considered to have
 timed out, or None if no deadline was specified for the RPC.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Optional[float]</p>
+<dd class="field-even"><p><em>Optional</em>[float]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -982,7 +982,7 @@ failure.</p>
 <dd class="field-odd"><p>The response message of the RPC.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Awaitable[grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>Awaitable</em>[grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1002,7 +1002,7 @@ failure.</p>
 <dd class="field-odd"><p>An async iterable object that yields messages.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>AsyncIterable[grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>AsyncIterable</em>[grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1019,7 +1019,7 @@ coroutines.</p>
 stream.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Union[grpc._cython.cygrpc._EOF, grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>Union</em>[grpc._cython.cygrpc._EOF, grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1038,7 +1038,7 @@ stream.</p>
 <dd class="field-odd"><p>The response message of the stream.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Awaitable[grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>Awaitable</em>[grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1088,7 +1088,7 @@ function will fail. This function is idempotent.</p>
 <dd class="field-odd"><p>An async iterable object that yields messages.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>AsyncIterable[grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>AsyncIterable</em>[grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1118,7 +1118,7 @@ coroutines.</p>
 stream.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Union[grpc._cython.cygrpc._EOF, grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>Union</em>[grpc._cython.cygrpc._EOF, grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1201,7 +1201,7 @@ object as its only argument.</p>
 <dd class="field-odd"><p>A map of strings to an iterable of bytes for each auth property.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Mapping[str, Iterable[bytes]]</p>
+<dd class="field-even"><p><em>Mapping</em>[str, <em>Iterable</em>[bytes]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1285,7 +1285,7 @@ server creation or set on the call.</p>
 <dd class="field-odd"><p>The invocation <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a>.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Optional[<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a>]</p>
+<dd class="field-even"><p><em>Optional</em>[<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata">grpc.aio._metadata.Metadata</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1317,7 +1317,7 @@ servicer_context.auth_context().get(servicer_context.peer_identity_key())</p>
 authenticated. Each identity is returned as a raw bytes type.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Optional[Iterable[bytes]]</p>
+<dd class="field-even"><p><em>Optional</em>[<em>Iterable</em>[bytes]]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1334,7 +1334,7 @@ used to identify an SSL peer.</p>
 peer identity, or None if the call is not authenticated.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Optional[str]</p>
+<dd class="field-even"><p><em>Optional</em>[str]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1526,7 +1526,7 @@ remaining for the RPC to complete before it is considered to have
 timed out, or None if no deadline was specified for the RPC.</p>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Optional[float]</p>
+<dd class="field-even"><p><em>Optional</em>[float]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1573,7 +1573,7 @@ outgoing RPC.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Union[grpc.aio._call.UnaryUnaryCall, grpc.aio._typing.ResponseType]</p>
+<dd class="field-even"><p><em>Union</em>[grpc.aio._call.UnaryUnaryCall, grpc.aio._typing.ResponseType]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1617,7 +1617,7 @@ outgoing RPC.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Union[AsyncIterable[Any], grpc.aio._call.UnaryStreamCall]</p>
+<dd class="field-even"><p><em>Union</em>[<em>AsyncIterable</em>[<em>Any</em>], grpc.aio._call.UnaryStreamCall]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1712,7 +1712,7 @@ for the RPC.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
-<dd class="field-even"><p>Union[AsyncIterable[Any], grpc.aio._call.StreamStreamCall]</p>
+<dd class="field-even"><p><em>Union</em>[<em>AsyncIterable</em>[<em>Any</em>], grpc.aio._call.StreamStreamCall]</p>
 </dd>
 </dl>
 </dd></dl>

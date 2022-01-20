@@ -210,7 +210,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.CallInvoker.html",
-          "hash": "vUv0H5o9xNqRiLL+LtWd6w=="
+          "hash": "Q9oxssJ8IyYD4ZR+pbkKeQ=="
         }
       },
       "is_incremental": false,
@@ -222,7 +222,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.CallOptions.html",
-          "hash": "F4LNvSGDYEB/oM80o8x8JQ=="
+          "hash": "yoJwpEhuXUXzECTxI4ZHSg=="
         }
       },
       "is_incremental": false,
@@ -282,7 +282,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ChannelCredentialsConfiguratorBase.html",
-          "hash": "x3Z8grGuMkRQkrGswVCzBQ=="
+          "hash": "nZTOfyYOotso0Qx/yHexNg=="
         }
       },
       "is_incremental": false,
@@ -426,7 +426,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.DefaultCallInvoker.html",
-          "hash": "iefuE7khgLjHlY4w2L/Chg=="
+          "hash": "tcfAi9KKM3+ar48TxzBsIg=="
         }
       },
       "is_incremental": false,
@@ -558,7 +558,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html",
-          "hash": "T95AhAO3oaXbKxXP7RGEPA=="
+          "hash": "AfrpHtNLOhqE/+Hx50PECA=="
         }
       },
       "is_incremental": false,
@@ -798,7 +798,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Metadata.html",
-          "hash": "4K4N7bxa7Lphip0WfR2wjQ=="
+          "hash": "1Ym5yM3R0C71VwEpPaJbpw=="
         }
       },
       "is_incremental": false,
@@ -894,7 +894,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ServerCallContext.html",
-          "hash": "CpyOuMCVAflQSMKl3TFplQ=="
+          "hash": "HEmLVaQr0/fttRyrXUysag=="
         }
       },
       "is_incremental": false,
@@ -990,7 +990,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.SslCredentials.html",
-          "hash": "ryRrtWab628BYGiXVVa8Ng=="
+          "hash": "rJ0amrH5Obqz+Imd2spzXA=="
         }
       },
       "is_incremental": false,
@@ -1014,7 +1014,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Status.html",
-          "hash": "u7KeP1TWMzvxpdI0sUkngw=="
+          "hash": "d3MhI0H0915U1uBr4f3cHw=="
         }
       },
       "is_incremental": false,
@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "SKzGKXR9shmMR1bNd1xL9g=="
+          "hash": "eewSeQD4vwTerGNluDRV4A=="
         }
       },
       "is_incremental": false,
@@ -1372,8 +1372,7 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": false,
-        "details": "Cannot build incrementally because last build info is missing.",
+        "can_incremental": true,
         "incrementalPhase": "build"
       },
       "processors": {
@@ -1383,7 +1382,7 @@
           "incrementalPhase": "build"
         },
         "ManagedReferenceDocumentProcessor": {
-          "can_incremental": false,
+          "can_incremental": true,
           "incrementalPhase": "build"
         }
       }

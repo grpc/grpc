@@ -125,14 +125,14 @@
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_CallInvoker_AsyncClientStreamingCall_" data-uid="Grpc.Core.CallInvoker.AsyncClientStreamingCall*"></a>
-  <h4 id="Grpc_Core_CallInvoker_AsyncClientStreamingCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions_" data-uid="Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, String, CallOptions)</h4>
+  <h4 id="Grpc_Core_CallInvoker_AsyncClientStreamingCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions_" data-uid="Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions)">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, Nullable&lt;String&gt;, CallOptions)</h4>
   <div class="markdown level1 summary"><p>Invokes a client streaming call asynchronously.
 In client streaming scenario, client sends a stream of requests and server responds with a single response.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public abstract AsyncClientStreamingCall&lt;TRequest, TResponse&gt; AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string host, CallOptions options)
+    <pre><code class="lang-csharp hljs">public abstract AsyncClientStreamingCall&lt;TRequest, TResponse&gt; AsyncClientStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string? host, CallOptions options)
     where TRequest : class where TResponse : class</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -151,7 +151,7 @@ In client streaming scenario, client sends a stream of requests and server respo
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td><span class="parametername">host</span></td>
         <td></td>
       </tr>
@@ -197,7 +197,7 @@ In client streaming scenario, client sends a stream of requests and server respo
     </tbody>
   </table>
   <a id="Grpc_Core_CallInvoker_AsyncDuplexStreamingCall_" data-uid="Grpc.Core.CallInvoker.AsyncDuplexStreamingCall*"></a>
-  <h4 id="Grpc_Core_CallInvoker_AsyncDuplexStreamingCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions_" data-uid="Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)">AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, String, CallOptions)</h4>
+  <h4 id="Grpc_Core_CallInvoker_AsyncDuplexStreamingCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions_" data-uid="Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions)">AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, Nullable&lt;String&gt;, CallOptions)</h4>
   <div class="markdown level1 summary"><p>Invokes a duplex streaming call asynchronously.
 In duplex streaming scenario, client sends a stream of requests and server responds with a stream of responses.
 The response stream is completely independent and both side can be sending messages at the same time.</p>
@@ -205,7 +205,7 @@ The response stream is completely independent and both side can be sending messa
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public abstract AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt; AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string host, CallOptions options)
+    <pre><code class="lang-csharp hljs">public abstract AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt; AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string? host, CallOptions options)
     where TRequest : class where TResponse : class</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -224,7 +224,7 @@ The response stream is completely independent and both side can be sending messa
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td><span class="parametername">host</span></td>
         <td></td>
       </tr>
@@ -270,14 +270,14 @@ The response stream is completely independent and both side can be sending messa
     </tbody>
   </table>
   <a id="Grpc_Core_CallInvoker_AsyncServerStreamingCall_" data-uid="Grpc.Core.CallInvoker.AsyncServerStreamingCall*"></a>
-  <h4 id="Grpc_Core_CallInvoker_AsyncServerStreamingCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions___0_" data-uid="Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)">AsyncServerStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, String, CallOptions, TRequest)</h4>
+  <h4 id="Grpc_Core_CallInvoker_AsyncServerStreamingCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions___0_" data-uid="Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)">AsyncServerStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, Nullable&lt;String&gt;, CallOptions, TRequest)</h4>
   <div class="markdown level1 summary"><p>Invokes a server streaming call asynchronously.
 In server streaming scenario, client sends on request and server responds with a stream of responses.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public abstract AsyncServerStreamingCall&lt;TResponse&gt; AsyncServerStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string host, CallOptions options, TRequest request)
+    <pre><code class="lang-csharp hljs">public abstract AsyncServerStreamingCall&lt;TResponse&gt; AsyncServerStreamingCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string? host, CallOptions options, TRequest request)
     where TRequest : class where TResponse : class</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -296,7 +296,7 @@ In server streaming scenario, client sends on request and server responds with a
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td><span class="parametername">host</span></td>
         <td></td>
       </tr>
@@ -347,13 +347,13 @@ In server streaming scenario, client sends on request and server responds with a
     </tbody>
   </table>
   <a id="Grpc_Core_CallInvoker_AsyncUnaryCall_" data-uid="Grpc.Core.CallInvoker.AsyncUnaryCall*"></a>
-  <h4 id="Grpc_Core_CallInvoker_AsyncUnaryCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions___0_" data-uid="Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)">AsyncUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, String, CallOptions, TRequest)</h4>
+  <h4 id="Grpc_Core_CallInvoker_AsyncUnaryCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions___0_" data-uid="Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)">AsyncUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, Nullable&lt;String&gt;, CallOptions, TRequest)</h4>
   <div class="markdown level1 summary"><p>Invokes a simple remote call asynchronously.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public abstract AsyncUnaryCall&lt;TResponse&gt; AsyncUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string host, CallOptions options, TRequest request)
+    <pre><code class="lang-csharp hljs">public abstract AsyncUnaryCall&lt;TResponse&gt; AsyncUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string? host, CallOptions options, TRequest request)
     where TRequest : class where TResponse : class</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -372,7 +372,7 @@ In server streaming scenario, client sends on request and server responds with a
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td><span class="parametername">host</span></td>
         <td></td>
       </tr>
@@ -423,13 +423,13 @@ In server streaming scenario, client sends on request and server responds with a
     </tbody>
   </table>
   <a id="Grpc_Core_CallInvoker_BlockingUnaryCall_" data-uid="Grpc.Core.CallInvoker.BlockingUnaryCall*"></a>
-  <h4 id="Grpc_Core_CallInvoker_BlockingUnaryCall__2_Grpc_Core_Method___0___1__System_String_Grpc_Core_CallOptions___0_" data-uid="Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)">BlockingUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, String, CallOptions, TRequest)</h4>
+  <h4 id="Grpc_Core_CallInvoker_BlockingUnaryCall__2_Grpc_Core_Method___0___1__System_Nullable_System_String__Grpc_Core_CallOptions___0_" data-uid="Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.Nullable{System.String},Grpc.Core.CallOptions,``0)">BlockingUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt;, Nullable&lt;String&gt;, CallOptions, TRequest)</h4>
   <div class="markdown level1 summary"><p>Invokes a simple remote call in a blocking fashion.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public abstract TResponse BlockingUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string host, CallOptions options, TRequest request)
+    <pre><code class="lang-csharp hljs">public abstract TResponse BlockingUnaryCall&lt;TRequest, TResponse&gt;(Method&lt;TRequest, TResponse&gt; method, string? host, CallOptions options, TRequest request)
     where TRequest : class where TResponse : class</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
@@ -448,7 +448,7 @@ In server streaming scenario, client sends on request and server responds with a
         <td></td>
       </tr>
       <tr>
-        <td><span class="xref">System.String</span></td>
+        <td><span class="xref">System.Nullable</span>&lt;<span class="xref">System.String</span>&gt;</td>
         <td><span class="parametername">host</span></td>
         <td></td>
       </tr>
