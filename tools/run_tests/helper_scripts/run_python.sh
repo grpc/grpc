@@ -22,6 +22,7 @@ PYTHON=$(realpath "${1:-py36/bin/python}")
 
 ROOT=$(pwd)
 
+$PYTHON -m pip install google-auth==2.3.3
 $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
 mkdir -p "$ROOT/reports"
