@@ -337,6 +337,7 @@ void ExternalAccountCredentials::ExchangeToken(
       std::move(*uri), nullptr, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
+  request.body = nullptr;
   grpc_http_request_destroy(&request);
 }
 
@@ -430,6 +431,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
       std::move(*uri), nullptr, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
+  request.body = nullptr;
   grpc_http_request_destroy(&request);
 }
 

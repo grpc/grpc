@@ -804,7 +804,7 @@ static int refresh_token_httpcli_post_success(
     const grpc_http_request* request, const char* host, const char* path, const char* body,
     size_t body_size, grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  validate_refresh_token_http_request(request, host, body, body_size);
+  validate_refresh_token_http_request(request, host, path, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -1037,7 +1037,7 @@ static int sts_token_httpcli_post_success(const grpc_http_request* request,
                                           grpc_millis /*deadline*/,
                                           grpc_closure* on_done,
                                           grpc_http_response* response) {
-  validate_sts_token_http_request(request, host, body, body_size, true);
+  validate_sts_token_http_request(request, host, path, body, body_size, true);
   *response = http_response(200, valid_sts_json_response);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -1047,7 +1047,7 @@ static int sts_token_httpcli_post_success_no_actor_token(
     const grpc_http_request* request, const char* host, const char* path, const char* body,
     size_t body_size, grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
-  validate_sts_token_http_request(request, host, body, body_size, false);
+  validate_sts_token_http_request(request, host, path, body, body_size, false);
   *response = http_response(200, valid_sts_json_response);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
@@ -1585,7 +1585,7 @@ test_google_default_creds_external_account_credentials_multi_pattern_iam(void) {
 }
 
 static int default_creds_metadata_server_detection_httpcli_get_success_override(
-    const grpc_http_request* request, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const char* host, const char* path,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   *response = http_response(200, "");
@@ -1679,7 +1679,7 @@ static void test_google_default_creds_non_gce(void) {
 }
 
 static int default_creds_gce_detection_httpcli_get_failure_override(
-    const grpc_http_request* request, const char* host, const char* path,
+    const grpc_http_request* /*request*/, const char* host, const char* path,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   /* No magic header. */
@@ -2175,7 +2175,7 @@ static int external_account_creds_httpcli_post_success(
 
 static int
 external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token(
-    const grpc_http_request* request, const char* /*host*/, const char* path,
+    const grpc_http_request* /*request*/, const char* /*host*/, const char* path,
     const char* /*body*/, size_t /*body_size*/, grpc_millis /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   if (strcmp(path, "/token") == 0) {
@@ -2193,7 +2193,7 @@ external_account_creds_httpcli_post_failure_token_exchange_response_missing_acce
 }
 
 static int url_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* /*host*/, const char* path,
+    const grpc_http_request* /*request*/, const char* /*host*/, const char* path,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (strcmp(path, "/generate_subject_token_format_text") == 0) {
@@ -2249,7 +2249,7 @@ static void validate_aws_external_account_creds_token_exchage_request(
 }
 
 static int aws_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* /*host*/, const char* /*path*/,
+    const grpc_http_request* /*request*/, const char* /*host*/, const char* path,
     grpc_millis /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   if (strcmp(path, "/region_url") == 0) {
