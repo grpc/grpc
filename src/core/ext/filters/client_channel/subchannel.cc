@@ -928,14 +928,6 @@ void Subchannel::ContinueConnectingLocked() {
   const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
   next_attempt_deadline_ = backoff_.NextAttemptTime();
   args.deadline = std::max(next_attempt_deadline_, min_deadline);
-  gpr_log(GPR_INFO,
-          "min_deadline:%s min_connect_timeout:%s now:%s "
-          "next_attempt_deadline:%s deadline:%s",
-          min_deadline.ToString().c_str(),
-          min_connect_timeout_.ToString().c_str(),
-          ExecCtx::Get()->Now().ToString().c_str(),
-          next_attempt_deadline_.ToString().c_str(),
-          args.deadline.ToString().c_str());
   args.channel_args = args_;
   SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status());
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
