@@ -16,7 +16,7 @@ extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
 extern upb_def_init udpa_annotations_sensitive_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[789] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 's', 
+static const char descriptor[860] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 's', 
 'k', 'y', 'w', 'a', 'l', 'k', 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 
 'n', 'f', 'i', 'g', '.', 't', 'r', 'a', 'c', 'e', '.', 'v', '3', '\032', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 
 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'g', 'r', 'p', 'c', '_', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'p', 
@@ -42,12 +42,15 @@ static const char descriptor[789] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 'c
 'x', '_', 'c', 'a', 'c', 'h', 'e', '_', 's', 'i', 'z', 'e', '\030', '\004', ' ', '\001', '(', '\013', '2', '\034', '.', 'g', 'o', 'o', 'g', 
 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '.', 'U', 'I', 'n', 't', '3', '2', 'V', 'a', 'l', 'u', 'e', 'R', '\014', 
 'm', 'a', 'x', 'C', 'a', 'c', 'h', 'e', 'S', 'i', 'z', 'e', 'B', '\031', '\n', '\027', 'b', 'a', 'c', 'k', 'e', 'n', 'd', '_', 't', 
-'o', 'k', 'e', 'n', '_', 's', 'p', 'e', 'c', 'i', 'f', 'i', 'e', 'r', 'B', 's', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 
-'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 't', 'r', 'a', 'c', 'e', 
-'.', 'v', '3', 'B', '\017', 'S', 'k', 'y', 'w', 'a', 'l', 'k', 'i', 'n', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\362', '\230', '\376', 
-'\217', '\005', '-', '\022', '+', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 
-'c', 'e', 'r', 's', '.', 's', 'k', 'y', 'w', 'a', 'l', 'k', 'i', 'n', 'g', '.', 'v', '4', 'a', 'l', 'p', 'h', 'a', '\272', '\200', 
-'\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'o', 'k', 'e', 'n', '_', 's', 'p', 'e', 'c', 'i', 'f', 'i', 'e', 'r', 'B', '\271', '\001', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 
+'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 't', 'r', 'a', 'c', 
+'e', '.', 'v', '3', 'B', '\017', 'S', 'k', 'y', 'w', 'a', 'l', 'k', 'i', 'n', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'D', 
+'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 
+'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 
+'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', ';', 't', 'r', 'a', 'c', 'e', 'v', '3', '\362', '\230', '\376', '\217', '\005', '-', '\022', 
+'+', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 'c', 'e', 'r', 's', 
+'.', 's', 'k', 'y', 'w', 'a', 'l', 'k', 'i', 'n', 'g', '.', 'v', '4', 'a', 'l', 'p', 'h', 'a', '\272', '\200', '\310', '\321', '\006', '\002', 
+'\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[7] = {
@@ -64,5 +67,5 @@ upb_def_init envoy_config_trace_v3_skywalking_proto_upbdefinit = {
   deps,
   &envoy_config_trace_v3_skywalking_proto_upb_file_layout,
   "envoy/config/trace/v3/skywalking.proto",
-  UPB_STRVIEW_INIT(descriptor, 789)
+  UPB_STRVIEW_INIT(descriptor, 860)
 };

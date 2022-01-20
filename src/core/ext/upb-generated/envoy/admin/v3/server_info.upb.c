@@ -42,7 +42,7 @@ static const upb_msglayout_sub envoy_admin_v3_CommandLineOptions_submsgs[1] = {
   {.submsg = &google_protobuf_Duration_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_CommandLineOptions__fields[33] = {
+static const upb_msglayout_field envoy_admin_v3_CommandLineOptions__fields[34] = {
   {1, UPB_SIZE(8, 8), 0, 0, 4, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
   {2, UPB_SIZE(28, 28), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
   {3, UPB_SIZE(52, 56), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
@@ -76,12 +76,13 @@ static const upb_msglayout_field envoy_admin_v3_CommandLineOptions__fields[33] =
   {35, UPB_SIZE(140, 232), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
   {36, UPB_SIZE(36, 36), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
   {37, UPB_SIZE(49, 49), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {38, UPB_SIZE(164, 280), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_admin_v3_CommandLineOptions_msginit = {
   &envoy_admin_v3_CommandLineOptions_submsgs[0],
   &envoy_admin_v3_CommandLineOptions__fields[0],
-  UPB_SIZE(168, 288), 33, _UPB_MSGEXT_NONE, 11, 255,
+  UPB_SIZE(168, 288), 34, _UPB_MSGEXT_NONE, 11, 255,
 };
 
 static const upb_msglayout *messages_layout[2] = {

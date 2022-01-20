@@ -31,6 +31,11 @@ UPB_INLINE const upb_msgdef *envoy_type_v3_HashPolicy_SourceIp_getmsgdef(upb_sym
   return upb_symtab_lookupmsg(s, "envoy.type.v3.HashPolicy.SourceIp");
 }
 
+UPB_INLINE const upb_msgdef *envoy_type_v3_HashPolicy_FilterState_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.type.v3.HashPolicy.FilterState");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

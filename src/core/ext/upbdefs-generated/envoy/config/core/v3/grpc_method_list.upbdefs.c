@@ -13,7 +13,7 @@
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[504] = {'\n', '+', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'g', 'r', 
+static const char descriptor[573] = {'\n', '+', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'g', 'r', 
 'p', 'c', '_', 'm', 'e', 't', 'h', 'o', 'd', '_', 'l', 'i', 's', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 
 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 
 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '!', 
@@ -30,10 +30,12 @@ static const char descriptor[504] = {'\n', '+', 'e', 'n', 'v', 'o', 'y', '/', 'c
 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'o', 'r', 'e', '.', 'G', 'r', 'p', 'c', 'M', 'e', 't', 'h', 'o', 'd', 'L', 
 'i', 's', 't', '.', 'S', 'e', 'r', 'v', 'i', 'c', 'e', ':', '\'', '\232', '\305', '\210', '\036', '\"', '\n', ' ', 'e', 'n', 'v', 'o', 'y', 
 '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'o', 'r', 'e', '.', 'G', 'r', 'p', 'c', 'M', 'e', 't', 'h', 'o', 'd', 'L', 'i', 
-'s', 't', 'B', 'C', '\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', 
-'.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\023', 'G', 'r', 'p', 'c', 'M', 'e', 't', 'h', 
-'o', 'd', 'L', 'i', 's', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 
-'o', 't', 'o', '3', 
+'s', 't', 'B', '\207', '\001', '\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 
+'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\023', 'G', 'r', 'p', 'c', 'M', 'e', 't', 
+'h', 'o', 'd', 'L', 'i', 's', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'B', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 
+'m', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 
+'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', 
+';', 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[4] = {
@@ -47,5 +49,5 @@ upb_def_init envoy_config_core_v3_grpc_method_list_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_grpc_method_list_proto_upb_file_layout,
   "envoy/config/core/v3/grpc_method_list.proto",
-  UPB_STRVIEW_INIT(descriptor, 504)
+  UPB_STRVIEW_INIT(descriptor, 573)
 };

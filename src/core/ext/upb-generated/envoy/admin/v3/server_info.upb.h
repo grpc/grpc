@@ -217,6 +217,7 @@ UPB_INLINE bool envoy_admin_v3_CommandLineOptions_enable_fine_grain_logging(cons
 UPB_INLINE upb_strview envoy_admin_v3_CommandLineOptions_socket_path(const envoy_admin_v3_CommandLineOptions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(140, 232), upb_strview); }
 UPB_INLINE uint32_t envoy_admin_v3_CommandLineOptions_socket_mode(const envoy_admin_v3_CommandLineOptions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(36, 36), uint32_t); }
 UPB_INLINE bool envoy_admin_v3_CommandLineOptions_enable_core_dump(const envoy_admin_v3_CommandLineOptions *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(49, 49), bool); }
+UPB_INLINE upb_strview const* envoy_admin_v3_CommandLineOptions_stats_tag(const envoy_admin_v3_CommandLineOptions *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(164, 280), len); }
 
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_base_id(envoy_admin_v3_CommandLineOptions *msg, uint64_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t) = value;
@@ -353,6 +354,16 @@ UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_socket_mode(envoy_admin_v3
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_enable_core_dump(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(49, 49), bool) = value;
+}
+UPB_INLINE upb_strview* envoy_admin_v3_CommandLineOptions_mutable_stats_tag(envoy_admin_v3_CommandLineOptions *msg, size_t *len) {
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(164, 280), len);
+}
+UPB_INLINE upb_strview* envoy_admin_v3_CommandLineOptions_resize_stats_tag(envoy_admin_v3_CommandLineOptions *msg, size_t len, upb_arena *arena) {
+  return (upb_strview*)_upb_array_resize_accessor2(msg, UPB_SIZE(164, 280), len, UPB_SIZE(3, 4), arena);
+}
+UPB_INLINE bool envoy_admin_v3_CommandLineOptions_add_stats_tag(envoy_admin_v3_CommandLineOptions *msg, upb_strview val, upb_arena *arena) {
+  return _upb_array_append_accessor2(msg, UPB_SIZE(164, 280), UPB_SIZE(3, 4), &val,
+      arena);
 }
 
 extern const upb_msglayout_file envoy_admin_v3_server_info_proto_upb_file_layout;
