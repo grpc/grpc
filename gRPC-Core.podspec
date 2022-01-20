@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.44.0-dev'
+  version = '1.45.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -169,7 +169,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.23'
+    ss.dependency 'BoringSSL-GRPC', '0.0.24'
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
@@ -820,6 +820,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_certificate_provider.cc',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_creds.cc',
+                      'src/core/ext/xds/xds_channel_creds.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.cc',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',
@@ -1436,6 +1438,8 @@ Pod::Spec.new do |s|
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.cc',
                       'src/core/tsi/local_transport_security.h',
+                      'src/core/tsi/ssl/key_logging/ssl_key_logging.cc',
+                      'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.cc',
@@ -1828,6 +1832,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_creds.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
@@ -2125,6 +2130,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/local_transport_security.h',
+                              'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                               'src/core/tsi/ssl_transport_security.h',

@@ -21,6 +21,9 @@
 
 #include <jni.h>
 
+#include <functional>
+#include <string>
+
 #include "absl/strings/string_view.h"
 
 namespace grpc_binder {
@@ -31,10 +34,17 @@ namespace grpc_binder {
 // JNI_OnLoad) so subsequent BinderTransport code can find Java class
 jclass FindNativeConnectionHelper(JNIEnv* env);
 
+jclass FindNativeConnectionHelper(
+    JNIEnv* env, std::function<void*(std::string)> class_finder);
+
 // Calls Java method NativeConnectionHelper.tryEstablishConnection
 void TryEstablishConnection(JNIEnv* env, jobject application,
                             absl::string_view pkg, absl::string_view cls,
                             absl::string_view conn_id);
+
+// Calls Java method NativeConnectionHelper.isSignatureMatch.
+// Will also return false if failed to invoke Java.
+bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2);
 
 }  // namespace grpc_binder
 

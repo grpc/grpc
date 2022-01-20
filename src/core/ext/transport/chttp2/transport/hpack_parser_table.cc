@@ -24,11 +24,11 @@
 #include <string.h>
 
 #include "absl/strings/str_format.h"
-#include "hpack_constants.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -226,8 +226,8 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
 }  // namespace
 
 const HPackTable::StaticMementos& HPackTable::GetStaticMementos() {
-  static const StaticMementos static_mementos;
-  return static_mementos;
+  static const StaticMementos* const static_mementos = new StaticMementos();
+  return *static_mementos;
 }
 
 HPackTable::StaticMementos::StaticMementos() {

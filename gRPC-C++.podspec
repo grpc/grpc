@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.44.0-dev'
+  version = '1.45.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -555,6 +555,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_creds.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.h',
@@ -852,6 +853,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
+                      'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                       'src/core/tsi/ssl_transport_security.h',
@@ -1287,6 +1289,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_creds.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
@@ -1584,6 +1587,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/local_transport_security.h',
+                              'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                               'src/core/tsi/ssl_transport_security.h',

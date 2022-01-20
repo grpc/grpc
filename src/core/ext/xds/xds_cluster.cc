@@ -235,9 +235,10 @@ grpc_error_handle CdsResourceParse(
     const envoy_config_core_v3_ConfigSource* eds_config =
         envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
             eds_cluster_config);
-    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
-      errors.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS ConfigSource is not ADS."));
+    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
+        !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "EDS ConfigSource is not ADS or SELF."));
     }
     // Record EDS service_name (if any).
     upb_strview service_name =

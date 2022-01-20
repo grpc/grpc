@@ -108,7 +108,8 @@ class CSharpDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        del inner_jobs  # arg unused as there is little opportunity for parallelizing whats inside the distribtests
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -170,7 +171,9 @@ class PythonDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         if not self.platform == 'linux':
             raise Exception("Not supported yet.")
 
@@ -220,7 +223,9 @@ class RubyDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         arch_to_gem_arch = {
             'x64': 'x86_64',
             'x86': 'x86',
@@ -260,7 +265,9 @@ class PHP7DistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        # TODO(jtattermusch): honor inner_jobs arg for this task.
+        del inner_jobs
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -314,7 +321,13 @@ class CppDistribTest(object):
     def pre_build_jobspecs(self):
         return []
 
-    def build_jobspec(self):
+    def build_jobspec(self, inner_jobs=None):
+        environ = {}
+        if inner_jobs is not None:
+            # set number of parallel jobs for the C++ build
+            environ['GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS'] = str(
+                inner_jobs)
+
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
@@ -434,28 +447,21 @@ def targets():
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
         # Ruby
+        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_5'),
+        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_6'),
         RubyDistribTest('linux',
                         'x64',
-                        'jessie',
-                        ruby_version='ruby_2_4',
-                        presubmit=True),
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_6'),
-        RubyDistribTest('linux',
-                        'x64',
-                        'jessie',
+                        'stretch',
                         ruby_version='ruby_2_7',
                         presubmit=True),
         # TODO(apolcyn): add a ruby 3.0 test once protobuf adds support
         RubyDistribTest('linux',
                         'x64',
-                        'jessie',
-                        ruby_version='ruby_2_4',
+                        'stretch',
+                        ruby_version='ruby_2_5',
                         source=True,
                         presubmit=True),
         RubyDistribTest('linux', 'x64', 'centos7'),
-        RubyDistribTest('linux', 'x64', 'fedora23'),
-        RubyDistribTest('linux', 'x64', 'opensuse'),
         RubyDistribTest('linux', 'x64', 'ubuntu1604'),
         RubyDistribTest('linux', 'x64', 'ubuntu1804', presubmit=True),
         # PHP7

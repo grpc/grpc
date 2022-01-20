@@ -711,6 +711,7 @@
   % endif
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
+      BUNDLE DESTINATION  <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
       ARCHIVE DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>
     )

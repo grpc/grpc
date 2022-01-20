@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.4.0'
+  s.required_ruby_version = '>= 2.5.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -32,7 +32,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.18'
+  s.add_dependency 'google-protobuf', '~> 3.19'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '>= 1.9'
@@ -739,6 +739,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_certificate_provider.cc )
   s.files += %w( src/core/ext/xds/xds_certificate_provider.h )
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
+  s.files += %w( src/core/ext/xds/xds_channel_creds.cc )
+  s.files += %w( src/core/ext/xds/xds_channel_creds.h )
   s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.cc )
   s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.h )
   s.files += %w( src/core/ext/xds/xds_client.cc )
@@ -1355,6 +1357,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/fake_transport_security.h )
   s.files += %w( src/core/tsi/local_transport_security.cc )
   s.files += %w( src/core/tsi/local_transport_security.h )
+  s.files += %w( src/core/tsi/ssl/key_logging/ssl_key_logging.cc )
+  s.files += %w( src/core/tsi/ssl/key_logging/ssl_key_logging.h )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session.h )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session_cache.cc )
