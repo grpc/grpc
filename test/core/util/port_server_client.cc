@@ -63,7 +63,6 @@ void grpc_free_port_using_server(int port) {
   grpc_http_request req;
   grpc_http_response rsp;
   freereq pr;
-  char* path;
   grpc_closure* shutdown_closure;
 
   grpc_init();
