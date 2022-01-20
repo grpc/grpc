@@ -22,6 +22,7 @@
 #include "absl/strings/str_split.h"
 
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -122,6 +123,13 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
             "Missing HTTPRequestContext to start subject token retrieval."));
     return;
   }
+  auto url_for_request = URI::Create(url_.scheme(), url_.authority(), url_full_path_, {} /* query params */, "" /* fragment */);
+  if (!url_for_request.ok()) {
+    FinishRetrieveSubjectToken(
+        "",
+        absl_status_to_grpc_error(url_for_request.status()));
+    return;
+  }
   ctx_ = ctx;
   cb_ = cb;
   grpc_http_request request;
@@ -151,7 +159,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
         CreateHttpRequestSSLCredentials());
   }
   http_request_ = HttpRequest::Get(
-      url_, nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
+      std::move(*url_for_request), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);

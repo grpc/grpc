@@ -132,7 +132,6 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                              const_cast<char*>("Google")};
-  request.path = const_cast<char*>(path);
   request.hdr_count = 1;
   request.hdrs = &header;
   auto uri = URI::Create("http", "metadata.google.internal.", path,

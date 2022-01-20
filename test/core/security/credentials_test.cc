@@ -2099,8 +2099,7 @@ static void validate_external_account_creds_token_exchage_request(
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
-static void
-validate_external_account_creds_token_exchage_request_with_url_encode(
+static void validate_external_account_creds_token_exchage_request_with_url_encode(
     const grpc_http_request* request, const char* host, const char* path, const char* body,
     size_t body_size, bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
