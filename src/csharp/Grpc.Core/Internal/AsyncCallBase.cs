@@ -17,16 +17,12 @@
 #endregion
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Grpc.Core.Internal;
 using Grpc.Core.Logging;
-using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -46,23 +42,154 @@ namespace Grpc.Core.Internal
         protected readonly object myLock = new object();
 
         protected INativeCall call;
-        protected bool disposed;
 
-        protected bool started;
-        protected bool cancelRequested;
+        private AsyncTaskMethodBuilder<TRead> streamingReadTmb; // Completion of a pending streaming read if not null.
+        private AsyncTaskMethodBuilder streamingWriteTmb; // Completion of a pending streaming write or send close from client if not null.
+        private AsyncTaskMethodBuilder sendStatusFromServerTmb;
 
-        protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
-        protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
-        protected TaskCompletionSource<object> sendStatusFromServerTcs;
-        protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
-
-        protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
-        protected bool halfcloseRequested;  // True if send close have been initiated.
-        protected bool finished;  // True if close has been received from the peer.
-
-        protected bool initialMetadataSent;
         protected long streamingWritesCounter;  // Number of streaming send operations started so far.
-        protected bool receiveResponseHeadersPending;  // True if this is a call with streaming response and the recv_initial_metadata_on_client operation hasn't finished yet.
+
+#region State flags and accessors/helpers
+        [Flags]
+        private enum StateFlags // flags rather than discrete bools
+        {
+            None = 0,
+            Disposed = 1 << 0,
+            Started = 1 << 1,
+            CancelRequested = 1 << 2,
+            IsStreamingWriteCompletionDelayed = 1 << 3, // Only used for the client side.
+            ReadingDone = 1 << 4, // True if last read (i.e. read with null payload) was already received.
+            HalfCloseRequested = 1 << 5, // True if send close have been initiated.
+            Finished = 1 << 6, // True if close has been received from the peer.
+            InitialMetadataSent = 1 << 7,
+            ReceiveResponseHeadersPending = 1 << 8, // True if this is a call with streaming response and the recv_initial_metadata_on_client operation hasn't finished yet.
+            StreamingReadInitialized = 1 << 9, // whether the corresponding TMB is considered initialized
+            StreamingWriteInitialized = 1 << 10, // whether the corresponding TMB is considered initialized
+            SendStatusFromServerInitialized = 1 << 12, // whether the corresponding TMB is considered initialized
+        }
+
+        private int stateFlags; // int, not StateFlags, because of Volatile/Interlocked APIs
+
+        // check whether a given flag is specified ("any")
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool GetState(StateFlags flag) => (Volatile.Read(ref stateFlags) & (int)flag) != 0;
+
+        private bool SetState(StateFlags flag, bool value)
+        {
+            int oldValue, newValue;
+            do
+            {
+                oldValue = Volatile.Read(ref stateFlags);
+                newValue = value ? (oldValue | (int)flag) : (oldValue & ~(int)flag);
+            }
+            while (oldValue != newValue && Interlocked.CompareExchange(ref stateFlags, newValue, oldValue) != oldValue);
+            return (oldValue & (int)flag) != 0; // return previous flag state ("any")
+        }
+
+        protected bool Disposed
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.Disposed);
+            private set => SetState(StateFlags.Disposed, value);
+        }
+        protected bool Started
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.Started);
+            set => SetState(StateFlags.Started, value);
+        }
+        protected bool CancelRequested
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.CancelRequested);
+            private set => SetState(StateFlags.CancelRequested, value);
+        }
+
+        protected bool ReadingDone
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.ReadingDone);
+            set => SetState(StateFlags.ReadingDone, value);
+        }
+        protected bool HalfCloseRequested
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.HalfCloseRequested);
+            set => SetState(StateFlags.HalfCloseRequested, value);
+        }
+
+        protected bool Finished
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.Finished);
+            set => SetState(StateFlags.Finished, value);
+        }
+        protected bool InitialMetadataSent
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.InitialMetadataSent);
+            set => SetState(StateFlags.InitialMetadataSent, value);
+        }
+        protected bool SendStatusFromServerInitialized => GetState(StateFlags.SendStatusFromServerInitialized);
+        protected bool ReceiveResponseHeadersPending
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.ReceiveResponseHeadersPending);
+            set => SetState(StateFlags.ReceiveResponseHeadersPending, value);
+        }
+        protected bool IsStreamingWriteCompletionDelayed
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.IsStreamingWriteCompletionDelayed);
+            private set => SetState(StateFlags.IsStreamingWriteCompletionDelayed, value);
+        }
+
+        protected bool StreamingWriteInitialized
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.StreamingWriteInitialized);
+        }
+        protected bool StreamingReadInitialized
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => GetState(StateFlags.StreamingReadInitialized);
+        }
+
+        protected Task InitializeStreamingWrite()
+        {
+            streamingWriteTmb = AsyncTaskMethodBuilder.Create();
+            SetState(StateFlags.StreamingWriteInitialized, true);
+            return streamingWriteTmb.Task;
+        }
+
+        protected Task InitializeSendStatusFromServer()
+        {
+            sendStatusFromServerTmb = AsyncTaskMethodBuilder.Create();
+            SetState(StateFlags.SendStatusFromServerInitialized, true);
+            return sendStatusFromServerTmb.Task;
+        }
+
+        protected void InitializeStreamingRead(TRead value)
+        {
+            streamingReadTmb = AsyncTaskMethodBuilder<TRead>.Create();
+            SetState(StateFlags.StreamingReadInitialized, true);
+            streamingReadTmb.SetResult(value);
+        }
+
+        protected AsyncTaskMethodBuilder? ResetStreamingWrite()
+        {
+            if (SetState(StateFlags.StreamingWriteInitialized, false))
+            {   // was initialized
+                var tmp = streamingWriteTmb;
+                streamingWriteTmb = default;
+                return tmp;
+            }
+            else
+            {   // wasn't initialized
+                return null;
+            }
+        }
+#endregion
 
         public AsyncCallBase(Action<TWrite, SerializationContext> serializer, Func<DeserializationContext, TRead> deserializer)
         {
@@ -77,10 +204,10 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(started);
-                cancelRequested = true;
+                GrpcPreconditions.CheckState(Started);
+                CancelRequested = true;
 
-                if (!disposed)
+                if (!Disposed)
                 {
                     call.Cancel();
                 }
@@ -94,9 +221,9 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                cancelRequested = true;
+                CancelRequested = true;
 
-                if (!disposed)
+                if (!Disposed)
                 {
                     call.CancelWithStatus(status);
                 }
@@ -121,19 +248,18 @@ namespace Grpc.Core.Internal
                 var payload = UnsafeSerialize(msg, serializationScope.Context);
                 lock (myLock)
                 {
-                    GrpcPreconditions.CheckState(started);
+                    GrpcPreconditions.CheckState(Started);
                     var earlyResult = CheckSendAllowedOrEarlyResult();
                     if (earlyResult != null)
                     {
                         return earlyResult;
                     }
 
-                    call.StartSendMessage(SendCompletionCallback, payload, writeFlags, !initialMetadataSent);
+                    call.StartSendMessage(SendCompletionCallback, payload, writeFlags, !InitialMetadataSent);
 
-                    initialMetadataSent = true;
+                    InitialMetadataSent = true;
                     streamingWritesCounter++;
-                    streamingWriteTcs = new TaskCompletionSource<object>();
-                    return streamingWriteTcs.Task;
+                    return InitializeStreamingWrite();
                 }
             }
         }
@@ -145,21 +271,22 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(started);
-                if (readingDone)
+                GrpcPreconditions.CheckState(Started);
+                if (ReadingDone)
                 {
                     // the last read that returns null or throws an exception is idempotent
                     // and maintains its state.
-                    GrpcPreconditions.CheckState(streamingReadTcs != null, "Call does not support streaming reads.");
-                    return streamingReadTcs.Task;
+                    GrpcPreconditions.CheckState(StreamingReadInitialized, "Call does not support streaming reads.");
+                    return streamingReadTmb.Task;
                 }
 
-                GrpcPreconditions.CheckState(streamingReadTcs == null, "Only one read can be pending at a time");
-                GrpcPreconditions.CheckState(!disposed);
+                GrpcPreconditions.CheckState(!StreamingReadInitialized, "Only one read can be pending at a time");
+                GrpcPreconditions.CheckState(!Disposed);
 
                 call.StartReceiveMessage(ReceivedMessageCallback);
-                streamingReadTcs = new TaskCompletionSource<TRead>();
-                return streamingReadTcs.Task;
+                streamingReadTmb = AsyncTaskMethodBuilder<TRead>.Create();
+                SetState(StateFlags.StreamingReadInitialized, true);
+                return streamingReadTmb.Task;
             }
         }
 
@@ -169,10 +296,10 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected bool ReleaseResourcesIfPossible()
         {
-            if (!disposed && call != null)
+            if (!Disposed && call != null)
             {
-                bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
-                if (noMoreSendCompletions && readingDone && finished && !receiveResponseHeadersPending)
+                bool noMoreSendCompletions = !StreamingReadInitialized && HalfCloseRequested || CancelRequested || Finished;
+                if (noMoreSendCompletions && ReadingDone && Finished && !ReceiveResponseHeadersPending)
                 {
                     ReleaseResources();
                     return true;
@@ -198,7 +325,7 @@ namespace Grpc.Core.Internal
             {
                 call.Dispose();
             }
-            disposed = true;
+            Disposed = true;
             OnAfterReleaseResourcesLocked();
         }
 
@@ -249,23 +376,22 @@ namespace Grpc.Core.Internal
         protected void HandleSendFinished(bool success)
         {
             bool delayCompletion = false;
-            TaskCompletionSource<object> origTcs = null;
+            AsyncTaskMethodBuilder origStreamingWrite = default;
             bool releasedResources;
             lock (myLock)
             {
-                if (!success && !finished && IsClient) {
+                if (!success && !Finished && IsClient) {
                     // We should be setting this only once per call, following writes will be short circuited
                     // because they cannot start until the entire call finishes.
-                    GrpcPreconditions.CheckState(!isStreamingWriteCompletionDelayed);
+                    GrpcPreconditions.CheckState(!IsStreamingWriteCompletionDelayed);
 
                     // leave streamingWriteTcs set, it will be completed once call finished.
-                    isStreamingWriteCompletionDelayed = true;
+                    IsStreamingWriteCompletionDelayed = true;
                     delayCompletion = true;
                 }
                 else
                 {
-                    origTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;    
+                    origStreamingWrite = ResetStreamingWrite().Value;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -282,19 +408,19 @@ namespace Grpc.Core.Internal
                 {
                     if (IsClient)
                     {
-                        GrpcPreconditions.CheckState(finished);  // implied by !success && !delayCompletion && IsClient
-                        origTcs.SetException(GetRpcExceptionClientOnly());
+                        GrpcPreconditions.CheckState(Finished);  // implied by !success && !delayCompletion && IsClient
+                        origStreamingWrite.SetException(GetRpcExceptionClientOnly());
                     }
                     else
                     {
-                        origTcs.SetException (new IOException("Error sending from server."));
+                        origStreamingWrite.SetException (new IOException("Error sending from server."));
                     }
                 }
                 // if delayCompletion == true, postpone SetException until call finishes.
             }
             else
             {
-                origTcs.SetResult(null);
+                origStreamingWrite.SetResult();
             }
         }
 
@@ -316,11 +442,11 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                sendStatusFromServerTcs.SetException(new IOException("Error sending status from server."));
+                sendStatusFromServerTmb.SetException(new IOException("Error sending status from server."));
             }
             else
             {
-                sendStatusFromServerTcs.SetResult(null);
+                sendStatusFromServerTmb.SetResult();
             }
         }
 
@@ -336,28 +462,29 @@ namespace Grpc.Core.Internal
             TRead msg = default(TRead);
             var deserializeException = (success && receivedMessageReader.TotalLength.HasValue) ? TryDeserialize(receivedMessageReader, out msg) : null;
 
-            TaskCompletionSource<TRead> origTcs = null;
+            AsyncTaskMethodBuilder<TRead> origTcs = default;
             bool releasedResources;
             lock (myLock)
             {
-                origTcs = streamingReadTcs;
+                origTcs = streamingReadTmb;
                 if (!receivedMessageReader.TotalLength.HasValue)
                 {
                     // This was the last read.
-                    readingDone = true;
+                    ReadingDone = true;
                 }
 
                 if (deserializeException != null && IsClient)
                 {
-                    readingDone = true;
+                    ReadingDone = true;
 
                     // TODO(jtattermusch): it might be too late to set the status
                     CancelWithStatus(DeserializeResponseFailureStatus);
                 }
 
-                if (!readingDone)
+                if (!ReadingDone)
                 {
-                    streamingReadTcs = null;
+                    SetState(StateFlags.StreamingReadInitialized, false);
+                    streamingReadTmb = default;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();

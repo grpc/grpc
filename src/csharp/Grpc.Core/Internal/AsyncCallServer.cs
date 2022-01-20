@@ -17,13 +17,8 @@
 #endregion
 
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -68,7 +63,7 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckNotNull(call);
 
-                started = true;
+                Started = true;
 
                 call.StartServerSide(ReceiveCloseOnServerCallback);
                 return finishedServersideTcs.Task;
@@ -102,8 +97,8 @@ namespace Grpc.Core.Internal
             {
                 GrpcPreconditions.CheckNotNull(headers, "metadata");
 
-                GrpcPreconditions.CheckState(started);
-                GrpcPreconditions.CheckState(!initialMetadataSent, "Response headers can only be sent once per call.");
+                GrpcPreconditions.CheckState(Started);
+                GrpcPreconditions.CheckState(!InitialMetadataSent, "Response headers can only be sent once per call.");
                 GrpcPreconditions.CheckState(streamingWritesCounter == 0, "Response headers can only be sent before the first write starts.");
 
                 var earlyResult = CheckSendAllowedOrEarlyResult();
@@ -117,9 +112,8 @@ namespace Grpc.Core.Internal
                     call.StartSendInitialMetadata(SendCompletionCallback, metadataArray);
                 }
 
-                this.initialMetadataSent = true;
-                streamingWriteTcs = new TaskCompletionSource<object>();
-                return streamingWriteTcs.Task;
+                this.InitialMetadataSent = true;
+                return InitializeStreamingWrite();
             }
         }
 
@@ -136,23 +130,23 @@ namespace Grpc.Core.Internal
 
                 lock (myLock)
                 {
-                    GrpcPreconditions.CheckState(started);
-                    GrpcPreconditions.CheckState(!disposed);
-                    GrpcPreconditions.CheckState(!halfcloseRequested, "Can only send status from server once.");
+                    GrpcPreconditions.CheckState(Started);
+                    GrpcPreconditions.CheckState(!Disposed);
+                    GrpcPreconditions.CheckState(!HalfCloseRequested, "Can only send status from server once.");
 
                     using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
                     {
-                        call.StartSendStatusFromServer(SendStatusFromServerCompletionCallback, status, metadataArray, !initialMetadataSent,
+                        call.StartSendStatusFromServer(SendStatusFromServerCompletionCallback, status, metadataArray, !InitialMetadataSent,
                             payload, writeFlags);
                     }
-                    halfcloseRequested = true;
-                    initialMetadataSent = true;
-                    sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                    HalfCloseRequested = true;
+                    InitialMetadataSent = true;
+                    var result = InitializeSendStatusFromServer();
                     if (optionalWrite.HasValue)
                     {
                         streamingWritesCounter++;
                     }
-                    return sendStatusFromServerTcs.Task;
+                    return result;
                 }
             }
         }
@@ -194,10 +188,10 @@ namespace Grpc.Core.Internal
 
         protected override Task CheckSendAllowedOrEarlyResult()
         {
-            GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
-            GrpcPreconditions.CheckState(!finished, "Already finished.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
-            GrpcPreconditions.CheckState(!disposed);
+            GrpcPreconditions.CheckState(!HalfCloseRequested, "Response stream has already been completed.");
+            GrpcPreconditions.CheckState(!Finished, "Already finished.");
+            GrpcPreconditions.CheckState(!StreamingWriteInitialized, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(!Disposed);
 
             return null;
         }
@@ -212,14 +206,13 @@ namespace Grpc.Core.Internal
             bool releasedResources;
             lock (myLock)
             {
-                finished = true;
-                if (streamingReadTcs == null)
+                Finished = true;
+                if (!StreamingReadInitialized)
                 {
                     // if there's no pending read, readingDone=true will dispose now.
                     // if there is a pending read, we will dispose once that read finishes.
-                    readingDone = true;
-                    streamingReadTcs = new TaskCompletionSource<TRequest>();
-                    streamingReadTcs.SetResult(default(TRequest));
+                    ReadingDone = true;
+                    InitializeStreamingRead(default(TRequest));
                 }
                 releasedResources = ReleaseResourcesIfPossible();
             }

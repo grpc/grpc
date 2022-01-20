@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Logging;
@@ -57,7 +58,7 @@ namespace Grpc.Core.Internal
             : base(callDetails.RequestMarshaller.ContextualSerializer, callDetails.ResponseMarshaller.ContextualDeserializer)
         {
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
-            this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
+            this.InitialMetadataSent = true;  // we always send metadata at the very beginning of the call.
         }
 
         /// <summary>
@@ -87,12 +88,12 @@ namespace Grpc.Core.Internal
 
                     lock (myLock)
                     {
-                        GrpcPreconditions.CheckState(!started);
-                        started = true;
+                        GrpcPreconditions.CheckState(!Started);
+                        Started = true;
                         Initialize(cq);
 
-                        halfcloseRequested = true;
-                        readingDone = true;
+                        HalfCloseRequested = true;
+                        ReadingDone = true;
                     }
 
                     using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
@@ -152,13 +153,13 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    GrpcPreconditions.CheckState(!started);
-                    started = true;
+                    GrpcPreconditions.CheckState(!Started);
+                    Started = true;
 
                     Initialize(details.Channel.CompletionQueue);
 
-                    halfcloseRequested = true;
-                    readingDone = true;
+                    HalfCloseRequested = true;
+                    ReadingDone = true;
 
                     using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     {
@@ -194,12 +195,12 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    GrpcPreconditions.CheckState(!started);
-                    started = true;
+                    GrpcPreconditions.CheckState(!Started);
+                    Started = true;
 
                     Initialize(details.Channel.CompletionQueue);
 
-                    readingDone = true;
+                    ReadingDone = true;
 
                     unaryResponseTcs = new TaskCompletionSource<TResponse>();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
@@ -230,13 +231,13 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    GrpcPreconditions.CheckState(!started);
-                    started = true;
+                    GrpcPreconditions.CheckState(!Started);
+                    Started = true;
 
                     Initialize(details.Channel.CompletionQueue);
 
-                    halfcloseRequested = true;
-                    receiveResponseHeadersPending = true;
+                    HalfCloseRequested = true;
+                    ReceiveResponseHeadersPending = true;
 
                     using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     {
@@ -271,9 +272,9 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    GrpcPreconditions.CheckState(!started);
-                    started = true;
-                    receiveResponseHeadersPending = true;
+                    GrpcPreconditions.CheckState(!Started);
+                    Started = true;
+                    ReceiveResponseHeadersPending = true;
 
                     Initialize(details.Channel.CompletionQueue);
 
@@ -319,7 +320,7 @@ namespace Grpc.Core.Internal
         {
             lock (myLock)
             {
-                GrpcPreconditions.CheckState(started);
+                GrpcPreconditions.CheckState(Started);
 
                 var earlyResult = CheckSendPreconditionsClientSide();
                 if (earlyResult != null)
@@ -327,19 +328,18 @@ namespace Grpc.Core.Internal
                     return earlyResult;
                 }
 
-                if (disposed || finished)
+                if (Disposed || Finished)
                 {
                     // In case the call has already been finished by the serverside,
                     // the halfclose has already been done implicitly, so just return
                     // completed task here.
-                    halfcloseRequested = true;
+                    HalfCloseRequested = true;
                     return TaskUtils.CompletedTask;
                 }
                 call.StartSendCloseFromClient(SendCompletionCallback);
 
-                halfcloseRequested = true;
-                streamingWriteTcs = new TaskCompletionSource<object>();
-                return streamingWriteTcs.Task;
+                HalfCloseRequested = true;
+                return InitializeStreamingWrite();
             }
         }
 
@@ -453,10 +453,10 @@ namespace Grpc.Core.Internal
 
         private Task CheckSendPreconditionsClientSide()
         {
-            GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+            GrpcPreconditions.CheckState(!HalfCloseRequested, "Request stream has already been completed.");
+            GrpcPreconditions.CheckState(!StreamingWriteInitialized, "Only one write can be pending at a time.");
 
-            if (cancelRequested)
+            if (CancelRequested)
             {
                 // Return a cancelled task.
                 var tcs = new TaskCompletionSource<object>();
@@ -537,7 +537,7 @@ namespace Grpc.Core.Internal
             bool releasedResources;
             lock (myLock)
             {
-                receiveResponseHeadersPending = false;
+                ReceiveResponseHeadersPending = false;
                 releasedResources = ReleaseResourcesIfPossible();
             }
 
@@ -557,14 +557,14 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+            AsyncTaskMethodBuilder? delayedStreamingWrite = null;
             TResponse msg = default(TResponse);
             var deserializeException = TryDeserialize(receivedMessageReader, out msg);
 
             bool releasedResources;
             lock (myLock)
             {
-                finished = true;
+                Finished = true;
 
                 if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
                 {
@@ -572,10 +572,9 @@ namespace Grpc.Core.Internal
                 }
                 finishedStatus = receivedStatus;
 
-                if (isStreamingWriteCompletionDelayed)
+                if (IsStreamingWriteCompletionDelayed)
                 {
-                    delayedStreamingWriteTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;
+                    delayedStreamingWrite = ResetStreamingWrite();
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -588,9 +587,9 @@ namespace Grpc.Core.Internal
 
             responseHeadersTcs.SetResult(responseHeaders);
 
-            if (delayedStreamingWriteTcs != null)
+            if (delayedStreamingWrite != null)
             {
-                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+                delayedStreamingWrite.Value.SetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
@@ -611,22 +610,21 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+            AsyncTaskMethodBuilder? delayedStreamingWrite = null;
 
             bool releasedResources;
             bool origCancelRequested;
             lock (myLock)
             {
-                finished = true;
+                Finished = true;
                 finishedStatus = receivedStatus;
-                if (isStreamingWriteCompletionDelayed)
+                if (IsStreamingWriteCompletionDelayed)
                 {
-                    delayedStreamingWriteTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;
+                    delayedStreamingWrite = ResetStreamingWrite();
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
-                origCancelRequested = cancelRequested;
+                origCancelRequested = CancelRequested;
             }
 
             if (releasedResources)
@@ -634,9 +632,9 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
-            if (delayedStreamingWriteTcs != null)
+            if (delayedStreamingWrite != null)
             {
-                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+                delayedStreamingWrite.Value.SetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
