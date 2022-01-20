@@ -29,7 +29,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32',
-    'x86_64-linux', 'x86-linux',
+    'x86_64-linux', 'x86-linux', 'aarch64-linux',
     'x86_64-darwin', 'arm64-darwin',
     'universal-darwin'
   ]
@@ -153,7 +153,7 @@ task 'gem:native', [:plat] do |t, args|
     nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
     supported_windows_platforms = ['x86-mingw32', 'x64-mingw32']
-    supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin']
+    supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
     supported_platforms = supported_windows_platforms + supported_unix_platforms
 
     if selected_plat.empty?

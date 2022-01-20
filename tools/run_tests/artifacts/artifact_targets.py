@@ -463,6 +463,7 @@ def targets():
         RubyArtifact('linux', 'x64-mingw32', presubmit=True),
         RubyArtifact('linux', 'x86_64-linux', presubmit=True),
         RubyArtifact('linux', 'x86-linux', presubmit=True),
+        RubyArtifact('linux', 'aarch64-linux', presubmit=True),
         RubyArtifact('linux', 'x86_64-darwin', presubmit=True),
         RubyArtifact('linux', 'arm64-darwin', presubmit=True),
         RubyArtifact('macos', 'darwin', presubmit=True),
