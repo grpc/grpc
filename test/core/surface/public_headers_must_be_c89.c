@@ -257,7 +257,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_new_with_len);
   printf("%lx", (unsigned long) grpc_slice_malloc);
   printf("%lx", (unsigned long) grpc_slice_malloc_large);
-  printf("%lx", (unsigned long) grpc_slice_intern);
   printf("%lx", (unsigned long) grpc_slice_from_copied_string);
   printf("%lx", (unsigned long) grpc_slice_from_copied_buffer);
   printf("%lx", (unsigned long) grpc_slice_from_static_string);
@@ -268,8 +267,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_split_tail_maybe_ref);
   printf("%lx", (unsigned long) grpc_slice_split_head);
   printf("%lx", (unsigned long) grpc_empty_slice);
-  printf("%lx", (unsigned long) grpc_slice_default_hash_impl);
-  printf("%lx", (unsigned long) grpc_slice_default_eq_impl);
   printf("%lx", (unsigned long) grpc_slice_eq);
   printf("%lx", (unsigned long) grpc_slice_cmp);
   printf("%lx", (unsigned long) grpc_slice_str_cmp);
@@ -277,7 +274,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_rchr);
   printf("%lx", (unsigned long) grpc_slice_chr);
   printf("%lx", (unsigned long) grpc_slice_slice);
-  printf("%lx", (unsigned long) grpc_slice_hash);
   printf("%lx", (unsigned long) grpc_slice_is_equivalent);
   printf("%lx", (unsigned long) grpc_slice_dup);
   printf("%lx", (unsigned long) grpc_slice_to_c_string);
