@@ -933,6 +933,7 @@ libs:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -980,6 +981,7 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/key_logging/ssl_key_logging.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
@@ -1534,6 +1536,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -1591,6 +1594,7 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -1990,6 +1994,7 @@ libs:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -2267,6 +2272,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -3769,6 +3775,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4020,6 +4027,15 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: slice_intern_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/slice_intern_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: slice_split_test
   build: test
   language: c
@@ -4042,6 +4058,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
@@ -4520,6 +4537,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5014,6 +5032,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5648,6 +5667,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/gprpp/time.cc
@@ -5859,6 +5879,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6625,6 +6646,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6932,6 +6954,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7286,6 +7309,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -7723,6 +7747,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_utils.h
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7879,6 +7904,18 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: tls_key_export_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/tls_key_export_test.cc
+  deps:
+  - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
   build: test

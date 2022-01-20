@@ -383,6 +383,11 @@ class Call : public std::enable_shared_from_this<Call> {
   template <typename T>
   grpc_slice ReadSlice(const T& s) {
     grpc_slice slice = grpc_slice_from_cpp_string(s.value());
+    if (s.intern()) {
+      auto interned_slice = grpc_slice_intern(slice);
+      grpc_slice_unref(slice);
+      slice = interned_slice;
+    }
     unref_slices_.push_back(slice);
     return slice;
   }

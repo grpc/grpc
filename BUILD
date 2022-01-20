@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "great"  # @unused
+g_stands_for = "gravity"  # @unused
 
 core_version = "22.0.0"  # @unused
 
-version = "1.44.0-dev"  # @unused
+version = "1.45.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1573,6 +1573,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/slice/slice_refcount.h",
         "src/core/lib/slice/slice_refcount_base.h",
+        "src/core/lib/slice/slice_utils.h",
     ],
     public_hdrs = [
         "include/grpc/slice.h",
@@ -1901,6 +1902,7 @@ grpc_cc_library(
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer.cc",
+        "src/core/lib/slice/slice_intern.cc",
         "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
@@ -3767,6 +3769,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
@@ -3775,6 +3778,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",

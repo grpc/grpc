@@ -1276,6 +1276,26 @@ grpc_authorization_policy_provider_file_watcher_create(
 GRPCAPI void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider);
 
+/** --- TLS session key logging. ---
+ * Experimental API to control tls session key logging. Tls session key logging
+ * is expected to be used only for debugging purposes and never in production.
+ * Tls session key logging is only enabled when:
+ *  At least one grpc_tls_credentials_options object is assigned a tls session
+ *  key logging file path using the API specified below.
+ */
+
+/**
+ * EXPERIMENTAL API - Subject to change.
+ * Configures a grpc_tls_credentials_options object with tls session key
+ * logging capability. TLS channels using these credentials have tls session
+ * key logging enabled.
+ * - options is the grpc_tls_credentials_options object
+ * - path is a string pointing to the location where TLS session keys would be
+ *   stored.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+    grpc_tls_credentials_options* options, const char* path);
+
 #ifdef __cplusplus
 }
 #endif
