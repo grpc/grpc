@@ -53,8 +53,6 @@ char** g_argv;
 int g_server_port;
 gpr_subprocess* g_server;
 
-std::vector<std::string> g_subprocess_args;
-
 class HttpsCliTest : public ::testing::Test {
  public:
   HttpsCliTest() {
