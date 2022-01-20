@@ -334,7 +334,7 @@ void ExternalAccountCredentials::ExchangeToken(
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
   http_request_ = HttpRequest::Post(
-      std::move(*uri), nullptr, ctx_->pollent, &request, ctx_->deadline,
+      std::move(*uri), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
       &ctx_->closure, &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   request.body = nullptr;
