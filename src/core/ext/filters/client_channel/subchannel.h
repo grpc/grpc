@@ -360,10 +360,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
 
+  // Minimum connect timeout - must be located before backoff_.
+  Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
   Timestamp next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
-  Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);
   bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
 
   // Retry alarm.
