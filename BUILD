@@ -4054,6 +4054,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_config_rbac_upb",
         "gpr_base",
         "grpc_base",
         "grpc_mock_cel",
