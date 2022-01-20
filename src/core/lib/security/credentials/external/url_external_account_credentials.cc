@@ -123,11 +123,12 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
             "Missing HTTPRequestContext to start subject token retrieval."));
     return;
   }
-  auto url_for_request = URI::Create(url_.scheme(), url_.authority(), url_full_path_, {} /* query params */, "" /* fragment */);
+  auto url_for_request =
+      URI::Create(url_.scheme(), url_.authority(), url_full_path_,
+                  {} /* query params */, "" /* fragment */);
   if (!url_for_request.ok()) {
     FinishRetrieveSubjectToken(
-        "",
-        absl_status_to_grpc_error(url_for_request.status()));
+        "", absl_status_to_grpc_error(url_for_request.status()));
     return;
   }
   ctx_ = ctx;
@@ -158,9 +159,10 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
         CreateHttpRequestSSLCredentials());
   }
-  http_request_ = HttpRequest::Get(
-      std::move(*url_for_request), nullptr /* channel args */, ctx_->pollent, &request, ctx_->deadline,
-      &ctx_->closure, &ctx_->response, std::move(http_request_creds));
+  http_request_ =
+      HttpRequest::Get(std::move(*url_for_request), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
   http_request_->Start();
   grpc_http_request_destroy(&request);
 }
