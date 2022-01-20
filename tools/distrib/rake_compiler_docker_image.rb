@@ -20,7 +20,7 @@ end
 def docker_image_for_rake_compiler(platform)
   require 'digest'
 
-  dockerfile = File.join(grpc_root, 'third_party', 'rake-compiler-dock', 'rake_' + platform, 'Dockerfile')
+  dockerfile = File.join(grpc_root, 'tools', 'dockerfile', 'artifact_ruby', 'rake_' + platform, 'Dockerfile')
   dockerpath = File.dirname(dockerfile)
   version = Digest::SHA1.file(dockerfile).hexdigest
   image_name = 'rake_' + platform + ':' + version
