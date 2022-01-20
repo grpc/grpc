@@ -466,6 +466,14 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
       drop_stats_ = xds_client_->AddClusterDropStats(
           config_->lrs_load_reporting_server().value(), config_->cluster_name(),
           config_->eds_service_name());
+      if (drop_stats_ == nullptr) {
+        gpr_log(GPR_ERROR,
+                "[xds_cluster_impl_lb %p] Failed to get cluster drop stats for "
+                "LRS server %s, cluster %s, EDS service name %s",
+                this, config_->lrs_load_reporting_server()->server_uri.c_str(),
+                config_->cluster_name().c_str(),
+                config_->eds_service_name().c_str());
+      }
     }
     call_counter_ = g_call_counter_map->GetOrCreate(
         config_->cluster_name(), config_->eds_service_name());
@@ -596,12 +604,16 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
           xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(
               std::move(address), args),
           std::move(locality_stats));
-    } else {
-      gpr_log(GPR_INFO,
-              "[xds_cluster_impl_lb %p] No locality stats object, unable to "
-              "wrap the subchannel",
-              this);
     }
+    gpr_log(GPR_ERROR,
+            "[xds_cluster_impl_lb %p] Failed to get locality stats object for "
+            "LRS server %s, cluster %s, EDS service name %s; load reports will "
+            "not be generated (not wrapping subchannel)",
+            this,
+            xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
+                ->server_uri.c_str(),
+            xds_cluster_impl_policy_->config_->cluster_name().c_str(),
+            xds_cluster_impl_policy_->config_->eds_service_name().c_str());
   }
   // Load reporting not enabled, so don't wrap the subchannel.
   return xds_cluster_impl_policy_->channel_control_helper()->CreateSubchannel(

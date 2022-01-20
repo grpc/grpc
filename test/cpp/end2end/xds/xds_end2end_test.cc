@@ -2580,7 +2580,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  protected:
-  XdsFederationTest() : XdsEnd2endTest(2, 100, 0, true) {
+  XdsFederationTest() : XdsEnd2endTest(2, 3, 0, true) {
     authority_balancer_ = CreateAndStartBalancer();
   }
 
@@ -2876,32 +2876,13 @@ TEST_P(XdsFederationTest, FederationServer) {
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
-class XdsFederationLrsTest : public XdsEnd2endTest {
- protected:
-  XdsFederationLrsTest() : XdsEnd2endTest(2, 3, 0, true) {
-    authority_balancer_ = CreateAndStartBalancer();
-  }
-
-  void SetUp() override {
-    // Each test will use a slightly different bootstrapfile,
-    // so SetUp() is intentionally empty here and the real
-    // setup: calling of CreateClientAndServers(builder)
-    // is moved into each test.
-  }
-
-  void TearDown() override {
-    authority_balancer_->Shutdown();
-    XdsEnd2endTest::TearDown();
-  }
-
-  std::unique_ptr<BalancerServerThread> authority_balancer_;
-};
+using XdsFederationLoadReportingTest = XdsFederationTest;
 
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // Bootstrap entry for that authority specifies a client listener name template.
 // Sending traffic to both default balancer and authority balancer and checking
 // load reporting with each one.
-TEST_P(XdsFederationLrsTest, FederationMultipleLoadReportingTest) {
+TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
@@ -13665,14 +13646,11 @@ INSTANTIATE_TEST_SUITE_P(
         TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
         TestType()
             .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-            .set_enable_load_reporting(),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing()),
     &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsFederationLrsTest,
+    XdsTest, XdsFederationLoadReportingTest,
     ::testing::Values(TestType()
                           .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
                           .set_enable_load_reporting(),

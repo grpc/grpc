@@ -1765,7 +1765,6 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceivedLocked(
   }
   // Ignore status from a stale call.
   if (IsCurrentCallOnChannel()) {
-    // GPR_ASSERT(!xds_client()->shutting_down_);
     // Try to restart the call.
     parent_->OnCallFinishedLocked();
   }
@@ -2079,9 +2078,7 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
         load_report_it->first.second /*eds_service_name*/);
     load_report_state.drop_stats = cluster_drop_stats.get();
   }
-  auto server = xds_server_channel_map_.find(server_it->first);
-  GPR_ASSERT(server != xds_server_channel_map_.end());
-  server->second->MaybeStartLrsCall();
+  server_it->second.channel_state->MaybeStartLrsCall();
   return cluster_drop_stats;
 }
 
@@ -2144,9 +2141,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
         load_report_it->first.second /*eds_service_name*/, std::move(locality));
     locality_state.locality_stats = cluster_locality_stats.get();
   }
-  auto server = xds_server_channel_map_.find(server_it->first);
-  GPR_ASSERT(server != xds_server_channel_map_.end());
-  server->second->MaybeStartLrsCall();
+  server_it->second.channel_state->MaybeStartLrsCall();
   return cluster_locality_stats;
 }
 
