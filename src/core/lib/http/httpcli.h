@@ -62,8 +62,6 @@ namespace grpc_core {
 class HttpRequest : public InternallyRefCounted<HttpRequest> {
  public:
   // Asynchronously perform a HTTP GET.
-  // 'scheme' can be "http" or "https", but note that the security level
-  //  is determined by channel_creds.
   // 'args' are channel args for the request. GRPC_ARG_DEFAULT_AUTHORITY is
   //   required and is used as the target host for the request.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -87,8 +85,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
       GRPC_MUST_USE_RESULT;
 
   // Asynchronously perform a HTTP POST.
-  // 'scheme' can be "http" or "https", but note that the security level
-  //  is determined by channel creds.
   // 'args' are channel args for the request. GRPC_ARG_DEFAULT_AUTHORITY is
   //   required and is used as the target host for the request.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
@@ -186,7 +182,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   const URI uri_;
   const grpc_slice request_text_;
   const grpc_millis deadline_;
-  grpc_channel_args* channel_args_;
+  const grpc_channel_args* channel_args_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_closure on_read_;
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
