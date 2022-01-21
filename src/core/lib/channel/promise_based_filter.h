@@ -60,6 +60,8 @@ class MetadataHandle {
   T* operator->() const { return handle_; }
   bool has_value() const { return handle_ != nullptr; }
 
+  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
+
  private:
   friend class promise_filter_detail::BaseCallData;
 
