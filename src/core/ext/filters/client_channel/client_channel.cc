@@ -1149,9 +1149,10 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
     policy_name = grpc_channel_args_find_string(resolver_result.args,
                                                 GRPC_ARG_LB_POLICY_NAME);
     bool requires_config;
-    if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-            policy_name, &requires_config) ||
-        requires_config) {
+    if (policy_name != nullptr &&
+        (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+             policy_name, &requires_config) ||
+         requires_config)) {
       if (requires_config) {
         gpr_log(GPR_ERROR,
                 "LB policy: %s passed through channel_args must not "
