@@ -39,7 +39,7 @@ class ClientAuthorityFilter {
   static absl::StatusOr<ClientAuthorityFilter> Create(
       const grpc_channel_args* args);
 
-  // Construct a promise for once call.
+  // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       InitialMetadata initial_metadata,
       NextPromiseFactory next_promise_factory);

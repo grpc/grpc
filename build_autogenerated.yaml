@@ -5063,6 +5063,16 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_test_util
+- name: client_authority_filter_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/client_authority_filter_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
