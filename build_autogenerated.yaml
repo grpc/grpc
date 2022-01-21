@@ -5917,6 +5917,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: google_c2p_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/client_channel/resolvers/google_c2p_resolver_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - grpc++_test_util
 - name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
   build: test
