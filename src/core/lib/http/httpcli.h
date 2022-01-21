@@ -62,8 +62,10 @@ namespace grpc_core {
 class HttpRequest : public InternallyRefCounted<HttpRequest> {
  public:
   // Asynchronously perform a HTTP GET.
-  // 'args' are channel args for the request. GRPC_ARG_DEFAULT_AUTHORITY is
-  //   required and is used as the target host for the request.
+  // 'uri' is the target to make the request to. The scheme field is used to
+  //  determine the port number. The authority field is the target host. The
+  //  path field determines the path of the request. No other fields are used.
+  // 'args' are optional channel args for the request.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the get - work on this entity may be used to progress the get
   //   operation
@@ -85,8 +87,10 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
       GRPC_MUST_USE_RESULT;
 
   // Asynchronously perform a HTTP POST.
-  // 'args' are channel args for the request. GRPC_ARG_DEFAULT_AUTHORITY is
-  //   required and is used as the target host for the request.
+  // 'uri' is the target to make the request to. The scheme field is used to
+  //  determine the port number. The authority field is the target host. The
+  //  path field determines the path of the request. No other fields are used.
+  // 'args' are optional channel args for the request.
   // 'pollent' indicates a grpc_polling_entity that is interested in the result
   //   of the post - work on this entity may be used to progress the post
   //   operation
