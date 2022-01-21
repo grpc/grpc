@@ -3488,6 +3488,7 @@ grpc_cc_library(
         "absl/strings:str_format",
     ],
     language = "c++",
+    visibility = ["@grpc:httpcli"],
     deps = [
         "config",
         "gpr_base",
