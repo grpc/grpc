@@ -45,6 +45,21 @@
 
 namespace grpc_core {
 
+template <typename Trait, typename Ignored = void>
+struct IsEncodableTraitImpl {
+  static const bool value = false;
+};
+
+template <typename Trait>
+struct IsEncodableTraitImpl<Trait, absl::void_t<decltype(Trait::key())>> {
+  static const bool value = true;
+};
+
+template <typename Trait>
+static constexpr bool IsEncodableTrait() {
+  return IsEncodableTraitImpl<Trait>::value;
+}
+
 // grpc-timeout metadata trait.
 // ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
 // deadline!), that is converted to a duration by transports before being
@@ -500,14 +515,31 @@ struct LbCostBinMetadata {
   }
 };
 
+struct GrpcStreamNetworkState {
+  static constexpr bool kRepeatable = false;
+  enum ValueType {
+    kNotSentOnWire,
+    kNotSeenByServer,
+  };
+  static std::string DisplayValue(ValueType x) {
+    switch (x) {
+      case kNotSentOnWire:
+        return "not sent on wire";
+      case kNotSeenByServer:
+        return "not seen by server";
+    }
+  }
+};
+
 namespace metadata_detail {
 
 // Helper type - maps a string name to a trait.
-template <typename... Traits>
+template <typename MustBeVoid, typename... Traits>
 struct NameLookup;
 
 template <typename Trait, typename... Traits>
-struct NameLookup<Trait, Traits...> {
+struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>(), void>, Trait,
+                  Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
   // Traits. If not found, call op->NotFound().
   template <typename Op>
@@ -516,12 +548,22 @@ struct NameLookup<Trait, Traits...> {
     if (key == Trait::key()) {
       return op->Found(Trait());
     }
-    return NameLookup<Traits...>::Lookup(key, op);
+    return NameLookup<void, Traits...>::Lookup(key, op);
+  }
+};
+
+template <typename Trait, typename... Traits>
+struct NameLookup<absl::enable_if_t<!IsEncodableTrait<Trait>(), void>, Trait,
+                  Traits...> {
+  template <typename Op>
+  static auto Lookup(absl::string_view key, Op* op)
+      -> decltype(NameLookup<void, Traits...>::Lookup(key, op)) {
+    return NameLookup<void, Traits...>::Lookup(key, op);
   }
 };
 
 template <>
-struct NameLookup<> {
+struct NameLookup<void> {
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->NotFound(key)) {
@@ -693,7 +735,9 @@ template <typename Which, typename Ignored = void>
 struct Value;
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
+                                          IsEncodableTrait<Which>(),
+                                      void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
   explicit Value(typename Which::ValueType&& value)
@@ -709,6 +753,27 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
   void EncodeTo(Encoder* encoder) const {
     encoder->Encode(Which(), value);
   }
+  using StorageType = typename Which::ValueType;
+  GPR_NO_UNIQUE_ADDRESS StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
+                                          !IsEncodableTrait<Which>(),
+                                      void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(typename Which::ValueType&& value)
+      : value(std::forward<typename Which::ValueType>(value)) {}
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&&) noexcept = default;
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder*) const {}
   using StorageType = typename Which::ValueType;
   GPR_NO_UNIQUE_ADDRESS StorageType value;
 };
@@ -948,7 +1013,7 @@ class MetadataMap {
   // Remove some metadata by name
   void Remove(absl::string_view key) {
     metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   void Remove(const char* key) { Remove(absl::string_view(key)); }
@@ -958,7 +1023,7 @@ class MetadataMap {
                                                    std::string* buffer) const {
     metadata_detail::GetStringValueHelper<Derived> helper(
         static_cast<const Derived*>(this), buffer);
-    return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
+    return metadata_detail::NameLookup<void, Traits...>::Lookup(name, &helper);
   }
 
   // Extract a piece of known metadata.
@@ -1001,7 +1066,7 @@ class MetadataMap {
                                        MetadataParseErrorFn on_error) {
     metadata_detail::ParseHelper<Derived> helper(value.TakeOwned(), on_error,
                                                  transport_size);
-    return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    return metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
@@ -1014,7 +1079,7 @@ class MetadataMap {
               MetadataParseErrorFn on_error) {
     metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
                                                   value.TakeOwned(), on_error);
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   void Clear();
@@ -1052,7 +1117,16 @@ class MetadataMap {
     }
 
     template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
+    void Encode(Which, absl::enable_if_t<IsEncodableTrait<Which>(),
+                                         const typename Which::ValueType&>
+                           value) {
+      Add(Which(), value);
+    }
+
+    template <typename Which>
+    void Encode(Which, absl::enable_if_t<!IsEncodableTrait<Which>(),
+                                         const typename Which::ValueType&>
+                           value) {
       Add(Which(), value);
     }
 
@@ -1203,7 +1277,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
-    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata>;
+    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
+    grpc_core::GrpcStreamNetworkState>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;

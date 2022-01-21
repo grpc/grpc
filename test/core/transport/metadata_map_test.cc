@@ -36,6 +36,13 @@ struct TimeoutOnlyMetadataMap
   using MetadataMap<TimeoutOnlyMetadataMap, GrpcTimeoutMetadata>::MetadataMap;
 };
 
+struct StreamNetworkStateMetadataMap
+    : public MetadataMap<StreamNetworkStateMetadataMap,
+                         GrpcStreamNetworkState> {
+  using MetadataMap<StreamNetworkStateMetadataMap,
+                    GrpcStreamNetworkState>::MetadataMap;
+};
+
 TEST(MetadataMapTest, Noop) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   EmptyMetadataMap(arena.get());
@@ -95,6 +102,14 @@ TEST(MetadataMapTest, TimeoutEncodeTest) {
   map.Set(GrpcTimeoutMetadata(), 1234);
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "grpc-timeout: deadline=1234\n");
+}
+
+TEST(MetadataMapTest, NonEncodableTrait) {
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  StreamNetworkStateMetadataMap map(arena.get());
+  map.Set(GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
+  EXPECT_EQ(map.get(GrpcStreamNetworkState()),
+            GrpcStreamNetworkState::kNotSentOnWire);
 }
 
 }  // namespace testing
