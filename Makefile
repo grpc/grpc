@@ -1991,6 +1991,16 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc \
+    src/core/lib/security/context/security_context.cc \
+    src/core/lib/security/credentials/composite/composite_credentials.cc \
+    src/core/lib/security/credentials/credentials.cc \
+    src/core/lib/security/credentials/plugin/plugin_credentials.cc \
+    src/core/lib/security/security_connector/security_connector.cc \
+    src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/secure_endpoint.cc \
+    src/core/lib/security/transport/security_handshaker.cc \
+    src/core/lib/security/transport/server_auth_filter.cc \
+    src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/service_config/service_config.cc \
     src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
@@ -2034,6 +2044,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/plugin_registry/grpc_unsecure_plugin_registry.cc \
+    src/core/tsi/transport_security.cc \
+    src/core/tsi/transport_security_grpc.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -2049,6 +2061,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
+    include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/load_reporting.h \
     include/grpc/slice.h \
@@ -2984,7 +2997,6 @@ src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/rbac_policy.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/sdk_server_authz_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc: $(OPENSSL_DEP)
@@ -2993,8 +3005,6 @@ src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc: $(OPENS
 src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/composite/composite_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_external_account_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_request_signer.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/external_account_credentials.cc: $(OPENSSL_DEP)
@@ -3010,7 +3020,6 @@ src/core/lib/security/credentials/jwt/jwt_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/jwt/jwt_verifier.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/local/local_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc: $(OPENSSL_DEP)
@@ -3025,16 +3034,10 @@ src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
 src/core/lib/security/security_connector/load_system_roots_fallback.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/load_system_roots_linux.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/local/local_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils_config.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/tls/tls_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/server_auth_filter.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/tsi_error.cc: $(OPENSSL_DEP)
 src/core/lib/security/util/json_util.cc: $(OPENSSL_DEP)
 src/core/lib/surface/init_secure.cc: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.cc: $(OPENSSL_DEP)
@@ -3064,8 +3067,6 @@ src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl/session_cache/ssl_session_openssl.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
-src/core/tsi/transport_security_grpc.cc: $(OPENSSL_DEP)
 endif
 
 .PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install_csharp install-static install-certs strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean

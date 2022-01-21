@@ -905,6 +905,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/http/httpcli.cc )
   s.files += %w( src/core/lib/http/httpcli.h )
   s.files += %w( src/core/lib/http/httpcli_security_connector.cc )
+  s.files += %w( src/core/lib/http/httpcli_ssl_credentials.h )
   s.files += %w( src/core/lib/http/parser.cc )
   s.files += %w( src/core/lib/http/parser.h )
   s.files += %w( src/core/lib/iomgr/block_annotate.h )
