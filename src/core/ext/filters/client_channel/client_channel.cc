@@ -1185,8 +1185,6 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // - A channel arg, in which case we check that the specified policy exists
   //   and accepts an empty config. If not, we revert to using pick_first
   //   lb_policy
-  // In the first two cases, these assertions will always be true.  In
-  // the last case, this is probably fine for now.
   GPR_ASSERT(lb_policy_config != nullptr);
   GPR_ASSERT(parse_error == GRPC_ERROR_NONE);
   return lb_policy_config;
