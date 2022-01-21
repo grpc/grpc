@@ -14,7 +14,7 @@ extern upb_def_init envoy_config_core_v3_udp_socket_config_proto_upbdefinit;
 extern upb_def_init envoy_config_listener_v3_quic_config_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-static const char descriptor[769] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
+static const char descriptor[692] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'u', 'd', 'p', '_', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', 
 '.', 'v', '3', '\032', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', 
@@ -38,13 +38,10 @@ static const char descriptor[769] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', 'c
 'A', 'c', 't', 'i', 'v', 'e', 'R', 'a', 'w', 'U', 'd', 'p', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 
 'g', ':', '7', '\232', '\305', '\210', '\036', '2', '\n', '0', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'l', 'i', 
 's', 't', 'e', 'n', 'e', 'r', '.', 'A', 'c', 't', 'i', 'v', 'e', 'R', 'a', 'w', 'U', 'd', 'p', 'L', 'i', 's', 't', 'e', 'n', 
-'e', 'r', 'C', 'o', 'n', 'f', 'i', 'g', 'B', '\226', '\001', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 
-'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', 
-'3', 'B', '\026', 'U', 'd', 'p', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 'g', 'P', 'r', 'o', 't', 'o', 
-'P', '\001', 'Z', 'J', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', 
-'/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 
-'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', '3', ';', 'l', 'i', 's', 't', 'e', 'n', 'e', 
-'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'e', 'r', 'C', 'o', 'n', 'f', 'i', 'g', 'B', 'J', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', 
+'.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', 
+'B', '\026', 'U', 'd', 'p', 'L', 'i', 's', 't', 'e', 'n', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 'g', 'P', 'r', 'o', 't', 'o', 'P', 
+'\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[5] = {
@@ -59,5 +56,5 @@ upb_def_init envoy_config_listener_v3_udp_listener_config_proto_upbdefinit = {
   deps,
   &envoy_config_listener_v3_udp_listener_config_proto_upb_file_layout,
   "envoy/config/listener/v3/udp_listener_config.proto",
-  UPB_STRVIEW_INIT(descriptor, 769)
+  UPB_STRVIEW_INIT(descriptor, 692)
 };

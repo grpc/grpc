@@ -22,8 +22,6 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "xds/annotations/v3/status.upb.h"
-#include "xds/type/matcher/v3/matcher.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -32,7 +30,7 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_config_route_v3_VirtualHost_submsgs[11] = {
+static const upb_msglayout_sub envoy_config_route_v3_VirtualHost_submsgs[10] = {
   {.submsg = &envoy_config_core_v3_HeaderValueOption_msginit},
   {.submsg = &envoy_config_route_v3_CorsPolicy_msginit},
   {.submsg = &envoy_config_route_v3_HedgePolicy_msginit},
@@ -43,35 +41,33 @@ static const upb_msglayout_sub envoy_config_route_v3_VirtualHost_submsgs[11] = {
   {.submsg = &envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msginit},
   {.submsg = &google_protobuf_Any_msginit},
   {.submsg = &google_protobuf_UInt32Value_msginit},
-  {.submsg = &xds_type_matcher_v3_Matcher_msginit},
 };
 
-static const upb_msglayout_field envoy_config_route_v3_VirtualHost__fields[19] = {
+static const upb_msglayout_field envoy_config_route_v3_VirtualHost__fields[18] = {
   {1, UPB_SIZE(12, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(44, 80), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(48, 88), 0, 5, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(40, 72), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(44, 80), 0, 5, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {4, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(52, 96), 0, 6, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(56, 104), 0, 3, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(60, 112), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {5, UPB_SIZE(48, 88), 0, 6, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {6, UPB_SIZE(52, 96), 0, 3, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {7, UPB_SIZE(56, 104), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {8, UPB_SIZE(20, 32), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {10, UPB_SIZE(64, 120), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {11, UPB_SIZE(68, 128), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {13, UPB_SIZE(72, 136), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {10, UPB_SIZE(60, 112), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {11, UPB_SIZE(64, 120), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {13, UPB_SIZE(68, 128), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {14, UPB_SIZE(8, 8), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {15, UPB_SIZE(76, 144), 0, 7, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {15, UPB_SIZE(72, 136), 0, 7, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {16, UPB_SIZE(24, 40), 2, 4, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {17, UPB_SIZE(28, 48), 3, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {18, UPB_SIZE(32, 56), 4, 9, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {19, UPB_SIZE(9, 9), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
   {20, UPB_SIZE(36, 64), 5, 8, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {21, UPB_SIZE(40, 72), 6, 10, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_route_v3_VirtualHost_msginit = {
   &envoy_config_route_v3_VirtualHost_submsgs[0],
   &envoy_config_route_v3_VirtualHost__fields[0],
-  UPB_SIZE(80, 160), 19, _UPB_MSGEXT_NONE, 8, 255,
+  UPB_SIZE(80, 144), 18, _UPB_MSGEXT_NONE, 8, 255,
 };
 
 static const upb_msglayout_sub envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_submsgs[1] = {
@@ -317,44 +313,43 @@ static const upb_msglayout_sub envoy_config_route_v3_RouteAction_submsgs[16] = {
   {.submsg = &google_protobuf_UInt32Value_msginit},
 };
 
-static const upb_msglayout_field envoy_config_route_v3_RouteAction__fields[31] = {
-  {1, UPB_SIZE(100, 184), UPB_SIZE(-109, -201), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(100, 184), UPB_SIZE(-109, -201), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(100, 184), UPB_SIZE(-109, -201), 10, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(28, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(20, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(112, 208), UPB_SIZE(-121, -225), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(112, 208), UPB_SIZE(-121, -225), 13, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {8, UPB_SIZE(32, 48), 2, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {9, UPB_SIZE(36, 56), 3, 5, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_msglayout_field envoy_config_route_v3_RouteAction__fields[30] = {
+  {1, UPB_SIZE(96, 176), UPB_SIZE(-105, -193), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(96, 176), UPB_SIZE(-105, -193), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(96, 176), UPB_SIZE(-105, -193), 10, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {4, UPB_SIZE(24, 32), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {5, UPB_SIZE(16, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {6, UPB_SIZE(108, 200), UPB_SIZE(-117, -217), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {7, UPB_SIZE(108, 200), UPB_SIZE(-117, -217), 13, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {8, UPB_SIZE(28, 40), 2, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {9, UPB_SIZE(32, 48), 3, 5, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {11, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {13, UPB_SIZE(84, 152), 0, 4, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {14, UPB_SIZE(40, 64), 4, 13, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {15, UPB_SIZE(88, 160), 0, 6, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {17, UPB_SIZE(44, 72), 5, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {13, UPB_SIZE(80, 144), 0, 4, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {14, UPB_SIZE(36, 56), 4, 13, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {15, UPB_SIZE(84, 152), 0, 6, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {17, UPB_SIZE(40, 64), 5, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {20, UPB_SIZE(8, 8), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {23, UPB_SIZE(48, 80), 6, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {24, UPB_SIZE(52, 88), 7, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {25, UPB_SIZE(92, 168), 0, 9, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {23, UPB_SIZE(44, 72), 6, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {24, UPB_SIZE(48, 80), 7, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {25, UPB_SIZE(88, 160), 0, 9, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {26, UPB_SIZE(12, 12), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {27, UPB_SIZE(56, 96), 8, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {28, UPB_SIZE(60, 104), 9, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {29, UPB_SIZE(112, 208), UPB_SIZE(-121, -225), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {30, UPB_SIZE(96, 176), 0, 8, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {31, UPB_SIZE(64, 112), 10, 15, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {32, UPB_SIZE(68, 120), 11, 11, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {33, UPB_SIZE(72, 128), 12, 12, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {34, UPB_SIZE(76, 136), 13, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {35, UPB_SIZE(112, 208), UPB_SIZE(-121, -225), 11, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {36, UPB_SIZE(80, 144), 14, 7, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {37, UPB_SIZE(100, 184), UPB_SIZE(-109, -201), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {38, UPB_SIZE(16, 16), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {27, UPB_SIZE(52, 88), 8, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {28, UPB_SIZE(56, 96), 9, 14, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {29, UPB_SIZE(108, 200), UPB_SIZE(-117, -217), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+  {30, UPB_SIZE(92, 168), 0, 8, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {31, UPB_SIZE(60, 104), 10, 15, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {32, UPB_SIZE(64, 112), 11, 11, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {33, UPB_SIZE(68, 120), 12, 12, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {34, UPB_SIZE(72, 128), 13, 3, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {35, UPB_SIZE(108, 200), UPB_SIZE(-117, -217), 11, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {36, UPB_SIZE(76, 136), 14, 7, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {37, UPB_SIZE(96, 176), UPB_SIZE(-105, -193), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_route_v3_RouteAction_msginit = {
   &envoy_config_route_v3_RouteAction_submsgs[0],
   &envoy_config_route_v3_RouteAction__fields[0],
-  UPB_SIZE(128, 240), 31, _UPB_MSGEXT_NONE, 9, 255,
+  UPB_SIZE(120, 224), 30, _UPB_MSGEXT_NONE, 9, 255,
 };
 
 static const upb_msglayout_sub envoy_config_route_v3_RouteAction_RequestMirrorPolicy_submsgs[2] = {

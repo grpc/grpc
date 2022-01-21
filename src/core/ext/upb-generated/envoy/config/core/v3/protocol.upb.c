@@ -27,38 +27,20 @@ const upb_msglayout envoy_config_core_v3_TcpProtocolOptions_msginit = {
   UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
 };
 
-static const upb_msglayout_sub envoy_config_core_v3_QuicKeepAliveSettings_submsgs[1] = {
-  {.submsg = &google_protobuf_Duration_msginit},
-};
-
-static const upb_msglayout_field envoy_config_core_v3_QuicKeepAliveSettings__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_config_core_v3_QuicKeepAliveSettings_msginit = {
-  &envoy_config_core_v3_QuicKeepAliveSettings_submsgs[0],
-  &envoy_config_core_v3_QuicKeepAliveSettings__fields[0],
-  UPB_SIZE(16, 24), 2, _UPB_MSGEXT_NONE, 2, 255,
-};
-
-static const upb_msglayout_sub envoy_config_core_v3_QuicProtocolOptions_submsgs[2] = {
-  {.submsg = &envoy_config_core_v3_QuicKeepAliveSettings_msginit},
+static const upb_msglayout_sub envoy_config_core_v3_QuicProtocolOptions_submsgs[1] = {
   {.submsg = &google_protobuf_UInt32Value_msginit},
 };
 
-static const upb_msglayout_field envoy_config_core_v3_QuicProtocolOptions__fields[5] = {
-  {1, UPB_SIZE(4, 8), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 3, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(16, 32), 4, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(20, 40), 5, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_msglayout_field envoy_config_core_v3_QuicProtocolOptions__fields[3] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(8, 16), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(12, 24), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_core_v3_QuicProtocolOptions_msginit = {
   &envoy_config_core_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_core_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(24, 48), 5, _UPB_MSGEXT_NONE, 5, 255,
+  UPB_SIZE(16, 32), 3, _UPB_MSGEXT_NONE, 3, 255,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_UpstreamHttpProtocolOptions__fields[3] = {
@@ -73,34 +55,21 @@ const upb_msglayout envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit = {
   UPB_SIZE(16, 32), 3, _UPB_MSGEXT_NONE, 3, 255,
 };
 
-static const upb_msglayout_sub envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[3] = {
-  {.submsg = &envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry_msginit},
+static const upb_msglayout_sub envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[2] = {
   {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
   {.submsg = &google_protobuf_UInt32Value_msginit},
 };
 
-static const upb_msglayout_field envoy_config_core_v3_AlternateProtocolsCacheOptions__fields[4] = {
+static const upb_msglayout_field envoy_config_core_v3_AlternateProtocolsCacheOptions__fields[3] = {
   {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(12, 24), 1, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(16, 32), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(20, 40), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {2, UPB_SIZE(12, 24), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(16, 32), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_core_v3_AlternateProtocolsCacheOptions_msginit = {
   &envoy_config_core_v3_AlternateProtocolsCacheOptions_submsgs[0],
   &envoy_config_core_v3_AlternateProtocolsCacheOptions__fields[0],
-  UPB_SIZE(24, 48), 4, _UPB_MSGEXT_NONE, 4, 255,
-};
-
-static const upb_msglayout_field envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(0, 0), 0, 0, 13, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-};
-
-const upb_msglayout envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry_msginit = {
-  NULL,
-  &envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(24, 48), 3, _UPB_MSGEXT_NONE, 3, 255,
 };
 
 static const upb_msglayout_sub envoy_config_core_v3_HttpProtocolOptions_submsgs[2] = {
@@ -271,13 +240,11 @@ const upb_msglayout envoy_config_core_v3_SchemeHeaderTransformation_msginit = {
   UPB_SIZE(16, 32), 1, _UPB_MSGEXT_NONE, 1, 255,
 };
 
-static const upb_msglayout *messages_layout[16] = {
+static const upb_msglayout *messages_layout[14] = {
   &envoy_config_core_v3_TcpProtocolOptions_msginit,
-  &envoy_config_core_v3_QuicKeepAliveSettings_msginit,
   &envoy_config_core_v3_QuicProtocolOptions_msginit,
   &envoy_config_core_v3_UpstreamHttpProtocolOptions_msginit,
   &envoy_config_core_v3_AlternateProtocolsCacheOptions_msginit,
-  &envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry_msginit,
   &envoy_config_core_v3_HttpProtocolOptions_msginit,
   &envoy_config_core_v3_Http1ProtocolOptions_msginit,
   &envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_msginit,
@@ -293,7 +260,7 @@ static const upb_msglayout *messages_layout[16] = {
 const upb_msglayout_file envoy_config_core_v3_protocol_proto_upb_file_layout = {
   messages_layout,
   NULL,
-  16,
+  14,
   0,
 };
 

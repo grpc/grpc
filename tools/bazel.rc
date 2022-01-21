@@ -39,10 +39,6 @@ build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
 
-# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
-# https://github.com/bazelbuild/bazel/issues/9190
-build:macos --dynamic_mode=off
-
 # We have a separate ASAN config for Mac OS to workaround a couple of bugs:
 # 1. https://github.com/bazelbuild/bazel/issues/6932
 #    _FORTIFY_SOURCE=1 is enabled by default on Mac OS, which breaks ASAN.
