@@ -261,7 +261,7 @@ if EXTRA_ENV_LINK_ARGS is None:
             ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
             ' -static -lshlwapi'.format(msvcr=msvcr))
     if "linux" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
+        EXTRA_ENV_LINK_ARGS += ' -static-libgcc'
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)

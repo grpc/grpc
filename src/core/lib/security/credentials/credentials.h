@@ -153,21 +153,11 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* args);
 
-/* --- grpc_credentials_mdelem_array. --- */
+/* --- grpc_core::CredentialsMetadataArray. --- */
 
-struct grpc_credentials_mdelem_array {
-  grpc_mdelem* md = nullptr;
-  size_t size = 0;
-};
-/// Takes a new ref to \a md.
-void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
-                                       grpc_mdelem md);
-
-/// Appends all elements from \a src to \a dst, taking a new ref to each one.
-void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array* dst,
-                                          grpc_credentials_mdelem_array* src);
-
-void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list);
+namespace grpc_core {
+using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
+}
 
 /* --- grpc_call_credentials. --- */
 
@@ -188,17 +178,17 @@ struct grpc_call_credentials
   // be set to indicate the result.  Otherwise, \a on_request_metadata will
   // be invoked asynchronously when complete.  \a md_array will be populated
   // with the resulting metadata once complete.
-  virtual bool get_request_metadata(grpc_polling_entity* pollent,
-                                    grpc_auth_metadata_context context,
-                                    grpc_credentials_mdelem_array* md_array,
-                                    grpc_closure* on_request_metadata,
-                                    grpc_error_handle* error) = 0;
+  virtual bool get_request_metadata(
+      grpc_polling_entity* pollent, grpc_auth_metadata_context context,
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_closure* on_request_metadata, grpc_error_handle* error) = 0;
 
   // Cancels a pending asynchronous operation started by
   // grpc_call_credentials_get_request_metadata() with the corresponding
   // value of \a md_array.
   virtual void cancel_get_request_metadata(
-      grpc_credentials_mdelem_array* md_array, grpc_error_handle error) = 0;
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;

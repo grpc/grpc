@@ -185,10 +185,30 @@ static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
   return 1024 * 1024;
 }
 
+namespace {
+
+class CountDefaultMetadataEncoder {
+ public:
+  size_t count() const { return count_; }
+
+  void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType&) {
+    count_++;
+  }
+
+ private:
+  size_t count_ = 0;
+};
+
+}  // namespace
+
 // Returns true if initial_metadata contains only default headers.
 static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
-  return initial_metadata->default_count() ==
-         initial_metadata->non_deadline_count();
+  CountDefaultMetadataEncoder enc;
+  initial_metadata->Encode(&enc);
+  return enc.count() == initial_metadata->count();
 }
 
 namespace {

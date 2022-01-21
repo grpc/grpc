@@ -40,40 +40,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/parsed_metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-
-typedef struct grpc_linked_mdelem {
-  grpc_linked_mdelem() {}
-
-  grpc_mdelem md;
-  struct grpc_linked_mdelem* next = nullptr;
-  struct grpc_linked_mdelem* prev = nullptr;
-  void* reserved;
-} grpc_linked_mdelem;
-
-typedef struct grpc_mdelem_list {
-  size_t count;
-  size_t default_count;  // Number of default keys.
-  grpc_linked_mdelem* head;
-  grpc_linked_mdelem* tail;
-} grpc_mdelem_list;
-
-struct grpc_filtered_mdelem {
-  grpc_error_handle error;
-  grpc_mdelem md;
-};
-#define GRPC_FILTERED_ERROR(error) \
-  { (error), GRPC_MDNULL }
-#define GRPC_FILTERED_MDELEM(md) \
-  { GRPC_ERROR_NONE, (md) }
-#define GRPC_FILTERED_REMOVE() \
-  { GRPC_ERROR_NONE, GRPC_MDNULL }
-
-grpc_error_handle grpc_attach_md_to_error(grpc_error_handle src,
-                                          grpc_mdelem md);
 
 namespace grpc_core {
 
@@ -85,6 +53,7 @@ namespace grpc_core {
 // to name this in MetadataMap, but ultimately once the transition is done we
 // should not need to.
 struct GrpcTimeoutMetadata {
+  static constexpr bool kRepeatable = false;
   using ValueType = grpc_millis;
   using MementoType = grpc_millis;
   static absl::string_view key() { return "grpc-timeout"; }
@@ -110,6 +79,7 @@ struct GrpcTimeoutMetadata {
 
 // TE metadata trait.
 struct TeMetadata {
+  static constexpr bool kRepeatable = false;
   // HTTP2 says that TE can either be empty or "trailers".
   // Empty means this trait is not included, "trailers" means kTrailers, and
   // kInvalid is used to remember an invalid value.
@@ -131,7 +101,7 @@ struct TeMetadata {
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
     GPR_ASSERT(x == kTrailers);
-    return StaticSlice(GRPC_MDSTR_TRAILERS);
+    return StaticSlice::FromStaticString("trailers");
   }
   static const char* DisplayValue(MementoType te) {
     switch (te) {
@@ -145,6 +115,7 @@ struct TeMetadata {
 
 // content-type metadata trait.
 struct ContentTypeMetadata {
+  static constexpr bool kRepeatable = false;
   // gRPC says that content-type can be application/grpc[;something]
   // Core has only ever verified the prefix.
   // IF we want to start verifying more, we can expand this type.
@@ -200,6 +171,7 @@ struct ContentTypeMetadata {
 
 // scheme metadata trait.
 struct HttpSchemeMetadata {
+  static constexpr bool kRepeatable = false;
   enum ValueType {
     kHttp,
     kHttps,
@@ -247,6 +219,7 @@ struct HttpSchemeMetadata {
 
 // method metadata trait.
 struct HttpMethodMetadata {
+  static constexpr bool kRepeatable = false;
   enum ValueType {
     kPost,
     kPut,
@@ -312,9 +285,9 @@ struct CompressionAlgorithmBasedMetadata {
     return *algorithm;
   }
   static ValueType MementoToValue(MementoType x) { return x; }
-  static StaticSlice Encode(ValueType x) {
+  static Slice Encode(ValueType x) {
     GPR_ASSERT(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
-    return StaticSlice::FromStaticString(CompressionAlgorithmAsString(x));
+    return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
   static const char* DisplayValue(MementoType x) {
     if (const char* p = CompressionAlgorithmAsString(x)) {
@@ -327,16 +300,19 @@ struct CompressionAlgorithmBasedMetadata {
 
 // grpc-encoding metadata trait.
 struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-encoding"; }
 };
 
 // grpc-internal-encoding-request metadata trait.
 struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-internal-encoding-request"; }
 };
 
 // grpc-accept-encoding metadata trait.
 struct GrpcAcceptEncodingMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-accept-encoding"; }
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
@@ -363,46 +339,55 @@ struct SimpleSliceBasedMetadata {
 
 // user-agent metadata trait.
 struct UserAgentMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "user-agent"; }
 };
 
 // grpc-message metadata trait.
 struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-message"; }
 };
 
 // host metadata trait.
 struct HostMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "host"; }
 };
 
 // x-endpoint-load-metrics-bin metadata trait.
 struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
 };
 
 // grpc-server-stats-bin metadata trait.
 struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-server-stats-bin"; }
 };
 
 // grpc-trace-bin metadata trait.
 struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-trace-bin"; }
 };
 
 // grpc-tags-bin metadata trait.
 struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
 
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return ":authority"; }
 };
 
 // :path metadata trait.
 struct HttpPathMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return ":path"; }
 };
 
@@ -434,25 +419,85 @@ struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
 // grpc-status metadata trait.
 struct GrpcStatusMetadata
     : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-status"; }
 };
 
 // grpc-previous-rpc-attempts metadata trait.
 struct GrpcPreviousRpcAttemptsMetadata
     : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
 };
 
 // grpc-retry-pushback-ms metadata trait.
 struct GrpcRetryPushbackMsMetadata
     : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
 };
 
 // :status metadata trait.
 // TODO(ctiller): consider moving to uint16_t
 struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kRepeatable = false;
   static absl::string_view key() { return ":status"; }
+};
+
+// "secret" metadata trait used to pass load balancing token between filters.
+// This should not be exposed outside of gRPC core.
+class GrpcLbClientStats;
+struct GrpcLbClientStatsMetadata {
+  static constexpr bool kRepeatable = false;
+  static absl::string_view key() { return "grpclb_client_stats"; }
+  using ValueType = GrpcLbClientStats*;
+  using MementoType = ValueType;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(ValueType) { abort(); }
+  static const char* DisplayValue(MementoType) { return "<internal-lb-stats>"; }
+  static MementoType ParseMemento(Slice, MetadataParseErrorFn) {
+    return nullptr;
+  }
+};
+
+// lb-token metadata
+struct LbTokenMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  static absl::string_view key() { return "lb-token"; }
+};
+
+// lb-cost-bin metadata
+struct LbCostBinMetadata {
+  static constexpr bool kRepeatable = true;
+  static absl::string_view key() { return "lb-cost-bin"; }
+  struct ValueType {
+    double cost;
+    std::string name;
+  };
+  using MementoType = ValueType;
+  static ValueType MementoToValue(MementoType value) { return value; }
+  static Slice Encode(const ValueType& x) {
+    auto slice =
+        MutableSlice::CreateUninitialized(sizeof(double) + x.name.length());
+    memcpy(slice.data(), &x.cost, sizeof(double));
+    memcpy(slice.data() + sizeof(double), x.name.data(), x.name.length());
+    return Slice(std::move(slice));
+  }
+  static std::string DisplayValue(MementoType x) {
+    return absl::StrCat(x.name, ":", x.cost);
+  }
+  static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    if (value.length() < sizeof(double)) {
+      on_error("too short", value);
+      return {0, ""};
+    }
+    MementoType out;
+    memcpy(&out.cost, value.data(), sizeof(double));
+    out.name = std::string(
+        reinterpret_cast<const char*>(value.data()) + sizeof(double),
+        value.length() - sizeof(double));
+    return out;
+  }
 };
 
 namespace metadata_detail {
@@ -519,10 +564,8 @@ class ParseHelper {
 
   GPR_ATTRIBUTE_NOINLINE ParsedMetadata<Container> NotFound(
       absl::string_view key) {
-    return ParsedMetadata<Container>(
-        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
-                                    key.data(), key.size())),
-                                value_.TakeCSlice()));
+    return ParsedMetadata<Container>(Slice::FromCopiedString(key),
+                                     std::move(value_));
   }
 
  private:
@@ -537,7 +580,7 @@ class ParseHelper {
 };
 
 // This is an "Op" type for NameLookup.
-// Used for MetadataMap::Parse, its Found/NotFound methods turn a slice into a
+// Used for MetadataMap::Append, its Found/NotFound methods turn a slice into a
 // value and add it to a container.
 template <typename Container>
 class AppendHelper {
@@ -555,19 +598,169 @@ class AppendHelper {
   }
 
   GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
-    grpc_mdelem elem =
-        grpc_mdelem_from_slices(grpc_slice_intern(grpc_slice_from_static_buffer(
-                                    key.data(), key.length())),
-                                value_.TakeCSlice());
-    if (!GRPC_LOG_IF_ERROR("AppendMetadata", container_->Append(elem))) {
-      GRPC_MDELEM_UNREF(elem);
-    }
+    container_->AppendUnknown(key, std::move(value_));
   }
 
  private:
   Container* const container_;
   Slice value_;
   MetadataParseErrorFn on_error_;
+};
+
+// This is an "Op" type for NameLookup.
+// Used for MetadataMap::Remove, its Found/NotFound methods remove a key from
+// the container.
+template <typename Container>
+class RemoveHelper {
+ public:
+  explicit RemoveHelper(Container* container) : container_(container) {}
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE void Found(Trait trait) {
+    container_->Remove(trait);
+  }
+
+  GPR_ATTRIBUTE_NOINLINE void NotFound(absl::string_view key) {
+    container_->RemoveUnknown(key);
+  }
+
+ private:
+  Container* const container_;
+};
+
+// This is an "Op" type for NameLookup.
+// Used for MetadataMap::GetStringValue, its Found/NotFound methods generated a
+// string value from the container.
+template <typename Container>
+class GetStringValueHelper {
+ public:
+  explicit GetStringValueHelper(const Container* container,
+                                std::string* backing)
+      : container_(container), backing_(backing) {}
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == false &&
+          std::is_same<Slice, typename Trait::ValueType>::value,
+      absl::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return absl::nullopt;
+    return value->as_string_view();
+  }
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == true &&
+          !std::is_same<Slice, typename Trait::ValueType>::value,
+      absl::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return absl::nullopt;
+    backing_->clear();
+    for (const auto& v : *value) {
+      if (!backing_->empty()) backing_->push_back(',');
+      auto new_segment = Trait::Encode(v);
+      backing_->append(new_segment.begin(), new_segment.end());
+    }
+    return *backing_;
+  }
+
+  template <typename Trait>
+  GPR_ATTRIBUTE_NOINLINE absl::enable_if_t<
+      Trait::kRepeatable == false &&
+          !std::is_same<Slice, typename Trait::ValueType>::value,
+      absl::optional<absl::string_view>>
+  Found(Trait) {
+    const auto* value = container_->get_pointer(Trait());
+    if (value == nullptr) return absl::nullopt;
+    *backing_ = std::string(Trait::Encode(*value).as_string_view());
+    return *backing_;
+  }
+
+  GPR_ATTRIBUTE_NOINLINE absl::optional<absl::string_view> NotFound(
+      absl::string_view key) {
+    return container_->GetStringValueUnknown(key, backing_);
+  }
+
+ private:
+  const Container* const container_;
+  std::string* backing_;
+};
+
+// Generate a strong type for metadata values per trait.
+template <typename Which, typename Ignored = void>
+struct Value;
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(typename Which::ValueType&& value)
+      : value(std::forward<typename Which::ValueType>(value)) {}
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&&) noexcept = default;
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder* encoder) const {
+    encoder->Encode(Which(), value);
+  }
+  using StorageType = typename Which::ValueType;
+  GPR_NO_UNIQUE_ADDRESS StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) {
+    this->value.push_back(value);
+  }
+  explicit Value(typename Which::ValueType&& value) {
+    this->value.emplace_back(std::forward<typename Which::ValueType>(value));
+  }
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&& other) noexcept : value(std::move(other.value)) {}
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder* encoder) const {
+    for (const auto& v : value) {
+      encoder->Encode(Which(), v);
+    }
+  }
+  using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
+  StorageType value;
+};
+
+// Encoder to copy some metadata
+template <typename Output>
+class CopySink {
+ public:
+  explicit CopySink(Output* dst) : dst_(dst) {}
+
+  template <class T, class V>
+  void Encode(T trait, V value) {
+    dst_->Set(trait, value);
+  }
+
+  template <class T>
+  void Encode(T trait, const Slice& value) {
+    dst_->Set(trait, std::move(value.AsOwned()));
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    dst_->AppendUnknown(key.as_string_view(), value.Ref());
+  }
+
+ private:
+  Output* dst_;
 };
 
 }  // namespace metadata_detail
@@ -588,24 +781,36 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
-// Right now the API presented is the minimal one that will allow us to
-// substitute this type for grpc_metadata_batch in a relatively easy fashion. At
-// that point we'll start iterating this API into something that's ergonomic
-// again, whilst minimally holding the performance bar already set (and
-// hopefully improving some things).
-// In the meantime, we're not going to invest much time in ephemeral API
-// documentation, so if you must use one of these APIs and it's not obvious
-// how, reach out to ctiller.
 //
-// MetadataMap takes a list of traits. Each of these trait objects defines
-// one metadata field that is used by core, and so should have more specialized
-// handling than just using the generic APIs.
+// MetadataMap takes a derived class and list of traits. Each of these trait
+// objects defines one metadata field that is used by core, and so should have
+// more specialized handling than just using the generic APIs.
+//
+// MetadataMap is the backing type for some derived type via the curiously
+// recursive template pattern. This is because many types consumed by
+// MetadataMap require the container type to operate on, and many of those
+// types are instantiated one per trait. A naive implementation without the
+// Derived type would, for traits A,B,C, then instantiate for some
+// T<Container, Trait>:
+//  - T<MetadataMap<A,B,C>, A>,
+//  - T<MetadataMap<A,B,C>, B>,
+//  - T<MetadataMap<A,B,C>, C>.
+// Since these types ultimately need to be recorded in the .dynstr segment
+// for dynamic linkers (if gRPC is linked as a static library) this would
+// create O(N^2) bytes of symbols even in stripped libraries. To avoid this
+// we use the derived type (e.g. grpc_metadata_batch right now) to capture
+// the container type, and we would write T<grpc_metadata_batch, A>, etc...
+// Note that now the container type uses a number of bytes that is independent
+// of the number of traits, and so we return to a linear symbol table growth
+// function.
 //
 // Each trait object has the following signature:
 // // Traits for the grpc-xyz metadata field:
 // struct GrpcXyzMetadata {
 //   // The type that's stored on MetadataBatch
 //   using ValueType = ...;
+//   // Can this metadata field be repeated?
+//   static constexpr bool kRepeatable = ...;
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
@@ -644,7 +849,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // for grpc-timeout we make the memento the timeout expressed on the wire, but
 // we make the value the timestamp of when the timeout will expire (i.e. the
 // deadline).
-template <typename... Traits>
+template <class Derived, typename... Traits>
 class MetadataMap {
  public:
   explicit MetadataMap(Arena* arena);
@@ -653,7 +858,10 @@ class MetadataMap {
   MetadataMap(const MetadataMap&) = delete;
   MetadataMap& operator=(const MetadataMap&) = delete;
   MetadataMap(MetadataMap&&) noexcept;
-  MetadataMap& operator=(MetadataMap&&) noexcept;
+  // We never create MetadataMap directly, instead we create Derived, but we
+  // want to be able to move it without redeclaring this.
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator)
+  Derived& operator=(MetadataMap&&) noexcept;
 
   // Encode this metadata map into some encoder.
   // For each field that is set in the MetadataMap, call
@@ -671,16 +879,22 @@ class MetadataMap {
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
     table_.ForEach(EncodeWrapper<Encoder>{encoder});
-    for (auto* l = list_.head; l; l = l->next) {
-      encoder->Encode(l->md);
+    for (const auto& unk : unknown_) {
+      encoder->Encode(unk.first, unk.second);
     }
   }
 
+  // Similar to Encode, but targeted at logging: for each metadatum,
+  // call f(key, value) as absl::string_views.
+  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+      const;
+
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
   template <typename Which>
-  const typename Which::ValueType* get_pointer(Which) const {
+  const typename metadata_detail::Value<Which>::StorageType* get_pointer(
+      Which) const {
     if (auto* p = table_.template get<Value<Which>>()) return &p->value;
     return nullptr;
   }
@@ -689,9 +903,18 @@ class MetadataMap {
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.
   template <typename Which>
-  typename Which::ValueType* get_pointer(Which) {
+  typename metadata_detail::Value<Which>::StorageType* get_pointer(Which) {
     if (auto* p = table_.template get<Value<Which>>()) return &p->value;
     return nullptr;
+  }
+
+  // Get the pointer to the value of some known metadata.
+  // Adds the default value for the metadata is not present.
+  // Causes a compilation error if Which is not an element of Traits.
+  template <typename Which>
+  typename metadata_detail::Value<Which>::StorageType* GetOrCreatePointer(
+      Which) {
+    return &table_.template get_or_create<Value<Which>>()->value;
   }
 
   // Get the value of some known metadata.
@@ -706,9 +929,14 @@ class MetadataMap {
   // Set the value of some known metadata.
   // Returns a pointer to the new value.
   template <typename Which, typename... Args>
-  typename Which::ValueType* Set(Which, Args&&... args) {
-    return &table_.template set<Value<Which>>(std::forward<Args>(args)...)
-                ->value;
+  absl::enable_if_t<Which::kRepeatable == false, void> Set(Which,
+                                                           Args&&... args) {
+    table_.template set<Value<Which>>(std::forward<Args>(args)...);
+  }
+  template <typename Which, typename... Args>
+  absl::enable_if_t<Which::kRepeatable == true, void> Set(Which,
+                                                          Args&&... args) {
+    GetOrCreatePointer(Which())->emplace_back(std::forward<Args>(args)...);
   }
 
   // Remove a specific piece of known metadata.
@@ -717,15 +945,47 @@ class MetadataMap {
     table_.template clear<Value<Which>>();
   }
 
+  // Remove some metadata by name
+  void Remove(absl::string_view key) {
+    metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
+    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+  }
+
+  void Remove(const char* key) { Remove(absl::string_view(key)); }
+
+  // Retrieve some metadata by name
+  absl::optional<absl::string_view> GetStringValue(absl::string_view name,
+                                                   std::string* buffer) const {
+    metadata_detail::GetStringValueHelper<Derived> helper(
+        static_cast<const Derived*>(this), buffer);
+    return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
+  }
+
   // Extract a piece of known metadata.
   // Returns nullopt if the metadata was not present, or the value if it was.
   // The same as:
   //  auto value = m.get(T());
   //  m.Remove(T());
   template <typename Which>
-  absl::optional<typename Which::ValueType> Take(Which which) {
+  absl::enable_if_t<Which::kRepeatable == false,
+                    absl::optional<typename Which::ValueType>>
+  Take(Which which) {
     if (auto* p = get_pointer(which)) {
       absl::optional<typename Which::ValueType> value(std::move(*p));
+      Remove(which);
+      return value;
+    }
+    return {};
+  }
+
+  // Extract repeated known metadata.
+  // Returns an empty vector if the metadata was not present.
+  template <typename Which>
+  absl::enable_if_t<Which::kRepeatable == true,
+                    typename metadata_detail::Value<Which>::StorageType>
+  Take(Which which) {
+    if (auto* p = get_pointer(which)) {
+      typename Value<Which>::StorageType value = std::move(*p);
       Remove(which);
       return value;
     }
@@ -736,140 +996,43 @@ class MetadataMap {
   // that result.
   // TODO(ctiller): key should probably be an absl::string_view.
   // Once we don't care about interning anymore, make that change!
-  static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
-                                           uint32_t transport_size,
-                                           MetadataParseErrorFn on_error) {
-    metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
-                                                     on_error, transport_size);
+  static ParsedMetadata<Derived> Parse(absl::string_view key, Slice value,
+                                       uint32_t transport_size,
+                                       MetadataParseErrorFn on_error) {
+    metadata_detail::ParseHelper<Derived> helper(value.TakeOwned(), on_error,
+                                                 transport_size);
     return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
-  GRPC_MUST_USE_RESULT grpc_error_handle
-  Set(const ParsedMetadata<MetadataMap>& m) {
-    return m.SetOnContainer(this);
+  void Set(const ParsedMetadata<Derived>& m) {
+    m.SetOnContainer(static_cast<Derived*>(this));
   }
 
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value,
               MetadataParseErrorFn on_error) {
-    metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned(),
-                                                      on_error);
+    metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
+                                                  value.TakeOwned(), on_error);
     metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
   }
 
-  //
-  // All APIs below this point are subject to change.
-  //
-
-  template <typename F>
-  void ForEach(F f) const {
-    for (auto* l = list_.head; l; l = l->next) {
-      f(l->md);
-    }
-  }
-
-  template <typename F>
-  grpc_error_handle Filter(F f, const char* composite_error_string) {
-    grpc_linked_mdelem* l = list_.head;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    auto add_error = [&](grpc_error_handle new_error) {
-      if (new_error == GRPC_ERROR_NONE) return;
-      if (error == GRPC_ERROR_NONE) {
-        error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(composite_error_string);
-      }
-      error = grpc_error_add_child(error, new_error);
-    };
-    while (l) {
-      grpc_linked_mdelem* next = l->next;
-      grpc_filtered_mdelem new_mdelem = f(l->md);
-      add_error(new_mdelem.error);
-      if (GRPC_MDISNULL(new_mdelem.md)) {
-        Remove(l);
-      } else if (new_mdelem.md.payload != l->md.payload) {
-        add_error(Substitute(l, new_mdelem.md));
-      }
-      l = next;
-    }
-    return error;
-  }
-
-  GRPC_MUST_USE_RESULT grpc_error_handle Append(grpc_mdelem md) {
-    return AddTail(elem_storage_.EmplaceBack(), md);
-  }
-
-  GRPC_MUST_USE_RESULT grpc_error_handle ReplaceOrAppend(grpc_slice key,
-                                                         grpc_slice value) {
-    if (ReplaceIfExists(key, value)) return GRPC_ERROR_NONE;
-    return Append(grpc_mdelem_from_slices(key, value));
-  }
-
-  // Set key to value if it exists and return true, otherwise return false.
-  // If this function returns true, it takes ownership of key and value.
-  // If this function returns false, it does not take ownership of key nor
-  // value.
-  bool ReplaceIfExists(grpc_slice key, grpc_slice value);
-
   void Clear();
-  bool empty() const { return count() == 0; }
-
-  size_t count() const { return list_.count + table_.count(); }
-  size_t non_deadline_count() const { return list_.count; }
-  size_t default_count() const { return list_.default_count; }
-
   size_t TransportSize() const;
-
-  void Remove(grpc_linked_mdelem* storage);
-
-  absl::optional<grpc_slice> Remove(grpc_slice key);
-
-  grpc_error_handle Substitute(grpc_linked_mdelem* storage,
-                               grpc_mdelem new_mdelem);
-
-  absl::optional<absl::string_view> GetValue(
-      absl::string_view target_key, std::string* concatenated_value) const;
-
-  grpc_error_handle LinkHead(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
-  grpc_error_handle LinkTail(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
-
-  grpc_error_handle AddHead(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
-  grpc_error_handle AddHead(grpc_linked_mdelem* storage,
-                            grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
-  grpc_error_handle AddTail(grpc_linked_mdelem* storage) GRPC_MUST_USE_RESULT;
-  grpc_error_handle AddTail(grpc_linked_mdelem* storage,
-                            grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
-
-  void CopyFrom(MetadataMap* src, grpc_linked_mdelem* storage);
-
-#ifndef NDEBUG
-  void AssertOk();
-#else
-  void AssertOk() {}
-#endif
-
-  // TODO(ctiller): the following explicit deadline handling methods are
-  // deprecated in terms of the traits based APIs.
-  grpc_millis deadline() const {
-    return get(GrpcTimeoutMetadata()).value_or(GRPC_MILLIS_INF_FUTURE);
-  };
+  Derived Copy() const;
+  bool empty() const { return table_.empty() && unknown_.empty(); }
+  size_t count() const { return table_.count() + unknown_.size(); }
 
  private:
-  // Generate a strong type for metadata values per trait.
+  friend class metadata_detail::AppendHelper<Derived>;
+  friend class metadata_detail::GetStringValueHelper<Derived>;
+  friend class metadata_detail::RemoveHelper<Derived>;
+  friend class metadata_detail::CopySink<Derived>;
+  friend class ParsedMetadata<Derived>;
+
   template <typename Which>
-  struct Value {
-    Value() = default;
-    explicit Value(const typename Which::ValueType& value) : value(value) {}
-    explicit Value(typename Which::ValueType&& value)
-        : value(std::forward<typename Which::ValueType>(value)) {}
-    Value(const Value&) = delete;
-    Value& operator=(const Value&) = delete;
-    Value(Value&&) noexcept = default;
-    Value& operator=(Value&& other) noexcept {
-      value = std::move(other.value);
-      return *this;
-    }
-    GPR_NO_UNIQUE_ADDRESS typename Which::ValueType value;
-  };
+  using Value = metadata_detail::Value<Which>;
+
   // Callable for the ForEach in Encode() -- for each value, call the
   // appropriate encoder method.
   template <typename Encoder>
@@ -877,267 +1040,155 @@ class MetadataMap {
     Encoder* encoder;
     template <typename Which>
     void operator()(const Value<Which>& which) {
-      encoder->Encode(Which(), which.value);
+      which.EncodeTo(encoder);
     }
   };
 
   // Encoder to compute TransportSize
   class TransportSizeEncoder {
    public:
-    void Encode(grpc_mdelem elem) { size_ += GRPC_MDELEM_LENGTH(elem); }
+    void Encode(const Slice& key, const Slice& value) {
+      size_ += key.length() + value.length() + 32;
+    }
 
     template <typename Which>
     void Encode(Which, const typename Which::ValueType& value) {
-      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+      Add(Which(), value);
+    }
+
+    void Encode(ContentTypeMetadata,
+                const typename ContentTypeMetadata::ValueType& value) {
+      if (value == ContentTypeMetadata::kInvalid) return;
+      Add(ContentTypeMetadata(), value);
     }
 
     size_t size() const { return size_; }
 
    private:
+    template <typename Which>
+    void Add(Which, const typename Which::ValueType& value) {
+      size_ += Which::key().length() + Which::Encode(value).length() + 32;
+    }
+
     uint32_t size_ = 0;
   };
 
-  static void assert_valid_list(grpc_mdelem_list* list) {
-#ifndef NDEBUG
-    grpc_linked_mdelem* l;
+  // Encoder to log some metadata
+  class LogEncoder {
+   public:
+    explicit LogEncoder(
+        absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+        : log_fn_(log_fn) {}
 
-    GPR_ASSERT((list->head == nullptr) == (list->tail == nullptr));
-    if (!list->head) return;
-    GPR_ASSERT(list->head->prev == nullptr);
-    GPR_ASSERT(list->tail->next == nullptr);
-    GPR_ASSERT((list->head == list->tail) == (list->head->next == nullptr));
-
-    size_t verified_count = 0;
-    for (l = list->head; l; l = l->next) {
-      GPR_ASSERT(!GRPC_MDISNULL(l->md));
-      GPR_ASSERT((l->prev == nullptr) == (l == list->head));
-      GPR_ASSERT((l->next == nullptr) == (l == list->tail));
-      if (l->next) GPR_ASSERT(l->next->prev == l);
-      if (l->prev) GPR_ASSERT(l->prev->next == l);
-      verified_count++;
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
     }
-    GPR_ASSERT(list->count == verified_count);
-#else
-    // Avoid unused-parameter warning for debug-only parameter
-    (void)list;
-#endif /* NDEBUG */
+
+    void Encode(const Slice& key, const Slice& value) {
+      log_fn_(key.as_string_view(), value.as_string_view());
+    }
+
+   private:
+    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
+  };
+
+  void AppendUnknown(absl::string_view key, Slice value) {
+    unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
   }
 
-  static grpc_error_handle GPR_ATTRIBUTE_NOINLINE
-  error_with_md(grpc_mdelem md) {
-    return grpc_attach_md_to_error(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unallowed duplicate metadata"),
-        md);
+  void RemoveUnknown(absl::string_view key) {
+    unknown_.SetEnd(std::remove_if(unknown_.begin(), unknown_.end(),
+                                   [key](const std::pair<Slice, Slice>& p) {
+                                     return p.first.as_string_view() == key;
+                                   }));
   }
 
-  static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
-    assert_valid_list(list);
-    GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
-    storage->prev = nullptr;
-    storage->next = list->head;
-    storage->reserved = nullptr;
-    if (list->head != nullptr) {
-      list->head->prev = storage;
-    } else {
-      list->tail = storage;
+  absl::optional<absl::string_view> GetStringValueUnknown(
+      absl::string_view key, std::string* backing) const {
+    absl::optional<absl::string_view> out;
+    for (const auto& p : unknown_) {
+      if (p.first.as_string_view() == key) {
+        if (!out.has_value()) {
+          out = p.second.as_string_view();
+        } else {
+          out = *backing = absl::StrCat(*out, ",", p.second.as_string_view());
+        }
+      }
     }
-    list->head = storage;
-    list->count++;
-    assert_valid_list(list);
-  }
-
-  static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
-    assert_valid_list(list);
-    GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
-    storage->prev = list->tail;
-    storage->next = nullptr;
-    storage->reserved = nullptr;
-    if (list->tail != nullptr) {
-      list->tail->next = storage;
-    } else {
-      list->head = storage;
-    }
-    list->tail = storage;
-    list->count++;
-    assert_valid_list(list);
-  }
-
-  static void unlink_storage(grpc_mdelem_list* list,
-                             grpc_linked_mdelem* storage) {
-    assert_valid_list(list);
-    if (storage->prev != nullptr) {
-      storage->prev->next = storage->next;
-    } else {
-      list->head = storage->next;
-    }
-    if (storage->next != nullptr) {
-      storage->next->prev = storage->prev;
-    } else {
-      list->tail = storage->prev;
-    }
-    list->count--;
-    assert_valid_list(list);
+    return out;
   }
 
   // Table of known metadata types.
   Table<Value<Traits>...> table_;
-  /** Metadata elements in this batch */
-  grpc_mdelem_list list_;
   // Backing store for added metadata.
-  ChunkedVector<grpc_linked_mdelem, 10> elem_storage_;
+  ChunkedVector<std::pair<Slice, Slice>, 10> unknown_;
 };
 
-#ifndef NDEBUG
-template <typename... Traits>
-void MetadataMap<Traits...>::AssertOk() {
-  assert_valid_list(&list_);
-}
-#endif /* NDEBUG */
-
-template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(Arena* arena) : elem_storage_(arena) {
-  memset(&list_, 0, sizeof(list_));
+// Ok/not-ok check for metadata maps that contain GrpcStatusMetadata, so that
+// they can be used as result types for TrySeq.
+template <typename Derived, typename... Args>
+inline bool IsStatusOk(const MetadataMap<Derived, Args...>& m) {
+  return m.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+         GRPC_STATUS_OK;
 }
 
-template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept
-    : table_(std::move(other.table_)) {
-  list_ = other.list_;
-  memset(&other.list_, 0, sizeof(list_));
-}
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
 
-template <typename... Traits>
-MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::MetadataMap(MetadataMap&& other) noexcept
+    : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {}
+
+// We never create MetadataMap directly, instead we create Derived, but we want
+// to be able to move it without redeclaring this.
+// NOLINTNEXTLINE(misc-unconventional-assign-operator)
+template <typename Derived, typename... Traits>
+Derived& MetadataMap<Derived, Traits...>::operator=(
     MetadataMap&& other) noexcept {
-  Clear();
   table_ = std::move(other.table_);
-  list_ = other.list_;
-  memset(&other.list_, 0, sizeof(list_));
-  return *this;
+  unknown_ = std::move(other.unknown_);
+  return static_cast<Derived&>(*this);
 }
 
-template <typename... Traits>
-MetadataMap<Traits...>::~MetadataMap() {
-  for (auto* l = list_.head; l; l = l->next) {
-    GRPC_MDELEM_UNREF(l->md);
-  }
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::~MetadataMap() = default;
+
+template <typename Derived, typename... Traits>
+void MetadataMap<Derived, Traits...>::Clear() {
+  table_.ClearAll();
+  unknown_.Clear();
 }
 
-template <typename... Traits>
-absl::optional<grpc_slice> MetadataMap<Traits...>::Remove(grpc_slice key) {
-  for (auto* l = list_.head; l; l = l->next) {
-    if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
-      auto out = grpc_slice_ref_internal(GRPC_MDVALUE(l->md));
-      Remove(l);
-      return out;
-    }
-  }
-  return {};
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::AddHead(grpc_linked_mdelem* storage,
-                                                  grpc_mdelem elem_to_add) {
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
-  storage->md = elem_to_add;
-  return LinkHead(storage);
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::LinkHead(
-    grpc_linked_mdelem* storage) {
-  link_head(&list_, storage);
-  return GRPC_ERROR_NONE;
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::AddTail(grpc_linked_mdelem* storage,
-                                                  grpc_mdelem elem_to_add) {
-  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
-  storage->md = elem_to_add;
-  return LinkTail(storage);
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::LinkTail(
-    grpc_linked_mdelem* storage) {
-  link_tail(&list_, storage);
-  return GRPC_ERROR_NONE;
-}
-
-template <typename... Traits>
-void MetadataMap<Traits...>::Remove(grpc_linked_mdelem* storage) {
-  unlink_storage(&list_, storage);
-  GRPC_MDELEM_UNREF(storage->md);
-}
-
-template <typename... Traits>
-absl::optional<absl::string_view> MetadataMap<Traits...>::GetValue(
-    absl::string_view target_key, std::string* concatenated_value) const {
-  // Find all values for the specified key.
-  absl::InlinedVector<absl::string_view, 1> values;
-  for (grpc_linked_mdelem* md = list_.head; md != nullptr; md = md->next) {
-    absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
-    absl::string_view value = StringViewFromSlice(GRPC_MDVALUE(md->md));
-    if (target_key == key) values.push_back(value);
-  }
-  // If none found, no match.
-  if (values.empty()) return absl::nullopt;
-  // If exactly one found, return it as-is.
-  if (values.size() == 1) return values.front();
-  // If more than one found, concatenate the values, using
-  // *concatenated_values as a temporary holding place for the
-  // concatenated string.
-  *concatenated_value = absl::StrJoin(values, ",");
-  return *concatenated_value;
-}
-
-template <typename... Traits>
-grpc_error_handle MetadataMap<Traits...>::Substitute(
-    grpc_linked_mdelem* storage, grpc_mdelem new_mdelem) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_mdelem old_mdelem = storage->md;
-  if (!grpc_slice_eq(GRPC_MDKEY(new_mdelem), GRPC_MDKEY(old_mdelem))) {
-    storage->md = new_mdelem;
-  } else {
-    storage->md = new_mdelem;
-  }
-  GRPC_MDELEM_UNREF(old_mdelem);
-  return error;
-}
-
-template <typename... Traits>
-void MetadataMap<Traits...>::Clear() {
-  // TODO(ctiller): implement this without deconstructing/reconstructing once
-  // linked_mdelem is no longer a thing.
-  auto* arena = elem_storage_.arena();
-  this->~MetadataMap();
-  new (this) MetadataMap(arena);
-}
-
-template <typename... Traits>
-size_t MetadataMap<Traits...>::TransportSize() const {
+template <typename Derived, typename... Traits>
+size_t MetadataMap<Derived, Traits...>::TransportSize() const {
   TransportSizeEncoder enc;
   Encode(&enc);
   return enc.size();
 }
 
-template <typename... Traits>
-bool MetadataMap<Traits...>::ReplaceIfExists(grpc_slice key, grpc_slice value) {
-  for (grpc_linked_mdelem* l = list_.head; l != nullptr; l = l->next) {
-    if (grpc_slice_eq(GRPC_MDKEY(l->md), key)) {
-      auto new_mdelem = grpc_mdelem_from_slices(key, value);
-      GRPC_MDELEM_UNREF(l->md);
-      l->md = new_mdelem;
-      return true;
-    }
-  }
-  return false;
+template <typename Derived, typename... Traits>
+Derived MetadataMap<Derived, Traits...>::Copy() const {
+  Derived out(unknown_.arena());
+  metadata_detail::CopySink<Derived> sink(&out);
+  Encode(&sink);
+  return out;
+}
+
+template <typename Derived, typename... Traits>
+void MetadataMap<Derived, Traits...>::Log(
+    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+    const {
+  LogEncoder enc(log_fn);
+  Encode(&enc);
 }
 
 }  // namespace grpc_core
 
-using grpc_metadata_batch = grpc_core::MetadataMap<
+struct grpc_metadata_batch;
+
+using grpc_metadata_batch_base = grpc_core::MetadataMap<
+    grpc_metadata_batch,
     // Colon prefixed headers first
     grpc_core::HttpPathMetadata, grpc_core::HttpAuthorityMetadata,
     grpc_core::HttpMethodMetadata, grpc_core::HttpStatusMetadata,
@@ -1151,113 +1202,11 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
-    grpc_core::GrpcTagsBinMetadata>;
+    grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
+    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata>;
 
-inline void grpc_metadata_batch_clear(grpc_metadata_batch* batch) {
-  batch->Clear();
-}
-inline bool grpc_metadata_batch_is_empty(grpc_metadata_batch* batch) {
-  return batch->empty();
-}
-
-/* Returns the transport size of the batch. */
-inline size_t grpc_metadata_batch_size(grpc_metadata_batch* batch) {
-  return batch->TransportSize();
-}
-
-/** Remove \a storage from the batch, unreffing the mdelem contained */
-inline void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
-                                       grpc_linked_mdelem* storage) {
-  batch->Remove(storage);
-}
-
-/** Substitute a new mdelem for an old value */
-inline grpc_error_handle grpc_metadata_batch_substitute(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_mdelem new_mdelem) {
-  return batch->Substitute(storage, new_mdelem);
-}
-
-void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
-                                   const grpc_slice& value);
-
-/** Returns metadata value(s) for the specified key.
-    If the key is not present in the batch, returns absl::nullopt.
-    If the key is present exactly once in the batch, returns a string_view of
-    that value.
-    If the key is present more than once in the batch, constructs a
-    comma-concatenated string of all values in concatenated_value and returns a
-    string_view of that string. */
-inline absl::optional<absl::string_view> grpc_metadata_batch_get_value(
-    grpc_metadata_batch* batch, absl::string_view target_key,
-    std::string* concatenated_value) {
-  return batch->GetValue(target_key, concatenated_value);
-}
-
-/** Add \a storage to the beginning of \a batch. storage->md is
-    assumed to be valid.
-    \a storage is owned by the caller and must survive for the
-    lifetime of batch. This usually means it should be around
-    for the lifetime of the call. */
-inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage) {
-  return batch->LinkHead(storage);
-}
-
-/** Add \a storage to the end of \a batch. storage->md is
-    assumed to be valid.
-    \a storage is owned by the caller and must survive for the
-    lifetime of batch. This usually means it should be around
-    for the lifetime of the call. */
-inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_link_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage) {
-  return batch->LinkTail(storage);
-}
-
-/** Add \a elem_to_add as the first element in \a batch, using
-    \a storage as backing storage for the linked list element.
-    \a storage is owned by the caller and must survive for the
-    lifetime of batch. This usually means it should be around
-    for the lifetime of the call.
-    Takes ownership of \a elem_to_add */
-inline grpc_error_handle grpc_metadata_batch_add_head(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_mdelem elem_to_add) {
-  return batch->AddHead(storage, elem_to_add);
-}
-
-/** Add \a elem_to_add as the last element in \a batch, using
-    \a storage as backing storage for the linked list element.
-    \a storage is owned by the caller and must survive for the
-    lifetime of batch. This usually means it should be around
-    for the lifetime of the call.
-    Takes ownership of \a elem_to_add */
-inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_add_tail(
-    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
-    grpc_mdelem elem_to_add) {
-  return batch->AddTail(storage, elem_to_add);
-}
-
-typedef grpc_filtered_mdelem (*grpc_metadata_batch_filter_func)(
-    void* user_data, grpc_mdelem elem);
-inline GRPC_MUST_USE_RESULT grpc_error_handle grpc_metadata_batch_filter(
-    grpc_metadata_batch* batch, grpc_metadata_batch_filter_func func,
-    void* user_data, const char* composite_error_string) {
-  return batch->Filter([=](grpc_mdelem elem) { return func(user_data, elem); },
-                       composite_error_string);
-}
-
-inline void grpc_metadata_batch_assert_ok(grpc_metadata_batch* batch) {
-  batch->AssertOk();
-}
-
-/// Copies \a src to \a dst.
-///
-/// For each mdelem in \a src, if the mdelem is of storage types
-/// GRPC_MDELEM_STORAGE_INTERNED or GRPC_MDELEM_STORAGE_ALLOCATED,
-/// refs the original mdelem for the copy.  Otherwise, makes a new
-/// mdelem that will hold its own refs to the key and value slices.
-void grpc_metadata_batch_copy(const grpc_metadata_batch* src,
-                              grpc_metadata_batch* dst);
+struct grpc_metadata_batch : public grpc_metadata_batch_base {
+  using grpc_metadata_batch_base::grpc_metadata_batch_base;
+};
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

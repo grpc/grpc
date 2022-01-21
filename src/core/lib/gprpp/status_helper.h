@@ -37,7 +37,6 @@ struct upb_arena;
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
   kErrorNo,
@@ -72,10 +71,11 @@ enum class StatusIntProperty {
   ChannelConnectivityState,
   /// LB policy drop
   kLbPolicyDrop,
+  /// stream network state
+  kStreamNetworkState,
 };
 
 /// This enum should have the same value of grpc_error_strs
-// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
   kDescription,
@@ -110,7 +110,7 @@ enum class StatusTimeProperty {
 /// Creates a status with given additional information
 absl::Status StatusCreate(
     absl::StatusCode code, absl::string_view msg, const DebugLocation& location,
-    std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
+    std::vector<absl::Status> children) GRPC_MUST_USE_RESULT;
 
 /// Sets the int property to the status
 void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);

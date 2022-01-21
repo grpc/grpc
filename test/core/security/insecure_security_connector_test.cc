@@ -47,8 +47,7 @@ TEST(InsecureSecurityConnector, MakeAuthContextTest) {
       auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   prop = grpc_auth_property_iterator_next(&it);
   ASSERT_NE(prop, nullptr);
-  EXPECT_EQ(grpc_tsi_security_level_string_to_enum(prop->value),
-            GRPC_SECURITY_NONE);
+  EXPECT_STREQ(prop->value, tsi_security_level_to_string(TSI_SECURITY_NONE));
 }
 
 }  // namespace

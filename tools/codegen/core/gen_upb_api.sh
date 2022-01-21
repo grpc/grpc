@@ -86,6 +86,7 @@ proto_files=( \
   "envoy/extensions/clusters/aggregate/v3/cluster.proto" \
   "envoy/extensions/filters/common/fault/v3/fault.proto" \
   "envoy/extensions/filters/http/fault/v3/fault.proto" \
+  "envoy/extensions/filters/http/rbac/v3/rbac.proto" \
   "envoy/extensions/filters/http/router/v3/router.proto" \
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
   "envoy/extensions/transport_sockets/tls/v3/cert.proto" \
@@ -116,13 +117,6 @@ proto_files=( \
   "envoy/type/v3/percent.proto" \
   "envoy/type/v3/range.proto" \
   "envoy/type/v3/semantic_version.proto" \
-  "third_party/istio/security/proto/providers/google/meshca.proto" \
-  "udpa/annotations/migrate.proto" \
-  "udpa/annotations/security.proto" \
-  "udpa/annotations/sensitive.proto" \
-  "udpa/annotations/status.proto" \
-  "udpa/annotations/versioning.proto" \
-  "validate/validate.proto" \
   "xds/annotations/v3/status.proto" \
   "xds/core/v3/authority.proto" \
   "xds/core/v3/collection_entry.proto" \

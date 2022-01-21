@@ -96,6 +96,9 @@ typedef enum {
   /// LB policy drop
   GRPC_ERROR_INT_LB_POLICY_DROP =
       static_cast<int>(grpc_core::StatusIntProperty::kLbPolicyDrop),
+  /// stream network state
+  GRPC_ERROR_INT_STREAM_NETWORK_STATE =
+      static_cast<int>(grpc_core::StatusIntProperty::kStreamNetworkState),
 
   /// Must always be last
   GRPC_ERROR_INT_MAX,

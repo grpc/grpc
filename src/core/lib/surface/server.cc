@@ -53,8 +53,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
 
@@ -984,19 +982,7 @@ class Server::ChannelData::ConnectivityWatcher
 //
 
 Server::ChannelData::~ChannelData() {
-  if (registered_methods_ != nullptr) {
-    for (const ChannelRegisteredMethod& crm : *registered_methods_) {
-      grpc_slice_unref_internal(crm.method);
-      GPR_DEBUG_ASSERT(crm.method.refcount == &kNoopRefcount ||
-                       crm.method.refcount == nullptr);
-      if (crm.has_host) {
-        grpc_slice_unref_internal(crm.host);
-        GPR_DEBUG_ASSERT(crm.host.refcount == &kNoopRefcount ||
-                         crm.host.refcount == nullptr);
-      }
-    }
-    registered_methods_.reset();
-  }
+  registered_methods_.reset();
   if (server_ != nullptr) {
     if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
       server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
@@ -1029,14 +1015,13 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     registered_methods_ =
         absl::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
-      ExternallyManagedSlice host;
-      ExternallyManagedSlice method(rm->method.c_str());
+      Slice host;
+      Slice method = Slice::FromExternalString(rm->method);
       const bool has_host = !rm->host.empty();
       if (has_host) {
-        host = ExternallyManagedSlice(rm->host.c_str());
+        host = Slice::FromExternalString(rm->host.c_str());
       }
-      uint32_t hash =
-          GRPC_MDSTR_KV_HASH(has_host ? host.Hash() : 0, method.Hash());
+      uint32_t hash = MixHash32(has_host ? host.Hash() : 0, method.Hash());
       uint32_t probes = 0;
       for (probes = 0; (*registered_methods_)[(hash + probes) % slots]
                            .server_registered_method != nullptr;
@@ -1049,9 +1034,9 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
       crm->flags = rm->flags;
       crm->has_host = has_host;
       if (has_host) {
-        crm->host = host;
+        crm->host = std::move(host);
       }
-      crm->method = method;
+      crm->method = std::move(method);
     }
     GPR_ASSERT(slots <= UINT32_MAX);
     registered_method_max_probes_ = max_probes;
@@ -1080,8 +1065,8 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
   if (registered_methods_ == nullptr) return nullptr;
   /* TODO(ctiller): unify these two searches */
   /* check for an exact match with host */
-  uint32_t hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash_internal(host),
-                                     grpc_slice_hash_internal(path));
+  uint32_t hash =
+      MixHash32(grpc_slice_hash_internal(host), grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];
@@ -1096,7 +1081,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     return rm;
   }
   /* check for a wildcard method definition (no host set) */
-  hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash_internal(path));
+  hash = MixHash32(0, grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];

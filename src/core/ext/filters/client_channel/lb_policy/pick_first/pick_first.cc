@@ -22,11 +22,11 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -377,9 +377,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    for a subchannel in p->latest_pending_subchannel_list_.  The
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
-  subchannel_list()->set_in_transient_failure(false);
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
+      subchannel_list()->set_in_transient_failure(false);
       ProcessUnselectedReadyLocked();
       break;
     }
@@ -428,8 +428,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     }
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE: {
-      // Only update connectivity state in case 1.
-      if (subchannel_list() == p->subchannel_list_.get()) {
+      // Only update connectivity state in case 1, and only if we're not
+      // already in TRANSIENT_FAILURE.
+      if (subchannel_list() == p->subchannel_list_.get() &&
+          !subchannel_list()->in_transient_failure()) {
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
             absl::make_unique<QueuePicker>(
