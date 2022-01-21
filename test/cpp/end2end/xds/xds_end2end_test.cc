@@ -6348,6 +6348,52 @@ TEST_P(CdsTest, AggregateClusterType) {
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
+TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
+             "true");
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()}},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  new_cluster1.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go backend 0, meaning we failed over to the second
+  // priority.
+  WaitForBackend(0);
+  gpr_unsetenv(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+}
+
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
              "true");
