@@ -41,7 +41,7 @@ class ClientAuthorityFilter {
 
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
-      InitialMetadata initial_metadata,
+      ClientInitialMetadata initial_metadata,
       NextPromiseFactory next_promise_factory);
 
  private:

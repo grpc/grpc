@@ -59,7 +59,8 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
 }
 
 ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
-    InitialMetadata initial_metadata, NextPromiseFactory next_promise_factory) {
+    ClientInitialMetadata initial_metadata,
+    NextPromiseFactory next_promise_factory) {
   // If no authority is set, set the default authority.
   if (initial_metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
     initial_metadata->Set(HttpAuthorityMetadata(), default_authority_.Ref());
