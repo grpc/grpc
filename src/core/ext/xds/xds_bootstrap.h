@@ -58,6 +58,13 @@ class XdsBootstrap {
 
     static XdsServer Parse(const Json& json, grpc_error_handle* error);
 
+    bool operator==(const XdsServer& other) const {
+      return (server_uri == other.server_uri &&
+              channel_creds_type == other.channel_creds_type &&
+              channel_creds_config == other.channel_creds_config &&
+              server_features == other.server_features);
+    }
+
     bool operator<(const XdsServer& other) const {
       if (server_uri < other.server_uri) return true;
       if (channel_creds_type < other.channel_creds_type) return true;
@@ -67,6 +74,8 @@ class XdsBootstrap {
       if (server_features < other.server_features) return true;
       return false;
     }
+
+    Json::Object ToJson() const;
 
     bool ShouldUseV3() const;
   };
@@ -105,6 +114,8 @@ class XdsBootstrap {
       const {
     return certificate_providers_;
   }
+  // A util method to check that an xds server exists in this bootstrap file.
+  bool XdsServerExists(const XdsServer& server) const;
 
  private:
   grpc_error_handle ParseXdsServerList(
