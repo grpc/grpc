@@ -277,17 +277,16 @@ const upb_msglayout envoy_config_core_v3_WatchedDirectory_msginit = {
   UPB_SIZE(8, 16), 1, _UPB_MSGEXT_NONE, 1, 255,
 };
 
-static const upb_msglayout_field envoy_config_core_v3_DataSource__fields[4] = {
+static const upb_msglayout_field envoy_config_core_v3_DataSource__fields[3] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
   {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 12, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
   {3, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_core_v3_DataSource_msginit = {
   NULL,
   &envoy_config_core_v3_DataSource__fields[0],
-  UPB_SIZE(16, 32), 4, _UPB_MSGEXT_NONE, 4, 255,
+  UPB_SIZE(16, 32), 3, _UPB_MSGEXT_NONE, 3, 255,
 };
 
 static const upb_msglayout_sub envoy_config_core_v3_RetryPolicy_submsgs[2] = {

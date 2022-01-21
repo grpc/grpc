@@ -192,7 +192,6 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
-        "no_mac",
         "no_test_ios",
         "no_windows",
         "nomsan",  # death tests seem to be incompatible with msan

@@ -29,8 +29,6 @@ typedef struct envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment envoy
 extern const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_msginit;
 extern const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit;
 extern const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_msginit;
-struct envoy_config_route_v3_RouteConfiguration;
-extern const upb_msglayout envoy_config_route_v3_RouteConfiguration_msginit;
 
 
 /* envoy.config.route.v3.ScopedRouteConfiguration */
@@ -64,8 +62,6 @@ UPB_INLINE upb_strview envoy_config_route_v3_ScopedRouteConfiguration_route_conf
 UPB_INLINE bool envoy_config_route_v3_ScopedRouteConfiguration_has_key(const envoy_config_route_v3_ScopedRouteConfiguration *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const envoy_config_route_v3_ScopedRouteConfiguration_Key* envoy_config_route_v3_ScopedRouteConfiguration_key(const envoy_config_route_v3_ScopedRouteConfiguration *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const envoy_config_route_v3_ScopedRouteConfiguration_Key*); }
 UPB_INLINE bool envoy_config_route_v3_ScopedRouteConfiguration_on_demand(const envoy_config_route_v3_ScopedRouteConfiguration *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
-UPB_INLINE bool envoy_config_route_v3_ScopedRouteConfiguration_has_route_configuration(const envoy_config_route_v3_ScopedRouteConfiguration *msg) { return _upb_hasbit(msg, 2); }
-UPB_INLINE const struct envoy_config_route_v3_RouteConfiguration* envoy_config_route_v3_ScopedRouteConfiguration_route_configuration(const envoy_config_route_v3_ScopedRouteConfiguration *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct envoy_config_route_v3_RouteConfiguration*); }
 
 UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_set_name(envoy_config_route_v3_ScopedRouteConfiguration *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
@@ -88,19 +84,6 @@ UPB_INLINE struct envoy_config_route_v3_ScopedRouteConfiguration_Key* envoy_conf
 }
 UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_set_on_demand(envoy_config_route_v3_ScopedRouteConfiguration *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
-}
-UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_set_route_configuration(envoy_config_route_v3_ScopedRouteConfiguration *msg, struct envoy_config_route_v3_RouteConfiguration* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct envoy_config_route_v3_RouteConfiguration*) = value;
-}
-UPB_INLINE struct envoy_config_route_v3_RouteConfiguration* envoy_config_route_v3_ScopedRouteConfiguration_mutable_route_configuration(envoy_config_route_v3_ScopedRouteConfiguration *msg, upb_arena *arena) {
-  struct envoy_config_route_v3_RouteConfiguration* sub = (struct envoy_config_route_v3_RouteConfiguration*)envoy_config_route_v3_ScopedRouteConfiguration_route_configuration(msg);
-  if (sub == NULL) {
-    sub = (struct envoy_config_route_v3_RouteConfiguration*)_upb_msg_new(&envoy_config_route_v3_RouteConfiguration_msginit, arena);
-    if (!sub) return NULL;
-    envoy_config_route_v3_ScopedRouteConfiguration_set_route_configuration(msg, sub);
-  }
-  return sub;
 }
 
 /* envoy.config.route.v3.ScopedRouteConfiguration.Key */
