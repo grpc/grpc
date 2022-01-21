@@ -340,46 +340,45 @@ static void run_test(bool http2_response, bool send_settings,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  if (false) {
-    /* status defined in hpack static table */
-    run_test(true, true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
-             GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
-    run_test(true, true, HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1,
-             GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(206));
-    run_test(true, true, HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1,
-             GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(304));
-    run_test(true, true, HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1,
-             GRPC_STATUS_INTERNAL, HTTP2_DETAIL_MSG(400));
-    run_test(true, true, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
-             GRPC_STATUS_UNIMPLEMENTED, HTTP2_DETAIL_MSG(404));
-    run_test(true, true, HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1,
-             GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(500));
+  /* status defined in hpack static table */
+  run_test(true, true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
+  run_test(true, true, HTTP2_RESP(206), sizeof(HTTP2_RESP(206)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(206));
+  run_test(true, true, HTTP2_RESP(304), sizeof(HTTP2_RESP(304)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(304));
+  run_test(true, true, HTTP2_RESP(400), sizeof(HTTP2_RESP(400)) - 1,
+           GRPC_STATUS_INTERNAL, HTTP2_DETAIL_MSG(400));
+  run_test(true, true, HTTP2_RESP(404), sizeof(HTTP2_RESP(404)) - 1,
+           GRPC_STATUS_UNIMPLEMENTED, HTTP2_DETAIL_MSG(404));
+  run_test(true, true, HTTP2_RESP(500), sizeof(HTTP2_RESP(500)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(500));
 
-    /* status not defined in hpack static table */
-    run_test(true, true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
-             GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
-    run_test(true, true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
-             GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
-    run_test(true, true, HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
-             GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(429));
-    run_test(true, true, HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1,
-             GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(499));
-    run_test(true, true, HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
-             GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(502));
-    run_test(true, true, HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
-             GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
-    run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
-             GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-    /* unparseable response. RPC should fail immediately due to a connect
-     * failure.
-     */
-    run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
-             GRPC_STATUS_UNAVAILABLE, nullptr);
+  /* status not defined in hpack static table */
+  run_test(true, true, HTTP2_RESP(401), sizeof(HTTP2_RESP(401)) - 1,
+           GRPC_STATUS_UNAUTHENTICATED, HTTP2_DETAIL_MSG(401));
+  run_test(true, true, HTTP2_RESP(403), sizeof(HTTP2_RESP(403)) - 1,
+           GRPC_STATUS_PERMISSION_DENIED, HTTP2_DETAIL_MSG(403));
+  run_test(true, true, HTTP2_RESP(429), sizeof(HTTP2_RESP(429)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(429));
+  run_test(true, true, HTTP2_RESP(499), sizeof(HTTP2_RESP(499)) - 1,
+           GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(499));
+  run_test(true, true, HTTP2_RESP(502), sizeof(HTTP2_RESP(502)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(502));
+  run_test(true, true, HTTP2_RESP(503), sizeof(HTTP2_RESP(503)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
+  run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
+           GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
+  /* unparseable response. RPC should fail immediately due to a connect
+   * failure.
+   */
+  run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
+           GRPC_STATUS_UNAVAILABLE, nullptr);
 
-    /* http1 response. RPC should fail immediately due to a connect failure. */
-    run_test(false, false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
-             GRPC_STATUS_UNAVAILABLE, nullptr);
-  }
+  /* http1 response. RPC should fail immediately due to a connect failure. */
+  run_test(false, false, HTTP1_RESP_400, sizeof(HTTP1_RESP_400) - 1,
+           GRPC_STATUS_UNAVAILABLE, nullptr);
+
   /* http2 response without sending a SETTINGs frame. RPC should fail with
    * DEADLINE_EXCEEDED since the RPC deadline is lower than the connection
    * attempt deadline. */
