@@ -105,11 +105,18 @@ TEST(MetadataMapTest, TimeoutEncodeTest) {
 }
 
 TEST(MetadataMapTest, NonEncodableTrait) {
+  struct EncoderWithNoTraitEncodeFunctions {
+    void Encode(const Slice& key, const Slice& value) {
+      abort();  // should not be called
+    }
+  };
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   StreamNetworkStateMetadataMap map(arena.get());
   map.Set(GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
   EXPECT_EQ(map.get(GrpcStreamNetworkState()),
             GrpcStreamNetworkState::kNotSentOnWire);
+  EncoderWithNoTraitEncodeFunctions encoder;
+  map.Encode(&encoder);
 }
 
 }  // namespace testing
