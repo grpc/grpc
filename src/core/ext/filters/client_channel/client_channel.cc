@@ -1148,11 +1148,21 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   } else {
     policy_name = grpc_channel_args_find_string(resolver_result.args,
                                                 GRPC_ARG_LB_POLICY_NAME);
-    if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(policy_name,
-                                                                nullptr)) {
-      gpr_log(GPR_ERROR, "grpc.lb_policy_name: %s passed through "
-              "channel_args is unsupported!", policy_name);
-      gpr_log(GPR_ERROR, "Using pick_first lb_policy instead");
+    bool requires_config;
+    if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+            policy_name, &requires_config) ||
+        requires_config) {
+      if (requires_config) {
+        gpr_log(GPR_ERROR,
+                "LB policy: %s passed through channel_args must not "
+                "require a config. Using pick_first instead.",
+                policy_name);
+      } else {
+        gpr_log(GPR_ERROR,
+                "LB policy: %s passed through channel_args does not exist. "
+                "Using pick_first instead.",
+                policy_name);
+      }
       policy_name = "pick_first";
     }
   }
@@ -1172,12 +1182,11 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   //   already verified that the policy does not require a config.
   // - One of the hard-coded values here, all of which are known to not
   //   require a config.
-  // - A channel arg, in which case the application did something that
-  //   is a misuse of our API.
+  // - A channel arg, in which case we check that the specified policy exists
+  //   and accepts an empty config. If not, we revert to using pick_first
+  //   lb_policy
   // In the first two cases, these assertions will always be true.  In
   // the last case, this is probably fine for now.
-  // TODO(roth): If the last case becomes a problem, add better error
-  // handling here.
   GPR_ASSERT(lb_policy_config != nullptr);
   GPR_ASSERT(parse_error == GRPC_ERROR_NONE);
   return lb_policy_config;
