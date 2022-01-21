@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.44.0-dev'
+  version = '1.45.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1439,6 +1439,8 @@ Pod::Spec.new do |s|
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.cc',
                       'src/core/tsi/local_transport_security.h',
+                      'src/core/tsi/ssl/key_logging/ssl_key_logging.cc',
+                      'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.cc',
@@ -2131,6 +2133,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/local_transport_security.h',
+                              'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                               'src/core/tsi/ssl_transport_security.h',

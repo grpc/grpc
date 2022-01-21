@@ -25,6 +25,7 @@
 
 #include <vector>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -46,7 +47,7 @@ static void put_metadata_list(const grpc_metadata_batch& md,
   md.Log([out, &first](absl::string_view key, absl::string_view value) {
     if (!first) out->push_back(", ");
     first = false;
-    out->push_back(absl::StrCat(key, "=", value));
+    out->push_back(absl::StrCat(absl::CEscape(key), "=", absl::CEscape(value)));
   });
 }
 

@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.44.0dev</release>
-  <api>1.44.0dev</api>
+  <release>1.45.0dev</release>
+  <api>1.45.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.44.0 update
+- gRPC Core 1.45.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1338,6 +1338,8 @@
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />

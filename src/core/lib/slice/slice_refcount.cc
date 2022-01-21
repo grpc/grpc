@@ -16,14 +16,16 @@
 
 #include "src/core/lib/slice/slice_refcount.h"
 
-#include <random>
+#include <chrono>
 
 namespace grpc_core {
 
 uint32_t g_hash_seed = []() {
-  std::random_device rd;
-  std::uniform_int_distribution<uint32_t> dist;
-  return dist(rd);
+  auto now = std::chrono::system_clock::now();
+  auto now_since_epoch = now.time_since_epoch();
+  auto now_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(now_since_epoch);
+  return static_cast<uint32_t>(now_ns.count());
 }();
 
 }  // namespace grpc_core

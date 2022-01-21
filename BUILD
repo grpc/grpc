@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "great"  # @unused
+g_stands_for = "gravity"  # @unused
 
 core_version = "22.0.0"  # @unused
 
-version = "1.44.0-dev"  # @unused
+version = "1.45.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -3753,6 +3753,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
@@ -3761,6 +3762,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",

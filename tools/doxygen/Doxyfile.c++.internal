@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.44.0-dev
+PROJECT_NUMBER         = 1.45.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2337,6 +2337,8 @@ src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
 src/core/tsi/local_transport_security.cc \
 src/core/tsi/local_transport_security.h \
+src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
+src/core/tsi/ssl/key_logging/ssl_key_logging.h \
 src/core/tsi/ssl/session_cache/ssl_session.h \
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
