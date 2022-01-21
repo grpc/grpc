@@ -54,8 +54,7 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
     return absl::InvalidArgumentError(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
   }
-  return absl::StatusOr<ClientAuthorityFilter>(
-      ClientAuthorityFilter(Slice::FromCopiedString(default_authority_str)));
+  return ClientAuthorityFilter(Slice::FromCopiedString(default_authority_str));
 }
 
 ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(

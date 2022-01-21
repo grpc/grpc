@@ -26,13 +26,11 @@ auto* g_memory_allocator = new MemoryAllocator(
 
 class TestChannelArgs {
  public:
-  explicit TestChannelArgs(const char* default_authority) {
-    arg_.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
-    arg_.type = GRPC_ARG_STRING;
-    arg_.value.string = const_cast<char*>(default_authority);
-    args_.num_args = 1;
-    args_.args = &arg_;
-  }
+  explicit TestChannelArgs(const char* default_authority)
+      : arg_(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+            const_cast<char*>(default_authority))),
+        args_{1, &arg_} {}
 
   const grpc_channel_args* args() const { return &args_; }
 
@@ -46,19 +44,16 @@ TEST(ClientAuthorityFilterTest, DefaultFails) {
 }
 
 TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
-  EXPECT_TRUE(ClientAuthorityFilter::Create(
-                  TestChannelArgs("foo.test.google.au").args())
-                  .ok());
+  EXPECT_EQ(ClientAuthorityFilter::Create(
+                TestChannelArgs("foo.test.google.au").args())
+                .status(),
+            absl::OkStatus());
 }
 
 TEST(ClientAuthorityFilterTest, NonStringArgFails) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_INTEGER;
-  arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
-  arg.value.integer = 0;
-  grpc_channel_args args;
-  args.num_args = 1;
-  args.args = &arg;
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), 123);
+  grpc_channel_args args = {1, &arg};
   EXPECT_FALSE(ClientAuthorityFilter::Create(&args).ok());
 }
 

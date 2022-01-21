@@ -148,41 +148,42 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   }
 
   // Handle one grpc_transport_stream_op_batch
-  void Op(grpc_transport_stream_op_batch* op) {
+  void StartBatch(grpc_transport_stream_op_batch* batch) {
     // Fake out the activity based context.
     ScopedContext context(this);
 
     // If this is a cancel stream, cancel anything we have pending and propagate
     // the cancellation.
-    if (op->cancel_stream) {
-      GPR_ASSERT(!op->send_initial_metadata && !op->send_trailing_metadata &&
-                 !op->send_message && !op->recv_initial_metadata &&
-                 !op->recv_message && !op->recv_trailing_metadata);
-      Cancel(op->payload->cancel_stream.cancel_error);
-      grpc_call_next_op(elem(), op);
+    if (batch->cancel_stream) {
+      GPR_ASSERT(!batch->send_initial_metadata &&
+                 !batch->send_trailing_metadata && !batch->send_message &&
+                 !batch->recv_initial_metadata && !batch->recv_message &&
+                 !batch->recv_trailing_metadata);
+      Cancel(batch->payload->cancel_stream.cancel_error);
+      grpc_call_next_op(elem(), batch);
       return;
     }
 
     // send_initial_metadata: seeing this triggers the start of the promise part
     // of this filter.
-    if (op->send_initial_metadata) {
+    if (batch->send_initial_metadata) {
       // If we're already cancelled, just terminate the batch.
       if (send_initial_state_ == SendInitialState::kCancelled) {
         grpc_transport_stream_op_batch_finish_with_failure(
-            op, GRPC_ERROR_REF(cancelled_error_), call_combiner());
+            batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
         return;
       }
       // Otherwise, we should not have seen a send_initial_metadata op yet.
       GPR_ASSERT(send_initial_state_ == SendInitialState::kInitial);
       // Mark ourselves as queued.
       send_initial_state_ = SendInitialState::kQueued;
-      if (op->recv_trailing_metadata) {
+      if (batch->recv_trailing_metadata) {
         // If there's a recv_trailing_metadata op, we queue that too.
         GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
         recv_trailing_state_ = RecvTrailingState::kQueued;
       }
       // This is the queuing!
-      send_initial_metadata_batch_ = op;
+      send_initial_metadata_batch_ = batch;
       // And kick start the promise.
       StartPromise();
       return;
@@ -190,13 +191,13 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
     // recv_trailing_metadata *without* send_initial_metadata: hook it so we can
     // respond to it, and push it down.
-    if (op->recv_trailing_metadata) {
+    if (batch->recv_trailing_metadata) {
       GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
       recv_trailing_state_ = RecvTrailingState::kForwarded;
-      HookRecvTrailingMetadata(op);
+      HookRecvTrailingMetadata(batch);
     }
 
-    grpc_call_next_op(elem(), op);
+    grpc_call_next_op(elem(), batch);
   }
 
  private:
@@ -265,7 +266,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         WrapMetadata(send_initial_metadata_batch_->payload
                          ->send_initial_metadata.send_initial_metadata),
         [this](ClientInitialMetadata initial_metadata) {
-          return NextPromiseFactory(std::move(initial_metadata));
+          return MakeNextPromise(std::move(initial_metadata));
         });
     // Poll once.
     WakeInsideCombiner();
@@ -274,12 +275,12 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   // Interject our callback into the op batch for recv trailing metadata ready.
   // Stash a pointer to the trailing metadata that will be filled in, so we can
   // manipulate it later.
-  void HookRecvTrailingMetadata(grpc_transport_stream_op_batch* op) {
+  void HookRecvTrailingMetadata(grpc_transport_stream_op_batch* batch) {
     recv_trailing_metadata_ =
-        op->payload->recv_trailing_metadata.recv_trailing_metadata;
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
     original_recv_trailing_metadata_ready_ =
-        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &recv_trailing_metadata_ready_;
   }
 
@@ -287,7 +288,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
   // Effectively:
   //   - put the modified initial metadata into the batch to be sent down.
   //   - return a wrapper around PollTrailingMetadata as the promise.
-  ArenaPromise<TrailingMetadata> NextPromiseFactory(
+  ArenaPromise<TrailingMetadata> MakeNextPromise(
       ClientInitialMetadata initial_metadata) {
     GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
     send_initial_metadata_batch_->payload->send_initial_metadata
@@ -452,8 +453,8 @@ grpc_channel_filter MakePromiseBasedFilter() {
 
   return grpc_channel_filter{
       // start_transport_stream_op_batch
-      [](grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-        static_cast<CallData*>(elem->call_data)->Op(op);
+      [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+        static_cast<CallData*>(elem->call_data)->StartBatch(batch);
       },
       // start_transport_op - for now unsupported
       grpc_channel_next_op,

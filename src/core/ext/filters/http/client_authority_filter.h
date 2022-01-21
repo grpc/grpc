@@ -33,11 +33,11 @@ namespace grpc_core {
 
 class ClientAuthorityFilter {
  public:
-  static constexpr bool is_client() { return true; }
-  static constexpr const char* name() { return "authority"; }
-
   static absl::StatusOr<ClientAuthorityFilter> Create(
       const grpc_channel_args* args);
+
+  static constexpr bool is_client() { return true; }
+  static constexpr const char* name() { return "authority"; }
 
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(

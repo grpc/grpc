@@ -25,6 +25,7 @@
 
 #include <limits>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -893,7 +894,7 @@ class MetadataMap {
     std::string out;
     Log([&out](absl::string_view key, absl::string_view value) {
       if (!out.empty()) out.append(", ");
-      absl::StrAppend(&out, key, ": ", value);
+      absl::StrAppend(&out, absl::CEscape(key), ": ", absl::CEscape(value));
     });
     return out;
   }
