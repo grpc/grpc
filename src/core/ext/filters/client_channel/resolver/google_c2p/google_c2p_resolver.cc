@@ -19,7 +19,6 @@
 #include <random>
 
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
@@ -132,7 +131,7 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   GPR_ASSERT(uri.ok());  // params are hardcoded
   grpc_arg resource_quota_arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
-      resolver->resource_quota_.get(), grpc_resource_quota_arg_vtable());
+      resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
   http_request_ =
       HttpRequest::Get(std::move(*uri), &args, pollent, &request,
