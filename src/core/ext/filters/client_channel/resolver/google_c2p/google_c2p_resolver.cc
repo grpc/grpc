@@ -36,7 +36,7 @@ class GoogleCloud2ProdResolver : public Resolver {
  public:
   explicit GoogleCloud2ProdResolver(ResolverArgs args);
 
-  ~GoogleCloud2ProdResolver() { grpc_channel_args_destroy(channel_args_); }
+  ~GoogleCloud2ProdResolver() override{ grpc_channel_args_destroy(channel_args_); }
 
   void StartLocked() override;
   void RequestReresolutionLocked() override;
