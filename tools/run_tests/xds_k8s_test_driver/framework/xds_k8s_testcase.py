@@ -396,7 +396,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         except retryers.RetryError as retry_error:
             logger.info(
                 'Retry exhausted. TD routing config propagation failed after timeout %ds.',
-                timeout)
+                timeout_second)
             raise retry_error
 
     def assertFailedRpcs(self,
