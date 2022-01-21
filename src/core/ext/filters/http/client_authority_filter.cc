@@ -24,13 +24,13 @@
 #include <limits.h>
 #include <string.h>
 
+#include "client_authority_filter.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -39,60 +39,42 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
+
+absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
+    const grpc_channel_args* args) {
+  const grpc_arg* default_authority_arg =
+      grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);
+  if (default_authority_arg == nullptr) {
+    return absl::InvalidArgumentError(
+        "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
+        "channels must explicitly specify a value for this argument.");
+  }
+  const char* default_authority_str =
+      grpc_channel_arg_get_string(default_authority_arg);
+  if (default_authority_str == nullptr) {
+    return absl::InvalidArgumentError(
+        "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
+  }
+  return absl::StatusOr<ClientAuthorityFilter>(
+      ClientAuthorityFilter(Slice::FromCopiedString(default_authority_str)));
+}
+
+ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
+    InitialMetadata initial_metadata, NextPromiseFactory next_promise_factory) {
+  // If no authority is set, set the default authority.
+  if (initial_metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    initial_metadata->Set(HttpAuthorityMetadata(), default_authority_.Ref());
+  }
+  // We have no asynchronous work, so we can just ask the next promise to run,
+  // passing down initial_metadata.
+  return next_promise_factory(std::move(initial_metadata));
+}
+
 namespace {
-
-class ClientAuthorityChannelFilter {
- public:
-  static constexpr bool is_client() { return true; }
-  static constexpr const char* name() { return "authority"; }
-
-  static absl::StatusOr<ClientAuthorityChannelFilter> Create(
-      const grpc_channel_args* args) {
-    const grpc_arg* default_authority_arg =
-        grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);
-    if (default_authority_arg == nullptr) {
-      return absl::InvalidArgumentError(
-          "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
-          "channels must explicitly specify a value for this argument.");
-    }
-    const char* default_authority_str =
-        grpc_channel_arg_get_string(default_authority_arg);
-    if (default_authority_str == nullptr) {
-      return absl::InvalidArgumentError(
-          "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
-    }
-    return absl::StatusOr<ClientAuthorityChannelFilter>(
-        ClientAuthorityChannelFilter(
-            Slice::FromCopiedString(default_authority_str)));
-  }
-
-  // Construct a promise for once call.
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      InitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) {
-    // If no authority is set, set the default authority.
-    if (initial_metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-      initial_metadata->Set(HttpAuthorityMetadata(), default_authority_.Ref());
-    }
-    // We have no asynchronous work, so we can just ask the next promise to run,
-    // passing down initial_metadata.
-    return next_promise_factory(std::move(initial_metadata));
-  }
-
- private:
-  explicit ClientAuthorityChannelFilter(Slice default_authority)
-      : default_authority_(std::move(default_authority)) {}
-  Slice default_authority_;
-};
-
-}  // namespace
-}  // namespace grpc_core
-
 const grpc_channel_filter grpc_client_authority_filter =
-    grpc_core::MakePromiseBasedFilter<
-        grpc_core::ClientAuthorityChannelFilter>();
+    grpc_core::MakePromiseBasedFilter<grpc_core::ClientAuthorityFilter>();
 
-static bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
+bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
@@ -107,12 +89,13 @@ static bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
   return grpc_channel_stack_builder_prepend_filter(
       builder, &grpc_client_authority_filter, nullptr, nullptr);
 }
+}  // namespace
 
-namespace grpc_core {
 void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
                                          add_client_authority_filter);
   builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
                                          add_client_authority_filter);
 }
+
 }  // namespace grpc_core
