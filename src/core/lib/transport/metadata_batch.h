@@ -1117,18 +1117,14 @@ class MetadataMap {
     }
 
     template <typename Which>
-    void Encode(Which, absl::enable_if_t<IsEncodableTrait<Which>(),
-                                         const typename Which::ValueType&>
-                           value) {
+    absl::enable_if_t<IsEncodableTrait<Which>(), void> Encode(
+        Which, const typename Which::ValueType& value) {
       Add(Which(), value);
     }
 
     template <typename Which>
-    void Encode(Which, absl::enable_if_t<!IsEncodableTrait<Which>(),
-                                         const typename Which::ValueType&>
-                           value) {
-      Add(Which(), value);
-    }
+    absl::enable_if_t<!IsEncodableTrait<Which>(), void> Encode(
+        Which, const typename Which::ValueType& value) {}
 
     void Encode(ContentTypeMetadata,
                 const typename ContentTypeMetadata::ValueType& value) {
