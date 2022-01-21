@@ -1934,6 +1934,7 @@ grpc_cc_library(
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
+        "src/core/lib/channel/promise_based_filter.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
         "src/core/lib/channel/channelz.h",
@@ -2086,6 +2087,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "arena",
+        "arena_promise",
         "avl",
         "bitset",
         "channel_args",
@@ -2108,6 +2110,7 @@ grpc_cc_library(
         "json",
         "memory_quota",
         "orphanable",
+        "promise",
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",

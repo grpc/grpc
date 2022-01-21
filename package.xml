@@ -779,6 +779,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
@@ -1073,6 +1074,7 @@
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/arena_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/basic_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
@@ -1083,6 +1085,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/poll.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/race.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />

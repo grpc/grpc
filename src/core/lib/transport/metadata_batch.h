@@ -25,6 +25,7 @@
 
 #include <limits>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -908,6 +909,15 @@ class MetadataMap {
   // call f(key, value) as absl::string_views.
   void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
       const;
+
+  std::string DebugString() const {
+    std::string out;
+    Log([&out](absl::string_view key, absl::string_view value) {
+      if (!out.empty()) out.append(", ");
+      absl::StrAppend(&out, absl::CEscape(key), ": ", absl::CEscape(value));
+    });
+    return out;
+  }
 
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
