@@ -226,8 +226,8 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
 }  // namespace
 
 const HPackTable::StaticMementos& HPackTable::GetStaticMementos() {
-  static const StaticMementos static_mementos;
-  return static_mementos;
+  static const StaticMementos* const static_mementos = new StaticMementos();
+  return *static_mementos;
 }
 
 HPackTable::StaticMementos::StaticMementos() {

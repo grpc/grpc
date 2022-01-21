@@ -26,6 +26,8 @@ powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [Sys
 @rem set absolute path to OpenSSL with forward slashes
 set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
+@rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
+
 @rem Build helloworld example using cmake
 @rem Use non-standard build directory to avoid too long filenames
 mkdir example_build

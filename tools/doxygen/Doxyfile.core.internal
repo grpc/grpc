@@ -1512,6 +1512,8 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
+src/core/ext/xds/xds_channel_creds.cc \
+src/core/ext/xds/xds_channel_creds.h \
 src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
@@ -2023,7 +2025,6 @@ src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice.h \
 src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
-src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
@@ -2032,7 +2033,6 @@ src/core/lib/slice/slice_split.cc \
 src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
-src/core/lib/slice/slice_utils.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
@@ -2137,6 +2137,8 @@ src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
 src/core/tsi/local_transport_security.cc \
 src/core/tsi/local_transport_security.h \
+src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
+src/core/tsi/ssl/key_logging/ssl_key_logging.h \
 src/core/tsi/ssl/session_cache/ssl_session.h \
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
