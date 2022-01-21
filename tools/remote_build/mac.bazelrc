@@ -36,3 +36,7 @@ build --test_output=errors
 
 # Enable strict warnings to keep it warning-free.
 build --define=use_strict_warning=true
+
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+# https://github.com/bazelbuild/bazel/issues/9190
+build --dynamic_mode=off
