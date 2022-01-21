@@ -4646,7 +4646,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -4658,7 +4657,6 @@
     "name": "grpc_tool_test",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": true

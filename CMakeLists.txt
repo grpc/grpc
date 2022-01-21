@@ -878,7 +878,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test)
   add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx grpc_tool_test)
   endif()
   add_dependencies(buildtests_cxx grpclb_api_test)
@@ -11509,7 +11509,7 @@ target_link_libraries(grpc_tls_credentials_options_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(grpc_tool_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
