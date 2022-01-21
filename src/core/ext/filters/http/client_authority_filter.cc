@@ -24,12 +24,11 @@
 #include <limits.h>
 #include <string.h>
 
-#include "client_authority_filter.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
@@ -72,7 +71,7 @@ ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
 
 namespace {
 const grpc_channel_filter grpc_client_authority_filter =
-    grpc_core::MakePromiseBasedFilter<grpc_core::ClientAuthorityFilter>();
+    MakePromiseBasedFilter<ClientAuthorityFilter>();
 
 bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
   const grpc_channel_args* channel_args =
