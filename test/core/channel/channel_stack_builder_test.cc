@@ -96,11 +96,11 @@ bool AddReplacementFilter(ChannelStackBuilder* builder) {
   // Get rid of any other version of the filter, as determined by having the
   // same name.
   auto* stk = builder->mutable_stack();
-  stk->erase(std::remove_if(
-                 stk->begin(), stk->end(),
-                 [](const ChannelStackBuilder::StackEntry& entry) {
-                   return strcmp(entry.filter->name, "filter_name") == 0;
-                 }),
+  stk->erase(std::remove_if(stk->begin(), stk->end(),
+                            [](const ChannelStackBuilder::StackEntry& entry) {
+                              return strcmp(entry.filter->name,
+                                            "filter_name") == 0;
+                            }),
              stk->end());
   builder->PrependFilter(&replacement_filter,
                          [](grpc_channel_stack*, grpc_channel_element*) {
