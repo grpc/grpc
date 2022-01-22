@@ -45,16 +45,6 @@
 
 namespace grpc_core {
 
-template <typename Trait, typename Ignored = void>
-struct IsEncodableTrait {
-  static const bool value = false;
-};
-
-template <typename Trait>
-struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
-  static const bool value = true;
-};
-
 // grpc-timeout metadata trait.
 // ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
 // deadline!), that is converted to a duration by transports before being
@@ -510,9 +500,11 @@ struct LbCostBinMetadata {
   }
 };
 
+// Annotation added by a transport to note whether a failed request was never
+// placed on the wire, or never seen by a server.
 struct GrpcStreamNetworkState {
   static constexpr bool kRepeatable = false;
-  enum ValueType {
+  enum ValueType : uint8_t {
     kNotSentOnWire,
     kNotSeenByServer,
   };
@@ -527,6 +519,21 @@ struct GrpcStreamNetworkState {
 };
 
 namespace metadata_detail {
+
+// IsEncodable: Given a trait, determine if that trait is encodable, or is just
+// a value attached to a MetadataMap.
+// We use the presence of the key() static method to determine if a trait is
+// encodable or not - encodable traits have string names, and non-encodable
+// traits do not.
+template <typename Trait, typename Ignored = void>
+struct IsEncodableTrait {
+  static const bool value = false;
+};
+
+template <typename Trait>
+struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
+  static const bool value = true;
+};
 
 // Helper type - maps a string name to a trait.
 template <typename MustBeVoid, typename... Traits>
@@ -864,13 +871,18 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // of the number of traits, and so we return to a linear symbol table growth
 // function.
 //
-// Each trait object has the following signature:
-// // Traits for the grpc-xyz metadata field:
+// Each trait object has one of two possible signatures, depending on whether
+// that traits field is encodable or not.
+// Non-encodable traits are carried in a MetadataMap, but are never passed to
+// the application nor serialized to wire.
+//
+// Encodable traits have the following signature:
+// // Traits for the "grpc-xyz" metadata field:
 // struct GrpcXyzMetadata {
-//   // The type that's stored on MetadataBatch
-//   using ValueType = ...;
 //   // Can this metadata field be repeated?
 //   static constexpr bool kRepeatable = ...;
+//   // The type that's stored on MetadataBatch
+//   using ValueType = ...;
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
@@ -888,6 +900,20 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
+// };
+//
+// Non-encodable traits are determined by missing the key() method, and have the
+// following signature (and by convention omit the Metadata part of the type
+// name):
+// // Traits for the GrpcXyz field:
+// struct GrpcXyz {
+//   // Can this metadata field be repeated?
+//   static constexpr bool kRepeatable = ...;
+//   // The type that's stored on MetadataBatch
+//   using ValueType = ...;
+//   // Convert a value to something that can be passed to StrCat and displayed
+//   // for debugging
+//   static SomeStrCatableType DisplayValue(ValueType value) { ... }
 // };
 //
 // About parsing and mementos:
