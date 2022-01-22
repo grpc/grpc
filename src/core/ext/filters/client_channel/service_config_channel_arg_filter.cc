@@ -140,7 +140,7 @@ void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_core::ChannelStackBuilder* builder) {
+      [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         if (grpc_channel_args_want_minimal_stack(channel_args) ||
             grpc_channel_args_find_string(channel_args,

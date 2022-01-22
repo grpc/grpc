@@ -92,13 +92,13 @@ const grpc_channel_filter original_filter = {
     grpc_channel_next_get_info,
     "filter_name"};
 
-bool AddReplacementFilter(grpc_core::ChannelStackBuilder* builder) {
+bool AddReplacementFilter(ChannelStackBuilder* builder) {
   // Get rid of any other version of the filter, as determined by having the
   // same name.
   auto* stk = builder->mutable_stack();
   stk->erase(std::remove_if(
                  stk->begin(), stk->end(),
-                 [](const grpc_core::ChannelStackBuilder::StackEntry& entry) {
+                 [](const ChannelStackBuilder::StackEntry& entry) {
                    return strcmp(entry.filter->name, "filter_name") == 0;
                  }),
              stk->end());
@@ -109,7 +109,7 @@ bool AddReplacementFilter(grpc_core::ChannelStackBuilder* builder) {
   return true;
 }
 
-bool AddOriginalFilter(grpc_core::ChannelStackBuilder* builder) {
+bool AddOriginalFilter(ChannelStackBuilder* builder) {
   builder->PrependFilter(&original_filter,
                          [](grpc_channel_stack*, grpc_channel_element*) {
                            g_original_fn_called = true;

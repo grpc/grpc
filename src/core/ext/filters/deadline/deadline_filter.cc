@@ -376,7 +376,7 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
                                    const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](grpc_core::ChannelStackBuilder* builder) {
+        [filter](ChannelStackBuilder* builder) {
           if (grpc_deadline_checking_enabled(builder->channel_args())) {
             builder->PrependFilter(filter, nullptr);
           }
