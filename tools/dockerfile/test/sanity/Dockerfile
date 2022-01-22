@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -60,17 +60,8 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 
-# Install Python 3.7 from source (and installed as a default python3)
-# (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
-RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                            libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
-tar -xf Python-3.7.9.tar.xz && \
-cd Python-3.7.9 && \
-./configure && \
-make -j 4 && \
-make install
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+# Install Python 3
+RUN apt update && apt install -y python3 python3-pip
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
@@ -117,10 +108,10 @@ RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/b
   bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
   rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
 
-# Install buildifier v0.29.0
-RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
-RUN chmod +x buildifier
-RUN mv buildifier /usr/local/bin
+# Install buildifier v4.2.5
+RUN wget https://github.com/bazelbuild/buildtools/releases/download/4.2.5/buildifier-linux-amd64
+RUN chmod +x buildifier-linux-amd64
+RUN mv buildifier-linux-amd64 /usr/local/bin/buildifier
 
 
 # Define the default command.
