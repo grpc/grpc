@@ -49,8 +49,7 @@ const char* kXdsChannelStackModifierChannelArgName =
 
 }  // namespace
 
-bool XdsChannelStackModifier::ModifyChannelStack(
-    ChannelStackBuilder* builder) {
+bool XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder* builder) {
   // Insert the filters after the census filter if present.
   auto it = builder->mutable_stack()->begin();
   while (it != builder->mutable_stack()->end()) {
@@ -92,8 +91,7 @@ XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
 
 void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX,
-      [](ChannelStackBuilder* builder) {
+      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
         RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier =
             XdsChannelStackModifier::GetFromChannelArgs(
                 *builder->channel_args());
