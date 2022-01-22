@@ -410,6 +410,14 @@ typedef struct grpc_transport_op {
   void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
                                const void* server_data) = nullptr;
   void* set_accept_stream_user_data = nullptr;
+  /** set the callback for accepting new streams based upon promises;
+      this is a permanent callback, unlike the other one-shot closures.
+      If true, the callback is set to set_make_promise_fn, with its
+      user_data argument set to set_make_promise_data */
+  bool set_make_promise = false;
+  void (*set_make_promise_fn)(void* user_data, grpc_transport* transport,
+                              const void* server_data) = nullptr;
+  void* set_make_promise_user_data = nullptr;
   /** add this transport to a pollset */
   grpc_pollset* bind_pollset = nullptr;
   /** add this transport to a pollset_set */
