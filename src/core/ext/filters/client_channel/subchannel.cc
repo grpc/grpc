@@ -964,21 +964,16 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  grpc_channel_stack_builder* builder =
-      grpc_channel_stack_builder_create("subchannel");
-  grpc_channel_stack_builder_set_channel_arguments(
-      builder, connecting_result_.channel_args);
-  grpc_channel_stack_builder_set_transport(builder,
-                                           connecting_result_.transport);
+  grpc_core::ChannelStackBuilder builder("subchannel");
+  builder.SetChannelArgs(connecting_result_.channel_args)
+      .SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(
-          builder, GRPC_CLIENT_SUBCHANNEL)) {
-    grpc_channel_stack_builder_destroy(builder);
+          &builder, GRPC_CLIENT_SUBCHANNEL)) {
     return false;
   }
   grpc_channel_stack* stk;
-  grpc_error_handle error = grpc_channel_stack_builder_finish(
-      builder, 0, 1, ConnectionDestroy, nullptr,
-      reinterpret_cast<void**>(&stk));
+  grpc_error_handle error = builder.Build(0, 1, ConnectionDestroy, nullptr,
+                                          reinterpret_cast<void**>(&stk));
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR,

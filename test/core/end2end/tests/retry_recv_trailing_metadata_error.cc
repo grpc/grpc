@@ -337,16 +337,15 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool AddFilter(grpc_channel_stack_builder* builder) {
+bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_channel_args* args = builder->channel_args();
   if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;
   }
   // Install filter.
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &InjectStatusFilter::kFilterVtable, nullptr, nullptr);
+  builder->PrependFilter(&InjectStatusFilter::kFilterVtable, nullptr);
+  return true;
 }
 
 }  // namespace

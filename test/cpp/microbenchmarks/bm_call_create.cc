@@ -707,16 +707,13 @@ class IsolatedCallFixture : public TrackCounters {
     const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
-    grpc_channel_stack_builder* builder =
-        grpc_channel_stack_builder_create("phony");
-    grpc_channel_stack_builder_set_target(builder, "phony_target");
-    grpc_channel_stack_builder_set_channel_arguments(builder, args);
-    GPR_ASSERT(grpc_channel_stack_builder_append_filter(
-        builder, &isolated_call_filter::isolated_call_filter, nullptr,
-        nullptr));
+    grpc_core::ChannelStackBuilder builder("phony");
+    builder.SetTarget("phony_target");
+    builder.SetChannelArgs(args);
+    builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL,
+      channel_ = grpc_channel_create_with_builder(&builder, GRPC_CLIENT_CHANNEL,
                                                   nullptr);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);

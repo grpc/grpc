@@ -73,9 +73,8 @@ namespace {
 const grpc_channel_filter grpc_client_authority_filter =
     MakePromiseBasedFilter<ClientAuthorityFilter>();
 
-bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+bool add_client_authority_filter(grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* channel_args = builder->channel_args();
   const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
       channel_args, GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
   if (disable_client_authority_filter_arg != nullptr) {
@@ -85,8 +84,8 @@ bool add_client_authority_filter(grpc_channel_stack_builder* builder) {
       return true;
     }
   }
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &grpc_client_authority_filter, nullptr, nullptr);
+  builder->PrependFilter(&grpc_client_authority_filter, nullptr);
+  return true;
 }
 }  // namespace
 

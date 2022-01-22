@@ -489,21 +489,17 @@ void filter_init_fails(grpc_end2end_test_config config) {
         auto register_stage = [builder](grpc_channel_stack_type type,
                                         bool* enable) {
           builder->channel_init()->RegisterStage(
-              type, INT_MAX, [enable](grpc_channel_stack_builder* builder) {
+              type, INT_MAX, [enable](grpc_core::ChannelStackBuilder* builder) {
                 if (!*enable) return true;
                 // Want to add the filter as close to the end as possible,
                 // to make sure that all of the filters work well together.
                 // However, we can't add it at the very end, because either the
                 // client_channel filter or connected_channel filter must be the
                 // last one.  So we add it right before the last one.
-                grpc_channel_stack_builder_iterator* it =
-                    grpc_channel_stack_builder_create_iterator_at_last(builder);
-                GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-                const bool retval =
-                    grpc_channel_stack_builder_add_filter_before(
-                        it, &test_filter, nullptr, nullptr);
-                grpc_channel_stack_builder_iterator_destroy(it);
-                return retval;
+                auto it = builder->mutable_stack()->end();
+                --it;
+                builder->mutable_stack()->insert(it, {&test_filter, nullptr});
+                return true;
               });
         };
         register_stage(GRPC_SERVER_CHANNEL, &g_enable_server_channel_filter);

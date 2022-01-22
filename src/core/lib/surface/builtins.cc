@@ -35,14 +35,15 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
                                          grpc_add_connected_filter);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_append_filter(
-            builder, &grpc_lame_filter, nullptr, nullptr);
+      [](grpc_core::ChannelStackBuilder* builder) {
+        builder->AppendFilter(&grpc_lame_filter, nullptr);
+        return true;
       });
   builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_prepend_filter(
-            builder, &Server::kServerTopFilter, nullptr, nullptr);
+      GRPC_SERVER_CHANNEL, INT_MAX,
+      [](grpc_core::ChannelStackBuilder* builder) {
+        builder->PrependFilter(&Server::kServerTopFilter, nullptr);
+        return true;
       });
 }
 
