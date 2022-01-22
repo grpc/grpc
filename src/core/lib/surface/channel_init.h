@@ -41,7 +41,7 @@ class ChannelInit {
  public:
   /// One stage of mutation: call functions against \a builder to influence the
   /// finally constructed channel stack
-  using Stage = std::function<bool(grpc_core::ChannelStackBuilder* builder)>;
+  using Stage = std::function<bool(ChannelStackBuilder* builder)>;
 
   class Builder {
    public:
@@ -74,7 +74,7 @@ class ChannelInit {
   /// Construct a channel stack of some sort: see channel_stack.h for details
   /// \a type is the type of channel stack to create
   /// \a builder is the channel stack builder to build into.
-  bool CreateStack(grpc_core::ChannelStackBuilder* builder,
+  bool CreateStack(ChannelStackBuilder* builder,
                    grpc_channel_stack_type type) const;
 
  private:

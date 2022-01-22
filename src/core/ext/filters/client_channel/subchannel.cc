@@ -964,7 +964,7 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  grpc_core::ChannelStackBuilder builder("subchannel");
+  ChannelStackBuilder builder("subchannel");
   builder.SetChannelArgs(connecting_result_.channel_args)
       .SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(

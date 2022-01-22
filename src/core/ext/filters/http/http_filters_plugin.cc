@@ -44,7 +44,7 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [enable_in_minimal_stack, control_channel_arg,
-         filter](grpc_core::ChannelStackBuilder* builder) {
+         filter](ChannelStackBuilder* builder) {
           if (!is_building_http_like_transport(builder)) return true;
           const grpc_channel_args* channel_args = builder->channel_args();
           bool enable = grpc_channel_arg_get_bool(
@@ -59,7 +59,7 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
                             const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](grpc_core::ChannelStackBuilder* builder) {
+        [filter](ChannelStackBuilder* builder) {
           if (is_building_http_like_transport(builder)) {
             builder->PrependFilter(filter, nullptr);
           }

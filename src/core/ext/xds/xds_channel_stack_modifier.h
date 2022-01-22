@@ -31,7 +31,7 @@ namespace grpc_core {
 
 // XdsChannelStackModifier allows for inserting xDS HTTP filters into the
 // channel stack. It is registered to mutate the
-// `grpc_core::ChannelStackBuilder` object via
+// `ChannelStackBuilder` object via
 // ChannelInit::Builder::RegisterStage.
 class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
  public:
@@ -39,7 +39,7 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
       std::vector<const grpc_channel_filter*> filters)
       : filters_(std::move(filters)) {}
   // Returns true on success, false otherwise.
-  bool ModifyChannelStack(grpc_core::ChannelStackBuilder* builder);
+  bool ModifyChannelStack(ChannelStackBuilder* builder);
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsChannelStackModifier> GetFromChannelArgs(
       const grpc_channel_args& args);

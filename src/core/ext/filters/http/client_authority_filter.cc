@@ -73,7 +73,7 @@ namespace {
 const grpc_channel_filter grpc_client_authority_filter =
     MakePromiseBasedFilter<ClientAuthorityFilter>();
 
-bool add_client_authority_filter(grpc_core::ChannelStackBuilder* builder) {
+bool add_client_authority_filter(ChannelStackBuilder* builder) {
   const grpc_channel_args* channel_args = builder->channel_args();
   const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
       channel_args, GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
