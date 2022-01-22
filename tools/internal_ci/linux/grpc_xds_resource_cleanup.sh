@@ -27,7 +27,7 @@ source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
 
-cd tools/run_tests/xds_k8s_test_driver
+cd "${TEST_DRIVER_FULL_DIR}"
 
 # flag resource_prefix is required by the gke test framework, but doesn't
 # matter for the cleanup script.
