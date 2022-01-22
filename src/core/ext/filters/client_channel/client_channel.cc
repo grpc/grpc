@@ -1148,7 +1148,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   } else {
     policy_name = grpc_channel_args_find_string(resolver_result.args,
                                                 GRPC_ARG_LB_POLICY_NAME);
-    bool requires_config;
+    bool requires_config = false;
     if (policy_name != nullptr &&
         (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
              policy_name, &requires_config) ||
