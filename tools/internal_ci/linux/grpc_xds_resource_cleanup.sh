@@ -35,6 +35,6 @@ cd "${TEST_DRIVER_FULL_DIR}"
 python3 -m bin.cleanup.cleanup \
     --project=grpc-testing \
     --network=default-vpc \
-    --kube_context=gke_grpc-testing_us-central1-a_interop-test-psm-sec-v2-us-central1-a \
+    --kube_context="${KUBE_CONTEXT}" \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
