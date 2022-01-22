@@ -203,6 +203,7 @@ static void connected_channel_get_channel_info(
 
 const grpc_channel_filter grpc_connected_filter = {
     connected_channel_start_transport_stream_op_batch,
+    nullptr,
     connected_channel_start_transport_op,
     sizeof(call_data),
     connected_channel_init_call_elem,

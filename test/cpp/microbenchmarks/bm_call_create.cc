@@ -384,17 +384,13 @@ void DestroyChannelElem(grpc_channel_element* /*elem*/) {}
 void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
-static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
-                                                 StartTransportOp,
-                                                 0,
-                                                 InitCallElem,
-                                                 SetPollsetOrPollsetSet,
-                                                 DestroyCallElem,
-                                                 0,
-                                                 InitChannelElem,
-                                                 DestroyChannelElem,
-                                                 GetChannelInfo,
-                                                 "phony_filter"};
+static const grpc_channel_filter phony_filter = {
+    StartTransportStreamOp, nullptr,
+    StartTransportOp,       0,
+    InitCallElem,           SetPollsetOrPollsetSet,
+    DestroyCallElem,        0,
+    InitChannelElem,        DestroyChannelElem,
+    GetChannelInfo,         "phony_filter"};
 
 }  // namespace phony_filter
 
@@ -682,17 +678,12 @@ void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
 static const grpc_channel_filter isolated_call_filter = {
-    StartTransportStreamOp,
-    StartTransportOp,
-    sizeof(call_data),
-    InitCallElem,
-    SetPollsetOrPollsetSet,
-    DestroyCallElem,
-    0,
-    InitChannelElem,
-    DestroyChannelElem,
-    GetChannelInfo,
-    "isolated_call_filter"};
+    StartTransportStreamOp, nullptr,
+    StartTransportOp,       sizeof(call_data),
+    InitCallElem,           SetPollsetOrPollsetSet,
+    DestroyCallElem,        0,
+    InitChannelElem,        DestroyChannelElem,
+    GetChannelInfo,         "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {

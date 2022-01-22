@@ -293,6 +293,7 @@ class FailSendOpsFilter {
 
 grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,

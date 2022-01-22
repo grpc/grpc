@@ -48,6 +48,8 @@
 
 #include <stddef.h>
 
+#include <functional>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -56,7 +58,9 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;
@@ -94,6 +98,62 @@ struct grpc_call_final_info {
   const char* error_string = nullptr;
 };
 
+namespace grpc_core {
+// TODO(ctiller): eliminate once MetadataHandle is constructable directly.
+namespace promise_filter_detail {
+class BaseCallData;
+}
+
+// Small unowned "handle" type to ensure one accessor at a time to metadata.
+// The focus here is to get promises to use the syntax we'd like - we'll
+// probably substitute some other smart pointer later.
+template <typename T>
+class MetadataHandle {
+ public:
+  MetadataHandle() = default;
+
+  MetadataHandle(const MetadataHandle&) = delete;
+  MetadataHandle& operator=(const MetadataHandle&) = delete;
+
+  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
+    other.handle_ = nullptr;
+  }
+  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+
+  T* operator->() const { return handle_; }
+  bool has_value() const { return handle_ != nullptr; }
+
+  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
+
+ private:
+  friend class promise_filter_detail::BaseCallData;
+
+  explicit MetadataHandle(T* handle) : handle_(handle) {}
+  T* Unwrap() {
+    T* result = handle_;
+    handle_ = nullptr;
+    return result;
+  }
+
+  T* handle_ = nullptr;
+};
+
+// Trailing metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+
+using NextPromiseFactory =
+    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+}  // namespace grpc_core
+
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
       members)
@@ -109,6 +169,19 @@ struct grpc_channel_filter {
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
+  /* Create a promise to execute one call.
+     If this is non-null, it may be used in preference to
+     start_transport_stream_op_batch.
+     If this is used in preference to start_transport_stream_op_batch, the
+     following can be omitted also:
+       - calling init_call_elem, destroy_call_elem, set_pollset_or_pollset_set
+       - allocation of memory for call data
+     There is an on-going migration to move all filters to providing this, and
+     then to drop start_transport_stream_op_batch. */
+  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
+      grpc_channel_element* elem,
+      grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::NextPromiseFactory next_promise_factory);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
