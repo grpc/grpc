@@ -25,6 +25,7 @@
 
 #include <limits>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -806,6 +807,26 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
   StorageType value;
 };
 
+// Encoder to log some metadata
+class LogEncoder {
+ public:
+  explicit LogEncoder(
+      absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
+      : log_fn_(log_fn) {}
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    log_fn_(key.as_string_view(), value.as_string_view());
+  }
+
+ private:
+  absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
+};
+
 // Encoder to copy some metadata
 template <typename Output>
 class CopySink {
@@ -974,6 +995,15 @@ class MetadataMap {
   // call f(key, value) as absl::string_views.
   void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
       const;
+
+  std::string DebugString() const {
+    std::string out;
+    Log([&out](absl::string_view key, absl::string_view value) {
+      if (!out.empty()) out.append(", ");
+      absl::StrAppend(&out, absl::CEscape(key), ": ", absl::CEscape(value));
+    });
+    return out;
+  }
 
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
@@ -1159,26 +1189,6 @@ class MetadataMap {
     uint32_t size_ = 0;
   };
 
-  // Encoder to log some metadata
-  class LogEncoder {
-   public:
-    explicit LogEncoder(
-        absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-        : log_fn_(log_fn) {}
-
-    template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
-    }
-
-    void Encode(const Slice& key, const Slice& value) {
-      log_fn_(key.as_string_view(), value.as_string_view());
-    }
-
-   private:
-    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
-  };
-
   void AppendUnknown(absl::string_view key, Slice value) {
     unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
   }
@@ -1265,7 +1275,7 @@ template <typename Derived, typename... Traits>
 void MetadataMap<Derived, Traits...>::Log(
     absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
     const {
-  LogEncoder enc(log_fn);
+  metadata_detail::LogEncoder enc(log_fn);
   Encode(&enc);
 }
 

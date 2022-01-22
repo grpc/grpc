@@ -742,6 +742,7 @@ libs:
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
+  - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -848,6 +849,7 @@ libs:
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -858,6 +860,7 @@ libs:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resolver/resolver.h
@@ -1851,6 +1854,7 @@ libs:
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
+  - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -1956,6 +1960,7 @@ libs:
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -1966,6 +1971,7 @@ libs:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resolver/resolver.h
@@ -5057,6 +5063,16 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_test_util
+- name: client_authority_filter_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/client_authority_filter_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
