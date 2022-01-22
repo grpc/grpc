@@ -106,7 +106,7 @@ TEST(MetadataMapTest, TimeoutEncodeTest) {
 
 TEST(MetadataMapTest, NonEncodableTrait) {
   struct EncoderWithNoTraitEncodeFunctions {
-    void Encode(const Slice& key, const Slice& value) {
+    void Encode(const Slice&, const Slice&) {
       abort();  // should not be called
     }
   };

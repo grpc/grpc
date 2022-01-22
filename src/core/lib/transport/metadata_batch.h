@@ -46,19 +46,14 @@
 namespace grpc_core {
 
 template <typename Trait, typename Ignored = void>
-struct IsEncodableTraitImpl {
+struct IsEncodableTrait {
   static const bool value = false;
 };
 
 template <typename Trait>
-struct IsEncodableTraitImpl<Trait, absl::void_t<decltype(Trait::key())>> {
+struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
   static const bool value = true;
 };
-
-template <typename Trait>
-static constexpr bool IsEncodableTrait() {
-  return IsEncodableTraitImpl<Trait>::value;
-}
 
 // grpc-timeout metadata trait.
 // ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
@@ -538,8 +533,8 @@ template <typename MustBeVoid, typename... Traits>
 struct NameLookup;
 
 template <typename Trait, typename... Traits>
-struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>(), void>, Trait,
-                  Traits...> {
+struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
+                  Trait, Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
   // Traits. If not found, call op->NotFound().
   template <typename Op>
@@ -553,8 +548,8 @@ struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>(), void>, Trait,
 };
 
 template <typename Trait, typename... Traits>
-struct NameLookup<absl::enable_if_t<!IsEncodableTrait<Trait>(), void>, Trait,
-                  Traits...> {
+struct NameLookup<absl::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
+                  Trait, Traits...> {
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(NameLookup<void, Traits...>::Lookup(key, op)) {
@@ -736,7 +731,7 @@ struct Value;
 
 template <typename Which>
 struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
-                                          IsEncodableTrait<Which>(),
+                                          IsEncodableTrait<Which>::value,
                                       void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
@@ -759,7 +754,7 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
 
 template <typename Which>
 struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
-                                          !IsEncodableTrait<Which>(),
+                                          !IsEncodableTrait<Which>::value,
                                       void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
