@@ -51,7 +51,7 @@ KubernetesClientRunner = client_app.KubernetesClientRunner
 KubernetesServerRunner = server_app.KubernetesServerRunner
 utc = pytz.UTC
 
-KEEP_PERIOD = datetime.timedelta(days=85)
+KEEP_PERIOD = datetime.timedelta(days=30)
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
