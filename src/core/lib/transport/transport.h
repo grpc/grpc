@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -41,6 +42,62 @@
 #define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
+namespace grpc_core {
+// TODO(ctiller): eliminate once MetadataHandle is constructable directly.
+namespace promise_filter_detail {
+class BaseCallData;
+}
+
+// Small unowned "handle" type to ensure one accessor at a time to metadata.
+// The focus here is to get promises to use the syntax we'd like - we'll
+// probably substitute some other smart pointer later.
+template <typename T>
+class MetadataHandle {
+ public:
+  MetadataHandle() = default;
+
+  MetadataHandle(const MetadataHandle&) = delete;
+  MetadataHandle& operator=(const MetadataHandle&) = delete;
+
+  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
+    other.handle_ = nullptr;
+  }
+  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+
+  T* operator->() const { return handle_; }
+  bool has_value() const { return handle_ != nullptr; }
+
+  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
+
+ private:
+  friend class promise_filter_detail::BaseCallData;
+
+  explicit MetadataHandle(T* handle) : handle_(handle) {}
+  T* Unwrap() {
+    T* result = handle_;
+    handle_ = nullptr;
+    return result;
+  }
+
+  T* handle_ = nullptr;
+};
+
+// Trailing metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+
+using NextPromiseFactory =
+    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+}  // namespace grpc_core
 
 /* forward declarations */
 

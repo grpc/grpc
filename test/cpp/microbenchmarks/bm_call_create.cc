@@ -437,11 +437,17 @@ void Destroy(grpc_transport* /*self*/) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* /*self*/) { return nullptr; }
 
-static const grpc_transport_vtable phony_transport_vtable = {
-    0,          "phony_http2", InitStream,
-    SetPollset, SetPollsetSet, PerformStreamOp,
-    PerformOp,  DestroyStream, Destroy,
-    GetEndpoint};
+static const grpc_transport_vtable phony_transport_vtable = {0,
+                                                             "phony_http2",
+                                                             InitStream,
+                                                             nullptr,
+                                                             SetPollset,
+                                                             SetPollsetSet,
+                                                             PerformStreamOp,
+                                                             PerformOp,
+                                                             DestroyStream,
+                                                             Destroy,
+                                                             GetEndpoint};
 
 static grpc_transport phony_transport = {&phony_transport_vtable};
 

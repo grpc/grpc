@@ -58,7 +58,6 @@
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -97,62 +96,6 @@ struct grpc_call_final_info {
   grpc_status_code final_status = GRPC_STATUS_OK;
   const char* error_string = nullptr;
 };
-
-namespace grpc_core {
-// TODO(ctiller): eliminate once MetadataHandle is constructable directly.
-namespace promise_filter_detail {
-class BaseCallData;
-}
-
-// Small unowned "handle" type to ensure one accessor at a time to metadata.
-// The focus here is to get promises to use the syntax we'd like - we'll
-// probably substitute some other smart pointer later.
-template <typename T>
-class MetadataHandle {
- public:
-  MetadataHandle() = default;
-
-  MetadataHandle(const MetadataHandle&) = delete;
-  MetadataHandle& operator=(const MetadataHandle&) = delete;
-
-  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
-    other.handle_ = nullptr;
-  }
-  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
-    handle_ = other.handle_;
-    other.handle_ = nullptr;
-    return *this;
-  }
-
-  T* operator->() const { return handle_; }
-  bool has_value() const { return handle_ != nullptr; }
-
-  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
-
- private:
-  friend class promise_filter_detail::BaseCallData;
-
-  explicit MetadataHandle(T* handle) : handle_(handle) {}
-  T* Unwrap() {
-    T* result = handle_;
-    handle_ = nullptr;
-    return result;
-  }
-
-  T* handle_ = nullptr;
-};
-
-// Trailing metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
-
-// Client initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
-
-using NextPromiseFactory =
-    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
-}  // namespace grpc_core
 
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX

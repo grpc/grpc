@@ -1483,6 +1483,7 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
     "cronet_http",
     init_stream,
+    nullptr,
     set_pollset_do_nothing,
     set_pollset_set_do_nothing,
     perform_stream_op,
