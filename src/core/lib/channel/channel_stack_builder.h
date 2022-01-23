@@ -77,15 +77,10 @@ class ChannelStackBuilder {
   std::vector<StackEntry>* mutable_stack() { return &stack_; }
 
   // Helper to add a filter to the front of the stack.
-  void PrependFilter(const grpc_channel_filter* filter,
-                     PostInitFunc post_init) {
-    stack_.insert(stack_.begin(), {filter, std::move(post_init)});
-  }
+  void PrependFilter(const grpc_channel_filter* filter, PostInitFunc post_init);
 
   // Helper to add a filter to the end of the stack.
-  void AppendFilter(const grpc_channel_filter* filter, PostInitFunc post_init) {
-    stack_.push_back({filter, std::move(post_init)});
-  }
+  void AppendFilter(const grpc_channel_filter* filter, PostInitFunc post_init);
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,
