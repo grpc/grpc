@@ -45,7 +45,7 @@ ChannelInit ChannelInit::Builder::Build() {
   return result;
 }
 
-bool ChannelInit::CreateStack(grpc_core::ChannelStackBuilder* builder,
+bool ChannelInit::CreateStack(ChannelStackBuilder* builder,
                               grpc_channel_stack_type type) const {
   for (const auto& stage : slots_[type]) {
     if (!stage(builder)) return false;

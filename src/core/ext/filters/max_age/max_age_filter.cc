@@ -538,7 +538,7 @@ namespace grpc_core {
 void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_core::ChannelStackBuilder* builder) {
+      [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         bool enable = grpc_channel_arg_get_integer(
                           grpc_channel_args_find(

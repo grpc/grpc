@@ -64,7 +64,7 @@ void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   RegisterHttpConnectHandshaker(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_core::ChannelStackBuilder* builder) {
+      [](ChannelStackBuilder* builder) {
         builder->AppendFilter(&ClientChannel::kFilterVtable, nullptr);
         return true;
       });

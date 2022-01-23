@@ -1843,7 +1843,7 @@ namespace grpc_core {
 void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_core::ChannelStackBuilder* builder) {
+      [](ChannelStackBuilder* builder) {
         const grpc_channel_args* args = builder->channel_args();
         const grpc_arg* channel_arg =
             grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
