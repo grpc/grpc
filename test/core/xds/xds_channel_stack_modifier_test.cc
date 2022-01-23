@@ -95,6 +95,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   for (const auto& entry : *builder.mutable_stack()) {
     filters.push_back(entry.filter->name);
   }
+  filters.resize(3);
   EXPECT_EQ(filters,
             std::vector<std::string>({"server", kTestFilter1, kTestFilter2}));
   grpc_shutdown();
@@ -133,6 +134,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   for (const auto& entry : *builder.mutable_stack()) {
     filters.push_back(entry.filter->name);
   }
+  filters.resize(4);
   EXPECT_EQ(filters, std::vector<std::string>({"server", "opencensus_server",
                                                kTestFilter1, kTestFilter2}));
   grpc_shutdown();

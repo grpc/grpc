@@ -59,6 +59,7 @@ bool XdsChannelStackModifier::ModifyChannelStack(
         strcmp("opencensus_server", filter_name_at_it) == 0) {
       break;
     }
+    ++it;
   }
   if (it == builder->mutable_stack()->end()) {
     // No census filter found. Reset iterator to the beginning. This will result
@@ -67,10 +68,13 @@ bool XdsChannelStackModifier::ModifyChannelStack(
     // resulting in these filters being finally placed after the `server`
     // filter.
     it = builder->mutable_stack()->begin();
+  } else {
+    ++it;
   }
   for (const grpc_channel_filter* filter : filters_) {
-    builder->mutable_stack()->insert(
+    it = builder->mutable_stack()->insert(
         it, ChannelStackBuilder::StackEntry{filter, nullptr});
+    ++it;
   }
   return true;
 }

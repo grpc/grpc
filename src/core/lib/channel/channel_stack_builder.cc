@@ -22,12 +22,38 @@
 
 #include <string.h>
 
+#include "channel_stack_builder.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
+
+ChannelStackBuilder::~ChannelStackBuilder() {
+  if (args_ != nullptr) {
+    grpc_channel_args_destroy(args_);
+  }
+}
+
+ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
+  if (target == nullptr) {
+    target_.clear();
+  } else {
+    target_ = target;
+  }
+  return *this;
+}
+
+ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(
+    const grpc_channel_args* args) {
+  if (args_ != nullptr) {
+    grpc_channel_args_destroy(args_);
+  }
+  args_ = grpc_channel_args_copy(args);
+  return *this;
+}
 
 grpc_error_handle ChannelStackBuilder::Build(size_t prefix_bytes,
                                              int initial_refs,
@@ -55,7 +81,12 @@ grpc_error_handle ChannelStackBuilder::Build(size_t prefix_bytes,
       filters.data(), filters.size(), args_, transport_, name_.c_str(),
       channel_stack);
 
-  if (error != GRPC_ERROR_NONE) return error;
+  if (error != GRPC_ERROR_NONE) {
+    grpc_channel_stack_destroy(channel_stack);
+    gpr_free(*result);
+    *result = nullptr;
+    return error;
+  }
 
   // run post-initialization functions
   for (size_t i = 0; i < filters.size(); i++) {

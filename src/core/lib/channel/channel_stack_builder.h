@@ -34,11 +34,9 @@ class ChannelStackBuilder {
 
   explicit ChannelStackBuilder(std::string name) : name_(std::move(name)) {}
 
-  ChannelStackBuilder& SetTarget(std::string target) {
-    target_ = std::move(target);
-    return *this;
-  }
+  ~ChannelStackBuilder();
 
+  ChannelStackBuilder& SetTarget(const char* target);
   absl::string_view target() const { return target_; }
 
   ChannelStackBuilder& SetTransport(grpc_transport* transport) {
@@ -49,12 +47,7 @@ class ChannelStackBuilder {
 
   grpc_transport* transport() const { return transport_; }
 
-  ChannelStackBuilder& SetChannelArgs(const grpc_channel_args* args) {
-    GPR_ASSERT(args_ == nullptr);
-    args_ = args;
-    return *this;
-  }
-
+  ChannelStackBuilder& SetChannelArgs(const grpc_channel_args* args);
   const grpc_channel_args* channel_args() const { return args_; }
 
   struct StackEntry {
