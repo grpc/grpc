@@ -233,6 +233,7 @@ void CallData::Destroy(grpc_call_element* elem,
 
 const grpc_channel_filter grpc_client_idle_filter = {
     grpc_call_next_op,
+    nullptr,
     ChannelData::StartTransportOp,
     sizeof(CallData),
     CallData::Init,

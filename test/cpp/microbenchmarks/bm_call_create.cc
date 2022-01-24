@@ -384,17 +384,13 @@ void DestroyChannelElem(grpc_channel_element* /*elem*/) {}
 void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
-static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
-                                                 StartTransportOp,
-                                                 0,
-                                                 InitCallElem,
-                                                 SetPollsetOrPollsetSet,
-                                                 DestroyCallElem,
-                                                 0,
-                                                 InitChannelElem,
-                                                 DestroyChannelElem,
-                                                 GetChannelInfo,
-                                                 "phony_filter"};
+static const grpc_channel_filter phony_filter = {
+    StartTransportStreamOp, nullptr,
+    StartTransportOp,       0,
+    InitCallElem,           SetPollsetOrPollsetSet,
+    DestroyCallElem,        0,
+    InitChannelElem,        DestroyChannelElem,
+    GetChannelInfo,         "phony_filter"};
 
 }  // namespace phony_filter
 
@@ -441,11 +437,17 @@ void Destroy(grpc_transport* /*self*/) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* /*self*/) { return nullptr; }
 
-static const grpc_transport_vtable phony_transport_vtable = {
-    0,          "phony_http2", InitStream,
-    SetPollset, SetPollsetSet, PerformStreamOp,
-    PerformOp,  DestroyStream, Destroy,
-    GetEndpoint};
+static const grpc_transport_vtable phony_transport_vtable = {0,
+                                                             "phony_http2",
+                                                             InitStream,
+                                                             nullptr,
+                                                             SetPollset,
+                                                             SetPollsetSet,
+                                                             PerformStreamOp,
+                                                             PerformOp,
+                                                             DestroyStream,
+                                                             Destroy,
+                                                             GetEndpoint};
 
 static grpc_transport phony_transport = {&phony_transport_vtable};
 
@@ -682,17 +684,12 @@ void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
 static const grpc_channel_filter isolated_call_filter = {
-    StartTransportStreamOp,
-    StartTransportOp,
-    sizeof(call_data),
-    InitCallElem,
-    SetPollsetOrPollsetSet,
-    DestroyCallElem,
-    0,
-    InitChannelElem,
-    DestroyChannelElem,
-    GetChannelInfo,
-    "isolated_call_filter"};
+    StartTransportStreamOp, nullptr,
+    StartTransportOp,       sizeof(call_data),
+    InitCallElem,           SetPollsetOrPollsetSet,
+    DestroyCallElem,        0,
+    InitChannelElem,        DestroyChannelElem,
+    GetChannelInfo,         "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {

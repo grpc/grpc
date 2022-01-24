@@ -123,6 +123,7 @@ void ServiceConfigChannelArgDestroyChannelElem(grpc_channel_element* elem) {
 
 const grpc_channel_filter ServiceConfigChannelArgFilter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     sizeof(ServiceConfigChannelArgCallData),
     ServiceConfigChannelArgInitCallElem,
