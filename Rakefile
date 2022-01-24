@@ -34,11 +34,11 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
     'universal-darwin'
   ]
   ext.cross_compiling do |spec|
-    spec.files = %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
-    spec.files += Dir.glob('src/ruby/bin/**/*')
-    spec.files += Dir.glob('src/ruby/ext/**/*')
-    spec.files += Dir.glob('src/ruby/lib/**/*')
-    spec.files += Dir.glob('src/ruby/pb/**/*')
+    spec.files = spec.files.select {
+      |file| file.start_with?(
+        "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
+    }
+    spec.files += %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
   end
 end
 
