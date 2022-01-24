@@ -30,4 +30,4 @@ void InitEventEngineFactory();
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
