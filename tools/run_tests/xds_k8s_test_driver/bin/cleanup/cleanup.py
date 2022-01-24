@@ -84,7 +84,7 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 
 @functools.lru_cache()
-def get_expire_timestamp() -> str:
+def get_expire_timestamp() -> datetime.datetime:
     return datetime.datetime.now(datetime.timezone.utc) - KEEP_PERIOD
 
 
