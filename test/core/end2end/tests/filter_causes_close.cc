@@ -256,9 +256,10 @@ void filter_causes_close(grpc_end2end_test_config config) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);
         builder->channel_init()->RegisterStage(
-            GRPC_SERVER_CHANNEL, 0, [](grpc_channel_stack_builder* builder) {
-              return grpc_channel_stack_builder_prepend_filter(
-                  builder, &test_filter, nullptr, nullptr);
+            GRPC_SERVER_CHANNEL, 0,
+            [](grpc_core::ChannelStackBuilder* builder) {
+              builder->PrependFilter(&test_filter, nullptr);
+              return true;
             });
       },
       [config] { test_request(config); });
