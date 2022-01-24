@@ -329,31 +329,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             if "no_linux" in engine["tags"]:
                 continue
 
-            # EventEngines need to only be exercised against a single poller. If
-            # poller test expansion has already happened, any single poller
-            # should suffice for this test.
-            if engine_only:
-                native.sh_test(
-                    name = name + "@poller=" + POLLERS[0] + ",engine=" + engine["name"],
-                    data = [name] + data,
-                    srcs = [
-                        "//test/core/util:run_with_poller_sh",
-                    ],
-                    size = size,
-                    timeout = timeout,
-                    args = [
-                        POLLERS[0],
-                        engine["name"],
-                        "$(location %s)" % name,
-                    ] + args["args"],
-                    tags = (tags + ["no_windows", "no_mac"]),
-                    exec_compatible_with = exec_compatible_with,
-                    exec_properties = exec_properties,
-                    shard_count = shard_count,
-                    flaky = flaky,
-                )
-                continue
-
             # on linux we run the same test multiple times, once for each
             # poller.
             for poller in POLLERS:
@@ -376,6 +351,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     shard_count = shard_count,
                     flaky = flaky,
                 )
+                # EventEngines only need to be exercised against a single
+                # poller. If poller test expansion has already happened, any
+                # single poller should suffice for this test.
+                if engine_only:
+                    break
             engine_only = True
     else:
         # the test behavior doesn't depend on polling, just generate the test
