@@ -15,5 +15,6 @@
 
 set -ex
 export GRPC_POLL_STRATEGY=$1
-shift
+export GRPC_EVENTENGINE_STRATEGY=$2
+shift 2
 "$@"

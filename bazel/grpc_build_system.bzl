@@ -35,6 +35,18 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
 
+# The set of known EventEngines to test
+EVENT_ENGINES = [
+    {
+        "name": "libuv",
+        "tags": [],
+    },
+    {
+        "name": "poll",
+        "tags": ["no_windows", "no_mac"],
+    },
+]
+
 def if_not_windows(a):
     return select({
         "//:windows": [],
@@ -298,39 +310,78 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
     if uses_polling:
-        # the vanilla version of the test should run on platforms that only
-        # support a single poller
-        native.cc_test(
-            name = name,
-            testonly = True,
-            tags = (tags + [
-                "no_linux",  # linux supports multiple pollers
-            ]),
-            **args
-        )
+        # When true, EventEngines will only be exercised against one poller
+        engine_only = False
+        for engine in EVENT_ENGINES:
+            if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
+                # the vanilla version of the test should run on platforms that only
+                # support a single poller
+                native.cc_test(
+                    name = name,
+                    testonly = True,
+                    tags = (tags + engine["tags"] + [
+                        "no_linux",  # linux supports multiple pollers
+                    ]),
+                    env = {"GRPC_EVENTENGINE_STRATEGY": engine["name"]},
+                    **args
+                )
 
-        # on linux we run the same test multiple times, once for each poller
-        for poller in POLLERS:
-            native.sh_test(
-                name = name + "@poller=" + poller,
-                data = [name] + data,
-                srcs = [
-                    "//test/core/util:run_with_poller_sh",
-                ],
-                size = size,
-                timeout = timeout,
-                args = [
-                    poller,
-                    "$(location %s)" % name,
-                ] + args["args"],
-                tags = (tags + ["no_windows", "no_mac"]),
-                exec_compatible_with = exec_compatible_with,
-                exec_properties = exec_properties,
-                shard_count = shard_count,
-                flaky = flaky,
-            )
+            if "no_linux" in engine["tags"]:
+                continue
+
+            # EventEngines need to only be exercised against a single poller. If
+            # poller test expansion has already happened, any single poller
+            # should suffice for this test.
+            if engine_only:
+                native.sh_test(
+                    name = name + "@poller=" + POLLERS[0] + ",engine=" + engine["name"],
+                    data = [name] + data,
+                    srcs = [
+                        "//test/core/util:run_with_poller_sh",
+                    ],
+                    size = size,
+                    timeout = timeout,
+                    args = [
+                        POLLERS[0],
+                        engine["name"],
+                        "$(location %s)" % name,
+                    ] + args["args"],
+                    tags = (tags + ["no_windows", "no_mac"]),
+                    exec_compatible_with = exec_compatible_with,
+                    exec_properties = exec_properties,
+                    shard_count = shard_count,
+                    flaky = flaky,
+                )
+                continue
+
+            # on linux we run the same test multiple times, once for each
+            # poller.
+            for poller in POLLERS:
+                native.sh_test(
+                    name = name + "@poller=" + poller + ",engine=" + engine["name"],
+                    data = [name] + data,
+                    srcs = [
+                        "//test/core/util:run_with_poller_sh",
+                    ],
+                    size = size,
+                    timeout = timeout,
+                    args = [
+                        poller,
+                        engine["name"],
+                        "$(location %s)" % name,
+                    ] + args["args"],
+                    tags = (tags + ["no_windows", "no_mac"]),
+                    exec_compatible_with = exec_compatible_with,
+                    exec_properties = exec_properties,
+                    shard_count = shard_count,
+                    flaky = flaky,
+                )
+            engine_only = True
     else:
         # the test behavior doesn't depend on polling, just generate the test
+        # TODO(hork): identify if any non-polling tests should be exercised by
+        # all known EventEngines. It is assumed that non-polling tests are
+        # engine-agnostic.
         native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     ios_cc_test(
         name = name,

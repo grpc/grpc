@@ -40,6 +40,14 @@ some configuration as environment variables that can be set.
     fallback engine when nothing better exists
   - legacy - the (deprecated) original polling engine for gRPC
 
+* GRPC_EVENTENGINE_STRATEGY
+  Declares which EventEngine to use with gRPC. This is a single value, which may
+  be one of:
+  - libuv - The default, cross-platform, libuv-based EventEngine implementation
+  - poll - (posix-only) A simpler engine based on the poll(2) system call.
+  - none - Do not initializate a known EventEngine. The application must provide
+    one in this scenario.
+
 * GRPC_TRACE
   A comma separated list of tracers that provide additional insight into how
   gRPC C core is processing requests via debug logs. Available tracers include:

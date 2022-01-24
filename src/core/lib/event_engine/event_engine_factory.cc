@@ -36,12 +36,18 @@ void SetDefaultEventEngineFactory(
   g_event_engine_factory = factory;
 }
 
-std::unique_ptr<EventEngine> CreateEventEngine() {
+void MaybeSetDefaultEventEngineFactory(
+    std::function<std::unique_ptr<EventEngine>()>* factory) {
   grpc_core::MutexLock lock(g_mu);
   if (g_event_engine_factory == nullptr) {
-    // TODO(hork): call LibuvEventEngineFactory
-    abort();
+    g_event_engine_factory = factory;
   }
+}
+
+std::unique_ptr<EventEngine> CreateEventEngine() {
+  grpc_core::MutexLock lock(g_mu);
+  assert(g_event_engine_factory != nullptr &&
+         "An EventEngine factory was not set.");
   return (*g_event_engine_factory)();
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2021 The gRPC Authors
+// Copyright 2022 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,29 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
-
 #include <grpc/support/port_platform.h>
 
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
+
 #include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/gprpp/global_config.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_eventengine_strategy);
 
 namespace grpc_event_engine {
 namespace experimental {
 
-/// Access the shared global EventEngine instance.
-///
-/// The concept of a global EventEngine may go away in a post-iomgr world.
-/// Strongly consider whether you could use \a CreateEventEngine instead.
-EventEngine* GetDefaultEventEngine();
-
-/// Replace gRPC's default EventEngine factory *if* one has not been set already
-///
-/// Related: \a SetDefaultEventEngineFactory.
-void MaybeSetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory);
+void InitEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
+#endif GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
