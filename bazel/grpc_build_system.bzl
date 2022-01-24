@@ -309,69 +309,86 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "flaky": flaky,
         "linkstatic": linkstatic,
     }
-    if uses_polling:
-        # When true, EventEngines will only be exercised against one poller
-        engine_only = False
-        for engine in EVENT_ENGINES:
-            if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
-                # the vanilla version of the test should run on platforms that only
-                # support a single poller
-                native.cc_test(
-                    # TODO(hork): changing the names here may be problematic for
-                    # automation that depends on these names.
-                    # name = name + "@engine=" + engine["name"],
-                    name = name,
-                    testonly = True,
-                    tags = (tags + engine["tags"] + [
-                        "no_linux",  # linux supports multiple pollers
-                    ]),
-                    env = {"GRPC_EVENTENGINE_STRATEGY": engine["name"]},
-                    **args
-                )
-
-            if "no_linux" in engine["tags"]:
-                continue
-
-            # on linux we run the same test multiple times, once for each
-            # poller.
-            for poller in POLLERS:
-                native.sh_test(
-                    name = name + "@poller=" + poller + "@engine=" + engine["name"],
-                    data = [name] + data,
-                    srcs = [
-                        "//test/core/util:run_with_poller_sh",
-                    ],
-                    size = size,
-                    timeout = timeout,
-                    args = [
-                        poller,
-                        engine["name"],
-                        "$(location %s)" % name,
-                    ] + args["args"],
-                    tags = (tags + ["no_windows", "no_mac"]),
-                    exec_compatible_with = exec_compatible_with,
-                    exec_properties = exec_properties,
-                    shard_count = shard_count,
-                    flaky = flaky,
-                )
-
-                # EventEngines only need to be exercised against a single
-                # poller. If poller test expansion has already happened, any
-                # single poller should suffice for this test.
-                if engine_only:
-                    break
-            engine_only = True
-    else:
-        # the test behavior doesn't depend on polling, just generate the test
-        # TODO(hork): identify if any non-polling tests should be exercised by
-        # all known EventEngines. It is assumed that non-polling tests are
-        # engine-agnostic.
-        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     ios_cc_test(
         name = name,
         tags = tags,
         **args
     )
+    if not uses_polling:
+        # the test behavior doesn't depend on polling, just generate the test
+        # TODO(hork): identify if any non-polling tests should be exercised by
+        # all known EventEngines. It is assumed that non-polling tests are
+        # engine-agnostic.
+        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
+        return
+
+    # -- Tests that exercise the polling system --
+
+    # Non-Linux platforms
+    for engine in EVENT_ENGINES:
+        if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
+            # These platforms do not support multiple polling engines,
+            # so just create a target for each EventEngine.
+            native.cc_test(
+                name = name + "@engine=" + engine["name"],
+                testonly = True,
+                tags = (tags + engine["tags"] + [
+                    "no_linux",  # linux supports multiple pollers
+                ]),
+                env = {"GRPC_EVENTENGINE_STRATEGY": engine["name"]},
+                **args
+            )
+
+    # Linux platforms
+    if "no_linux" in EVENT_ENGINES[0]["tags"]:
+        fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
+
+    # On linux we run the same test multiple times, once for each poller.
+    for poller in POLLERS:
+        native.sh_test(
+            name = name + "@poller=" + poller + "@engine=" + EVENT_ENGINES[0]["name"],
+            data = [name] + data,
+            srcs = [
+                "//test/core/util:run_with_poller_sh",
+            ],
+            size = size,
+            timeout = timeout,
+            args = [
+                poller,
+                EVENT_ENGINES[0]["name"],
+                "$(location %s)" % name,
+            ] + args["args"],
+            tags = (tags + ["no_windows", "no_mac"]),
+            exec_compatible_with = exec_compatible_with,
+            exec_properties = exec_properties,
+            shard_count = shard_count,
+            flaky = flaky,
+        )
+
+    # Now generate one test for each subsequent EventEngine, all using the first
+    # poller.
+    if len(EVENT_ENGINES) < 2:
+        return
+    for engine in EVENT_ENGINES[1:]:
+        native.sh_test(
+            name = name + "@poller=" + POLLERS[0] + "@engine=" + engine["name"],
+            data = [name] + data,
+            srcs = [
+                "//test/core/util:run_with_poller_sh",
+            ],
+            size = size,
+            timeout = timeout,
+            args = [
+                POLLERS[0],
+                engine["name"],
+                "$(location %s)" % name,
+            ] + args["args"],
+            tags = (tags + ["no_windows", "no_mac"]),
+            exec_compatible_with = exec_compatible_with,
+            exec_properties = exec_properties,
+            shard_count = shard_count,
+            flaky = flaky,
+        )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     """Generates a cc_binary for use in the gRPC repo.
