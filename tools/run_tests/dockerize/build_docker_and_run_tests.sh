@@ -66,13 +66,7 @@ docker run \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT="$git_root" \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
-  -e "BUILD_ID=$BUILD_ID" \
-  -e "BUILD_URL=$BUILD_URL" \
-  -e "JOB_BASE_NAME=$JOB_BASE_NAME" \
-  -e "KOKORO_BUILD_ID=$KOKORO_BUILD_ID" \
-  -e "KOKORO_BUILD_NUMBER=$KOKORO_BUILD_NUMBER" \
-  -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
-  -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
+  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
   $DOCKER_TTY_ARGS \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
   -v ~/.config/gcloud:/root/.config/gcloud \
