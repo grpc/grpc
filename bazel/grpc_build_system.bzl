@@ -317,6 +317,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 # the vanilla version of the test should run on platforms that only
                 # support a single poller
                 native.cc_test(
+                    # TODO(hork): changing the names here may be problematic for
+                    # automation that depends on these names.
+                    # name = name + "@engine=" + engine["name"],
                     name = name,
                     testonly = True,
                     tags = (tags + engine["tags"] + [
@@ -333,7 +336,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             # poller.
             for poller in POLLERS:
                 native.sh_test(
-                    name = name + "@poller=" + poller + ",engine=" + engine["name"],
+                    name = name + "@poller=" + poller + "@engine=" + engine["name"],
                     data = [name] + data,
                     srcs = [
                         "//test/core/util:run_with_poller_sh",
