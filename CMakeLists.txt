@@ -2355,6 +2355,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
+  test/core/event_engine/factory.cc
   test/core/util/build.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
@@ -2424,6 +2425,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
+  test/core/event_engine/factory.cc
   test/core/util/build.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
@@ -16848,6 +16850,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    test/core/event_engine/factory.cc
     test/core/util/build.cc
     test/core/util/cmdline.cc
     test/core/util/fuzzer_util.cc

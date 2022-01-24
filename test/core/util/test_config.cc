@@ -33,6 +33,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "test/core/event_engine/factory.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/examine_stack.h"
@@ -92,9 +93,10 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 
 void grpc_test_init(int /*argc*/, char** argv) {
   grpc_core::testing::InitializeStackTracer(argv[0]);
+  gpr_log_verbosity_init();
+  grpc_event_engine::experimental::InitTestEventEngineFactory();
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
-  gpr_log_verbosity_init();
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
           ", poller=%" PRId64 ", total=%" PRId64,

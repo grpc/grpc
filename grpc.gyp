@@ -1165,6 +1165,7 @@
         'grpc',
       ],
       'sources': [
+        'test/core/event_engine/factory.cc',
         'test/core/util/build.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/fuzzer_util.cc',
@@ -1199,6 +1200,7 @@
         'grpc_unsecure',
       ],
       'sources': [
+        'test/core/event_engine/factory.cc',
         'test/core/util/build.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/fuzzer_util.cc',

@@ -1755,6 +1755,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/event_engine/factory.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -1778,6 +1779,7 @@ libs:
   - test/core/util/tls_utils.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/factory.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -1810,6 +1812,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/event_engine/factory.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -1832,6 +1835,7 @@ libs:
   - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/factory.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -8502,6 +8506,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/factory.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -8527,6 +8532,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/factory.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc

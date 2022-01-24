@@ -87,6 +87,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_common",
+        "//test/core/event_engine:event_engine_test_factory",
     ],
 )
 

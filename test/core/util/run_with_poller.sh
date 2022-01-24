@@ -14,6 +14,4 @@
 # limitations under the License.
 
 set -ex
-export GRPC_POLL_STRATEGY=$1
-shift
 "$@"
