@@ -13,8 +13,9 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/init.h"
+
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/string.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_eventengine_strategy, "libuv",
