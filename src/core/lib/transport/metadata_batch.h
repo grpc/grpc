@@ -501,14 +501,48 @@ struct LbCostBinMetadata {
   }
 };
 
+// Annotation added by a transport to note whether a failed request was never
+// placed on the wire, or never seen by a server.
+struct GrpcStreamNetworkState {
+  static constexpr bool kRepeatable = false;
+  enum ValueType : uint8_t {
+    kNotSentOnWire,
+    kNotSeenByServer,
+  };
+  static std::string DisplayValue(ValueType x) {
+    switch (x) {
+      case kNotSentOnWire:
+        return "not sent on wire";
+      case kNotSeenByServer:
+        return "not seen by server";
+    }
+  }
+};
+
 namespace metadata_detail {
 
+// IsEncodable: Given a trait, determine if that trait is encodable, or is just
+// a value attached to a MetadataMap.
+// We use the presence of the key() static method to determine if a trait is
+// encodable or not - encodable traits have string names, and non-encodable
+// traits do not.
+template <typename Trait, typename Ignored = void>
+struct IsEncodableTrait {
+  static const bool value = false;
+};
+
+template <typename Trait>
+struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
+  static const bool value = true;
+};
+
 // Helper type - maps a string name to a trait.
-template <typename... Traits>
+template <typename MustBeVoid, typename... Traits>
 struct NameLookup;
 
 template <typename Trait, typename... Traits>
-struct NameLookup<Trait, Traits...> {
+struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
+                  Trait, Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
   // Traits. If not found, call op->NotFound().
   template <typename Op>
@@ -517,12 +551,22 @@ struct NameLookup<Trait, Traits...> {
     if (key == Trait::key()) {
       return op->Found(Trait());
     }
-    return NameLookup<Traits...>::Lookup(key, op);
+    return NameLookup<void, Traits...>::Lookup(key, op);
+  }
+};
+
+template <typename Trait, typename... Traits>
+struct NameLookup<absl::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
+                  Trait, Traits...> {
+  template <typename Op>
+  static auto Lookup(absl::string_view key, Op* op)
+      -> decltype(NameLookup<void, Traits...>::Lookup(key, op)) {
+    return NameLookup<void, Traits...>::Lookup(key, op);
   }
 };
 
 template <>
-struct NameLookup<> {
+struct NameLookup<void> {
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->NotFound(key)) {
@@ -694,7 +738,9 @@ template <typename Which, typename Ignored = void>
 struct Value;
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
+                                          IsEncodableTrait<Which>::value,
+                                      void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
   explicit Value(typename Which::ValueType&& value)
@@ -710,6 +756,27 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
   void EncodeTo(Encoder* encoder) const {
     encoder->Encode(Which(), value);
   }
+  using StorageType = typename Which::ValueType;
+  GPR_NO_UNIQUE_ADDRESS StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
+                                          !IsEncodableTrait<Which>::value,
+                                      void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(typename Which::ValueType&& value)
+      : value(std::forward<typename Which::ValueType>(value)) {}
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&&) noexcept = default;
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder*) const {}
   using StorageType = typename Which::ValueType;
   GPR_NO_UNIQUE_ADDRESS StorageType value;
 };
@@ -825,13 +892,18 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // of the number of traits, and so we return to a linear symbol table growth
 // function.
 //
-// Each trait object has the following signature:
-// // Traits for the grpc-xyz metadata field:
+// Each trait object has one of two possible signatures, depending on whether
+// that traits field is encodable or not.
+// Non-encodable traits are carried in a MetadataMap, but are never passed to
+// the application nor serialized to wire.
+//
+// Encodable traits have the following signature:
+// // Traits for the "grpc-xyz" metadata field:
 // struct GrpcXyzMetadata {
-//   // The type that's stored on MetadataBatch
-//   using ValueType = ...;
 //   // Can this metadata field be repeated?
 //   static constexpr bool kRepeatable = ...;
+//   // The type that's stored on MetadataBatch
+//   using ValueType = ...;
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
@@ -849,6 +921,20 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
+// };
+//
+// Non-encodable traits are determined by missing the key() method, and have the
+// following signature (and by convention omit the Metadata part of the type
+// name):
+// // Traits for the GrpcXyz field:
+// struct GrpcXyz {
+//   // Can this metadata field be repeated?
+//   static constexpr bool kRepeatable = ...;
+//   // The type that's stored on MetadataBatch
+//   using ValueType = ...;
+//   // Convert a value to something that can be passed to StrCat and displayed
+//   // for debugging
+//   static SomeStrCatableType DisplayValue(ValueType value) { ... }
 // };
 //
 // About parsing and mementos:
@@ -978,7 +1064,7 @@ class MetadataMap {
   // Remove some metadata by name
   void Remove(absl::string_view key) {
     metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   void Remove(const char* key) { Remove(absl::string_view(key)); }
@@ -988,7 +1074,7 @@ class MetadataMap {
                                                    std::string* buffer) const {
     metadata_detail::GetStringValueHelper<Derived> helper(
         static_cast<const Derived*>(this), buffer);
-    return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
+    return metadata_detail::NameLookup<void, Traits...>::Lookup(name, &helper);
   }
 
   // Extract a piece of known metadata.
@@ -1031,7 +1117,7 @@ class MetadataMap {
                                        MetadataParseErrorFn on_error) {
     metadata_detail::ParseHelper<Derived> helper(value.TakeOwned(), on_error,
                                                  transport_size);
-    return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    return metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
@@ -1044,7 +1130,7 @@ class MetadataMap {
               MetadataParseErrorFn on_error) {
     metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
                                                   value.TakeOwned(), on_error);
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   void Clear();
@@ -1213,7 +1299,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
-    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata>;
+    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
+    grpc_core::GrpcStreamNetworkState>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;

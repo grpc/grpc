@@ -37,7 +37,10 @@ final class NativeConnectionHelper {
   }
 
   // Returns true if the packages signature of the 2 UIDs match.
-  // `context` is used to get PackageManager
+  // `context` is used to get PackageManager.
+  // Suppress unnecessary internal warnings related to checkSignatures compatibility issue.
+  // BinderTransport code is only used on newer Android platform versions so this is fine.
+  @SuppressWarnings("CheckSignatures")
   static boolean isSignatureMatch(Context context, int uid1, int uid2) {
     int result = context.getPackageManager().checkSignatures(uid1, uid2);
     if (result == PackageManager.SIGNATURE_MATCH) {

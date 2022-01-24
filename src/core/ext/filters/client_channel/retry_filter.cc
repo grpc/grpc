@@ -2541,6 +2541,7 @@ void RetryFilter::CallData::OnRetryTimerLocked(void* arg,
 
 const grpc_channel_filter kRetryFilterVtable = {
     RetryFilter::CallData::StartTransportStreamOpBatch,
+    nullptr,
     RetryFilter::StartTransportOp,
     sizeof(RetryFilter::CallData),
     RetryFilter::CallData::Init,

@@ -156,6 +156,7 @@ grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
 
 const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
+    nullptr,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),
     grpc_core::lame_init_call_elem,

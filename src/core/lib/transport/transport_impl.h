@@ -36,6 +36,19 @@ typedef struct grpc_transport_vtable {
                      grpc_stream_refcount* refcount, const void* server_data,
                      grpc_core::Arena* arena);
 
+  /* Create a promise to execute one client call.
+     If this is non-null, it may be used in preference to
+     perform_stream_op.
+     If this is used in preference to perform_stream_op, the
+     following can be omitted also:
+       - calling init_stream, destroy_stream, set_pollset, set_pollset_set
+       - allocation of memory for call data (sizeof_stream may be ignored)
+     There is an on-going migration to move all filters to providing this, and
+     then to drop perform_stream_op. */
+  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
+      grpc_transport* self, grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::NextPromiseFactory next_promise_factory);
+
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_transport* self, grpc_stream* stream,
                       grpc_pollset* pollset);

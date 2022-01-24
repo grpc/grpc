@@ -365,6 +365,7 @@ void DecompressDestroyChannelElem(grpc_channel_element* elem) {
 
 const grpc_channel_filter MessageDecompressFilter = {
     DecompressStartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     DecompressInitCallElem,

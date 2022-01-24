@@ -68,6 +68,7 @@ TEST(ChannelStackBuilderTest, ReplaceFilter) {
 
 const grpc_channel_filter replacement_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     CallInitFunc,
@@ -81,6 +82,7 @@ const grpc_channel_filter replacement_filter = {
 
 const grpc_channel_filter original_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     CallInitFunc,
