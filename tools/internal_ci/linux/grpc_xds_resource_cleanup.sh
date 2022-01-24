@@ -26,7 +26,6 @@ echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL
 source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
 kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
-python3 -m pip install pytz # pytz is not in requirements.txt
 
 cd "${TEST_DRIVER_FULL_DIR}"
 

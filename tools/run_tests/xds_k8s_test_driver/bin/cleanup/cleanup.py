@@ -35,7 +35,6 @@ from typing import Any, List
 
 from absl import app
 from absl import flags
-import pytz
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -49,7 +48,6 @@ logger = logging.getLogger(__name__)
 Json = Any
 KubernetesClientRunner = client_app.KubernetesClientRunner
 KubernetesServerRunner = server_app.KubernetesServerRunner
-utc = pytz.UTC
 
 KEEP_PERIOD = datetime.timedelta(days=30)
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
@@ -87,7 +85,7 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 @functools.lru_cache()
 def get_expire_timestamp() -> str:
-    return datetime.datetime.now() - KEEP_PERIOD
+    return datetime.datetime.now(datetime.timezone.utc) - KEEP_PERIOD
 
 
 def exec_gcloud(project: str, *cmds: List[str]) -> Json:
@@ -291,8 +289,7 @@ def delete_k8s_resources(dry_run, project, network, k8s_api_manager,
     for ns in namespaces:
         logger.info('-----')
         logger.info('----- Cleaning up k8s namespaces %s', ns.metadata.name)
-        if ns.metadata.creation_timestamp <= utc.localize(
-                get_expire_timestamp()):
+        if ns.metadata.creation_timestamp <= get_expire_timestamp():
             if dry_run:
                 # Skip deletion for dry-runs
                 logging.info('----- Skipped [Dry Run]: %s', ns.metadata.name)
