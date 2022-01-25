@@ -330,8 +330,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             # These platforms do not support multiple polling engines,
             # so just create a target for each EventEngine.
             native.cc_test(
-                # Note: The `@engine=...` style is not valid CMake syntax.
-                name = name + "_engine_" + engine["name"],
+                # TODO(hork): these names are depended upon in cpp end2end
+                # tests data arguments. Those tests need to be updated to pull
+                # the right dependencies. See http://go/paste/4579685397692416
+                # name = name + "_engine_" + engine["name"],
+                name = name,
                 testonly = True,
                 tags = (tags + engine["tags"] + [
                     "no_linux",  # linux supports multiple pollers

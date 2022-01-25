@@ -3032,7 +3032,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: alpn_test_engine_libuv
+- name: alpn_test
   build: test
   language: c
   headers: []
@@ -3040,7 +3040,7 @@ targets:
   - test/core/transport/chttp2/alpn_test.cc
   deps:
   - grpc_test_util
-- name: alts_counter_test_engine_libuv
+- name: alts_counter_test
   build: test
   language: c
   headers:
@@ -3050,7 +3050,7 @@ targets:
   - test/core/tsi/alts/frame_protector/alts_counter_test.cc
   deps:
   - grpc_test_util
-- name: alts_crypt_test_engine_libuv
+- name: alts_crypt_test
   build: test
   language: c
   headers:
@@ -3060,7 +3060,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   deps:
   - grpc_test_util
-- name: alts_crypter_test_engine_libuv
+- name: alts_crypter_test
   build: test
   language: c
   headers:
@@ -3070,7 +3070,7 @@ targets:
   - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
   deps:
   - grpc_test_util
-- name: alts_frame_protector_test_engine_libuv
+- name: alts_frame_protector_test
   build: test
   language: c
   headers:
@@ -3082,7 +3082,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - grpc_test_util
-- name: alts_grpc_record_protocol_test_engine_libuv
+- name: alts_grpc_record_protocol_test
   build: test
   language: c
   headers:
@@ -3092,7 +3092,7 @@ targets:
   - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
   deps:
   - grpc_test_util
-- name: alts_handshaker_client_test_engine_libuv
+- name: alts_handshaker_client_test
   build: test
   language: c
   headers:
@@ -3102,7 +3102,7 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
   - grpc_test_util
-- name: alts_iovec_record_protocol_test_engine_libuv
+- name: alts_iovec_record_protocol_test
   build: test
   language: c
   headers:
@@ -3112,7 +3112,7 @@ targets:
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
   - grpc_test_util
-- name: alts_security_connector_test_engine_libuv
+- name: alts_security_connector_test
   build: test
   language: c
   headers: []
@@ -3120,7 +3120,7 @@ targets:
   - test/core/security/alts_security_connector_test.cc
   deps:
   - grpc_test_util
-- name: alts_tsi_handshaker_test_engine_libuv
+- name: alts_tsi_handshaker_test
   build: test
   language: c
   headers:
@@ -3130,7 +3130,7 @@ targets:
   - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
   deps:
   - grpc_test_util
-- name: alts_tsi_utils_test_engine_libuv
+- name: alts_tsi_utils_test
   build: test
   language: c
   headers:
@@ -3140,7 +3140,7 @@ targets:
   - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
   deps:
   - grpc_test_util
-- name: alts_zero_copy_grpc_protector_test_engine_libuv
+- name: alts_zero_copy_grpc_protector_test
   build: test
   language: c
   headers:
@@ -3177,7 +3177,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: bad_server_response_test_engine_libuv
+- name: bad_server_response_test
   build: test
   language: c
   headers:
@@ -3187,7 +3187,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: bad_ssl_alpn_test_engine_libuv
+- name: bad_ssl_alpn_test
   build: test
   language: c
   headers:
@@ -3201,7 +3201,7 @@ targets:
   - linux
   - posix
   - mac
-- name: bad_ssl_cert_test_engine_libuv
+- name: bad_ssl_cert_test
   build: test
   language: c
   headers:
@@ -3233,7 +3233,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: buffer_list_test_engine_libuv
+- name: buffer_list_test
   build: test
   language: c
   headers: []
@@ -3250,7 +3250,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: channel_create_test_engine_libuv
+- name: channel_create_test
   build: test
   language: c
   headers: []
@@ -3267,7 +3267,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: check_gcp_environment_linux_test_engine_libuv
+- name: check_gcp_environment_linux_test
   build: test
   language: c
   headers: []
@@ -3275,7 +3275,7 @@ targets:
   - test/core/security/check_gcp_environment_linux_test.cc
   deps:
   - grpc_test_util
-- name: check_gcp_environment_windows_test_engine_libuv
+- name: check_gcp_environment_windows_test
   build: test
   language: c
   headers: []
@@ -3283,7 +3283,7 @@ targets:
   - test/core/security/check_gcp_environment_windows_test.cc
   deps:
   - grpc_test_util
-- name: client_ssl_test_engine_libuv
+- name: client_ssl_test
   build: test
   language: c
   headers: []
@@ -3304,7 +3304,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: combiner_test_engine_libuv
+- name: combiner_test
   build: test
   language: c
   headers: []
@@ -3316,7 +3316,7 @@ targets:
   - linux
   - posix
   - mac
-- name: completion_queue_threading_test_engine_libuv
+- name: completion_queue_threading_test
   build: test
   run: false
   language: c
@@ -3336,7 +3336,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: concurrent_connectivity_test_engine_libuv
+- name: concurrent_connectivity_test
   build: test
   language: c
   headers: []
@@ -3344,7 +3344,7 @@ targets:
   - test/core/surface/concurrent_connectivity_test.cc
   deps:
   - grpc_test_util
-- name: connection_refused_test_engine_libuv
+- name: connection_refused_test
   build: test
   language: c
   headers:
@@ -3363,7 +3363,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: dns_resolver_connectivity_using_ares_test_engine_libuv
+- name: dns_resolver_connectivity_using_ares_test
   build: test
   language: c
   headers: []
@@ -3373,7 +3373,7 @@ targets:
   - grpc_test_util
   args:
   - --resolver=ares
-- name: dns_resolver_connectivity_using_native_test_engine_libuv
+- name: dns_resolver_connectivity_using_native_test
   build: test
   language: c
   headers: []
@@ -3383,7 +3383,7 @@ targets:
   - grpc_test_util
   args:
   - --resolver=native
-- name: dns_resolver_cooldown_test_engine_libuv
+- name: dns_resolver_cooldown_test
   build: test
   language: c
   headers: []
@@ -3391,7 +3391,7 @@ targets:
   - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
   deps:
   - grpc_test_util
-- name: dns_resolver_test_engine_libuv
+- name: dns_resolver_test
   build: test
   language: c
   headers: []
@@ -3399,7 +3399,7 @@ targets:
   - test/core/client_channel/resolvers/dns_resolver_test.cc
   deps:
   - grpc_test_util
-- name: dualstack_socket_test_engine_libuv
+- name: dualstack_socket_test
   build: test
   language: c
   headers:
@@ -3413,7 +3413,7 @@ targets:
   - linux
   - posix
   - mac
-- name: endpoint_pair_test_engine_libuv
+- name: endpoint_pair_test
   build: test
   language: c
   headers:
@@ -3432,7 +3432,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: ev_epollex_linux_test_engine_libuv
+- name: ev_epollex_linux_test
   build: test
   language: c
   headers: []
@@ -3444,7 +3444,7 @@ targets:
   - linux
   - posix
   - mac
-- name: fake_resolver_test_engine_libuv
+- name: fake_resolver_test
   build: test
   language: c
   headers: []
@@ -3452,7 +3452,7 @@ targets:
   - test/core/client_channel/resolvers/fake_resolver_test.cc
   deps:
   - grpc_test_util
-- name: fake_transport_security_test_engine_libuv
+- name: fake_transport_security_test
   build: test
   language: c
   headers:
@@ -3462,7 +3462,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - grpc_test_util
-- name: fd_conservation_posix_test_engine_libuv
+- name: fd_conservation_posix_test
   build: test
   language: c
   headers: []
@@ -3474,7 +3474,7 @@ targets:
   - linux
   - posix
   - mac
-- name: fd_posix_test_engine_libuv
+- name: fd_posix_test
   build: test
   language: c
   headers: []
@@ -3486,7 +3486,7 @@ targets:
   - linux
   - posix
   - mac
-- name: fling_stream_test_engine_libuv
+- name: fling_stream_test
   build: test
   language: c
   headers:
@@ -3503,7 +3503,7 @@ targets:
   - linux
   - posix
   - mac
-- name: fling_test_engine_libuv
+- name: fling_test
   build: test
   language: c
   headers:
@@ -3533,7 +3533,7 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: format_request_test_engine_libuv
+- name: format_request_test
   build: test
   language: c
   headers:
@@ -3546,7 +3546,7 @@ targets:
   - test/core/http/format_request_test.cc
   deps:
   - grpc_test_util
-- name: frame_handler_test_engine_libuv
+- name: frame_handler_test
   build: test
   language: c
   headers:
@@ -3556,7 +3556,7 @@ targets:
   - test/core/tsi/alts/frame_protector/frame_handler_test.cc
   deps:
   - grpc_test_util
-- name: goaway_server_test_engine_libuv
+- name: goaway_server_test
   build: test
   language: c
   headers:
@@ -3566,7 +3566,7 @@ targets:
   - test/core/end2end/goaway_server_test.cc
   deps:
   - grpc_test_util
-- name: grpc_alts_credentials_options_test_engine_libuv
+- name: grpc_alts_credentials_options_test
   build: test
   language: c
   headers: []
@@ -3583,7 +3583,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: grpc_completion_queue_test_engine_libuv
+- name: grpc_completion_queue_test
   build: test
   language: c
   headers: []
@@ -3591,7 +3591,7 @@ targets:
   - test/core/surface/completion_queue_test.cc
   deps:
   - grpc_test_util
-- name: grpc_ipv6_loopback_available_test_engine_libuv
+- name: grpc_ipv6_loopback_available_test
   build: test
   language: c
   headers: []
@@ -3599,7 +3599,7 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: handshake_server_with_readahead_handshaker_test_engine_libuv
+- name: handshake_server_with_readahead_handshaker_test
   build: test
   language: c
   headers:
@@ -3640,7 +3640,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: httpcli_test_engine_libuv
+- name: httpcli_test
   build: test
   language: c
   headers:
@@ -3657,7 +3657,7 @@ targets:
   - linux
   - posix
   - mac
-- name: httpscli_test_engine_libuv
+- name: httpscli_test
   build: test
   language: c
   headers:
@@ -3683,7 +3683,7 @@ targets:
   deps:
   - end2end_tests
   uses_polling: false
-- name: invalid_call_argument_test_engine_libuv
+- name: invalid_call_argument_test
   build: test
   language: c
   headers:
@@ -3711,7 +3711,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: lame_client_test_engine_libuv
+- name: lame_client_test
   build: test
   language: c
   headers:
@@ -3839,7 +3839,7 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: multiple_server_queues_test_engine_libuv
+- name: multiple_server_queues_test
   build: test
   language: c
   headers:
@@ -3858,7 +3858,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: no_server_test_engine_libuv
+- name: no_server_test
   build: test
   language: c
   headers:
@@ -3868,7 +3868,7 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
-- name: num_external_connectivity_watchers_test_engine_libuv
+- name: num_external_connectivity_watchers_test
   build: test
   language: c
   headers: []
@@ -3876,7 +3876,7 @@ targets:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
-- name: parse_address_test_engine_libuv
+- name: parse_address_test
   build: test
   language: c
   headers: []
@@ -3920,7 +3920,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: public_headers_must_be_c89_engine_libuv
+- name: public_headers_must_be_c89
   build: test
   language: c
   headers:
@@ -3932,7 +3932,7 @@ targets:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
-- name: resolve_address_using_ares_resolver_posix_test_engine_libuv
+- name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
   headers: []
@@ -3946,7 +3946,7 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_native_resolver_posix_test_engine_libuv
+- name: resolve_address_using_native_resolver_posix_test
   build: test
   language: c
   headers: []
@@ -3960,7 +3960,7 @@ targets:
   - linux
   - posix
   - mac
-- name: secure_channel_create_test_engine_libuv
+- name: secure_channel_create_test
   build: test
   language: c
   headers: []
@@ -3968,7 +3968,7 @@ targets:
   - test/core/surface/secure_channel_create_test.cc
   deps:
   - grpc_test_util
-- name: secure_endpoint_test_engine_libuv
+- name: secure_endpoint_test
   build: test
   language: c
   headers:
@@ -3978,7 +3978,7 @@ targets:
   - test/core/security/secure_endpoint_test.cc
   deps:
   - grpc_test_util
-- name: security_connector_test_engine_libuv
+- name: security_connector_test
   build: test
   language: c
   headers: []
@@ -3986,7 +3986,7 @@ targets:
   - test/core/security/security_connector_test.cc
   deps:
   - grpc_test_util
-- name: sequential_connectivity_test_engine_libuv
+- name: sequential_connectivity_test
   build: test
   run: false
   language: c
@@ -3995,7 +3995,7 @@ targets:
   - test/core/surface/sequential_connectivity_test.cc
   deps:
   - grpc_test_util
-- name: server_ssl_test_engine_libuv
+- name: server_ssl_test
   build: test
   language: c
   headers:
@@ -4009,7 +4009,7 @@ targets:
   - linux
   - posix
   - mac
-- name: server_test_engine_libuv
+- name: server_test
   build: test
   language: c
   headers: []
@@ -4057,7 +4057,7 @@ targets:
   deps:
   - gpr
   uses_polling: false
-- name: sockaddr_resolver_test_engine_libuv
+- name: sockaddr_resolver_test
   build: test
   language: c
   headers: []
@@ -4065,7 +4065,7 @@ targets:
   - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
   - grpc_test_util
-- name: socket_utils_test_engine_libuv
+- name: socket_utils_test
   build: test
   language: c
   headers: []
@@ -4086,7 +4086,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: ssl_credentials_test_engine_libuv
+- name: ssl_credentials_test
   build: test
   language: c
   headers: []
@@ -4094,7 +4094,7 @@ targets:
   - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
-- name: ssl_transport_security_test_engine_libuv
+- name: ssl_transport_security_test
   build: test
   language: c
   headers:
@@ -4117,7 +4117,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: stream_map_test_engine_libuv
+- name: stream_map_test
   build: test
   language: c
   headers: []
@@ -4143,7 +4143,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: tcp_client_posix_test_engine_libuv
+- name: tcp_client_posix_test
   build: test
   language: c
   headers: []
@@ -4155,7 +4155,7 @@ targets:
   - linux
   - posix
   - mac
-- name: tcp_posix_test_engine_libuv
+- name: tcp_posix_test
   build: test
   language: c
   headers:
@@ -4168,7 +4168,7 @@ targets:
   platforms:
   - linux
   - posix
-- name: tcp_server_posix_test_engine_libuv
+- name: tcp_server_posix_test
   build: test
   language: c
   headers: []
@@ -4189,7 +4189,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_security_credentials_test_engine_libuv
+- name: test_core_security_credentials_test
   build: test
   language: c
   headers: []
@@ -4242,7 +4242,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: transport_security_common_api_test_engine_libuv
+- name: transport_security_common_api_test
   build: test
   language: c
   headers: []
@@ -4250,7 +4250,7 @@ targets:
   - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
   deps:
   - grpc_test_util
-- name: transport_security_test_engine_libuv
+- name: transport_security_test
   build: test
   language: c
   headers: []
@@ -4384,7 +4384,7 @@ targets:
   - absl/types:variant
   - upb
   uses_polling: false
-- name: address_sorting_test_engine_libuv
+- name: address_sorting_test
   gtest: true
   build: test
   language: c++
@@ -4398,7 +4398,7 @@ targets:
   - linux
   - posix
   - mac
-- name: address_sorting_test_unsecure_engine_libuv
+- name: address_sorting_test_unsecure
   gtest: true
   build: test
   language: c++
@@ -4419,7 +4419,7 @@ targets:
   - linux
   - posix
   - mac
-- name: admin_services_end2end_test_engine_libuv
+- name: admin_services_end2end_test
   gtest: true
   build: test
   language: c++
@@ -4437,7 +4437,7 @@ targets:
   - grpc++_reflection
   - grpcpp_channelz
   - grpc++_test_util
-- name: alarm_test_engine_libuv
+- name: alarm_test
   gtest: true
   build: test
   language: c++
@@ -4451,7 +4451,7 @@ targets:
   - linux
   - posix
   - mac
-- name: alts_concurrent_connectivity_test_engine_libuv
+- name: alts_concurrent_connectivity_test
   gtest: true
   build: test
   language: c++
@@ -4472,7 +4472,7 @@ targets:
   platforms:
   - linux
   - posix
-- name: alts_util_test_engine_libuv
+- name: alts_util_test
   gtest: true
   build: test
   language: c++
@@ -4482,31 +4482,6 @@ targets:
   deps:
   - grpc++_alts
   - grpc++_test_util
-- name: api_fuzzer_engine_libuv
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/fuzzers/api_fuzzer.proto
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/end2end/fuzzers/api_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  args:
-  - test/core/end2end/fuzzers/api_fuzzer_corpus
-  - --directory=test/core/end2end/fuzzers/api_fuzzer_corpus
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: arena_promise_test
   gtest: true
   build: test
@@ -4573,7 +4548,7 @@ targets:
   - absl/types:variant
   - gpr
   uses_polling: false
-- name: async_end2end_test_engine_libuv
+- name: async_end2end_test
   gtest: true
   build: test
   language: c++
@@ -4597,7 +4572,7 @@ targets:
   deps:
   - grpc++_test_util
   uses_polling: false
-- name: authorization_matchers_test_engine_libuv
+- name: authorization_matchers_test
   gtest: true
   build: test
   language: c++
@@ -4606,7 +4581,7 @@ targets:
   - test/core/security/authorization_matchers_test.cc
   deps:
   - grpc_test_util
-- name: authorization_policy_provider_test_engine_libuv
+- name: authorization_policy_provider_test
   gtest: true
   build: test
   language: c++
@@ -4631,7 +4606,7 @@ targets:
   - test/core/avl/avl_test.cc
   deps: []
   uses_polling: false
-- name: aws_request_signer_test_engine_libuv
+- name: aws_request_signer_test
   gtest: true
   build: test
   language: c++
@@ -4650,7 +4625,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: bad_streaming_id_bad_client_test_engine_libuv
+- name: bad_streaming_id_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -4663,7 +4638,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: badreq_bad_client_test_engine_libuv
+- name: badreq_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -4690,7 +4665,7 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: binder_resolver_test_engine_libuv
+- name: binder_resolver_test
   gtest: true
   build: test
   language: c++
@@ -4699,7 +4674,7 @@ targets:
   - test/core/client_channel/resolvers/binder_resolver_test.cc
   deps:
   - grpc_test_util
-- name: binder_server_test_engine_libuv
+- name: binder_server_test
   gtest: true
   build: test
   language: c++
@@ -4715,52 +4690,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: binder_transport_client_fuzzer_engine_libuv
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h
-  src:
-  - test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.proto
-  - test/core/transport/binder/end2end/fuzzers/client.proto
-  - test/core/transport/binder/end2end/fuzzers/client_fuzzer.cc
-  - test/core/transport/binder/end2end/fuzzers/fuzzer_utils.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc++
-  - grpc_test_util
-  - grpc++_test_config
-  args:
-  - test/core/transport/binder/end2end/fuzzers/binder_transport_client_fuzzer_corpus
-  - --directory=test/core/transport/binder/end2end/fuzzers/binder_transport_client_fuzzer_corpus
-  platforms:
-  - linux
-  - posix
-- name: binder_transport_server_fuzzer_engine_libuv
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h
-  src:
-  - test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.proto
-  - test/core/transport/binder/end2end/fuzzers/server.proto
-  - test/core/transport/binder/end2end/fuzzers/fuzzer_utils.cc
-  - test/core/transport/binder/end2end/fuzzers/server_fuzzer.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc++
-  - grpc_test_util
-  - grpc++_test_config
-  args:
-  - test/core/transport/binder/end2end/fuzzers/binder_transport_server_fuzzer_corpus
-  - --directory=test/core/transport/binder/end2end/fuzzers/binder_transport_server_fuzzer_corpus
-  platforms:
-  - linux
-  - posix
 - name: binder_transport_test
   gtest: true
   build: test
@@ -4886,7 +4815,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: cancel_ares_query_test_engine_libuv
+- name: cancel_ares_query_test
   gtest: true
   build: test
   language: c++
@@ -4911,7 +4840,7 @@ targets:
   deps:
   - absl/utility:utility
   uses_polling: false
-- name: cel_authorization_engine_test_engine_libuv
+- name: cel_authorization_engine_test
   gtest: true
   build: test
   language: c++
@@ -4929,7 +4858,7 @@ targets:
   deps:
   - absl/container:flat_hash_set
   - grpc_test_util
-- name: certificate_provider_registry_test_engine_libuv
+- name: certificate_provider_registry_test
   gtest: true
   build: test
   language: c++
@@ -4938,7 +4867,7 @@ targets:
   - test/core/client_channel/certificate_provider_registry_test.cc
   deps:
   - grpc_test_util
-- name: certificate_provider_store_test_engine_libuv
+- name: certificate_provider_store_test
   gtest: true
   build: test
   language: c++
@@ -4947,7 +4876,7 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
-- name: cfstream_test_engine_libuv
+- name: cfstream_test
   gtest: true
   build: test
   run: false
@@ -4984,7 +4913,7 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
-- name: channel_stack_builder_test_engine_libuv
+- name: channel_stack_builder_test
   gtest: true
   build: test
   language: c++
@@ -4993,7 +4922,7 @@ targets:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
-- name: channel_trace_test_engine_libuv
+- name: channel_trace_test
   gtest: true
   build: test
   language: c++
@@ -5017,7 +4946,7 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
-- name: channelz_service_test_engine_libuv
+- name: channelz_service_test
   gtest: true
   build: test
   language: c++
@@ -5032,7 +4961,7 @@ targets:
   deps:
   - grpcpp_channelz
   - grpc++_test_util
-- name: channelz_test_engine_libuv
+- name: channelz_test
   gtest: true
   build: test
   language: c++
@@ -5112,7 +5041,7 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
-- name: cli_call_test_engine_libuv
+- name: cli_call_test
   gtest: true
   build: test
   language: c++
@@ -5148,7 +5077,7 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: client_callback_end2end_test_engine_libuv
+- name: client_callback_end2end_test
   gtest: true
   build: test
   language: c++
@@ -5164,7 +5093,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: client_channel_stress_test_engine_libuv
+- name: client_channel_stress_test
   gtest: true
   build: test
   run: false
@@ -5185,7 +5114,7 @@ targets:
   - linux
   - posix
   - mac
-- name: client_context_test_peer_test_engine_libuv
+- name: client_context_test_peer_test
   gtest: true
   build: test
   language: c++
@@ -5195,7 +5124,7 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: client_interceptors_end2end_test_engine_libuv
+- name: client_interceptors_end2end_test
   gtest: true
   build: test
   language: c++
@@ -5211,7 +5140,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: client_lb_end2end_test_engine_libuv
+- name: client_lb_end2end_test
   gtest: true
   build: test
   run: false
@@ -5256,7 +5185,7 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
-- name: connection_prefix_bad_client_test_engine_libuv
+- name: connection_prefix_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -5269,7 +5198,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: connectivity_state_test_engine_libuv
+- name: connectivity_state_test
   gtest: true
   build: test
   language: c++
@@ -5278,7 +5207,7 @@ targets:
   - test/core/transport/connectivity_state_test.cc
   deps:
   - grpc_test_util
-- name: context_allocator_end2end_test_engine_libuv
+- name: context_allocator_end2end_test
   gtest: true
   build: test
   language: c++
@@ -5433,7 +5362,7 @@ targets:
   - test/core/gprpp/cpp_impl_of_test.cc
   deps: []
   uses_polling: false
-- name: crl_ssl_transport_security_test_engine_libuv
+- name: crl_ssl_transport_security_test
   gtest: true
   build: test
   language: c++
@@ -5448,7 +5377,7 @@ targets:
   - linux
   - posix
   - mac
-- name: delegating_channel_test_engine_libuv
+- name: delegating_channel_test
   gtest: true
   build: test
   language: c++
@@ -5462,7 +5391,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv
+- name: destroy_grpclb_channel_with_active_connect_stress_test
   gtest: true
   build: test
   language: c++
@@ -5471,7 +5400,7 @@ targets:
   - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
   - grpc++_test_util
-- name: dual_ref_counted_test_engine_libuv
+- name: dual_ref_counted_test
   gtest: true
   build: test
   language: c++
@@ -5480,7 +5409,7 @@ targets:
   - test/core/gprpp/dual_ref_counted_test.cc
   deps:
   - grpc_test_util
-- name: duplicate_header_bad_client_test_engine_libuv
+- name: duplicate_header_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -5493,7 +5422,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: end2end_binder_transport_test_engine_libuv
+- name: end2end_binder_transport_test
   gtest: true
   build: test
   language: c++
@@ -5511,7 +5440,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: end2end_test_engine_libuv
+- name: end2end_test
   gtest: true
   build: test
   run: false
@@ -5634,7 +5563,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: error_details_test_engine_libuv
+- name: error_details_test
   gtest: true
   build: test
   language: c++
@@ -5658,7 +5587,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: error_utils_test_engine_libuv
+- name: error_utils_test
   gtest: true
   build: test
   language: c++
@@ -5667,7 +5596,7 @@ targets:
   - test/core/transport/error_utils_test.cc
   deps:
   - grpc_test_util
-- name: evaluate_args_test_engine_libuv
+- name: evaluate_args_test
   gtest: true
   build: test
   language: c++
@@ -5690,7 +5619,7 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: exception_test_engine_libuv
+- name: exception_test
   gtest: true
   build: test
   language: c++
@@ -5841,7 +5770,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: file_watcher_certificate_provider_factory_test_engine_libuv
+- name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
   language: c++
@@ -5850,7 +5779,7 @@ targets:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
-- name: filter_end2end_test_engine_libuv
+- name: filter_end2end_test
   gtest: true
   build: test
   language: c++
@@ -5863,7 +5792,7 @@ targets:
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
   - grpc++_test_util
-- name: flaky_network_test_engine_libuv
+- name: flaky_network_test
   gtest: true
   build: test
   run: false
@@ -5878,7 +5807,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: flow_control_test_engine_libuv
+- name: flow_control_test
   gtest: true
   build: test
   language: c++
@@ -5964,7 +5893,7 @@ targets:
   - absl/types:variant
   - gpr
   uses_polling: false
-- name: generic_end2end_test_engine_libuv
+- name: generic_end2end_test
   gtest: true
   build: test
   language: c++
@@ -6001,7 +5930,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: google_mesh_ca_certificate_provider_factory_test_engine_libuv
+- name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
   build: test
   language: c++
@@ -6012,7 +5941,7 @@ targets:
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
-- name: grpc_authorization_engine_test_engine_libuv
+- name: grpc_authorization_engine_test
   gtest: true
   build: test
   language: c++
@@ -6021,7 +5950,7 @@ targets:
   - test/core/security/grpc_authorization_engine_test.cc
   deps:
   - grpc_test_util
-- name: grpc_authorization_policy_provider_test_engine_libuv
+- name: grpc_authorization_policy_provider_test
   gtest: true
   build: test
   language: c++
@@ -6115,7 +6044,7 @@ targets:
   - src/compiler/ruby_plugin.cc
   deps:
   - grpc_plugin_support
-- name: grpc_tls_certificate_distributor_test_engine_libuv
+- name: grpc_tls_certificate_distributor_test
   gtest: true
   build: test
   language: c++
@@ -6124,7 +6053,7 @@ targets:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
   deps:
   - grpc_test_util
-- name: grpc_tls_certificate_provider_test_engine_libuv
+- name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
   language: c++
@@ -6133,7 +6062,7 @@ targets:
   - test/core/security/grpc_tls_certificate_provider_test.cc
   deps:
   - grpc_test_util
-- name: grpc_tls_certificate_verifier_test_engine_libuv
+- name: grpc_tls_certificate_verifier_test
   gtest: true
   build: test
   language: c++
@@ -6142,7 +6071,7 @@ targets:
   - test/core/security/grpc_tls_certificate_verifier_test.cc
   deps:
   - grpc_test_util
-- name: grpc_tls_credentials_options_test_engine_libuv
+- name: grpc_tls_credentials_options_test
   gtest: true
   build: test
   language: c++
@@ -6151,7 +6080,7 @@ targets:
   - test/core/security/grpc_tls_credentials_options_test.cc
   deps:
   - grpc_test_util
-- name: grpc_tool_test_engine_libuv
+- name: grpc_tool_test
   gtest: true
   build: test
   language: c++
@@ -6182,7 +6111,7 @@ targets:
   - linux
   - posix
   - mac
-- name: grpclb_api_test_engine_libuv
+- name: grpclb_api_test
   gtest: true
   build: test
   language: c++
@@ -6192,7 +6121,7 @@ targets:
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - grpc++_test_util
-- name: grpclb_end2end_test_engine_libuv
+- name: grpclb_end2end_test
   gtest: true
   build: test
   run: false
@@ -6215,7 +6144,7 @@ targets:
   - linux
   - posix
   - mac
-- name: h2_ssl_session_reuse_test_engine_libuv
+- name: h2_ssl_session_reuse_test
   gtest: true
   build: test
   language: c++
@@ -6224,7 +6153,7 @@ targets:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - end2end_tests
-- name: head_of_line_blocking_bad_client_test_engine_libuv
+- name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -6237,7 +6166,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: headers_bad_client_test_engine_libuv
+- name: headers_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -6250,7 +6179,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: health_service_end2end_test_engine_libuv
+- name: health_service_end2end_test
   gtest: true
   build: test
   language: c++
@@ -6268,26 +6197,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: hpack_parser_fuzzer_engine_libuv
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_parser_fuzzer.proto
-  - test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
-  - test/core/util/fuzzer_corpus_test.cc
-  deps:
-  - absl/flags:flag
-  - grpc_test_util
-  - grpc++_test_config
-  args:
-  - test/core/transport/chttp2/hpack_parser_corpus
-  - --directory=test/core/transport/chttp2/hpack_parser_corpus
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6321,7 +6230,7 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: hybrid_end2end_test_engine_libuv
+- name: hybrid_end2end_test
   gtest: true
   build: test
   language: c++
@@ -6372,7 +6281,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: initial_settings_frame_bad_client_test_engine_libuv
+- name: initial_settings_frame_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -6385,7 +6294,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: insecure_security_connector_test_engine_libuv
+- name: insecure_security_connector_test
   gtest: true
   build: test
   language: c++
@@ -6429,7 +6338,7 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: interop_test_engine_libuv
+- name: interop_test
   build: test
   language: c++
   headers: []
@@ -6470,7 +6379,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: large_metadata_bad_client_test_engine_libuv
+- name: large_metadata_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -6599,7 +6508,7 @@ targets:
   - absl/types:variant
   - upb
   uses_polling: false
-- name: lb_get_cpu_stats_test_engine_libuv
+- name: lb_get_cpu_stats_test
   gtest: true
   build: test
   language: c++
@@ -6614,7 +6523,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: lb_load_data_store_test_engine_libuv
+- name: lb_load_data_store_test
   gtest: true
   build: test
   language: c++
@@ -6627,7 +6536,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: linux_system_roots_test_engine_libuv
+- name: linux_system_roots_test
   gtest: true
   build: test
   language: c++
@@ -6676,7 +6585,7 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: matchers_test_engine_libuv
+- name: matchers_test
   gtest: true
   build: test
   language: c++
@@ -6744,7 +6653,7 @@ targets:
   - absl/types:variant
   - gpr
   uses_polling: false
-- name: message_allocator_end2end_test_engine_libuv
+- name: message_allocator_end2end_test
   gtest: true
   build: test
   language: c++
@@ -6758,7 +6667,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: metadata_map_test_engine_libuv
+- name: metadata_map_test
   gtest: true
   build: test
   language: c++
@@ -6776,7 +6685,7 @@ targets:
   - test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
   deps: []
   uses_polling: false
-- name: mock_stream_test_engine_libuv
+- name: mock_stream_test
   gtest: true
   build: test
   language: c++
@@ -6789,7 +6698,7 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: mock_test_engine_libuv
+- name: mock_test
   gtest: true
   build: test
   language: c++
@@ -6803,7 +6712,7 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: nonblocking_test_engine_libuv
+- name: nonblocking_test
   gtest: true
   build: test
   language: c++
@@ -6930,7 +6839,7 @@ targets:
   - absl/types:variant
   - upb
   uses_polling: false
-- name: orphanable_test_engine_libuv
+- name: orphanable_test
   gtest: true
   build: test
   language: c++
@@ -6939,7 +6848,7 @@ targets:
   - test/core/gprpp/orphanable_test.cc
   deps:
   - grpc_test_util
-- name: out_of_bounds_bad_client_test_engine_libuv
+- name: out_of_bounds_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -6962,7 +6871,7 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
-- name: parsed_metadata_test_engine_libuv
+- name: parsed_metadata_test
   gtest: true
   build: test
   language: c++
@@ -6971,7 +6880,7 @@ targets:
   - test/core/transport/parsed_metadata_test.cc
   deps:
   - grpc_test_util
-- name: pid_controller_test_engine_libuv
+- name: pid_controller_test
   gtest: true
   build: test
   language: c++
@@ -7063,7 +6972,7 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: port_sharing_end2end_test_engine_libuv
+- name: port_sharing_end2end_test
   gtest: true
   build: test
   language: c++
@@ -7124,7 +7033,7 @@ targets:
   - absl/types:optional
   - absl/types:variant
   uses_polling: false
-- name: proto_server_reflection_test_engine_libuv
+- name: proto_server_reflection_test
   gtest: true
   build: test
   language: c++
@@ -7246,7 +7155,7 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: raw_end2end_test_engine_libuv
+- name: raw_end2end_test
   gtest: true
   build: test
   language: c++
@@ -7271,7 +7180,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: rbac_translator_test_engine_libuv
+- name: rbac_translator_test
   gtest: true
   build: test
   language: c++
@@ -7284,7 +7193,7 @@ targets:
   - test/core/security/rbac_translator_test.cc
   deps:
   - grpc_test_util
-- name: ref_counted_ptr_test_engine_libuv
+- name: ref_counted_ptr_test
   gtest: true
   build: test
   language: c++
@@ -7293,7 +7202,7 @@ targets:
   - test/core/gprpp/ref_counted_ptr_test.cc
   deps:
   - grpc_test_util
-- name: ref_counted_test_engine_libuv
+- name: ref_counted_test
   gtest: true
   build: test
   language: c++
@@ -7302,7 +7211,7 @@ targets:
   - test/core/gprpp/ref_counted_test.cc
   deps:
   - grpc_test_util
-- name: remove_stream_from_stalled_lists_test_engine_libuv
+- name: remove_stream_from_stalled_lists_test
   gtest: true
   build: test
   language: c++
@@ -7315,7 +7224,7 @@ targets:
   - linux
   - posix
   - mac
-- name: resolve_address_using_ares_resolver_test_engine_libuv
+- name: resolve_address_using_ares_resolver_test
   gtest: true
   build: test
   language: c++
@@ -7327,7 +7236,7 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test_config
-- name: resolve_address_using_native_resolver_test_engine_libuv
+- name: resolve_address_using_native_resolver_test
   gtest: true
   build: test
   language: c++
@@ -7412,7 +7321,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: rls_end2end_test_engine_libuv
+- name: rls_end2end_test
   gtest: true
   build: test
   language: c++
@@ -7432,7 +7341,7 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: rls_lb_config_parser_test_engine_libuv
+- name: rls_lb_config_parser_test
   gtest: true
   build: test
   language: c++
@@ -7441,7 +7350,7 @@ targets:
   - test/core/client_channel/rls_lb_config_parser_test.cc
   deps:
   - grpc_test_util
-- name: sdk_authz_end2end_test_engine_libuv
+- name: sdk_authz_end2end_test
   gtest: true
   build: test
   language: c++
@@ -7460,7 +7369,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: secure_auth_context_test_engine_libuv
+- name: secure_auth_context_test
   gtest: true
   build: test
   language: c++
@@ -7486,7 +7395,7 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: server_builder_plugin_test_engine_libuv
+- name: server_builder_plugin_test
   gtest: true
   build: test
   language: c++
@@ -7501,7 +7410,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: server_builder_test_engine_libuv
+- name: server_builder_test
   gtest: true
   build: test
   language: c++
@@ -7518,7 +7427,7 @@ targets:
   - linux
   - posix
   - mac
-- name: server_builder_with_socket_mutator_test_engine_libuv
+- name: server_builder_with_socket_mutator_test
   gtest: true
   build: test
   language: c++
@@ -7535,7 +7444,7 @@ targets:
   - linux
   - posix
   - mac
-- name: server_chttp2_test_engine_libuv
+- name: server_chttp2_test
   gtest: true
   build: test
   language: c++
@@ -7554,7 +7463,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: server_context_test_spouse_test_engine_libuv
+- name: server_context_test_spouse_test
   gtest: true
   build: test
   language: c++
@@ -7564,7 +7473,7 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: server_early_return_test_engine_libuv
+- name: server_early_return_test
   gtest: true
   build: test
   language: c++
@@ -7576,7 +7485,7 @@ targets:
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - grpc++_test_util
-- name: server_interceptors_end2end_test_engine_libuv
+- name: server_interceptors_end2end_test
   gtest: true
   build: test
   language: c++
@@ -7592,7 +7501,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: server_registered_method_bad_client_test_engine_libuv
+- name: server_registered_method_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -7605,7 +7514,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: server_request_call_test_engine_libuv
+- name: server_request_call_test
   gtest: true
   build: test
   language: c++
@@ -7622,7 +7531,7 @@ targets:
   - linux
   - posix
   - mac
-- name: service_config_end2end_test_engine_libuv
+- name: service_config_end2end_test
   gtest: true
   build: test
   language: c++
@@ -7637,7 +7546,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: service_config_test_engine_libuv
+- name: service_config_test
   gtest: true
   build: test
   language: c++
@@ -7646,7 +7555,7 @@ targets:
   - test/core/client_channel/service_config_test.cc
   deps:
   - grpc_test_util
-- name: settings_timeout_test_engine_libuv
+- name: settings_timeout_test
   gtest: true
   build: test
   run: false
@@ -7656,7 +7565,7 @@ targets:
   - test/core/transport/chttp2/settings_timeout_test.cc
   deps:
   - grpc_test_util
-- name: shutdown_test_engine_libuv
+- name: shutdown_test
   gtest: true
   build: test
   language: c++
@@ -7669,7 +7578,7 @@ targets:
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - grpc++_test_util
-- name: simple_request_bad_client_test_engine_libuv
+- name: simple_request_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -7682,7 +7591,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: sockaddr_utils_test_engine_libuv
+- name: sockaddr_utils_test
   gtest: true
   build: test
   language: c++
@@ -7745,7 +7654,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: stranded_event_test_engine_libuv
+- name: stranded_event_test
   gtest: true
   build: test
   language: c++
@@ -7760,7 +7669,7 @@ targets:
   - linux
   - posix
   - mac
-- name: streaming_throughput_test_engine_libuv
+- name: streaming_throughput_test
   gtest: true
   build: test
   language: c++
@@ -7827,7 +7736,7 @@ targets:
   deps:
   - gpr
   uses_polling: false
-- name: test_cpp_client_credentials_test_engine_libuv
+- name: test_cpp_client_credentials_test
   gtest: true
   build: test
   language: c++
@@ -7839,7 +7748,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: test_cpp_server_credentials_test_engine_libuv
+- name: test_cpp_server_credentials_test
   gtest: true
   build: test
   language: c++
@@ -7871,7 +7780,7 @@ targets:
   deps:
   - grpc++_test_util
   uses_polling: false
-- name: thread_manager_test_engine_libuv
+- name: thread_manager_test
   gtest: true
   build: test
   language: c++
@@ -7898,7 +7807,7 @@ targets:
   deps:
   - gpr
   uses_polling: false
-- name: thread_stress_test_engine_libuv
+- name: thread_stress_test
   gtest: true
   build: test
   language: c++
@@ -7915,7 +7824,7 @@ targets:
   - linux
   - posix
   - mac
-- name: time_jump_test_engine_libuv
+- name: time_jump_test
   gtest: true
   build: test
   run: false
@@ -7950,7 +7859,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: timer_test_engine_libuv
+- name: timer_test
   gtest: true
   build: test
   language: c++
@@ -7960,7 +7869,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: tls_certificate_verifier_test_engine_libuv
+- name: tls_certificate_verifier_test
   gtest: true
   build: test
   language: c++
@@ -7972,7 +7881,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: tls_key_export_test_engine_libuv
+- name: tls_key_export_test
   gtest: true
   build: test
   language: c++
@@ -7984,7 +7893,7 @@ targets:
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
   - grpc++_test_util
-- name: tls_security_connector_test_engine_libuv
+- name: tls_security_connector_test
   gtest: true
   build: test
   language: c++
@@ -8003,7 +7912,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: too_many_pings_test_engine_libuv
+- name: too_many_pings_test
   gtest: true
   build: test
   language: c++
@@ -8159,7 +8068,7 @@ targets:
   - absl/status:statusor
   - absl/types:variant
   uses_polling: false
-- name: unknown_frame_bad_client_test_engine_libuv
+- name: unknown_frame_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -8172,7 +8081,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: uri_parser_test_engine_libuv
+- name: uri_parser_test
   gtest: true
   build: test
   language: c++
@@ -8191,7 +8100,7 @@ targets:
   - test/core/gpr/useful_test.cc
   deps: []
   uses_polling: false
-- name: window_overflow_bad_client_test_engine_libuv
+- name: window_overflow_bad_client_test
   gtest: true
   build: test
   language: c++
@@ -8392,7 +8301,7 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: work_serializer_test_engine_libuv
+- name: work_serializer_test
   gtest: true
   build: test
   language: c++
@@ -8405,7 +8314,7 @@ targets:
   - linux
   - posix
   - mac
-- name: writes_per_rpc_test_engine_libuv
+- name: writes_per_rpc_test
   gtest: true
   build: test
   language: c++
@@ -8466,7 +8375,7 @@ targets:
   - linux
   - posix
   - mac
-- name: xds_bootstrap_test_engine_libuv
+- name: xds_bootstrap_test
   gtest: true
   build: test
   language: c++
@@ -8475,7 +8384,7 @@ targets:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
-- name: xds_certificate_provider_test_engine_libuv
+- name: xds_certificate_provider_test
   gtest: true
   build: test
   language: c++
@@ -8484,7 +8393,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
-- name: xds_channel_creds_registry_test_engine_libuv
+- name: xds_channel_creds_registry_test
   gtest: true
   build: test
   language: c++
@@ -8493,7 +8402,7 @@ targets:
   - test/core/xds/xds_channel_creds_registry_test.cc
   deps:
   - grpc_test_util
-- name: xds_credentials_end2end_test_engine_libuv
+- name: xds_credentials_end2end_test
   gtest: true
   build: test
   language: c++
@@ -8507,7 +8416,7 @@ targets:
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
   - grpc++_test_util
-- name: xds_credentials_test_engine_libuv
+- name: xds_credentials_test
   gtest: true
   build: test
   language: c++
@@ -8516,7 +8425,7 @@ targets:
   - test/core/security/xds_credentials_test.cc
   deps:
   - grpc_test_util
-- name: xds_end2end_test_engine_libuv
+- name: xds_end2end_test
   gtest: true
   build: test
   run: false
