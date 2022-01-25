@@ -221,7 +221,7 @@ cc_library(
         "//conditions:default": [],
     }),
     defines = ["CARES_STATICLIB"],
-    includes = ["."],
+    includes = ["include", "."],
     linkopts = select({
         ":windows": ["-defaultlib:ws2_32.lib"],
         "//conditions:default": [],
