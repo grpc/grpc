@@ -125,17 +125,9 @@ export LANG=en_US.UTF-8
 DEFAULT_PARALLEL_JOBS=$(nproc) || DEFAULT_PARALLEL_JOBS=4
 export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-$DEFAULT_PARALLEL_JOBS}
 
-# If ccache is available on Linux, use it.
-if [ "$(is_linux)" ]; then
-  # We're not on Darwin (Mac OS X)
-  if [ -x "$(command -v ccache)" ]; then
-    if [ -x "$(command -v gcc)" ]; then
-      export CC='ccache gcc'
-    elif [ -x "$(command -v clang)" ]; then
-      export CC='ccache clang'
-    fi
-  fi
-fi
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 ############################
 # Perform build operations #
@@ -176,16 +168,13 @@ pip_install_dir() {
   cd "$PWD"
 }
 
-case "$VENV" in
-  *py36_gevent*)
+# Install gevent
+if [[ "$VENV" == "py36" ]]; then
   # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
   pip_install gevent==1.3.b1
-  ;;
-  *gevent*)
+else
   pip_install -U gevent
-  ;;
-esac
-
+fi
 
 pip_install --upgrade cython
 pip_install --upgrade six protobuf

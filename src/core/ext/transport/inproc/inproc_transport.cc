@@ -1212,9 +1212,11 @@ void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
 grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
 
 const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",        init_stream,
-    set_pollset,           set_pollset_set, perform_stream_op,
-    perform_transport_op,  destroy_stream,  destroy_transport,
+    sizeof(inproc_stream), "inproc",
+    init_stream,           nullptr,
+    set_pollset,           set_pollset_set,
+    perform_stream_op,     perform_transport_op,
+    destroy_stream,        destroy_transport,
     get_endpoint};
 
 /*******************************************************************************

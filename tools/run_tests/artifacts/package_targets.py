@@ -96,13 +96,13 @@ class CSharpPackage:
         if self.unity:
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/test/csharp_buster_x64',
+                'tools/dockerfile/test/csharp_debian11_x64',
                 'src/csharp/build_unitypackage.sh',
                 environ=environ)
         else:
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/test/csharp_buster_x64',
+                'tools/dockerfile/test/csharp_debian11_x64',
                 'src/csharp/build_nuget.sh',
                 environ=environ)
 

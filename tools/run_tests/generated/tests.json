@@ -2122,30 +2122,6 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "slice_intern_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": false
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": false,
-    "language": "c",
     "name": "slice_split_test",
     "platforms": [
       "linux",
@@ -3610,6 +3586,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "client_authority_filter_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "client_callback_end2end_test",
     "platforms": [
       "linux",
@@ -4626,7 +4626,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -4638,7 +4637,6 @@
     "name": "grpc_tool_test",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": true
@@ -7036,6 +7034,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "tls_key_export_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "tls_security_connector_test",
     "platforms": [
       "linux",
@@ -7417,6 +7439,30 @@
     "gtest": true,
     "language": "c++",
     "name": "xds_certificate_provider_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "xds_channel_creds_registry_test",
     "platforms": [
       "linux",
       "mac",

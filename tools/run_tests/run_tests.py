@@ -178,22 +178,18 @@ _PythonConfigVars = collections.namedtuple('_ConfigVars', [
     'venv_relative_python',
     'toolchain',
     'runner',
-    'test_name',
-    'iomgr_platform',
 ])
 
 
 def _python_config_generator(name, major, minor, bits, config_vars):
-    name += '_' + config_vars.iomgr_platform
-    return PythonConfig(
-        name, config_vars.shell + config_vars.builder +
-        config_vars.builder_prefix_arguments +
-        [_python_pattern_function(major=major, minor=minor, bits=bits)] +
-        [name] + config_vars.venv_relative_python + config_vars.toolchain,
-        config_vars.shell + config_vars.runner + [
-            os.path.join(name, config_vars.venv_relative_python[0]),
-            config_vars.test_name
-        ])
+    build = (config_vars.shell + config_vars.builder +
+             config_vars.builder_prefix_arguments +
+             [_python_pattern_function(major=major, minor=minor, bits=bits)] +
+             [name] + config_vars.venv_relative_python + config_vars.toolchain)
+    run = (config_vars.shell + config_vars.runner + [
+        os.path.join(name, config_vars.venv_relative_python[0]),
+    ])
+    return PythonConfig(name, build, run)
 
 
 def _pypy_config_generator(name, major, config_vars):
@@ -463,13 +459,13 @@ class CLanguage(object):
             _check_compiler(compiler, ['default', 'cmake'])
 
         if compiler == 'default' or compiler == 'cmake':
-            return ('debian9', [])
+            return ('debian11', [])
         elif compiler == 'gcc4.9':
             return ('gcc_4.9', [])
-        elif compiler == 'gcc8.3':
-            return ('debian10', [])
-        elif compiler == 'gcc8.3_openssl102':
-            return ('debian10_openssl102', [
+        elif compiler == 'gcc10.2':
+            return ('debian11', [])
+        elif compiler == 'gcc10.2_openssl102':
+            return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':
@@ -478,8 +474,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang4':
             return ('clang_4', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang12':
-            return ('clang_12', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang13':
+            return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -614,8 +610,9 @@ class PythonLanguage(object):
         ],
         'asyncio': ['src/python/grpcio_tests/tests_aio/tests.json'],
     }
-    _TEST_FOLDER = {
-        'native': 'test',
+
+    _TEST_COMMAND = {
+        'native': 'test_lite',
         'gevent': 'test_gevent',
         'asyncio': 'test_aio',
     }
@@ -627,28 +624,36 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        tests_json = []
-        for tests_json_file_name in self._TEST_SPECS_FILE[
-                self.args.iomgr_platform]:
-            with open(tests_json_file_name) as tests_json_file:
-                tests_json.extend(json.load(tests_json_file))
-        environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-        # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
-        # designed for non-native IO manager. It has a side-effect that
-        # overrides threading settings in C-Core.
-        if args.iomgr_platform != 'native':
-            environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
-        return [
-            self.config.job_spec(
-                config.run,
-                timeout_seconds=8 * 60,
-                environ=dict(GRPC_PYTHON_TESTRUNNER_FILTER=str(suite_name),
-                             **environment),
-                shortname='%s.%s.%s' %
-                (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
-                 suite_name),
-            ) for suite_name in tests_json for config in self.pythons
-        ]
+        jobs = []
+        for io_platform in self._TEST_SPECS_FILE:
+            test_cases = []
+            for tests_json_file_name in self._TEST_SPECS_FILE[io_platform]:
+                with open(tests_json_file_name) as tests_json_file:
+                    test_cases.extend(json.load(tests_json_file))
+
+            environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+            # TODO(https://github.com/grpc/grpc/issues/21401) Fork handlers is not
+            # designed for non-native IO manager. It has a side-effect that
+            # overrides threading settings in C-Core.
+            if io_platform != 'native':
+                environment['GRPC_ENABLE_FORK_SUPPORT'] = '0'
+            for python_config in self.pythons:
+                # TODO(https://github.com/grpc/grpc/issues/23784) allow gevent
+                # to run on later version once issue solved.
+                if io_platform == 'gevent' and python_config.name != 'py36':
+                    continue
+                jobs.extend([
+                    self.config.job_spec(
+                        python_config.run + [self._TEST_COMMAND[io_platform]],
+                        timeout_seconds=8 * 60,
+                        environ=dict(
+                            GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
+                            **environment),
+                        shortname='%s.%s.%s' %
+                        (python_config.name, io_platform, test_case),
+                    ) for test_case in test_cases
+                ])
+        return jobs
 
     def pre_build_steps(self):
         return []
@@ -673,19 +678,23 @@ class PythonLanguage(object):
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_docker_distro_name(),
+            _docker_arch_suffix(self.args.arch))
 
-    def _python_manager_name(self):
+    def _python_docker_distro_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
-            return 'stretch_' + self.args.compiler[len('python'):]
-        elif self.args.compiler == 'python_alpine':
+        if self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
-            return 'stretch_default'
+            return 'debian11_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
+        if args.iomgr_platform != 'native':
+            raise ValueError(
+                'Python builds no longer differentiate IO Manager platforms, please use "native"'
+            )
+
         if args.arch == 'x86':
             bits = '32'
         else:
@@ -710,25 +719,13 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
-        # Selects the corresponding testing mode.
-        # See src/python/grpcio_tests/commands.py for implementation details.
-        if args.iomgr_platform == 'native':
-            test_command = 'test_lite'
-        elif args.iomgr_platform == 'gevent':
-            test_command = 'test_gevent'
-        elif args.iomgr_platform == 'asyncio':
-            test_command = 'test_aio'
-        else:
-            raise ValueError('Unsupported IO Manager platform: %s' %
-                             args.iomgr_platform)
         runner = [
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
 
         config_vars = _PythonConfigVars(shell, builder,
                                         builder_prefix_arguments,
-                                        venv_relative_python, toolchain, runner,
-                                        test_command, args.iomgr_platform)
+                                        venv_relative_python, toolchain, runner)
         python36_config = _python_config_generator(name='py36',
                                                    major='3',
                                                    minor='6',
@@ -749,6 +746,11 @@ class PythonLanguage(object):
                                                    minor='9',
                                                    bits=bits,
                                                    config_vars=config_vars)
+        python310_config = _python_config_generator(name='py310',
+                                                    major='3',
+                                                    minor='10',
+                                                    bits=bits,
+                                                    config_vars=config_vars)
         pypy27_config = _pypy_config_generator(name='pypy',
                                                major='2',
                                                config_vars=config_vars)
@@ -756,34 +758,19 @@ class PythonLanguage(object):
                                                major='3',
                                                config_vars=config_vars)
 
-        if args.iomgr_platform in ('asyncio', 'gevent'):
-            if args.compiler not in ('default', 'python3.6', 'python3.7',
-                                     'python3.8', 'python3.9'):
-                raise Exception(
-                    'Compiler %s not supported with IO Manager platform: %s' %
-                    (args.compiler, args.iomgr_platform))
-
         if args.compiler == 'default':
             if os.name == 'nt':
-                if args.iomgr_platform == 'gevent':
-                    # TODO(https://github.com/grpc/grpc/issues/23784) allow
-                    # gevent to run on later version once issue solved.
-                    return (python36_config,)
-                else:
-                    return (python38_config,)
+                return (python38_config,)
+            elif os.uname()[0] == 'Darwin':
+                # NOTE(rbellevi): Testing takes significantly longer on
+                # MacOS, so we restrict the number of interpreter versions
+                # tested.
+                return (python38_config,)
             else:
-                if args.iomgr_platform in ('asyncio', 'gevent'):
-                    return (python36_config, python38_config)
-                elif os.uname()[0] == 'Darwin':
-                    # NOTE(rbellevi): Testing takes significantly longer on
-                    # MacOS, so we restrict the number of interpreter versions
-                    # tested.
-                    return (python38_config,)
-                else:
-                    return (
-                        python37_config,
-                        python38_config,
-                    )
+                return (
+                    python36_config,
+                    python38_config,
+                )
         elif args.compiler == 'python3.6':
             return (python36_config,)
         elif args.compiler == 'python3.7':
@@ -792,6 +779,8 @@ class PythonLanguage(object):
             return (python38_config,)
         elif args.compiler == 'python3.9':
             return (python39_config,)
+        elif args.compiler == 'python3.10':
+            return (python310_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -803,6 +792,8 @@ class PythonLanguage(object):
                 python36_config,
                 python37_config,
                 python38_config,
+                python39_config,
+                python310_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -870,7 +861,7 @@ class RubyLanguage(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/ruby_buster_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/ruby_debian11_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -885,13 +876,19 @@ class CSharpLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
+        _check_compiler(self.args.compiler, ['default', 'coreclr', 'mono'])
+        if self.args.compiler == 'default':
+            # test both runtimes by default
+            self.test_runtimes = ['coreclr', 'mono']
+        else:
+            # only test the specified runtime
+            self.test_runtimes = [self.args.compiler]
+
         if self.platform == 'windows':
-            _check_compiler(self.args.compiler, ['default', 'coreclr'])
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
         else:
-            _check_compiler(self.args.compiler, ['default', 'coreclr'])
-            self._docker_distro = 'buster'
+            self._docker_distro = 'debian11'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -899,28 +896,28 @@ class CSharpLanguage(object):
 
         msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
         nunit_args = ['--labels=All', '--noresult', '--workers=1']
-        assembly_subdir = 'bin/%s' % msbuild_config
-        assembly_extension = '.exe'
-
-        if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp3.1'
-            runtime_cmd = ['dotnet', 'exec']
-            assembly_extension = '.dll'
-        else:
-            assembly_subdir += '/net45'
-            if self.platform == 'windows':
-                runtime_cmd = []
-            elif self.platform == 'mac':
-                # mono before version 5.2 on MacOS defaults to 32bit runtime
-                runtime_cmd = ['mono', '--arch=64']
-            else:
-                runtime_cmd = ['mono']
 
         specs = []
-        for assembly in six.iterkeys(tests_by_assembly):
-            assembly_file = 'src/csharp/%s/%s/%s%s' % (
-                assembly, assembly_subdir, assembly, assembly_extension)
-            if self.config.build_config != 'gcov' or self.platform != 'windows':
+        for test_runtime in self.test_runtimes:
+            if self.args.compiler == 'coreclr':
+                assembly_extension = '.dll'
+                assembly_subdir = 'bin/%s/netcoreapp3.1' % msbuild_config
+                runtime_cmd = ['dotnet', 'exec']
+            else:
+                assembly_extension = '.exe'
+                assembly_subdir = 'bin/%s/net45' % msbuild_config
+                if self.platform == 'windows':
+                    runtime_cmd = []
+                elif self.platform == 'mac':
+                    # mono before version 5.2 on MacOS defaults to 32bit runtime
+                    runtime_cmd = ['mono', '--arch=64']
+                else:
+                    runtime_cmd = ['mono']
+
+            for assembly in six.iterkeys(tests_by_assembly):
+                assembly_file = 'src/csharp/%s/%s/%s%s' % (
+                    assembly, assembly_subdir, assembly, assembly_extension)
+
                 # normally, run each test as a separate process
                 for test in tests_by_assembly[assembly]:
                     cmdline = runtime_cmd + [assembly_file,
@@ -928,28 +925,8 @@ class CSharpLanguage(object):
                     specs.append(
                         self.config.job_spec(
                             cmdline,
-                            shortname='csharp.%s' % test,
+                            shortname='csharp.%s.%s' % (test_runtime, test),
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-            else:
-                # For C# test coverage, run all tests from the same assembly at once
-                # using OpenCover.Console (only works on Windows).
-                cmdline = [
-                    'src\\csharp\\packages\\OpenCover.4.6.519\\tools\\OpenCover.Console.exe',
-                    '-target:%s' % assembly_file, '-targetdir:src\\csharp',
-                    '-targetargs:%s' % ' '.join(nunit_args),
-                    '-filter:+[Grpc.Core]*', '-register:user',
-                    '-output:src\\csharp\\coverage_csharp_%s.xml' % assembly
-                ]
-
-                # set really high cpu_cost to make sure instances of OpenCover.Console run exclusively
-                # to prevent problems with registering the profiler.
-                run_exclusive = 1000000
-                specs.append(
-                    self.config.job_spec(cmdline,
-                                         shortname='csharp.coverage.%s' %
-                                         assembly,
-                                         cpu_cost=run_exclusive,
-                                         environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return specs
 
     def pre_build_steps(self):
@@ -1405,12 +1382,12 @@ argp.add_argument(
     choices=[
         'default',
         'gcc4.9',
-        'gcc8.3',
-        'gcc8.3_openssl102',
+        'gcc10.2',
+        'gcc10.2_openssl102',
         'gcc11',
         'gcc_musl',
         'clang4',
-        'clang12',
+        'clang13',
         'python2.7',
         'python3.5',
         'python3.6',
@@ -1428,6 +1405,7 @@ argp.add_argument(
         'cmake_vs2015',
         'cmake_vs2017',
         'cmake_vs2019',
+        'mono',
     ],
     default='default',
     help=

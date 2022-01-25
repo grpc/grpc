@@ -90,6 +90,7 @@ def _update_visibility(visibility):
         "grpc_opencensus_plugin": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
         "grpc++_test": PRIVATE,
+        "httpcli": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "trace": PRIVATE,
