@@ -881,6 +881,13 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.key",
         "//src/core/tsi/test_creds:server0.pem",
     ],
+    args = [
+        "--ca_cert=$(location //src/core/tsi/test_creds:ca.pem)",
+        "--client_private_key=$(location //src/core/tsi/test_creds:client.key)",
+        "--server_private_key=$(location //src/core/tsi/test_creds:server0.key)",
+        "--client_cert=$(location //src/core/tsi/test_creds:client.pem)",
+        "--server_cert=$(location //src/core/tsi/test_creds:server0.pem)",
+    ],
     external_deps = [
         "gtest",
     ],

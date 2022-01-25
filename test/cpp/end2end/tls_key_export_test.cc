@@ -33,6 +33,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/tls_utils.h"
 
 extern "C" {
@@ -43,13 +44,14 @@ extern "C" {
 #define TLS_KEY_LOGGING_AVAILABLE
 #endif
 
-#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
-#define SERVER_KEY_PATH "src/core/tsi/test_creds/server0.key"
-#define SERVER_CERT_PATH "src/core/tsi/test_creds/server0.pem"
-#define CLIENT_KEY_PATH "src/core/tsi/test_creds/client.key"
-#define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
-
-#define NUM_REQUESTS_PER_CHANNEL 5
+namespace {
+  constexpr int kNumRequestsPerChannel = 5;
+  const char* kCACertPath = nullptr;
+  const char* kServerKeyPath = nullptr;
+  const char* kServerCertPath = nullptr;
+  const char* kClientKeyPath = nullptr;
+  const char* kClientCertPath = nullptr;
+}
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
@@ -149,11 +151,11 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
     auto server_certificate_provider =
         std::make_shared<FileWatcherCertificateProvider>(
-            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+            kServerKeyPath, kServerCertPath, kCACertPath, 1);
 
     auto channel_certificate_provider =
         std::make_shared<FileWatcherCertificateProvider>(
-            CLIENT_KEY_PATH, CLIENT_CERT_PATH, CA_CERT_PATH, 1);
+            kClientKeyPath, kClientCertPath, kCACertPath, 1);
 
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       // Configure tls credential options for each port
@@ -250,7 +252,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
 TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
   // Cover all valid statuses.
-  for (int i = 0; i <= NUM_REQUESTS_PER_CHANNEL; ++i) {
+  for (int i = 0; i <= kNumRequestsPerChannel; ++i) {
     for (int j = 0; j < GetParam().num_listening_ports(); ++j) {
       EchoRequest request;
       request.set_message("foo");
@@ -335,7 +337,25 @@ INSTANTIATE_TEST_SUITE_P(TlsKeyLogging, TlsKeyLoggingEnd2EndTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  int ret;
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
-  return RUN_ALL_TESTS();
+
+  gpr_cmdline* cl = gpr_cmdline_create("tls key export test");
+  gpr_cmdline_add_string(cl, "ca_cert", "Path to CA certificate",
+                         &kCACertPath);
+  gpr_cmdline_add_string(cl, "client_private_key", "Path to Client Private key",
+                         &kClientKeyPath);
+  gpr_cmdline_add_string(cl, "server_private_key", "Path to Server Private key",
+                         &kServerKeyPath);
+  gpr_cmdline_add_string(cl, "client_cert", "Path to Client Certificate",
+                         &kClientCertPath);
+  gpr_cmdline_add_string(cl, "server_cert", "Path to Server Certificate",
+                         &kServerCertPath);
+  // There must be at-least 5 arguments on the command line,
+  GPR_ASSERT(argc >= 5);
+  gpr_cmdline_parse(cl, argc, argv);
+  ret = RUN_ALL_TESTS();
+  gpr_cmdline_destroy(cl);
+  return ret;
 }
