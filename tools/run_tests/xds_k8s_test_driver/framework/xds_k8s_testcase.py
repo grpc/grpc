@@ -350,6 +350,55 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                      json_format.MessageToJson(config, indent=2))
         self.assertSameElements(want, seen)
 
+    @staticmethod
+    def getRouteConfigVersion(test_client: XdsTestClient) -> Optional[str]:
+        config = test_client.csds.fetch_client_status(log_level=logging.INFO)
+        route_config_version = None
+        for xds_config in config.xds_config:
+            if xds_config.WhichOneof('per_xds_config') == "route_config":
+                route_config = xds_config.route_config
+                logger.info('Route config found: %s',
+                            json_format.MessageToJson(route_config, indent=2))
+                route_config_version = route_config.dynamic_route_configs[
+                    0].version_info
+                logger.info('found routing config version: %s',
+                            route_config_version)
+                break
+        return route_config_version
+
+    def assertRouteConfigUpdateTrafficHandoff(
+            self, test_client: XdsTestClient,
+            previous_route_config_version: str, retry_wait_second: int,
+            timeout_second: int):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=retry_wait_second),
+            timeout=datetime.timedelta(seconds=timeout_second),
+            retry_on_exceptions=(TdPropagationRetryableError,),
+            logger=logger,
+            log_level=logging.INFO)
+        try:
+            for attempt in retryer:
+                with attempt:
+                    self.assertSuccessfulRpcs(test_client)
+                    route_config_version = self.getRouteConfigVersion(
+                        test_client)
+                    if previous_route_config_version == route_config_version:
+                        logger.info(
+                            'Routing config not propagated yet. Retrying.')
+                        raise TdPropagationRetryableError(
+                            "CSDS not get updated routing config corresponding"
+                            " to the second set of url maps")
+                    else:
+                        self.assertSuccessfulRpcs(test_client)
+                        logger.info(
+                            '[SUCCESS] Confirmed successful RPC with the updated routing config, version=%s',
+                            route_config_version)
+        except retryers.RetryError as retry_error:
+            logger.info(
+                'Retry exhausted. TD routing config propagation failed after timeout %ds.',
+                timeout_second)
+            raise retry_error
+
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
@@ -376,6 +425,10 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                 int(rpcs_count),
                 0,
                 msg=f'Backend {backend} did not receive a single RPC')
+
+
+class TdPropagationRetryableError(Exception):
+    pass
 
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):

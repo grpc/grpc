@@ -437,19 +437,15 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
-  - src/core/ext/filters/client_channel/resolver_factory.h
-  - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -468,9 +464,6 @@ libs:
   - src/core/ext/filters/rbac/rbac_service_config_parser.h
   - src/core/ext/filters/server_config_selector/server_config_selector.h
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.h
-  - src/core/ext/service_config/service_config.h
-  - src/core/ext/service_config/service_config_call_data.h
-  - src/core/ext/service_config/service_config_parser.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -488,15 +481,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
-  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
@@ -720,6 +710,7 @@ libs:
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
+  - src/core/ext/xds/xds_channel_creds.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
@@ -751,6 +742,7 @@ libs:
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
+  - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -772,6 +764,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
+  - src/core/lib/http/httpcli_ssl_credentials.h
   - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
@@ -826,6 +819,7 @@ libs:
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -856,6 +850,7 @@ libs:
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -866,8 +861,13 @@ libs:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resolver/resolver.h
+  - src/core/lib/resolver/resolver_factory.h
+  - src/core/lib/resolver/resolver_registry.h
+  - src/core/lib/resolver/server_address.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -925,6 +925,9 @@ libs:
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
+  - src/core/lib/service_config/service_config.h
+  - src/core/lib/service_config/service_config_call_data.h
+  - src/core/lib/service_config/service_config_parser.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -933,8 +936,6 @@ libs:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -954,11 +955,9 @@ libs:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
-  - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -984,6 +983,7 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/key_logging/ssl_key_logging.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
@@ -1029,7 +1029,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
@@ -1045,12 +1044,10 @@ libs:
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
-  - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -1071,8 +1068,6 @@ libs:
   - src/core/ext/filters/rbac/rbac_service_config_parser.cc
   - src/core/ext/filters/server_config_selector/server_config_selector.cc
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
-  - src/core/ext/service_config/service_config.cc
-  - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -1098,7 +1093,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -1325,6 +1319,7 @@ libs:
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_certificate_provider.cc
+  - src/core/ext/xds/xds_channel_creds.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
@@ -1468,6 +1463,9 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resolver/resolver.cc
+  - src/core/lib/resolver/resolver_registry.cc
+  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -1491,7 +1489,6 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
-  - src/core/lib/security/credentials/credentials_metadata.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
   - src/core/lib/security/credentials/external/aws_request_signer.cc
   - src/core/lib/security/credentials/external/external_account_credentials.cc
@@ -1533,16 +1530,16 @@ libs:
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
+  - src/core/lib/service_config/service_config.cc
+  - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -1568,11 +1565,8 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
-  - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -1600,6 +1594,7 @@ libs:
   - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/key_logging/ssl_key_logging.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -1753,6 +1748,7 @@ libs:
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   - include/grpc/load_reporting.h
   - include/grpc/slice.h
@@ -1788,18 +1784,14 @@ libs:
   - src/core/ext/filters/client_channel/local_subchannel_pool.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
-  - src/core/ext/filters/client_channel/resolver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
-  - src/core/ext/filters/client_channel/resolver_factory.h
-  - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
@@ -1814,9 +1806,6 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/service_config/service_config.h
-  - src/core/ext/service_config/service_config_call_data.h
-  - src/core/ext/service_config/service_config_parser.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
@@ -1834,18 +1823,16 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
-  - src/core/ext/transport/chttp2/transport/hpack_utils.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
   - src/core/ext/transport/chttp2/transport/stream_map.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/inproc/inproc_transport.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/protobuf/duration.upb.h
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
@@ -1869,6 +1856,7 @@ libs:
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
+  - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -1944,6 +1932,7 @@ libs:
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -1973,6 +1962,7 @@ libs:
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/arena_promise.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -1983,14 +1973,31 @@ libs:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resolver/resolver.h
+  - src/core/lib/resolver/resolver_factory.h
+  - src/core/lib/resolver/resolver_registry.h
+  - src/core/lib/resolver/server_address.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/composite/composite_credentials.h
+  - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/plugin/plugin_credentials.h
+  - src/core/lib/security/security_connector/security_connector.h
+  - src/core/lib/security/transport/auth_filters.h
+  - src/core/lib/security/transport/secure_endpoint.h
+  - src/core/lib/security/transport/security_handshaker.h
+  - src/core/lib/security/transport/tsi_error.h
+  - src/core/lib/service_config/service_config.h
+  - src/core/lib/service_config/service_config_call_data.h
+  - src/core/lib/service_config/service_config_parser.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -1999,8 +2006,6 @@ libs:
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
@@ -2020,16 +2025,17 @@ libs:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
-  - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/census/grpc_context.cc
@@ -2063,7 +2069,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
   - src/core/ext/filters/client_channel/local_subchannel_pool.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc
@@ -2077,12 +2082,10 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
   - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
-  - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
@@ -2099,8 +2102,6 @@ libs:
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/service_config/service_config.cc
-  - src/core/ext/service_config/service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
@@ -2124,7 +2125,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
-  - src/core/ext/transport/chttp2/transport/hpack_utils.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -2134,6 +2134,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/protobuf/duration.upb.c
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
@@ -2267,6 +2268,9 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resolver/resolver.cc
+  - src/core/lib/resolver/resolver_registry.cc
+  - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -2274,16 +2278,26 @@ libs:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
+  - src/core/lib/security/context/security_context.cc
+  - src/core/lib/security/credentials/composite/composite_credentials.cc
+  - src/core/lib/security/credentials/credentials.cc
+  - src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  - src/core/lib/security/security_connector/security_connector.cc
+  - src/core/lib/security/transport/client_auth_filter.cc
+  - src/core/lib/security/transport/secure_endpoint.cc
+  - src/core/lib/security/transport/security_handshaker.cc
+  - src/core/lib/security/transport/server_auth_filter.cc
+  - src/core/lib/security/transport/tsi_error.cc
+  - src/core/lib/service_config/service_config.cc
+  - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
@@ -2309,17 +2323,16 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/metadata.cc
-  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
-  - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
   - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   deps:
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -3649,40 +3662,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: httpcli_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/httpcli_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: httpscli_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/httpscli_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: inproc_callback_test
   build: test
   language: c
@@ -3785,8 +3764,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -3801,7 +3778,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/status:statusor
@@ -3820,14 +3796,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: metadata_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/metadata_test.cc
-  deps:
-  - grpc_test_util
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -4046,15 +4014,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: slice_intern_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_intern_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: slice_split_test
   build: test
   language: c
@@ -4077,14 +4036,11 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
   - gpr
@@ -4557,8 +4513,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4576,7 +4530,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/arena_promise_test.cc
   deps:
   - absl/status:statusor
@@ -5052,8 +5005,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -5071,7 +5022,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/status:statusor
@@ -5105,6 +5055,16 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_test_util
+- name: client_authority_filter_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/filters/client_authority_filter_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -5687,8 +5647,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/iomgr/combiner.cc
@@ -5700,7 +5658,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
   - absl/status:statusor
@@ -5899,8 +5856,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -5919,7 +5874,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
@@ -6231,16 +6185,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: hpack_encoder_index_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/hpack_encoder_index.h
-  src:
-  - test/core/transport/chttp2/hpack_encoder_index_test.cc
-  deps:
-  - absl/types:optional
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6274,6 +6218,40 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: httpcli_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/http/httpcli_test_util.h
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/http/httpcli_test.cc
+  - test/core/http/httpcli_test_util.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: httpscli_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/http/httpcli_test_util.h
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/http/httpcli_test_util.cc
+  - test/core/http/httpscli_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: hybrid_end2end_test
   gtest: true
   build: test
@@ -6676,8 +6654,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
@@ -6693,7 +6669,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/status:statusor
@@ -6984,8 +6959,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
@@ -7004,7 +6977,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/promise/pipe_test.cc
   deps:
   - absl/status:statusor
@@ -7022,15 +6994,6 @@ targets:
   deps:
   - absl/types:variant
   uses_polling: false
-- name: popularity_count_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chttp2/transport/popularity_count.h
-  src:
-  - test/core/transport/chttp2/popularity_count_test.cc
-  deps: []
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -7348,8 +7311,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -7366,7 +7327,6 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/status:statusor
@@ -7686,15 +7646,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: static_metadata_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/static_metadata_test.cc
-  deps:
-  - grpc_test_util
 - name: stats_test
   gtest: true
   build: test
@@ -7796,15 +7747,12 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/slice/slice_utils.h
-  - src/core/lib/slice/static_slice.h
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/slice/static_slice.cc
   - test/core/slice/slice_test.cc
   - test/core/util/build.cc
   deps:
@@ -7955,6 +7903,18 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: tls_key_export_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/end2end/tls_key_export_test.cc
+  deps:
+  - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
   build: test
@@ -8098,6 +8058,17 @@ targets:
   - absl/status:status
   - absl/status:statusor
   - absl/types:variant
+  uses_polling: false
+- name: try_seq_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/try_seq_metadata_test.cc
+  deps:
+  - grpc
   uses_polling: false
 - name: try_seq_test
   gtest: true
@@ -8442,6 +8413,15 @@ targets:
   headers: []
   src:
   - test/core/xds/xds_certificate_provider_test.cc
+  deps:
+  - grpc_test_util
+- name: xds_channel_creds_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_channel_creds_registry_test.cc
   deps:
   - grpc_test_util
 - name: xds_credentials_end2end_test

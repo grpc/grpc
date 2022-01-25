@@ -200,8 +200,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
   if (ParseJsonObjectField(permission_json, "andRules", &inner_json, error_list,
                            /*required=*/false)) {
     std::vector<grpc_error_handle> and_rules_error_list;
-    permission = Rbac::Permission(
-        Rbac::Permission::RuleType::kAnd,
+    permission = Rbac::Permission::MakeAndPermission(
         parse_permission_set(*inner_json, &and_rules_error_list));
     if (!and_rules_error_list.empty()) {
       error_list->push_back(
@@ -210,8 +209,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
   } else if (ParseJsonObjectField(permission_json, "orRules", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> or_rules_error_list;
-    permission = Rbac::Permission(
-        Rbac::Permission::RuleType::kOr,
+    permission = Rbac::Permission::MakeOrPermission(
         parse_permission_set(*inner_json, &or_rules_error_list));
     if (!or_rules_error_list.empty()) {
       error_list->push_back(
@@ -220,15 +218,14 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
   } else if (ParseJsonObjectField(permission_json, "any", &any, error_list,
                                   /*required=*/false) &&
              any) {
-    permission = Rbac::Permission(Rbac::Permission::RuleType::kAny);
+    permission = Rbac::Permission::MakeAnyPermission();
   } else if (ParseJsonObjectField(permission_json, "header", &inner_json,
                                   error_list,
                                   /*required=*/false)) {
     std::vector<grpc_error_handle> header_error_list;
     auto matcher = ParseHeaderMatcher(*inner_json, &header_error_list);
     if (matcher.ok()) {
-      permission =
-          Rbac::Permission(Rbac::Permission::RuleType::kHeader, *matcher);
+      permission = Rbac::Permission::MakeHeaderPermission(*matcher);
     } else {
       header_error_list.push_back(absl_status_to_grpc_error(matcher.status()));
     }
@@ -242,8 +239,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
     std::vector<grpc_error_handle> url_path_error_list;
     auto matcher = ParsePathMatcher(*inner_json, &url_path_error_list);
     if (matcher.ok()) {
-      permission =
-          Rbac::Permission(Rbac::Permission::RuleType::kPath, *matcher);
+      permission = Rbac::Permission::MakePathPermission(*matcher);
     } else {
       url_path_error_list.push_back(
           absl_status_to_grpc_error(matcher.status()));
@@ -255,8 +251,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
   } else if (ParseJsonObjectField(permission_json, "destinationIp", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> destination_ip_error_list;
-    permission = Rbac::Permission(
-        Rbac::Permission::RuleType::kDestIp,
+    permission = Rbac::Permission::MakeDestIpPermission(
         ParseCidrRange(*inner_json, &destination_ip_error_list));
     if (!destination_ip_error_list.empty()) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -264,17 +259,24 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
     }
   } else if (ParseJsonObjectField(permission_json, "destinationPort", &port,
                                   error_list, /*required=*/false)) {
-    permission = Rbac::Permission(Rbac::Permission::RuleType::kDestPort, port);
+    permission = Rbac::Permission::MakeDestPortPermission(port);
   } else if (ParseJsonObjectField(permission_json, "metadata", &inner_json,
                                   error_list, /*required=*/false)) {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cannot handle metadata"));
+    std::vector<grpc_error_handle> metadata_error_list;
+    bool invert = false;
+    ParseJsonObjectField(*inner_json, "invert", &invert, &metadata_error_list,
+                         /*required=*/false);
+    if (metadata_error_list.empty()) {
+      permission = Rbac::Permission::MakeMetadataPermission(invert);
+    } else {
+      error_list->push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("metadata", &metadata_error_list));
+    }
   } else if (ParseJsonObjectField(permission_json, "notRule", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> not_rule_error_list;
-    permission =
-        Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                         ParsePermission(*inner_json, &not_rule_error_list));
+    permission = Rbac::Permission::MakeNotPermission(
+        ParsePermission(*inner_json, &not_rule_error_list));
     if (!not_rule_error_list.empty()) {
       error_list->push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("notRule", &not_rule_error_list));
@@ -285,8 +287,7 @@ Rbac::Permission ParsePermission(const Json::Object& permission_json,
     std::vector<grpc_error_handle> req_server_name_error_list;
     auto matcher = ParseStringMatcher(*inner_json, &req_server_name_error_list);
     if (matcher.ok()) {
-      permission = Rbac::Permission(Rbac::Permission::RuleType::kReqServerName,
-                                    *matcher);
+      permission = Rbac::Permission::MakeReqServerNamePermission(*matcher);
     } else {
       req_server_name_error_list.push_back(
           absl_status_to_grpc_error(matcher.status()));
@@ -334,8 +335,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
   if (ParseJsonObjectField(principal_json, "andIds", &inner_json, error_list,
                            /*required=*/false)) {
     std::vector<grpc_error_handle> and_rules_error_list;
-    principal = Rbac::Principal(
-        Rbac::Principal::RuleType::kAnd,
+    principal = Rbac::Principal::MakeAndPrincipal(
         parse_principal_set(*inner_json, &and_rules_error_list));
     if (!and_rules_error_list.empty()) {
       error_list->push_back(
@@ -344,9 +344,8 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
   } else if (ParseJsonObjectField(principal_json, "orIds", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> or_rules_error_list;
-    principal =
-        Rbac::Principal(Rbac::Principal::RuleType::kOr,
-                        parse_principal_set(*inner_json, &or_rules_error_list));
+    principal = Rbac::Principal::MakeOrPrincipal(
+        parse_principal_set(*inner_json, &or_rules_error_list));
     if (!or_rules_error_list.empty()) {
       error_list->push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("orIds", &or_rules_error_list));
@@ -354,7 +353,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
   } else if (ParseJsonObjectField(principal_json, "any", &any, error_list,
                                   /*required=*/false) &&
              any) {
-    principal = Rbac::Principal(Rbac::Principal::RuleType::kAny);
+    principal = Rbac::Principal::MakeAnyPrincipal();
   } else if (ParseJsonObjectField(principal_json, "authenticated", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> authenticated_error_list;
@@ -365,8 +364,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
       auto matcher =
           ParseStringMatcher(*principal_name_json, &principal_name_error_list);
       if (matcher.ok()) {
-        principal = Rbac::Principal(Rbac::Principal::RuleType::kPrincipalName,
-                                    *matcher);
+        principal = Rbac::Principal::MakeAuthenticatedPrincipal(*matcher);
       } else {
         principal_name_error_list.push_back(
             absl_status_to_grpc_error(matcher.status()));
@@ -377,7 +375,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
       }
     } else if (authenticated_error_list.empty()) {
       // No principalName found. Match for all users.
-      principal = Rbac::Principal(Rbac::Principal::RuleType::kAny);
+      principal = Rbac::Principal::MakeAnyPrincipal();
     } else {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
           "authenticated", &authenticated_error_list));
@@ -385,9 +383,8 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
   } else if (ParseJsonObjectField(principal_json, "sourceIp", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> source_ip_error_list;
-    principal =
-        Rbac::Principal(Rbac::Principal::RuleType::kSourceIp,
-                        ParseCidrRange(*inner_json, &source_ip_error_list));
+    principal = Rbac::Principal::MakeSourceIpPrincipal(
+        ParseCidrRange(*inner_json, &source_ip_error_list));
     if (!source_ip_error_list.empty()) {
       error_list->push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("sourceIp", &source_ip_error_list));
@@ -395,8 +392,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
   } else if (ParseJsonObjectField(principal_json, "directRemoteIp", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> direct_remote_ip_error_list;
-    principal = Rbac::Principal(
-        Rbac::Principal::RuleType::kDirectRemoteIp,
+    principal = Rbac::Principal::MakeDirectRemoteIpPrincipal(
         ParseCidrRange(*inner_json, &direct_remote_ip_error_list));
     if (!direct_remote_ip_error_list.empty()) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -405,9 +401,8 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
   } else if (ParseJsonObjectField(principal_json, "remoteIp", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> remote_ip_error_list;
-    principal =
-        Rbac::Principal(Rbac::Principal::RuleType::kRemoteIp,
-                        ParseCidrRange(*inner_json, &remote_ip_error_list));
+    principal = Rbac::Principal::MakeRemoteIpPrincipal(
+        ParseCidrRange(*inner_json, &remote_ip_error_list));
     if (!remote_ip_error_list.empty()) {
       error_list->push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("remoteIp", &remote_ip_error_list));
@@ -418,7 +413,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
     std::vector<grpc_error_handle> header_error_list;
     auto matcher = ParseHeaderMatcher(*inner_json, &header_error_list);
     if (matcher.ok()) {
-      principal = Rbac::Principal(Rbac::Principal::RuleType::kHeader, *matcher);
+      principal = Rbac::Principal::MakeHeaderPrincipal(*matcher);
     } else {
       header_error_list.push_back(absl_status_to_grpc_error(matcher.status()));
     }
@@ -432,7 +427,7 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
     std::vector<grpc_error_handle> url_path_error_list;
     auto matcher = ParsePathMatcher(*inner_json, &url_path_error_list);
     if (matcher.ok()) {
-      principal = Rbac::Principal(Rbac::Principal::RuleType::kPath, *matcher);
+      principal = Rbac::Principal::MakePathPrincipal(*matcher);
     } else {
       url_path_error_list.push_back(
           absl_status_to_grpc_error(matcher.status()));
@@ -443,14 +438,21 @@ Rbac::Principal ParsePrincipal(const Json::Object& principal_json,
     }
   } else if (ParseJsonObjectField(principal_json, "metadata", &inner_json,
                                   error_list, /*required=*/false)) {
-    error_list->push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cannot handle metadata"));
+    std::vector<grpc_error_handle> metadata_error_list;
+    bool invert = false;
+    ParseJsonObjectField(*inner_json, "invert", &invert, &metadata_error_list,
+                         /*required=*/false);
+    if (metadata_error_list.empty()) {
+      principal = Rbac::Principal::MakeMetadataPrincipal(invert);
+    } else {
+      error_list->push_back(
+          GRPC_ERROR_CREATE_FROM_VECTOR("metadata", &metadata_error_list));
+    }
   } else if (ParseJsonObjectField(principal_json, "notId", &inner_json,
                                   error_list, /*required=*/false)) {
     std::vector<grpc_error_handle> not_rule_error_list;
-    principal =
-        Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                        ParsePrincipal(*inner_json, &not_rule_error_list));
+    principal = Rbac::Principal::MakeNotPrincipal(
+        ParsePrincipal(*inner_json, &not_rule_error_list));
     if (!not_rule_error_list.empty()) {
       error_list->push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("notId", &not_rule_error_list));
@@ -506,9 +508,8 @@ Rbac::Policy ParsePolicy(const Json::Object& policy_json,
     }
   }
   policy.permissions =
-      Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(permissions));
-  policy.principals =
-      Rbac::Principal(Rbac::Principal::RuleType::kOr, std::move(principals));
+      Rbac::Permission::MakeOrPermission(std::move(permissions));
+  policy.principals = Rbac::Principal::MakeOrPrincipal(std::move(principals));
   return policy;
 }
 

@@ -29,7 +29,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata.h"
 
 /// Creates a grpc_channel.
 grpc_channel* grpc_channel_create(const char* target,
@@ -45,7 +44,7 @@ void grpc_channel_destroy_internal(grpc_channel* channel);
 /// Creates a grpc_channel with a builder. See the description of
 /// \a grpc_channel_create for variable definitions.
 grpc_channel* grpc_channel_create_with_builder(
-    grpc_channel_stack_builder* builder,
+    grpc_core::ChannelStackBuilder* builder,
     grpc_channel_stack_type channel_stack_type,
     grpc_error_handle* error = nullptr);
 

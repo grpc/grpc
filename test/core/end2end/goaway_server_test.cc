@@ -27,11 +27,11 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -165,7 +165,8 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   grpc_init();
   g_default_dns_resolver = grpc_core::GetDNSResolver();
-  grpc_core::SetDNSResolver(new TestDNSResolver());
+  auto* resolver = new TestDNSResolver();
+  grpc_core::SetDNSResolver(resolver);
   iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
   iomgr_cancel_ares_request = grpc_cancel_ares_request;
   grpc_dns_lookup_ares = my_dns_lookup_ares;
@@ -395,6 +396,8 @@ int main(int argc, char** argv) {
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
+  grpc_core::SetDNSResolver(g_default_dns_resolver);
+  delete resolver;
   grpc_shutdown();
   gpr_mu_destroy(&g_mu);
 

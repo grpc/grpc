@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -113,9 +114,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
-      absl::string_view lrs_server, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name);
-  void RemoveClusterDropStats(absl::string_view /*lrs_server*/,
+  void RemoveClusterDropStats(const XdsBootstrap::XdsServer& xds_server,
                               absl::string_view cluster_name,
                               absl::string_view eds_service_name,
                               XdsClusterDropStats* cluster_drop_stats);
@@ -123,11 +124,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Adds and removes locality stats for cluster_name and eds_service_name
   // for the specified locality.
   RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
-      absl::string_view lrs_server, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       RefCountedPtr<XdsLocalityName> locality);
   void RemoveClusterLocalityStats(
-      absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       const RefCountedPtr<XdsLocalityName>& locality,
       XdsClusterLocalityStats* cluster_locality_stats);
@@ -150,9 +151,20 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const grpc_channel_args& args);
 
  private:
+  struct XdsResourceKey {
+    std::string id;
+    std::vector<URI::QueryParam> query_params;
+
+    bool operator<(const XdsResourceKey& other) const {
+      int c = id.compare(other.id);
+      if (c != 0) return c < 0;
+      return query_params < other.query_params;
+    }
+  };
+
   struct XdsResourceName {
     std::string authority;
-    std::string id;
+    XdsResourceKey key;
   };
 
   // Contains a channel to the xds server and all the data related to the
@@ -177,7 +189,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LrsCallState* lrs_calld() const;
 
     void MaybeStartLrsCall();
-    void StopLrsCall();
+    void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
@@ -225,8 +237,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   struct AuthorityState {
     RefCountedPtr<ChannelState> channel_state;
-    std::map<const XdsResourceType*,
-             std::map<std::string /*id*/, ResourceState>>
+    std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
         resource_map;
   };
 
@@ -242,6 +253,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
              XdsLocalityName::Less>
         locality_stats;
     grpc_millis last_report_time = ExecCtx::Get()->Now();
+  };
+
+  // Load report data.
+  using LoadReportMap = std::map<
+      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+      LoadReportState>;
+
+  struct LoadReportServer {
+    RefCountedPtr<ChannelState> channel_state;
+    LoadReportMap load_report_map;
   };
 
   class Notifier;
@@ -261,11 +282,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
       absl::string_view authority, absl::string_view resource_type,
-      absl::string_view id);
+      const XdsResourceKey& key);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      bool send_all_clusters, const std::set<std::string>& clusters)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
+      const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<ChannelState> GetOrCreateChannelStateLocked(
       const XdsBootstrap::XdsServer& server) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -294,11 +315,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  // Load report data.
-  std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      LoadReportState>
-      load_report_map_ ABSL_GUARDED_BY(mu_);
+  std::map<XdsBootstrap::XdsServer, LoadReportServer>
+      xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().

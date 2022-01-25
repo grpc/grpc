@@ -19,8 +19,8 @@
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
-#include "src/core/ext/service_config/service_config_call_data.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -109,6 +109,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
 
 const grpc_channel_filter RbacFilter::kFilterVtable = {
     RbacFilter::CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(RbacFilter::CallData),
     RbacFilter::CallData::Init,

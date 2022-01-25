@@ -45,7 +45,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -411,11 +410,10 @@ static void convert_cronet_array_to_metadata(
     grpc_slice value;
     if (absl::EndsWith(header_array->headers[i].key, "-bin")) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
-      value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
-          value, grpc_chttp2_base64_infer_length_after_decode(value)));
+      value = grpc_chttp2_base64_decode_with_length(
+          value, grpc_chttp2_base64_infer_length_after_decode(value));
     } else {
-      value = grpc_slice_intern(
-          grpc_slice_from_static_string(header_array->headers[i].value));
+      value = grpc_slice_from_static_string(header_array->headers[i].value);
     }
     mds->Append(header_array->headers[i].key, grpc_core::Slice(value),
                 [&](absl::string_view error, const grpc_core::Slice& value) {
@@ -722,12 +720,8 @@ class CronetMetadataEncoder {
 
   template <class T, class V>
   void Encode(T, const V& value) {
-    auto value_slice = T::Encode(value);
-    auto key_slice =
-        grpc_core::ExternallyManagedSlice(T::key().data(), T::key().length());
-    auto mdelem = grpc_mdelem_from_slices(key_slice, value_slice.TakeCSlice());
-    Encode(mdelem);
-    GRPC_MDELEM_UNREF(mdelem);
+    Encode(grpc_core::Slice::FromStaticString(T::key()),
+           grpc_core::Slice(T::Encode(value)));
   }
 
   void Encode(grpc_core::HttpSchemeMetadata,
@@ -762,15 +756,16 @@ class CronetMetadataEncoder {
     *url_ = absl::StrCat("https://", host_, path.as_string_view());
   }
 
-  void Encode(grpc_mdelem mdelem) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
+  void Encode(const grpc_core::Slice& key_slice,
+              const grpc_core::Slice& value_slice) {
+    char* key = grpc_slice_to_c_string(key_slice.c_slice());
     char* value;
-    if (grpc_is_binary_header_internal(GRPC_MDKEY(mdelem))) {
-      grpc_slice wire_value = grpc_chttp2_base64_encode(GRPC_MDVALUE(mdelem));
+    if (grpc_is_binary_header_internal(key_slice.c_slice())) {
+      grpc_slice wire_value = grpc_chttp2_base64_encode(value_slice.c_slice());
       value = grpc_slice_to_c_string(wire_value);
       grpc_slice_unref_internal(wire_value);
     } else {
-      value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
+      value = grpc_slice_to_c_string(value_slice.c_slice());
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
     GPR_ASSERT(count_ < capacity_);
@@ -1488,6 +1483,7 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
     "cronet_http",
     init_stream,
+    nullptr,
     set_pollset_do_nothing,
     set_pollset_set_do_nothing,
     perform_stream_op,

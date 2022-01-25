@@ -70,15 +70,6 @@ class ServerLoadReportingCallData : public CallData {
   // Records the call start.
   static void RecvInitialMetadataReady(void* arg, grpc_error_handle err);
 
-  // From the initial metadata, extracts the service_method_, target_host_, and
-  // client_ip_and_lr_token_.
-  static grpc_filtered_mdelem RecvInitialMetadataFilter(void* user_data,
-                                                        grpc_mdelem md);
-
-  // Records the other call metrics.
-  static grpc_filtered_mdelem SendTrailingMetadataFilter(void* user_data,
-                                                         grpc_mdelem md);
-
   // The peer string (a member of the recv_initial_metadata op). Note that
   // gpr_atm itself is a pointer type here, making "peer_string_" effectively a
   // double pointer.

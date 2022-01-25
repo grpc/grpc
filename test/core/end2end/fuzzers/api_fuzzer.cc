@@ -25,7 +25,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -34,10 +33,10 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -382,11 +381,6 @@ class Call : public std::enable_shared_from_this<Call> {
   template <typename T>
   grpc_slice ReadSlice(const T& s) {
     grpc_slice slice = grpc_slice_from_cpp_string(s.value());
-    if (s.intern()) {
-      auto interned_slice = grpc_slice_intern(slice);
-      grpc_slice_unref(slice);
-      slice = interned_slice;
-    }
     unref_slices_.push_back(slice);
     return slice;
   }

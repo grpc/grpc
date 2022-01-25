@@ -83,6 +83,15 @@ class TlsCredentialsOptions {
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
+  // Sets the Tls session key logging configuration. If not set, tls
+  // session key logging is disabled. Note that this should be used only for
+  // debugging purposes. It should never be used in a production environment
+  // due to security concerns.
+  //
+  // @param tls_session_key_log_file_path: Path where tls session keys would
+  // be logged.
+  void set_tls_session_key_log_file_path(
+      const std::string& tls_session_key_log_file_path);
   // Sets the certificate verifier used to perform post-handshake peer identity
   // checks.
   void set_certificate_verifier(

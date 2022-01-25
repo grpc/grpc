@@ -21,7 +21,7 @@
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
-#include "src/core/ext/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -255,6 +255,7 @@ void CallData::MaybeResumeRecvTrailingMetadataReady() {
 
 const grpc_channel_filter kServerConfigSelectorFilter = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,

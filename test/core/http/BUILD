@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/http")
@@ -61,6 +61,18 @@ grpc_fuzzer(
 
 licenses(["notice"])
 
+grpc_cc_library(
+    name = "httpcli_test_util",
+    testonly = True,
+    srcs = ["httpcli_test_util.cc"],
+    hdrs = ["httpcli_test_util.h"],
+    deps = [
+        "//:gpr",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "httpcli_test",
     srcs = ["httpcli_test.cc"],
@@ -70,13 +82,17 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        ":httpcli_test_util",
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -90,13 +106,17 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        ":httpcli_test_util",
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
     ],
 )
 

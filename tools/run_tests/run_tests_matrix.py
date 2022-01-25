@@ -201,20 +201,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # C# tests on .NET desktop/mono
+    # C# tests (both on .NET desktop/mono and .NET core)
     test_jobs += _generate_jobs(languages=['csharp'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                labels=['basictests', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
-    # C# tests on .NET core
-    test_jobs += _generate_jobs(languages=['csharp'],
-                                configs=['dbg', 'opt'],
-                                platforms=['linux', 'macos', 'windows'],
-                                arch='default',
-                                compiler='coreclr',
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
@@ -223,7 +213,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                iomgr_platforms=['native', 'gevent', 'asyncio'],
+                                iomgr_platforms=['native'],
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
@@ -276,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
-            'gcc_musl', 'clang4', 'clang12'
+            'gcc4.9', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang4',
+            'clang13'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -320,16 +310,6 @@ def _create_portability_test_jobs(extra_args=[],
                                 compiler='cmake_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
-    # C and C++ with the c-ares DNS resolver on Linux
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args,
-                                extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 

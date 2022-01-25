@@ -39,7 +39,6 @@
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -506,6 +505,7 @@ static void http_client_destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_http_client_filter = {
     http_client_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     http_client_init_call_elem,

@@ -52,7 +52,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
@@ -1331,13 +1330,10 @@ static void complete_fetch_locked(void* gs, grpc_error_handle error) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  md_batch->ForEach([=](grpc_mdelem md) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_INFO, "HTTP:%d:%s:%s: %s: %s", id, is_initial ? "HDR" : "TRL",
-            is_client ? "CLI" : "SVR", key, value);
-    gpr_free(key);
-    gpr_free(value);
+  const std::string prefix = absl::StrCat(
+      "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
+  md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
+    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
   });
 }
 
@@ -1357,8 +1353,10 @@ static void perform_stream_op_locked(void* stream_op,
   s->context = op->payload->context;
   s->traced = op->is_traced;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p",
-            grpc_transport_stream_op_batch_string(op).c_str(), op->on_complete);
+    gpr_log(GPR_INFO,
+            "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
+            op, grpc_transport_stream_op_batch_string(op).c_str(),
+            op->on_complete);
     if (op->send_initial_metadata) {
       log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
                    s->id, t->is_client, true);
@@ -1602,7 +1600,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   }
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s,
+    gpr_log(GPR_INFO, "perform_stream_op[s=%p; op=%p]: %s", s, op,
             grpc_transport_stream_op_batch_string(op).c_str());
   }
 
@@ -3163,6 +3161,7 @@ static grpc_endpoint* chttp2_get_endpoint(grpc_transport* t) {
 static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              "chttp2",
                                              init_stream,
+                                             nullptr,
                                              set_pollset,
                                              set_pollset_set,
                                              perform_stream_op,
