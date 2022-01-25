@@ -886,6 +886,7 @@
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/http/httpcli_ssl_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/block_annotate.h" role="src" />

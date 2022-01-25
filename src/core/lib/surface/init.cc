@@ -36,7 +36,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

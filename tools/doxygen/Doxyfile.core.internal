@@ -1683,6 +1683,7 @@ src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \
 src/core/lib/http/httpcli.h \
 src/core/lib/http/httpcli_security_connector.cc \
+src/core/lib/http/httpcli_ssl_credentials.h \
 src/core/lib/http/parser.cc \
 src/core/lib/http/parser.h \
 src/core/lib/iomgr/README.md \
