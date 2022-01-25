@@ -332,7 +332,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             native.cc_test(
                 # TODO(hork): these names are depended upon in cpp end2end
                 # tests data arguments. Those tests need to be updated to pull
-                # the right dependencies. See http://go/paste/4579685397692416
+                # the right dependencies.
                 # name = name + "_engine_" + engine["name"],
                 name = name,
                 testonly = True,
