@@ -174,12 +174,17 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   std::string server_address =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
   grpc_server_register_completion_queue(server, cq, nullptr);
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
   GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(server, server_address.c_str()));
+      grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
+  grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
   // create the channel (bdp pings are enabled by default)
-  grpc_channel* channel = grpc_insecure_channel_create(
-      server_address.c_str(), nullptr /* channel args */, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel = grpc_channel_create(server_address.c_str(), creds,
+                                              nullptr /* channel args */);
+  grpc_channel_credentials_release(creds);
   std::map<grpc_status_code, int> statuses_and_counts;
   const int kNumTotalRpcs = 1e5;
   // perform an RPC
@@ -343,7 +348,10 @@ class KeepaliveThrottlingTest : public ::testing::Test {
     // Create server
     grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr, server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server);
     return server;
   }
@@ -364,10 +372,14 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
           const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel = grpc_insecure_channel_create(
-      server_address.c_str(), &client_channel_args, nullptr);
-  grpc_channel* channel_dup = grpc_insecure_channel_create(
-      server_address.c_str(), &client_channel_args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
+  grpc_channel_credentials_release(creds);
+  grpc_channel_credentials* another_creds = grpc_insecure_credentials_create();
+  grpc_channel* channel_dup = grpc_channel_create(
+      server_address.c_str(), another_creds, &client_channel_args);
+  grpc_channel_credentials_release(another_creds);
   int expected_keepalive_time_sec = 1;
   // We need 3 GOAWAY frames to throttle the keepalive time from 1 second to 8
   // seconds (> 5sec).
@@ -383,11 +395,11 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
       expected_keepalive_time_sec);
   EXPECT_EQ(PerformWaitingCall(channel, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
-  // Since the subchannel is shared, the second channel should also have
-  // keepalive settings in sync with the server.
+  // Since the subchannel is not shared any more, the second channel should not
+  // have keepalive settings in sync with the server.
   gpr_log(GPR_INFO, "Now testing second channel sharing the same subchannel");
   EXPECT_EQ(PerformWaitingCall(channel_dup, server, cq),
-            GRPC_STATUS_DEADLINE_EXCEEDED);
+            GRPC_STATUS_UNAVAILABLE);
   // shutdown and destroy the client and server
   grpc_channel_destroy(channel);
   grpc_channel_destroy(channel_dup);
@@ -448,8 +460,10 @@ TEST_F(KeepaliveThrottlingTest, NewSubchannelsUseUpdatedKeepaliveTime) {
           response_generator.get())};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_insecure_channel_create("fake:///", &client_channel_args, nullptr);
+      grpc_channel_create("fake:///", creds, &client_channel_args);
+  grpc_channel_credentials_release(creds);
   // For a single subchannel 3 GOAWAYs would be sufficient to increase the
   // keepalive time from 1 second to beyond 5 seconds. Even though we are
   // alternating between two subchannels, 3 GOAWAYs should still be enough since
@@ -517,8 +531,10 @@ TEST_F(KeepaliveThrottlingTest,
           response_generator.get())};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_insecure_channel_create("fake:///", &client_channel_args, nullptr);
+      grpc_channel_create("fake:///", creds, &client_channel_args);
+  grpc_channel_credentials_release(creds);
   response_generator->SetResponse(
       BuildResolverResult({absl::StrCat("ipv4:", server_address1),
                            absl::StrCat("ipv4:", server_address2)}));
@@ -710,8 +726,11 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
                                            server_args};
   grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
   GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(server, server_address.c_str()));
+      grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
+  grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
   // create the channel (bdp pings are enabled by default)
   grpc_arg client_args[] = {
@@ -721,8 +740,10 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
           const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel = grpc_insecure_channel_create(
-      server_address.c_str(), &client_channel_args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
+  grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
   cq_verifier* cqv = cq_verifier_create(cq);
@@ -781,8 +802,11 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
                                            server_args};
   grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
   GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(server, server_address.c_str()));
+      grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
+  grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
   grpc_arg client_args[] = {
       grpc_channel_arg_integer_create(
@@ -791,8 +815,10 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
           const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
   grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                            client_args};
-  grpc_channel* channel = grpc_insecure_channel_create(
-      server_address.c_str(), &client_channel_args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
+  grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
   cq_verifier* cqv = cq_verifier_create(cq);

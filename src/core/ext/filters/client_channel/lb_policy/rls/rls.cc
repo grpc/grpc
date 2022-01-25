@@ -43,6 +43,7 @@
 #include "absl/strings/strip.h"
 #include "upb/upb.hpp"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -1535,8 +1536,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
         const_cast<char*>(fake_security_expected_targets)));
   }
   grpc_channel_args rls_channel_args = {args.size(), args.data()};
-  channel_ = grpc_secure_channel_create(creds, target.c_str(),
-                                        &rls_channel_args, nullptr);
+  channel_ = grpc_channel_create(target.c_str(), creds, &rls_channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_, target.c_str());

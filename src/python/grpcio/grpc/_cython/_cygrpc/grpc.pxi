@@ -373,9 +373,6 @@ cdef extern from "grpc/grpc.h":
   char *grpc_call_get_peer(grpc_call *call) nogil
   void grpc_call_unref(grpc_call *call) nogil
 
-  grpc_channel *grpc_insecure_channel_create(const char *target,
-                                             const grpc_channel_args *args,
-                                             void *reserved) nogil
   grpc_call *grpc_channel_create_call(
     grpc_channel *channel, grpc_call *parent_call, uint32_t propagation_mask,
     grpc_completion_queue *completion_queue, grpc_slice method,
@@ -416,8 +413,6 @@ cdef extern from "grpc/grpc.h":
        const grpc_channel_args* args) nogil
 
 
-  int grpc_server_add_insecure_http2_port(
-      grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil
   void grpc_server_shutdown_and_notify(
       grpc_server *server, grpc_completion_queue *cq, void *tag) nogil
@@ -560,9 +555,9 @@ cdef extern from "grpc/grpc_security.h":
       void *reserved) nogil
   void grpc_call_credentials_release(grpc_call_credentials *creds) nogil
 
-  grpc_channel *grpc_secure_channel_create(
-      grpc_channel_credentials *creds, const char *target,
-      const grpc_channel_args *args, void *reserved) nogil
+  grpc_channel *grpc_channel_create(
+      const char *target, grpc_channel_credentials *creds,
+      const grpc_channel_args *args) nogil
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)
@@ -570,7 +565,7 @@ cdef extern from "grpc/grpc_security.h":
 
   void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
 
-  int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
+  int grpc_server_add_http2_port(grpc_server *server, const char *addr,
                                         grpc_server_credentials *creds) nogil
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,

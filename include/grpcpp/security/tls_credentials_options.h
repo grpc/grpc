@@ -22,22 +22,13 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/support/config.h>
-
-// TODO(yihuazhang): remove the forward declaration here and include
-// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
-typedef struct grpc_tls_server_authorization_check_arg
-    grpc_tls_server_authorization_check_arg;
-typedef struct grpc_tls_server_authorization_check_config
-    grpc_tls_server_authorization_check_config;
-typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
-typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
-typedef struct grpc_tls_certificate_verifier grpc_tls_certificate_verifier;
 
 namespace grpc {
 namespace experimental {

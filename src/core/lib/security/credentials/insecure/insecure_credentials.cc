@@ -18,19 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
 namespace grpc_core {
 namespace {
 
-constexpr char kCredentialsTypeInsecure[] = "insecure";
-
 class InsecureCredentials final : public grpc_channel_credentials {
  public:
-  InsecureCredentials() : grpc_channel_credentials(kCredentialsTypeInsecure) {}
+  InsecureCredentials()
+      : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_INSECURE) {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds,
@@ -44,7 +41,7 @@ class InsecureCredentials final : public grpc_channel_credentials {
 class InsecureServerCredentials final : public grpc_server_credentials {
  public:
   InsecureServerCredentials()
-      : grpc_server_credentials(kCredentialsTypeInsecure) {}
+      : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_INSECURE) {}
 
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
       const grpc_channel_args* /* args */) override {
