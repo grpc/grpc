@@ -10,11 +10,11 @@
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 
-extern upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[1086] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'h', 't', 't', 'p', '/', 'r', 'o', 'u', 't', 'e', 'r', '/', 'v', '3', '/', 'r', 'o', 'u', 't', 'e', 'r', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\'', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 
@@ -61,7 +61,7 @@ static const char descriptor[1086] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', '
 '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[6] = {
+static _upb_DefPool_Init *deps[6] = {
   &envoy_config_accesslog_v3_accesslog_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
@@ -70,9 +70,9 @@ static upb_def_init *deps[6] = {
   NULL
 };
 
-upb_def_init envoy_extensions_filters_http_router_v3_router_proto_upbdefinit = {
+_upb_DefPool_Init envoy_extensions_filters_http_router_v3_router_proto_upbdefinit = {
   deps,
   &envoy_extensions_filters_http_router_v3_router_proto_upb_file_layout,
   "envoy/extensions/filters/http/router/v3/router.proto",
-  UPB_STRVIEW_INIT(descriptor, 1086)
+  UPB_STRINGVIEW_INIT(descriptor, 1086)
 };

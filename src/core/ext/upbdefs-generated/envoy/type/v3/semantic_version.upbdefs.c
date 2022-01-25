@@ -10,8 +10,8 @@
 #include "envoy/type/v3/semantic_version.upbdefs.h"
 #include "envoy/type/v3/semantic_version.upb.h"
 
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[398] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'v', '3', '/', 's', 'e', 'm', 'a', 'n', 't', 'i', 'c', '_', 
 'v', 'e', 'r', 's', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\r', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', 
 '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 
@@ -30,15 +30,15 @@ static const char descriptor[398] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 't
 ';', 't', 'y', 'p', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[3] = {
+static _upb_DefPool_Init *deps[3] = {
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_type_v3_semantic_version_proto_upbdefinit = {
+_upb_DefPool_Init envoy_type_v3_semantic_version_proto_upbdefinit = {
   deps,
   &envoy_type_v3_semantic_version_proto_upb_file_layout,
   "envoy/type/v3/semantic_version.proto",
-  UPB_STRVIEW_INIT(descriptor, 398)
+  UPB_STRINGVIEW_INIT(descriptor, 398)
 };

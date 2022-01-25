@@ -10,12 +10,12 @@
 #include "envoy/config/common/matcher/v3/matcher.upbdefs.h"
 #include "envoy/config/common/matcher/v3/matcher.upb.h"
 
-extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
-extern upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_string_proto_upbdefinit;
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_extension_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_route_v3_route_components_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_string_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[4235] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'm', 'm', 'o', 'n', '/', 'm', 'a', 't', 
 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\036', 'e', 'n', 
 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'm', 'm', 'o', 'n', '.', 'm', 'a', 't', 'c', 'h', 'e', 'r', 
@@ -188,7 +188,7 @@ static const char descriptor[4235] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', '
 '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_config_core_v3_extension_proto_upbdefinit,
   &envoy_config_route_v3_route_components_proto_upbdefinit,
   &envoy_type_matcher_v3_string_proto_upbdefinit,
@@ -198,9 +198,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_config_common_matcher_v3_matcher_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_common_matcher_v3_matcher_proto_upbdefinit = {
   deps,
   &envoy_config_common_matcher_v3_matcher_proto_upb_file_layout,
   "envoy/config/common/matcher/v3/matcher.proto",
-  UPB_STRVIEW_INIT(descriptor, 4235)
+  UPB_STRINGVIEW_INIT(descriptor, 4235)
 };
