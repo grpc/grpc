@@ -250,18 +250,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     const char ping_ack_bytes[] =
         "\x00\x00\x08\x06\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
     Write(absl::string_view(ping_bytes, sizeof(ping_bytes) - 1));
-    std::atomic<bool> done{false};
-    std::thread cq_driver([&]() {
-      while (!done) {
-        grpc_event ev = grpc_completion_queue_next(
-            cq_, grpc_timeout_milliseconds_to_deadline(10), nullptr);
-        GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
-      }
-    });
     WaitForReadBytes(
         absl::string_view(ping_ack_bytes, sizeof(ping_ack_bytes) - 1));
-    done = true;
-    cq_driver.join();
   }
 
   void SendGoaway(uint32_t last_stream_id) {
@@ -310,10 +300,22 @@ class StreamsNotSeenTest : public ::testing::Test {
 
   // Waits for \a bytes to show up in read_bytes_
   void WaitForReadBytes(absl::string_view bytes) {
-    absl::MutexLock lock(&mu_);
-    while (!absl::StrContains(read_bytes_, bytes)) {
-      read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
+    std::atomic<bool> done{false};
+    std::thread cq_driver([&]() {
+      while (!done) {
+        grpc_event ev = grpc_completion_queue_next(
+            cq_, grpc_timeout_milliseconds_to_deadline(10), nullptr);
+        GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
+      }
+    });
+    {
+      absl::MutexLock lock(&mu_);
+      while (!absl::StrContains(read_bytes_, bytes)) {
+        read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
+      }
     }
+    done = true;
+    cq_driver.join();
   }
 
   // Flag to check whether the server's MAX_CONCURRENT_STREAM setting is
@@ -403,6 +405,77 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
       TrailingMetadataRecordingFilter::stream_network_state().has_value());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
             GrpcStreamNetworkState::kNotSeenByServer);
+  grpc_slice_unref(details);
+  gpr_free(const_cast<char*>(error_string));
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_call_unref(c);
+  ExecCtx::Get()->Flush();
+}
+
+// Client's HTTP2 transport starts a new stream, sends the request on the wire,
+// notices that the transport is destroyed. The test verifies that the HTTP2
+// transport does not add GrpcNetworkStreamState metadata since we don't know
+// whether the server saw the request or not.
+TEST_F(StreamsNotSeenTest, TransportDestroyed) {
+  grpc_call* c =
+      grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               grpc_timeout_seconds_to_deadline(1), nullptr);
+  GPR_ASSERT(c);
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_op* op;
+  grpc_op ops[6];
+  grpc_status_code status;
+  const char* error_string;
+  grpc_call_error error;
+  grpc_slice details;
+  // Send the request
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
+                                nullptr);
+  CQ_EXPECT_COMPLETION(cqv_, Tag(101), 1);
+  cq_verify(cqv_);
+  // Shutdown the server endpoint
+  grpc_endpoint_shutdown(
+      tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->data.recv_status_on_client.error_string = &error_string;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv_, Tag(102), 1);
+  cq_verify(cqv_);
+  // Verify status and metadata
+  EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
+  EXPECT_FALSE(
+      TrailingMetadataRecordingFilter::stream_network_state().has_value());
   grpc_slice_unref(details);
   gpr_free(const_cast<char*>(error_string));
   grpc_metadata_array_destroy(&initial_metadata_recv);
