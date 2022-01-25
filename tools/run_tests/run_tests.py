@@ -459,13 +459,13 @@ class CLanguage(object):
             _check_compiler(compiler, ['default', 'cmake'])
 
         if compiler == 'default' or compiler == 'cmake':
-            return ('debian9', [])
+            return ('debian11', [])
         elif compiler == 'gcc4.9':
             return ('gcc_4.9', [])
-        elif compiler == 'gcc8.3':
-            return ('debian10', [])
-        elif compiler == 'gcc8.3_openssl102':
-            return ('debian10_openssl102', [
+        elif compiler == 'gcc10.2':
+            return ('debian11', [])
+        elif compiler == 'gcc10.2_openssl102':
+            return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':
@@ -474,8 +474,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang4':
             return ('clang_4', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang12':
-            return ('clang_12', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang13':
+            return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -678,16 +678,15 @@ class PythonLanguage(object):
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_docker_distro_name(),
+            _docker_arch_suffix(self.args.arch))
 
-    def _python_manager_name(self):
+    def _python_docker_distro_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
-            return 'stretch_' + self.args.compiler[len('python'):]
-        elif self.args.compiler == 'python_alpine':
+        if self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
-            return 'stretch_default'
+            return 'debian11_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -1383,12 +1382,12 @@ argp.add_argument(
     choices=[
         'default',
         'gcc4.9',
-        'gcc8.3',
-        'gcc8.3_openssl102',
+        'gcc10.2',
+        'gcc10.2_openssl102',
         'gcc11',
         'gcc_musl',
         'clang4',
-        'clang12',
+        'clang13',
         'python2.7',
         'python3.5',
         'python3.6',

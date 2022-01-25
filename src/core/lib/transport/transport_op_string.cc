@@ -41,24 +41,14 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata_list(const grpc_metadata_batch& md,
-                              std::vector<std::string>* out) {
-  bool first = true;
-  md.Log([out, &first](absl::string_view key, absl::string_view value) {
-    if (!first) out->push_back(", ");
-    first = false;
-    out->push_back(absl::StrCat(absl::CEscape(key), "=", absl::CEscape(value)));
-  });
-}
-
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op) {
   std::vector<std::string> out;
 
   if (op->send_initial_metadata) {
     out.push_back(" SEND_INITIAL_METADATA{");
-    put_metadata_list(*op->payload->send_initial_metadata.send_initial_metadata,
-                      &out);
+    out.push_back(op->payload->send_initial_metadata.send_initial_metadata
+                      ->DebugString());
     out.push_back("}");
   }
 
@@ -77,8 +67,8 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_trailing_metadata) {
     out.push_back(" SEND_TRAILING_METADATA{");
-    put_metadata_list(
-        *op->payload->send_trailing_metadata.send_trailing_metadata, &out);
+    out.push_back(op->payload->send_trailing_metadata.send_trailing_metadata
+                      ->DebugString());
     out.push_back("}");
   }
 
@@ -97,7 +87,9 @@ std::string grpc_transport_stream_op_batch_string(
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
         " CANCEL:",
-        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
+        absl::StrFormat(
+            "%p", static_cast<void*>(op->payload->cancel_stream.cancel_error)),
+        ":", grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");

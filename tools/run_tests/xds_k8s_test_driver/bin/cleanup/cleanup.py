@@ -35,7 +35,6 @@ from typing import Any, List
 
 from absl import app
 from absl import flags
-import pytz
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -49,9 +48,8 @@ logger = logging.getLogger(__name__)
 Json = Any
 KubernetesClientRunner = client_app.KubernetesClientRunner
 KubernetesServerRunner = server_app.KubernetesServerRunner
-utc = pytz.UTC
 
-KEEP_PERIOD = datetime.timedelta(days=85)
+KEEP_PERIOD = datetime.timedelta(days=7)
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
@@ -86,8 +84,8 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 
 @functools.lru_cache()
-def get_expire_timestamp() -> str:
-    return datetime.datetime.now() - KEEP_PERIOD
+def get_expire_timestamp() -> datetime.datetime:
+    return datetime.datetime.now(datetime.timezone.utc) - KEEP_PERIOD
 
 
 def exec_gcloud(project: str, *cmds: List[str]) -> Json:
@@ -267,7 +265,7 @@ def delete_leaked_td_resources(dry_run, project, network, resources):
                     logging.info('Skipped [keep]:')
                     break  # break inner loop, continue outer loop
                 remove(project, network, resource_prefix, result.group(1))
-            break
+                break
         if not matched:
             logging.info(
                 '----- Skipped [does not matching resource name templates]')
@@ -291,8 +289,7 @@ def delete_k8s_resources(dry_run, project, network, k8s_api_manager,
     for ns in namespaces:
         logger.info('-----')
         logger.info('----- Cleaning up k8s namespaces %s', ns.metadata.name)
-        if ns.metadata.creation_timestamp <= utc.localize(
-                get_expire_timestamp()):
+        if ns.metadata.creation_timestamp <= get_expire_timestamp():
             if dry_run:
                 # Skip deletion for dry-runs
                 logging.info('----- Skipped [Dry Run]: %s', ns.metadata.name)

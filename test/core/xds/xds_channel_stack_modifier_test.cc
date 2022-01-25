@@ -69,41 +69,35 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_init();
   // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
-      nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
-      0,       nullptr, nullptr, nullptr, kTestFilter1};
+      nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+      nullptr, 0,       nullptr, nullptr, nullptr, kTestFilter1};
   const grpc_channel_filter test_filter_2 = {
-      nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
-      0,       nullptr, nullptr, nullptr, kTestFilter2};
+      nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+      nullptr, 0,       nullptr, nullptr, nullptr, kTestFilter2};
   auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
       std::vector<const grpc_channel_filter*>{&test_filter_1, &test_filter_2});
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
-  // Create a phony grpc_channel_stack_builder object
+  // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  grpc_channel_stack_builder* builder =
-      grpc_channel_stack_builder_create("test");
-  grpc_channel_stack_builder_set_channel_arguments(builder, args);
+  ChannelStackBuilder builder("test");
+  builder.SetChannelArgs(args);
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = "fake";
   grpc_transport fake_transport = {&fake_transport_vtable};
-  grpc_channel_stack_builder_set_transport(builder, &fake_transport);
+  builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
   ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(
-      builder, GRPC_SERVER_CHANNEL));
-  grpc_channel_stack_builder_iterator* it =
-      grpc_channel_stack_builder_create_iterator_at_first(builder);
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it), "server");
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
-               kTestFilter1);
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
-               kTestFilter2);
-  grpc_channel_stack_builder_iterator_destroy(it);
-  grpc_channel_stack_builder_destroy(builder);
+      &builder, GRPC_SERVER_CHANNEL));
+  std::vector<std::string> filters;
+  for (const auto& entry : *builder.mutable_stack()) {
+    filters.push_back(entry.filter->name);
+  }
+  filters.resize(3);
+  EXPECT_EQ(filters,
+            std::vector<std::string>({"server", kTestFilter1, kTestFilter2}));
   grpc_shutdown();
 }
 
@@ -114,44 +108,35 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   grpc_init();
   // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
-      nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
-      0,       nullptr, nullptr, nullptr, kTestFilter1};
+      nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+      nullptr, 0,       nullptr, nullptr, nullptr, kTestFilter1};
   const grpc_channel_filter test_filter_2 = {
-      nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
-      0,       nullptr, nullptr, nullptr, kTestFilter2};
+      nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+      nullptr, 0,       nullptr, nullptr, nullptr, kTestFilter2};
   auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
       std::vector<const grpc_channel_filter*>{&test_filter_1, &test_filter_2});
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
-  // Create a phony grpc_channel_stack_builder object
+  // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  grpc_channel_stack_builder* builder =
-      grpc_channel_stack_builder_create("test");
-  grpc_channel_stack_builder_set_channel_arguments(builder, args);
+  ChannelStackBuilder builder("test");
+  builder.SetChannelArgs(args);
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = "fake";
   grpc_transport fake_transport = {&fake_transport_vtable};
-  grpc_channel_stack_builder_set_transport(builder, &fake_transport);
+  builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added after the census filter
   ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(
-      builder, GRPC_SERVER_CHANNEL));
-  grpc_channel_stack_builder_iterator* it =
-      grpc_channel_stack_builder_create_iterator_at_first(builder);
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it), "server");
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
-               "opencensus_server");
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
-               kTestFilter1);
-  ASSERT_TRUE(grpc_channel_stack_builder_move_next(it));
-  ASSERT_STREQ(grpc_channel_stack_builder_iterator_filter_name(it),
-               kTestFilter2);
-  grpc_channel_stack_builder_iterator_destroy(it);
-  grpc_channel_stack_builder_destroy(builder);
+      &builder, GRPC_SERVER_CHANNEL));
+  std::vector<std::string> filters;
+  for (const auto& entry : *builder.mutable_stack()) {
+    filters.push_back(entry.filter->name);
+  }
+  filters.resize(4);
+  EXPECT_EQ(filters, std::vector<std::string>({"server", "opencensus_server",
+                                               kTestFilter1, kTestFilter2}));
   grpc_shutdown();
 }
 

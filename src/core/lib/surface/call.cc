@@ -298,6 +298,7 @@ static void add_init_error(grpc_error_handle* composite,
 }
 
 void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
+  grpc_core::ExecCtx exec_ctx;
   return call->arena->Alloc(size);
 }
 
