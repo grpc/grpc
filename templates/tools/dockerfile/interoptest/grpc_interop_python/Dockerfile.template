@@ -20,3 +20,6 @@
   RUN ln -s $(which python3) /usr/bin/python
 
   <%include file="../../gcp_api_libraries.include"/>
+
+  <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>
