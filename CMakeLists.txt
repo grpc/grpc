@@ -305,6 +305,9 @@ if(UNIX)
   endif()
 endif()
 
+# configure ccache if requested
+include(cmake/ccache.cmake)
+
 include(cmake/abseil-cpp.cmake)
 include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
