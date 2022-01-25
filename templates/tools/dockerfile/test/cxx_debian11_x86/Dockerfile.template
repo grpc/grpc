@@ -1,7 +1,6 @@
-
 %YAML 1.2
 --- |
-  # Copyright 2019 The gRPC Authors
+  # Copyright 2021 gRPC authors.
   #
   # Licensed under the Apache License, Version 2.0 (the "License");
   # you may not use this file except in compliance with the License.
@@ -14,10 +13,15 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
+  
+  FROM i386/debian:11
+  
+  <%include file="../../apt_get_basic.include"/>
+  <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../cxx_deps.include"/>
+  <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>
+  <%include file="../../run_tests_addons.include"/>
 
-  <%include file="../../python_stretch_base.include"/>
-  <%include file="../../compile_python_38.include"/>
-
-  RUN ln -s $(which python3.8) /usr/bin/python3
-
-  <%include file="../../gcp_api_libraries.include"/>
+  # Define the default command.
+  CMD ["bash"]
