@@ -55,7 +55,7 @@ ABSL_INCLUDE = (os.path.join('third_party', 'abseil-cpp'),)
 ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting',
                                         'include'),)
 CARES_INCLUDE = (
-    os.path.join('third_party', 'cares', 'include'),
+    os.path.join('third_party', 'cares', 'cares', 'include'),
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),
 )
