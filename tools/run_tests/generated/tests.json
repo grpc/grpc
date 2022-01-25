@@ -40,7 +40,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alpn_test@engine=libuv",
+    "name": "alpn_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -64,7 +64,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_counter_test@engine=libuv",
+    "name": "alts_counter_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -88,7 +88,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_crypt_test@engine=libuv",
+    "name": "alts_crypt_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -112,7 +112,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_crypter_test@engine=libuv",
+    "name": "alts_crypter_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -136,7 +136,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_frame_protector_test@engine=libuv",
+    "name": "alts_frame_protector_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -160,7 +160,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_grpc_record_protocol_test@engine=libuv",
+    "name": "alts_grpc_record_protocol_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -184,7 +184,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_handshaker_client_test@engine=libuv",
+    "name": "alts_handshaker_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -208,7 +208,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_iovec_record_protocol_test@engine=libuv",
+    "name": "alts_iovec_record_protocol_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -232,7 +232,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_security_connector_test@engine=libuv",
+    "name": "alts_security_connector_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -256,7 +256,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_tsi_handshaker_test@engine=libuv",
+    "name": "alts_tsi_handshaker_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -280,7 +280,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_tsi_utils_test@engine=libuv",
+    "name": "alts_tsi_utils_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -304,7 +304,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "alts_zero_copy_grpc_protector_test@engine=libuv",
+    "name": "alts_zero_copy_grpc_protector_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -400,7 +400,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "bad_server_response_test@engine=libuv",
+    "name": "bad_server_response_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -423,7 +423,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "bad_ssl_alpn_test@engine=libuv",
+    "name": "bad_ssl_alpn_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -445,7 +445,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "bad_ssl_cert_test@engine=libuv",
+    "name": "bad_ssl_cert_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -516,7 +516,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "buffer_list_test@engine=libuv",
+    "name": "buffer_list_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -564,7 +564,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "channel_create_test@engine=libuv",
+    "name": "channel_create_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -612,7 +612,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "check_gcp_environment_linux_test@engine=libuv",
+    "name": "check_gcp_environment_linux_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -636,7 +636,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "check_gcp_environment_windows_test@engine=libuv",
+    "name": "check_gcp_environment_windows_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -659,7 +659,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "client_ssl_test@engine=libuv",
+    "name": "client_ssl_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -705,7 +705,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "combiner_test@engine=libuv",
+    "name": "combiner_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -752,7 +752,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "concurrent_connectivity_test@engine=libuv",
+    "name": "concurrent_connectivity_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -776,7 +776,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "connection_refused_test@engine=libuv",
+    "name": "connection_refused_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -826,7 +826,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dns_resolver_connectivity_using_ares_test@engine=libuv",
+    "name": "dns_resolver_connectivity_using_ares_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -852,7 +852,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dns_resolver_connectivity_using_native_test@engine=libuv",
+    "name": "dns_resolver_connectivity_using_native_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -876,7 +876,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dns_resolver_cooldown_test@engine=libuv",
+    "name": "dns_resolver_cooldown_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -900,7 +900,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dns_resolver_test@engine=libuv",
+    "name": "dns_resolver_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -923,7 +923,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "dualstack_socket_test@engine=libuv",
+    "name": "dualstack_socket_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -946,7 +946,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "endpoint_pair_test@engine=libuv",
+    "name": "endpoint_pair_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -993,7 +993,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "ev_epollex_linux_test@engine=libuv",
+    "name": "ev_epollex_linux_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1016,7 +1016,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "fake_resolver_test@engine=libuv",
+    "name": "fake_resolver_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1040,7 +1040,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "fake_transport_security_test@engine=libuv",
+    "name": "fake_transport_security_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1063,7 +1063,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "fd_conservation_posix_test@engine=libuv",
+    "name": "fd_conservation_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1085,7 +1085,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "fd_posix_test@engine=libuv",
+    "name": "fd_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1107,7 +1107,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "fling_stream_test@engine=libuv",
+    "name": "fling_stream_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1129,7 +1129,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "fling_test@engine=libuv",
+    "name": "fling_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1174,7 +1174,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "format_request_test@engine=libuv",
+    "name": "format_request_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1198,7 +1198,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "frame_handler_test@engine=libuv",
+    "name": "frame_handler_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1222,7 +1222,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "goaway_server_test@engine=libuv",
+    "name": "goaway_server_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1246,7 +1246,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "grpc_alts_credentials_options_test@engine=libuv",
+    "name": "grpc_alts_credentials_options_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1294,7 +1294,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "grpc_completion_queue_test@engine=libuv",
+    "name": "grpc_completion_queue_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1318,7 +1318,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "grpc_ipv6_loopback_available_test@engine=libuv",
+    "name": "grpc_ipv6_loopback_available_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1341,7 +1341,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "handshake_server_with_readahead_handshaker_test@engine=libuv",
+    "name": "handshake_server_with_readahead_handshaker_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1435,7 +1435,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "httpcli_test@engine=libuv",
+    "name": "httpcli_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1457,7 +1457,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "httpscli_test@engine=libuv",
+    "name": "httpscli_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1504,7 +1504,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "invalid_call_argument_test@engine=libuv",
+    "name": "invalid_call_argument_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1576,7 +1576,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "lame_client_test@engine=libuv",
+    "name": "lame_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1762,7 +1762,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "multiple_server_queues_test@engine=libuv",
+    "name": "multiple_server_queues_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1810,7 +1810,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "no_server_test@engine=libuv",
+    "name": "no_server_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1834,7 +1834,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "num_external_connectivity_watchers_test@engine=libuv",
+    "name": "num_external_connectivity_watchers_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1858,7 +1858,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "parse_address_test@engine=libuv",
+    "name": "parse_address_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1952,7 +1952,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "public_headers_must_be_c89@engine=libuv",
+    "name": "public_headers_must_be_c89_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -1977,7 +1977,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "resolve_address_using_ares_resolver_posix_test@engine=libuv",
+    "name": "resolve_address_using_ares_resolver_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2001,7 +2001,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "resolve_address_using_native_resolver_posix_test@engine=libuv",
+    "name": "resolve_address_using_native_resolver_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2024,7 +2024,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "secure_channel_create_test@engine=libuv",
+    "name": "secure_channel_create_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2048,7 +2048,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "secure_endpoint_test@engine=libuv",
+    "name": "secure_endpoint_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2072,7 +2072,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "security_connector_test@engine=libuv",
+    "name": "security_connector_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2095,7 +2095,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "server_ssl_test@engine=libuv",
+    "name": "server_ssl_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2118,7 +2118,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "server_test@engine=libuv",
+    "name": "server_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2214,7 +2214,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "sockaddr_resolver_test@engine=libuv",
+    "name": "sockaddr_resolver_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2237,7 +2237,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "socket_utils_test@engine=libuv",
+    "name": "socket_utils_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2284,7 +2284,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "ssl_credentials_test@engine=libuv",
+    "name": "ssl_credentials_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2307,7 +2307,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "ssl_transport_security_test@engine=libuv",
+    "name": "ssl_transport_security_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2354,7 +2354,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "stream_map_test@engine=libuv",
+    "name": "stream_map_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2425,7 +2425,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "tcp_client_posix_test@engine=libuv",
+    "name": "tcp_client_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2446,7 +2446,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "tcp_posix_test@engine=libuv",
+    "name": "tcp_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "posix"
@@ -2467,7 +2467,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "tcp_server_posix_test@engine=libuv",
+    "name": "tcp_server_posix_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2514,7 +2514,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "test_core_security_credentials_test@engine=libuv",
+    "name": "test_core_security_credentials_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2658,7 +2658,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "transport_security_common_api_test@engine=libuv",
+    "name": "transport_security_common_api_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2682,7 +2682,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c",
-    "name": "transport_security_test@engine=libuv",
+    "name": "transport_security_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2753,7 +2753,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "address_sorting_test@engine=libuv",
+    "name": "address_sorting_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2775,7 +2775,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "address_sorting_test_unsecure@engine=libuv",
+    "name": "address_sorting_test_unsecure_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2798,7 +2798,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "admin_services_end2end_test@engine=libuv",
+    "name": "admin_services_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2821,7 +2821,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "alarm_test@engine=libuv",
+    "name": "alarm_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2842,7 +2842,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "alts_concurrent_connectivity_test@engine=libuv",
+    "name": "alts_concurrent_connectivity_test_engine_libuv",
     "platforms": [
       "linux",
       "posix"
@@ -2864,7 +2864,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "alts_util_test@engine=libuv",
+    "name": "alts_util_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2890,7 +2890,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "api_fuzzer@engine=libuv",
+    "name": "api_fuzzer_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2937,7 +2937,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "async_end2end_test@engine=libuv",
+    "name": "async_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -2985,7 +2985,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "authorization_matchers_test@engine=libuv",
+    "name": "authorization_matchers_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3009,7 +3009,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "authorization_policy_provider_test@engine=libuv",
+    "name": "authorization_policy_provider_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3057,7 +3057,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "aws_request_signer_test@engine=libuv",
+    "name": "aws_request_signer_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3105,7 +3105,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "bad_streaming_id_bad_client_test@engine=libuv",
+    "name": "bad_streaming_id_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3129,7 +3129,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "badreq_bad_client_test@engine=libuv",
+    "name": "badreq_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3175,7 +3175,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "binder_resolver_test@engine=libuv",
+    "name": "binder_resolver_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3199,7 +3199,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "binder_server_test@engine=libuv",
+    "name": "binder_server_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3224,7 +3224,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "binder_transport_client_fuzzer@engine=libuv",
+    "name": "binder_transport_client_fuzzer_engine_libuv",
     "platforms": [
       "linux",
       "posix"
@@ -3247,7 +3247,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "binder_transport_server_fuzzer@engine=libuv",
+    "name": "binder_transport_server_fuzzer_engine_libuv",
     "platforms": [
       "linux",
       "posix"
@@ -3365,7 +3365,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "cancel_ares_query_test@engine=libuv",
+    "name": "cancel_ares_query_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3413,7 +3413,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "cel_authorization_engine_test@engine=libuv",
+    "name": "cel_authorization_engine_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3437,7 +3437,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "certificate_provider_registry_test@engine=libuv",
+    "name": "certificate_provider_registry_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3461,7 +3461,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "certificate_provider_store_test@engine=libuv",
+    "name": "certificate_provider_store_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3533,7 +3533,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "channel_stack_builder_test@engine=libuv",
+    "name": "channel_stack_builder_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3557,7 +3557,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "channel_trace_test@engine=libuv",
+    "name": "channel_trace_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3605,7 +3605,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "channelz_service_test@engine=libuv",
+    "name": "channelz_service_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3629,7 +3629,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "channelz_test@engine=libuv",
+    "name": "channelz_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3677,7 +3677,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "cli_call_test@engine=libuv",
+    "name": "cli_call_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3725,7 +3725,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "client_callback_end2end_test@engine=libuv",
+    "name": "client_callback_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3749,7 +3749,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "client_context_test_peer_test@engine=libuv",
+    "name": "client_context_test_peer_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3773,7 +3773,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "client_interceptors_end2end_test@engine=libuv",
+    "name": "client_interceptors_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3845,7 +3845,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "connection_prefix_bad_client_test@engine=libuv",
+    "name": "connection_prefix_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3869,7 +3869,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "connectivity_state_test@engine=libuv",
+    "name": "connectivity_state_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -3893,7 +3893,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "context_allocator_end2end_test@engine=libuv",
+    "name": "context_allocator_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4012,7 +4012,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "crl_ssl_transport_security_test@engine=libuv",
+    "name": "crl_ssl_transport_security_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4035,7 +4035,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "delegating_channel_test@engine=libuv",
+    "name": "delegating_channel_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4059,7 +4059,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "destroy_grpclb_channel_with_active_connect_stress_test@engine=libuv",
+    "name": "destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4083,7 +4083,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "dual_ref_counted_test@engine=libuv",
+    "name": "dual_ref_counted_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4107,7 +4107,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "duplicate_header_bad_client_test@engine=libuv",
+    "name": "duplicate_header_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4131,7 +4131,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "end2end_binder_transport_test@engine=libuv",
+    "name": "end2end_binder_transport_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4203,7 +4203,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "error_details_test@engine=libuv",
+    "name": "error_details_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4251,7 +4251,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "error_utils_test@engine=libuv",
+    "name": "error_utils_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4275,7 +4275,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "evaluate_args_test@engine=libuv",
+    "name": "evaluate_args_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4321,7 +4321,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "exception_test@engine=libuv",
+    "name": "exception_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4393,7 +4393,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "file_watcher_certificate_provider_factory_test@engine=libuv",
+    "name": "file_watcher_certificate_provider_factory_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4417,7 +4417,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "filter_end2end_test@engine=libuv",
+    "name": "filter_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4441,7 +4441,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "flow_control_test@engine=libuv",
+    "name": "flow_control_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4489,7 +4489,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "generic_end2end_test@engine=libuv",
+    "name": "generic_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4559,7 +4559,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "google_mesh_ca_certificate_provider_factory_test@engine=libuv",
+    "name": "google_mesh_ca_certificate_provider_factory_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4583,7 +4583,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_authorization_engine_test@engine=libuv",
+    "name": "grpc_authorization_engine_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4607,7 +4607,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_authorization_policy_provider_test@engine=libuv",
+    "name": "grpc_authorization_policy_provider_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4631,7 +4631,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_tls_certificate_distributor_test@engine=libuv",
+    "name": "grpc_tls_certificate_distributor_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4655,7 +4655,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_tls_certificate_provider_test@engine=libuv",
+    "name": "grpc_tls_certificate_provider_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4679,7 +4679,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_tls_certificate_verifier_test@engine=libuv",
+    "name": "grpc_tls_certificate_verifier_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4703,7 +4703,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_tls_credentials_options_test@engine=libuv",
+    "name": "grpc_tls_credentials_options_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4726,7 +4726,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpc_tool_test@engine=libuv",
+    "name": "grpc_tool_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4749,7 +4749,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "grpclb_api_test@engine=libuv",
+    "name": "grpclb_api_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4773,7 +4773,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "h2_ssl_session_reuse_test@engine=libuv",
+    "name": "h2_ssl_session_reuse_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4797,7 +4797,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "head_of_line_blocking_bad_client_test@engine=libuv",
+    "name": "head_of_line_blocking_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4821,7 +4821,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "headers_bad_client_test@engine=libuv",
+    "name": "headers_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4845,7 +4845,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "health_service_end2end_test@engine=libuv",
+    "name": "health_service_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4871,7 +4871,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "hpack_parser_fuzzer@engine=libuv",
+    "name": "hpack_parser_fuzzer_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -4942,7 +4942,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "hybrid_end2end_test@engine=libuv",
+    "name": "hybrid_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5038,7 +5038,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "initial_settings_frame_bad_client_test@engine=libuv",
+    "name": "initial_settings_frame_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5062,7 +5062,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "insecure_security_connector_test@engine=libuv",
+    "name": "insecure_security_connector_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5085,7 +5085,7 @@
     "flaky": false,
     "gtest": false,
     "language": "c++",
-    "name": "interop_test@engine=libuv",
+    "name": "interop_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5156,7 +5156,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "large_metadata_bad_client_test@engine=libuv",
+    "name": "large_metadata_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5204,7 +5204,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "lb_get_cpu_stats_test@engine=libuv",
+    "name": "lb_get_cpu_stats_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5228,7 +5228,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "lb_load_data_store_test@engine=libuv",
+    "name": "lb_load_data_store_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5252,7 +5252,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "linux_system_roots_test@engine=libuv",
+    "name": "linux_system_roots_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5348,7 +5348,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "matchers_test@engine=libuv",
+    "name": "matchers_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5396,7 +5396,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "message_allocator_end2end_test@engine=libuv",
+    "name": "message_allocator_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5420,7 +5420,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "metadata_map_test@engine=libuv",
+    "name": "metadata_map_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5468,7 +5468,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "mock_stream_test@engine=libuv",
+    "name": "mock_stream_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5492,7 +5492,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "mock_test@engine=libuv",
+    "name": "mock_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5516,7 +5516,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "nonblocking_test@engine=libuv",
+    "name": "nonblocking_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5564,7 +5564,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "orphanable_test@engine=libuv",
+    "name": "orphanable_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5588,7 +5588,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "out_of_bounds_bad_client_test@engine=libuv",
+    "name": "out_of_bounds_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5636,7 +5636,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "parsed_metadata_test@engine=libuv",
+    "name": "parsed_metadata_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5660,7 +5660,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "pid_controller_test@engine=libuv",
+    "name": "pid_controller_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5732,7 +5732,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "port_sharing_end2end_test@engine=libuv",
+    "name": "port_sharing_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5828,7 +5828,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "proto_server_reflection_test@engine=libuv",
+    "name": "proto_server_reflection_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5900,7 +5900,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "raw_end2end_test@engine=libuv",
+    "name": "raw_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5948,7 +5948,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "rbac_translator_test@engine=libuv",
+    "name": "rbac_translator_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5972,7 +5972,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "ref_counted_ptr_test@engine=libuv",
+    "name": "ref_counted_ptr_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -5996,7 +5996,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "ref_counted_test@engine=libuv",
+    "name": "ref_counted_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6019,7 +6019,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "remove_stream_from_stalled_lists_test@engine=libuv",
+    "name": "remove_stream_from_stalled_lists_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6042,7 +6042,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "resolve_address_using_ares_resolver_test@engine=libuv",
+    "name": "resolve_address_using_ares_resolver_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6066,7 +6066,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "resolve_address_using_native_resolver_test@engine=libuv",
+    "name": "resolve_address_using_native_resolver_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6138,7 +6138,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "rls_end2end_test@engine=libuv",
+    "name": "rls_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6162,7 +6162,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "rls_lb_config_parser_test@engine=libuv",
+    "name": "rls_lb_config_parser_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6186,7 +6186,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "sdk_authz_end2end_test@engine=libuv",
+    "name": "sdk_authz_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6210,7 +6210,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "secure_auth_context_test@engine=libuv",
+    "name": "secure_auth_context_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6258,7 +6258,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_builder_plugin_test@engine=libuv",
+    "name": "server_builder_plugin_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6281,7 +6281,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_builder_test@engine=libuv",
+    "name": "server_builder_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6303,7 +6303,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_builder_with_socket_mutator_test@engine=libuv",
+    "name": "server_builder_with_socket_mutator_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6326,7 +6326,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_chttp2_test@engine=libuv",
+    "name": "server_chttp2_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6374,7 +6374,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_context_test_spouse_test@engine=libuv",
+    "name": "server_context_test_spouse_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6398,7 +6398,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_early_return_test@engine=libuv",
+    "name": "server_early_return_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6422,7 +6422,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_interceptors_end2end_test@engine=libuv",
+    "name": "server_interceptors_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6446,7 +6446,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_registered_method_bad_client_test@engine=libuv",
+    "name": "server_registered_method_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6469,7 +6469,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "server_request_call_test@engine=libuv",
+    "name": "server_request_call_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6492,7 +6492,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "service_config_end2end_test@engine=libuv",
+    "name": "service_config_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6516,7 +6516,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "service_config_test@engine=libuv",
+    "name": "service_config_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6540,7 +6540,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "shutdown_test@engine=libuv",
+    "name": "shutdown_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6564,7 +6564,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "simple_request_bad_client_test@engine=libuv",
+    "name": "simple_request_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6588,7 +6588,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "sockaddr_utils_test@engine=libuv",
+    "name": "sockaddr_utils_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6729,7 +6729,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "stranded_event_test@engine=libuv",
+    "name": "stranded_event_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6751,7 +6751,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "streaming_throughput_test@engine=libuv",
+    "name": "streaming_throughput_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6846,7 +6846,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_cpp_client_credentials_test@engine=libuv",
+    "name": "test_cpp_client_credentials_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6870,7 +6870,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_cpp_server_credentials_test@engine=libuv",
+    "name": "test_cpp_server_credentials_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6942,7 +6942,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "thread_manager_test@engine=libuv",
+    "name": "thread_manager_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -6989,7 +6989,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "thread_stress_test@engine=libuv",
+    "name": "thread_stress_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7060,7 +7060,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "timer_test@engine=libuv",
+    "name": "timer_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7084,7 +7084,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "tls_certificate_verifier_test@engine=libuv",
+    "name": "tls_certificate_verifier_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7108,7 +7108,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "tls_key_export_test@engine=libuv",
+    "name": "tls_key_export_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7132,7 +7132,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "tls_security_connector_test@engine=libuv",
+    "name": "tls_security_connector_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7180,7 +7180,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "too_many_pings_test@engine=libuv",
+    "name": "too_many_pings_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7300,7 +7300,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "unknown_frame_bad_client_test@engine=libuv",
+    "name": "unknown_frame_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7324,7 +7324,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "uri_parser_test@engine=libuv",
+    "name": "uri_parser_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7372,7 +7372,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "window_overflow_bad_client_test@engine=libuv",
+    "name": "window_overflow_bad_client_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7443,7 +7443,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "work_serializer_test@engine=libuv",
+    "name": "work_serializer_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7465,7 +7465,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "writes_per_rpc_test@engine=libuv",
+    "name": "writes_per_rpc_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7488,7 +7488,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_bootstrap_test@engine=libuv",
+    "name": "xds_bootstrap_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7512,7 +7512,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_certificate_provider_test@engine=libuv",
+    "name": "xds_certificate_provider_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7536,7 +7536,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_channel_creds_registry_test@engine=libuv",
+    "name": "xds_channel_creds_registry_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7560,7 +7560,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_credentials_end2end_test@engine=libuv",
+    "name": "xds_credentials_end2end_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
@@ -7584,7 +7584,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "xds_credentials_test@engine=libuv",
+    "name": "xds_credentials_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
