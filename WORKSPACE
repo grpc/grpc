@@ -59,12 +59,12 @@ android_sdk_repository(
     build_tools_version = "30.0.3",
 )
 
-android_ndk_repository(
-    name = "androidndk",
-    # Note that Bazel does not support NDK 22 yet, and Bazel 3.7.1 only
-    # supports up to API level 29 for NDK 21
-    # https://github.com/bazelbuild/bazel/issues/13421
-)
+# android_ndk_repository(
+#     name = "androidndk",
+#     # Note that Bazel does not support NDK 22 yet, and Bazel 3.7.1 only
+#     # supports up to API level 29 for NDK 21
+#     # https://github.com/bazelbuild/bazel/issues/13421
+# )
 
 # Prevents bazel's '...' expansion from including the following folder.
 # This is required because the BUILD file in the following folder
