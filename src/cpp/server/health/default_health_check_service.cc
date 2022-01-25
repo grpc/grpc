@@ -215,7 +215,7 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   if (request_struct == nullptr) {
     return false;
   }
-  upb_strview service =
+  upb_StringView service =
       grpc_health_v1_HealthCheckRequest_service(request_struct);
   if (service.size > MAX_SERVICE_NAME_LENGTH) {
     return false;
