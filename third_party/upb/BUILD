@@ -46,6 +46,7 @@ exports_files([
 config_setting(
     name = "windows",
     constraint_values = ["@bazel_tools//platforms:windows"],
+    visibility = ["//visibility:public"],
 )
 
 upb_fasttable_enabled(
@@ -102,12 +103,14 @@ cc_library(
     deps = [
         ":fastdecode",
         ":port",
+        "//third_party/utf8_range",
     ],
 )
 
 cc_library(
     name = "fastdecode",
     srcs = [
+        "upb/decode.h",
         "upb/decode_internal.h",
         "upb/decode_fast.c",
         "upb/decode_fast.h",
@@ -119,6 +122,7 @@ cc_library(
     deps = [
         ":port",
         ":table",
+        "//third_party/utf8_range",
     ],
 )
 
@@ -274,6 +278,7 @@ cc_library(
     srcs = ["upb.c"],
     hdrs = ["upb.h"],
     copts = UPB_DEFAULT_COPTS,
+    deps = ["//third_party/utf8_range"],
 )
 
 upb_amalgamation(
@@ -299,6 +304,7 @@ cc_library(
     srcs = ["php-upb.c"],
     hdrs = ["php-upb.h"],
     copts = UPB_DEFAULT_COPTS,
+    deps = ["//third_party/utf8_range"],
 )
 
 upb_amalgamation(
@@ -323,6 +329,7 @@ cc_library(
     srcs = ["ruby-upb.c"],
     hdrs = ["ruby-upb.h"],
     copts = UPB_DEFAULT_COPTS,
+    deps = ["//third_party/utf8_range"],
 )
 
 exports_files(

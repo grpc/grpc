@@ -12,11 +12,11 @@
 //       names of its contributors may be used to endorse or promote products
 //       derived from this software without specific prior written permission.
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -35,9 +35,9 @@
 #include <set>
 #include <sstream>
 
-#include "tests/test_cpp.upbdefs.h"
+#include "gtest/gtest.h"
 #include "tests/test_cpp.upb.h"
-#include "tests/upb_test.h"
+#include "tests/test_cpp.upbdefs.h"
 #include "upb/def.h"
 #include "upb/def.hpp"
 #include "upb/json_decode.h"
@@ -47,7 +47,7 @@
 // Must be last.
 #include "upb/port_def.inc"
 
-void TestIteration() {
+TEST(Cpp, Iteration) {
   upb::SymbolTable symtab;
   upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(symtab.ptr()));
 
@@ -57,17 +57,17 @@ void TestIteration() {
     UPB_UNUSED(field);
     field_count++;
   }
-  ASSERT(field_count == md.field_count());
+  EXPECT_EQ(field_count, md.field_count());
 
   int oneof_count = 0;
   for (auto oneof : md.oneofs()) {
     UPB_UNUSED(oneof);
     oneof_count++;
   }
-  ASSERT(oneof_count == md.oneof_count());
+  EXPECT_EQ(oneof_count, md.oneof_count());
 }
 
-void TestArena() {
+TEST(Cpp, Arena) {
   int n = 100000;
 
   struct Decrementer {
@@ -82,14 +82,14 @@ void TestArena() {
       arena.Own(new Decrementer(&n));
 
       // Intersperse allocation and ensure we can write to it.
-      int* val = static_cast<int*>(upb_arena_malloc(arena.ptr(), sizeof(int)));
+      int* val = static_cast<int*>(upb_Arena_Malloc(arena.ptr(), sizeof(int)));
       *val = i;
     }
 
     // Test a large allocation.
-    upb_arena_malloc(arena.ptr(), 1000000);
+    upb_Arena_Malloc(arena.ptr(), 1000000);
   }
-  ASSERT(n == 0);
+  EXPECT_EQ(0, n);
 
   {
     // Test fuse.
@@ -98,12 +98,12 @@ void TestArena() {
 
     arena1.Fuse(arena2);
 
-    upb_arena_malloc(arena1.ptr(), 10000);
-    upb_arena_malloc(arena2.ptr(), 10000);
+    upb_Arena_Malloc(arena1.ptr(), 10000);
+    upb_Arena_Malloc(arena2.ptr(), 10000);
   }
 }
 
-void TestInlinedArena() {
+TEST(Cpp, InlinedArena) {
   int n = 100000;
 
   struct Decrementer {
@@ -118,44 +118,33 @@ void TestInlinedArena() {
       arena.Own(new Decrementer(&n));
 
       // Intersperse allocation and ensure we can write to it.
-      int* val = static_cast<int*>(upb_arena_malloc(arena.ptr(), sizeof(int)));
+      int* val = static_cast<int*>(upb_Arena_Malloc(arena.ptr(), sizeof(int)));
       *val = i;
     }
 
     // Test a large allocation.
-    upb_arena_malloc(arena.ptr(), 1000000);
+    upb_Arena_Malloc(arena.ptr(), 1000000);
   }
-  ASSERT(n == 0);
+  EXPECT_EQ(0, n);
 }
 
-void TestDefault() {
+TEST(Cpp, Default) {
   upb::SymbolTable symtab;
   upb::Arena arena;
   upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(symtab.ptr()));
-  upb_test_TestMessage *msg = upb_test_TestMessage_new(arena.ptr());
-  size_t size = upb_json_encode(msg, md.ptr(), NULL, 0, NULL, 0, NULL);
-  ASSERT(size == 2);  // "{}"
+  upb_test_TestMessage* msg = upb_test_TestMessage_new(arena.ptr());
+  size_t size = upb_JsonEncode(msg, md.ptr(), NULL, 0, NULL, 0, NULL);
+  EXPECT_EQ(2, size);  // "{}"
 }
 
-void TestJsonNull() {
+TEST(Cpp, JsonNull) {
   upb::SymbolTable symtab;
   upb::MessageDefPtr md(upb_test_TestMessage_getmsgdef(symtab.ptr()));
   upb::FieldDefPtr i32_f = md.FindFieldByName("i32");
   upb::FieldDefPtr str_f = md.FindFieldByName("str");
-  ASSERT(i32_f && str_f);
-  ASSERT(i32_f.default_value().int32_val == 5);
-  ASSERT(strcmp(str_f.default_value().str_val.data, "abc") == 0);
-  ASSERT(str_f.default_value().str_val.size == 3);
-}
-
-extern "C" {
-
-int run_tests() {
-  TestIteration();
-  TestArena();
-  TestDefault();
-
-  return 0;
-}
-
+  ASSERT_TRUE(i32_f);
+  ASSERT_TRUE(str_f);
+  EXPECT_EQ(5, i32_f.default_value().int32_val);
+  EXPECT_EQ(0, strcmp(str_f.default_value().str_val.data, "abc"));
+  EXPECT_EQ(3, str_f.default_value().str_val.size);
 }
