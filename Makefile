@@ -2584,6 +2584,12 @@ LIBARES_SRC = \
     third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
     third_party/cares/cares/src/lib/ares__read_line.c \
     third_party/cares/cares/src/lib/ares_query.c \
+    third_party/cares/cares/src/lib/ares_options.c \
+    third_party/cares/cares/src/lib/inet_net_pton.c \
+    third_party/cares/cares/src/lib/ares_expand_name.c \
+    third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/ares_cancel.c \
+    third_party/cares/cares/src/lib/ares_writev.c \
 
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
