@@ -285,19 +285,22 @@ class FailFirstTenCallsFilter {
       auto* calld = static_cast<CallData*>(elem->call_data);
       if (chand->num_calls_ < 10) calld->fail_ = true;
       if (batch->send_initial_metadata) ++chand->num_calls_;
-      if (calld->fail_ && !batch->cancel_stream) {
-        grpc_transport_stream_op_batch_finish_with_failure(
-            batch,
-            grpc_error_set_int(
-                grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                       "FailFirstTenCallsFilter failing batch"),
-                                   GRPC_ERROR_INT_GRPC_STATUS,
-                                   GRPC_STATUS_UNAVAILABLE),
-                GRPC_ERROR_INT_STREAM_NETWORK_STATE,
-                static_cast<int>(
-                    grpc_core::StreamNetworkState::kNotSentOnWire)),
-            calld->call_combiner_);
-        return;
+      if (calld->fail_) {
+        if (batch->recv_trailing_metadata) {
+          batch->payload->recv_trailing_metadata.recv_trailing_metadata->Set(
+              grpc_core::GrpcStreamNetworkState(),
+              grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
+        }
+        if (!batch->cancel_stream) {
+          grpc_transport_stream_op_batch_finish_with_failure(
+              batch,
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "FailFirstTenCallsFilter failing batch"),
+                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+              calld->call_combiner_);
+          return;
+        }
       }
       grpc_call_next_op(elem, batch);
     }
@@ -347,7 +350,7 @@ void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);
         builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_SUBCHANNEL, 0,
+            GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY + 1,
             [](grpc_core::ChannelStackBuilder* builder) {
               // Skip on proxy (which explicitly disables retries).
               const grpc_channel_args* args = builder->channel_args();

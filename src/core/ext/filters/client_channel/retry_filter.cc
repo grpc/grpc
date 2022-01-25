@@ -1547,7 +1547,8 @@ void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
                    grpc_error_handle error, grpc_status_code* status,
                    absl::optional<grpc_millis>* server_pushback_ms,
                    bool* is_lb_drop,
-                   absl::optional<StreamNetworkState>* stream_network_state) {
+                   absl::optional<GrpcStreamNetworkState::ValueType>*
+                       stream_network_state) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
     intptr_t value = 0;
@@ -1555,14 +1556,11 @@ void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
         value != 0) {
       *is_lb_drop = true;
     }
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_STREAM_NETWORK_STATE,
-                           &value)) {
-      *stream_network_state = static_cast<StreamNetworkState>(value);
-    }
   } else {
     *status = *md_batch->get(GrpcStatusMetadata());
-    *server_pushback_ms = md_batch->get(GrpcRetryPushbackMsMetadata());
   }
+  *server_pushback_ms = md_batch->get(GrpcRetryPushbackMsMetadata());
+  *stream_network_state = md_batch->get(GrpcStreamNetworkState());
   GRPC_ERROR_UNREF(error);
 }
 
@@ -1695,7 +1693,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   grpc_status_code status = GRPC_STATUS_OK;
   absl::optional<grpc_millis> server_pushback_ms;
   bool is_lb_drop = false;
-  absl::optional<StreamNetworkState> stream_network_state;
+  absl::optional<GrpcStreamNetworkState::ValueType> stream_network_state;
   grpc_metadata_batch* md_batch =
       batch_data->batch_.payload->recv_trailing_metadata.recv_trailing_metadata;
   GetCallStatus(calld->deadline_, md_batch, GRPC_ERROR_REF(error), &status,
@@ -1721,10 +1719,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
     if (stream_network_state.has_value()) {
       // If not sent on wire, then always retry.
       // If sent on wire but not seen by server, retry exactly once.
-      if (*stream_network_state == StreamNetworkState::kNotSentOnWire) {
+      if (*stream_network_state == GrpcStreamNetworkState::kNotSentOnWire) {
         retry = kTransparentRetry;
       } else if (*stream_network_state ==
-                     StreamNetworkState::kNotSeenByServer &&
+                     GrpcStreamNetworkState::kNotSeenByServer &&
                  !calld->sent_transparent_retry_not_seen_by_server_) {
         calld->sent_transparent_retry_not_seen_by_server_ = true;
         retry = kTransparentRetry;
@@ -2144,6 +2142,10 @@ RetryFilter::CallData::~CallData() {
 
 void RetryFilter::CallData::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+    gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from surface: %s",
+            chand_, this, grpc_transport_stream_op_batch_string(batch).c_str());
+  }
   // If we have an LB call, delegate to the LB call.
   if (committed_call_ != nullptr) {
     // Note: This will release the call combiner.
