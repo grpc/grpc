@@ -147,7 +147,7 @@ absl::optional<GrpcStreamNetworkState::ValueType>
 
 class StreamsNotSeenTest : public ::testing::Test {
  protected:
-  StreamsNotSeenTest(bool server_allows_streams = true)
+  explicit StreamsNotSeenTest(bool server_allows_streams = true)
       : server_allows_streams_(server_allows_streams) {
     // Reset the filter state
     TrailingMetadataRecordingFilter::reset_stream_network_state();
@@ -189,7 +189,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     connect_notification_.WaitForNotificationWithTimeout(absl::Seconds(1));
   }
 
-  ~StreamsNotSeenTest() {
+  ~StreamsNotSeenTest() override {
     cq_verifier_destroy(cqv_);
     grpc_completion_queue_shutdown(cq_);
     grpc_event ev;
