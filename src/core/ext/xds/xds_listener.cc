@@ -259,7 +259,7 @@ void MaybeLogHttpConnectionManager(
             context.symtab);
     char buf[10240];
     upb_TextEncode(http_connection_manager_config, msg_type, nullptr, 0, buf,
-                    sizeof(buf));
+                   sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] HttpConnectionManager: %s",
             context.client, buf);
   }

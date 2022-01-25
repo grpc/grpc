@@ -192,7 +192,7 @@ void PopulateBuildVersion(const XdsEncodingContext& context,
   // API for now.  Change this once we upgrade to a version of upb that
   // fixes this bug.
   _upb_Message_AddUnknown(node_msg, encoded_build_version.data(),
-                      encoded_build_version.size(), context.arena);
+                          encoded_build_version.size(), context.arena);
 }
 
 void PopulateNode(const XdsEncodingContext& context,
@@ -241,7 +241,8 @@ void PopulateNode(const XdsEncodingContext& context,
   envoy_config_core_v3_Node_set_user_agent_version(
       node_msg, StdStringToUpbString(user_agent_version));
   envoy_config_core_v3_Node_add_client_features(
-      node_msg, upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
+      node_msg,
+      upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
       context.arena);
 }
 
@@ -313,7 +314,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
     // Error description comes from the error that was passed in.
     error_string_storage = grpc_error_std_string(error);
-    upb_StringView error_description = StdStringToUpbString(error_string_storage);
+    upb_StringView error_description =
+        StdStringToUpbString(error_string_storage);
     google_rpc_Status_set_message(error_detail, error_description);
     GRPC_ERROR_UNREF(error);
   }
@@ -449,7 +451,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
-      node_msg, upb_StringView_FromString("envoy.lrs.supports_send_all_clusters"),
+      node_msg,
+      upb_StringView_FromString("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
   MaybeLogLrsRequest(context, request);
   return SerializeLrsRequest(context, request);

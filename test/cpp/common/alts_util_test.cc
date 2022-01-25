@@ -91,21 +91,24 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
   grpc_gcp_AltsContext_set_application_protocol(
-      context, upb_StringView_FromDataAndSize(expected_ap.data(), expected_ap.length()));
+      context,
+      upb_StringView_FromDataAndSize(expected_ap.data(), expected_ap.length()));
   grpc_gcp_AltsContext_set_record_protocol(
-      context, upb_StringView_FromDataAndSize(expected_rp.data(), expected_rp.length()));
+      context,
+      upb_StringView_FromDataAndSize(expected_rp.data(), expected_rp.length()));
   grpc_gcp_AltsContext_set_security_level(context, expected_sl);
   grpc_gcp_AltsContext_set_peer_service_account(
-      context, upb_StringView_FromDataAndSize(expected_peer.data(), expected_peer.length()));
+      context, upb_StringView_FromDataAndSize(expected_peer.data(),
+                                              expected_peer.length()));
   grpc_gcp_AltsContext_set_local_service_account(
-      context,
-      upb_StringView_FromDataAndSize(expected_local.data(), expected_local.length()));
+      context, upb_StringView_FromDataAndSize(expected_local.data(),
+                                              expected_local.length()));
   grpc_gcp_AltsContext_peer_attributes_set(
       context,
       upb_StringView_FromDataAndSize(expected_peer_atrributes_key.data(),
-                       expected_peer_atrributes_key.length()),
+                                     expected_peer_atrributes_key.length()),
       upb_StringView_FromDataAndSize(expected_peer_atrributes_value.data(),
-                       expected_peer_atrributes_value.length()),
+                                     expected_peer_atrributes_value.length()),
       context_arena.ptr());
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(

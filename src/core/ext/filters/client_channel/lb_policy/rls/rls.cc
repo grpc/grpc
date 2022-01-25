@@ -1802,13 +1802,14 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
   for (const auto& kv : key_.key_map) {
     grpc_lookup_v1_RouteLookupRequest_key_map_set(
         req, upb_StringView_FromDataAndSize(kv.first.data(), kv.first.size()),
-        upb_StringView_FromDataAndSize(kv.second.data(), kv.second.size()), arena.ptr());
+        upb_StringView_FromDataAndSize(kv.second.data(), kv.second.size()),
+        arena.ptr());
   }
   grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
   if (!stale_header_data_.empty()) {
     grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(
-        req,
-        upb_StringView_FromDataAndSize(stale_header_data_.data(), stale_header_data_.size()));
+        req, upb_StringView_FromDataAndSize(stale_header_data_.data(),
+                                            stale_header_data_.size()));
   }
   size_t len;
   char* buf =

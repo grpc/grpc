@@ -68,12 +68,12 @@ static bool handshaker_identity_equals(const grpc_gcp_Identity* l_id,
 
   if (grpc_gcp_Identity_has_service_account(l_id)) {
     if (!upb_StringView_IsEqual(grpc_gcp_Identity_service_account(l_id),
-                         grpc_gcp_Identity_service_account(r_id))) {
+                                grpc_gcp_Identity_service_account(r_id))) {
       return false;
     }
   } else if (grpc_gcp_Identity_has_hostname(l_id)) {
     if (!upb_StringView_IsEqual(grpc_gcp_Identity_hostname(l_id),
-                         grpc_gcp_Identity_hostname(r_id))) {
+                                grpc_gcp_Identity_hostname(r_id))) {
       return false;
     }
   }
@@ -105,7 +105,7 @@ static bool handshaker_rpc_versions_equals(
 bool grpc_gcp_handshaker_resp_equals(const grpc_gcp_HandshakerResp* l_resp,
                                      const grpc_gcp_HandshakerResp* r_resp) {
   return upb_StringView_IsEqual(grpc_gcp_HandshakerResp_out_frames(l_resp),
-                         grpc_gcp_HandshakerResp_out_frames(r_resp)) &&
+                                grpc_gcp_HandshakerResp_out_frames(r_resp)) &&
          (grpc_gcp_HandshakerResp_bytes_consumed(l_resp) ==
           grpc_gcp_HandshakerResp_bytes_consumed(l_resp)) &&
          grpc_gcp_handshaker_resp_result_equals(
@@ -129,10 +129,11 @@ bool grpc_gcp_handshaker_resp_result_equals(
   return upb_StringView_IsEqual(
              grpc_gcp_HandshakerResult_application_protocol(l_result),
              grpc_gcp_HandshakerResult_application_protocol(r_result)) &&
-         upb_StringView_IsEqual(grpc_gcp_HandshakerResult_record_protocol(l_result),
-                         grpc_gcp_HandshakerResult_record_protocol(r_result)) &&
+         upb_StringView_IsEqual(
+             grpc_gcp_HandshakerResult_record_protocol(l_result),
+             grpc_gcp_HandshakerResult_record_protocol(r_result)) &&
          upb_StringView_IsEqual(grpc_gcp_HandshakerResult_key_data(l_result),
-                         grpc_gcp_HandshakerResult_key_data(r_result)) &&
+                                grpc_gcp_HandshakerResult_key_data(r_result)) &&
          handshaker_identity_equals(
              grpc_gcp_HandshakerResult_peer_identity(l_result),
              grpc_gcp_HandshakerResult_peer_identity(r_result)) &&
@@ -159,5 +160,5 @@ bool grpc_gcp_handshaker_resp_status_equals(
   return (grpc_gcp_HandshakerStatus_code(l_status) ==
           grpc_gcp_HandshakerStatus_code(r_status)) &&
          upb_StringView_IsEqual(grpc_gcp_HandshakerStatus_details(l_status),
-                         grpc_gcp_HandshakerStatus_details(r_status));
+                                grpc_gcp_HandshakerStatus_details(r_status));
 }

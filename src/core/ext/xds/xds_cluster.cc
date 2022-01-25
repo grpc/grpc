@@ -281,7 +281,8 @@ grpc_error_handle CdsResourceParse(
             aggregate_cluster_config =
                 envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
                     aggregate_cluster_config_upb_StringView.data,
-                    aggregate_cluster_config_upb_StringView.size, context.arena);
+                    aggregate_cluster_config_upb_StringView.size,
+                    context.arena);
         if (aggregate_cluster_config == nullptr) {
           errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Can't parse aggregate cluster."));

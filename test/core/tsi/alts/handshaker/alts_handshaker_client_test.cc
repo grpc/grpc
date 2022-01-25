@@ -87,10 +87,12 @@ static void validate_target_identities(
   const grpc_gcp_Identity* identity2 = target_identities[0];
   GPR_ASSERT(upb_StringView_IsEqual(
       grpc_gcp_Identity_service_account(identity1),
-      upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1)));
+      upb_StringView_FromString(
+          ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1)));
   GPR_ASSERT(upb_StringView_IsEqual(
       grpc_gcp_Identity_service_account(identity2),
-      upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2)));
+      upb_StringView_FromString(
+          ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2)));
 }
 
 /**
@@ -181,12 +183,13 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   upb_StringView const* application_protocols =
       grpc_gcp_StartClientHandshakeReq_application_protocols(client_start,
                                                              nullptr);
-  GPR_ASSERT(upb_StringView_IsEqual(application_protocols[0],
-                             upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      application_protocols[0],
+      upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
   upb_StringView const* record_protocols =
       grpc_gcp_StartClientHandshakeReq_record_protocols(client_start, nullptr);
-  GPR_ASSERT(upb_StringView_IsEqual(record_protocols[0],
-                             upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   const grpc_gcp_RpcProtocolVersions* rpc_protocol_versions =
       grpc_gcp_StartClientHandshakeReq_rpc_versions(client_start);
   validate_rpc_protocol_versions(rpc_protocol_versions);
@@ -229,8 +232,9 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
   upb_StringView const* application_protocols =
       grpc_gcp_StartServerHandshakeReq_application_protocols(server_start,
                                                              nullptr);
-  GPR_ASSERT(upb_StringView_IsEqual(application_protocols[0],
-                             upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      application_protocols[0],
+      upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(
                  server_start) == 1);
   grpc_gcp_ServerHandshakeParameters* value;
@@ -238,8 +242,8 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
       server_start, grpc_gcp_ALTS, &value));
   upb_StringView const* record_protocols =
       grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
-  GPR_ASSERT(upb_StringView_IsEqual(record_protocols[0],
-                             upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   validate_rpc_protocol_versions(
       grpc_gcp_StartServerHandshakeReq_rpc_versions(server_start));
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_max_frame_size(server_start) ==

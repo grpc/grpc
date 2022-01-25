@@ -338,7 +338,8 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
   google_rpc_Status_set_message(
-      msg, upb_StringView_FromDataAndSize(status.message().data(), status.message().size()));
+      msg, upb_StringView_FromDataAndSize(status.message().data(),
+                                          status.message().size()));
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
     google_protobuf_Any* any = google_rpc_Status_add_details(msg, arena);
@@ -359,7 +360,8 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
         memcpy(cur, chunk.data(), chunk.size());
         cur += chunk.size();
       }
-      google_protobuf_Any_set_value(any, upb_StringView_FromDataAndSize(buf, payload.size()));
+      google_protobuf_Any_set_value(
+          any, upb_StringView_FromDataAndSize(buf, payload.size()));
     }
   });
   return msg;

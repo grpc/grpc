@@ -152,8 +152,10 @@ static grpc_byte_buffer* generate_handshaker_response(
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
       grpc_gcp_Identity_attributes_set(
           peer_identity,
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
+          upb_StringView_FromString(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
+          upb_StringView_FromString(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
           arena.ptr());
       grpc_gcp_Identity_set_service_account(
           peer_identity,
@@ -171,10 +173,11 @@ static grpc_byte_buffer* generate_handshaker_response(
           local_identity,
           upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
       grpc_gcp_HandshakerResult_set_application_protocol(
-          result,
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+          result, upb_StringView_FromString(
+                      ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
-          result, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+          result,
+          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       grpc_gcp_HandshakerResult_set_max_frame_size(
           result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
       break;
@@ -186,8 +189,10 @@ static grpc_byte_buffer* generate_handshaker_response(
           grpc_gcp_HandshakerResult_mutable_peer_identity(result, arena.ptr());
       grpc_gcp_Identity_attributes_set(
           peer_identity,
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
+          upb_StringView_FromString(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY),
+          upb_StringView_FromString(
+              ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE),
           arena.ptr());
       grpc_gcp_Identity_set_service_account(
           peer_identity,
@@ -205,10 +210,11 @@ static grpc_byte_buffer* generate_handshaker_response(
           local_identity,
           upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
       grpc_gcp_HandshakerResult_set_application_protocol(
-          result,
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+          result, upb_StringView_FromString(
+                      ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
-          result, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+          result,
+          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       break;
     case FAILED:
       grpc_gcp_HandshakerStatus_set_code(status, 3 /* INVALID ARGUMENT */);
@@ -331,7 +337,8 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
       grpc_gcp_AltsContext_application_protocol(ctx);
   upb_StringView record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
   upb_StringView peer_account = grpc_gcp_AltsContext_peer_service_account(ctx);
-  upb_StringView local_account = grpc_gcp_AltsContext_local_service_account(ctx);
+  upb_StringView local_account =
+      grpc_gcp_AltsContext_local_service_account(ctx);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
                     application_protocol.data, application_protocol.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
@@ -352,10 +359,11 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
         const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
             peer_attributes_entry));
     GPR_ASSERT(upb_StringView_IsEqual(
-        key, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+        key, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
     GPR_ASSERT(upb_StringView_IsEqual(
-        val,
-        upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+        val, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
     peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   }
@@ -424,7 +432,8 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
       grpc_gcp_AltsContext_application_protocol(ctx);
   upb_StringView record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
   upb_StringView peer_account = grpc_gcp_AltsContext_peer_service_account(ctx);
-  upb_StringView local_account = grpc_gcp_AltsContext_local_service_account(ctx);
+  upb_StringView local_account =
+      grpc_gcp_AltsContext_local_service_account(ctx);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
                     application_protocol.data, application_protocol.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
@@ -445,10 +454,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
         const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
             peer_attributes_entry));
     GPR_ASSERT(upb_StringView_IsEqual(
-        key, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+        key, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
     GPR_ASSERT(upb_StringView_IsEqual(
-        val,
-        upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+        val, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
     peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
   }

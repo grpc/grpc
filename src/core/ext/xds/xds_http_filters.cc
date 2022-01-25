@@ -38,7 +38,8 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_StringView serialized_filter_config, upb_Arena* arena) const override {
+      upb_StringView serialized_filter_config,
+      upb_Arena* arena) const override {
     if (envoy_extensions_filters_http_router_v3_Router_parse(
             serialized_filter_config.data, serialized_filter_config.size,
             arena) == nullptr) {
