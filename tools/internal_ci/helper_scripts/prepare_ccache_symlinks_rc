@@ -43,6 +43,8 @@ then
       "aarch64-apple-darwin-clang"
       "aarch64-apple-darwin-clang++"
       # python artifacts: dockcross crosscompilers
+      "aarch64-unknown-linux-gnueabi-gcc"
+      "aarch64-unknown-linux-gnueabi-g++"
     )
     CCACHE_BINARY_PATH="$(command -v ccache)"
     TEMP_CCACHE_BINDIR="$(mktemp -d)"
