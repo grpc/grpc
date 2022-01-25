@@ -14,6 +14,7 @@
 import functools
 import json
 import logging
+import re
 import subprocess
 import time
 from typing import List, Optional, Tuple
@@ -302,22 +303,27 @@ class KubernetesNamespace:
         remote_port: int,
         local_port: Optional[int] = None,
         local_address: Optional[str] = None,
-    ) -> subprocess.Popen:
+    ) -> Tuple[int, subprocess.Popen]:
         """Experimental"""
         local_address = local_address or self.PORT_FORWARD_LOCAL_ADDRESS
-        local_port = local_port or remote_port
+        port_mapping = f"{local_port}:{remote_port}" if local_port else f":{remote_port}"
         cmd = [
             "kubectl", "--context", self.api.context, "--namespace", self.name,
             "port-forward", "--address", local_address,
-            f"pod/{pod.metadata.name}", f"{local_port}:{remote_port}"
+            f"pod/{pod.metadata.name}", port_mapping
         ]
         pf = subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               universal_newlines=True)
         # Wait for stdout line indicating successful start.
-        expected = (f"Forwarding from {local_address}:{local_port}"
-                    f" -> {remote_port}")
+        if local_port:
+            local_port_expected = (
+                f"Forwarding from {local_address}:{local_port}"
+                f" -> {remote_port}")
+        else:
+            local_port_re = re.compile(
+                f"Forwarding from {local_address}:([0-9]+) -> {remote_port}")
         try:
             while True:
                 time.sleep(0.05)
@@ -329,18 +335,32 @@ class KubernetesNamespace:
                         raise PortForwardingError(
                             'Error forwarding port, kubectl return '
                             f'code {return_code}, output {errors}')
-                elif output != expected:
-                    raise PortForwardingError(
-                        f'Error forwarding port, unexpected output {output}')
+                    # If there is no output, and the subprocess is not exiting,
+                    # continue waiting for the log line.
+                    continue
+
+                # Validate output log
+                if local_port:
+                    if output != local_port_expected:
+                        raise PortForwardingError(
+                            f'Error forwarding port, unexpected output {output}'
+                        )
                 else:
-                    logger.info(output)
-                    break
+                    groups = local_port_re.search(output)
+                    if groups is None:
+                        raise PortForwardingError(
+                            f'Error forwarding port, unexpected output {output}'
+                        )
+                    local_port = int(groups[1])
+
+                logger.info(output)
+                break
         except Exception:
             self.port_forward_stop(pf)
             raise
 
         # TODO(sergiitk): return new PortForwarder object
-        return pf
+        return local_port, pf
 
     @staticmethod
     def port_forward_stop(pf):
