@@ -42,6 +42,10 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
                             absl::string_view pkg, absl::string_view cls,
                             absl::string_view conn_id);
 
+// Calls Java method NativeConnectionHelper.isSignatureMatch.
+// Will also return false if failed to invoke Java.
+bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2);
+
 }  // namespace grpc_binder
 
 #endif

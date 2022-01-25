@@ -28,6 +28,8 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
+
 namespace grpc_core {
 
 // Channel security connector using TLS as transport security protocol.
@@ -147,6 +149,7 @@ class TlsChannelSecurityConnector final
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
+  RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
   absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
@@ -257,6 +260,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
+  RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
   std::map<grpc_closure* /*on_peer_checked*/, ServerPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };

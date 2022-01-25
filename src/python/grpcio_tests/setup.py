@@ -42,7 +42,7 @@ INSTALL_REQUIRES = (
     'grpcio-status>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=3.6.0', 'six>=1.10',
+    'oauth2client>=1.4.7', 'protobuf>=3.12.0', 'six>=1.10',
     'google-auth>=1.17.2', 'requests>=2.14.2')
 
 if not PY3:

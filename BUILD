@@ -146,11 +146,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "great"  # @unused
+g_stands_for = "gravity"  # @unused
 
 core_version = "22.0.0"  # @unused
 
-version = "1.44.0-dev"  # @unused
+version = "1.45.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1573,7 +1573,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/slice/slice_refcount.h",
         "src/core/lib/slice/slice_refcount_base.h",
-        "src/core/lib/slice/slice_utils.h",
     ],
     public_hdrs = [
         "include/grpc/slice.h",
@@ -1887,7 +1886,6 @@ grpc_cc_library(
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer.cc",
-        "src/core/lib/slice/slice_intern.cc",
         "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
@@ -1936,6 +1934,7 @@ grpc_cc_library(
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
+        "src/core/lib/channel/promise_based_filter.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
         "src/core/lib/channel/channelz.h",
@@ -2088,6 +2087,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "arena",
+        "arena_promise",
         "avl",
         "bitset",
         "channel_args",
@@ -2110,6 +2110,7 @@ grpc_cc_library(
         "json",
         "memory_quota",
         "orphanable",
+        "promise",
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
@@ -2755,6 +2756,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
+        "src/core/ext/xds/xds_channel_creds.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
@@ -2779,6 +2781,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
+        "src/core/ext/xds/xds_channel_creds.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
@@ -3750,6 +3753,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
@@ -3758,6 +3762,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
+        "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
@@ -5272,46 +5277,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "proto_gen_validate_upb",
-    srcs = [
-        "src/core/ext/upb-generated/validate/validate.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/validate/validate.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "protobuf_duration_upb",
-        "protobuf_timestamp_upb",
-    ],
+    deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "proto_gen_validate_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/validate/validate.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/validate/validate.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-        "protobuf_timestamp_upbdefs",
-    ],
+    deps = ["@com_envoyproxy_protoc_gen_validate//validate:validate_proto"],
 )
 
 # Once upb code-gen issue is resolved, replace xds_orca_upb with this.
@@ -5339,60 +5312,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
+grpc_upb_proto_library(
     name = "udpa_annotations_upb",
-    srcs = [
-        "src/core/ext/upb-generated/udpa/annotations/migrate.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/security.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/status.upb.c",
-        "src/core/ext/upb-generated/udpa/annotations/versioning.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/udpa/annotations/migrate.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/security.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/status.upb.h",
-        "src/core/ext/upb-generated/udpa/annotations/versioning.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "proto_gen_validate_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
 )
 
-grpc_cc_library(
+grpc_upb_proto_reflection_library(
     name = "udpa_annotations_upbdefs",
-    srcs = [
-        "src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c",
-        "src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c",
-    ],
-    hdrs = [
-        "src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.h",
-        "src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.h",
-    ],
-    external_deps = [
-        "upb_lib",
-        "upb_lib_descriptor_reflection",
-        "upb_textformat_lib",
-        "upb_reflection",
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "udpa_annotations_upb",
-    ],
+    deps = ["@com_github_cncf_udpa//udpa/annotations:pkg"],
 )
 
 grpc_cc_library(
@@ -5597,29 +5524,6 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
-)
-
-# Once upb code-gen issue is resolved, replace meshca_upb with this.
-# meshca_upb_proto_library(
-#     name = "meshca_upb",
-#     deps = ["//third_party/istio/security/proto/providers/google:meshca_proto"],
-# )
-
-grpc_cc_library(
-    name = "meshca_upb",
-    srcs = [
-        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/third_party/istio/security/proto/providers/google/meshca.upb.h",
-    ],
-    external_deps = [
-        "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    ],
-    language = "c++",
-    deps = [
-        "protobuf_duration_upb",
-    ],
 )
 
 grpc_upb_proto_library(

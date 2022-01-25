@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.44.0-dev'
+  version = '1.45.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -555,6 +555,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_bootstrap.h',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
+                      'src/core/ext/xds/xds_channel_creds.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_stats.h',
@@ -586,6 +587,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker.h',
                       'src/core/lib/channel/handshaker_factory.h',
                       'src/core/lib/channel/handshaker_registry.h',
+                      'src/core/lib/channel/promise_based_filter.h',
                       'src/core/lib/channel/status_util.h',
                       'src/core/lib/compression/compression_internal.h',
                       'src/core/lib/compression/message_compress.h',
@@ -720,6 +722,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/matchers/matchers.h',
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/promise/activity.h',
+                      'src/core/lib/promise/arena_promise.h',
                       'src/core/lib/promise/context.h',
                       'src/core/lib/promise/detail/basic_seq.h',
                       'src/core/lib/promise/detail/promise_factory.h',
@@ -730,6 +733,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
                       'src/core/lib/promise/poll.h',
+                      'src/core/lib/promise/promise.h',
                       'src/core/lib/promise/race.h',
                       'src/core/lib/promise/seq.h',
                       'src/core/lib/resolver/resolver.h',
@@ -804,7 +808,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount_base.h',
                       'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.h',
-                      'src/core/lib/slice/slice_utils.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/call.h',
@@ -852,6 +855,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
+                      'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
                       'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                       'src/core/tsi/ssl_transport_security.h',
@@ -1287,6 +1291,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
+                              'src/core/ext/xds/xds_channel_creds.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_stats.h',
@@ -1318,6 +1323,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/handshaker.h',
                               'src/core/lib/channel/handshaker_factory.h',
                               'src/core/lib/channel/handshaker_registry.h',
+                              'src/core/lib/channel/promise_based_filter.h',
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',
@@ -1452,6 +1458,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
                               'src/core/lib/promise/activity.h',
+                              'src/core/lib/promise/arena_promise.h',
                               'src/core/lib/promise/context.h',
                               'src/core/lib/promise/detail/basic_seq.h',
                               'src/core/lib/promise/detail/promise_factory.h',
@@ -1462,6 +1469,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
                               'src/core/lib/promise/poll.h',
+                              'src/core/lib/promise/promise.h',
                               'src/core/lib/promise/race.h',
                               'src/core/lib/promise/seq.h',
                               'src/core/lib/resolver/resolver.h',
@@ -1536,7 +1544,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_refcount_base.h',
                               'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
-                              'src/core/lib/slice/slice_utils.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
@@ -1584,6 +1591,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/local_transport_security.h',
+                              'src/core/tsi/ssl/key_logging/ssl_key_logging.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
                               'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                               'src/core/tsi/ssl_transport_security.h',

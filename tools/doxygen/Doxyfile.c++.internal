@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.44.0-dev
+PROJECT_NUMBER         = 1.45.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1718,6 +1718,8 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
+src/core/ext/xds/xds_channel_creds.cc \
+src/core/ext/xds/xds_channel_creds.h \
 src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
@@ -1776,6 +1778,7 @@ src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/compression.cc \
@@ -2070,6 +2073,7 @@ src/core/lib/profiling/stap_timers.cc \
 src/core/lib/profiling/timers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
+src/core/lib/promise/arena_promise.h \
 src/core/lib/promise/context.h \
 src/core/lib/promise/detail/basic_seq.h \
 src/core/lib/promise/detail/promise_factory.h \
@@ -2080,6 +2084,7 @@ src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
 src/core/lib/promise/poll.h \
+src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
 src/core/lib/resolver/resolver.cc \
@@ -2223,7 +2228,6 @@ src/core/lib/slice/slice.cc \
 src/core/lib/slice/slice.h \
 src/core/lib/slice/slice_api.cc \
 src/core/lib/slice/slice_buffer.cc \
-src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
@@ -2232,7 +2236,6 @@ src/core/lib/slice/slice_split.cc \
 src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
-src/core/lib/slice/slice_utils.h \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
 src/core/lib/surface/builtins.cc \
@@ -2334,6 +2337,8 @@ src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
 src/core/tsi/local_transport_security.cc \
 src/core/tsi/local_transport_security.h \
+src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
+src/core/tsi/ssl/key_logging/ssl_key_logging.h \
 src/core/tsi/ssl/session_cache/ssl_session.h \
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \

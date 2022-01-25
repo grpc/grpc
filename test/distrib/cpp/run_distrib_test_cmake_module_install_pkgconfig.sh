@@ -26,6 +26,9 @@ wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.
 sh cmake-linux.sh -- --skip-license --prefix=/usr
 rm cmake-linux.sh
 
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
+
 # Install gRPC and its dependencies
 mkdir -p "cmake/build"
 pushd "cmake/build"
@@ -35,11 +38,11 @@ cmake \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_SSL_PROVIDER=package \
   ../..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Build helloworld example using make & pkg-config
 cd examples/cpp/helloworld
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
-make
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"

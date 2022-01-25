@@ -332,6 +332,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\xds\\xds_api.cc " +
     "src\\core\\ext\\xds\\xds_bootstrap.cc " +
     "src\\core\\ext\\xds\\xds_certificate_provider.cc " +
+    "src\\core\\ext\\xds\\xds_channel_creds.cc " +
     "src\\core\\ext\\xds\\xds_channel_stack_modifier.cc " +
     "src\\core\\ext\\xds\\xds_client.cc " +
     "src\\core\\ext\\xds\\xds_client_stats.cc " +
@@ -593,7 +594,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\slice\\slice.cc " +
     "src\\core\\lib\\slice\\slice_api.cc " +
     "src\\core\\lib\\slice\\slice_buffer.cc " +
-    "src\\core\\lib\\slice\\slice_intern.cc " +
     "src\\core\\lib\\slice\\slice_refcount.cc " +
     "src\\core\\lib\\slice\\slice_split.cc " +
     "src\\core\\lib\\slice\\slice_string_helpers.cc " +
@@ -651,6 +651,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_zero_copy_grpc_protector.cc " +
     "src\\core\\tsi\\fake_transport_security.cc " +
     "src\\core\\tsi\\local_transport_security.cc " +
+    "src\\core\\tsi\\ssl\\key_logging\\ssl_key_logging.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_boringssl.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_cache.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_openssl.cc " +
@@ -1400,6 +1401,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\handshaker");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\zero_copy_frame_protector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl\\key_logging");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl\\session_cache");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext");
