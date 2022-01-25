@@ -538,7 +538,7 @@ endif
 
 # Setup c-ares dependency
 
-ifeq ($(wildcard third_party/cares/cares/ares.h),)
+ifeq ($(wildcard third_party/cares/cares/include/ares.h),)
 HAS_EMBEDDED_CARES = false
 else
 HAS_EMBEDDED_CARES = true
