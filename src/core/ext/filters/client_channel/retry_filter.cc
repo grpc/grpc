@@ -1543,12 +1543,11 @@ namespace {
 
 // Sets *status, *server_pushback_ms, and *is_lb_drop based on md_batch
 // and error.
-void GetCallStatus(grpc_millis deadline, grpc_metadata_batch* md_batch,
-                   grpc_error_handle error, grpc_status_code* status,
-                   absl::optional<grpc_millis>* server_pushback_ms,
-                   bool* is_lb_drop,
-                   absl::optional<GrpcStreamNetworkState::ValueType>*
-                       stream_network_state) {
+void GetCallStatus(
+    grpc_millis deadline, grpc_metadata_batch* md_batch,
+    grpc_error_handle error, grpc_status_code* status,
+    absl::optional<grpc_millis>* server_pushback_ms, bool* is_lb_drop,
+    absl::optional<GrpcStreamNetworkState::ValueType>* stream_network_state) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
     intptr_t value = 0;

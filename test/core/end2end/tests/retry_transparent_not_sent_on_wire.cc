@@ -294,10 +294,10 @@ class FailFirstTenCallsFilter {
         if (!batch->cancel_stream) {
           grpc_transport_stream_op_batch_finish_with_failure(
               batch,
-              grpc_error_set_int(
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "FailFirstTenCallsFilter failing batch"),
-                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "FailFirstTenCallsFilter failing batch"),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 GRPC_STATUS_UNAVAILABLE),
               calld->call_combiner_);
           return;
         }

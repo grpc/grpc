@@ -492,9 +492,8 @@ class Call : public std::enable_shared_from_this<Call> {
         break;
       case api_fuzzer::BatchOp::kReceiveStatusOnClient:
         op = MakeRecvStatusOnClientOp(batch_ops);
-        unwinders->push_back([this]() {
-          started_recv_status_on_client_ = false;
-        });
+        unwinders->push_back(
+            [this]() { started_recv_status_on_client_ = false; });
         break;
       case api_fuzzer::BatchOp::kReceiveCloseOnServer:
         op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -551,8 +550,7 @@ class Call : public std::enable_shared_from_this<Call> {
     memset(&op, 0, sizeof(op));
     op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     op.data.recv_status_on_client.status = &status_;
-    op.data.recv_status_on_client.trailing_metadata =
-        &recv_trailing_metadata_;
+    op.data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata_;
     op.data.recv_status_on_client.status_details = &recv_status_details_;
     *batch_ops |= 1 << GRPC_OP_RECV_STATUS_ON_CLIENT;
     started_recv_status_on_client_ = true;
