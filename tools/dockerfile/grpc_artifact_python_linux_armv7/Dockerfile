@@ -50,3 +50,12 @@ RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD \
 # to ccache via a symlink. Use relative paths instead.
 ENV CC ${CROSS_TRIPLE}-gcc
 ENV CXX ${CROSS_TRIPLE}-g++
+
+# For historical reasons, task_runner.py the script under docker container using "bash -l"
+# which loads /etc/profile on startup. dockcross/linux-armv7 is based on an image where
+# /etc/profile overwrites contents of PATH (for security reasons) when run as root.
+# That causes the crosscompiler binaries located under /usr/xcc/armv7-unknown-linux-gnueabi/bin
+# to be removed from PATH. Since in our builds we don't need the /etc/profile for anything, we can just
+# truncate it.
+# TODO(jtattermusch): Remove this hack when possible.
+RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
