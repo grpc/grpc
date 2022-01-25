@@ -45,6 +45,8 @@ then
       # python artifacts: dockcross crosscompilers
       "aarch64-unknown-linux-gnueabi-gcc"
       "aarch64-unknown-linux-gnueabi-g++"
+      "armv7-unknown-linux-gnueabi-gcc"
+      "armv7-unknown-linux-gnueabi-g++"
     )
     CCACHE_BINARY_PATH="$(command -v ccache)"
     TEMP_CCACHE_BINDIR="$(mktemp -d)"

@@ -31,3 +31,23 @@ RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.0" "3.10.0rc1" /
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
+
+#=================
+# Install ccache
+
+# Install ccache from source since ccache 3.x packaged with most linux distributions
+# does not support Redis backend for caching.
+RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD \
+    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && cd ccache-4.5.1 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.5.1 ccache.tar.gz
+
+# The dockcross base of this image sets CC and CXX to absolute paths, which makes it impossible to redirect their invocations
+# to ccache via a symlink. Use relative paths instead.
+ENV CC ${CROSS_TRIPLE}-gcc
+ENV CXX ${CROSS_TRIPLE}-g++
