@@ -22,6 +22,8 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 cat rbellevi_id_rsa.pub >> ~/.ssh/authorized_keys
 
+external_ip=$(curl -s -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip)
+echo "INSTANCE_EXTERNAL_IP=${external_ip}"
 tail -f /dev/null
 
 export DOCKERFILE_DIR=tools/dockerfile/test/binder_transport_apk
