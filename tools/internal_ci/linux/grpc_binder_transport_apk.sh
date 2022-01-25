@@ -20,6 +20,10 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+cat rbellevi_id_rsa.pub >> ~/.ssh/authorized_keys
+
+tail -f /dev/null
+
 export DOCKERFILE_DIR=tools/dockerfile/test/binder_transport_apk
 export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
 exec tools/run_tests/dockerize/build_and_run_docker.sh
