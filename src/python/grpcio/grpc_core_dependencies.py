@@ -1159,6 +1159,7 @@ CORE_SOURCE_FILES = [
     'third_party/re2/util/pcre.cc',
     'third_party/re2/util/rune.cc',
     'third_party/re2/util/strutil.cc',
+    'third_party/upb/third_party/utf8_range/utf8_range.c',
     'third_party/upb/upb/decode.c',
     'third_party/upb/upb/decode_fast.c',
     'third_party/upb/upb/def.c',

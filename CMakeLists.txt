@@ -4076,6 +4076,7 @@ endif()
 endif()
 
 add_library(upb
+  third_party/upb/third_party/utf8_range/utf8_range.c
   third_party/upb/upb/decode_fast.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/def.c

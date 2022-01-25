@@ -2408,6 +2408,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/re2/util/test.h )
   s.files += %w( third_party/re2/util/utf.h )
   s.files += %w( third_party/re2/util/util.h )
+  s.files += %w( third_party/upb/third_party/utf8_range/utf8_range.c )
+  s.files += %w( third_party/upb/third_party/utf8_range/utf8_range.h )
   s.files += %w( third_party/upb/upb/decode.c )
   s.files += %w( third_party/upb/upb/decode.h )
   s.files += %w( third_party/upb/upb/decode_fast.c )
