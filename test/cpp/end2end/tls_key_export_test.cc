@@ -32,8 +32,8 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_config.h"
 #include "test/core/util/cmdline.h"
+#include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
 extern "C" {
@@ -45,13 +45,13 @@ extern "C" {
 #endif
 
 namespace {
-  constexpr int kNumRequestsPerChannel = 5;
-  const char* kCACertPath = nullptr;
-  const char* kServerKeyPath = nullptr;
-  const char* kServerCertPath = nullptr;
-  const char* kClientKeyPath = nullptr;
-  const char* kClientCertPath = nullptr;
-}
+constexpr int kNumRequestsPerChannel = 5;
+const char* kCACertPath = nullptr;
+const char* kServerKeyPath = nullptr;
+const char* kServerCertPath = nullptr;
+const char* kClientKeyPath = nullptr;
+const char* kClientCertPath = nullptr;
+}  // namespace
 
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
@@ -342,8 +342,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
 
   gpr_cmdline* cl = gpr_cmdline_create("tls key export test");
-  gpr_cmdline_add_string(cl, "ca_cert", "Path to CA certificate",
-                         &kCACertPath);
+  gpr_cmdline_add_string(cl, "ca_cert", "Path to CA certificate", &kCACertPath);
   gpr_cmdline_add_string(cl, "client_private_key", "Path to Client Private key",
                          &kClientKeyPath);
   gpr_cmdline_add_string(cl, "server_private_key", "Path to Server Private key",
