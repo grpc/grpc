@@ -31,6 +31,11 @@ static NSString *const kDefaultUserAgentSuffix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
 static const GRPCCompressionAlgorithm kDefaultCompressionAlgorithm = GRPCCompressNone;
 static const BOOL kDefaultRetryEnabled = YES;
+static const NSTimeInterval kDefaultMaxRetryInterval =
+    0;  // Use transport's default max retry interval
+static const NSTimeInterval kDefaultMinRetryInterval =
+    0;                                        // Use transport's default min retry interval
+static const double kDefaultRetryFactor = 0;  // Use transport's default retry factor
 static const NSTimeInterval kDefaultKeepaliveInterval = 0;
 static const NSTimeInterval kDefaultKeepaliveTimeout = 0;
 static const NSTimeInterval kDefaultConnectMinTimeout = 0;
@@ -74,6 +79,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSUInteger _responseSizeLimit;
   GRPCCompressionAlgorithm _compressionAlgorithm;
   BOOL _retryEnabled;
+  NSTimeInterval _maxRetryInterval;
+  NSTimeInterval _minRetryInterval;
+  double _retryFactor;
   NSTimeInterval _keepaliveInterval;
   NSTimeInterval _keepaliveTimeout;
   NSTimeInterval _connectMinTimeout;
@@ -103,6 +111,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize responseSizeLimit = _responseSizeLimit;
 @synthesize compressionAlgorithm = _compressionAlgorithm;
 @synthesize retryEnabled = _retryEnabled;
+@synthesize maxRetryInterval = _maxRetryInterval;
+@synthesize minRetryInterval = _minRetryInterval;
+@synthesize retryFactor = _retryFactor;
 @synthesize keepaliveInterval = _keepaliveInterval;
 @synthesize keepaliveTimeout = _keepaliveTimeout;
 @synthesize connectMinTimeout = _connectMinTimeout;
@@ -132,6 +143,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
                           retryEnabled:kDefaultRetryEnabled
+                      maxRetryInterval:kDefaultMaxRetryInterval
+                      minRetryInterval:kDefaultMinRetryInterval
+                           retryFactor:kDefaultRetryFactor
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
                      connectMinTimeout:kDefaultConnectMinTimeout
@@ -161,6 +175,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                       responseSizeLimit:(NSUInteger)responseSizeLimit
                    compressionAlgorithm:(GRPCCompressionAlgorithm)compressionAlgorithm
                            retryEnabled:(BOOL)retryEnabled
+                       maxRetryInterval:(NSTimeInterval)maxRetryInterval
+                       minRetryInterval:(NSTimeInterval)minRetryInterval
+                            retryFactor:(double)retryFactor
                       keepaliveInterval:(NSTimeInterval)keepaliveInterval
                        keepaliveTimeout:(NSTimeInterval)keepaliveTimeout
                       connectMinTimeout:(NSTimeInterval)connectMinTimeout
@@ -192,6 +209,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _responseSizeLimit = responseSizeLimit;
     _compressionAlgorithm = compressionAlgorithm;
     _retryEnabled = retryEnabled;
+    _maxRetryInterval = maxRetryInterval;
+    _minRetryInterval = minRetryInterval;
+    _retryFactor = retryFactor;
     _keepaliveInterval = keepaliveInterval < 0 ? 0 : keepaliveInterval;
     _keepaliveTimeout = keepaliveTimeout < 0 ? 0 : keepaliveTimeout;
     _connectMinTimeout = connectMinTimeout < 0 ? 0 : connectMinTimeout;
@@ -228,6 +248,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
                                                        retryEnabled:_retryEnabled
+                                                   maxRetryInterval:_maxRetryInterval
+                                                   minRetryInterval:_minRetryInterval
+                                                        retryFactor:_retryFactor
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
                                                   connectMinTimeout:_connectMinTimeout
@@ -261,6 +284,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
+             maxRetryInterval:_maxRetryInterval
+             minRetryInterval:_minRetryInterval
+                  retryFactor:_retryFactor
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
             connectMinTimeout:_connectMinTimeout
@@ -287,6 +313,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if (!(callOptions.responseSizeLimit == _responseSizeLimit)) return NO;
   if (!(callOptions.compressionAlgorithm == _compressionAlgorithm)) return NO;
   if (!(callOptions.retryEnabled == _retryEnabled)) return NO;
+  if (!(callOptions.maxRetryInterval == _maxRetryInterval)) return NO;
+  if (!(callOptions.minRetryInterval == _minRetryInterval)) return NO;
+  if (!(callOptions.retryFactor == _retryFactor)) return NO;
   if (!(callOptions.keepaliveInterval == _keepaliveInterval)) return NO;
   if (!(callOptions.keepaliveTimeout == _keepaliveTimeout)) return NO;
   if (!(callOptions.connectMinTimeout == _connectMinTimeout)) return NO;
@@ -348,6 +377,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic responseSizeLimit;
 @dynamic compressionAlgorithm;
 @dynamic retryEnabled;
+@dynamic maxRetryInterval;
+@dynamic minRetryInterval;
+@dynamic retryFactor;
 @dynamic keepaliveInterval;
 @dynamic keepaliveTimeout;
 @dynamic connectMinTimeout;
@@ -377,6 +409,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                      responseSizeLimit:kDefaultResponseSizeLimit
                   compressionAlgorithm:kDefaultCompressionAlgorithm
                           retryEnabled:kDefaultRetryEnabled
+                      maxRetryInterval:kDefaultMaxRetryInterval
+                      minRetryInterval:kDefaultMinRetryInterval
+                           retryFactor:kDefaultRetryFactor
                      keepaliveInterval:kDefaultKeepaliveInterval
                       keepaliveTimeout:kDefaultKeepaliveTimeout
                      connectMinTimeout:kDefaultConnectMinTimeout
@@ -408,6 +443,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                   responseSizeLimit:_responseSizeLimit
                                                compressionAlgorithm:_compressionAlgorithm
                                                        retryEnabled:_retryEnabled
+                                                   maxRetryInterval:_maxRetryInterval
+                                                   minRetryInterval:_minRetryInterval
+                                                        retryFactor:_retryFactor
                                                   keepaliveInterval:_keepaliveInterval
                                                    keepaliveTimeout:_keepaliveTimeout
                                                   connectMinTimeout:_connectMinTimeout
@@ -440,6 +478,9 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
             responseSizeLimit:_responseSizeLimit
          compressionAlgorithm:_compressionAlgorithm
                  retryEnabled:_retryEnabled
+             maxRetryInterval:_maxRetryInterval
+             minRetryInterval:_minRetryInterval
+                  retryFactor:_retryFactor
             keepaliveInterval:_keepaliveInterval
              keepaliveTimeout:_keepaliveTimeout
             connectMinTimeout:_connectMinTimeout
@@ -508,6 +549,18 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setRetryEnabled:(BOOL)retryEnabled {
   _retryEnabled = retryEnabled;
+}
+
+- (void)setMaxRetryInterval:(NSTimeInterval)maxRetryInterval {
+  _maxRetryInterval = maxRetryInterval;
+}
+
+- (void)setMinRetryInterval:(NSTimeInterval)minRetryInterval {
+  _minRetryInterval = minRetryInterval;
+}
+
+- (void)setRetryFactor:(double)retryFactor {
+  _retryFactor = retryFactor;
 }
 
 - (void)setKeepaliveInterval:(NSTimeInterval)keepaliveInterval {
