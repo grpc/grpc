@@ -49,7 +49,7 @@ else
 fi
 
 # Git root as seen by the docker instance
-docker_instance_git_root=/var/local/jenkins/grpc
+EXTERNAL_GIT_ROOT=/var/local/jenkins/grpc
 
 # temporary directory that will be mounted to the docker container
 # as a way to persist output files.
@@ -65,11 +65,11 @@ docker run \
   ${DOCKER_TTY_ARGS} \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
-  -e "EXTERNAL_GIT_ROOT=${docker_instance_git_root}" \
+  -e "EXTERNAL_GIT_ROOT=${EXTERNAL_GIT_ROOT}" \
   --env-file tools/run_tests/dockerize/docker_propagate_env.list \
   --rm \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-  -v "${git_root}:${docker_instance_git_root}" \
+  -v "${git_root}:${EXTERNAL_GIT_ROOT}" \
   -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
   "${DOCKER_IMAGE_NAME}" \
