@@ -281,8 +281,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         # Mutable state
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
-        self.port_forwarder = None
-        self.local_forwarding_port: Optional[int] = None
+        self.port_forwarder: Optional[k8s.PortForwarder] = None
 
     # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(self,
@@ -352,10 +351,10 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         if self.debug_use_port_forwarding:
             logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
                         pod_ip, self.stats_port)
-            self.local_forwarding_port, self.port_forwarder = self.k8s_namespace.port_forward_pod(
+            self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=self.stats_port)
-            rpc_port = self.local_forwarding_port
-            rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
+            rpc_port = self.port_forwarder.local_port
+            rpc_host = self.port_forwarder.local_address
 
         return XdsTestClient(ip=pod_ip,
                              rpc_port=rpc_port,
@@ -364,7 +363,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
 
     def cleanup(self, *, force=False, force_namespace=False):
         if self.port_forwarder:
-            self.k8s_namespace.port_forward_stop(self.port_forwarder)
+            self.port_forwarder.close()
             self.port_forwarder = None
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)

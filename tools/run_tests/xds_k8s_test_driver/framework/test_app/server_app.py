@@ -221,8 +221,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.service: Optional[k8s.V1Service] = None
-        self.port_forwarders = []
-        self.local_forwarding_ports: List[int] = []
+        self.port_forwarders: List[k8s.PortForwarder] = []
 
     def run(self,
             *,
@@ -329,16 +328,15 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             if self.debug_use_port_forwarding:
                 logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
                             pod_ip, maintenance_port)
-                local_port, port_forwarder = self.k8s_namespace.port_forward_pod(
+                port_forwarder = self.k8s_namespace.port_forward_pod(
                     pod, remote_port=maintenance_port)
                 self.port_forwarders.append(port_forwarder)
-                self.local_forwarding_ports.append(local_port)
-                rpc_port = local_port
-                rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
+                local_port = port_forwarder.local_port
+                rpc_host = port_forwarder.local_address
 
             servers.append(
                 XdsTestServer(ip=pod_ip,
-                              rpc_port=rpc_port,
+                              rpc_port=test_port,
                               maintenance_port=local_port,
                               secure_mode=secure_mode,
                               server_id=server_id,
@@ -349,7 +347,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     def cleanup(self, *, force=False, force_namespace=False):
         if self.port_forwarders:
             for port_forwarder in self.port_forwarders:
-                self.k8s_namespace.port_forward_stop(port_forwarder)
+                port_forwarder.close()
             self.port_forwarders = []
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)
