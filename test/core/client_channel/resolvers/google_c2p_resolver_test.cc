@@ -110,5 +110,5 @@ int main(int argc, char** argv) {
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return result + 1;
+  return result;
 }

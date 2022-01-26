@@ -120,8 +120,9 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   grpc_resolved_address resolved_addr;
   memcpy(resolved_addr.addr, &addr, sizeof(addr));
   resolved_addr.len = sizeof(addr);
-  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, 0);
-  gpr_log(GPR_INFO, "Fake UDP and TCP server listening on %s", addr_str.c_str());
+  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, false);
+  gpr_log(GPR_INFO, "Fake UDP and TCP server listening on %s",
+          addr_str.c_str());
   if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
            sizeof(addr)) != 0) {
     gpr_log(GPR_ERROR, "Failed to bind UDP socket to [::1]:%d", port_);
