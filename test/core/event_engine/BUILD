@@ -46,4 +46,6 @@ grpc_cc_library(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    # Ensure the linker doesn't throw away test cases.
+    alwayslink = 1,
 )
