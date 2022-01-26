@@ -17,6 +17,9 @@
 #include <grpc/event_engine/port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/gprpp/sync.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -32,6 +35,31 @@ const struct sockaddr* EventEngine::ResolvedAddress::address() const {
 }
 
 socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
+
+namespace {
+const std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory =
+    nullptr;
+grpc_core::Mutex* g_mu = new grpc_core::Mutex();
+}  // namespace
+
+void SetDefaultEventEngineFactory(
+    const std::function<std::unique_ptr<EventEngine>()>* factory) {
+  grpc_core::MutexLock lock(g_mu);
+  g_event_engine_factory = factory;
+}
+
+std::unique_ptr<EventEngine> CreateEventEngine() {
+  grpc_core::MutexLock lock(g_mu);
+  if (g_event_engine_factory != nullptr) {
+    return (*g_event_engine_factory)();
+  }
+  return DefaultEventEngineFactory();
+}
+
+EventEngine* GetDefaultEventEngine() {
+  static EventEngine* default_event_engine = CreateEventEngine().release();
+  return default_event_engine;
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
