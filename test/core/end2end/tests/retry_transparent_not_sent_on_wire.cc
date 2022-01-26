@@ -185,12 +185,21 @@ static void test_retry_transparent_not_sent_on_wire(
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
   cq_verify(cqv);
 
-  // Server returns status OK.
+  // Server receives the request.
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &request_payload_recv;
   op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
+  cq_verify(cqv);
+
+  // Server sends a response with status OK.
+  memset(ops, 0, sizeof(ops));
+  op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
@@ -205,15 +214,14 @@ static void test_retry_transparent_not_sent_on_wire(
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // In principle, the server batch should complete before the client
   // recv ops batch, but in the proxy fixtures, there are multiple threads
   // involved, so the completion order tends to be a little racy.
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   cq_verify(cqv);
 
