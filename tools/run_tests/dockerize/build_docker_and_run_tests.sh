@@ -64,8 +64,8 @@ DOCKER_EXIT_CODE=0
 docker run \
   --rm \
   --cap-add SYS_PTRACE \
-  -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
-  -e LOCAL_GIT_ROOT=$docker_instance_git_root \
+  -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
+  -e "EXTERNAL_GIT_ROOT=${docker_instance_git_root}" \
   --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
   $DOCKER_TTY_ARGS \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
