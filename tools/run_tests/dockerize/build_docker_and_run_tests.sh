@@ -62,18 +62,18 @@ DOCKER_EXIT_CODE=0
 # TODO: silence complaint about $DOCKER_TTY_ARGS expansion in some other way
 # shellcheck disable=SC2086,SC2154
 docker run \
-  --rm \
+  ${DOCKER_TTY_ARGS} \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
   -e "EXTERNAL_GIT_ROOT=${docker_instance_git_root}" \
-  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
-  $DOCKER_TTY_ARGS \
+  --env-file tools/run_tests/dockerize/docker_propagate_env.list \
+  --rm \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-  -v "$git_root:$docker_instance_git_root" \
+  -v "${git_root}:${docker_instance_git_root}" \
   -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
-  "$DOCKER_IMAGE_NAME" \
-  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_EXIT_CODE=$?
+  "${DOCKER_IMAGE_NAME}" \
+  bash -l "/var/local/jenkins/grpc/${DOCKER_RUN_SCRIPT}" || DOCKER_EXIT_CODE=$?
 
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
