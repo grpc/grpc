@@ -88,7 +88,7 @@ class GoogleCloud2ProdResolver : public Resolver {
                 grpc_error_handle error) override;
   };
 
-  void ZoneQueryDone(absl::StatusOr<std::string> zone);
+  void ZoneQueryDone(std::string zone);
   void IPv6QueryDone(bool ipv6_supported);
   void StartXdsResolver();
 
@@ -101,7 +101,7 @@ class GoogleCloud2ProdResolver : public Resolver {
   bool shutdown_ = false;
 
   OrphanablePtr<ZoneQuery> zone_query_;
-  absl::optional<absl::StatusOr<std::string>> zone_;
+  absl::optional<std::string> zone_;
 
   OrphanablePtr<IPv6Query> ipv6_query_;
   absl::optional<bool> supports_ipv6_;
@@ -197,8 +197,10 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
   if (!zone.ok()) {
     gpr_log(GPR_ERROR, "zone query failed: %s",
             zone.status().ToString().c_str());
+    resolver->ZoneQueryDone("");
+  } else {
+    resolver->ZoneQueryDone(std::move(*zone));
   }
-  resolver->ZoneQueryDone(std::move(zone));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -299,7 +301,7 @@ void GoogleCloud2ProdResolver::ShutdownLocked() {
   child_resolver_.reset();
 }
 
-void GoogleCloud2ProdResolver::ZoneQueryDone(absl::StatusOr<std::string> zone) {
+void GoogleCloud2ProdResolver::ZoneQueryDone(std::string zone) {
   zone_query_.reset();
   zone_ = std::move(zone);
   if (supports_ipv6_.has_value()) StartXdsResolver();
@@ -322,9 +324,9 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   Json::Object node = {
       {"id", absl::StrCat("C2P-", dist(mt))},
   };
-  if (zone_.value().ok()) {
+  if (!zone_->empty()) {
     node["locality"] = Json::Object{
-        {"zone", zone_.value().value()},
+        {"zone", *zone_},
     };
   };
   if (*supports_ipv6_) {
