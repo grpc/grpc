@@ -36,7 +36,7 @@ ChannelStackBuilder::~ChannelStackBuilder() {
 
 ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   if (target == nullptr) {
-    target_.clear();
+    target_ = unknown_target();
   } else {
     target_ = target;
   }
