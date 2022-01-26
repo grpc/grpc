@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Builds docker image and runs a command under it.
-# You should never need to call this script on your own.
+# This script is invoked by run_tests.py to accommodate "test under docker"
+# scenario. You should never need to call this script on your own.
 
 # shellcheck disable=SC2103
 
@@ -27,9 +27,9 @@ cd -
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
-# OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
+# OUTPUT_DIR - Directory (relatively to git repo root) that will be copied from inside docker container after finishing.
 # DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
-# $@ - Extra args to pass to docker run
+# $@ - Extra args to pass to the "docker run" command.
 
 # Use image name based on Dockerfile location checksum
 DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR"):$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
@@ -50,39 +50,54 @@ else
   DOCKER_TTY_ARGS=
 fi
 
-# Choose random name for docker container
-CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
+# Git root as seen by the docker instance
+EXTERNAL_GIT_ROOT=/var/local/jenkins/grpc
 
-# Run command inside docker
-# TODO: use a proper array instead of $EXTRA_DOCKER_ARGS
-# shellcheck disable=SC2086
+# temporary directory that will be mounted to the docker container
+# as a way to persist output files.
+# use unique name for the output directory to prevent clash between concurrent
+# runs of multiple docker containers
+TEMP_OUTPUT_DIR="$(mktemp -d)"
+
+# Run tests inside docker
+DOCKER_EXIT_CODE=0
+# TODO: silence complaint about $DOCKER_TTY_ARGS expansion in some other way
+# shellcheck disable=SC2086,SC2154
 docker run \
   "$@" \
+  ${DOCKER_TTY_ARGS} \
+  ${EXTRA_DOCKER_ARGS} \
   --cap-add SYS_PTRACE \
-  -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
-  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
-  -v "$git_root:/var/local/jenkins/grpc:ro" \
+  -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
+  -e "EXTERNAL_GIT_ROOT=${EXTERNAL_GIT_ROOT}" \
+  -e "OUTPUT_DIR=${OUTPUT_DIR}" \
+  --env-file tools/run_tests/dockerize/docker_propagate_env.list \
+  --rm \
+  --sysctl net.ipv6.conf.all.disable_ipv6=0 \
+  -v "${git_root}:${EXTERNAL_GIT_ROOT}" \
+  -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
-  --name="$CONTAINER_NAME" \
-  $DOCKER_TTY_ARGS \
-  $EXTRA_DOCKER_ARGS \
-  "$DOCKER_IMAGE_NAME" \
-  /bin/bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
+  "${DOCKER_IMAGE_NAME}" \
+  bash -l "/var/local/jenkins/grpc/${DOCKER_RUN_SCRIPT}" || DOCKER_EXIT_CODE=$?
 
-# Copy output artifacts
-if [ "$OUTPUT_DIR" != "" ]
+if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
-  # Create the artifact directory in advance to avoid a race in "docker cp" if tasks
-  # that were running in parallel finish at the same time.
-  # see https://github.com/grpc/grpc/issues/16155
-  mkdir -p "$git_root/$OUTPUT_DIR"
-  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$OUTPUT_DIR" "$git_root" || FAILED="true"
+  REPORTS_DEST_DIR="${GRPC_TEST_REPORT_BASE_DIR}"
+else
+  REPORTS_DEST_DIR="${git_root}"
 fi
 
-# remove the container, possibly killing it first
-docker rm -f "$CONTAINER_NAME" || true
+# reports.zip will be stored by the container after run_tests.py has finished.
+TEMP_REPORTS_ZIP="${TEMP_OUTPUT_DIR}/reports.zip"
+unzip -o "${TEMP_REPORTS_ZIP}" -d "${REPORTS_DEST_DIR}" || true
+rm -f "${TEMP_REPORTS_ZIP}"
 
-if [ "$FAILED" != "" ]
+# Copy contents of OUTPUT_DIR back under the git repo root
+if [ "${OUTPUT_DIR}" != "" ]
 then
-  exit 1
+  # create the directory if it doesn't exist yet.
+  mkdir -p "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}"
+  cp -r "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
 fi
+
+exit $DOCKER_EXIT_CODE

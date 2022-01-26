@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
+# This script is invoked by build_and_run_docker.sh inside a docker
 # container. You should never need to call this script on your own.
 
 set -e

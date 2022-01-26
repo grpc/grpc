@@ -41,4 +41,15 @@ fi
 
 cd /var/local/git/grpc
 
-$RUN_COMMAND
+exit_code=0
+$RUN_COMMAND || exit_code=$?
+
+# Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
+if [ "${OUTPUT_DIR}" != "" ]
+then
+  # create the directory if it doesn't exist yet.
+  mkdir -p "${OUTPUT_DIR}"
+  mv "${OUTPUT_DIR}" /var/local/output_dir || exit_code=$?
+fi
+
+exit $exit_code

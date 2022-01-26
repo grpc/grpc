@@ -1590,7 +1590,7 @@ if args.use_docker:
         env['XML_REPORT'] = args.xml_report
 
     retcode = subprocess.call(
-        'tools/run_tests/dockerize/build_docker_and_run_tests.sh',
+        'tools/run_tests/dockerize/build_and_run_docker.sh',
         shell=True,
         env=env)
     _print_debug_info_epilogue(dockerfile_dir=dockerfile_dir)
