@@ -83,6 +83,7 @@ docker run \
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
   REPORTS_DEST_DIR="${GRPC_TEST_REPORT_BASE_DIR}"
+  mkdir -p "${GRPC_TEST_REPORT_BASE_DIR}"
 else
   REPORTS_DEST_DIR="${git_root}"
 fi
