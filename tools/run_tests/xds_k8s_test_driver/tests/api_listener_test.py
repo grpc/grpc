@@ -83,9 +83,12 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('13_test_server_received_rpcs_with_two_url_maps'):
             self.assertSuccessfulRpcs(test_client)
-            config = test_client.csds.fetch_client_status(log_level=logging.INFO)
-            logger.info('received client config from CSDS, dump config: %s', config)
-            previous_route_config_version = self.extractRouteConfigVersion(config)
+            config = test_client.csds.fetch_client_status(
+                log_level=logging.INFO)
+            logger.info('received client config from CSDS, dump config: %s',
+                        config)
+            previous_route_config_version = self.extractRouteConfigVersion(
+                config)
 
         with self.subTest('14_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()
