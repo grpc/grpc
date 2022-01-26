@@ -181,6 +181,21 @@ class PythonArtifact:
                                   environ=environ,
                                   timeout_seconds=45 * 60,
                                   use_workspace=True)
+        elif self.platform == 'darwin':
+            if self.arch == 'x64':
+                environ['ARCHFLAGS'] = '-arch x86_64'
+            elif self.arch == 'aarch64':
+                environ['ARCHFLAGS'] = '-arch arm64'
+            else:
+                raise ValueError('Unsupported arch %s' % self.arch)
+            environ['PYTHON'] = self.py_version
+            environ['SKIP_PIP_INSTALL'] = 'TRUE'
+            return create_jobspec(
+                self.name,
+                ['tools/run_tests/artifacts/build_artifact_python.sh'],
+                environ=environ,
+                timeout_seconds=60 * 60 * 2,
+                use_workspace=True)
         else:
             environ['PYTHON'] = self.py_version
             environ['SKIP_PIP_INSTALL'] = 'TRUE'
