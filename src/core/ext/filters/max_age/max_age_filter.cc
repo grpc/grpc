@@ -539,8 +539,9 @@ namespace grpc_core {
 void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args();
+      [](grpc_channel_stack_builder* builder) {
+        const grpc_channel_args* channel_args =
+            grpc_channel_stack_builder_get_channel_arguments(builder);
         bool enable = grpc_channel_arg_get_integer(
                           grpc_channel_args_find(
                               channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
@@ -550,9 +551,11 @@ void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
                               channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
                           MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
         if (enable) {
-          builder->PrependFilter(&grpc_max_age_filter, nullptr);
+          return grpc_channel_stack_builder_prepend_filter(
+              builder, &grpc_max_age_filter, nullptr, nullptr);
+        } else {
+          return true;
         }
-        return true;
       });
 }
 }  // namespace grpc_core

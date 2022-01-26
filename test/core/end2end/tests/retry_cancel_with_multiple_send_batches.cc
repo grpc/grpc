@@ -306,15 +306,16 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     "FailSendOpsFilter",
 };
 
-bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
+bool MaybeAddFilter(grpc_channel_stack_builder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args = builder->channel_args();
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
   if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;
   }
   // Install filter.
-  builder->PrependFilter(&FailSendOpsFilter::kFilterVtable, nullptr);
-  return true;
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, &FailSendOpsFilter::kFilterVtable, nullptr, nullptr);
 }
 
 }  // namespace

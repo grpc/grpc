@@ -344,20 +344,21 @@ const grpc_channel_filter grpc_message_size_filter = {
 
 // Used for GRPC_CLIENT_SUBCHANNEL
 static bool maybe_add_message_size_filter_subchannel(
-    grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* channel_args = builder->channel_args();
+    grpc_channel_stack_builder* builder) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
   if (grpc_channel_args_want_minimal_stack(channel_args)) {
     return true;
   }
-  builder->PrependFilter(&grpc_message_size_filter, nullptr);
-  return true;
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, &grpc_message_size_filter, nullptr, nullptr);
 }
 
 // Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the filter
 // only if message size limits or service config is specified.
-static bool maybe_add_message_size_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* channel_args = builder->channel_args();
+static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
   if (grpc_channel_args_want_minimal_stack(channel_args)) {
     return true;
   }
@@ -370,9 +371,15 @@ static bool maybe_add_message_size_filter(
   const grpc_arg* a =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* svc_cfg_str = grpc_channel_arg_get_string(a);
-  if (svc_cfg_str != nullptr) enable = true;
-  if (enable) builder->PrependFilter(&grpc_message_size_filter, nullptr);
-  return true;
+  if (svc_cfg_str != nullptr) {
+    enable = true;
+  }
+  if (enable) {
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_message_size_filter, nullptr, nullptr);
+  } else {
+    return true;
+  }
 }
 
 void grpc_message_size_filter_init(void) {
