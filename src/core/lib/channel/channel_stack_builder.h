@@ -43,7 +43,7 @@ class ChannelStackBuilder {
   };
 
   // Initialize with a name.
-  explicit ChannelStackBuilder(std::string name) : name_(std::move(name)) {}
+  explicit ChannelStackBuilder(const char* name) : name_(name) {}
 
   ~ChannelStackBuilder();
 
@@ -89,7 +89,7 @@ class ChannelStackBuilder {
 
  private:
   // The name of the stack
-  const std::string name_;
+  const char* const name_;
   // The target
   std::string target_;
   // The transport
