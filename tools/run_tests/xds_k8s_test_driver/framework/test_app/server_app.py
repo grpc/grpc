@@ -322,7 +322,6 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
 
             pod_ip = pod.status.pod_ip
             rpc_host = None
-            rpc_port = test_port
             # Experimental, for local debugging.
             local_port = maintenance_port
             if self.debug_use_port_forwarding:

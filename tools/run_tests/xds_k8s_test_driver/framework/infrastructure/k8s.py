@@ -97,7 +97,9 @@ class PortForwarder:
         self.local_port, self.subprocess = self._establish_port_forwarding(
             local_port)
 
-    def _establish_port_forwarding(self, local_port: Optional[int] = None):
+    def _establish_port_forwarding(
+            self,
+            local_port: Optional[int] = None) -> Tuple[int, subprocess.Popen]:
         port_mapping = f"{local_port}:{self.remote_port}" if local_port else f":{self.remote_port}"
         cmd = [
             "kubectl", "--context", self.context, "--namespace", self.namespace,
