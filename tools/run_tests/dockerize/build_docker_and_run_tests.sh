@@ -69,7 +69,6 @@ docker run \
   --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
   $DOCKER_TTY_ARGS \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
-  -v ~/.config/gcloud:/root/.config/gcloud \
   -v "$git_root:$docker_instance_git_root" \
   -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
