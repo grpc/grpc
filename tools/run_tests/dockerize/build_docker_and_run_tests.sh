@@ -27,6 +27,7 @@ cd -
 # Inputs
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
+# OUTPUT_DIR - Directory (relatively to git repo root) that will be copied from inside docker container after finishing.
 # DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
 # $@ - Extra args to pass to the "docker run" command.
 
@@ -69,6 +70,7 @@ docker run \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
   -e "EXTERNAL_GIT_ROOT=${EXTERNAL_GIT_ROOT}" \
+  -e "OUTPUT_DIR=${OUTPUT_DIR}" \
   --env-file tools/run_tests/dockerize/docker_propagate_env.list \
   --rm \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
@@ -89,5 +91,13 @@ fi
 TEMP_REPORTS_ZIP="${TEMP_OUTPUT_DIR}/reports.zip"
 unzip -o "${TEMP_REPORTS_ZIP}" -d "${REPORTS_DEST_DIR}" || true
 rm -f "${TEMP_REPORTS_ZIP}"
+
+# Copy contents of OUTPUT_DIR back under the git repo root
+if [ "${OUTPUT_DIR}" != "" ]
+then
+  # create the directory if it doesn't exist yet.
+  mkdir -p "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}"
+  cp -r "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
+fi
 
 exit $DOCKER_EXIT_CODE
