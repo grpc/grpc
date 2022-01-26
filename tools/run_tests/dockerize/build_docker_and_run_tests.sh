@@ -48,17 +48,21 @@ else
   DOCKER_TTY_ARGS=
 fi
 
-# Choose random name for docker container
-CONTAINER_NAME="run_tests_$(uuidgen)"
-
 # Git root as seen by the docker instance
 docker_instance_git_root=/var/local/jenkins/grpc
+
+# temporary directory that will be mounted to the docker container
+# as a way to persist output files.
+# use unique name for the output directory to prevent clash between concurrent
+# runs of multiple docker containers
+TEMP_OUTPUT_DIR="$(mktemp -d)"
 
 # Run tests inside docker
 DOCKER_EXIT_CODE=0
 # TODO: silence complaint about $DOCKER_TTY_ARGS expansion in some other way
 # shellcheck disable=SC2086,SC2154
 docker run \
+  --rm \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
   -e "config=$config" \
@@ -72,25 +76,21 @@ docker run \
   -v ~/.config/gcloud:/root/.config/gcloud \
   -v "$git_root:$docker_instance_git_root" \
   -v /tmp/npm-cache:/tmp/npm-cache \
+  -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
-  --name="$CONTAINER_NAME" \
   "$DOCKER_IMAGE_NAME" \
   bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || DOCKER_EXIT_CODE=$?
 
-# use unique name for reports.zip to prevent clash between concurrent
-# run_tests.py runs 
-TEMP_REPORTS_ZIP=$(mktemp)
-docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" "${TEMP_REPORTS_ZIP}" || true
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
   REPORTS_DEST_DIR="${GRPC_TEST_REPORT_BASE_DIR}"
 else
   REPORTS_DEST_DIR="${git_root}"
 fi
+
+# reports.zip will be stored by the container after run_tests.py has finished.
+TEMP_REPORTS_ZIP="${TEMP_OUTPUT_DIR}/reports.zip"
 unzip -o "${TEMP_REPORTS_ZIP}" -d "${REPORTS_DEST_DIR}" || true
 rm -f "${TEMP_REPORTS_ZIP}"
-
-# remove the container, possibly killing it first
-docker rm -f "$CONTAINER_NAME" || true
 
 exit $DOCKER_EXIT_CODE

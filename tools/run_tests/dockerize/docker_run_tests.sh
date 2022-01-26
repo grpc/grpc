@@ -45,6 +45,10 @@ find . -name report.xml -print0 | xargs -0 -r zip reports.zip
 find . -name sponge_log.xml -print0 | xargs -0 -r zip reports.zip
 find . -name 'report_*.xml' -print0 | xargs -0 -r zip reports.zip
 
+# copy reports.zip to the well-known output dir mounted to the
+# docker container.
+cp reports.zip /var/local/output_dir
+
 if [ -x "$(command -v ccache)" ]
 then
   ccache --show-stats || true
