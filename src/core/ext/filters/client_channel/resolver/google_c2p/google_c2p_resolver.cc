@@ -129,8 +129,8 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
                          {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());  // params are hardcoded
   grpc_arg resource_quota_arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA), resolver_->resource_quota_.get(),
-      grpc_resource_quota_arg_vtable());
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
+      resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
   http_request_ =
       HttpRequest::Get(std::move(*uri), &args, pollent, &request,
