@@ -194,9 +194,10 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
       zone = std::string(body.substr(i + 1));
     }
   }
-  if (!zone.ok())
+  if (!zone.ok()) {
     gpr_log(GPR_ERROR, "zone query failed: %s",
             zone.status().ToString().c_str());
+  }
   resolver->ZoneQueryDone(std::move(zone));
   GRPC_ERROR_UNREF(error);
 }
