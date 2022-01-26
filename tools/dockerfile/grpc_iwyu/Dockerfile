@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+FROM debian:11
 
 RUN apt-get update && apt-get install -y clang-11 llvm-11-dev libclang-11-dev clang-format-11 jq git cmake python
 
