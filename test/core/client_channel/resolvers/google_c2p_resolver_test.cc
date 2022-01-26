@@ -23,6 +23,8 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -62,7 +64,7 @@ void TryConnectAndDestroy(const char* fake_metadata_server_address) {
 // Exercise the machinery involved with shutting down the C2P resolver while
 // it's waiting for its initial metadata server queries to finish.
 TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
-     LoopTryConnectAndDestroy) {
+     LoopTryConnectAndDestroyWithHangingMetadataServer) {
   // Create a fake metadata server which hangs.
   grpc_core::testing::FakeUdpAndTcpServer fake_metadata_server(
       grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
@@ -74,6 +76,25 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back(
         new std::thread(TryConnectAndDestroy, fake_metadata_server.address()));
+  }
+  for (size_t i = 0; i < threads.size(); i++) {
+    threads[i]->join();
+  }
+}
+
+// Exercise the machinery involved with shutting down the C2P resolver while
+// it's waiting for its initial metadata server queries to finish.
+TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
+     LoopTryConnectAndDestroyWithFastFailingMetadataServer) {
+  // Create a fake metadata server address which rejects connections
+  int port = grpc_pick_unused_port_or_die();
+  std::string address = absl::StrFormat("[::1]:%d", port);
+  std::vector<std::unique_ptr<std::thread>> threads;
+  const int kNumThreads = 100;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; i++) {
+    threads.emplace_back(
+        new std::thread(TryConnectAndDestroy, address.c_str()));
   }
   for (size_t i = 0; i < threads.size(); i++) {
     threads[i]->join();

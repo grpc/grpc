@@ -108,7 +108,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "google_c2p_resolver_test",
     srcs = ["google_c2p_resolver_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+      "absl/strings:str_format",
+      "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
