@@ -67,7 +67,6 @@ docker run \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
   -e "config=$config" \
   -e "arch=$arch" \
-  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e HOST_GIT_ROOT="$git_root" \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
   --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
@@ -75,7 +74,6 @@ docker run \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
   -v ~/.config/gcloud:/root/.config/gcloud \
   -v "$git_root:$docker_instance_git_root" \
-  -v /tmp/npm-cache:/tmp/npm-cache \
   -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
   "$DOCKER_IMAGE_NAME" \
