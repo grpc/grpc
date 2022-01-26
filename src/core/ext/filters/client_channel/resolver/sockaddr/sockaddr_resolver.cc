@@ -38,8 +38,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
-static constexpr int kMaxParsedAddressFromUri = 5000;
-
 namespace grpc_core {
 
 namespace {
@@ -92,10 +90,9 @@ bool ParseUri(const URI& uri,
   }
   // Construct addresses.
   bool errors_found = false;
-  int parsed_addresses = 0;
   for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
     if (ith_path.empty()) {
-      // (b/212831051) Skip targets which are empty.
+      // Skip targets which are empty.
       continue;
     }
     auto ith_uri = URI::Create(uri.scheme(), "", std::string(ith_path), {}, "");
@@ -106,18 +103,6 @@ bool ParseUri(const URI& uri,
     }
     if (addresses != nullptr) {
       addresses->emplace_back(addr, nullptr /* args */);
-    }
-    if (++parsed_addresses >= kMaxParsedAddressFromUri) {
-      // (b/212831051) This prevents OOMs. If there are a lot of targets, then
-      // its likely the original channel_args is big and it needs to be copied
-      // for each resolved address if there is a request to check connectivity
-      // using the grpc_channel_check_connectivity_state api immediately after
-      // channel creation. This could take up a lot of memory.
-      gpr_log(GPR_ERROR,
-              "Detected more than %d targets in the specified URI. "
-              "Keeping only the first %d targets",
-              kMaxParsedAddressFromUri, kMaxParsedAddressFromUri);
-      break;
     }
   }
   return !errors_found;
