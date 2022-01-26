@@ -37,6 +37,8 @@ from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
 
+from framework.rpc.grpc_csds import ClientConfig
+
 logger = logging.getLogger(__name__)
 _FORCE_CLEANUP = flags.DEFINE_bool(
     "force_cleanup",
@@ -351,8 +353,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         self.assertSameElements(want, seen)
 
     @staticmethod
-    def getRouteConfigVersion(test_client: XdsTestClient) -> Optional[str]:
-        config = test_client.csds.fetch_client_status(log_level=logging.INFO)
+    def extractRouteConfigVersion(config: ClientConfig) -> Optional[str]:
         route_config_version = None
         for xds_config in config.xds_config:
             if xds_config.WhichOneof('per_xds_config') == "route_config":
@@ -364,12 +365,16 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                 logger.info('found routing config version: %s',
                             route_config_version)
                 break
+        if not route_config_version:
+            logger.info('no route config version found.')
         return route_config_version
 
     def assertRouteConfigUpdateTrafficHandoff(
             self, test_client: XdsTestClient,
             previous_route_config_version: str, retry_wait_second: int,
             timeout_second: int):
+        logger.info('comparing route config versions, previous_route_config_version: %s',
+                    previous_route_config_version)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(seconds=retry_wait_second),
             timeout=datetime.timedelta(seconds=timeout_second),
@@ -380,8 +385,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             for attempt in retryer:
                 with attempt:
                     self.assertSuccessfulRpcs(test_client)
-                    route_config_version = self.getRouteConfigVersion(
-                        test_client)
+                    config = test_client.csds.fetch_client_status(log_level=logging.INFO)
+                    route_config_version = self.extractRouteConfigVersion(config)
                     if previous_route_config_version == route_config_version:
                         logger.info(
                             'Routing config not propagated yet. Retrying.')
@@ -395,8 +400,8 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                             route_config_version)
         except retryers.RetryError as retry_error:
             logger.info(
-                'Retry exhausted. TD routing config propagation failed after timeout %ds.',
-                timeout_second)
+                'Retry exhausted. TD routing config propagation failed after timeout %ds. Last seen client config dump: %s',
+                timeout_second, config)
             raise retry_error
 
     def assertFailedRpcs(self,
