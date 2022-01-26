@@ -119,6 +119,11 @@ bool AddOriginalFilter(ChannelStackBuilder* builder) {
   return true;
 }
 
+TEST(ChannelStackBuilder, UnknownTarget) {
+  ChannelStackBuilder builder("alpha-beta-gamma");
+  EXPECT_EQ(builder.target(), "unknown");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

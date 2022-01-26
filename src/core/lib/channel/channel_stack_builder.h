@@ -88,10 +88,12 @@ class ChannelStackBuilder {
                           void** result);
 
  private:
+  static std::string unknown_target() { return "unknown"; }
+
   // The name of the stack
   const std::string name_;
   // The target
-  std::string target_;
+  std::string target_{unknown_target()};
   // The transport
   grpc_transport* transport_ = nullptr;
   // Channel args
