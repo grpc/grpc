@@ -67,7 +67,6 @@ docker run \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
   -e "config=$config" \
   -e "arch=$arch" \
-  -e HOST_GIT_ROOT="$git_root" \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
   --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
   $DOCKER_TTY_ARGS \
