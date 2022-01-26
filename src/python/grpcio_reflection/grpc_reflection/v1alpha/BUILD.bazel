@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,11 +26,6 @@ py_grpc_library(
     srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_descriptor"],
     strip_prefixes = ["src.python.grpcio_reflection."],
     deps = ["reflection_py_pb2"],
-)
-
-py_library(
-    name = "grpc_reflection_test",
-    srcs = ["proto_reflection_descriptor_database.py"],
 )
 
 py_library(

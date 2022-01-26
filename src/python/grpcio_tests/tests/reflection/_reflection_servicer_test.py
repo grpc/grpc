@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,10 +56,6 @@ class ReflectionServicerTest(unittest.TestCase):
     # DESCRIPTOR for each message. So, the equal comparison between protobuf
     # returned by stub and manually crafted protobuf will always fail.
     def _assert_sequence_of_proto_equal(self, x, y):
-        # self.assertSequenceEqual(
-        #     tuple(proto.SerializeToString() for proto in x),
-        #     tuple(proto.SerializeToString() for proto in y),
-        # )
         self.assertEqual(x, y)
 
     def setUp(self):

@@ -65,6 +65,9 @@ descriptor database.
   initialize an instance with a channel.
 
   ```Python
+  import grpc
+  from grpc_reflection.v1alpha.proto_reflection_descriptor_database import ProtoReflectionDescriptorDatabase
+
   channel = grpc.secure_channel(server_address, creds)
   reflection_db = ProtoReflectionDescriptorDatabase(channel)
   ```
@@ -73,10 +76,12 @@ descriptor database.
   [DescriptorPool](https://googleapis.dev/python/protobuf/latest/google/protobuf/descriptor_pool.html#google.protobuf.descriptor_pool.DescriptorPool).
 
   ```Python
+  from google.protobuf.descriptor_pool import DescriptorPool
+
   desc_pool = DescriptorPool(reflection_db)
   ```
 
-- Example usage of this descriptor pool
+- Example usage of this descriptor pool:
 
   * Get Service/method descriptors.
 
@@ -90,6 +95,12 @@ descriptor database.
     ```Python
     request_desc = desc_pool.FindMessageTypeByName("helloworld.HelloRequest")
     request = MessageFactory(desc_pool).GetPrototype(request_desc)()
+    ```
+
+- You can also use the Reflection Database to list all the services:
+
+    ```Python
+    services = reflection_db.get_services()
     ```
 
 

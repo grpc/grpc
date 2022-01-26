@@ -1,4 +1,4 @@
-# Copyright 2021 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ from grpc_reflection.v1alpha.reflection_pb2 import (
 )
 from grpc_reflection.v1alpha.reflection_pb2_grpc import ServerReflectionStub
 import logging
+from typing import Iterable, Any
 
 
 class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
@@ -48,50 +49,19 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         self._stub = ServerReflectionStub(channel)
         self._known_files: Set[str] = set()
         self._cached_extension_numbers: Dict[str, List[int]] = dict()
-        self._cached_extension_files: Dict[str, FileDescriptorProto] = dict()
 
-    def _DoOneRequest(
-        self, request: ServerReflectionRequest
-    ) -> ServerReflectionResponse:
-        response = self._stub.ServerReflectionInfo(iter([request]))
-        res = next(response)
-        if res.WhichOneof("message_response") == "error_response":
-            raise grpc.RpcError(res.error_response)
-        return res
-
-    def _AddFileFromResponse(self, file_descriptor: FileDescriptorResponse):
-        protos: List[bytes] = file_descriptor.file_descriptor_proto
-        for proto in protos:
-            desc = FileDescriptorProto()
-            desc.ParseFromString(proto)
-            if desc.name not in self._known_files:
-                self._logger.info("Got new file {}".format(desc.name))
-                self._known_files.add(desc.name)
-                self.Add(desc)
-
-    def GetServices(self):
+    def get_services(self) -> Iterable[str]:
         request = ServerReflectionRequest(list_services="")
-        response = self._DoOneRequest(request)
+        response = self._do_one_request(request, key="")
         list_services: ListServiceResponse = response.list_services_response
         services: List[ServiceResponse] = list_services.service
         return [service.name for service in services]
 
-    def FindAllExtensionNumbers(self, extendee_name):
+    def FindAllExtensionNumbers(self, extendee_name: str) -> Iterable[int]:
         if extendee_name in self._cached_extension_numbers:
             return self._cached_extension_numbers[extendee_name]
         request = ServerReflectionRequest(all_extension_numbers_of_type=extendee_name)
-        try:
-            response = self._DoOneRequest(request)
-        except grpc.RpcError as e:
-            error_response: ErrorResponse = e.args[0]
-            if error_response.error_code == grpc.StatusCode.NOT_FOUND:
-                # Seems that this is "OK"
-                self._logger.info(
-                    "NOT_FOUND from server for FindAllExtensionNumbers({})".format(
-                        extendee_name
-                    )
-                )
-            return []
+        response = self._do_one_request(request, key=extendee_name)
         all_extension_numbers: ExtensionNumberResponse = (
             response.all_extension_numbers_response
         )
@@ -99,18 +69,20 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         self._cached_extension_numbers[extendee_name] = numbers
         return numbers
 
-    def FindFileByName(self, name):
+    def FindFileByName(self, name: str) -> FileDescriptorProto:
         try:
             return super().FindFileByName(name)
         except KeyError:
             pass
         assert name not in self._known_files
         request = ServerReflectionRequest(file_by_filename=name)
-        response = self._DoOneRequest(request)
-        self._AddFileFromResponse(response.file_descriptor_response)
+        response = self._do_one_request(request, key=name)
+        self._add_file_from_response(response.file_descriptor_response)
         return super().FindFileByName(name)
 
-    def FindFileContainingExtension(self, extendee_name, extension_number):
+    def FindFileContainingExtension(
+        self, extendee_name: str, extension_number: int
+    ) -> FileDescriptorProto:
         try:
             return super().FindFileContainingExtension(extendee_name, extension_number)
         except KeyError:
@@ -120,21 +92,42 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
                 containing_type=extendee_name, extension_number=extension_number
             )
         )
-        response = self._DoOneRequest(request)
+        response = self._do_one_request(request, key=(extendee_name, extension_number))
         file_desc = response.file_descriptor_response
-        self._AddFileFromResponse(file_desc)
+        self._add_file_from_response(file_desc)
         return super().FindFileContainingExtension(extendee_name, extension_number)
 
-    def FindFileContainingSymbol(self, symbol):
+    def FindFileContainingSymbol(self, symbol: str) -> FileDescriptorProto:
         try:
             return super().FindFileContainingSymbol(symbol)
         except KeyError:
             pass
         # Query the server
         request = ServerReflectionRequest(file_containing_symbol=symbol)
-        response = self._DoOneRequest(request)
-        self._AddFileFromResponse(response.file_descriptor_response)
+        response = self._do_one_request(request, key=symbol)
+        self._add_file_from_response(response.file_descriptor_response)
         return super().FindFileContainingSymbol(symbol)
 
+    def _do_one_request(
+        self, request: ServerReflectionRequest, key: Any
+    ) -> ServerReflectionResponse:
+        response = self._stub.ServerReflectionInfo(iter([request]))
+        res = next(response)
+        if res.WhichOneof("message_response") == "error_response":
+            # Only NOT_FOUND errors are expected at this layer
+            error_code = res.error_response.error_code
+            assert (
+                error_code == grpc.StatusCode.NOT_FOUND.value[0]
+            ), "unexpected error response: " + repr(res.error_response)
+            raise KeyError(key)
+        return res
 
-
+    def _add_file_from_response(self, file_descriptor: FileDescriptorResponse) -> None:
+        protos: List[bytes] = file_descriptor.file_descriptor_proto
+        for proto in protos:
+            desc = FileDescriptorProto()
+            desc.ParseFromString(proto)
+            if desc.name not in self._known_files:
+                self._logger.info("Loading descriptors from file: {}".format(desc.name))
+                self._known_files.add(desc.name)
+                self.Add(desc)

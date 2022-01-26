@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ from tests.unit import test_common
 
 import grpc
 from grpc_reflection.v1alpha import reflection
-from grpc_reflection.v1alpha.proto_reflection_descriptor_database import ProtoReflectionDescriptorDatabase
+from grpc_reflection.v1alpha.proto_reflection_descriptor_database import (
+    ProtoReflectionDescriptorDatabase,
+)
 from google.protobuf.descriptor_pool import DescriptorPool
 from src.proto.grpc.testing import test_pb2
 
@@ -28,9 +30,10 @@ from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 _PROTO_PACKAGE_NAME = "grpc.testing"
 _PROTO_FILE_NAME = "src/proto/grpc/testing/test.proto"
 _EMPTY_PROTO_FILE_NAME = "src/proto/grpc/testing/empty.proto"
+_INVALID_FILE_NAME = "i-do-not-exist.proto"
 _EMPTY_PROTO_SYMBOL_NAME = "grpc.testing.Empty"
+_INVALID_SYMBOL_NAME = "IDoNotExist"
 _EMPTY_EXTENSIONS_SYMBOL_NAME = "grpc.testing.proto2.EmptyWithExtensions"
-
 
 
 class ReflectionServicerTest(unittest.TestCase):
@@ -54,7 +57,7 @@ class ReflectionServicerTest(unittest.TestCase):
         self._channel.close()
 
     def testListServices(self):
-        services = self._reflection_db.GetServices()
+        services = self._reflection_db.get_services()
         self.assertCountEqual(self._SERVICE_NAMES, services)
 
     def testReflectionServiceName(self):
@@ -77,12 +80,19 @@ class ReflectionServicerTest(unittest.TestCase):
         self.assertEqual("proto3", file_desc.syntax)
         self.assertIn("Empty", file_desc.message_types_by_name)
 
+    def testFindFileError(self):
+        with self.assertRaises(KeyError):
+            self.desc_pool.FindFileByName(_INVALID_FILE_NAME)
+
     def testFindMessage(self):
         message_name = _EMPTY_PROTO_SYMBOL_NAME
         message_desc = self.desc_pool.FindMessageTypeByName(message_name)
         self.assertEqual(message_name, message_desc.full_name)
         self.assertTrue(message_name.endswith(message_desc.name))
-        return message_desc
+
+    def testFindMessageError(self):
+        with self.assertRaises(KeyError):
+            self.desc_pool.FindMessageTypeByName(_INVALID_SYMBOL_NAME)
 
     def testFindServiceFindMethod(self):
         service_name = self._SERVICE_NAMES[0]
@@ -108,13 +118,24 @@ class ReflectionServicerTest(unittest.TestCase):
         self.assertEqual(empty_message_desc, method_desc.input_type)
         self.assertEqual(empty_message_desc, method_desc.output_type)
 
+    def testFindServiceError(self):
+        with self.assertRaises(KeyError):
+            self.desc_pool.FindServiceByName(_INVALID_SYMBOL_NAME)
+
+    def testFindServiceFindMethod(self):
+        service_name = self._SERVICE_NAMES[0]
+        service_desc = self.desc_pool.FindServiceByName(service_name)
+
+        with self.assertRaises(KeyError):
+            service_desc.FindMethodByName(_INVALID_SYMBOL_NAME)
+
     def testFindExtension(self):
         message_name = _EMPTY_EXTENSIONS_SYMBOL_NAME
         message_desc = self.desc_pool.FindMessageTypeByName(message_name)
         self.assertEqual(message_name, message_desc.full_name)
         self.assertTrue(message_name.endswith(message_desc.name))
         extension_field_descs = self.desc_pool.FindAllExtensions(message_desc)
-        
+
         # TODO: Extensions aren't implemented in Protobuf for Python.
         # For now, simply assert that indeed they don't work
         self.assertEqual(0, len(extension_field_descs))
