@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is invoked by build_docker_* inside a docker
+# This script is invoked by build_and_run_docker.sh inside a docker
 # container. You should never need to call this script on your own.
 
-set -ex
+set -e
+
+# TODO(jtattermusch): added in https://github.com/grpc/grpc/pull/17303, should be removed.
+export CONFIG=${config:-opt}
 
 if [ "$RELATIVE_COPY_PATH" == "" ]
 then
@@ -32,17 +35,29 @@ else
   cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
 fi
 
+# ensure the "reports" directory exists
+mkdir -p reports
+
+# TODO(jtattermusch): this is garbage, remove it.
 $POST_GIT_STEP
 
-if [ -x "$(command -v rvm)" ]
-then
-  rvm use ruby-2.1
-fi
-
+# TODO(jtattermusch): is this necessary?
 cd /var/local/git/grpc
 
 exit_code=0
-$RUN_COMMAND || exit_code=$?
+${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
+
+# TODO(jtattermusch): skip if report extraction isn't desirable (e.g. artifact builds)
+# The easiest way to copy all the reports files from inside of
+# the docker container is to zip them and then copy the zip.
+zip -r reports.zip reports
+find . -name report.xml -print0 | xargs -0 -r zip reports.zip
+find . -name sponge_log.xml -print0 | xargs -0 -r zip reports.zip
+find . -name 'report_*.xml' -print0 | xargs -0 -r zip reports.zip
+
+# copy reports.zip to the well-known output dir mounted to the
+# docker container.
+cp reports.zip /var/local/output_dir
 
 # Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
 if [ "${OUTPUT_DIR}" != "" ]
@@ -50,6 +65,11 @@ then
   # create the directory if it doesn't exist yet.
   mkdir -p "${OUTPUT_DIR}"
   mv "${OUTPUT_DIR}" /var/local/output_dir || exit_code=$?
+fi
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
 fi
 
 exit $exit_code

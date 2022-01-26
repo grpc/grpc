@@ -68,7 +68,7 @@ docker run \
   ${DOCKER_TTY_ARGS} \
   ${EXTRA_DOCKER_ARGS} \
   --cap-add SYS_PTRACE \
-  -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
+  -e "DOCKER_RUN_SCRIPT_COMMAND=${DOCKER_RUN_SCRIPT_COMMAND}" \
   -e "EXTERNAL_GIT_ROOT=${EXTERNAL_GIT_ROOT}" \
   -e "OUTPUT_DIR=${OUTPUT_DIR}" \
   --env-file tools/run_tests/dockerize/docker_propagate_env.list \
