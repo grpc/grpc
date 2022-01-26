@@ -40,10 +40,12 @@ EVENT_ENGINES = [
     {
         "name": "libuv",
         "tags": [],
+        "deps": ["//test/core/event_engine:libuv_event_engine_test_init"],
     },
     # {
     #     "name": "poll",
-    #     "tags": ["no_windows", "no_mac"],
+    #     "tags": ["no_windows"],
+    #     "deps": ["//test/core/event_engine:poll_event_engine_test_init"],
     # },
 ]
 
@@ -298,7 +300,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "srcs": srcs,
         "args": args,
         "data": data,
-        "deps": deps + _get_external_deps(external_deps),
         "copts": GRPC_DEFAULT_COPTS + copts,
         "linkopts": if_not_windows(["-pthread"]),
         "size": size,
@@ -309,9 +310,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "flaky": flaky,
         "linkstatic": linkstatic,
     }
+    common_deps = deps + _get_external_deps(external_deps)
     ios_cc_test(
         name = name,
         tags = tags,
+        deps = common_deps + EVENT_ENGINES[0]["deps"],
         **args
     )
     if not uses_polling:
@@ -319,7 +322,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # TODO(hork): identify if any non-polling tests should be exercised by
         # all known EventEngines. It is assumed that non-polling tests are
         # engine-agnostic.
-        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
+        native.cc_test(name = name, tags = tags + ["no_uses_polling"], deps = common_deps + EVENT_ENGINES[0]["deps"], **args)
         return
 
     # -- Tests that exercise the polling system --
@@ -330,15 +333,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             # These platforms do not support multiple polling engines,
             # so just create a target for each EventEngine.
             native.cc_test(
-                # TODO(hork): these names are depended upon in cpp end2end
-                # tests data arguments. Those tests need to be updated to pull
-                # the right dependencies.
-                # name = name + "_engine_" + engine["name"],
-                name = name,
+                name = name + "_engine_" + engine["name"],
                 tags = (tags + engine["tags"] + [
                     "no_linux",  # linux supports multiple pollers
                 ]),
-                env = {"GRPC_EVENTENGINE_STRATEGY": engine["name"]},
+                deps = common_deps + engine["deps"],
                 **args
             )
 
@@ -351,10 +350,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         native.cc_test(
             name = name + "@poller=" + poller + "@engine=" + EVENT_ENGINES[0]["name"],
             env = {
-              "GRPC_POLL_STRATEGY": poller,
-              "GRPC_EVENTENGINE_STRATEGY": engine["name"],
+                "GRPC_POLL_STRATEGY": poller,
             },
             tags = (tags + ["no_windows", "no_mac"]),
+            deps = common_deps + EVENT_ENGINES[0]["deps"],
             **args
         )
 
@@ -366,9 +365,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         native.cc_test(
             name = name + "@poller=" + POLLERS[0] + "@engine=" + engine["name"],
             env = {
-              "GRPC_POLL_STRATEGY": POLLERS[0],
-              "GRPC_EVENTENGINE_STRATEGY": engine["name"],
+                "GRPC_POLL_STRATEGY": POLLERS[0],
             },
+            deps = common_deps + engine["deps"],
             tags = (tags + ["no_windows", "no_mac"]),
             **args
         )

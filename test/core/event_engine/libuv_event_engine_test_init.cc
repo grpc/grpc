@@ -13,21 +13,15 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_INIT_H
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/gprpp/global_config.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_eventengine_strategy);
+#include "test/core/event_engine/test_init.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-void InitEventEngineFactory();
+void InitializeTestingEventEngineFactory() {
+  // Set the default EventEngine factory
+  // TODO(hork): SetDefaultEventEngineFactory(LibuvEventEngineFactory)
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_INIT_H

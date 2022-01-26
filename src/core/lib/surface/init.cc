@@ -34,7 +34,6 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/init.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/parser.h"
@@ -109,7 +108,6 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
-    grpc_event_engine::experimental::InitEventEngineFactory();
     grpc_iomgr_init();
     gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {

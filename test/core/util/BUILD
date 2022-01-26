@@ -32,6 +32,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util_base",
+    testonly = True,
     srcs = [
         "cmdline.cc",
         "fuzzer_util.cc",
@@ -87,11 +88,13 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_common",
+        "//test/core/event_engine:event_engine_test_init_base",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_test_util",
+    testonly = True,
     srcs = ["tls_utils.cc"],
     hdrs = ["tls_utils.h"],
     language = "C++",
@@ -103,6 +106,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util_unsecure",
+    testonly = True,
     srcs = [],
     hdrs = [],
     language = "C++",
@@ -154,11 +158,6 @@ grpc_cc_test(
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
-)
-
-sh_library(
-    name = "run_with_poller_sh",
-    srcs = ["run_with_poller.sh"],
 )
 
 grpc_cc_library(
