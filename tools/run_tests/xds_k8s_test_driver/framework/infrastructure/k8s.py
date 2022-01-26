@@ -391,9 +391,11 @@ class KubernetesNamespace:
         local_port: Optional[int] = None,
         local_address: Optional[str] = None,
     ) -> PortForwarder:
-        return PortForwarder(self.api.context, self.name,
-                             f"pod/{pod.metadata.name}", remote_port,
-                             local_port, local_address)
+        pf = PortForwarder(self.api.context, self.name,
+                           f"pod/{pod.metadata.name}", remote_port, local_port,
+                           local_address)
+        pf.connect()
+        return pf
 
     @staticmethod
     def _pod_started(pod: V1Pod):
