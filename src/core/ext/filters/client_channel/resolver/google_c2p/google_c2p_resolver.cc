@@ -26,7 +26,6 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -214,15 +213,6 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
             grpc_error_std_string(error).c_str());
   }
-  absl::Status status;
-  if (error != GRPC_ERROR_NONE) {
-    status = grpc_error_to_absl_status(error);
-  } else if (response->status != 200) {
-    status = absl::UnknownError(
-        absl::StrFormat("response status: %d", response->status));
-  } else {
-    status = absl::OkStatus();
-  }
   resolver->IPv6QueryDone(error == GRPC_ERROR_NONE && response->status == 200);
   GRPC_ERROR_UNREF(error);
 }
@@ -360,9 +350,7 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   };
   // Inject bootstrap JSON as fallback config.
   internal::SetXdsFallbackBootstrapConfig(bootstrap.Dump().c_str());
-  // Create and start the xds resolver.
-  grpc_pollset_set* pollset_set = grpc_polling_entity_pollset_set(&pollent_);
-  GPR_ASSERT(pollset_set != nullptr);
+  // Now start xDS resolver.
   child_resolver_->StartLocked();
 }
 
