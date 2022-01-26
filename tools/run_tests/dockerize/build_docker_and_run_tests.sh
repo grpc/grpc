@@ -65,8 +65,6 @@ docker run \
   --rm \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
-  -e "config=$config" \
-  -e "arch=$arch" \
   -e LOCAL_GIT_ROOT=$docker_instance_git_root \
   --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
   $DOCKER_TTY_ARGS \
