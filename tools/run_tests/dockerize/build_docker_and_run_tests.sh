@@ -28,6 +28,7 @@ cd -
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
 # DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
+# $@ - Extra args to pass to the "docker run" command.
 
 # Use image name based on Dockerfile location checksum
 DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR"):$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
@@ -62,6 +63,7 @@ DOCKER_EXIT_CODE=0
 # TODO: silence complaint about $DOCKER_TTY_ARGS expansion in some other way
 # shellcheck disable=SC2086,SC2154
 docker run \
+  "$@" \
   ${DOCKER_TTY_ARGS} \
   --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=${RUN_TESTS_COMMAND}" \
