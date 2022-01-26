@@ -1058,7 +1058,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     GPR_ASSERT(uri.ok() && !uri->path().empty());
     absl::string_view server_name = absl::StripPrefix(uri->path(), "/");
     // Determine if it's an xds URI.
-    bool is_xds_uri = uri->scheme() == "xds" || uri->scheme() == "google-c2p";
+    bool is_xds_uri =
+        uri->scheme() == "xds" || uri->scheme() == "google-c2p-experimental";
     // Get XdsClient.
     RefCountedPtr<XdsClient> xds_client =
         XdsClient::GetFromChannelArgs(*args.args);
