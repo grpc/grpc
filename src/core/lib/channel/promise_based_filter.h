@@ -507,7 +507,6 @@ class CallData<ChannelFilter, false> : public BaseCallData {
   ArenaPromise<TrailingMetadata> MakeNextPromise(
       ClientInitialMetadata initial_metadata) {
     GPR_ASSERT(recv_initial_state_ == RecvInitialState::kComplete);
-    GPR_ASSERT(initial_metadata.get() == recv_initial_metadata_);
     forward_recv_initial_metadata_callback_ = true;
     return ArenaPromise<TrailingMetadata>(
         [this]() { return PollTrailingMetadata(); });
@@ -581,27 +580,31 @@ class CallData<ChannelFilter, false> : public BaseCallData {
     if (recv_initial_state_ == RecvInitialState::kComplete) {
       Poll<TrailingMetadata> poll = promise_();
       if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
+        auto* md = UnwrapMetadata(std::move(*r));
+        bool destroy_md = true;
         switch (send_trailing_state_) {
-          case SendTrailingState::kQueued:
+          case SendTrailingState::kQueued: {
             if (send_trailing_metadata_batch_->payload->send_trailing_metadata
-                    .send_trailing_metadata != r->get()) {
+                    .send_trailing_metadata != md) {
               *send_trailing_metadata_batch_->payload->send_trailing_metadata
-                   .send_trailing_metadata = std::move(*r->get());
+                   .send_trailing_metadata = std::move(*md);
+            } else {
+              destroy_md = false;
             }
             forward_send_trailing_metadata = true;
-            break;
+          } break;
           case SendTrailingState::kForwarded:
             abort();  // unreachable
             break;
           case SendTrailingState::kInitial: {
-            GPR_ASSERT(*r->get()->get_pointer(GrpcStatusMetadata()) !=
+            GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
                        GRPC_STATUS_OK);
             grpc_error_handle error = grpc_error_set_int(
                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                     "early return from promise based filter"),
                 GRPC_ERROR_INT_GRPC_STATUS,
-                *r->get()->get_pointer(GrpcStatusMetadata()));
-            if (auto* message = r->get()->get_pointer(GrpcMessageMetadata())) {
+                *md->get_pointer(GrpcStatusMetadata()));
+            if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
               error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                                          message->as_string_view());
             }
@@ -611,6 +614,9 @@ class CallData<ChannelFilter, false> : public BaseCallData {
           case SendTrailingState::kCancelled:
             // Nothing to do.
             break;
+        }
+        if (destroy_md) {
+          md->~grpc_metadata_batch();
         }
       }
     }

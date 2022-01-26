@@ -80,7 +80,6 @@ class MetadataHandle {
 
   T* operator->() const { return handle_; }
   bool has_value() const { return handle_ != nullptr; }
-
   T* get() const { return handle_; }
 
   static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
