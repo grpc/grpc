@@ -121,7 +121,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
     goto done;
   }
   if (port.empty()) {
-    if (default_port == nullptr) {
+    if (default_port.empty()) {
       err = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS, name);

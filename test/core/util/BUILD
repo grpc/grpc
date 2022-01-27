@@ -79,6 +79,7 @@ grpc_cc_library(
         "absl/debugging:failure_signal_handler",
         "absl/debugging:symbolize",
         "absl/strings:str_format",
+        "gtest",
     ],
     language = "C++",
     deps = [

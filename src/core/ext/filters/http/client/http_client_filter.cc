@@ -505,6 +505,7 @@ static void http_client_destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_http_client_filter = {
     http_client_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     http_client_init_call_elem,

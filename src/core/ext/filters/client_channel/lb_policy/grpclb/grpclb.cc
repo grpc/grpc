@@ -1843,9 +1843,8 @@ namespace grpc_core {
 void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        const grpc_channel_args* args =
-            grpc_channel_stack_builder_get_channel_arguments(builder);
+      [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* args = builder->channel_args();
         const grpc_arg* channel_arg =
             grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
         if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
@@ -1855,8 +1854,7 @@ void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
           // this filter at the very top of the subchannel stack, since that
           // will minimize the number of metadata elements that the filter
           // needs to iterate through to find the ClientStats object.
-          return grpc_channel_stack_builder_prepend_filter(
-              builder, &grpc_client_load_reporting_filter, nullptr, nullptr);
+          builder->PrependFilter(&grpc_client_load_reporting_filter, nullptr);
         }
         return true;
       });
