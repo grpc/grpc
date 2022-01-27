@@ -62,6 +62,24 @@ DRY_RUN = flags.DEFINE_bool(
     "dry_run",
     default=False,
     help="dry run, print resources but do not perform deletion")
+TD_RESOURCE_PREFIXES = flags.DEFINE_list(
+    "td_resource_prefixes",
+    default=[PSM_SECURITY_PREFIX],
+    help=
+    "a comma-separated list of prefixes for which the leaked TD resources will be deleted",
+)
+SERVER_PREFIXES = flags.DEFINE_list(
+    "server_prefixes",
+    default=[PSM_SECURITY_PREFIX],
+    help=
+    "a comma-separated list of prefixes for which the leaked servers will be deleted",
+)
+CLIENT_PREFIXES = flags.DEFINE_list(
+    "client_prefixes",
+    default=[PSM_SECURITY_PREFIX, URL_MAP_TEST_PREFIX],
+    help=
+    "a comma-separated list of prefixes for which the leaked clients will be deleted",
+)
 
 
 def load_keep_config() -> None:
@@ -233,22 +251,8 @@ def cleanup_server(project, network, k8s_api_manager, resource_prefix,
     server_runner.cleanup(force=True, force_namespace=True)
 
 
-td_resource_rules = [
-    # itmes in each tuple, in order
-    # - regex to match
-    # - prefix of the resource (only used by gke resources)
-    # - function to check of the resource should be kept
-    # - function to delete the resource
-    (r'test-hc(.*)', '', is_marked_as_keep_gce,
-     remove_relative_resources_run_xds_tests),
-    (f'{PSM_SECURITY_PREFIX}-health-check-(.*)', PSM_SECURITY_PREFIX,
-     is_marked_as_keep_gke, cleanup_td_for_gke),
-    (r'test-template(.*)', '', is_marked_as_keep_gce,
-     remove_relative_resources_run_xds_tests),
-]
-
-
-def delete_leaked_td_resources(dry_run, project, network, resources):
+def delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
+                               resources):
     for resource in resources:
         logger.info('-----')
         logger.info('----- Cleaning up resource %s', resource['name'])
@@ -271,21 +275,8 @@ def delete_leaked_td_resources(dry_run, project, network, resources):
                 '----- Skipped [does not matching resource name templates]')
 
 
-k8s_resource_rules = [
-    # items in each tuple, in order
-    # - regex to match
-    # - prefix of the resources
-    # - function to delete the resource
-    (f'{PSM_SECURITY_PREFIX}-server-(.*)', PSM_SECURITY_PREFIX, cleanup_server),
-    (f'{PSM_SECURITY_PREFIX}-client-(.*)', PSM_SECURITY_PREFIX, cleanup_client),
-    # Special handling for url-map test clients. url-map test servers are
-    # shared, so there's no need to delete them.
-    (f'{URL_MAP_TEST_PREFIX}-client-(.*)', URL_MAP_TEST_PREFIX, cleanup_client),
-]
-
-
-def delete_k8s_resources(dry_run, project, network, k8s_api_manager,
-                         gcp_service_account, namespaces):
+def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
+                         k8s_api_manager, gcp_service_account, namespaces):
     for ns in namespaces:
         logger.info('-----')
         logger.info('----- Cleaning up k8s namespaces %s', ns.metadata.name)
@@ -320,6 +311,21 @@ def main(argv):
     gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
     dry_run: bool = DRY_RUN.value
 
+    td_resource_rules = [
+        # itmes in each tuple, in order
+        # - regex to match
+        # - prefix of the resource (only used by gke resources)
+        # - function to check of the resource should be kept
+        # - function to delete the resource
+        (r'test-hc(.*)', '', is_marked_as_keep_gce,
+         remove_relative_resources_run_xds_tests),
+        (r'test-template(.*)', '', is_marked_as_keep_gce,
+         remove_relative_resources_run_xds_tests),
+    ]
+    for prefix in TD_RESOURCE_PREFIXES.value:
+        td_resource_rules.append((f'{prefix}-health-check-(.*)', prefix,
+                                  is_marked_as_keep_gke, cleanup_td_for_gke),)
+
     # List resources older than KEEP_PERIOD. We only list health-checks and
     # instance templates because these are leaves in the resource dependency tree.
     #
@@ -330,22 +336,36 @@ def main(argv):
     # forwarding-rule.
     leakedHealthChecks = exec_gcloud(project, 'compute', 'health-checks',
                                      'list')
-    delete_leaked_td_resources(dry_run, project, network, leakedHealthChecks)
+    delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
+                               leakedHealthChecks)
 
     # Delete leaked instance templates, those usually mean there are leaked VMs
     # from the gce framework. Also note that this is only needed for the gce
     # resources.
     leakedInstanceTemplates = exec_gcloud(project, 'compute',
                                           'instance-templates', 'list')
-    delete_leaked_td_resources(dry_run, project, network,
+    delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedInstanceTemplates)
+
+    k8s_resource_rules = [
+        # items in each tuple, in order
+        # - regex to match
+        # - prefix of the resources
+        # - function to delete the resource
+    ]
+    for prefix in CLIENT_PREFIXES.value:
+        k8s_resource_rules.append(
+            (f'{prefix}-client-(.*)', prefix, cleanup_client),)
+    for prefix in SERVER_PREFIXES.value:
+        k8s_resource_rules.append(
+            (f'{prefix}-server-(.*)', prefix, cleanup_server),)
 
     # Delete leaked k8s namespaces, those usually mean there are leaked testing
     # client/servers from the gke framework.
     k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
     nss = k8s_api_manager.core.list_namespace()
-    delete_k8s_resources(dry_run, project, network, k8s_api_manager,
-                         gcp_service_account, nss.items)
+    delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
+                         k8s_api_manager, gcp_service_account, nss.items)
 
 
 if __name__ == '__main__':

@@ -219,14 +219,12 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         self,
         name: str,
         url_map: GcpResource,
-        validate_for_proxyless: bool = True,
     ) -> GcpResource:
-        return self._insert_resource(
-            self.api.targetGrpcProxies(), {
-                'name': name,
-                'url_map': url_map.url,
-                'validate_for_proxyless': validate_for_proxyless,
-            })
+        return self._insert_resource(self.api.targetGrpcProxies(), {
+            'name': name,
+            'url_map': url_map.url,
+            'validate_for_proxyless': True,
+        })
 
     def delete_target_grpc_proxy(self, name):
         self._delete_resource(self.api.targetGrpcProxies(), 'targetGrpcProxy',
@@ -246,13 +244,13 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         self._delete_resource(self.api.targetHttpProxies(), 'targetHttpProxy',
                               name)
 
-    def create_forwarding_rule(self,
-                               name: str,
-                               src_port: int,
-                               target_proxy: GcpResource,
-                               network_url: str,
-                               *,
-                               ip_address: str = '0.0.0.0') -> GcpResource:
+    def create_forwarding_rule(
+        self,
+        name: str,
+        src_port: int,
+        target_proxy: GcpResource,
+        network_url: str,
+    ) -> GcpResource:
         return self._insert_resource(
             self.api.globalForwardingRules(),
             {
@@ -260,7 +258,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 'loadBalancingScheme':
                     'INTERNAL_SELF_MANAGED',  # Traffic Director
                 'portRange': src_port,
-                'IPAddress': ip_address,
+                'IPAddress': '0.0.0.0',
                 'network': network_url,
                 'target': target_proxy.url,
             })
