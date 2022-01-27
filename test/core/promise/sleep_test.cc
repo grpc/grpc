@@ -27,9 +27,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
-using testing::MockFunction;
-using testing::StrictMock;
-
 namespace grpc_core {
 namespace {
 
