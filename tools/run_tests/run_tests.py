@@ -1328,11 +1328,6 @@ argp.add_argument('-p',
                   default=100.0,
                   type=percent_type,
                   help='Run a random sample with that percentage of tests')
-argp.add_argument('-f',
-                  '--forever',
-                  default=False,
-                  action='store_const',
-                  const=True)
 argp.add_argument(
     '-t',
     '--travis',
@@ -1669,7 +1664,6 @@ post_tests_steps = list(
         for l in languages
         for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
-forever = args.forever
 
 
 def _shut_down_legacy_server(legacy_server_port):
@@ -1860,37 +1854,19 @@ def _build_and_run(check_cancelled,
     return out
 
 
-if forever:
-    success = True
-    while True:
-        dw = watch_dirs.DirWatcher(['src', 'include', 'test', 'examples'])
-        initial_time = dw.most_recent_change()
-        have_files_changed = lambda: dw.most_recent_change() != initial_time
-        previous_success = success
-        errors = _build_and_run(check_cancelled=have_files_changed,
-                                newline_on_success=False,
-                                build_only=args.build_only) == 0
-        if not previous_success and not errors:
-            jobset.message('SUCCESS',
-                           'All tests are now passing properly',
-                           do_newline=True)
-        jobset.message('IDLE', 'No change detected')
-        while not have_files_changed():
-            time.sleep(1)
+errors = _build_and_run(check_cancelled=lambda: False,
+                        newline_on_success=args.newline_on_success,
+                        xml_report=args.xml_report,
+                        build_only=args.build_only)
+if not errors:
+    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 else:
-    errors = _build_and_run(check_cancelled=lambda: False,
-                            newline_on_success=args.newline_on_success,
-                            xml_report=args.xml_report,
-                            build_only=args.build_only)
-    if not errors:
-        jobset.message('SUCCESS', 'All tests passed', do_newline=True)
-    else:
-        jobset.message('FAILED', 'Some tests failed', do_newline=True)
-    exit_code = 0
-    if BuildAndRunError.BUILD in errors:
-        exit_code |= 1
-    if BuildAndRunError.TEST in errors:
-        exit_code |= 2
-    if BuildAndRunError.POST_TEST in errors:
-        exit_code |= 4
-    sys.exit(exit_code)
+    jobset.message('FAILED', 'Some tests failed', do_newline=True)
+exit_code = 0
+if BuildAndRunError.BUILD in errors:
+    exit_code |= 1
+if BuildAndRunError.TEST in errors:
+    exit_code |= 2
+if BuildAndRunError.POST_TEST in errors:
+    exit_code |= 4
+sys.exit(exit_code)
