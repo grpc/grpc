@@ -54,6 +54,7 @@ cp -r reports/ /var/local/report_dir
 find . -name report.xml -print0 | xargs -0 -r cp --parents -t /var/local/report_dir
 find . -name sponge_log.xml -print0 | xargs -0 -r cp --parents -t /var/local/report_dir
 find . -name 'report_*.xml' | xargs -0 -r cp --parents -t /var/local/report_dir
+chmod -R ugo+r /var/local/report_dir || true
 
 # Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
 if [ "${OUTPUT_DIR}" != "" ]
@@ -61,6 +62,7 @@ then
   # create the directory if it doesn't exist yet.
   mkdir -p "${OUTPUT_DIR}"
   mv "${OUTPUT_DIR}" /var/local/output_dir || exit_code=$?
+  chmod -R ugo+r /var/local/output_dir || true
 fi
 
 if [ -x "$(command -v ccache)" ]
