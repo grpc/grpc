@@ -32,7 +32,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util_base",
-    testonly = True,
     srcs = [
         "cmdline.cc",
         "fuzzer_util.cc",
@@ -94,7 +93,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util",
-    testonly = True,
     srcs = ["tls_utils.cc"],
     hdrs = ["tls_utils.h"],
     language = "C++",
@@ -106,7 +104,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util_unsecure",
-    testonly = True,
     srcs = [],
     hdrs = [],
     language = "C++",

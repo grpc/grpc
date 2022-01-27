@@ -35,7 +35,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "event_engine_test_suite",
-    testonly = 1,
+    testonly = True,
     srcs = [
         "test_suite/event_engine_test.cc",
         "test_suite/timer_test.cc",
@@ -55,7 +55,6 @@ grpc_cc_library(
 
 cc_library(
     name = "event_engine_test_init_base",
-    testonly = True,
     textual_hdrs = [
         "test_init.h",
     ],
@@ -63,7 +62,6 @@ cc_library(
 
 grpc_cc_library(
     name = "libuv_event_engine_test_init",
-    testonly = 1,
     srcs = ["libuv_event_engine_test_init.cc"],
     language = "C++",
     deps = [
