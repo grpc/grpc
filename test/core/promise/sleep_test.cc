@@ -39,12 +39,11 @@ TEST(Sleep, Zzzz) {
   absl::Notification done;
   grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
   // Sleep for one second then set done to true.
-  auto activity =
-      MakeActivity(Seq(Sleep(done_time), [] { return absl::OkStatus(); }),
-                   InlineWakeupScheduler(), [&done](absl::Status r) {
-                     EXPECT_EQ(r, absl::OkStatus());
-                     done.Notify();
-                   });
+  auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
+                               [&done](absl::Status r) {
+                                 EXPECT_EQ(r, absl::OkStatus());
+                                 done.Notify();
+                               });
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(ExecCtx::Get()->Now(), done_time);
@@ -57,13 +56,12 @@ TEST(Sleep, Cancel) {
   absl::Notification done;
   grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
   // Sleep for one second but race it to complete immediately
-  auto activity =
-      MakeActivity(Seq(Race(Sleep(done_time), [] { return Sleep::Done{}; }),
-                       [] { return absl::OkStatus(); }),
-                   InlineWakeupScheduler(), [&done](absl::Status r) {
-                     EXPECT_EQ(r, absl::OkStatus());
-                     done.Notify();
-                   });
+  auto activity = MakeActivity(
+      Race(Sleep(done_time), [] { return absl::CancelledError(); }),
+      InlineWakeupScheduler(), [&done](absl::Status r) {
+        EXPECT_EQ(r, absl::CancelledError());
+        done.Notify();
+      });
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_LT(ExecCtx::Get()->Now(), done_time);

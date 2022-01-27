@@ -37,8 +37,7 @@ class Sleep {
     return *this;
   }
 
-  struct Done {};
-  Poll<Done> operator()();
+  Poll<absl::Status> operator()();
 
  private:
   static void OnTimer(void* arg, grpc_error_handle error);

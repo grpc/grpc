@@ -41,12 +41,12 @@ void Sleep::OnTimer(void* arg, grpc_error_handle error) {
   state->Unref();
 }
 
-Poll<Sleep::Done> Sleep::operator()() {
+Poll<absl::Status> Sleep::operator()() {
   MutexLock lock(&state_->mu);
   switch (state_->stage) {
     case Stage::kInitial:
       if (state_->deadline <= grpc_core::ExecCtx::Get()->Now()) {
-        return Done{};
+        return absl::OkStatus();
       }
       state_->stage = Stage::kStarted;
       grpc_timer_init(&state_->timer, state_->deadline, &state_->on_timer);
@@ -54,7 +54,7 @@ Poll<Sleep::Done> Sleep::operator()() {
     case Stage::kStarted:
       break;
     case Stage::kDone:
-      return Done{};
+      return absl::OkStatus();
   }
   state_->waker = Activity::current()->MakeNonOwningWaker();
   return Pending{};
