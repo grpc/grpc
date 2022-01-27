@@ -49,11 +49,11 @@ ${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
 
 # copy reports/ dir and files matching one of the patterns to the well-known
 # location of report dir mounted to the docker container.
-# --parent preserves the directory structure for files matched by find.
+# --parents preserves the directory structure for files matched by find.
 cp -r reports/ /var/local/report_dir
-find . -name report.xml -print0 | xargs -0 -r cp --parents -t /var/local/report_dir
-find . -name sponge_log.xml -print0 | xargs -0 -r cp --parents -t /var/local/report_dir
-find . -name 'report_*.xml' | xargs -0 -r cp --parents -t /var/local/report_dir
+find . -name report.xml -exec cp --parents {} /var/local/report_dir \;
+find . -name sponge_log.xml -exec cp --parents {} /var/local/report_dir \;
+find . -name 'report_*.xml' -exec cp --parents {} /var/local/report_dir \;
 chmod -R ugo+r /var/local/report_dir || true
 
 # Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
