@@ -14,29 +14,14 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM php:7.3-zts-stretch
+  FROM debian:11
   
-  RUN apt-get update && apt-get install -y ${'\\'}
-    autoconf automake build-essential git libtool curl ${'\\'}
-    zlib1g-dev ${'\\'}
-    && apt-get clean
-
-  # install php pthreads from source
-  # TODO(jtattermusch): is this really needed?
-  # See https://github.com/grpc/grpc/pull/23056
-  WORKDIR /tmp
-  RUN git clone https://github.com/krakjoe/pthreads
-  RUN cd pthreads && ${'\\'}
-    phpize && ${'\\'}
-    ./configure && ${'\\'}
-    make && ${'\\'}
-    make install
-
+  <%include file="../../apt_get_basic.include"/>
   <%include file="../../run_tests_python_deps.include"/>
-  <%include file="../../php_common_deps.include"/>
+  <%include file="../../php7_deps.include"/>
+  <%include file="../../php_valgrind.include"/>
+  <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
-
-  RUN python3 -m pip install virtualenv==16.7.9
-
   # Define the default command.
   CMD ["bash"]
