@@ -40,7 +40,7 @@ Sleep::~Sleep() {
   state_->Unref();
 }
 
-void Sleep::OnTimer(void* arg, grpc_error_handle error) {
+void Sleep::OnTimer(void* arg, grpc_error_handle) {
   auto* state = static_cast<State*>(arg);
   Waker waker;
   {
