@@ -305,6 +305,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     base_lib_dep = ":" + base_lib_name
     native.cc_library(
         name = base_lib_name,
+        testonly = True,
         srcs = srcs,
         deps = deps + _get_external_deps(external_deps),
         copts = GRPC_DEFAULT_COPTS + copts,
