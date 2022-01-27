@@ -337,9 +337,10 @@ def main(argv):
     compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
     leakedHealthChecks = []
     for item in compute.list_health_check()['items']:
-        if datetime.datetime.fromisoformat(item['creationTimestamp']) <= get_expire_timestamp():
+        if datetime.datetime.fromisoformat(
+                item['creationTimestamp']) <= get_expire_timestamp():
             leakedHealthChecks.append(item)
-    
+
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedHealthChecks)
 
