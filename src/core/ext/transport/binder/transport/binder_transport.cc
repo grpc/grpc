@@ -689,7 +689,6 @@ static grpc_endpoint* get_endpoint(grpc_transport*) {
 static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
                                              "binder",
                                              init_stream,
-                                             nullptr,
                                              set_pollset,
                                              set_pollset_set,
                                              perform_stream_op,

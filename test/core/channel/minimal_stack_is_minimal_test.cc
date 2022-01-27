@@ -126,20 +126,22 @@ static int check_stack(const char* file, int line, const char* transport_name,
                        grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...) {
   // create phony channel stack
-  grpc_core::ChannelStackBuilder builder("test");
+  grpc_channel_stack_builder* builder =
+      grpc_channel_stack_builder_create("test");
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
   grpc_transport fake_transport = {&fake_transport_vtable};
+  grpc_channel_stack_builder_set_target(builder, "foo.test.google.fr");
   grpc_channel_args* channel_args = grpc_channel_args_copy(init_args);
-  builder.SetTarget("foo.test.google.fr").SetChannelArgs(channel_args);
   if (transport_name != nullptr) {
-    builder.SetTransport(&fake_transport);
+    grpc_channel_stack_builder_set_transport(builder, &fake_transport);
   }
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_channel_stack_builder_set_channel_arguments(builder, channel_args);
     GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-        &builder, (grpc_channel_stack_type)channel_stack_type));
+        builder, (grpc_channel_stack_type)channel_stack_type));
   }
 
   // build up our expectation list
@@ -156,12 +158,15 @@ static int check_stack(const char* file, int line, const char* transport_name,
 
   // build up our "got" list
   parts.clear();
-  for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry.filter->name;
+  grpc_channel_stack_builder_iterator* it =
+      grpc_channel_stack_builder_create_iterator_at_first(builder);
+  while (grpc_channel_stack_builder_move_next(it)) {
+    const char* name = grpc_channel_stack_builder_iterator_filter_name(it);
     if (name == nullptr) continue;
     parts.push_back(name);
   }
   std::string got = absl::StrJoin(parts, ", ");
+  grpc_channel_stack_builder_iterator_destroy(it);
 
   // figure out result, log if there's an error
   int result = 0;
@@ -201,6 +206,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
 
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_channel_stack_builder_destroy(builder);
     grpc_channel_args_destroy(channel_args);
   }
 

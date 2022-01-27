@@ -132,7 +132,6 @@ static void clr_start_transport_stream_op_batch(
 
 const grpc_channel_filter grpc_client_load_reporting_filter = {
     clr_start_transport_stream_op_batch,
-    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     clr_init_call_elem,

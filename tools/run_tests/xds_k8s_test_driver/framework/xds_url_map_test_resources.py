@@ -43,6 +43,9 @@ UrlMapType = Any
 HostRule = Any
 PathMatcher = Any
 
+_BackendHTTP2 = gcp.compute.ComputeV1.BackendServiceProtocol.HTTP2
+_COMPUTE_V1_URL_PREFIX = 'https://www.googleapis.com/compute/v1'
+
 
 class _UrlMapChangeAggregator:
     """Where all the urlMap change happens."""

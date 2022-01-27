@@ -36,7 +36,6 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
@@ -270,7 +269,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
     gpr_free(prev);
   }
   Unref();
-  delete r;
+  grpc_credentials_metadata_request_destroy(r);
 }
 
 bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
@@ -316,8 +315,8 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
   gpr_mu_unlock(&mu_);
   if (start_fetch) {
     Ref().release();
-    fetch_oauth2(new grpc_credentials_metadata_request(this->Ref()), &pollent_,
-                 on_oauth2_token_fetcher_http_response,
+    fetch_oauth2(grpc_credentials_metadata_request_create(this->Ref()),
+                 &pollent_, on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
   return false;
@@ -381,26 +380,21 @@ class grpc_compute_engine_token_fetcher_credentials
                     grpc_millis deadline) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
-    grpc_http_request request;
-    memset(&request, 0, sizeof(grpc_http_request));
-    request.hdr_count = 1;
-    request.hdrs = &header;
+    grpc_httpcli_request request;
+    memset(&request, 0, sizeof(grpc_httpcli_request));
+    request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_HOST);
+    request.http.path =
+        const_cast<char*>(GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH);
+    request.http.hdr_count = 1;
+    request.http.hdrs = &header;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
-                                      GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
-                                      {} /* query params */, "" /* fragment */);
-    GPR_ASSERT(uri.ok());  // params are hardcoded
-    http_request_ = grpc_core::HttpRequest::Get(
-        std::move(*uri), nullptr /* channel args */, pollent, &request,
-        deadline,
-        GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb, metadata_req,
-                          grpc_schedule_on_exec_ctx),
-        &metadata_req->response,
-        grpc_core::RefCountedPtr<grpc_channel_credentials>(
-            grpc_insecure_credentials_create()));
-    http_request_->Start();
+    grpc_httpcli_get(pollent, grpc_core::ResourceQuota::Default(), &request,
+                     deadline,
+                     GRPC_CLOSURE_INIT(&http_get_cb_closure_, response_cb,
+                                       metadata_req, grpc_schedule_on_exec_ctx),
+                     &metadata_req->response);
   }
 
   std::string debug_string() override {
@@ -411,7 +405,6 @@ class grpc_compute_engine_token_fetcher_credentials
 
  private:
   grpc_closure http_get_cb_closure_;
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request_;
 };
 
 }  // namespace
@@ -442,28 +435,24 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   grpc_http_header header = {
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
-  grpc_http_request request;
+  grpc_httpcli_request request;
   std::string body = absl::StrFormat(
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING, refresh_token_.client_id,
       refresh_token_.client_secret, refresh_token_.refresh_token);
-  memset(&request, 0, sizeof(grpc_http_request));
-  request.hdr_count = 1;
-  request.hdrs = &header;
-  request.body = const_cast<char*>(body.c_str());
-  request.body_length = body.size();
+  memset(&request, 0, sizeof(grpc_httpcli_request));
+  request.host = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_HOST);
+  request.http.path = const_cast<char*>(GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH);
+  request.http.hdr_count = 1;
+  request.http.hdrs = &header;
+  request.handshaker = &grpc_httpcli_ssl;
   /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
-                                    GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
-                                    {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());  // params are hardcoded
-  http_request_ = grpc_core::HttpRequest::Post(
-      std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
-      GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
-                        grpc_schedule_on_exec_ctx),
-      &metadata_req->response, grpc_core::CreateHttpRequestSSLCredentials());
-  http_request_->Start();
+  grpc_httpcli_post(pollent, grpc_core::ResourceQuota::Default(), &request,
+                    body.c_str(), body.size(), deadline,
+                    GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb,
+                                      metadata_req, grpc_schedule_on_exec_ctx),
+                    &metadata_req->response);
 }
 
 grpc_google_refresh_token_credentials::grpc_google_refresh_token_credentials(
@@ -564,9 +553,9 @@ class StsTokenFetcherCredentials
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
                     grpc_millis deadline) override {
-    grpc_http_request request;
-    memset(&request, 0, sizeof(grpc_http_request));
-    grpc_error_handle err = FillBody(&request.body, &request.body_length);
+    char* body = nullptr;
+    size_t body_length = 0;
+    grpc_error_handle err = FillBody(&body, &body_length);
     if (err != GRPC_ERROR_NONE) {
       response_cb(metadata_req, err);
       GRPC_ERROR_UNREF(err);
@@ -575,25 +564,25 @@ class StsTokenFetcherCredentials
     grpc_http_header header = {
         const_cast<char*>("Content-Type"),
         const_cast<char*>("application/x-www-form-urlencoded")};
-    request.hdr_count = 1;
-    request.hdrs = &header;
+    grpc_httpcli_request request;
+    memset(&request, 0, sizeof(grpc_httpcli_request));
+    request.host = const_cast<char*>(sts_url_.authority().c_str());
+    request.http.path = const_cast<char*>(sts_url_.path().c_str());
+    request.http.hdr_count = 1;
+    request.http.hdrs = &header;
+    request.handshaker = (sts_url_.scheme() == "https")
+                             ? &grpc_httpcli_ssl
+                             : &grpc_httpcli_plaintext;
     /* TODO(ctiller): Carry the memory quota in ctx and share it with the host
        channel. This would allow us to cancel an authentication query when under
        extreme memory pressure. */
-    RefCountedPtr<grpc_channel_credentials> http_request_creds;
-    if (sts_url_.scheme() == "http") {
-      http_request_creds = RefCountedPtr<grpc_channel_credentials>(
-          grpc_insecure_credentials_create());
-    } else {
-      http_request_creds = CreateHttpRequestSSLCredentials();
-    }
-    http_request_ = HttpRequest::Post(
-        sts_url_, nullptr /* channel args */, pollent, &request, deadline,
+    grpc_httpcli_post(
+        pollent, ResourceQuota::Default(), &request, body, body_length,
+        deadline,
         GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
                           grpc_schedule_on_exec_ctx),
-        &metadata_req->response, std::move(http_request_creds));
-    http_request_->Start();
-    gpr_free(request.body);
+        &metadata_req->response);
+    gpr_free(body);
   }
 
   grpc_error_handle FillBody(char** body, size_t* body_length) {
@@ -648,7 +637,6 @@ class StsTokenFetcherCredentials
   UniquePtr<char> subject_token_type_;
   UniquePtr<char> actor_token_path_;
   UniquePtr<char> actor_token_type_;
-  OrphanablePtr<HttpRequest> http_request_;
 };
 
 }  // namespace

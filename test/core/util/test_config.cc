@@ -37,7 +37,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/surface/init.h"
-#include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
 
@@ -92,7 +91,6 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 }
 
 void grpc_test_init(int /*argc*/, char** argv) {
-  grpc_event_engine::experimental::InitializeTestingEventEngineFactory();
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);

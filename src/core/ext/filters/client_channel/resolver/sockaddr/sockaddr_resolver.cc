@@ -91,10 +91,6 @@ bool ParseUri(const URI& uri,
   // Construct addresses.
   bool errors_found = false;
   for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
-    if (ith_path.empty()) {
-      // Skip targets which are empty.
-      continue;
-    }
     auto ith_uri = URI::Create(uri.scheme(), "", std::string(ith_path), {}, "");
     grpc_resolved_address addr;
     if (!ith_uri.ok() || !parse(*ith_uri, &addr)) {

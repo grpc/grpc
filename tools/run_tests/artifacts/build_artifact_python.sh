@@ -21,10 +21,6 @@ export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
-# activate ccache if desired
-# shellcheck disable=SC1091
-source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
-
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade wheel
 

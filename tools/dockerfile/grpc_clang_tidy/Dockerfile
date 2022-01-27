@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:bullseye
 
 # Install clang-tidy 11
 RUN apt-get update && apt-get install -y clang-tidy-11 jq git

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM debian:buster
 
 #=================
 # Basic C core dependencies
@@ -97,29 +97,8 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
 
-#=================
-# Install cmake
-# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
-
-RUN apt-get update && apt-get install -y cmake && apt-get clean
-
-#=================
-# Install ccache
-
-# Install ccache from source since ccache 3.x packaged with most linux distributions
-# does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
-    && tar -zxf ccache.tar.gz \
-    && cd ccache-4.5.1 \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
-    && make -j4 && make install \
-    && cd ../.. \
-    && rm -rf ccache-4.5.1 ccache.tar.gz
-
 
 RUN mkdir /var/local/jenkins
-
 
 # Define the default command.
 CMD ["bash"]

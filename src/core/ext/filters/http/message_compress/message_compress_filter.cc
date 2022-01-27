@@ -443,7 +443,6 @@ void CompressDestroyChannelElem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_message_compress_filter = {
     CompressStartTransportStreamOpBatch,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CompressInitCallElem,

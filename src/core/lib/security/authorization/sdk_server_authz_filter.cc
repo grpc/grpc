@@ -159,7 +159,6 @@ void SdkServerAuthzFilter::CallData::RecvInitialMetadataReady(
 
 const grpc_channel_filter SdkServerAuthzFilter::kFilterVtable = {
     SdkServerAuthzFilter::CallData::StartTransportStreamOpBatch,
-    nullptr,
     grpc_channel_next_op,
     sizeof(SdkServerAuthzFilter::CallData),
     SdkServerAuthzFilter::CallData::Init,

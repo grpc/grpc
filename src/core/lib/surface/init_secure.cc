@@ -38,13 +38,14 @@
 void grpc_security_pre_init(void) {}
 
 static bool maybe_prepend_client_auth_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
+    grpc_channel_stack_builder* builder) {
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
-        builder->PrependFilter(&grpc_client_auth_filter, nullptr);
-        break;
+        return grpc_channel_stack_builder_prepend_filter(
+            builder, &grpc_client_auth_filter, nullptr, nullptr);
       }
     }
   }
@@ -52,13 +53,14 @@ static bool maybe_prepend_client_auth_filter(
 }
 
 static bool maybe_prepend_server_auth_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
+    grpc_channel_stack_builder* builder) {
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(GRPC_SERVER_CREDENTIALS_ARG, args->args[i].key)) {
-        builder->PrependFilter(&grpc_server_auth_filter, nullptr);
-        break;
+        return grpc_channel_stack_builder_prepend_filter(
+            builder, &grpc_server_auth_filter, nullptr, nullptr);
       }
     }
   }
@@ -66,14 +68,16 @@ static bool maybe_prepend_server_auth_filter(
 }
 
 static bool maybe_prepend_sdk_server_authz_filter(
-    grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
+    grpc_channel_stack_builder* builder) {
+  const grpc_channel_args* args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
   const auto* provider =
       grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
           args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
   if (provider != nullptr) {
-    builder->PrependFilter(&grpc_core::SdkServerAuthzFilter::kFilterVtable,
-                           nullptr);
+    return grpc_channel_stack_builder_prepend_filter(
+        builder, &grpc_core::SdkServerAuthzFilter::kFilterVtable, nullptr,
+        nullptr);
   }
   return true;
 }

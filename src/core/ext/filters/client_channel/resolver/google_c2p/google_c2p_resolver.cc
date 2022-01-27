@@ -24,7 +24,6 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 namespace grpc_core {
@@ -62,8 +61,7 @@ class GoogleCloud2ProdResolver : public Resolver {
                         grpc_error_handle error) = 0;
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
-    OrphanablePtr<HttpRequest> http_request_;
-    grpc_http_response response_;
+    grpc_httpcli_response response_;
     grpc_closure on_done_;
     std::atomic<bool> on_done_called_{false};
   };
@@ -96,7 +94,6 @@ class GoogleCloud2ProdResolver : public Resolver {
   void IPv6QueryDone(bool ipv6_supported);
   void StartXdsResolver();
 
-  ResourceQuotaRefPtr resource_quota_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_polling_entity pollent_;
   bool using_dns_ = false;
@@ -120,26 +117,18 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
   // Start HTTP request.
   GRPC_CLOSURE_INIT(&on_done_, OnHttpRequestDone, this, nullptr);
   Ref().release();  // Ref held by callback.
-  grpc_http_request request;
-  memset(&request, 0, sizeof(grpc_http_request));
+  grpc_httpcli_request request;
+  memset(&request, 0, sizeof(grpc_httpcli_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                              const_cast<char*>("Google")};
-  request.hdr_count = 1;
-  request.hdrs = &header;
-  auto uri = URI::Create("http", "metadata.google.internal.", path,
-                         {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());  // params are hardcoded
-  grpc_arg resource_quota_arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
-      resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
-  grpc_channel_args args = {1, &resource_quota_arg};
-  http_request_ =
-      HttpRequest::Get(std::move(*uri), &args, pollent, &request,
-                       ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                       &on_done_, &response_,
-                       RefCountedPtr<grpc_channel_credentials>(
-                           grpc_insecure_credentials_create()));
-  http_request_->Start();
+  request.host = const_cast<char*>("metadata.google.internal");
+  request.http.path = const_cast<char*>(path);
+  request.http.hdr_count = 1;
+  request.http.hdrs = &header;
+  // TODO(ctiller): share the quota from whomever instantiates this!
+  grpc_httpcli_get(pollent, ResourceQuota::Default(), &request,
+                   ExecCtx::Get()->Now() + 10000,  // 10s timeout
+                   &on_done_, &response_);
 }
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {
@@ -238,8 +227,7 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
 //
 
 GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
-    : resource_quota_(ResourceQuotaFromChannelArgs(args.args)),
-      work_serializer_(std::move(args.work_serializer)),
+    : work_serializer_(std::move(args.work_serializer)),
       pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)) {
   absl::string_view name_to_resolve = absl::StripPrefix(args.uri.path(), "/");
   // If we're not running on GCP, we can't use DirectPath, so delegate

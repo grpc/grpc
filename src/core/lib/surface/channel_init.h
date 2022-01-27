@@ -33,15 +33,15 @@
 /// It also provides a universal entry path to run those mutators to build
 /// a channel stack for various subsystems.
 
-namespace grpc_core {
+typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
 
-class ChannelStackBuilder;
+namespace grpc_core {
 
 class ChannelInit {
  public:
   /// One stage of mutation: call functions against \a builder to influence the
   /// finally constructed channel stack
-  using Stage = std::function<bool(ChannelStackBuilder* builder)>;
+  using Stage = std::function<bool(grpc_channel_stack_builder* builder)>;
 
   class Builder {
    public:
@@ -74,7 +74,7 @@ class ChannelInit {
   /// Construct a channel stack of some sort: see channel_stack.h for details
   /// \a type is the type of channel stack to create
   /// \a builder is the channel stack builder to build into.
-  bool CreateStack(ChannelStackBuilder* builder,
+  bool CreateStack(grpc_channel_stack_builder* builder,
                    grpc_channel_stack_type type) const;
 
  private:

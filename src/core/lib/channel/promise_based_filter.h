@@ -34,6 +34,59 @@
 namespace grpc_core {
 
 namespace promise_filter_detail {
+class BaseCallData;
+};
+
+// Small unowned "handle" type to ensure one accessor at a time to metadata.
+// The focus here is to get promises to use the syntax we'd like - we'll
+// probably substitute some other smart pointer later.
+template <typename T>
+class MetadataHandle {
+ public:
+  MetadataHandle() = default;
+
+  MetadataHandle(const MetadataHandle&) = delete;
+  MetadataHandle& operator=(const MetadataHandle&) = delete;
+
+  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
+    other.handle_ = nullptr;
+  }
+  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+
+  T* operator->() const { return handle_; }
+  bool has_value() const { return handle_ != nullptr; }
+
+  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
+
+ private:
+  friend class promise_filter_detail::BaseCallData;
+
+  explicit MetadataHandle(T* handle) : handle_(handle) {}
+  T* Unwrap() {
+    T* result = handle_;
+    handle_ = nullptr;
+    return result;
+  }
+
+  T* handle_ = nullptr;
+};
+
+// Trailing metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+
+using NextPromiseFactory =
+    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+
+namespace promise_filter_detail {
 
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData {
@@ -402,13 +455,6 @@ grpc_channel_filter MakePromiseBasedFilter() {
       // start_transport_stream_op_batch
       [](grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
         static_cast<CallData*>(elem->call_data)->StartBatch(batch);
-      },
-      // make_call_promise
-      [](grpc_channel_element* elem, ClientInitialMetadata initial_metadata,
-         NextPromiseFactory next_promise_factory) {
-        return static_cast<ChannelFilter*>(elem->channel_data)
-            ->MakeCallPromise(std::move(initial_metadata),
-                              std::move(next_promise_factory));
       },
       // start_transport_op - for now unsupported
       grpc_channel_next_op,

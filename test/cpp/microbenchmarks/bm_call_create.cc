@@ -384,13 +384,17 @@ void DestroyChannelElem(grpc_channel_element* /*elem*/) {}
 void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
-static const grpc_channel_filter phony_filter = {
-    StartTransportStreamOp, nullptr,
-    StartTransportOp,       0,
-    InitCallElem,           SetPollsetOrPollsetSet,
-    DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "phony_filter"};
+static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
+                                                 StartTransportOp,
+                                                 0,
+                                                 InitCallElem,
+                                                 SetPollsetOrPollsetSet,
+                                                 DestroyCallElem,
+                                                 0,
+                                                 InitChannelElem,
+                                                 DestroyChannelElem,
+                                                 GetChannelInfo,
+                                                 "phony_filter"};
 
 }  // namespace phony_filter
 
@@ -437,17 +441,11 @@ void Destroy(grpc_transport* /*self*/) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* /*self*/) { return nullptr; }
 
-static const grpc_transport_vtable phony_transport_vtable = {0,
-                                                             "phony_http2",
-                                                             InitStream,
-                                                             nullptr,
-                                                             SetPollset,
-                                                             SetPollsetSet,
-                                                             PerformStreamOp,
-                                                             PerformOp,
-                                                             DestroyStream,
-                                                             Destroy,
-                                                             GetEndpoint};
+static const grpc_transport_vtable phony_transport_vtable = {
+    0,          "phony_http2", InitStream,
+    SetPollset, SetPollsetSet, PerformStreamOp,
+    PerformOp,  DestroyStream, Destroy,
+    GetEndpoint};
 
 static grpc_transport phony_transport = {&phony_transport_vtable};
 
@@ -684,12 +682,17 @@ void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
 static const grpc_channel_filter isolated_call_filter = {
-    StartTransportStreamOp, nullptr,
-    StartTransportOp,       sizeof(call_data),
-    InitCallElem,           SetPollsetOrPollsetSet,
-    DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "isolated_call_filter"};
+    StartTransportStreamOp,
+    StartTransportOp,
+    sizeof(call_data),
+    InitCallElem,
+    SetPollsetOrPollsetSet,
+    DestroyCallElem,
+    0,
+    InitChannelElem,
+    DestroyChannelElem,
+    GetChannelInfo,
+    "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {
@@ -704,13 +707,16 @@ class IsolatedCallFixture : public TrackCounters {
     const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
-    grpc_core::ChannelStackBuilder builder("phony");
-    builder.SetTarget("phony_target");
-    builder.SetChannelArgs(args);
-    builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);
+    grpc_channel_stack_builder* builder =
+        grpc_channel_stack_builder_create("phony");
+    grpc_channel_stack_builder_set_target(builder, "phony_target");
+    grpc_channel_stack_builder_set_channel_arguments(builder, args);
+    GPR_ASSERT(grpc_channel_stack_builder_append_filter(
+        builder, &isolated_call_filter::isolated_call_filter, nullptr,
+        nullptr));
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(&builder, GRPC_CLIENT_CHANNEL,
+      channel_ = grpc_channel_create_with_builder(builder, GRPC_CLIENT_CHANNEL,
                                                   nullptr);
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);

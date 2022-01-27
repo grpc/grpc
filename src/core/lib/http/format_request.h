@@ -25,12 +25,11 @@
 
 #include "src/core/lib/http/httpcli.h"
 
-grpc_slice grpc_httpcli_format_get_request(const grpc_http_request* request,
-                                           const char* host, const char* path);
-grpc_slice grpc_httpcli_format_post_request(const grpc_http_request* request,
-                                            const char* host, const char* path);
-grpc_slice grpc_httpcli_format_connect_request(const grpc_http_request* request,
-                                               const char* host,
-                                               const char* path);
+grpc_slice grpc_httpcli_format_get_request(const grpc_httpcli_request* request);
+grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
+                                            const char* body_bytes,
+                                            size_t body_size);
+grpc_slice grpc_httpcli_format_connect_request(
+    const grpc_httpcli_request* request);
 
 #endif /* GRPC_CORE_LIB_HTTP_FORMAT_REQUEST_H */

@@ -60,7 +60,11 @@ docker run \
   "$@" \
   --cap-add SYS_PTRACE \
   -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
-  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
+  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
+  -e "KOKORO_BUILD_ID=$KOKORO_BUILD_ID" \
+  -e "KOKORO_BUILD_NUMBER=$KOKORO_BUILD_NUMBER" \
+  -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
+  -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -w /var/local/git/grpc \
   --name="$CONTAINER_NAME" \

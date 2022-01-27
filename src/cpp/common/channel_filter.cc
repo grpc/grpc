@@ -71,13 +71,14 @@ void RegisterChannelFilter(
     std::function<bool(const grpc_channel_args&)> include_filter,
     const grpc_channel_filter* filter) {
   auto maybe_add_filter = [include_filter,
-                           filter](grpc_core::ChannelStackBuilder* builder) {
+                           filter](grpc_channel_stack_builder* builder) {
     if (include_filter != nullptr) {
-      const grpc_channel_args* args = builder->channel_args();
+      const grpc_channel_args* args =
+          grpc_channel_stack_builder_get_channel_arguments(builder);
       if (!include_filter(*args)) return true;
     }
-    builder->PrependFilter(filter, nullptr);
-    return true;
+    return grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
+                                                     nullptr);
   };
   grpc_core::CoreConfiguration::RegisterBuilder(
       [stack_type, priority,

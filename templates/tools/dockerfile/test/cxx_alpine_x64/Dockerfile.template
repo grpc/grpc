@@ -51,7 +51,6 @@
 
   RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
-  <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
     
   # Define the default command.

@@ -11,10 +11,6 @@ build:opt --copt=-Wframe-larger-than=16384
 build:dbg --compilation_mode=dbg
 build:dbg --copt=-Werror=return-stack-address
 
-# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
-# https://github.com/bazelbuild/bazel/issues/9190
-build:macos --dynamic_mode=off
-
 build:windows_opt --compilation_mode=opt
 build:windows_dbg --compilation_mode=dbg
 
@@ -61,7 +57,6 @@ build:asan_macos --copt=-fno-omit-frame-pointer
 build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
-build:asan_macos --dynamic_mode=off
 
 build:msan --strip=never
 build:msan --copt=-fsanitize=memory
@@ -83,16 +78,6 @@ build:tsan --linkopt=-fsanitize=thread
 # https://github.com/google/sanitizers/issues/953
 build:tsan --test_env=TSAN_OPTIONS=report_atomic_races=0
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-
-build:tsan_macos --strip=never
-build:tsan_macos --copt=-fsanitize=thread
-build:tsan_macos --copt=-fno-omit-frame-pointer
-build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
-build:tsan_macos --copt=-DGRPC_TSAN
-build:tsan_macos --linkopt=-fsanitize=thread
-build:tsan_macos --test_env=TSAN_OPTIONS=report_atomic_races=0
-build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-build:tsan_macos --dynamic_mode=off
 
 build:ubsan --strip=never
 build:ubsan --copt=-fsanitize=undefined

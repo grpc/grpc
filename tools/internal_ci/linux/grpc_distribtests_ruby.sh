@@ -26,9 +26,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # prerequisites for ruby artifact build on linux
 source tools/internal_ci/helper_scripts/prepare_build_linux_ruby_artifact_rc
 
-# configure ccache
-source tools/internal_ci/helper_scripts/prepare_ccache_rc
-
 # Build all ruby linux artifacts (this step actually builds all the binary wheels and source archives)
 tools/run_tests/task_runner.py -f artifact linux ruby ${TASK_RUNNER_EXTRA_FILTERS} -j 6 --inner_jobs 6 -x build_artifacts/sponge_log.xml || FAILED="true"
 

@@ -87,7 +87,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_common",
-        "//test/core/event_engine:event_engine_test_init_base",
     ],
 )
 
@@ -155,6 +154,11 @@ grpc_cc_test(
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
+)
+
+sh_library(
+    name = "run_with_poller_sh",
+    srcs = ["run_with_poller.sh"],
 )
 
 grpc_cc_library(

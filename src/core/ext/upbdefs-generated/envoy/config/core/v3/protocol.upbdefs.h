@@ -26,11 +26,6 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_TcpProtocolOptions_getmsgdef(u
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.TcpProtocolOptions");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_QuicKeepAliveSettings_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.QuicKeepAliveSettings");
-}
-
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_QuicProtocolOptions_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.QuicProtocolOptions");
@@ -44,11 +39,6 @@ UPB_INLINE const upb_msgdef *envoy_config_core_v3_UpstreamHttpProtocolOptions_ge
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_AlternateProtocolsCacheOptions_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.core.v3.AlternateProtocolsCacheOptions");
-}
-
-UPB_INLINE const upb_msgdef *envoy_config_core_v3_AlternateProtocolsCacheOptions_AlternateProtocolsCacheEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_core_v3_protocol_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.core.v3.AlternateProtocolsCacheOptions.AlternateProtocolsCacheEntry");
 }
 
 UPB_INLINE const upb_msgdef *envoy_config_core_v3_HttpProtocolOptions_getmsgdef(upb_symtab *s) {

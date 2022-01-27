@@ -109,7 +109,6 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
 
 const grpc_channel_filter RbacFilter::kFilterVtable = {
     RbacFilter::CallData::StartTransportStreamOpBatch,
-    nullptr,
     grpc_channel_next_op,
     sizeof(RbacFilter::CallData),
     RbacFilter::CallData::Init,

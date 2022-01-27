@@ -203,7 +203,6 @@ static void connected_channel_get_channel_info(
 
 const grpc_channel_filter grpc_connected_filter = {
     connected_channel_start_transport_stream_op_batch,
-    nullptr,
     connected_channel_start_transport_op,
     sizeof(call_data),
     connected_channel_init_call_elem,
@@ -233,15 +232,11 @@ static void bind_transport(grpc_channel_stack* channel_stack,
       grpc_transport_stream_size(static_cast<grpc_transport*>(t));
 }
 
-bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
-  grpc_transport* t = builder->transport();
+bool grpc_add_connected_filter(grpc_channel_stack_builder* builder) {
+  grpc_transport* t = grpc_channel_stack_builder_get_transport(builder);
   GPR_ASSERT(t != nullptr);
-  builder->AppendFilter(
-      &grpc_connected_filter,
-      [t](grpc_channel_stack* stk, grpc_channel_element* elem) {
-        bind_transport(stk, elem, t);
-      });
-  return true;
+  return grpc_channel_stack_builder_append_filter(
+      builder, &grpc_connected_filter, bind_transport, t);
 }
 
 grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem) {

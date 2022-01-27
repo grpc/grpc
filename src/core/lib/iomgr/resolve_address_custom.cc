@@ -80,7 +80,7 @@ absl::Status TrySplitHostPort(absl::string_view name,
   }
   if (port->empty()) {
     // TODO(murgatroid99): add tests for this case
-    if (default_port.empty()) {
+    if (default_port == nullptr) {
       return absl::UnknownError(absl::StrFormat("no port in name '%s'", name));
     }
     *port = std::string(default_port);

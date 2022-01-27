@@ -16,10 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(
-    name = "test/core/event_engine",
-    visibility = "public",
-)
+grpc_package(name = "test/core/event_engine")
 
 grpc_cc_test(
     name = "endpoint_config_test",
@@ -35,7 +32,7 @@ grpc_cc_test(
 
 grpc_cc_library(
     name = "event_engine_test_suite",
-    testonly = True,
+    testonly = 1,
     srcs = [
         "test_suite/event_engine_test.cc",
         "test_suite/timer_test.cc",
@@ -49,24 +46,4 @@ grpc_cc_library(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
-)
-
-cc_library(
-    name = "event_engine_test_init_base",
-    textual_hdrs = [
-        "test_init.h",
-    ],
-)
-
-grpc_cc_library(
-    name = "libuv_event_engine_test_init",
-    srcs = ["libuv_event_engine_test_init.cc"],
-    language = "C++",
-    deps = [
-        ":event_engine_test_init_base",
-        "//:event_engine_base",
-    ],
-    alwayslink = True,
 )

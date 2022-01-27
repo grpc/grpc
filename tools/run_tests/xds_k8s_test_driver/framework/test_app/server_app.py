@@ -158,6 +158,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     DEFAULT_MAINTENANCE_PORT = 8080
     DEFAULT_SECURE_MODE_MAINTENANCE_PORT = 8081
 
+    _lock = threading.Lock()
+    _server_port_forwarding_offset = 0
+
     def __init__(self,
                  k8s_namespace,
                  *,
@@ -221,7 +224,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
         self.service: Optional[k8s.V1Service] = None
-        self.port_forwarders: List[k8s.PortForwarder] = []
+        self.port_forwarders = []
 
     def run(self,
             *,
@@ -325,13 +328,18 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             # Experimental, for local debugging.
             local_port = maintenance_port
             if self.debug_use_port_forwarding:
-                logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s',
-                            pod_ip, maintenance_port)
-                port_forwarder = self.k8s_namespace.port_forward_pod(
-                    pod, remote_port=maintenance_port)
-                self.port_forwarders.append(port_forwarder)
-                local_port = port_forwarder.local_port
-                rpc_host = port_forwarder.local_address
+                with KubernetesServerRunner._lock:
+                    local_port = maintenance_port + KubernetesServerRunner._server_port_forwarding_offset
+                    KubernetesServerRunner._server_port_forwarding_offset += 1
+                logger.info(
+                    'LOCAL DEV MODE: Enabling port forwarding to %s:%s using local port %s',
+                    pod_ip, maintenance_port, local_port)
+                self.port_forwarders.append(
+                    self.k8s_namespace.port_forward_pod(
+                        pod,
+                        remote_port=maintenance_port,
+                        local_port=local_port))
+                rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
             servers.append(
                 XdsTestServer(ip=pod_ip,
@@ -346,7 +354,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     def cleanup(self, *, force=False, force_namespace=False):
         if self.port_forwarders:
             for port_forwarder in self.port_forwarders:
-                port_forwarder.close()
+                self.k8s_namespace.port_forward_stop(port_forwarder)
             self.port_forwarders = []
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)

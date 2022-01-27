@@ -72,10 +72,6 @@ DOCKER_CLEANUP_ARGS=(
   "--rm=true"
 )
 
-DOCKER_PROPAGATE_ENV_ARGS=(
-  "--env-file=tools/run_tests/dockerize/docker_propagate_env.list" \
-)
-
 # Uncomment to run the docker container as current user's UID and GID.
 # That way, the files written by the container won't be owned by root (=you won't end up with polluted workspace),
 # but it can have some other disadvantages. E.g.:
@@ -92,4 +88,4 @@ set -ex
 
 # Run command inside C# docker container.
 # - the local clone of grpc repository will be mounted as /workspace.
-exec docker run "${DOCKER_TTY_ARGS[@]}" "${DOCKER_PRIVILEGED_ARGS[@]}" "${DOCKER_NETWORK_ARGS[@]}" "${DOCKER_CLEANUP_ARGS[@]}" "${DOCKER_PROPAGATE_ENV_ARGS[@]}" ${DOCKER_EXTRA_ARGS} -v "${grpc_rootdir}":/workspace -w /workspace "${DOCKER_IMAGE}" bash -c "$*"
+exec docker run "${DOCKER_TTY_ARGS[@]}" "${DOCKER_PRIVILEGED_ARGS[@]}" "${DOCKER_NETWORK_ARGS[@]}" "${DOCKER_CLEANUP_ARGS[@]}" ${DOCKER_EXTRA_ARGS} -v "${grpc_rootdir}":/workspace -w /workspace "${DOCKER_IMAGE}" bash -c "$*"

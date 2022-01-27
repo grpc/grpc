@@ -91,18 +91,18 @@ class CSharpPackage:
         del inner_jobs  # arg unused as there is little opportunity for parallelizing
         environ = {
             'GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET':
-                os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET', '')
+                os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET')
         }
         if self.unity:
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/test/csharp_debian11_x64',
+                'tools/dockerfile/test/csharp_buster_x64',
                 'src/csharp/build_unitypackage.sh',
                 environ=environ)
         else:
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/test/csharp_debian11_x64',
+                'tools/dockerfile/test/csharp_buster_x64',
                 'src/csharp/build_nuget.sh',
                 environ=environ)
 

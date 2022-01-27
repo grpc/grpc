@@ -343,9 +343,6 @@
     endif()
   endif()
 
-  # configure ccache if requested
-  include(cmake/ccache.cmake)
-
   include(cmake/abseil-cpp.cmake)
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
@@ -463,7 +460,7 @@
   if(gRPC_BUILD_TESTS)
     add_custom_target(buildtests_c)
     % for tgt in targets:
-    % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl and not '@poller' in tgt.name:
+    % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
     <%block filter='platforms_condition_block(tgt.platforms)'>
     add_dependencies(buildtests_c ${tgt.name})
     </%block>
@@ -472,7 +469,7 @@
 
     add_custom_target(buildtests_cxx)
     % for tgt in targets:
-    % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl and not '@poller' in tgt.name:
+    % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None) and not tgt.boringssl:
     <%block filter='platforms_condition_block(tgt.platforms)'>
     add_dependencies(buildtests_cxx ${tgt.name})
     </%block>
@@ -515,9 +512,6 @@
   % endfor
 
   % for tgt in targets:
-  % if "@poller" in tgt.name:
-      <% continue %>
-  % endif
   % if tgt.build in ["all", "protoc", "tool", "test", "private"] and not tgt.boringssl:
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)

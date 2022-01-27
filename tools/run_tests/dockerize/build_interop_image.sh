@@ -113,7 +113,8 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 # shellcheck disable=SC2086
 (docker run \
   --cap-add SYS_PTRACE \
-  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
+  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
+  -e THIS_IS_REALLY_NEEDED_ONCE_AGAIN='For issue 4835. See https://github.com/docker/docker/issues/14203 for why docker is awful' \
   $DOCKER_TTY_ARGS \
   $MOUNT_ARGS \
   $BUILD_INTEROP_DOCKER_EXTRA_ARGS \
