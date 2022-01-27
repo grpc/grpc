@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_SLEEP_H
 #define GRPC_CORE_LIB_PROMISE_SLEEP_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
@@ -61,4 +63,4 @@ class Sleep {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_SLEEP_H
