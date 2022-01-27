@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -32,7 +31,6 @@ static grpc_custom_timer_vtable* custom_timer_impl;
 
 void grpc_custom_timer_callback(grpc_custom_timer* t,
                                 grpc_error_handle /*error*/) {
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_timer* timer = t->original;
@@ -46,7 +44,6 @@ void grpc_custom_timer_callback(grpc_custom_timer* t,
 static void timer_init(grpc_timer* timer, grpc_millis deadline,
                        grpc_closure* closure) {
   uint64_t timeout;
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= grpc_core::ExecCtx::Get()->Now()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
@@ -66,7 +63,6 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 }
 
 static void timer_cancel(grpc_timer* timer) {
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_custom_timer* tw = static_cast<grpc_custom_timer*>(timer->custom_timer);
   if (timer->pending) {
     timer->pending = false;

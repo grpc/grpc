@@ -20,8 +20,6 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
-#include "src/core/lib/iomgr/timer_manager.h"
-
 grpc_timer_vtable* grpc_timer_impl;
 
 void grpc_set_timer_impl(grpc_timer_vtable* vtable) {

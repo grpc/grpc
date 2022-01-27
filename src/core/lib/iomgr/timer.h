@@ -25,7 +25,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/port.h"
 
 typedef struct grpc_timer {

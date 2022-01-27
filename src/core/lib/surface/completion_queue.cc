@@ -40,6 +40,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"

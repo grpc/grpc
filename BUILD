@@ -1778,6 +1778,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_timer",
+    srcs = [
+        "src/core/lib/iomgr/time_averaged_stats.cc",
+        "src/core/lib/iomgr/timer.cc",
+        "src/core/lib/iomgr/timer_custom.cc",
+        "src/core/lib/iomgr/timer_generic.cc",
+        "src/core/lib/iomgr/timer_heap.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/time_averaged_stats.h",
+        "src/core/lib/iomgr/timer.h",
+        "src/core/lib/iomgr/timer_custom.h",
+        "src/core/lib/iomgr/timer_generic.h",
+        "src/core/lib/iomgr/timer_heap.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base",
+        "exec_ctx",
+        "gpr_base",
+        "gpr_tls",
+        "grpc_trace",
+        "iomgr_port",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1865,11 +1895,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc",
         "src/core/lib/iomgr/tcp_server_windows.cc",
         "src/core/lib/iomgr/tcp_windows.cc",
-        "src/core/lib/iomgr/time_averaged_stats.cc",
-        "src/core/lib/iomgr/timer.cc",
-        "src/core/lib/iomgr/timer_custom.cc",
-        "src/core/lib/iomgr/timer_generic.cc",
-        "src/core/lib/iomgr/timer_heap.cc",
         "src/core/lib/iomgr/timer_manager.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
@@ -2001,11 +2026,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server.h",
         "src/core/lib/iomgr/tcp_server_utils_posix.h",
         "src/core/lib/iomgr/tcp_windows.h",
-        "src/core/lib/iomgr/time_averaged_stats.h",
-        "src/core/lib/iomgr/timer.h",
-        "src/core/lib/iomgr/timer_custom.h",
-        "src/core/lib/iomgr/timer_generic.h",
-        "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
@@ -2052,6 +2072,11 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
+        "src/core/lib/iomgr/time_averaged_stats.h",
+        "src/core/lib/iomgr/timer.h",
+        "src/core/lib/iomgr/timer_custom.h",
+        "src/core/lib/iomgr/timer_generic.h",
+        "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/channel/channel_args.h",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
@@ -2101,6 +2126,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "grpc_trace",
         "iomgr_port",
+        "iomgr_timer",
         "json",
         "memory_quota",
         "orphanable",
