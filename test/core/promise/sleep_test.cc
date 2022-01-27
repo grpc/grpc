@@ -50,6 +50,23 @@ TEST(Sleep, Zzzz) {
   grpc_shutdown();
 }
 
+TEST(Sleep, AlreadyDone) {
+  grpc_init();
+  ExecCtx exec_ctx;
+  absl::Notification done;
+  grpc_millis done_time = ExecCtx::Get()->Now() - 1000;
+  // Sleep for one second then set done to true.
+  auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
+                               [&done](absl::Status r) {
+                                 EXPECT_EQ(r, absl::OkStatus());
+                                 done.Notify();
+                               });
+  done.WaitForNotification();
+  exec_ctx.InvalidateNow();
+  EXPECT_GE(ExecCtx::Get()->Now(), done_time);
+  grpc_shutdown();
+}
+
 TEST(Sleep, Cancel) {
   grpc_init();
   ExecCtx exec_ctx;

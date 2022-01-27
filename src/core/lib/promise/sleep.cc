@@ -24,7 +24,16 @@ Sleep::~Sleep() {
   if (state_ == nullptr) return;
   {
     MutexLock lock(&state_->mu);
-    if (state_->stage == Stage::kStarted) grpc_timer_cancel(&state_->timer);
+    switch (state_->stage) {
+      case Stage::kInitial:
+        state_->Unref();
+        break;
+      case Stage::kStarted:
+        grpc_timer_cancel(&state_->timer);
+        break;
+      case Stage::kDone:
+        break;
+    }
   }
   state_->Unref();
 }
