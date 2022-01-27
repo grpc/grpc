@@ -94,6 +94,19 @@ def max_parallel_tests_for_current_platform():
     return 1024
 
 
+def _print_debug_info_epilogue(dockerfile_dir=None):
+    """Use to print useful info for debug/repro just before exiting."""
+    print('')
+    print('=== run_tests.py DEBUG INFO ===')
+    print('command: \"%s\"' % ' '.join(sys.argv))
+    if dockerfile_dir:
+        print('dockerfile: %s' % dockerfile_dir)
+    kokoro_job_name = os.getenv('KOKORO_JOB_NAME')
+    if kokoro_job_name:
+        print('kokoro job name: %s' % kokoro_job_name)
+    print('===============================')
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
@@ -1576,11 +1589,12 @@ if args.use_docker:
     if args.xml_report:
         env['XML_REPORT'] = args.xml_report
 
-    subprocess.check_call(
+    retcode = subprocess.call(
         'tools/run_tests/dockerize/build_docker_and_run_tests.sh',
         shell=True,
         env=env)
-    sys.exit(0)
+    _print_debug_info_epilogue(dockerfile_dir=dockerfile_dir)
+    sys.exit(retcode)
 
 _check_arch_option(args.arch)
 
@@ -1862,6 +1876,12 @@ if not errors:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 else:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
+
+if not _is_use_docker_child():
+    # if --use_docker was used, the outer invocation of run_tests.py will
+    # print the debug info instead.
+    _print_debug_info_epilogue()
+
 exit_code = 0
 if BuildAndRunError.BUILD in errors:
     exit_code |= 1
