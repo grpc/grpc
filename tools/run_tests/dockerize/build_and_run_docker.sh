@@ -57,6 +57,7 @@ EXTERNAL_GIT_ROOT=/var/local/jenkins/grpc
 # as a way to persist output files.
 # use unique name for the output directory to prevent clash between concurrent
 # runs of multiple docker containers
+TEMP_REPORT_DIR="$(mktemp -d)"
 TEMP_OUTPUT_DIR="$(mktemp -d)"
 
 # Run tests inside docker
@@ -75,23 +76,20 @@ docker run \
   --rm \
   --sysctl net.ipv6.conf.all.disable_ipv6=0 \
   -v "${git_root}:${EXTERNAL_GIT_ROOT}" \
+  -v "${TEMP_REPORT_DIR}:/var/local/report_dir" \
   -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
   -w /var/local/git/grpc \
   "${DOCKER_IMAGE_NAME}" \
   bash -l "/var/local/jenkins/grpc/${DOCKER_RUN_SCRIPT}" || DOCKER_EXIT_CODE=$?
 
+# Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
-  REPORTS_DEST_DIR="${GRPC_TEST_REPORT_BASE_DIR}"
   mkdir -p "${GRPC_TEST_REPORT_BASE_DIR}"
+  cp -r "${TEMP_REPORT_DIR}"/* "${GRPC_TEST_REPORT_BASE_DIR}" || true
 else
-  REPORTS_DEST_DIR="${git_root}"
+  cp -r "${TEMP_REPORT_DIR}"/* "${git_root}" || true
 fi
-
-# reports.zip will be stored by the container after run_tests.py has finished.
-TEMP_REPORTS_ZIP="${TEMP_OUTPUT_DIR}/reports.zip"
-unzip -o "${TEMP_REPORTS_ZIP}" -d "${REPORTS_DEST_DIR}" || true
-rm -f "${TEMP_REPORTS_ZIP}"
 
 # Copy contents of OUTPUT_DIR back under the git repo root
 if [ "${OUTPUT_DIR}" != "" ]

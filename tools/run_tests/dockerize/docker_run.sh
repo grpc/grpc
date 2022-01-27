@@ -47,17 +47,13 @@ cd /var/local/git/grpc
 exit_code=0
 ${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
 
-# TODO(jtattermusch): skip if report extraction isn't desirable (e.g. artifact builds)
-# The easiest way to copy all the reports files from inside of
-# the docker container is to zip them and then copy the zip.
-zip -r reports.zip reports
-find . -name report.xml -print0 | xargs -0 -r zip reports.zip
-find . -name sponge_log.xml -print0 | xargs -0 -r zip reports.zip
-find . -name 'report_*.xml' -print0 | xargs -0 -r zip reports.zip
-
-# copy reports.zip to the well-known output dir mounted to the
-# docker container.
-cp reports.zip /var/local/output_dir
+# copy reports/ dir and files matching one of the patterns to the well-known
+# location of report dir mounted to the docker container.
+# --parent preserves the directory structure for files matched by find.
+cp -r reports/ /var/local/report_dir
+find . -name report.xml -print0 | xargs -0 -r cp --parents -t /var/local/report_dir
+find . -name sponge_log.xml -print0 | xargs -0 -r cp --parents -t /var/local/report_dir
+find . -name 'report_*.xml' | xargs -0 -r cp --parents -t /var/local/report_dir
 
 # Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
 if [ "${OUTPUT_DIR}" != "" ]
