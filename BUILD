@@ -1087,6 +1087,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "gpr_platform",
         "grpc_base",
         "poll",
     ],
