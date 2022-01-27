@@ -120,6 +120,24 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @property(readonly) BOOL retryEnabled;
 
+/**
+ * Maximum interval in seconds between two consecutive retries.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readonly) NSTimeInterval maxRetryInterval;
+
+/**
+ * Minimum interval in seconds between two consecutive retries.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readonly) NSTimeInterval minRetryInterval;
+
+/**
+ * Multiplier used to increase the interval between retries.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readonly) double retryFactor;
+
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the
 // call should wait for PING ACK. If PING ACK is not received after this period, the call fails.
@@ -204,12 +222,6 @@ NS_ASSUME_NONNULL_BEGIN
  * Hash for channel options.
  */
 @property(readonly) NSUInteger channelOptionsHash;
-
-// Parameters for GTMSessionFetcher transport retry policy. This is only for internal users.
-@property(atomic, assign) NSTimeInterval maxRetryInterval;
-@property(atomic, assign) NSTimeInterval minRetryInterval;
-@property(atomic, assign) NSUInteger retryCount;
-@property(atomic, assign) double retryFactor;
 
 @end
 
@@ -313,6 +325,24 @@ NS_ASSUME_NONNULL_BEGIN
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
 @property(readwrite) BOOL retryEnabled;
+
+/**
+ * Maximum interval in seconds between two consecutive retries. Pass 0 to use default.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readwrite) NSTimeInterval maxRetryInterval;
+
+/**
+ * Minimum interval in seconds between two consecutive retries. Pass 0 to use default.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readwrite) NSTimeInterval minRetryInterval;
+
+/**
+ * Multiplier used to increase the interval between retries. Pass 0 to use default.
+ * Internal-only property used for GTMSessionFetcher transport retry policy.
+ */
+@property(readwrite) double retryFactor;
 
 // HTTP/2 keep-alive feature. The parameter \a keepaliveInterval specifies the interval between two
 // PING frames. The parameter \a keepaliveTimeout specifies the length of the period for which the

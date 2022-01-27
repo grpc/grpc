@@ -62,8 +62,8 @@ class WorkSerializer::WorkSerializerImpl : public Orphanable {
   static uint32_t GetOwners(uint64_t ref_pair) {
     return static_cast<uint32_t>(ref_pair >> 48);
   }
-  static uint32_t GetSize(uint64_t ref_pair) {
-    return static_cast<uint32_t>(ref_pair & 0xffffffffffffu);
+  static uint64_t GetSize(uint64_t ref_pair) {
+    return static_cast<uint64_t>(ref_pair & 0xffffffffffffu);
   }
 
   // An initial size of 1 keeps track of whether the work serializer has been
