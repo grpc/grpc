@@ -24,10 +24,10 @@ EVENT_ENGINES = [
         "name": "libuv",
         "tags": [],
     },
-    # {
-    #     "name": "poll",
-    #     "tags": ["no_windows", "no_mac"],
-    # },
+    {
+        "name": "poll",
+        "tags": ["no_windows", "no_mac"],
+    },
 ]
 
 def _fixture_options(

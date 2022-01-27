@@ -19,7 +19,7 @@ extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[4838] = {'\n', '3', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
+static const char descriptor[4927] = {'\n', '3', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 'l', 's', '/', 'v', '3', '/', 't', 'l', 's', '.', 'p', 'r', 
 'o', 't', 'o', '\022', ')', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 
 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '.', 't', 'l', 's', '.', 'v', '3', '\032', '$', 'e', 'n', 
@@ -209,10 +209,14 @@ static const char descriptor[4838] = {'\n', '3', 'e', 'n', 'v', 'o', 'y', '/', '
 ':', ')', '\232', '\305', '\210', '\036', '$', '\n', '\"', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'a', 'u', 't', 
 'h', '.', 'C', 'o', 'm', 'm', 'o', 'n', 'T', 'l', 's', 'C', 'o', 'n', 't', 'e', 'x', 't', 'B', '\031', '\n', '\027', 'v', 'a', 'l', 
 'i', 'd', 'a', 't', 'i', 'o', 'n', '_', 'c', 'o', 'n', 't', 'e', 'x', 't', '_', 't', 'y', 'p', 'e', 'J', '\004', '\010', '\005', '\020', 
-'\006', 'B', 'M', '\n', '7', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 
-'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 
-'e', 't', 's', '.', 't', 'l', 's', '.', 'v', '3', 'B', '\010', 'T', 'l', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', 
-'\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'\006', 'B', '\245', '\001', '\n', '7', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', 
+'.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 
+'k', 'e', 't', 's', '.', 't', 'l', 's', '.', 'v', '3', 'B', '\010', 'T', 'l', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'V', 
+'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 
+'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 
+'s', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 
+'l', 's', '/', 'v', '3', ';', 't', 'l', 's', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 
+'o', '3', 
 };
 
 static upb_def_init *deps[10] = {
@@ -232,5 +236,5 @@ upb_def_init envoy_extensions_transport_sockets_tls_v3_tls_proto_upbdefinit = {
   deps,
   &envoy_extensions_transport_sockets_tls_v3_tls_proto_upb_file_layout,
   "envoy/extensions/transport_sockets/tls/v3/tls.proto",
-  UPB_STRVIEW_INIT(descriptor, 4838)
+  UPB_STRVIEW_INIT(descriptor, 4927)
 };

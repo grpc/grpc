@@ -34,7 +34,6 @@ TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetPath(), nullptr);
   EXPECT_EQ(args.GetMethod(), nullptr);
-  EXPECT_EQ(args.GetHost(), nullptr);
   EXPECT_EQ(args.GetAuthority(), nullptr);
   EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
@@ -43,12 +42,6 @@ TEST_F(EvaluateArgsTest, GetPathSuccess) {
   util_.AddPairToMetadata(":path", "/expected/path");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetPath(), "/expected/path");
-}
-
-TEST_F(EvaluateArgsTest, GetHostSuccess) {
-  util_.AddPairToMetadata("host", "host123");
-  EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetHost(), "host123");
 }
 
 TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {

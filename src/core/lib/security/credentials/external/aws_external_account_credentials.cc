@@ -22,6 +22,7 @@
 #include "absl/strings/str_replace.h"
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 
 namespace grpc_core {
 
@@ -160,18 +161,24 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
                 "Invalid region url. %s", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
-  grpc_httpcli_get(ctx_->pollent, ResourceQuota::Default(), &request,
-                   ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_http_request_destroy(&request.http);
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (uri->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRegion(void* arg,
@@ -206,19 +213,25 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
                 absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
-  grpc_httpcli_get(ctx_->pollent, ResourceQuota::Default(), &request,
-                   ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_http_request_destroy(&request.http);
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (uri->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRoleName(
@@ -265,19 +278,25 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
                 "Invalid url with role name: %s.", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
-  grpc_httpcli_get(ctx_->pollent, ResourceQuota::Default(), &request,
-                   ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_http_request_destroy(&request.http);
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (uri->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveSigningKeys(

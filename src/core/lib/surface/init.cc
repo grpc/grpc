@@ -37,7 +37,6 @@
 #include "src/core/lib/event_engine/init.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -94,6 +93,7 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
 }
 
 void grpc_init(void) {
+  grpc_event_engine::experimental::InitEventEngineFactory();
   gpr_once_init(&g_basic_init, do_basic_init);
 
   grpc_core::MutexLock lock(g_init_mu);
@@ -109,7 +109,6 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
-    grpc_event_engine::experimental::InitEventEngineFactory();
     grpc_iomgr_init();
     gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
