@@ -66,6 +66,7 @@ static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 static void do_basic_init(void) {
+  grpc_event_engine::experimental::InitEventEngineFactory();
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
@@ -93,7 +94,6 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
 }
 
 void grpc_init(void) {
-  grpc_event_engine::experimental::InitEventEngineFactory();
   gpr_once_init(&g_basic_init, do_basic_init);
 
   grpc_core::MutexLock lock(g_init_mu);
