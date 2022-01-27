@@ -85,6 +85,10 @@ def _rule_dict_from_xml_node(rule_xml_node):
     return result
 
 
+def _sanitize_rule_name(rule_name):
+    return rule_name.replace("@engine=", "_engine_")
+
+
 def _extract_rules_from_bazel_xml(xml_tree):
     """Extract bazel rules from an XML tree node obtained from "bazel query --output xml" command."""
     result = {}
@@ -105,7 +109,11 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
                 if "@poller=" in rule_name:
+                    # only exercise tests that rely on the default poller for
+                    # the current platform.
                     continue
+                rule_name = _sanitize_rule_name(rule_name)
+                rule_dict['name'] = rule_name
                 result[rule_name] = rule_dict
     return result
 
