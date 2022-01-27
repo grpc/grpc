@@ -15,8 +15,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-if [ -n "$3" ]
-  then
-    export GRPC_POLL_STRATEGY=$3
-fi
-"$1" "$2"
+"$@"

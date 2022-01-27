@@ -346,15 +346,15 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if "no_linux" in EVENT_ENGINES[0]["tags"]:
         fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
 
-    # On linux we run the same test multiple times, once for each poller.
+    # On linux we run the same test multiple times, once for each poller, with the default EventEngine.
     for poller in POLLERS:
         native.cc_test(
             name = name + "@poller=" + poller + "@engine=" + EVENT_ENGINES[0]["name"],
             env = {
               "GRPC_POLL_STRATEGY": poller,
-              "GRPC_EVENTENGINE_STRATEGY": engine["name"],
+              "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
             },
-            tags = (tags + ["no_windows", "no_mac"]),
+            tags = (tags + EVENT_ENGINES[0]["tags"] + ["no_windows", "no_mac"]),
             **args
         )
 
@@ -369,7 +369,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
               "GRPC_POLL_STRATEGY": POLLERS[0],
               "GRPC_EVENTENGINE_STRATEGY": engine["name"],
             },
-            tags = (tags + ["no_windows", "no_mac"]),
+            tags = (tags + engine["tags"] + ["no_windows", "no_mac"]),
             **args
         )
 

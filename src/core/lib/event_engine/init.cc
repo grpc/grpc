@@ -33,6 +33,8 @@ void InitEventEngineFactory() {
     // TODO(hork): MaybeSetDefaultEventEngineFactory(LibuvEventEngineFactory)
   } else if (gpr_stricmp("poll", engine_name.get()) == 0) {
     // TODO(tamird): MaybeSetDefaultEventEngineFactory(PollEventEngineFactory)
+    gpr_log(GPR_ERROR, "PollEventEngine is unimplemented.");
+    abort();
   } else {
     gpr_log(GPR_ERROR,
             "Invalid EventEngine '%s'. See doc/environment_variables.md",

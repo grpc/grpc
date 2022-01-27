@@ -18,6 +18,18 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
 POLLERS = ["epollex", "epoll1", "poll"]
 
+# The set of known EventEngines to test
+EVENT_ENGINES = [
+    {
+        "name": "libuv",
+        "tags": [],
+    },
+    {
+        "name": "poll",
+        "tags": ["no_windows", "no_mac"],
+    },
+]
+
 def _fixture_options(
         fullstack = True,
         includes_proxy = False,
@@ -468,33 +480,68 @@ def grpc_end2end_tests():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
-
             test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
-                name = "%s_test@%s" % (f, test_short_name),
-                data = [":%s_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
-                flaky = t in fopt.flaky_tests,
-            )
 
+            # Non-Linux platforms
+            for engine in EVENT_ENGINES:
+                if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
+                    # These platforms do not support multiple polling engines,
+                    # so just create a target for each EventEngine.
+                    native.sh_test(
+                        name = "%s_test@%s@engine=%s" % (f, test_short_name, engine["name"]),
+                        data = [":%s_test" % f],
+                        srcs = ["end2end_test.sh"],
+                        env = {
+                            "GRPC_EVENTENGINE_STRATEGY": engine["name"],
+                        },
+                        args = [
+                            "$(location %s_test)" % f,
+                            t,
+                        ],
+                        tags = ["no_linux"] + engine["tags"] + _platform_support_tags(fopt),
+                        flaky = t in fopt.flaky_tests,
+                    )
+
+            # Linux platforms
+            if "no_linux" in EVENT_ENGINES[0]["tags"]:
+                fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
             for poller in POLLERS:
                 if poller in topt.exclude_pollers:
                     continue
                 native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
+                    name = "%s_test@%s@poller=%s@engine=%s" % (f, test_short_name, poller, EVENT_ENGINES[0]["name"]),
                     data = [":%s_test" % f],
                     srcs = ["end2end_test.sh"],
+                    env = {
+                        "GRPC_POLL_STRATEGY": poller,
+                        "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
+                    },
                     args = [
                         "$(location %s_test)" % f,
                         t,
-                        poller,
                     ],
-                    tags = ["no_mac", "no_windows"],
+                    tags = EVENT_ENGINES[0]["tags"] + ["no_mac", "no_windows"],
+                    flaky = t in fopt.flaky_tests,
+                )
+
+            # Now generate one test for each subsequent EventEngine, all using the first
+            # poller.
+            if len(EVENT_ENGINES) < 2:
+                continue
+            for engine in EVENT_ENGINES[1:]:
+                native.sh_test(
+                    name = "%s_test@%s@poller=%s@engine=%s" % (f, test_short_name, POLLERS[0], engine["name"]),
+                    data = [":%s_test" % f],
+                    srcs = ["end2end_test.sh"],
+                    env = {
+                        "GRPC_POLL_STRATEGY": POLLERS[0],
+                        "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
+                    },
+                    args = [
+                        "$(location %s_test)" % f,
+                        t,
+                    ],
+                    tags = EVENT_ENGINES[0]["tags"] + ["no_mac", "no_windows"],
                     flaky = t in fopt.flaky_tests,
                 )
 
@@ -555,31 +602,67 @@ def grpc_end2end_nosec_tests():
                 continue
 
             test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
-                name = "%s_nosec_test@%s" % (f, test_short_name),
-                data = [":%s_nosec_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_nosec_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
-                flaky = t in fopt.flaky_tests,
-            )
 
+            # Non-Linux platforms
+            for engine in EVENT_ENGINES:
+                if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
+                    # These platforms do not support multiple polling engines,
+                    # so just create a target for each EventEngine.
+                    native.sh_test(
+                        name = "%s_nosec_test@%s@engine=%s" % (f, test_short_name, engine["name"]),
+                        data = [":%s_nosec_test" % f],
+                        srcs = ["end2end_test.sh"],
+                        env = {
+                            "GRPC_EVENTENGINE_STRATEGY": engine["name"],
+                        },
+                        args = [
+                            "$(location %s_nosec_test)" % f,
+                            t,
+                        ],
+                        tags = ["no_linux"] + engine["tags"] + _platform_support_tags(fopt),
+                        flaky = t in fopt.flaky_tests,
+                    )
+
+            # Linux platforms
+            if "no_linux" in EVENT_ENGINES[0]["tags"]:
+                fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
             for poller in POLLERS:
                 if poller in topt.exclude_pollers:
                     continue
                 native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" %
-                           (f, test_short_name, poller),
+                    name = "%s_nosec_test@%s@poller=%s@engine=%s" %
+                           (f, test_short_name, poller, EVENT_ENGINES[0]["name"]),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
+                    env = {
+                        "GRPC_POLL_STRATEGY": poller,
+                        "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
+                    },
                     args = [
                         "$(location %s_nosec_test)" % f,
                         t,
-                        poller,
                     ],
-                    tags = ["no_mac", "no_windows"],
+                    tags = ["no_mac", "no_windows"] + EVENT_ENGINES[0]["tags"],
+                    flaky = t in fopt.flaky_tests,
+                )
+            # Now generate one test for each subsequent EventEngine, all using the first
+            # poller.
+            if len(EVENT_ENGINES) < 2:
+                continue
+            for engine in EVENT_ENGINES[1:]:
+                native.sh_test(
+                    name = "%s_nosec_test@%s@poller=%s@engine=%s" %
+                           (f, test_short_name, POLLERS[0], engine["name"]),
+                    data = [":%s_nosec_test" % f],
+                    srcs = ["end2end_test.sh"],
+                    env = {
+                        "GRPC_POLL_STRATEGY": POLLERS[0],
+                        "GRPC_EVENTENGINE_STRATEGY": engine["name"],
+                    },
+                    args = [
+                        "$(location %s_nosec_test)" % f,
+                        t,
+                    ],
+                    tags = ["no_mac", "no_windows"] + engine["tags"],
                     flaky = t in fopt.flaky_tests,
                 )
