@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/sleep.h"
 
 namespace grpc_core {
@@ -54,7 +56,7 @@ Poll<absl::Status> Sleep::operator()() {
   MutexLock lock(&state_->mu);
   switch (state_->stage) {
     case Stage::kInitial:
-      if (state_->deadline <= grpc_core::ExecCtx::Get()->Now()) {
+      if (state_->deadline <= ExecCtx::Get()->Now()) {
         return absl::OkStatus();
       }
       state_->stage = Stage::kStarted;
