@@ -21,12 +21,13 @@
 #include <float.h>
 #include <math.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
-#include <gtest/gtest.h>
-#include "src/core/lib/support/string.h"
+
+#include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -75,7 +76,7 @@ TEST_P(SimpleConvergenceTest, Converges) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     X, SimpleConvergenceTest,
     ::testing::Values(SimpleConvergenceTestArgs{0.2, 0, 0, 1, 100, 0},
                       SimpleConvergenceTestArgs{0.2, 0.1, 0, 1, 100, 0},
@@ -85,7 +86,7 @@ INSTANTIATE_TEST_CASE_P(
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard1.5</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.8.0" />
+    <PackageReference Include="Grpc" Version="2.23.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.23.0" PrivateAssets="All" />
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\..\..\protos\route_guide.proto" Link="protos\route_guide.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="route_guide_db.json" />
+  </ItemGroup>
+
+</Project>

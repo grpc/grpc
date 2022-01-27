@@ -21,10 +21,10 @@
 
 #include <memory>
 
-#include <grpc++/server.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/config.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/server.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
 
 #include "test/cpp/qps/server.h"
 
@@ -39,7 +39,7 @@ extern std::vector<grpc::testing::Server*>* g_inproc_servers;
 class QpsWorker {
  public:
   explicit QpsWorker(int driver_port, int server_port,
-                     const grpc::string& credential_type);
+                     const std::string& credential_type);
   ~QpsWorker();
 
   bool Done() const;

@@ -19,11 +19,9 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
 #define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H
 
-#include "src/core/lib/transport/transport.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper
@@ -31,50 +29,56 @@ typedef struct grpc_transport_vtable {
   size_t sizeof_stream; /* = sizeof(transport stream) */
 
   /* name of this transport implementation */
-  const char *name;
+  const char* name;
 
   /* implementation of grpc_transport_init_stream */
-  int (*init_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_stream *stream, grpc_stream_refcount *refcount,
-                     const void *server_data, gpr_arena *arena);
+  int (*init_stream)(grpc_transport* self, grpc_stream* stream,
+                     grpc_stream_refcount* refcount, const void* server_data,
+                     grpc_core::Arena* arena);
+
+  /* Create a promise to execute one client call.
+     If this is non-null, it may be used in preference to
+     perform_stream_op.
+     If this is used in preference to perform_stream_op, the
+     following can be omitted also:
+       - calling init_stream, destroy_stream, set_pollset, set_pollset_set
+       - allocation of memory for call data (sizeof_stream may be ignored)
+     There is an on-going migration to move all filters to providing this, and
+     then to drop perform_stream_op. */
+  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
+      grpc_transport* self, grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::NextPromiseFactory next_promise_factory);
 
   /* implementation of grpc_transport_set_pollset */
-  void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                      grpc_stream *stream, grpc_pollset *pollset);
+  void (*set_pollset)(grpc_transport* self, grpc_stream* stream,
+                      grpc_pollset* pollset);
 
   /* implementation of grpc_transport_set_pollset */
-  void (*set_pollset_set)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                          grpc_stream *stream, grpc_pollset_set *pollset_set);
+  void (*set_pollset_set)(grpc_transport* self, grpc_stream* stream,
+                          grpc_pollset_set* pollset_set);
 
   /* implementation of grpc_transport_perform_stream_op */
-  void (*perform_stream_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                            grpc_stream *stream,
-                            grpc_transport_stream_op_batch *op);
+  void (*perform_stream_op)(grpc_transport* self, grpc_stream* stream,
+                            grpc_transport_stream_op_batch* op);
 
   /* implementation of grpc_transport_perform_op */
-  void (*perform_op)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                     grpc_transport_op *op);
+  void (*perform_op)(grpc_transport* self, grpc_transport_op* op);
 
   /* implementation of grpc_transport_destroy_stream */
-  void (*destroy_stream)(grpc_exec_ctx *exec_ctx, grpc_transport *self,
-                         grpc_stream *stream,
-                         grpc_closure *then_schedule_closure);
+  void (*destroy_stream)(grpc_transport* self, grpc_stream* stream,
+                         grpc_closure* then_schedule_closure);
 
   /* implementation of grpc_transport_destroy */
-  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
+  void (*destroy)(grpc_transport* self);
 
   /* implementation of grpc_transport_get_endpoint */
-  grpc_endpoint *(*get_endpoint)(grpc_exec_ctx *exec_ctx, grpc_transport *self);
+  grpc_endpoint* (*get_endpoint)(grpc_transport* self);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */
 struct grpc_transport {
   /* pointer to a vtable defining operations on this transport */
-  const grpc_transport_vtable *vtable;
+  const grpc_transport_vtable* vtable;
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TRANSPORT_IMPL_H */

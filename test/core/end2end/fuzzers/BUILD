@@ -12,19 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/end2end/fuzzers")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
-
-grpc_fuzzer(
+grpc_proto_fuzzer(
     name = "api_fuzzer",
-    srcs = ["api_fuzzer.c"],
-    language = "C",
+    size = "enormous",
+    srcs = ["api_fuzzer.cc"],
     corpus = "api_fuzzer_corpus",
+    language = "C++",
+    proto = "api_fuzzer.proto",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -35,9 +37,10 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "client_fuzzer",
-    srcs = ["client_fuzzer.c"],
-    language = "C",
+    srcs = ["client_fuzzer.cc"],
     corpus = "client_fuzzer_corpus",
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -47,9 +50,10 @@ grpc_fuzzer(
 
 grpc_fuzzer(
     name = "server_fuzzer",
-    srcs = ["server_fuzzer.c"],
-    language = "C",
+    srcs = ["server_fuzzer.cc"],
     corpus = "server_fuzzer_corpus",
+    language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",

@@ -18,27 +18,64 @@ import sys
 
 import setuptools
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
+
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import style to ensure that we can find same-directory modules.
 import grpc_version
 
+
+class _NoOpCommand(setuptools.Command):
+    """No-op command."""
+
+    description = ''
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        pass
+
+
 PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-INSTALL_REQUIRES = ('protobuf>=3.3.0',
-                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
+INSTALL_REQUIRES = (
+    'protobuf>=3.12.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
+)
 
-setuptools.setup(
-    name='grpcio-testing',
-    version=grpc_version.VERSION,
-    license='Apache License 2.0',
-    description='Testing utilities for gRPC Python',
-    author='The gRPC Authors',
-    author_email='grpc-io@googlegroups.com',
-    url='https://grpc.io',
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages('.'),
-    install_requires=INSTALL_REQUIRES)
+try:
+    import testing_commands as _testing_commands
+
+    # we are in the build environment, otherwise the above import fails
+    COMMAND_CLASS = {
+        # Run preprocess from the repository *before* doing any packaging!
+        'preprocess': _testing_commands.Preprocess,
+    }
+except ImportError:
+    COMMAND_CLASS = {
+        # wire up commands to no-op not to break the external dependencies
+        'preprocess': _NoOpCommand,
+    }
+
+setuptools.setup(name='grpcio-testing',
+                 version=grpc_version.VERSION,
+                 license='Apache License 2.0',
+                 description='Testing utilities for gRPC Python',
+                 long_description=open(_README_PATH, 'r').read(),
+                 author='The gRPC Authors',
+                 author_email='grpc-io@googlegroups.com',
+                 url='https://grpc.io',
+                 package_dir=PACKAGE_DIRECTORIES,
+                 packages=setuptools.find_packages('.'),
+                 install_requires=INSTALL_REQUIRES,
+                 cmdclass=COMMAND_CLASS)

@@ -17,23 +17,17 @@ set -ex
 
 cd $(dirname $0)/../..
 
-DIFF_COMMAND="git diff --name-only HEAD | grep -v ^third_party/"
+tools/buildgen/generate_projects.sh
+tools/distrib/check_include_guards.py --fix
+tools/distrib/check_naked_includes.py --fix || true
+tools/distrib/check_copyright.py --fix
+tools/distrib/add-iwyu.py
+tools/distrib/check_trailing_newlines.sh --fix
+tools/run_tests/sanity/check_port_platform.py --fix
+tools/run_tests/sanity/check_include_style.py --fix || true
+tools/distrib/yapf_code.sh
+tools/distrib/isort_code.sh
+tools/distrib/clang_format_code.sh
+tools/distrib/buildifier_format_code_strict.sh || true
+tools/distrib/check_redundant_namespace_qualifiers.py || true
 
-if [ "x$1" == 'x--pre-commit' ]; then
-  if eval $DIFF_COMMAND | grep '^build.yaml$'; then
-    ./tools/buildgen/generate_projects.sh
-  else
-    templates=$(eval $DIFF_COMMAND | grep '\.template$' || true)
-    if [ -n "$templates" ]; then
-      ./tools/buildgen/generate_projects.sh --templates $templates
-    fi
-  fi
-  CHANGED_FILES=$(eval $DIFF_COMMAND) ./tools/distrib/clang_format_code.sh
-  ./tools/distrib/check_copyright.py --fix --precommit
-  ./tools/distrib/check_trailing_newlines.sh
-else
-  ./tools/buildgen/generate_projects.sh
-  ./tools/distrib/clang_format_code.sh
-  ./tools/distrib/check_copyright.py --fix
-  ./tools/distrib/check_trailing_newlines.sh
-fi

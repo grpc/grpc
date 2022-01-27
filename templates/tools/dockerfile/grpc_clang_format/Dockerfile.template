@@ -13,11 +13,19 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-  
-  FROM debian:jessie
-  
-  <%include file="../clang_format.include"/>
+
+  FROM debian:11
+
+  # Install clang-format
+  RUN apt-get update && apt-get install -y clang-format-11
+  ENV CLANG_FORMAT=clang-format-11
+
   ADD clang_format_all_the_things.sh /
+  
+  # When running locally, we'll be impersonating the current user, so we need
+  # to make the script runnable by everyone.
+  RUN chmod a+rx /clang_format_all_the_things.sh
+  
   CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]
   
   

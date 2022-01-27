@@ -19,19 +19,10 @@
 ulimit -n 32768
 ulimit -c unlimited
 
-# Performance PR testing needs GH API key and PR metadata to comment results
-if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
-  set +x
-  sudo apt-get install -y jq
-  export ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
+python3 -m pip install pip==19.3.1
 
-  gsutil cp gs://grpc-testing-secrets/github_credentials/oauth_token.txt ~/
-  # TODO(matt-kwong): rename this to GITHUB_OAUTH_TOKEN after Jenkins deprecation
-  export JENKINS_OAUTH_TOKEN=$(cat ~/oauth_token.txt)
-  export ghprbPullId=$KOKORO_GITHUB_PULL_REQUEST_NUMBER
-  set -x
-fi
-
-sudo pip install tabulate
+# Python dependencies for tools/run_tests/python_utils/check_on_pr.py
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+time python3 -m pip install --user -r $DIR/requirements.linux_perf.txt
 
 git submodule update --init

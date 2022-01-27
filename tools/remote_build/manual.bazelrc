@@ -1,0 +1,39 @@
+# Copyright 2018 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# bazelrc file for running gRPC tests with Foundry (remote build execution)
+# manually from developer's workstation
+
+import %workspace%/tools/remote_build/rbe_common.bazelrc
+
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build --remote_executor=grpcs://remotebuildexecution.googleapis.com
+
+# Enable authentication. Bazel will use application default credentials
+# unless overridden by --google_credentials=service_account_credentials.json
+# How to setup credentials:
+# https://cloud.google.com/remote-build-execution/docs/results-ui/getting-started-results-ui
+build --auth_enabled=true
+
+# Set flags for uploading to BES in order to view results in the Bazel Build
+# Results UI.
+build --bes_backend=grpcs://buildeventservice.googleapis.com
+build --bes_timeout=600s
+build --bes_results_url="https://source.cloud.google.com/results/invocations/"
+build --project_id=grpc-testing
+
+build --jobs=100
+
+# print output for tests that fail (default is "summary")
+build --test_output=errors

@@ -16,17 +16,21 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/gprpp/global_config.h"
 
-extern "C" void grpc_chttp2_plugin_init(void) {
-  grpc_register_tracer(&grpc_http_trace);
-  grpc_register_tracer(&grpc_flowctl_trace);
-  grpc_register_tracer(&grpc_trace_http2_stream_state);
-#ifndef NDEBUG
-  grpc_register_tracer(&grpc_trace_chttp2_refcount);
-#endif
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_disable_flow_control, false,
+    "If set, flow control will be effectively disabled. Max out all values and "
+    "assume the remote peer does the same. Thus we can ignore any flow control "
+    "bookkeeping, error checking, and decision making");
+
+void grpc_chttp2_plugin_init(void) {
+  g_flow_control_enabled =
+      !GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control);
 }
 
-extern "C" void grpc_chttp2_plugin_shutdown(void) {}
+void grpc_chttp2_plugin_shutdown(void) {}

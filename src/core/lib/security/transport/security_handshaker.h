@@ -19,24 +19,28 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H
 
-#include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+
+namespace grpc_core {
 
 /// Creates a security handshaker using \a handshaker.
-grpc_handshaker *grpc_security_handshaker_create(
-    grpc_exec_ctx *exec_ctx, tsi_handshaker *handshaker,
-    grpc_security_connector *connector);
+RefCountedPtr<Handshaker> SecurityHandshakerCreate(
+    tsi_handshaker* handshaker, grpc_security_connector* connector,
+    const grpc_channel_args* args);
 
 /// Registers security handshaker factories.
-void grpc_security_register_handshaker_factories();
+void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder*);
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespace grpc_core
+
+// TODO(arjunroy): This is transitional to account for the new handshaker API
+// and will eventually be removed entirely.
+grpc_handshaker* grpc_security_handshaker_create(
+    tsi_handshaker* handshaker, grpc_security_connector* connector,
+    const grpc_channel_args* args);
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_HANDSHAKER_H */

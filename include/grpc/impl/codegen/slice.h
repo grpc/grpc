@@ -19,11 +19,12 @@
 #ifndef GRPC_IMPL_CODEGEN_SLICE_H
 #define GRPC_IMPL_CODEGEN_SLICE_H
 
+// IWYU pragma: private, include <grpc/slice.h>
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <stddef.h>
 
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 
 typedef struct grpc_slice grpc_slice;
@@ -41,34 +42,14 @@ typedef struct grpc_slice grpc_slice;
    reference ownership semantics (who should call unref?) and mutability
    constraints (is the callee allowed to modify the slice?) */
 
-typedef struct grpc_slice_refcount_vtable {
-  void (*ref)(void *);
-  void (*unref)(grpc_exec_ctx *exec_ctx, void *);
-  int (*eq)(grpc_slice a, grpc_slice b);
-  uint32_t (*hash)(grpc_slice slice);
-} grpc_slice_refcount_vtable;
-
-/** Reference count container for grpc_slice. Contains function pointers to
-   increment and decrement reference counts. Implementations should cleanup
-   when the reference count drops to zero.
-   Typically client code should not touch this, and use grpc_slice_malloc,
-   grpc_slice_new, or grpc_slice_new_with_len instead. */
-typedef struct grpc_slice_refcount {
-  const grpc_slice_refcount_vtable *vtable;
-  /** If a subset of this slice is taken, use this pointer for the refcount.
-     Typically points back to the refcount itself, however iterning
-     implementations can use this to avoid a verification step on each hash
-     or equality check */
-  struct grpc_slice_refcount *sub_refcount;
-} grpc_slice_refcount;
-
 /* Inlined half of grpc_slice is allowed to expand the size of the overall type
    by this many bytes */
-#define GRPC_SLICE_INLINE_EXTRA_SIZE sizeof(void *)
+#define GRPC_SLICE_INLINE_EXTRA_SIZE sizeof(void*)
 
 #define GRPC_SLICE_INLINED_SIZE \
-  (sizeof(size_t) + sizeof(uint8_t *) - 1 + GRPC_SLICE_INLINE_EXTRA_SIZE)
+  (sizeof(size_t) + sizeof(uint8_t*) - 1 + GRPC_SLICE_INLINE_EXTRA_SIZE)
 
+struct grpc_slice_refcount;
 /** A grpc_slice s, if initialized, represents the byte range
    s.bytes[0..s.length-1].
 
@@ -77,13 +58,16 @@ typedef struct grpc_slice_refcount {
    Multiple grpc_slice values may share a ref count.
 
    If the slice does not have a refcount, it represents an inlined small piece
-   of data that is copied by value. */
+   of data that is copied by value.
+
+   As a special case, a slice can be given refcount == uintptr_t(1), meaning
+   that the slice represents external data that is not refcounted. */
 struct grpc_slice {
-  struct grpc_slice_refcount *refcount;
+  struct grpc_slice_refcount* refcount;
   union grpc_slice_data {
     struct grpc_slice_refcounted {
-      uint8_t *bytes;
       size_t length;
+      uint8_t* bytes;
     } refcounted;
     struct grpc_slice_inlined {
       uint8_t length;
@@ -96,13 +80,13 @@ struct grpc_slice {
 
 /** Represents an expandable array of slices, to be interpreted as a
    single item. */
-typedef struct {
+typedef struct grpc_slice_buffer {
   /** This is for internal use only. External users (i.e any code outside grpc
    * core) MUST NOT use this field */
-  grpc_slice *base_slices;
+  grpc_slice* base_slices;
 
   /** slices in the array (Points to the first valid grpc_slice in the array) */
-  grpc_slice *slices;
+  grpc_slice* slices;
   /** the number of slices in the array */
   size_t count;
   /** the number of slices allocated in the array. External users (i.e any code

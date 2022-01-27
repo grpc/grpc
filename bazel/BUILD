@@ -12,20 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+"""
+Contains build targets used by Starlark files in the bazel/ directory.
+"""
+
+licenses(["notice"])
 
 package(default_visibility = ["//:__subpackages__"])
 
-load(":cc_grpc_library.bzl", "cc_grpc_library")
-
-proto_library(
-    name = "well_known_protos_list",
-    srcs = ["@com_google_protobuf//:well_known_protos"],
-)
-
-cc_grpc_library(
-    name = "well_known_protos",
-    srcs = "well_known_protos_list",
-    proto_only = True,
-    deps = [],
+filegroup(
+    name = "_gevent_test_main",
+    srcs = ["_gevent_test_main.py"],
 )

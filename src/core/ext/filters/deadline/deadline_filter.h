@@ -17,49 +17,39 @@
 #ifndef GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/timer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef enum grpc_deadline_timer_state {
-  GRPC_DEADLINE_STATE_INITIAL,
-  GRPC_DEADLINE_STATE_PENDING,
-  GRPC_DEADLINE_STATE_FINISHED
-} grpc_deadline_timer_state;
+namespace grpc_core {
+class TimerState;
+}  // namespace grpc_core
 
 // State used for filters that enforce call deadlines.
 // Must be the first field in the filter's call_data.
-typedef struct grpc_deadline_state {
+struct grpc_deadline_state {
+  grpc_deadline_state(grpc_call_element* elem,
+                      const grpc_call_element_args& args, grpc_millis deadline);
+  ~grpc_deadline_state();
+
   // We take a reference to the call stack for the timer callback.
   grpc_call_stack* call_stack;
-  grpc_call_combiner* call_combiner;
-  grpc_deadline_timer_state timer_state;
-  grpc_timer timer;
-  grpc_closure timer_callback;
-  // Closure to invoke when the call is complete.
+  grpc_core::CallCombiner* call_combiner;
+  grpc_core::Arena* arena;
+  grpc_core::TimerState* timer_state = nullptr;
+  // Closure to invoke when we receive trailing metadata.
   // We use this to cancel the timer.
-  grpc_closure on_complete;
-  // The original on_complete closure, which we chain to after our own
-  // closure is invoked.
-  grpc_closure* next_on_complete;
-} grpc_deadline_state;
+  grpc_closure recv_trailing_metadata_ready;
+  // The original recv_trailing_metadata_ready closure, which we chain to
+  // after our own closure is invoked.
+  grpc_closure* original_recv_trailing_metadata_ready;
+};
 
 //
 // NOTE: All of these functions require that the first field in
 // elem->call_data is a grpc_deadline_state.
 //
-
-// assumes elem->call_data is zero'd
-void grpc_deadline_state_init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                              grpc_call_stack* call_stack,
-                              grpc_call_combiner* call_combiner,
-                              grpc_millis deadline);
-
-void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
-                                 grpc_call_element* elem);
 
 // Cancels the existing timer and starts a new one with new_deadline.
 //
@@ -70,7 +60,7 @@ void grpc_deadline_state_destroy(grpc_exec_ctx* exec_ctx,
 // deadline may result in the timer being called twice.
 //
 // Note: Must be called while holding the call combiner.
-void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
+void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
@@ -82,8 +72,7 @@ void grpc_deadline_state_reset(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
 //
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_client_start_transport_stream_op_batch(
-    grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-    grpc_transport_stream_op_batch* op);
+    grpc_call_element* elem, grpc_transport_stream_op_batch* op);
 
 // Should deadline checking be performed (according to channel args)
 bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
@@ -93,9 +82,5 @@ bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
 // client_channel filter.
 extern const grpc_channel_filter grpc_client_deadline_filter;
 extern const grpc_channel_filter grpc_server_deadline_filter;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_DEADLINE_DEADLINE_FILTER_H */

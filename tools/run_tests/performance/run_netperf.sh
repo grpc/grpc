@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 netperf >netperf_latency.txt -P 0 -t TCP_RR -H "$NETPERF_SERVER_HOST" -- -r 1,1 -o P50_LATENCY,P90_LATENCY,P99_LATENCY
 

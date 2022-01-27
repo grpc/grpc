@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,96 +23,93 @@ import subprocess
 import sys
 import tempfile
 
+import grpc_version
+
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', metavar='c', type=str, nargs=1,
-                    help='GRPC/GPR libraries build configuration',
-                    default='opt')
-parser.add_argument('--submit', action='store_true')
-parser.add_argument('--gh-user', type=str, help='GitHub user to push as.')
-parser.add_argument('--gh-repo-owner', type=str,
-                    help=('Owner of the GitHub repository to be pushed; '
-                          'defaults to --gh-user.'))
-parser.add_argument('--doc-branch', type=str)
+parser.add_argument('--repo-owner',
+                    type=str,
+                    help=('Owner of the GitHub repository to be pushed'))
+parser.add_argument('--doc-branch',
+                    type=str,
+                    default='python-doc-%s' % grpc_version.VERSION)
 args = parser.parse_args()
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..', '..'))
 
-CONFIG = args.config
 SETUP_PATH = os.path.join(PROJECT_ROOT, 'setup.py')
-REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, 'requirements.txt')
+REQUIREMENTS_PATH = os.path.join(PROJECT_ROOT, 'requirements.bazel.txt')
 DOC_PATH = os.path.join(PROJECT_ROOT, 'doc/build')
-INCLUDE_PATH = os.path.join(PROJECT_ROOT, 'include')
-LIBRARY_PATH = os.path.join(PROJECT_ROOT, 'libs/{}'.format(CONFIG))
-VIRTUALENV_DIR = os.path.join(SCRIPT_DIR, 'distrib_virtualenv')
-VIRTUALENV_PYTHON_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'python')
-VIRTUALENV_PIP_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'pip')
 
-environment = os.environ.copy()
-environment.update({
-    'CONFIG': CONFIG,
-    'CFLAGS': '-I{}'.format(INCLUDE_PATH),
-    'LDFLAGS': '-L{}'.format(LIBRARY_PATH),
-    'LD_LIBRARY_PATH': LIBRARY_PATH,
-    'GRPC_PYTHON_BUILD_WITH_CYTHON': '1',
-    'GRPC_PYTHON_ENABLE_DOCUMENTATION_BUILD': '1',
-})
+if "VIRTUAL_ENV" in os.environ:
+    VIRTUALENV_DIR = os.environ['VIRTUAL_ENV']
+    PYTHON_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'python')
+    subprocess_arguments_list = []
+else:
+    VIRTUALENV_DIR = os.path.join(SCRIPT_DIR, 'distrib_virtualenv')
+    PYTHON_PATH = os.path.join(VIRTUALENV_DIR, 'bin', 'python')
+    subprocess_arguments_list = [
+        ['python3', '-m', 'virtualenv', VIRTUALENV_DIR],
+    ]
 
-subprocess_arguments_list = [
-    {'args': ['virtualenv', VIRTUALENV_DIR], 'env': environment},
-    {'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==9.0.1'],
-     'env': environment},
-    {'args': [VIRTUALENV_PIP_PATH, 'install', '-r', REQUIREMENTS_PATH],
-     'env': environment},
-    {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'build'], 'env': environment},
-    {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'doc'], 'env': environment},
+subprocess_arguments_list += [
+    [PYTHON_PATH, '-m', 'pip', 'install', '--upgrade', 'pip==19.3.1'],
+    [PYTHON_PATH, '-m', 'pip', 'install', '-r', REQUIREMENTS_PATH],
+    [PYTHON_PATH, '-m', 'pip', 'install', '--upgrade', 'Sphinx'],
+    [PYTHON_PATH, SETUP_PATH, 'doc'],
 ]
 
 for subprocess_arguments in subprocess_arguments_list:
-  print('Running command: {}'.format(subprocess_arguments['args']))
-  subprocess.check_call(**subprocess_arguments)
+    print('Running command: {}'.format(subprocess_arguments))
+    subprocess.check_call(args=subprocess_arguments)
 
-if args.submit:
-  assert args.gh_user
-  assert args.doc_branch
-  github_user = args.gh_user
-  github_repository_owner = (
-      args.gh_repo_owner if args.gh_repo_owner else args.gh_user)
-  # Create a temporary directory out of tree, checkout gh-pages from the
-  # specified repository, edit it, and push it. It's up to the user to then go
-  # onto GitHub and make a PR against grpc/grpc:gh-pages.
-  repo_parent_dir = tempfile.mkdtemp()
-  print('Documentation parent directory: {}'.format(repo_parent_dir))
-  repo_dir = os.path.join(repo_parent_dir, 'grpc')
-  python_doc_dir = os.path.join(repo_dir, 'python')
-  doc_branch = args.doc_branch
+if not args.repo_owner or not args.doc_branch:
+    tty_width = int(os.popen('stty size', 'r').read().split()[1])
+    print('-' * tty_width)
+    print('Please check generated Python doc inside doc/build')
+    print(
+        'To push to a GitHub repo, please provide repo owner and doc branch name'
+    )
+else:
+    # Create a temporary directory out of tree, checkout gh-pages from the
+    # specified repository, edit it, and push it. It's up to the user to then go
+    # onto GitHub and make a PR against grpc/grpc:gh-pages.
+    repo_parent_dir = tempfile.mkdtemp()
+    print('Documentation parent directory: {}'.format(repo_parent_dir))
+    repo_dir = os.path.join(repo_parent_dir, 'grpc')
+    python_doc_dir = os.path.join(repo_dir, 'python')
+    doc_branch = args.doc_branch
 
-  print('Cloning your repository...')
-  subprocess.check_call([
-          'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
-              github_user, github_repository_owner)
-      ], cwd=repo_parent_dir)
-  subprocess.check_call([
-          'git', 'remote', 'add', 'upstream', 'https://github.com/grpc/grpc'
-      ], cwd=repo_dir)
-  subprocess.check_call(['git', 'fetch', 'upstream'], cwd=repo_dir)
-  subprocess.check_call([
-          'git', 'checkout', 'upstream/gh-pages', '-b', doc_branch
-      ], cwd=repo_dir)
-  print('Updating documentation...')
-  shutil.rmtree(python_doc_dir, ignore_errors=True)
-  shutil.copytree(DOC_PATH, python_doc_dir)
-  print('Attempting to push documentation...')
-  try:
-    subprocess.check_call(['git', 'add', '--all'], cwd=repo_dir)
+    print('Cloning your repository...')
     subprocess.check_call([
-            'git', 'commit', '-m', 'Auto-update Python documentation'
-        ], cwd=repo_dir)
+        'git',
+        'clone',
+        '--branch',
+        'gh-pages',
+        'https://github.com/grpc/grpc',
+    ],
+                          cwd=repo_parent_dir)
+    subprocess.check_call(['git', 'checkout', '-b', doc_branch], cwd=repo_dir)
     subprocess.check_call([
-            'git', 'push', '--set-upstream', 'origin', doc_branch
-        ], cwd=repo_dir)
-  except subprocess.CalledProcessError:
-    print('Failed to push documentation. Examine this directory and push '
-          'manually: {}'.format(repo_parent_dir))
-    sys.exit(1)
-  shutil.rmtree(repo_parent_dir)
+        'git', 'remote', 'add', 'ssh-origin',
+        'git@github.com:%s/grpc.git' % args.repo_owner
+    ],
+                          cwd=repo_dir)
+    print('Updating documentation...')
+    shutil.rmtree(python_doc_dir, ignore_errors=True)
+    shutil.copytree(DOC_PATH, python_doc_dir)
+    print('Attempting to push documentation to %s/%s...' %
+          (args.repo_owner, doc_branch))
+    try:
+        subprocess.check_call(['git', 'add', '--all'], cwd=repo_dir)
+        subprocess.check_call(
+            ['git', 'commit', '-m', 'Auto-update Python documentation'],
+            cwd=repo_dir)
+        subprocess.check_call(
+            ['git', 'push', '--set-upstream', 'ssh-origin', doc_branch],
+            cwd=repo_dir)
+    except subprocess.CalledProcessError:
+        print('Failed to push documentation. Examine this directory and push '
+              'manually: {}'.format(repo_parent_dir))
+        sys.exit(1)
+    shutil.rmtree(repo_parent_dir)

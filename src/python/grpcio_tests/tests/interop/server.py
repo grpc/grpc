@@ -16,48 +16,60 @@
 import argparse
 from concurrent import futures
 import logging
-import time
 
 import grpc
+
 from src.proto.grpc.testing import test_pb2_grpc
-
-from tests.interop import methods
 from tests.interop import resources
+from tests.interop import service
+from tests.unit import test_common
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+logging.basicConfig()
+_LOGGER = logging.getLogger(__name__)
+
+
+def parse_interop_server_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port',
+                        type=int,
+                        required=True,
+                        help='the port on which to serve')
+    parser.add_argument('--use_tls',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require a secure connection')
+    parser.add_argument('--use_alts',
+                        default=False,
+                        type=resources.parse_bool,
+                        help='require an ALTS connection')
+    return parser.parse_args()
+
+
+def get_server_credentials(use_tls):
+    if use_tls:
+        private_key = resources.private_key()
+        certificate_chain = resources.certificate_chain()
+        return grpc.ssl_server_credentials(((private_key, certificate_chain),))
+    else:
+        return grpc.alts_server_credentials()
 
 
 def serve():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--port', help='the port on which to serve', type=int)
-    parser.add_argument(
-        '--use_tls',
-        help='require a secure connection',
-        default=False,
-        type=resources.parse_bool)
-    args = parser.parse_args()
+    args = parse_interop_server_arguments()
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
+    server = test_common.test_server()
+    test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
                                                     server)
-    if args.use_tls:
-        private_key = resources.private_key()
-        certificate_chain = resources.certificate_chain()
-        credentials = grpc.ssl_server_credentials((
-            (private_key, certificate_chain),))
+    if args.use_tls or args.use_alts:
+        credentials = get_server_credentials(args.use_tls)
         server.add_secure_port('[::]:{}'.format(args.port), credentials)
     else:
         server.add_insecure_port('[::]:{}'.format(args.port))
 
     server.start()
-    logging.info('Server serving.')
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except BaseException as e:
-        logging.info('Caught exception "%s"; stopping server...', e)
-        server.stop(None)
-        logging.info('Server stopped; exiting.')
+    _LOGGER.info('Server serving.')
+    server.wait_for_termination()
+    _LOGGER.info('Server stopped; exiting.')
 
 
 if __name__ == '__main__':

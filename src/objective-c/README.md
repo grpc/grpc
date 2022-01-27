@@ -1,5 +1,12 @@
 [![Cocoapods](https://img.shields.io/cocoapods/v/gRPC.svg)](https://cocoapods.org/pods/gRPC)
 # gRPC for Objective-C
+gRPC Objective C library provides Objective C API for users to make gRPC calls on iOS or OS X
+platforms. Currently, the minimum supported iOS version is 9.0 and OS X version is 10.10 (Yosemite).
+
+While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
+usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
+plugin for the Protobuf Compiler (_protoc_) to generate client libraries to communicate with gRPC
+services.
 
 - [Write your API declaration in proto format](#write-protos)
 - [Integrate a proto library in your project](#cocoapods)
@@ -9,11 +16,6 @@
     - [Install protoc with the gRPC plugin](#install)
     - [Install protoc and the gRPC plugin without using Homebrew](#no-homebrew)
     - [Integrate the generated gRPC library without using Cocoapods](#no-cocoapods)
-
-While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
-usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
-plugin for the Protobuf Compiler (_protoc_) to generate client libraries to communicate with gRPC
-services.
 
 <a name="write-protos"></a>
 ## Write your API declaration in proto format
@@ -41,8 +43,8 @@ Pod::Spec.new do |s|
   s.summary = '...'
   s.source = { :git => 'https://github.com/...' }
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
 
   # Base directory where the .proto files are.
   src = '.'
@@ -174,8 +176,8 @@ This will download and run the [gRPC install script][].
 ### Install _protoc_ and the gRPC plugin without using Homebrew
 
 First install v3 of the Protocol Buffers compiler (_protoc_), by cloning
-[its Git repository](https://github.com/google/protobuf) and following these
-[installation instructions](https://github.com/google/protobuf#c-installation---unix)
+[its Git repository](https://github.com/protocolbuffers/protobuf) and following these
+[installation instructions](https://github.com/protocolbuffers/protobuf#c-installation---unix)
 (the ones titled C++; don't miss the note for Mac users).
 
 Then clone this repository and execute the following commands from the root directory where it was
@@ -210,7 +212,7 @@ files:
 
 * [Podspec](https://github.com/grpc/grpc/blob/master/gRPC.podspec) for the Objective-C gRPC runtime
 library. This can be tedious to configure manually.
-* [Podspec](https://github.com/google/protobuf/blob/master/Protobuf.podspec) for the
+* [Podspec](https://github.com/protocolbuffers/protobuf/blob/master/Protobuf.podspec) for the
 Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/
@@ -218,3 +220,34 @@ Objective-C Protobuf runtime library.
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [example Podfile]:https://github.com/grpc/grpc/blob/master/examples/objective-c/helloworld/Podfile
 [example apps]: https://github.com/grpc/grpc/tree/master/examples/objective-c
+
+## Use gRPC with OpenSSL
+gRPC uses BoringSSL as its dependency, which is a fork of OpenSSL and export a number of symbols
+that are the same as OpenSSL. gRPC avoids conflicts of these symbols by renaming BoringSSL symbols.
+
+If you need gRPC to use OpenSSL instead of BoringSSL (e.g. for the benefit of reducing the binary
+size of your product), you need to make a local `gRPC-Core` podspec and tweak it accordingly:
+- Copy the version of `/gRPC-Core.podspec` you wish to use from Github into the repository of your
+  app;
+- In your `Podfile`, add the following line:
+```
+pod `gRPC-Core`, :podspec => "." # assuming gRPC-Core.podspec is in the same directory as your Podfile
+```
+- Remove [the
+  macro](https://github.com/grpc/grpc/blob/b24b212ee585d376c618235905757b2445ac6461/gRPC-Core.podspec#L186)
+  `GRPC_SHADOW_BORINGSSL_SYMBOLS` to disable symbol renaming;
+- Substitude the `BoringSSL-GRPC`
+  [dependency](https://github.com/grpc/grpc/blob/b24b212ee585d376c618235905757b2445ac6461/gRPC-Core.podspec#L184)
+  to whatever pod of OpenSSL your other libraries use.
+
+These steps should allow gRPC to use OpenSSL and drop BoringSSL dependency. If you see any issue,
+file an issue to us.
+
+## Upgrade issue with BoringSSL
+If you were using an old version of gRPC (<= v1.14) which depended on pod `BoringSSL` rather than
+`BoringSSL-GRPC` and meet issue with the library like:
+```
+ld: framework not found openssl
+```
+updating `-framework openssl` in Other Linker Flags to `-framework openssl_grpc` in your project
+may resolve this issue (see [#16821](https://github.com/grpc/grpc/issues/16821)).

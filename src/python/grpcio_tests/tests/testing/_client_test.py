@@ -18,7 +18,6 @@ import unittest
 
 import grpc
 from grpc.framework.foundation import logging_pool
-from tests.unit.framework.common import test_constants
 import grpc_testing
 
 from tests.testing import _application_common
@@ -26,9 +25,10 @@ from tests.testing import _application_testing_common
 from tests.testing import _client_application
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
+from tests.unit.framework.common import test_constants
 
 
-# TODO(https://github.com/google/protobuf/issues/3452): Drop this skip.
+# TODO(https://github.com/protocolbuffers/protobuf/issues/3452): Drop this skip.
 @unittest.skipIf(
     services_pb2.DESCRIPTOR.services_by_name.get('FirstService') is None,
     'Fix protobuf issue 3452!')
@@ -193,8 +193,10 @@ class ClientTest(unittest.TestCase):
             rpc.take_request()
             rpc.take_request()
             rpc.requests_closed()
-            rpc.send_initial_metadata((
-                ('my_metadata_key', 'My Metadata Value!',),))
+            rpc.send_initial_metadata(((
+                'my_metadata_key',
+                'My Metadata Value!',
+            ),))
         for rpc in rpcs[:-1]:
             rpc.terminate(_application_common.STREAM_UNARY_RESPONSE, (),
                           grpc.StatusCode.OK, '')

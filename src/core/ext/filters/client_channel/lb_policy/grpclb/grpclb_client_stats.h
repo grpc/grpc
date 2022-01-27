@@ -19,55 +19,58 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 
-#include <stdbool.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include "absl/container/inlined_vector.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/support/atm.h>
 
-typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 
-typedef struct {
-  char* token;
-  int64_t count;
-} grpc_grpclb_drop_token_count;
+namespace grpc_core {
 
-typedef struct {
-  grpc_grpclb_drop_token_count* token_counts;
-  size_t num_entries;
-} grpc_grpclb_dropped_call_counts;
+class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
+ public:
+  struct DropTokenCount {
+    UniquePtr<char> token;
+    int64_t count;
 
-grpc_grpclb_client_stats* grpc_grpclb_client_stats_create();
-grpc_grpclb_client_stats* grpc_grpclb_client_stats_ref(
-    grpc_grpclb_client_stats* client_stats);
-void grpc_grpclb_client_stats_unref(grpc_grpclb_client_stats* client_stats);
+    DropTokenCount(UniquePtr<char> token, int64_t count)
+        : token(std::move(token)), count(count) {}
+  };
 
-void grpc_grpclb_client_stats_add_call_started(
-    grpc_grpclb_client_stats* client_stats);
-void grpc_grpclb_client_stats_add_call_finished(
-    bool finished_with_client_failed_to_send, bool finished_known_received,
-    grpc_grpclb_client_stats* client_stats);
+  typedef absl::InlinedVector<DropTokenCount, 10> DroppedCallCounts;
 
-// This method is not thread-safe; caller must synchronize.
-void grpc_grpclb_client_stats_add_call_dropped_locked(
-    char* token, grpc_grpclb_client_stats* client_stats);
+  void AddCallStarted();
+  void AddCallFinished(bool finished_with_client_failed_to_send,
+                       bool finished_known_received);
 
-// This method is not thread-safe; caller must synchronize.
-void grpc_grpclb_client_stats_get_locked(
-    grpc_grpclb_client_stats* client_stats, int64_t* num_calls_started,
-    int64_t* num_calls_finished,
-    int64_t* num_calls_finished_with_client_failed_to_send,
-    int64_t* num_calls_finished_known_received,
-    grpc_grpclb_dropped_call_counts** drop_token_counts);
+  void AddCallDropped(const char* token);
 
-void grpc_grpclb_dropped_call_counts_destroy(
-    grpc_grpclb_dropped_call_counts* drop_entries);
+  void Get(int64_t* num_calls_started, int64_t* num_calls_finished,
+           int64_t* num_calls_finished_with_client_failed_to_send,
+           int64_t* num_calls_finished_known_received,
+           std::unique_ptr<DroppedCallCounts>* drop_token_counts);
 
-#ifdef __cplusplus
-}
-#endif
+  // A destruction function to use as the user_data key when attaching
+  // client stats to a grpc_mdelem.
+  static void Destroy(void* arg) {
+    static_cast<GrpcLbClientStats*>(arg)->Unref();
+  }
+
+ private:
+  gpr_atm num_calls_started_ = 0;
+  gpr_atm num_calls_finished_ = 0;
+  gpr_atm num_calls_finished_with_client_failed_to_send_ = 0;
+  gpr_atm num_calls_finished_known_received_ = 0;
+  Mutex drop_count_mu_;  // Guards drop_token_counts_.
+  std::unique_ptr<DroppedCallCounts> drop_token_counts_
+      ABSL_GUARDED_BY(drop_count_mu_);
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
-          */
+        */

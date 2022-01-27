@@ -2,6 +2,7 @@ Server-side API for Authenticating Clients
 ==========================================
 
 NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently.
+NOTE2: `CallCredentials` class is only valid for secure channels in C-Core. So, for connections under insecure channels, features below might not be available.
 
 ## AuthContext
 

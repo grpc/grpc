@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -23,6 +25,6 @@
 
 #include <stddef.h>
 
-char *grpc_gethostname() { return NULL; }
+char* grpc_gethostname() { return NULL; }
 
 #endif  // GRPC_GETHOSTNAME_FALLBACK

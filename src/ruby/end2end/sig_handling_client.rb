@@ -30,24 +30,26 @@ class SigHandlingClientController < ClientControl::ClientController::Service
   end
 
   def shutdown(_, _)
-    Thread.new do
-      # TODO(apolcyn) There is a race between stopping the
-      # server and the "shutdown" rpc completing,
-      # See if stop method on server can end active RPC cleanly, to
-      # avoid this sleep.
-      sleep 3
+    # Spawn a new thread because RpcServer#stop is
+    # synchronous and blocks until either this RPC has finished,
+    # or the server's "poll_period" seconds have passed.
+    @shutdown_thread = Thread.new do
       @srv.stop
     end
     ClientControl::Void.new
   end
+
+  def join_shutdown_thread
+    @shutdown_thread.join
+  end
 end
 
 def main
-  client_control_port = ''
+  parent_controller_port = ''
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do |p|
-      client_control_port = p
+    opts.on('--parent_controller_port=P', String) do |p|
+      parent_controller_port = p
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
@@ -62,13 +64,23 @@ def main
     STDERR.puts 'SIGINT received'
   end
 
-  srv = GRPC::RpcServer.new
-  srv.add_http2_port("0.0.0.0:#{client_control_port}",
-                     :this_port_is_insecure)
+  # The "shutdown" RPC should end very quickly.
+  # Allow a few seconds to be safe.
+  srv = new_rpc_server_for_testing(poll_period: 3)
+  port = srv.add_http2_port('localhost:0',
+                            :this_port_is_insecure)
   stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",
                                     :this_channel_is_insecure)
-  srv.handle(SigHandlingClientController.new(srv, stub))
-  srv.run
+  control_service = SigHandlingClientController.new(srv, stub)
+  srv.handle(control_service)
+  server_thread = Thread.new do
+    srv.run
+  end
+  srv.wait_till_running
+  # notify the parent process that we're ready
+  report_controller_port_to_parent(parent_controller_port, port)
+  server_thread.join
+  control_service.join_shutdown_thread
 end
 
 main

@@ -18,22 +18,22 @@
 
 /* Test out pollset latencies */
 
+#include <string.h>
+
+#include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
-extern "C" {
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
-}
-
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
-
-#include <string.h>
+#include "test/cpp/util/test_config.h"
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
 #include <sys/epoll.h>
@@ -41,10 +41,8 @@ extern "C" {
 #include <unistd.h>
 #endif
 
-auto& force_library_initialization = Library::get();
-
-static void shutdown_ps(grpc_exec_ctx* exec_ctx, void* ps, grpc_error* error) {
-  grpc_pollset_destroy(exec_ctx, static_cast<grpc_pollset*>(ps));
+static void shutdown_ps(void* ps, grpc_error_handle /*error*/) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
 
 static void BM_CreateDestroyPollset(benchmark::State& state) {
@@ -52,19 +50,19 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   size_t ps_sz = grpc_pollset_size();
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_malloc(ps_sz));
   gpr_mu* mu;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     memset(ps, 0, ps_sz);
     grpc_pollset_init(ps, &mu);
     gpr_mu_lock(mu);
-    grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
+    grpc_pollset_shutdown(ps, &shutdown_ps_closure);
     gpr_mu_unlock(mu);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
   track_counters.Finish(state);
 }
@@ -87,7 +85,7 @@ static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
     ev.events = EPOLLIN;
     epoll_ctl(epfd, EPOLL_CTL_ADD, fds.back(), &ev);
   }
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     epoll_wait(epfd, ev, nev, 0);
   }
   for (auto fd : fds) {
@@ -116,17 +114,17 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(mu);
-  while (state.KeepRunning()) {
-    GRPC_ERROR_UNREF(grpc_pollset_work(&exec_ctx, ps, NULL, 0));
+  for (auto _ : state) {
+    GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, 0));
   }
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
+  grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
   track_counters.Finish(state);
 }
@@ -138,46 +136,44 @@ static void BM_PollAddFd(benchmark::State& state) {
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
-  grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx");
-  while (state.KeepRunning()) {
-    grpc_pollset_add_fd(&exec_ctx, ps, fd);
-    grpc_exec_ctx_flush(&exec_ctx);
+  grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
+  for (auto _ : state) {
+    grpc_pollset_add_fd(ps, fd);
+    grpc_core::ExecCtx::Get()->Flush();
   }
-  grpc_fd_orphan(&exec_ctx, fd, NULL, NULL, false /* already_closed */, "xxx");
+  grpc_fd_orphan(fd, nullptr, nullptr, "xxx");
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
   gpr_mu_lock(mu);
-  grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
+  grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
   gpr_free(ps);
   track_counters.Finish(state);
 }
 BENCHMARK(BM_PollAddFd);
 
-class Closure : public grpc_closure {
+class TestClosure : public grpc_closure {
  public:
-  virtual ~Closure() {}
+  virtual ~TestClosure() {}
 };
 
 template <class F>
-Closure* MakeClosure(F f, grpc_closure_scheduler* scheduler) {
-  struct C : public Closure {
-    C(F f, grpc_closure_scheduler* scheduler) : f_(f) {
-      GRPC_CLOSURE_INIT(this, C::cbfn, this, scheduler);
-    }
-    static void cbfn(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+TestClosure* MakeTestClosure(F f) {
+  struct C : public TestClosure {
+    explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
+    static void cbfn(void* arg, grpc_error_handle /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
     }
     F f_;
   };
-  return new C(f, scheduler);
+  return new C(f);
 }
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
@@ -191,7 +187,7 @@ static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
   int fd = eventfd(0, EFD_NONBLOCK);
   ev[0].events = EPOLLIN;
   epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev[0]);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     int err;
     do {
       err = eventfd_write(fd, 1);
@@ -220,39 +216,35 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_pollset* ps = static_cast<grpc_pollset*>(gpr_zalloc(ps_sz));
   gpr_mu* mu;
   grpc_pollset_init(ps, &mu);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
-  grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read");
-  grpc_pollset_add_fd(&exec_ctx, ps, wakeup);
+  grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
+  grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
-  Closure* continue_closure = MakeClosure(
-      [&]() {
-        GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
-        if (!state.KeepRunning()) {
-          done = true;
-          return;
-        }
-        GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
-        grpc_fd_notify_on_read(&exec_ctx, wakeup, continue_closure);
-      },
-      grpc_schedule_on_exec_ctx);
+  TestClosure* continue_closure = MakeTestClosure([&]() {
+    GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
+    if (!state.KeepRunning()) {
+      done = true;
+      return;
+    }
+    GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
+    grpc_fd_notify_on_read(wakeup, continue_closure);
+  });
   GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
-  grpc_fd_notify_on_read(&exec_ctx, wakeup, continue_closure);
+  grpc_fd_notify_on_read(wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    GRPC_ERROR_UNREF(
-        grpc_pollset_work(&exec_ctx, ps, NULL, GRPC_MILLIS_INF_FUTURE));
+    GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, GRPC_MILLIS_INF_FUTURE));
   }
-  grpc_fd_orphan(&exec_ctx, wakeup, NULL, NULL, false /* already_closed */,
-                 "done");
+  grpc_fd_orphan(wakeup, nullptr, nullptr, "done");
   wakeup_fd.read_fd = 0;
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(&exec_ctx, ps, &shutdown_ps_closure);
+  grpc_pollset_shutdown(ps, &shutdown_ps_closure);
   gpr_mu_unlock(mu);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_wakeup_fd_destroy(&wakeup_fd);
   gpr_free(ps);
   track_counters.Finish(state);
@@ -260,4 +252,17 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
 }
 BENCHMARK(BM_SingleThreadPollOneFd);
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  LibraryInitializer libInit;
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

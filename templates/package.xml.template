@@ -12,39 +12,39 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-08-24</date>
+   <date>2019-09-24</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
     <api>${settings.php_version.php()}</api>
    </version>
    <stability>
-    <release>beta</release>
-    <api>beta</api>
+    <release>${settings.php_version.php_stability()}</release>
+    <api>${settings.php_version.php_stability()}</api>
    </stability>
    <license>Apache 2.0</license>
    <notes>
-  - Channel are now by default persistent #11878
-  - Some bug fixes from 1.4 branch #12109, #12123
-  - Fixed hang bug when fork() was used #11814
-  - License changed to Apache 2.0
-  - Added support for php_namespace option in codegen plugin #11886
-  - Updated gRPC C Core library version 1.6
+  - gRPC Core ${settings.php_version.php_composer()} update
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
       <file baseinstalldir="/" name="config.w32" role="src" />
-      <file baseinstalldir="/" name="src/php/README.md" role="src" />
-      % for source in php_config_m4.src + php_config_m4.headers:
-      <file baseinstalldir="/" name="${source}" role="src" />
-      % endfor
-      % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []):
-      % for source in lib.get('public_headers', []) + lib.headers + lib.src:
-      <file baseinstalldir="/" name="${source}" role="src" />
-      % endfor
-      % endif
+      <file baseinstalldir="/" name="src/php/README.md" role="src" />\
+  <%
+    srcs = []
+    srcs.extend(php_config_m4.src + php_config_m4.headers)
+    php_deps = php_config_m4.get('deps', [])
+    lib_maps = {lib.name: lib for lib in libs}
+    for dep in php_deps[:]:
+      php_deps.extend(lib_maps[dep].transitive_deps)
+    for dep in php_deps:
+      lib = lib_maps[dep]
+      srcs.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+    srcs = sorted(set(srcs))
+  %>
+      % for src in srcs:
+      <file baseinstalldir="/" name="${src}" role="src" />
       % endfor
       <file name="LICENSE" role="doc" />
     </dir>
@@ -52,7 +52,7 @@
    <dependencies>
     <required>
      <php>
-      <min>5.5.0</min>
+      <min>7.0.0</min>
      </php>
      <pearinstaller>
       <min>1.4.0</min>
@@ -221,7 +221,7 @@
      <license>BSD</license>
      <notes>
   - GA release
-  - Fix shutdown hang problem #4017
+  - Fix shutdown freeze problem #4017
      </notes>
     </release>
     <release>

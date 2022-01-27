@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 
 void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,

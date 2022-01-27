@@ -18,7 +18,7 @@
   
   <%include file="../../go_path.include"/>
   <%include file="../../python_deps.include"/>
-  RUN pip install twisted h2==2.6.1 hyper
+  RUN python3 -m pip install twisted h2==2.6.1 hyper
 
   # Define the default command.
   CMD ["bash"]

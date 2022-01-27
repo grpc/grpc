@@ -19,9 +19,10 @@
 #include <memory>
 #include <string>
 
-#include <gflags/gflags.h>
-#include <grpc++/grpc++.h>
+#include "absl/flags/flag.h"
+
 #include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -30,20 +31,20 @@
 
 int kDeadlineSecs = 10;
 
-DEFINE_string(metrics_server_address, "localhost:8081",
-              "The metrics server addresses in the fomrat <hostname>:<port>");
-DEFINE_int32(deadline_secs, kDeadlineSecs,
-             "The deadline (in seconds) for RCP call");
-DEFINE_bool(total_only, false,
-            "If true, this prints only the total value of all gauges");
+ABSL_FLAG(std::string, metrics_server_address, "localhost:8081",
+          "The metrics server addresses in the fomrat <hostname>:<port>");
+// TODO(Capstan): Consider using absl::Duration
+ABSL_FLAG(int32_t, deadline_secs, kDeadlineSecs,
+          "The deadline (in seconds) for RCP call");
+ABSL_FLAG(bool, total_only, false,
+          "If true, this prints only the total value of all gauges");
 
 using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
-using grpc::testing::MetricsServiceImpl;
 
 // Do not log anything
-void BlackholeLogger(gpr_log_func_args* args) {}
+void BlackholeLogger(gpr_log_func_args* /*args*/) {}
 
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).
@@ -88,16 +89,18 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  // The output of metrics client is in some cases programatically parsed (for
+  // The output of metrics client is in some cases programmatically parsed (for
   // example by the stress test framework). So, we do not want any of the log
   // from the grpc library appearing on stdout.
   gpr_set_log_function(BlackholeLogger);
 
-  std::shared_ptr<grpc::Channel> channel(grpc::CreateChannel(
-      FLAGS_metrics_server_address, grpc::InsecureChannelCredentials()));
+  std::shared_ptr<grpc::Channel> channel(
+      grpc::CreateChannel(absl::GetFlag(FLAGS_metrics_server_address),
+                          grpc::InsecureChannelCredentials()));
 
-  if (!PrintMetrics(MetricsService::NewStub(channel), FLAGS_total_only,
-                    FLAGS_deadline_secs)) {
+  if (!PrintMetrics(MetricsService::NewStub(channel),
+                    absl::GetFlag(FLAGS_total_only),
+                    absl::GetFlag(FLAGS_deadline_secs))) {
     return 1;
   }
 

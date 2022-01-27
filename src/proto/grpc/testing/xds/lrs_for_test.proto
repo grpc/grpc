@@ -1,0 +1,189 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file contains the eds protocol and its dependency.
+//
+// TODO(juanlishen): This file is a hack to avoid a problem we're
+// currently having where we can't depend on a proto file in an external
+// repo due to bazel limitations.  Once that's fixed, this should be
+// removed.  Until this, it should be used in the gRPC tests only, or else it
+// will cause a conflict due to the same proto messages being defined in
+// multiple files in the same binary.
+
+syntax = "proto3";
+
+package envoy.service.load_stats.v2;
+
+import "google/protobuf/duration.proto";
+import "src/proto/grpc/testing/xds/eds_for_test.proto";
+
+// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
+message EndpointLoadMetricStats {
+  // Name of the metric; may be empty.
+  string metric_name = 1;
+
+  // Number of calls that finished and included this metric.
+  uint64 num_requests_finished_with_metric = 2;
+
+  // Sum of metric values across all calls that finished with this metric for
+  // load_reporting_interval.
+  double total_metric_value = 3;
+}
+
+message UpstreamLocalityStats {
+  // Name of zone, region and optionally endpoint group these metrics were
+  // collected from. Zone and region names could be empty if unknown.
+  envoy.api.v2.Locality locality = 1;
+
+  // The total number of requests successfully completed by the endpoints in the
+  // locality.
+  uint64 total_successful_requests = 2;
+
+  // The total number of unfinished requests
+  uint64 total_requests_in_progress = 3;
+
+  // The total number of requests that failed due to errors at the endpoint,
+  // aggregated over all endpoints in the locality.
+  uint64 total_error_requests = 4;
+
+  // The total number of requests that were issued by this Envoy since
+  // the last report. This information is aggregated over all the
+  // upstream endpoints in the locality.
+  uint64 total_issued_requests = 8;
+
+  // Stats for multi-dimensional load balancing.
+  repeated EndpointLoadMetricStats load_metric_stats = 5;
+
+//  // Endpoint granularity stats information for this locality. This information
+//  // is populated if the Server requests it by setting
+//  // :ref:`LoadStatsResponse.report_endpoint_granularity<envoy_api_field_load_stats.LoadStatsResponse.report_endpoint_granularity>`.
+//  repeated UpstreamEndpointStats upstream_endpoint_stats = 7;
+
+  // [#not-implemented-hide:] The priority of the endpoint group these metrics
+  // were collected from.
+  uint32 priority = 6;
+}
+
+// Per cluster load stats. Envoy reports these stats a management server in a
+// :ref:`LoadStatsRequest<envoy_api_msg_load_stats.LoadStatsRequest>`
+// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
+// Next ID: 7
+message ClusterStats {
+  // The name of the cluster.
+  string cluster_name = 1;
+
+  // The eds_cluster_config service_name of the cluster.
+  // It's possible that two clusters send the same service_name to EDS,
+  // in that case, the management server is supposed to do aggregation on the load reports.
+  string cluster_service_name = 6;
+
+  // Need at least one.
+  repeated UpstreamLocalityStats upstream_locality_stats = 2;
+
+  // Cluster-level stats such as total_successful_requests may be computed by
+  // summing upstream_locality_stats. In addition, below there are additional
+  // cluster-wide stats.
+  //
+  // The total number of dropped requests. This covers requests
+  // deliberately dropped by the drop_overload policy and circuit breaking.
+  uint64 total_dropped_requests = 3;
+
+  message DroppedRequests {
+    // Identifier for the policy specifying the drop.
+    string category = 1;
+    // Total number of deliberately dropped requests for the category.
+    uint64 dropped_count = 2;
+  }
+  // Information about deliberately dropped requests for each category specified
+  // in the DropOverload policy.
+  repeated DroppedRequests dropped_requests = 5;
+
+  // Period over which the actual load report occurred. This will be guaranteed to include every
+  // request reported. Due to system load and delays between the *LoadStatsRequest* sent from Envoy
+  // and the *LoadStatsResponse* message sent from the management server, this may be longer than
+  // the requested load reporting interval in the *LoadStatsResponse*.
+  google.protobuf.Duration load_report_interval = 4;
+}
+
+// [#protodoc-title: Load reporting service]
+
+service LoadReportingService {
+  // Advanced API to allow for multi-dimensional load balancing by remote
+  // server. For receiving LB assignments, the steps are:
+  // 1, The management server is configured with per cluster/zone/load metric
+  //    capacity configuration. The capacity configuration definition is
+  //    outside of the scope of this document.
+  // 2. Envoy issues a standard {Stream,Fetch}Endpoints request for the clusters
+  //    to balance.
+  //
+  // Independently, Envoy will initiate a StreamLoadStats bidi stream with a
+  // management server:
+  // 1. Once a connection establishes, the management server publishes a
+  //    LoadStatsResponse for all clusters it is interested in learning load
+  //    stats about.
+  // 2. For each cluster, Envoy load balances incoming traffic to upstream hosts
+  //    based on per-zone weights and/or per-instance weights (if specified)
+  //    based on intra-zone LbPolicy. This information comes from the above
+  //    {Stream,Fetch}Endpoints.
+  // 3. When upstream hosts reply, they optionally add header <define header
+  //    name> with ASCII representation of EndpointLoadMetricStats.
+  // 4. Envoy aggregates load reports over the period of time given to it in
+  //    LoadStatsResponse.load_reporting_interval. This includes aggregation
+  //    stats Envoy maintains by itself (total_requests, rpc_errors etc.) as
+  //    well as load metrics from upstream hosts.
+  // 5. When the timer of load_reporting_interval expires, Envoy sends new
+  //    LoadStatsRequest filled with load reports for each cluster.
+  // 6. The management server uses the load reports from all reported Envoys
+  //    from around the world, computes global assignment and prepares traffic
+  //    assignment destined for each zone Envoys are located in. Goto 2.
+  rpc StreamLoadStats(stream LoadStatsRequest) returns (stream LoadStatsResponse) {
+  }
+}
+
+// A load report Envoy sends to the management server.
+// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
+message LoadStatsRequest {
+  // Node identifier for Envoy instance.
+  envoy.api.v2.Node node = 1;
+
+  // A list of load stats to report.
+  repeated ClusterStats cluster_stats = 2;
+}
+
+// The management server sends envoy a LoadStatsResponse with all clusters it
+// is interested in learning load stats about.
+// [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
+message LoadStatsResponse {
+  // Clusters to report stats for.
+  // Not populated if *send_all_clusters* is true.
+  repeated string clusters = 1;
+
+  // If true, the client should send all clusters it knows about.
+  // Only clients that advertise the "envoy.lrs.supports_send_all_clusters" capability in their
+  // :ref:`client_features<envoy_api_field_core.Node.client_features>` field will honor this field.
+  bool send_all_clusters = 4;
+
+  // The minimum interval of time to collect stats over. This is only a minimum for two reasons:
+  // 1. There may be some delay from when the timer fires until stats sampling occurs.
+  // 2. For clusters that were already feature in the previous *LoadStatsResponse*, any traffic
+  //    that is observed in between the corresponding previous *LoadStatsRequest* and this
+  //    *LoadStatsResponse* will also be accumulated and billed to the cluster. This avoids a period
+  //    of inobservability that might otherwise exists between the messages. New clusters are not
+  //    subject to this consideration.
+  google.protobuf.Duration load_reporting_interval = 2;
+
+  // Set to *true* if the management server supports endpoint granularity
+  // report.
+  bool report_endpoint_granularity = 3;
+}

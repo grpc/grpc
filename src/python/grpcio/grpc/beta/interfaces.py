@@ -15,9 +15,8 @@
 
 import abc
 
-import six
-
 import grpc
+import six
 
 ChannelConnectivity = grpc.ChannelConnectivity
 # FATAL_FAILURE was a Beta-API name for SHUTDOWN

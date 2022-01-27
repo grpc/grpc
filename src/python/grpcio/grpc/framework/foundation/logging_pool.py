@@ -13,9 +13,10 @@
 # limitations under the License.
 """A thread pool that logs exceptions raised by tasks executed within it."""
 
+from concurrent import futures
 import logging
 
-from concurrent import futures
+_LOGGER = logging.getLogger(__name__)
 
 
 def _wrap(behavior):
@@ -25,7 +26,7 @@ def _wrap(behavior):
         try:
             return behavior(*args, **kwargs)
         except Exception:
-            logging.exception(
+            _LOGGER.exception(
                 'Unexpected exception from %s executed in logging pool!',
                 behavior)
             raise
@@ -49,8 +50,9 @@ class _LoggingPool(object):
         return self._backing_pool.submit(_wrap(fn), *args, **kwargs)
 
     def map(self, func, *iterables, **kwargs):
-        return self._backing_pool.map(
-            _wrap(func), *iterables, timeout=kwargs.get('timeout', None))
+        return self._backing_pool.map(_wrap(func),
+                                      *iterables,
+                                      timeout=kwargs.get('timeout', None))
 
     def shutdown(self, wait=True):
         self._backing_pool.shutdown(wait=wait)

@@ -18,12 +18,12 @@ set -e
 
 export TEST=true
 
-cd `dirname $0`/../../..
+cd "$(dirname "$0")/../../.."
 
 owners=.github/CODEOWNERS
-want_owners=`mktemp /tmp/submXXXXXX`
+want_owners=$(mktemp /tmp/submXXXXXX)
 
-tools/mkowners/mkowners.py -o $want_owners
-diff -u $owners $want_owners
+tools/mkowners/mkowners.py -o "$want_owners"
+diff -u "$owners" "$want_owners"
 
-rm $want_owners
+rm "$want_owners"

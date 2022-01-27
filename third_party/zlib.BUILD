@@ -1,5 +1,5 @@
 cc_library(
-    name = "z",
+    name = "zlib",
     srcs = [
         "adler32.c",
         "compress.c",
@@ -27,7 +27,7 @@ cc_library(
         "zutil.h",
     ],
     includes = [
-        "include",
+        ".",
     ],
     linkstatic = 1,
     visibility = [

@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpc++/ext/proto_server_reflection_plugin.h>
-#include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/impl/server_initializer.h>
-#include <grpc++/server.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/server.h>
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
@@ -29,7 +29,7 @@ namespace reflection {
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
     : reflection_service_(new grpc::ProtoServerReflection()) {}
 
-grpc::string ProtoServerReflectionPlugin::name() {
+std::string ProtoServerReflectionPlugin::name() {
   return "proto_server_reflection";
 }
 
@@ -41,8 +41,8 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
   reflection_service_->SetServiceList(si->GetServiceList());
 }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
-                                                  void* value) {}
+void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
+                                                  void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
   if (reflection_service_) {
@@ -64,10 +64,11 @@ static std::unique_ptr< ::grpc::ServerBuilderPlugin> CreateProtoReflection() {
 }
 
 void InitProtoReflectionServerBuilderPlugin() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
+  static struct Initialize {
+    Initialize() {
+      ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateProtoReflection);
+    }
+  } initializer;
 }
 
 // Force InitProtoReflectionServerBuilderPlugin() to be called at static

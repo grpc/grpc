@@ -18,8 +18,6 @@
 
 #include "completion_queue.h"
 
-#include <php.h>
-
 grpc_completion_queue *completion_queue;
 
 void grpc_php_init_completion_queue(TSRMLS_D) {

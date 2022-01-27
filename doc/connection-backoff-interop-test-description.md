@@ -3,7 +3,7 @@ Connection Backoff Interop Test Descriptions
 
 This test is to verify the client is reconnecting the server with correct
 backoffs as specified in
-[the spec](http://github.com/grpc/grpc/blob/master/doc/connection-backoff.md).
+[the spec](https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md).
 The test server has a port (control_port) running a rpc service for controlling
 the server and another port (retry_port) to close any incoming tcp connections.
 The test has the following flow:
@@ -40,7 +40,7 @@ Procedure of client:
 1. Calls Start on server control port with a large deadline or no deadline,
 waits for its finish and checks it succeeded.
 2. Initiates a channel connection to server retry port, which should perform
-reconnections with proper backoffs. A convienent way to achieve this is to
+reconnections with proper backoffs. A convenient way to achieve this is to
 call Start with a deadline of 540s. The rpc should fail with deadline exceeded.
 3. Calls Stop on server control port and checks it succeeded.
 4. Checks the response to see whether the server thinks the backoffs passed the

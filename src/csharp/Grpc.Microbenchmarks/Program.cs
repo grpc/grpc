@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 
 // Copyright 2015 gRPC authors.
 //
@@ -16,25 +16,18 @@
 
 #endregion
 
-using System;
-using Grpc.Core;
-using Grpc.Core.Internal;
-using Grpc.Core.Logging;
+using BenchmarkDotNet.Running;
 
 namespace Grpc.Microbenchmarks
 {
     class Program
     {
+        // typical usage: dotnet run -c Release -f netcoreapp2.1
+        // (this will profile both .net core and .net framework; for some reason
+        // if you start from "-f net461", it goes horribly wrong)
         public static void Main(string[] args)
         {
-            GrpcEnvironment.SetLogger(new ConsoleLogger());
-            var benchmark = new SendMessageBenchmark();
-            benchmark.Init();
-            foreach (int threadCount in new int[] {1, 1, 2, 4, 8, 12})
-            {
-                benchmark.Run(threadCount, 4 * 1000 * 1000, 0);
-            }
-            benchmark.Cleanup();
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
     }
 }

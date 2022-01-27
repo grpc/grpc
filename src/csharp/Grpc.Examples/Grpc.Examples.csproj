@@ -1,17 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
-
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
-    <AssemblyName>Grpc.Examples</AssemblyName>
-    <PackageId>Grpc.Examples</PackageId>
+    <TargetFrameworks>net45;netcoreapp3.1</TargetFrameworks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
   <ItemGroup>

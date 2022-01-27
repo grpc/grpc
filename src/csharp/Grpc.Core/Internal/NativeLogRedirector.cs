@@ -51,6 +51,7 @@ namespace Grpc.Core.Internal
             }
         }
 
+        [MonoPInvokeCallback(typeof(GprLogDelegate))]
         private static void HandleWrite(IntPtr fileStringPtr, int line, ulong threadId, IntPtr severityStringPtr, IntPtr msgPtr)
         {
             try

@@ -16,71 +16,108 @@
  *
  */
 
-#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include <string.h>
 
+#include "absl/strings/str_cat.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
-                                      grpc_server_credentials *creds) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_error *err = GRPC_ERROR_NONE;
-  grpc_server_security_connector *sc = NULL;
+namespace {
+
+grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
+                                           grpc_error_handle* error) {
+  grpc_server_credentials* server_credentials =
+      grpc_find_server_credentials_in_args(args);
+  if (server_credentials == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Could not find server credentials");
+    return args;
+  }
+  auto security_connector = server_credentials->create_security_connector(args);
+  if (security_connector == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unable to create secure server with credentials of type ",
+                     server_credentials->type()));
+    return args;
+  }
+  grpc_arg arg_to_add =
+      grpc_security_connector_to_arg(security_connector.get());
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
+  grpc_channel_args_destroy(args);
+  return new_args;
+}
+
+}  // namespace
+
+int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
+                                      grpc_server_credentials* creds) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
-  grpc_security_status status;
-  grpc_channel_args *args = NULL;
+  grpc_channel_args* args = nullptr;
   GRPC_API_TRACE(
       "grpc_server_add_secure_http2_port("
       "server=%p, addr=%s, creds=%p)",
       3, (server, addr, creds));
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   // Create security context.
-  if (creds == NULL) {
+  if (creds == nullptr) {
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No credentials specified for secure server port (creds==NULL)");
     goto done;
   }
-  status =
-      grpc_server_credentials_create_security_connector(&exec_ctx, creds, &sc);
-  if (status != GRPC_SECURITY_OK) {
-    char *msg;
-    gpr_asprintf(&msg,
-                 "Unable to create secure server with credentials of type %s.",
-                 creds->type);
-    err = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg),
-                             GRPC_ERROR_INT_SECURITY_STATUS, status);
-    gpr_free(msg);
-    goto done;
+  // TODO(yashykt): Ideally, we would not want to have different behavior here
+  // based on whether a config fetcher is configured or not. Currently, we have
+  // a feature for SSL credentials reloading with an application callback that
+  // assumes that there is a single security connector. If we delay the creation
+  // of the security connector to after the creation of the listener(s), we
+  // would have potentially multiple security connectors which breaks the
+  // assumption for SSL creds reloading. When the API for SSL creds reloading is
+  // rewritten, we would be able to make this workaround go away by removing
+  // that assumption. As an immediate drawback of this workaround, config
+  // fetchers need to be registered before adding ports to the server.
+  if (core_server->config_fetcher() != nullptr) {
+    // Create channel args.
+    grpc_arg arg_to_add = grpc_server_credentials_to_arg(creds);
+    args = grpc_channel_args_copy_and_add(core_server->channel_args(),
+                                          &arg_to_add, 1);
+  } else {
+    sc = creds->create_security_connector(nullptr);
+    if (sc == nullptr) {
+      err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Unable to create secure server with credentials of type ",
+          creds->type()));
+      goto done;
+    }
+    grpc_arg args_to_add[2];
+    args_to_add[0] = grpc_server_credentials_to_arg(creds);
+    args_to_add[1] = grpc_security_connector_to_arg(sc.get());
+    args = grpc_channel_args_copy_and_add(
+        core_server->channel_args(), args_to_add, GPR_ARRAY_SIZE(args_to_add));
   }
-  // Create channel args.
-  grpc_arg args_to_add[2];
-  args_to_add[0] = grpc_server_credentials_to_arg(creds);
-  args_to_add[1] = grpc_security_connector_to_arg(&sc->base);
-  args =
-      grpc_channel_args_copy_and_add(grpc_server_get_channel_args(server),
-                                     args_to_add, GPR_ARRAY_SIZE(args_to_add));
   // Add server port.
-  err = grpc_chttp2_server_add_port(&exec_ctx, server, addr, args, &port_num);
+  err = grpc_core::Chttp2ServerAddPort(core_server, addr, args,
+                                       ModifyArgsForConnection, &port_num);
 done:
-  if (sc != NULL) {
-    GRPC_SECURITY_CONNECTOR_UNREF(&exec_ctx, &sc->base, "server");
-  }
-  grpc_exec_ctx_finish(&exec_ctx);
+  sc.reset(DEBUG_LOCATION, "server");
   if (err != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
 
     GRPC_ERROR_UNREF(err);
   }

@@ -16,26 +16,20 @@
  *
  */
 
-#import "GRPCCall.h"
+#import "GRPCCallLegacy.h"
 
-/** Helpers for setting TLS Trusted Roots, Client Certificates, and Private Key */
+/**
+ * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
+ */
 @interface GRPCCall (ChannelCredentials)
 
-/**
- * Use the provided @c pemRootCert as the set of trusted root Certificate Authorities for @c host.
- */
 + (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCert
                    forHost:(nonnull NSString *)host
-                     error:(NSError * _Nullable * _Nullable)errorPtr;
-/**
- * Configures @c host with TLS/SSL Client Credentials and optionally trusted root Certificate
- * Authorities. If @c pemRootCerts is nil, the default CA Certificates bundled with gRPC will be
- * used.
- */
+                     error:(NSError *_Nullable *_Nullable)errorPtr;
 + (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
                    forHost:(nonnull NSString *)host
-                     error:(NSError * _Nullable * _Nullable)errorPtr;
+                     error:(NSError *_Nullable *_Nullable)errorPtr;
 
 @end

@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="end2end_defs.include" import="*"/>\
+  ${end2end_selector(k for k, v in core_end2end_tests.items() if not v)}

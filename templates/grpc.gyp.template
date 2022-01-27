@@ -20,7 +20,10 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-
+  <%
+  def is_absl_lib(target_name):
+      return target_name.startswith("absl/");
+  %>
   {
     'variables': {
      # The openssl and zlib dependencies must be passed in as variables
@@ -33,7 +36,7 @@
     },
     'target_defaults': {
       'configurations': {
-        % for name, args in configs.iteritems():
+        % for name, args in configs.items():
         %  if name in ['dbg', 'opt']:
         '${{'dbg':'Debug', 'opt': 'Release'}[name]}': {
           % for arg, prop in [('CPPFLAGS', 'cflags'), ('DEFINES', 'defines')]:
@@ -60,11 +63,11 @@
       % endfor
       'cflags_c': [
         '-Werror',
-        '-std=c99'
+        '-std=c99',
       ],
       'cflags_cc': [
         '-Werror',
-        '-std=c++11'
+        '-std=c++11',
       ],
       'include_dirs': [
         '.',
@@ -127,7 +130,7 @@
               % endfor
               '-stdlib=libc++',
               '-std=c++11',
-              '-Wno-error=deprecated-declarations'
+              '-Wno-error=deprecated-declarations',
             ],
             % endif
           },
@@ -136,13 +139,15 @@
     },
     'targets': [
       % for lib in libs:
-      %  if getattr(lib, 'platforms', None) is None and lib.name != 'ares':
+      %  if getattr(lib, 'platforms', None) is None and lib.name != 'ares' and not is_absl_lib(lib.name):
       {
         'target_name': '${lib.name}',
         'type': 'static_library',
         'dependencies': [
           % for dep in getattr(lib, 'deps', []):
+          %  if dep != 'libssl':
           '${dep}',
+          %  endif
           % endfor
         ],
         'sources': [

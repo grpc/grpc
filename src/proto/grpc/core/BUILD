@@ -12,13 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:python_rules.bzl", "py_proto_library")
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
+licenses(["notice"])
 
-grpc_package(name = "core", visibility = "public")
+grpc_package(
+    name = "core",
+    visibility = "public",
+)
 
 grpc_proto_library(
     name = "stats_proto",
     srcs = ["stats.proto"],
+)
+
+proto_library(
+    name = "stats_descriptor",
+    srcs = ["stats.proto"],
+)
+
+py_proto_library(
+    name = "stats_py_pb2",
+    deps = [":stats_descriptor"],
 )

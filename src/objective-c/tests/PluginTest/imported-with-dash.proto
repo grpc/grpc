@@ -18,5 +18,5 @@ package grpc.testing;
 option objc_class_prefix = "RMT";
 
 message TestMessageImported {
-  int32 dummy = 1;
+  int32 phony = 1;
 }

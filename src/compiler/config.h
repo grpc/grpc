@@ -19,44 +19,21 @@
 #ifndef SRC_COMPILER_CONFIG_H
 #define SRC_COMPILER_CONFIG_H
 
-#include <grpc++/impl/codegen/config_protobuf.h>
-
-#ifndef GRPC_CUSTOM_CODEGENERATOR
-#include <google/protobuf/compiler/code_generator.h>
-#define GRPC_CUSTOM_CODEGENERATOR ::google::protobuf::compiler::CodeGenerator
-#define GRPC_CUSTOM_GENERATORCONTEXT \
-  ::google::protobuf::compiler::GeneratorContext
-#endif
-
-#ifndef GRPC_CUSTOM_PRINTER
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/printer.h>
-#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
-#define GRPC_CUSTOM_PRINTER ::google::protobuf::io::Printer
-#define GRPC_CUSTOM_CODEDOUTPUTSTREAM ::google::protobuf::io::CodedOutputStream
-#define GRPC_CUSTOM_STRINGOUTPUTSTREAM \
-  ::google::protobuf::io::StringOutputStream
-#endif
-
-#ifndef GRPC_CUSTOM_PLUGINMAIN
-#include <google/protobuf/compiler/plugin.h>
-#define GRPC_CUSTOM_PLUGINMAIN ::google::protobuf::compiler::PluginMain
-#endif
-
-#ifndef GRPC_CUSTOM_PARSEGENERATORPARAMETER
-#include <google/protobuf/compiler/code_generator.h>
-#define GRPC_CUSTOM_PARSEGENERATORPARAMETER \
-  ::google::protobuf::compiler::ParseGeneratorParameter
-#endif
-
-#ifndef GRPC_CUSTOM_STRING
 #include <string>
-#define GRPC_CUSTOM_STRING std::string
+
+#include "src/compiler/config_protobuf.h"
+
+#ifdef GRPC_CUSTOM_STRING
+#warning GRPC_CUSTOM_STRING is no longer supported. Please use std::string.
 #endif
 
 namespace grpc {
 
-typedef GRPC_CUSTOM_STRING string;
+// Using grpc::string and grpc::to_string is discouraged in favor of
+// std::string and std::to_string. This is only for legacy code using
+// them explictly.
+using std::string;     // deprecated
+using std::to_string;  // deprecated
 
 namespace protobuf {
 

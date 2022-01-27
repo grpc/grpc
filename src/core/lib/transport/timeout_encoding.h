@@ -19,25 +19,50 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/slice/slice.h"
 
-#define GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE (GPR_LTOA_MIN_BUFSIZE + 1)
+namespace grpc_core {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+class Timeout {
+ public:
+  static Timeout FromDuration(grpc_millis duration);
 
-/* Encode/decode timeouts to the GRPC over HTTP/2 format;
-   encoding may round up arbitrarily */
-void grpc_http2_encode_timeout(grpc_millis timeout, char *buffer);
-int grpc_http2_decode_timeout(grpc_slice text, grpc_millis *timeout);
+  // Computes: 100 * ((this - other) / other)
+  double RatioVersus(Timeout other) const;
+  Slice Encode() const;
+  grpc_millis AsDuration() const;
 
-#ifdef __cplusplus
-}
-#endif
+ private:
+  enum class Unit : uint8_t {
+    kNanoseconds,
+    kMilliseconds,
+    kTenMilliseconds,
+    kHundredMilliseconds,
+    kSeconds,
+    kTenSeconds,
+    kHundredSeconds,
+    kMinutes,
+    kTenMinutes,
+    kHundredMinutes,
+    kHours,
+  };
+
+  Timeout(uint16_t value, Unit unit) : value_(value), unit_(unit) {}
+
+  static Timeout FromMillis(int64_t millis);
+  static Timeout FromSeconds(int64_t seconds);
+  static Timeout FromMinutes(int64_t minutes);
+  static Timeout FromHours(int64_t hours);
+
+  uint16_t value_;
+  Unit unit_;
+};
+
+absl::optional<grpc_millis> ParseTimeout(const Slice& text);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H */

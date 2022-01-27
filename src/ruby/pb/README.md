@@ -7,7 +7,7 @@ code to them.
 PREREQUISITES
 -------------
 
-The code is is generated using the protoc (> 3.0.0.alpha.1) and the
+The code is generated using the protoc (> 3.0.0.alpha.1) and the
 grpc_ruby_plugin.  These must be installed to regenerate the IDL defined
 classes, but that's not necessary just to use them.
 

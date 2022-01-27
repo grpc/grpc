@@ -19,14 +19,13 @@
 #ifndef GRPC_CORE_LIB_SURFACE_API_TRACE_H
 #define GRPC_CORE_LIB_SURFACE_API_TRACE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
+
 #include "src/core/lib/debug/trace.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern grpc_tracer_flag grpc_api_trace;
+extern grpc_core::TraceFlag grpc_api_trace;
 
 /* Provide unwrapping macros because we're in C89 and variadic macros weren't
    introduced until C99... */
@@ -47,12 +46,8 @@ extern grpc_tracer_flag grpc_api_trace;
 /* Due to the limitations of C89's preprocessor, the arity of the var-arg list
    'nargs' must be specified. */
 #define GRPC_API_TRACE(fmt, nargs, args)                      \
-  if (GRPC_TRACER_ON(grpc_api_trace)) {                       \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {              \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_API_TRACE_H */

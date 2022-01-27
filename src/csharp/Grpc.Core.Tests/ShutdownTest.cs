@@ -59,7 +59,7 @@ namespace Grpc.Core.Tests
             await readyToShutdown.Task;  // make sure handler is running
 
             await channel.ShutdownAsync();  // channel.ShutdownAsync() works even if there's a pending call.
-            await server.KillAsync();  // server.ShutdownAsync() would hang waiting for the call to finish.
+            await server.KillAsync();  // server.ShutdownAsync() would freeze waiting for the call to finish.
         }
     }
 }

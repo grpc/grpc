@@ -16,4 +16,4 @@
 
   # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_version.py.template`!!!
 
-  VERSION='${settings.python_version.pep440()}'
+  VERSION = '${settings.python_version.pep440()}'

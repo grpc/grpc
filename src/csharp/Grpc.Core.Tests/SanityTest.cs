@@ -31,7 +31,7 @@ namespace Grpc.Core.Tests
     public class SanityTest
     {
         // TODO: make sanity test work for CoreCLR as well
-#if !NETCOREAPP1_0
+#if !NETCOREAPP
         /// <summary>
         /// Because we depend on a native library, sometimes when things go wrong, the
         /// entire NUnit test process crashes. To be able to track down problems better,
@@ -44,7 +44,7 @@ namespace Grpc.Core.Tests
         public void TestsJsonUpToDate()
         {
             var discoveredTests = DiscoverAllTestClasses();
-            var testsFromFile 
+            var testsFromFile
                 = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(ReadTestsJson());
 
             Assert.AreEqual(discoveredTests, testsFromFile);
@@ -65,13 +65,13 @@ namespace Grpc.Core.Tests
                 {
                     foreach (var m in t.GetMethods())
                     {
-                        var attributes = m.GetCustomAttributes(typeof(NUnit.Framework.TestAttribute), true);
-                        if (attributes.Length > 0)
+                        var testAttributes = m.GetCustomAttributes(typeof(NUnit.Framework.TestAttribute), true);
+                        var testCaseAttributes = m.GetCustomAttributes(typeof(NUnit.Framework.TestCaseAttribute), true);
+                        if (testAttributes.Length > 0 || testCaseAttributes.Length > 0)
                         {
                             testClasses.Add(t.FullName);
                             break;
                         }
-
                     }
                 }
                 testClasses.Sort();
@@ -102,6 +102,7 @@ namespace Grpc.Core.Tests
                 "Grpc.HealthCheck.Tests",
                 "Grpc.IntegrationTesting",
                 "Grpc.Reflection.Tests",
+                "Grpc.Tools.Tests",
             };
             foreach (var assemblyName in otherAssemblies)
             {

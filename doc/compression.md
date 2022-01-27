@@ -30,7 +30,7 @@ configured:
    therefore the compression that SHALL be used in the absence of per-RPC
    compression configuration.
 +  At response time, via:
-   +  For unary RPCs, the {Client,Server}Context instance. 
+   +  For unary RPCs, the {Client,Server}Context instance.
    +  For streaming RPCs, the {Client,Server}Writer instance. In this case,
       configuration is reduced to disabling compression altogether.
 
@@ -41,14 +41,14 @@ of the request, including not performing any compression, regardless of channel
 and RPC settings (for example, if compression would result in small or negative
 gains).
 
-When a message from a client compressed with an unsupported algorithm is
-processed by a server, it WILL result in an `UNIMPLEMENTED` error status on the
-server. The server will then include in its response a `grpc-accept-encoding`
-header specifying the algorithms it does accept. If an `UNIMPLEMENTED` error
-status is returned from the server despite having used one of the algorithms
-from the `grpc-accept-encoding` header, the cause MUST NOT be related to
-compression. Data sent from a server compressed with an algorithm not supported
-by the client WILL result in an `INTERNAL` error status on the client side.
+If a client message is compressed by an algorithm that is not supported
+by a server, the message WILL result in an `UNIMPLEMENTED` error status on the
+server. The server will then include a `grpc-accept-encoding` response
+header which specifies the algorithms that the server accepts. If the client
+message is compressed using one of the algorithms from the `grpc-accept-encoding` header
+and an `UNIMPLEMENTED` error status is returned from the server, the cause of the error
+MUST NOT be related to compression. If a server sent data which is compressed by an algorithm
+that is not supported by the client, an `INTERNAL` error status will occur on the client side.
 
 Note that a peer MAY choose to not disclose all the encodings it supports.
 However, if it receives a message compressed in an undisclosed but supported
@@ -57,13 +57,13 @@ header.
 
 For every message a server is requested to compress using an algorithm it knows
 the client doesn't support (as indicated by the last `grpc-accept-encoding`
-header received from the client), it SHALL send the message uncompressed. 
+header received from the client), it SHALL send the message uncompressed.
 
 ### Specific Disabling of Compression
 
 If the user (through the previously described mechanisms) requests to disable
 compression the next message MUST be sent uncompressed. This is instrumental in
-preventing BEAST/CRIME attacks. This applies to both the the unary and streaming
+preventing BEAST/CRIME attacks. This applies to both the unary and streaming
 cases.
 
 ### Compression Levels and Algorithms
@@ -76,8 +76,8 @@ of _compression levels_ (such as "low", "medium", "high").
 Levels map to concrete algorithms and/or their settings (such as "low" mapping
 to "gzip -3" and "high" mapping to "gzip -9") automatically depending on what a
 peer is known to support. A server is always aware of what its clients support,
-as clients disclose it in their Message-Accept-Encoding header as part of their
-initial call. A client doesn't a priori (presently) know which algorithms a
+as clients disclose it in the Message-Accept-Encoding header as part of the
+RPC. A client doesn't a priori (presently) know which algorithms a
 server supports. This issue can be addressed with an initial negotiation of
 capabilities or an automatic retry mechanism. These features will be implemented
 in the future. Currently however, compression levels are only supported at the

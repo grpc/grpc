@@ -16,9 +16,8 @@
 import abc
 
 from google.protobuf import descriptor
-import six
-
 import grpc
+import six
 
 
 class UnaryUnaryChannelRpc(six.with_metaclass(abc.ABCMeta)):
@@ -495,8 +494,8 @@ class Server(six.with_metaclass(abc.ABCMeta)):
     """A server with which to test a system that services RPCs."""
 
     @abc.abstractmethod
-    def invoke_unary_unary(
-            self, method_descriptor, invocation_metadata, request, timeout):
+    def invoke_unary_unary(self, method_descriptor, invocation_metadata,
+                           request, timeout):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -513,8 +512,8 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def invoke_unary_stream(
-            self, method_descriptor, invocation_metadata, request, timeout):
+    def invoke_unary_stream(self, method_descriptor, invocation_metadata,
+                            request, timeout):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -531,8 +530,8 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def invoke_stream_unary(
-            self, method_descriptor, invocation_metadata, timeout):
+    def invoke_stream_unary(self, method_descriptor, invocation_metadata,
+                            timeout):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:
@@ -548,8 +547,8 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def invoke_stream_stream(
-            self, method_descriptor, invocation_metadata, timeout):
+    def invoke_stream_stream(self, method_descriptor, invocation_metadata,
+                             timeout):
         """Invokes an RPC to be serviced by the system under test.
 
         Args:

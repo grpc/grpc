@@ -18,25 +18,27 @@
 
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/impl/server_builder_option.h>
-#include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/impl/server_initializer.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
+#include <gtest/gtest.h>
+
+#include "absl/memory/memory.h"
+
 #include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/impl/server_builder_option.h>
+#include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gtest/gtest.h>
 
 #define PLUGIN_NAME "TestServerBuilderPlugin"
 
@@ -52,7 +54,7 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     register_service_ = false;
   }
 
-  grpc::string name() override { return PLUGIN_NAME; }
+  std::string name() override { return PLUGIN_NAME; }
 
   void InitServer(ServerInitializer* si) override {
     init_server_is_called_ = true;
@@ -61,9 +63,9 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     }
   }
 
-  void Finish(ServerInitializer* si) override { finish_is_called_ = true; }
+  void Finish(ServerInitializer* /*si*/) override { finish_is_called_ = true; }
 
-  void ChangeArguments(const grpc::string& name, void* value) override {
+  void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {
     change_arguments_is_called_ = true;
   }
 
@@ -99,7 +101,7 @@ class InsertPluginServerBuilderOption : public ServerBuilderOption {
  public:
   InsertPluginServerBuilderOption() { register_service_ = false; }
 
-  void UpdateArguments(ChannelArguments* arg) override {}
+  void UpdateArguments(ChannelArguments* /*arg*/) override {}
 
   void UpdatePlugins(
       std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {
@@ -121,17 +123,12 @@ std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
   return std::unique_ptr<ServerBuilderPlugin>(new TestServerBuilderPlugin());
 }
 
-void AddTestServerBuilderPlugin() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  ::grpc::ServerBuilder::InternalAddPluginFactory(
-      &CreateTestServerBuilderPlugin);
-}
-
 // Force AddServerBuilderPlugin() to be called at static initialization time.
 struct StaticTestPluginInitializer {
-  StaticTestPluginInitializer() { AddTestServerBuilderPlugin(); }
+  StaticTestPluginInitializer() {
+    ::grpc::ServerBuilder::InternalAddPluginFactory(
+        &CreateTestServerBuilderPlugin);
+  }
 } static_plugin_initializer_test_;
 
 // When the param boolean is true, the ServerBuilder plugin will be added at the
@@ -143,7 +140,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
-    builder_.reset(new ServerBuilder());
+    builder_ = absl::make_unique<ServerBuilder>();
   }
 
   void InsertPlugin() {
@@ -173,7 +170,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   }
 
   void StartServer() {
-    grpc::string server_address = "localhost:" + to_string(port_);
+    std::string server_address = "localhost:" + to_string(port_);
     builder_->AddListeningPort(server_address, InsecureServerCredentials());
     // we run some tests without a service, and for those we need to supply a
     // frequently polled completion queue
@@ -185,7 +182,7 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = CreateChannel(target, InsecureChannelCredentials());
+    channel_ = grpc::CreateChannel(target, InsecureChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -232,8 +229,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void RunCQ() {
     void* tag;
     bool ok;
-    while (cq_->Next(&tag, &ok))
-      ;
+    while (cq_->Next(&tag, &ok)) {
+    }
   }
 };
 
@@ -257,14 +254,14 @@ TEST_P(ServerBuilderPluginTest, PluginWithServiceTest) {
   EXPECT_TRUE(s.ok());
 }
 
-INSTANTIATE_TEST_CASE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
-                        ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
+                         ::testing::Values(false, true));
 
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -19,14 +19,10 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-void grpc_register_http_proxy_mapper();
+void RegisterHttpProxyMapper();
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H */

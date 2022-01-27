@@ -54,7 +54,7 @@ def run_concurrency_stress_test(test_proc)
 
   test_proc.call
 
-  fail 'exception thrown while child thread initing class'
+  fail '(expected) exception thrown while child thread initing class'
 end
 
 # default (no gc_stress and no concurrency_stress)
@@ -70,7 +70,7 @@ def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
     return proc do
-      GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+      GRPC::Core::Channel.new('phony_host', nil, :this_channel_is_insecure)
     end
   when 'server'
     return proc do
@@ -79,6 +79,31 @@ def get_test_proc(grpc_class)
   when 'channel_credentials'
     return proc do
       GRPC::Core::ChannelCredentials.new
+    end
+  when 'xds_channel_credentials'
+    return proc do
+      GRPC::Core::XdsChannelCredentials.new(GRPC::Core::ChannelCredentials.new)
+    end
+  when 'server_credentials'
+    return proc do
+      test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
+      files = ['ca.pem', 'server1.key', 'server1.pem']
+      creds = files.map { |f| File.open(File.join(test_root, f)).read }
+      GRPC::Core::ServerCredentials.new(
+        creds[0],
+        [{ private_key: creds[1], cert_chain: creds[2] }],
+        true)
+    end
+  when 'xds_server_credentials'
+    return proc do
+      test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
+      files = ['ca.pem', 'server1.key', 'server1.pem']
+      creds = files.map { |f| File.open(File.join(test_root, f)).read }
+      GRPC::Core::XdsServerCredentials.new(
+        GRPC::Core::ServerCredentials.new(
+          creds[0],
+          [{ private_key: creds[1], cert_chain: creds[2] }],
+          true))
     end
   when 'call_credentials'
     return proc do

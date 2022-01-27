@@ -16,138 +16,81 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
-bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx) {
-  if ((exec_ctx->flags & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
-    if (exec_ctx->check_ready_to_finish(exec_ctx,
-                                        exec_ctx->check_ready_to_finish_arg)) {
-      exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
-      return true;
-    }
-    return false;
-  } else {
-    return true;
-  }
-}
-
-bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
-  return false;
-}
-
-bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored) {
-  return true;
-}
-
-bool grpc_exec_ctx_has_work(grpc_exec_ctx *exec_ctx) {
-  return exec_ctx->active_combiner != NULL ||
-         !grpc_closure_list_empty(exec_ctx->closure_list);
-}
-
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
-  exec_ctx->flags |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
-  grpc_exec_ctx_flush(exec_ctx);
-}
-
-static void exec_ctx_run(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                         grpc_error *error) {
+static void exec_ctx_run(grpc_closure* closure) {
 #ifndef NDEBUG
   closure->scheduled = false;
-  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+  if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
             closure, closure->file_created, closure->line_created,
             closure->run ? "run" : "scheduled", closure->file_initiated,
             closure->line_initiated);
   }
 #endif
-  closure->cb(exec_ctx, closure->cb_arg, error);
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  grpc_error_handle error =
+      grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
+  closure->error_data.error = 0;
+  closure->cb(closure->cb_arg, std::move(error));
+#else
+  grpc_error_handle error =
+      reinterpret_cast<grpc_error_handle>(closure->error_data.error);
+  closure->error_data.error = 0;
+  closure->cb(closure->cb_arg, error);
+  GRPC_ERROR_UNREF(error);
+#endif
 #ifndef NDEBUG
-  if (GRPC_TRACER_ON(grpc_trace_closure)) {
+  if (grpc_trace_closure.enabled()) {
     gpr_log(GPR_DEBUG, "closure %p finished", closure);
   }
 #endif
-  GRPC_ERROR_UNREF(error);
 }
 
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
-  bool did_something = 0;
-  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
-  for (;;) {
-    if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-      grpc_closure *c = exec_ctx->closure_list.head;
-      exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
-      while (c != NULL) {
-        grpc_closure *next = c->next_data.next;
-        grpc_error *error = c->error_data.error;
-        did_something = true;
-        exec_ctx_run(exec_ctx, c, error);
-        c = next;
-      }
-    } else if (!grpc_combiner_continue_exec_ctx(exec_ctx)) {
-      break;
-    }
-  }
-  GPR_ASSERT(exec_ctx->active_combiner == NULL);
-  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
-  return did_something;
+static void exec_ctx_sched(grpc_closure* closure) {
+  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure);
 }
 
-static void exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           grpc_error *error) {
-  grpc_closure_list_append(&exec_ctx->closure_list, closure, error);
-}
+static gpr_timespec g_start_time;
+static gpr_cycle_counter g_start_cycle;
 
-static gpr_timespec
-    g_start_time[GPR_TIMESPAN + 1];  // assumes GPR_TIMESPAN is the
-                                     // last enum value in
-                                     // gpr_clock_type
-
-void grpc_exec_ctx_global_init(void) {
-  for (int i = 0; i < GPR_TIMESPAN; i++) {
-    g_start_time[i] = gpr_now((gpr_clock_type)i);
-  }
-  // allows uniform treatment in conversion functions
-  g_start_time[GPR_TIMESPAN] = gpr_time_0(GPR_TIMESPAN);
-}
-
-void grpc_exec_ctx_global_shutdown(void) {}
-
-static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
-  double x =
-      GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
+static grpc_millis timespan_to_millis_round_down(gpr_timespec ts) {
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
-}
-
-static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time[ts.clock_type]);
-  double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
-             (double)ts.tv_nsec / GPR_NS_PER_MS +
-             (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
-  if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
-}
-
-grpc_millis grpc_exec_ctx_now(grpc_exec_ctx *exec_ctx) {
-  if (!exec_ctx->now_is_valid) {
-    exec_ctx->now = timespec_to_atm_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
-    exec_ctx->now_is_valid = true;
+  if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE)) {
+    return GRPC_MILLIS_INF_FUTURE;
   }
-  return exec_ctx->now;
+  return static_cast<grpc_millis>(x);
 }
 
-void grpc_exec_ctx_invalidate_now(grpc_exec_ctx *exec_ctx) {
-  exec_ctx->now_is_valid = false;
+static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
+  return timespan_to_millis_round_down(gpr_time_sub(ts, g_start_time));
+}
+
+static grpc_millis timespan_to_millis_round_up(gpr_timespec ts) {
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
+             static_cast<double>(GPR_NS_PER_SEC - 1) /
+                 static_cast<double>(GPR_NS_PER_SEC);
+  if (x < 0) return 0;
+  if (x > static_cast<double>(GRPC_MILLIS_INF_FUTURE)) {
+    return GRPC_MILLIS_INF_FUTURE;
+  }
+  return static_cast<grpc_millis>(x);
+}
+
+static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
+  return timespan_to_millis_round_up(gpr_time_sub(ts, g_start_time));
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
@@ -164,19 +107,134 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
   if (clock_type == GPR_TIMESPAN) {
     return gpr_time_from_millis(millis, GPR_TIMESPAN);
   }
-  return gpr_time_add(g_start_time[clock_type],
+  return gpr_time_add(gpr_convert_clock_type(g_start_time, clock_type),
                       gpr_time_from_millis(millis, GPR_TIMESPAN));
 }
 
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespec_to_atm_round_down(ts);
+  return timespec_to_millis_round_down(
+      gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespec_to_atm_round_up(ts);
+  return timespec_to_millis_round_up(
+      gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
-static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
-    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
-static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
-grpc_closure_scheduler *grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
+grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
+  return timespan_to_millis_round_down(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
+}
+
+grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
+  return timespan_to_millis_round_up(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
+}
+
+namespace grpc_core {
+GPR_THREAD_LOCAL(ExecCtx*) ExecCtx::exec_ctx_;
+GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*)
+ApplicationCallbackExecCtx::callback_exec_ctx_;
+
+// WARNING: for testing purposes only!
+void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
+  g_start_time = new_val;
+}
+
+void ExecCtx::GlobalInit(void) {
+  // gpr_now(GPR_CLOCK_MONOTONIC) incurs a syscall. We don't actually know the
+  // exact cycle the time was captured, so we use the average of cycles before
+  // and after the syscall as the starting cycle.
+  const gpr_cycle_counter cycle_before = gpr_get_cycle_counter();
+  g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
+  g_start_cycle = (cycle_before + cycle_after) / 2;
+}
+
+bool ExecCtx::Flush() {
+  bool did_something = false;
+  GPR_TIMER_SCOPE("grpc_exec_ctx_flush", 0);
+  for (;;) {
+    if (!grpc_closure_list_empty(closure_list_)) {
+      grpc_closure* c = closure_list_.head;
+      closure_list_.head = closure_list_.tail = nullptr;
+      while (c != nullptr) {
+        grpc_closure* next = c->next_data.next;
+        did_something = true;
+        exec_ctx_run(c);
+        c = next;
+      }
+    } else if (!grpc_combiner_continue_exec_ctx()) {
+      break;
+    }
+  }
+  GPR_ASSERT(combiner_data_.active_combiner == nullptr);
+  return did_something;
+}
+
+grpc_millis ExecCtx::Now() {
+  if (!now_is_valid_) {
+    now_ = timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
+    now_is_valid_ = true;
+  }
+  return now_;
+}
+
+void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error_handle error) {
+  (void)location;
+  if (closure == nullptr) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+#ifndef NDEBUG
+  if (closure->scheduled) {
+    gpr_log(GPR_ERROR,
+            "Closure already scheduled. (closure: %p, created: [%s:%d], "
+            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
+            closure, closure->file_created, closure->line_created,
+            closure->file_initiated, closure->line_initiated, location.file(),
+            location.line());
+    abort();
+  }
+  closure->scheduled = true;
+  closure->file_initiated = location.file();
+  closure->line_initiated = location.line();
+  closure->run = false;
+  GPR_ASSERT(closure->cb != nullptr);
+#endif
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+  closure->error_data.error = internal::StatusAllocHeapPtr(error);
+#else
+  closure->error_data.error = reinterpret_cast<intptr_t>(error);
+#endif
+  exec_ctx_sched(closure);
+}
+
+void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
+  (void)location;
+  grpc_closure* c = list->head;
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
+#ifndef NDEBUG
+    if (c->scheduled) {
+      gpr_log(GPR_ERROR,
+              "Closure already scheduled. (closure: %p, created: [%s:%d], "
+              "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, location.file(), location.line());
+      abort();
+    }
+    c->scheduled = true;
+    c->file_initiated = location.file();
+    c->line_initiated = location.line();
+    c->run = false;
+    GPR_ASSERT(c->cb != nullptr);
+#endif
+    exec_ctx_sched(c);
+    c = next;
+  }
+  list->head = list->tail = nullptr;
+}
+
+}  // namespace grpc_core

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.8.0-dev'
+  version = '1.45.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'https://grpc.io'
@@ -33,24 +33,56 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+  s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   name = 'ProtoRPC'
   s.module_name = name
   s.header_dir = name
 
-  src_dir = 'src/objective-c/ProtoRPC'
-  s.source_files = "#{src_dir}/*.{h,m}"
-  s.header_mappings_dir = "#{src_dir}"
+  s.default_subspec = 'Main', 'Legacy', 'Legacy-Header'
 
-  s.dependency 'gRPC', version
-  s.dependency 'gRPC-RxLibrary', version
-  s.dependency 'Protobuf', '~> 3.0'
+  s.subspec 'Legacy-Header' do |ss|
+    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
+    ss.public_header_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.h"
+    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.h"
+  end
+
+  s.subspec 'Main' do |ss|
+    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
+    ss.dependency "#{s.name}/Legacy-Header", version
+    ss.dependency 'gRPC/Interface', version
+    ss.dependency 'Protobuf', '~> 3.0'
+
+    ss.source_files = "src/objective-c/ProtoRPC/ProtoMethod.{h,m}",
+                      "src/objective-c/ProtoRPC/ProtoRPC.{h,m}",
+                      "src/objective-c/ProtoRPC/ProtoService.{h,m}"
+  end
+
+  s.subspec 'Legacy' do |ss|
+    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
+    ss.dependency "#{s.name}/Main", version
+    ss.dependency "#{s.name}/Legacy-Header", version
+    ss.dependency 'gRPC/GRPCCore', version
+    ss.dependency 'gRPC-RxLibrary', version
+    ss.dependency 'Protobuf', '~> 3.0'
+
+    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.m",
+                      "src/objective-c/ProtoRPC/ProtoServiceLegacy.m"
+  end
+
+  # CFStream is now default. Leaving this subspec only for compatibility purpose.
+  s.subspec 'CFStream' do |ss|
+    ss.dependency "#{s.name}/Legacy", version
+  end
+
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on Protobuf:
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 end

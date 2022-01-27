@@ -1,23 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
-    <AssemblyName>Grpc.HealthCheck.Tests</AssemblyName>
+    <TargetFrameworks>net45;netcoreapp3.1</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <PackageId>Grpc.HealthCheck.Tests</PackageId>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+    <DefineConstants>$(DefineConstants);GRPC_SUPPORT_WATCH;</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Grpc.HealthCheck/Grpc.HealthCheck.csproj" />
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="NUnit" Version="3.6.0" />
-    <PackageReference Include="NUnitLite" Version="3.6.0" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnitLite" Version="3.10.1" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
@@ -26,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
 </Project>

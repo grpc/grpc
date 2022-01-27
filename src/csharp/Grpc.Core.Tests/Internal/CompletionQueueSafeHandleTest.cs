@@ -40,14 +40,13 @@ namespace Grpc.Core.Internal.Tests
         public void CreateAsyncAndShutdown()
         {
             var env = GrpcEnvironment.AddRef();
-            var cq = CompletionQueueSafeHandle.CreateAsync(new CompletionRegistry(env));
+            var cq = CompletionQueueSafeHandle.CreateAsync(new CompletionRegistry(env, () => BatchContextSafeHandle.Create(), () => RequestCallContextSafeHandle.Create()));
             cq.Shutdown();
             var ev = cq.Next();
             cq.Dispose();
             GrpcEnvironment.ReleaseAsync().Wait();
             Assert.AreEqual(CompletionQueueEvent.CompletionType.Shutdown, ev.type);
             Assert.AreNotEqual(IntPtr.Zero, ev.success);
-            Assert.AreEqual(IntPtr.Zero, ev.tag);
         }
     }
 }

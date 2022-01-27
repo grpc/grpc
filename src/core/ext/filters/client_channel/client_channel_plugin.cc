@@ -24,71 +24,50 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
+#include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 
-static bool append_filter(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack_builder *builder, void *arg) {
-  return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter *)arg, NULL, NULL);
+void grpc_client_channel_init(void) {
+  grpc_core::internal::ClientChannelServiceConfigParser::Register();
+  grpc_core::internal::RetryServiceConfigParser::Register();
+  grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
+  grpc_core::ResolverRegistry::Builder::InitRegistry();
+  grpc_core::internal::ServerRetryThrottleMap::Init();
+  grpc_core::ProxyMapperRegistry::Init();
+  grpc_core::RegisterHttpProxyMapper();
+  grpc_core::GlobalSubchannelPool::Init();
+  grpc_client_channel_global_init_backup_polling();
 }
 
-static bool set_default_host_if_unset(grpc_exec_ctx *exec_ctx,
-                                      grpc_channel_stack_builder *builder,
-                                      void *unused) {
-  const grpc_channel_args *args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  for (size_t i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY) ||
-        0 == strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      return true;
-    }
-  }
-  char *default_authority = grpc_get_default_authority(
-      exec_ctx, grpc_channel_stack_builder_get_target(builder));
-  if (default_authority != NULL) {
-    grpc_arg arg = grpc_channel_arg_string_create(
-        (char *)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
-    grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
-                                                     new_args);
-    gpr_free(default_authority);
-    grpc_channel_args_destroy(exec_ctx, new_args);
-  }
-  return true;
+void grpc_client_channel_shutdown(void) {
+  grpc_core::GlobalSubchannelPool::Shutdown();
+  grpc_core::ProxyMapperRegistry::Shutdown();
+  grpc_core::internal::ServerRetryThrottleMap::Shutdown();
+  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
+  grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
 }
 
-extern "C" void grpc_client_channel_init(void) {
-  grpc_lb_policy_registry_init();
-  grpc_resolver_registry_init();
-  grpc_retry_throttle_map_init();
-  grpc_proxy_mapper_registry_init();
-  grpc_register_http_proxy_mapper();
-  grpc_subchannel_index_init();
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
-                                   set_default_host_if_unset, NULL);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
-      (void *)&grpc_client_channel_filter);
-  grpc_http_connect_register_handshaker_factory();
-  grpc_register_tracer(&grpc_client_channel_trace);
-#ifndef NDEBUG
-  grpc_register_tracer(&grpc_trace_resolver_refcount);
-#endif
+namespace grpc_core {
+
+void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
+  RegisterHttpConnectHandshaker(builder);
+  builder->channel_init()->RegisterStage(
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      [](ChannelStackBuilder* builder) {
+        builder->AppendFilter(&ClientChannel::kFilterVtable, nullptr);
+        return true;
+      });
 }
 
-extern "C" void grpc_client_channel_shutdown(void) {
-  grpc_subchannel_index_shutdown();
-  grpc_channel_init_shutdown();
-  grpc_proxy_mapper_registry_shutdown();
-  grpc_retry_throttle_map_shutdown();
-  grpc_resolver_registry_shutdown();
-  grpc_lb_policy_registry_shutdown();
-}
+}  // namespace grpc_core

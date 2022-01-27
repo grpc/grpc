@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_CREATE_CHANNEL_H
 #define GRPCXX_CREATE_CHANNEL_H
 
-#include <memory>
-
-#include <grpc++/channel.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/config.h>
-
-namespace grpc {
-
-/// Create a new \a Channel pointing to \a target.
-///
-/// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-std::shared_ptr<Channel> CreateChannel(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds);
-
-/// Create a new \em custom \a Channel pointing to \a target.
-///
-/// \warning For advanced use and testing ONLY. Override default channel
-/// arguments only if necessary.
-///
-/// \param target The URI of the endpoint to connect to.
-/// \param creds Credentials to use for the created channel. If it does not
-/// hold an object or is invalid, a lame channel (one on which all operations
-/// fail) is returned.
-/// \param args Options for channel creation.
-std::shared_ptr<Channel> CreateCustomChannel(
-    const grpc::string& target,
-    const std::shared_ptr<ChannelCredentials>& creds,
-    const ChannelArguments& args);
-
-}  // namespace grpc
+#include <grpcpp/create_channel.h>
 
 #endif  // GRPCXX_CREATE_CHANNEL_H

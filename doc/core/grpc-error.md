@@ -56,8 +56,8 @@ For example, in the following code block, error1 and error2 are owned by the
 current function.
 
 ```C
-grpc_error* error1 = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured");
-grpc_error* error2 = some_operation_that_might_fail(...);
+grpc_error_handle error1 = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occurred");
+grpc_error_handle error2 = some_operation_that_might_fail(...);
 ```
 
 The current function would have to explicitly call GRPC_ERROR_UNREF on the
@@ -71,24 +71,24 @@ errors, or pass them along to a function that would take over the ownership.
 A `grpc_closure` callback function is any function that has the signature:
 
 ```C
-void (*cb)(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error);
+void (*cb)(void *arg, grpc_error_handle error);
 ```
 
 This means that the error ownership is NOT transferred when a functions calls:
 
 ```C
-c->cb(exec_ctx, c->cb_arg, err);
+c->cb(c->cb_arg, err);
 ```
 
 The caller is still responsible for unref-ing the error.
 
-However, the above line is currently being phased out! It is safer to invoke
-callbacks with `GRPC_CLOSURE_RUN` and `GRPC_CLOSURE_SCHED`. These functions are
-not callbacks, so they will take ownership of the error passed to them.
+Note that you'll likely never need to run `c->cb(...)` yourself; the idiomatic
+way to execute callbacks is via the `Closure::Run` method, which takes ownership
+of the error variable.
 
 ```C
-grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured");
-GRPC_CLOSURE_RUN(exec_ctx, cb, error);
+grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occurred");
+grpc_core::Closure::Run(DEBUG_LOCATION, c->cb, error);
 // current function no longer has ownership of the error
 ```
 
@@ -96,8 +96,8 @@ If you schedule or run a closure, but still need ownership of the error, then
 you must explicitly take a reference.
 
 ```C
-grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured");
-GRPC_CLOSURE_RUN(exec_ctx, cb, GRPC_ERROR_REF(error));
+grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occurred");
+grpc_core::Closure::Run(DEBUG_LOCATION, c->cb, GRPC_ERROR_REF(error));
 // do some other things with the error
 GRPC_ERROR_UNREF(error);
 ```
@@ -109,7 +109,7 @@ would take ownership of the error, without explicitly taking ownership yourself.
 For example:
 
 ```C
-void on_some_action(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
+void on_some_action(void *arg, grpc_error_handle error) {
   // this would cause a crash, because some_function will unref the error,
   // and the caller of this callback will also unref it.
   some_function(error);
@@ -128,7 +128,7 @@ void on_some_action(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {
 Take the following example:
 
 ```C
-grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occured");
+grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occurred");
 // do some things
 some_function(error);
 // can't use error anymore! might be gone.
@@ -142,7 +142,7 @@ if would have to take on a reference to it. This is a common pattern seen.
 
 ```C
 void func() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error");
+  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error");
   some_function(GRPC_ERROR_REF(error));
   // do things
   some_other_function(GRPC_ERROR_REF(error));

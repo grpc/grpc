@@ -1,104 +1,122 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
-#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 
-static void client_channel_factory_ref(
-    grpc_client_channel_factory *cc_factory) {}
+namespace grpc_core {
 
-static void client_channel_factory_unref(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory) {}
+class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
+ public:
+  RefCountedPtr<Subchannel> CreateSubchannel(
+      const grpc_resolved_address& address,
+      const grpc_channel_args* args) override {
+    return Subchannel::Create(MakeOrphanable<Chttp2Connector>(), address, args);
+  }
+};
 
-static grpc_subchannel *client_channel_factory_create_subchannel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const grpc_subchannel_args *args) {
-  grpc_connector *connector = grpc_chttp2_connector_create();
-  grpc_subchannel *s = grpc_subchannel_create(exec_ctx, connector, args);
-  grpc_connector_unref(exec_ctx, connector);
-  return s;
-}
+namespace {
 
-static grpc_channel *client_channel_factory_create_channel(
-    grpc_exec_ctx *exec_ctx, grpc_client_channel_factory *cc_factory,
-    const char *target, grpc_client_channel_type type,
-    const grpc_channel_args *args) {
-  if (target == NULL) {
+grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
+                            grpc_error_handle* error) {
+  if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
-    return NULL;
+    if (error != nullptr) {
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel target is NULL");
+    }
+    return nullptr;
   }
   // Add channel arg containing the server URI.
+  UniquePtr<char> canonical_target =
+      ResolverRegistry::AddDefaultPrefixIfNeeded(target);
   grpc_arg arg = grpc_channel_arg_string_create(
-      (char *)GRPC_ARG_SERVER_URI,
-      grpc_resolver_factory_add_default_prefix_if_needed(exec_ctx, target));
-  const char *to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args *new_args =
+      const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
+  const char* to_remove[] = {GRPC_ARG_SERVER_URI};
+  grpc_channel_args* new_args0 =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  gpr_free(arg.value.string);
-  grpc_channel *channel = grpc_channel_create(exec_ctx, target, new_args,
-                                              GRPC_CLIENT_CHANNEL, NULL);
-  grpc_channel_args_destroy(exec_ctx, new_args);
+  const grpc_channel_args* new_args = CoreConfiguration::Get()
+                                          .channel_args_preconditioning()
+                                          .PreconditionChannelArgs(new_args0);
+  grpc_channel_args_destroy(new_args0);
+  grpc_channel* channel = grpc_channel_create(
+      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, error);
+  grpc_channel_args_destroy(new_args);
   return channel;
 }
 
-static const grpc_client_channel_factory_vtable client_channel_factory_vtable =
-    {client_channel_factory_ref, client_channel_factory_unref,
-     client_channel_factory_create_subchannel,
-     client_channel_factory_create_channel};
+}  // namespace
 
-static grpc_client_channel_factory client_channel_factory = {
-    &client_channel_factory_vtable};
+}  // namespace grpc_core
+
+namespace {
+
+grpc_core::Chttp2InsecureClientChannelFactory* g_factory;
+gpr_once g_factory_once = GPR_ONCE_INIT;
+
+void FactoryInit() {
+  g_factory = new grpc_core::Chttp2InsecureClientChannelFactory();
+}
+
+}  // namespace
 
 /* Create a client channel:
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel *grpc_insecure_channel_create(const char *target,
-                                           const grpc_channel_args *args,
-                                           void *reserved) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+grpc_channel* grpc_insecure_channel_create(const char* target,
+                                           const grpc_channel_args* args,
+                                           void* reserved) {
+  grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE(
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
-  GPR_ASSERT(reserved == NULL);
+  GPR_ASSERT(reserved == nullptr);
   // Add channel arg containing the client channel factory.
-  grpc_arg arg =
-      grpc_client_channel_factory_create_channel_arg(&client_channel_factory);
-  grpc_channel_args *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  gpr_once_init(&g_factory_once, FactoryInit);
+  grpc_arg arg = grpc_core::ClientChannelFactory::CreateChannelArg(g_factory);
+  const char* arg_to_remove = arg.key;
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+      args, &arg_to_remove, 1, &arg, 1);
+  grpc_error_handle error = GRPC_ERROR_NONE;
   // Create channel.
-  grpc_channel *channel = client_channel_factory_create_channel(
-      &exec_ctx, &client_channel_factory, target,
-      GRPC_CLIENT_CHANNEL_TYPE_REGULAR, new_args);
+  grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.
-  grpc_channel_args_destroy(&exec_ctx, new_args);
-  grpc_exec_ctx_finish(&exec_ctx);
-  return channel != NULL ? channel : grpc_lame_client_channel_create(
-                                         target, GRPC_STATUS_INTERNAL,
-                                         "Failed to create client channel");
+  grpc_channel_args_destroy(new_args);
+  if (channel == nullptr) {
+    intptr_t integer;
+    grpc_status_code status = GRPC_STATUS_INTERNAL;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
+      status = static_cast<grpc_status_code>(integer);
+    }
+    GRPC_ERROR_UNREF(error);
+    channel = grpc_lame_client_channel_create(
+        target, status, "Failed to create client channel");
+  }
+  return channel;
 }

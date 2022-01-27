@@ -19,34 +19,47 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern grpc_core::TraceFlag grpc_http_trace;
+extern grpc_core::TraceFlag grpc_keepalive_trace;
+extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 
-extern grpc_tracer_flag grpc_http_trace;
-extern grpc_tracer_flag grpc_flowctl_trace;
-extern grpc_tracer_flag grpc_trace_http2_stream_state;
+extern bool g_flow_control_enabled;
 
-#ifndef NDEBUG
-extern grpc_tracer_flag grpc_trace_chttp2_refcount;
-#endif
+/// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
+/// from the caller; if the caller still needs the resource_user after creating
+/// a transport, the caller must take another ref.
+grpc_transport* grpc_create_chttp2_transport(
+    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client);
 
-grpc_transport *grpc_create_chttp2_transport(
-    grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
-    grpc_endpoint *ep, int is_client);
+grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
+grpc_chttp2_transport_get_socket_node(grpc_transport* transport);
 
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
-void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
-                                         grpc_transport *transport,
-                                         grpc_slice_buffer *read_buffer);
+/// If non-null, \a notify_on_receive_settings will be scheduled when
+/// HTTP/2 settings are received from the peer.
+void grpc_chttp2_transport_start_reading(
+    grpc_transport* transport, grpc_slice_buffer* read_buffer,
+    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
 
-#ifdef __cplusplus
-}
-#endif
+namespace grpc_core {
+typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
+typedef void (*TestOnlyGlobalHttp2TransportDestructCallback)();
+
+void TestOnlySetGlobalHttp2TransportInitCallback(
+    TestOnlyGlobalHttp2TransportInitCallback callback);
+
+void TestOnlySetGlobalHttp2TransportDestructCallback(
+    TestOnlyGlobalHttp2TransportDestructCallback callback);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

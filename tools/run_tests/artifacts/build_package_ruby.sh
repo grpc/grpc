@@ -15,21 +15,23 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 base=$(pwd)
 
 mkdir -p artifacts/
 
-# All the ruby packages have been built in the artifact phase already
+# All the "grpc" gems have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/ruby_native_gem_*/* artifacts/ || true
+# NOTE: Besides the platform-specific native gems, all the artifact build
+# jobs will generate a grpc-X.Y.Z.gem source package, and only one of them
+# will end up in the artifacts/ directory. They should be all equivalent
+# though.
+cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/ruby_native_gem_*/* artifacts/ || true
 
+# Next, build the "grpc-tools" gem by collecting the protoc and grpc_ruby_plugin binaries
+# that have been built by the the artifact build phase previously.
 well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
-
-# TODO: all the artifact builder configurations generate a grpc-VERSION.gem
-# source distribution package, and only one of them will end up
-# in the artifacts/ directory. They should be all equivalent though.
 
 for arch in {x86,x64}; do
   case $arch in
@@ -41,18 +43,26 @@ for arch in {x86,x64}; do
       ;;
   esac
   for plat in {windows,linux,macos}; do
-    input_dir="$EXTERNAL_GIT_ROOT/platform=${plat}/artifacts/protoc_${plat}_${arch}"
+    # skip non-existent macos x86 protoc artifact
+    if [[ "${plat}_${arch}" == "macos_x86" ]]
+    then
+      continue
+    fi
+    input_dir="${EXTERNAL_GIT_ROOT}/input_artifacts/protoc_${plat}_${arch}"
     output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
-    mkdir -p $output_dir/google/protobuf
-    mkdir -p $output_dir/google/protobuf/compiler  # needed for plugin.proto
-    cp $input_dir/protoc* $output_dir/
-    cp $input_dir/grpc_ruby_plugin* $output_dir/
+    mkdir -p "$output_dir"/google/protobuf
+    mkdir -p "$output_dir"/google/protobuf/compiler  # needed for plugin.proto
+    cp "$input_dir"/protoc* "$input_dir"/grpc_ruby_plugin* "$output_dir/"
+    if [[ "$plat" != "windows" ]]
+    then
+      chmod +x "$output_dir/protoc" "$output_dir/grpc_ruby_plugin"
+    fi
     for proto in "${well_known_protos[@]}"; do
-      cp $base/third_party/protobuf/src/google/protobuf/$proto.proto $output_dir/google/protobuf/$proto.proto
+      cp "$base/third_party/protobuf/src/google/protobuf/$proto.proto" "$output_dir/google/protobuf/$proto.proto"
     done
   done
 done
 
-cd $base/src/ruby/tools
+cd "$base/src/ruby/tools"
 gem build grpc-tools.gemspec
-cp ./grpc-tools*.gem $base/artifacts/
+cp ./grpc-tools*.gem "$base/artifacts/"

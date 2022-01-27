@@ -18,44 +18,64 @@
 
 /* Benchmark arenas */
 
-extern "C" {
-#include "src/core/lib/support/arena.h"
-}
+#include <benchmark/benchmark.h>
+
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
+#include "test/cpp/util/test_config.h"
+
+using grpc_core::Arena;
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static void BM_Arena_NoOp(benchmark::State& state) {
-  while (state.KeepRunning()) {
-    gpr_arena_destroy(gpr_arena_create(state.range(0)));
+  for (auto _ : state) {
+    Arena::Create(state.range(0), g_memory_allocator)->Destroy();
   }
 }
 BENCHMARK(BM_Arena_NoOp)->Range(1, 1024 * 1024);
 
 static void BM_Arena_ManyAlloc(benchmark::State& state) {
-  gpr_arena* a = gpr_arena_create(state.range(0));
+  Arena* a = Arena::Create(state.range(0), g_memory_allocator);
   const size_t realloc_after =
       1024 * 1024 * 1024 / ((state.range(1) + 15) & 0xffffff0u);
   while (state.KeepRunning()) {
-    gpr_arena_alloc(a, state.range(1));
+    a->Alloc(state.range(1));
     // periodically recreate arena to avoid OOM
     if (state.iterations() % realloc_after == 0) {
-      gpr_arena_destroy(a);
-      a = gpr_arena_create(state.range(0));
+      a->Destroy();
+      a = Arena::Create(state.range(0), g_memory_allocator);
     }
   }
-  gpr_arena_destroy(a);
+  a->Destroy();
 }
 BENCHMARK(BM_Arena_ManyAlloc)->Ranges({{1, 1024 * 1024}, {1, 32 * 1024}});
 
 static void BM_Arena_Batch(benchmark::State& state) {
-  while (state.KeepRunning()) {
-    gpr_arena* a = gpr_arena_create(state.range(0));
+  for (auto _ : state) {
+    Arena* a = Arena::Create(state.range(0), g_memory_allocator);
     for (int i = 0; i < state.range(1); i++) {
-      gpr_arena_alloc(a, state.range(2));
+      a->Alloc(state.range(2));
     }
-    gpr_arena_destroy(a);
+    a->Destroy();
   }
 }
 BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

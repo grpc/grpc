@@ -19,27 +19,29 @@
 #include <ruby/ruby.h>
 
 #include "rb_event_thread.h"
-#include "rb_grpc_imports.generated.h"
 
+#include <ruby/thread.h>
 #include <stdbool.h>
+
+#include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <ruby/thread.h>
 
 typedef struct grpc_rb_event {
   // callback will be called with argument while holding the GVL
-  void (*callback)(void *);
-  void *argument;
+  void (*callback)(void*);
+  void* argument;
 
-  struct grpc_rb_event *next;
+  struct grpc_rb_event* next;
 } grpc_rb_event;
 
 typedef struct grpc_rb_event_queue {
-  grpc_rb_event *head;
-  grpc_rb_event *tail;
+  grpc_rb_event* head;
+  grpc_rb_event* tail;
 
   gpr_mu mu;
   gpr_cv cv;
@@ -50,8 +52,8 @@ typedef struct grpc_rb_event_queue {
 
 static grpc_rb_event_queue event_queue;
 
-void grpc_rb_event_queue_enqueue(void (*callback)(void *), void *argument) {
-  grpc_rb_event *event = gpr_malloc(sizeof(grpc_rb_event));
+void grpc_rb_event_queue_enqueue(void (*callback)(void*), void* argument) {
+  grpc_rb_event* event = gpr_malloc(sizeof(grpc_rb_event));
   event->callback = callback;
   event->argument = argument;
   event->next = NULL;
@@ -66,8 +68,8 @@ void grpc_rb_event_queue_enqueue(void (*callback)(void *), void *argument) {
   gpr_mu_unlock(&event_queue.mu);
 }
 
-static grpc_rb_event *grpc_rb_event_queue_dequeue() {
-  grpc_rb_event *event;
+static grpc_rb_event* grpc_rb_event_queue_dequeue() {
+  grpc_rb_event* event;
   if (event_queue.head == NULL) {
     event = NULL;
   } else {
@@ -86,8 +88,8 @@ static void grpc_rb_event_queue_destroy() {
   gpr_cv_destroy(&event_queue.cv);
 }
 
-static void *grpc_rb_wait_for_event_no_gil(void *param) {
-  grpc_rb_event *event = NULL;
+static void* grpc_rb_wait_for_event_no_gil(void* param) {
+  grpc_rb_event* event = NULL;
   (void)param;
   gpr_mu_lock(&event_queue.mu);
   while (!event_queue.abort) {
@@ -102,7 +104,7 @@ static void *grpc_rb_wait_for_event_no_gil(void *param) {
   return NULL;
 }
 
-static void grpc_rb_event_unblocking_func(void *arg) {
+static void grpc_rb_event_unblocking_func(void* arg) {
   (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
@@ -113,10 +115,11 @@ static void grpc_rb_event_unblocking_func(void *arg) {
 /* This is the implementation of the thread that handles auth metadata plugin
  * events */
 static VALUE grpc_rb_event_thread(VALUE arg) {
-  grpc_rb_event *event;
+  grpc_rb_event* event;
   (void)arg;
+  grpc_ruby_init();
   while (true) {
-    event = (grpc_rb_event *)rb_thread_call_without_gvl(
+    event = (grpc_rb_event*)rb_thread_call_without_gvl(
         grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
         NULL);
     if (event == NULL) {
@@ -128,6 +131,7 @@ static VALUE grpc_rb_event_thread(VALUE arg) {
     }
   }
   grpc_rb_event_queue_destroy();
+  grpc_ruby_shutdown();
   return Qnil;
 }
 

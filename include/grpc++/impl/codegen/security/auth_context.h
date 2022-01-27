@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,80 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_SECURITY_AUTH_CONTEXT_H
 #define GRPCXX_IMPL_CODEGEN_SECURITY_AUTH_CONTEXT_H
 
-#include <iterator>
-#include <vector>
-
-#include <grpc++/impl/codegen/config.h>
-#include <grpc++/impl/codegen/string_ref.h>
-
-struct grpc_auth_context;
-struct grpc_auth_property;
-struct grpc_auth_property_iterator;
-
-namespace grpc {
-class SecureAuthContext;
-
-typedef std::pair<grpc::string_ref, grpc::string_ref> AuthProperty;
-
-class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
- public:
-  ~AuthPropertyIterator();
-  AuthPropertyIterator& operator++();
-  AuthPropertyIterator operator++(int);
-  bool operator==(const AuthPropertyIterator& rhs) const;
-  bool operator!=(const AuthPropertyIterator& rhs) const;
-  const AuthProperty operator*();
-
- protected:
-  AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
-
- private:
-  friend class SecureAuthContext;
-  const grpc_auth_property* property_;
-  // The following items form a grpc_auth_property_iterator.
-  const grpc_auth_context* ctx_;
-  size_t index_;
-  const char* name_;
-};
-
-/// Class encapsulating the Authentication Information.
-///
-/// It includes the secure identity of the peer, the type of secure transport
-/// used as well as any other properties required by the authorization layer.
-class AuthContext {
- public:
-  virtual ~AuthContext() {}
-
-  /// Returns true if the peer is authenticated.
-  virtual bool IsPeerAuthenticated() const = 0;
-
-  /// A peer identity.
-  ///
-  /// It is, in general, comprised of one or more properties (in which case they
-  /// have the same name).
-  virtual std::vector<grpc::string_ref> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
-
-  /// Returns all the property values with the given name.
-  virtual std::vector<grpc::string_ref> FindPropertyValues(
-      const grpc::string& name) const = 0;
-
-  /// Iteration over all the properties.
-  virtual AuthPropertyIterator begin() const = 0;
-  virtual AuthPropertyIterator end() const = 0;
-
-  /// Mutation functions: should only be used by an AuthMetadataProcessor.
-  virtual void AddProperty(const grpc::string& key,
-                           const grpc::string_ref& value) = 0;
-  virtual bool SetPeerIdentityPropertyName(const grpc::string& name) = 0;
-};
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/security/auth_context.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_SECURITY_AUTH_CONTEXT_H

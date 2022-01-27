@@ -16,20 +16,20 @@
  *
  */
 
-#include <grpc++/support/channel_arguments.h>
-
 #include <grpc/grpc_security.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include "src/core/lib/channel/channel_args.h"
 
 namespace grpc {
 
-void ChannelArguments::SetSslTargetNameOverride(const grpc::string& name) {
+void ChannelArguments::SetSslTargetNameOverride(const std::string& name) {
   SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
 }
 
-grpc::string ChannelArguments::GetSslTargetNameOverride() const {
+std::string ChannelArguments::GetSslTargetNameOverride() const {
   for (unsigned int i = 0; i < args_.size(); i++) {
-    if (grpc::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == args_[i].key) {
+    if (std::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == args_[i].key) {
       return args_[i].value.string;
     }
   }

@@ -19,6 +19,8 @@
 #ifndef GRPC_SUPPORT_SYNC_POSIX_H
 #define GRPC_SUPPORT_SYNC_POSIX_H
 
-#include <grpc/impl/codegen/sync_posix.h>
+#include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/sync_posix.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_SYNC_POSIX_H */

@@ -19,13 +19,22 @@
 #ifndef GRPC_CORE_LIB_DEBUG_TRACE_H
 #define GRPC_CORE_LIB_DEBUG_TRACE_H
 
-#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/support/atm.h>
+
+#include "src/core/lib/gprpp/global_config.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
+
+// TODO(veblush): Remove this deprecated function once codes depending on this
+// function are updated in the internal repo.
+void grpc_tracer_init(const char* env_var_name);
+
+void grpc_tracer_init();
+void grpc_tracer_shutdown(void);
 
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
@@ -33,31 +42,91 @@ extern "C" {
 #endif
 #endif
 
-typedef struct {
-#ifdef GRPC_THREADSAFE_TRACER
-  gpr_atm value;
-#else
-  bool value;
-#endif
-  const char *name;
-} grpc_tracer_flag;
+namespace grpc_core {
 
-#ifdef GRPC_THREADSAFE_TRACER
-#define GRPC_TRACER_ON(flag) (gpr_atm_no_barrier_load(&(flag).value) != 0)
-#define GRPC_TRACER_INITIALIZER(on, name) \
-  { (gpr_atm)(on), (name) }
-#else
-#define GRPC_TRACER_ON(flag) ((flag).value)
-#define GRPC_TRACER_INITIALIZER(on, name) \
-  { (on), (name) }
-#endif
+class TraceFlag;
+class TraceFlagList {
+ public:
+  static bool Set(const char* name, bool enabled);
+  static void Add(TraceFlag* flag);
 
-void grpc_register_tracer(grpc_tracer_flag *flag);
-void grpc_tracer_init(const char *env_var_name);
-void grpc_tracer_shutdown(void);
+ private:
+  static void LogAllTracers();
+  static TraceFlag* root_tracer_;
+};
 
-#ifdef __cplusplus
+namespace testing {
+void grpc_tracer_enable_flag(TraceFlag* flag);
 }
+
+class TraceFlag {
+ public:
+  TraceFlag(bool default_enabled, const char* name);
+  // TraceFlag needs to be trivially destructible since it is used as global
+  // variable.
+  ~TraceFlag() = default;
+
+  const char* name() const { return name_; }
+
+// Use the symbol GRPC_USE_TRACERS to determine if tracers will be enabled in
+// opt builds (tracers are always on in dbg builds). The default in OSS is for
+// tracers to be on since we support binary distributions of gRPC for the
+// wrapped language (wr don't want to force recompilation to get tracing).
+// Internally, however, for performance reasons, we compile them out by
+// default, since internal build systems make recompiling trivial.
+//
+// Prefer GRPC_TRACE_FLAG_ENABLED() macro instead of using enabled() directly.
+#define GRPC_USE_TRACERS  // tracers on by default in OSS
+#if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
+  bool enabled() {
+#ifdef GRPC_THREADSAFE_TRACER
+    return gpr_atm_no_barrier_load(&value_) != 0;
+#else
+    return value_;
+#endif  // GRPC_THREADSAFE_TRACER
+  }
+#else
+  bool enabled() { return false; }
+#endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
+
+ private:
+  friend void testing::grpc_tracer_enable_flag(TraceFlag* flag);
+  friend class TraceFlagList;
+
+  void set_enabled(bool enabled) {
+#ifdef GRPC_THREADSAFE_TRACER
+    gpr_atm_no_barrier_store(&value_, enabled);
+#else
+    value_ = enabled;
 #endif
+  }
+
+  TraceFlag* next_tracer_;
+  const char* const name_;
+#ifdef GRPC_THREADSAFE_TRACER
+  gpr_atm value_;
+#else
+  bool value_;
+#endif
+};
+
+#define GRPC_TRACE_FLAG_ENABLED(f) GPR_UNLIKELY((f).enabled())
+
+#ifndef NDEBUG
+typedef TraceFlag DebugOnlyTraceFlag;
+#else
+class DebugOnlyTraceFlag {
+ public:
+  constexpr DebugOnlyTraceFlag(bool /*default_enabled*/, const char* /*name*/) {
+  }
+  constexpr bool enabled() const { return false; }
+  constexpr const char* name() const { return "DebugOnlyTraceFlag"; }
+
+ private:
+  void set_enabled(bool /*enabled*/) {}
+};
+#endif
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_DEBUG_TRACE_H */

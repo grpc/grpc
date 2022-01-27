@@ -16,26 +16,26 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 #include <string.h>
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
-void grpc_call_details_init(grpc_call_details* cd) {
-  GRPC_API_TRACE("grpc_call_details_init(cd=%p)", 1, (cd));
-  memset(cd, 0, sizeof(*cd));
-  cd->method = grpc_empty_slice();
-  cd->host = grpc_empty_slice();
+void grpc_call_details_init(grpc_call_details* details) {
+  GRPC_API_TRACE("grpc_call_details_init(details=%p)", 1, (details));
+  details->method = grpc_empty_slice();
+  details->host = grpc_empty_slice();
 }
 
-void grpc_call_details_destroy(grpc_call_details* cd) {
-  GRPC_API_TRACE("grpc_call_details_destroy(cd=%p)", 1, (cd));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_unref_internal(&exec_ctx, cd->method);
-  grpc_slice_unref_internal(&exec_ctx, cd->host);
-  grpc_exec_ctx_finish(&exec_ctx);
+void grpc_call_details_destroy(grpc_call_details* details) {
+  GRPC_API_TRACE("grpc_call_details_destroy(details=%p)", 1, (details));
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_unref_internal(details->method);
+  grpc_slice_unref_internal(details->host);
 }

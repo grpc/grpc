@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests server responding with RESOURCE_EXHAUSTED."""
 
+import logging
 import threading
 import unittest
 
@@ -41,7 +42,7 @@ class _TestTrigger(object):
         self._finish_condition = threading.Condition()
         self._start_condition = threading.Condition()
 
-    # Wait for all calls be be blocked in their handler
+    # Wait for all calls be blocked in their handler
     def await_calls(self):
         with self._start_condition:
             while self._pending_calls < self._total_call_count:
@@ -139,6 +140,7 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._server = grpc.server(
             self._server_pool,
             handlers=(_GenericHandler(self._trigger),),
+            options=(('grpc.so_reuseport', 0),),
             maximum_concurrent_rpcs=test_constants.THREAD_CONCURRENCY)
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
@@ -146,6 +148,7 @@ class ResourceExhaustedTest(unittest.TestCase):
 
     def tearDown(self):
         self._server.stop(0)
+        self._channel.close()
 
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(_UNARY_UNARY)
@@ -252,4 +255,5 @@ class ResourceExhaustedTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

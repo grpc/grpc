@@ -18,15 +18,34 @@
 
 var PROTO_PATH = __dirname + '/../../protos/helloworld.proto';
 
-var grpc = require('grpc');
-var hello_proto = grpc.load(PROTO_PATH).helloworld;
+var parseArgs = require('minimist');
+var grpc = require('@grpc/grpc-js');
+var protoLoader = require('@grpc/proto-loader');
+var packageDefinition = protoLoader.loadSync(
+    PROTO_PATH,
+    {keepCase: true,
+     longs: String,
+     enums: String,
+     defaults: true,
+     oneofs: true
+    });
+var hello_proto = grpc.loadPackageDefinition(packageDefinition).helloworld;
 
 function main() {
-  var client = new hello_proto.Greeter('localhost:50051',
+  var argv = parseArgs(process.argv.slice(2), {
+    string: 'target'
+  });
+  var target;
+  if (argv.target) {
+    target = argv.target;
+  } else {
+    target = 'localhost:50051';
+  }
+  var client = new hello_proto.Greeter(target,
                                        grpc.credentials.createInsecure());
   var user;
-  if (process.argv.length >= 3) {
-    user = process.argv[2];
+  if (argv._.length > 0) {
+    user = argv._[0]; 
   } else {
     user = 'world';
   }

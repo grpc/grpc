@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 # Make sure there are no pre-existing QPS workers around before starting
 # the performance test suite
@@ -24,16 +24,17 @@ cd $(dirname $0)/../../..
 killall -9 qps_worker || true
 
 # C#
+# shellcheck disable=SC2009
 ps -C mono -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9 || true
+# shellcheck disable=SC2009
 ps -C dotnet -o pid=,cmd= | grep QpsWorker | awk '{print $1}' | xargs kill -9 || true
 
 # Ruby
+# shellcheck disable=SC2009
 ps -C ruby -o pid=,cmd= | grep 'qps/worker.rb' | awk '{print $1}' | xargs kill -9 || true
 
-# Node
-ps -C node -o pid=,cmd= | grep 'performance/worker.js' | awk '{print $1}' | xargs kill -9 || true
-
 # Python
+# shellcheck disable=SC2009
 ps -C python -o pid=,cmd= | grep 'qps_worker.py' | awk '{print $1}' | xargs kill -9 || true
 
 # Java

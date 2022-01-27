@@ -19,45 +19,68 @@
 #ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
+
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
+extern const char* kDefaultSecurePort;
+constexpr int kDefaultSecurePortInt = 443;
 
-typedef struct {
-  char addr[GRPC_MAX_SOCKADDR_SIZE];
-  size_t len;
-} grpc_resolved_address;
+// A singleton class used for async and blocking DNS resolution
+class DNSResolver {
+ public:
+  // Tracks a single asynchronous DNS resolution attempt. The DNS
+  // resolution should be arranged to be cancelled as soon as possible
+  // when Orphan is called.
+  class Request : public InternallyRefCounted<Request> {
+   public:
+    // Begins async DNS resolution
+    virtual void Start() = 0;
+  };
 
-typedef struct {
-  size_t naddrs;
-  grpc_resolved_address *addrs;
-} grpc_resolved_addresses;
+  virtual ~DNSResolver() {}
 
-/* Asynchronously resolve addr. Use default_port if a port isn't designated
-   in addr, otherwise use the port in addr. */
-/* TODO(ctiller): add a timeout here */
-extern void (*grpc_resolve_address)(grpc_exec_ctx *exec_ctx, const char *addr,
-                                    const char *default_port,
-                                    grpc_pollset_set *interested_parties,
-                                    grpc_closure *on_done,
-                                    grpc_resolved_addresses **addresses);
-/* Destroy resolved addresses */
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
+  // Asynchronously resolve name. Use \a default_port if a port isn't designated
+  // in \a name, otherwise use the port in \a name. On completion, \a on_done is
+  // invoked with the result.
+  //
+  // Note for implementations: calls may acquire locks in \a on_done which
+  // were previously held while calling Request::Start(). Therefore,
+  // implementations must not invoke \a on_done inline from the call to
+  // Request::Start(). The DNSCallbackExecCtxScheduler utility may help address
+  // this.
+  virtual OrphanablePtr<Request> ResolveName(
+      absl::string_view name, absl::string_view default_port,
+      grpc_pollset_set* interested_parties,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) GRPC_MUST_USE_RESULT = 0;
 
-/* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
-   result must be freed with grpc_resolved_addresses_destroy. */
-extern grpc_error *(*grpc_blocking_resolve_address)(
-    const char *name, const char *default_port,
-    grpc_resolved_addresses **addresses);
+  // Resolve name in a blocking fashion. Use \a default_port if a port isn't
+  // designated in \a name, otherwise use the port in \a name.
+  virtual absl::StatusOr<std::vector<grpc_resolved_address>>
+  ResolveNameBlocking(absl::string_view name,
+                      absl::string_view default_port) = 0;
+};
 
-#ifdef __cplusplus
-}
-#endif
+// Override the active DNS resolver which should be used for all DNS
+// resolution in gRPC. Note this should only be used during library
+// initialization or within tests.
+void SetDNSResolver(DNSResolver* resolver);
+
+// Get the singleton DNS resolver instance which should be used for all
+// DNS resolution in gRPC.
+DNSResolver* GetDNSResolver();
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

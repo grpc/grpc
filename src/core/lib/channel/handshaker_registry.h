@@ -19,38 +19,53 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
+#include <memory>
+#include <vector>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker_factory.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
 typedef enum {
   HANDSHAKER_CLIENT = 0,
   HANDSHAKER_SERVER,
   NUM_HANDSHAKER_TYPES,  // Must be last.
-} grpc_handshaker_type;
+} HandshakerType;
 
-void grpc_handshaker_factory_registry_init();
-void grpc_handshaker_factory_registry_shutdown(grpc_exec_ctx* exec_ctx);
+class HandshakerRegistry {
+ public:
+  class Builder {
+   public:
+    /// Registers a new handshaker factory.  Takes ownership.
+    /// If \a at_start is true, the new handshaker will be at the beginning of
+    /// the list.  Otherwise, it will be added to the end.
+    void RegisterHandshakerFactory(bool at_start,
+                                   HandshakerType handshaker_type,
+                                   std::unique_ptr<HandshakerFactory> factory);
 
-/// Registers a new handshaker factory.  Takes ownership.
-/// If \a at_start is true, the new handshaker will be at the beginning of
-/// the list.  Otherwise, it will be added to the end.
-void grpc_handshaker_factory_register(bool at_start,
-                                      grpc_handshaker_type handshaker_type,
-                                      grpc_handshaker_factory* factory);
+    HandshakerRegistry Build();
 
-void grpc_handshakers_add(grpc_exec_ctx* exec_ctx,
-                          grpc_handshaker_type handshaker_type,
-                          const grpc_channel_args* args,
-                          grpc_handshake_manager* handshake_mgr);
+   private:
+    std::vector<std::unique_ptr<HandshakerFactory>>
+        factories_[NUM_HANDSHAKER_TYPES];
+  };
 
-#ifdef __cplusplus
-}
-#endif
+  void AddHandshakers(HandshakerType handshaker_type,
+                      const grpc_channel_args* args,
+                      grpc_pollset_set* interested_parties,
+                      HandshakeManager* handshake_mgr) const;
+
+ private:
+  HandshakerRegistry() = default;
+
+  std::vector<std::unique_ptr<HandshakerFactory>>
+      factories_[NUM_HANDSHAKER_TYPES];
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_REGISTRY_H */

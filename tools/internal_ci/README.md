@@ -1,6 +1,7 @@
-# Internal continuous integration
+# Kokoro CI job configurations and testing scripts
 
-gRPC's externally facing testing is managed by Jenkins CI (see `tools/jenkins`
-directory). Nevertheless, some of the tests are better suited for being run
-on internal infrastructure and using an internal CI system. Configuration for
-such tests is under this directory.
+gRPC uses a continuous integration tool called "Kokoro" (a.k.a "internal CI")
+for running majority of its open source tests.
+This directory contains the external part of kokoro test job configurations
+(the actual job definitions live in an internal repository) and the shell
+scripts that act as entry points to execute the actual tests.

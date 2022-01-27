@@ -13,14 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use devtoolset environment that has GCC 4.7 before set -ex
-source scl_source enable devtoolset-1.1
-
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
-make plugins
+mkdir -p cmake/build
+pushd cmake/build
+
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
+
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_PROTOC_BUILD_COMPILER_JOBS=${GRPC_PROTOC_BUILD_COMPILER_JOBS:-2}
+
+make protoc plugins "-j${GRPC_PROTOC_BUILD_COMPILER_JOBS}"
+
+popd
 
 mkdir -p "${ARTIFACTS_OUT}"
-cp bins/opt/protobuf/protoc bins/opt/*_plugin "${ARTIFACTS_OUT}"/
+cp cmake/build/third_party/protobuf/protoc cmake/build/*_plugin "${ARTIFACTS_OUT}"/

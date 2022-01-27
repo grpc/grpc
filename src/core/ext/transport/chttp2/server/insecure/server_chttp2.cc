@@ -16,8 +16,9 @@
  *
  */
 
-#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
@@ -25,20 +26,27 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+namespace {
+
+grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
+                                           grpc_error_handle* /*error*/) {
+  return args;
+}
+
+}  // namespace
+
+int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
+  grpc_core::ExecCtx exec_ctx;
   int port_num = 0;
   GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
                  (server, addr));
-  grpc_error *err = grpc_chttp2_server_add_port(
-      &exec_ctx, server, addr,
-      grpc_channel_args_copy(grpc_server_get_channel_args(server)), &port_num);
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+  grpc_error_handle err = grpc_core::Chttp2ServerAddPort(
+      core_server, addr, grpc_channel_args_copy(core_server->channel_args()),
+      ModifyArgsForConnection, &port_num);
   if (err != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
-
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
     GRPC_ERROR_UNREF(err);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
   return port_num;
 }

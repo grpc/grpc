@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H
 #define GRPCXX_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H
 
-#include <memory>
-
-#include <grpc++/impl/codegen/security/auth_context.h>
-#include <grpc/impl/codegen/grpc_types.h>
-
-namespace grpc {
-
-std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/create_auth_context.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H

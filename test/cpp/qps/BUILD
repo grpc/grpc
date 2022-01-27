@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps_json_driver_batch")
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+licenses(["notice"])
 
 grpc_package(name = "test/cpp/qps")
 
@@ -22,21 +24,25 @@ grpc_cc_library(
     name = "parse_json",
     srcs = ["parse_json.cc"],
     hdrs = ["parse_json.h"],
-    deps = ["//:grpc++"],
     external_deps = ["protobuf"],
+    deps = ["//:grpc++"],
 )
 
 grpc_cc_library(
     name = "qps_worker_impl",
     srcs = [
         "client_async.cc",
+        "client_callback.cc",
         "client_sync.cc",
+        "qps_server_builder.cc",
         "qps_worker.cc",
         "server_async.cc",
+        "server_callback.cc",
         "server_sync.cc",
     ],
     hdrs = [
         "client.h",
+        "qps_server_builder.h",
         "qps_worker.h",
         "server.h",
     ],
@@ -47,12 +53,13 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_core_stats",
+        "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
-        "//src/proto/grpc/testing:services_proto",
+        "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -74,8 +81,8 @@ grpc_cc_library(
         "//:grpc++",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:services_proto",
-        "//test/core/util:gpr_test_util",
+        "//src/proto/grpc/testing:report_qps_scenario_service_proto",
+        "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -89,14 +96,14 @@ grpc_cc_library(
     hdrs = [
         "benchmark_config.h",
     ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
     deps = [
         ":driver_impl",
         ":histogram",
         "//:grpc++",
         "//src/proto/grpc/testing:control_proto",
-    ],
-    external_deps = [
-        "gflags",
     ],
 )
 
@@ -106,7 +113,25 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "//src/proto/grpc/testing:stats_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "qps_json_driver",
+    srcs = ["qps_json_driver.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
 
 grpc_cc_test(
@@ -127,21 +152,14 @@ grpc_cc_library(
     deps = ["//:grpc++"],
 )
 
-grpc_cc_binary(
-    name = "json_run_localhost",
-    srcs = ["json_run_localhost.cc"],
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
-        "//test/cpp/util:test_util",
-    ],
-)
+qps_json_driver_batch()
+
+json_run_localhost_batch()
 
 grpc_cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
+    uses_polling = False,
     deps = [
         ":histogram",
         ":interarrival",
@@ -149,24 +167,11 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_binary(
-    name = "qps_json_driver",
-    srcs = ["qps_json_driver.cc"],
-    deps = [
-        ":benchmark_config",
-        ":driver_impl",
-        "//:grpc++",
-        "//test/cpp/util:test_config",
-        "//test/cpp/util:test_util",
-    ],
-    external_deps = [
-        "gflags",
-    ],
-)
-
 grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
+    exec_properties = LARGE_MACHINE,
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         ":benchmark_config",
         ":driver_impl",
@@ -198,10 +203,12 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "qps_worker",
     srcs = ["worker.cc"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
     deps = [
         ":qps_worker_impl",
         "//:grpc++",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

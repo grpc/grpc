@@ -4,6 +4,14 @@ PHP_ARG_ENABLE(grpc, whether to enable grpc support,
 PHP_ARG_ENABLE(coverage, whether to include code coverage symbols,
 [  --enable-coverage       Enable coverage support], no, no)
 
+PHP_ARG_ENABLE(tests, whether to compile helper methods for tests,
+[  --enable-tests          Enable tests methods], no, no)
+
+dnl Check whether to enable tests
+if test "$PHP_TESTS" != "no"; then
+  CPPFLAGS="$CPPFLAGS -DGRPC_PHP_DEBUG"
+fi
+
 if test "$PHP_GRPC" != "no"; then
   dnl Write more examples of tests here...
 
@@ -34,13 +42,15 @@ if test "$PHP_GRPC" != "no"; then
   dnl  PHP_ADD_LIBRARY(pthread,,GRPC_SHARED_LIBADD)
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_ADD_LIBRARY(pthread)
-
   PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(dl)
 
   case $host in
-    *darwin*) ;;
+    *darwin*)
+      PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
+      ;;
     *)
+      PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt)
       ;;
@@ -76,7 +86,7 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_NEW_EXTENSION(grpc, byte_buffer.c call.c call_credentials.c channel.c \
     channel_credentials.c completion_queue.c timeval.c server.c \
-    server_credentials.c php_grpc.c, $ext_shared, , -Wall -Werror -std=c11)
+    server_credentials.c php_grpc.c, $ext_shared, , -Wall -Werror -std=c11 -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
 fi
 
 if test "$PHP_COVERAGE" = "yes"; then
@@ -84,7 +94,7 @@ if test "$PHP_COVERAGE" = "yes"; then
   if test "$GCC" != "yes"; then
     AC_MSG_ERROR([GCC is required for --enable-coverage])
   fi
-  
+
   dnl Check if ccache is being used
   case `$php_shtool path $CC` in
     *ccache*[)] gcc_ccache=yes;;
@@ -94,8 +104,8 @@ if test "$PHP_COVERAGE" = "yes"; then
   if test "$gcc_ccache" = "yes" && (test -z "$CCACHE_DISABLE" || test "$CCACHE_DISABLE" != "1"); then
     AC_MSG_ERROR([ccache must be disabled when --enable-coverage option is used. You can disable ccache by setting environment variable CCACHE_DISABLE=1.])
   fi
-  
-  lcov_version_list="1.5 1.6 1.7 1.9 1.10 1.11"
+
+  lcov_version_list="1.5 1.6 1.7 1.9 1.10 1.11 1.12 1.13"
 
   AC_CHECK_PROG(LCOV, lcov, lcov)
   AC_CHECK_PROG(GENHTML, genhtml, genhtml)
@@ -113,7 +123,7 @@ if test "$PHP_COVERAGE" = "yes"; then
       done
     ])
   else
-    lcov_msg="To enable code coverage reporting you must have one of the following LCOV versions installed: $lcov_version_list"      
+    lcov_msg="To enable code coverage reporting you must have one of the following LCOV versions installed: $lcov_version_list"
     AC_MSG_ERROR([$lcov_msg])
   fi
 

@@ -19,38 +19,58 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/support/port_platform.h>
 
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef GRPC_LINUX_ERRQUEUE
+#ifndef SO_ZEROCOPY
+#define SO_ZEROCOPY 60
 #endif
+#ifndef SO_EE_ORIGIN_ZEROCOPY
+#define SO_EE_ORIGIN_ZEROCOPY 5
+#endif
+#endif /* ifdef GRPC_LINUX_ERRQUEUE */
 
 /* a wrapper for accept or accept4 */
-int grpc_accept4(int sockfd, grpc_resolved_address *resolved_addr, int nonblock,
+int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
                  int cloexec);
 
+/* set a socket to use zerocopy */
+grpc_error_handle grpc_set_socket_zerocopy(int fd);
+
 /* set a socket to non blocking mode */
-grpc_error *grpc_set_socket_nonblocking(int fd, int non_blocking);
+grpc_error_handle grpc_set_socket_nonblocking(int fd, int non_blocking);
 
 /* set a socket to close on exec */
-grpc_error *grpc_set_socket_cloexec(int fd, int close_on_exec);
+grpc_error_handle grpc_set_socket_cloexec(int fd, int close_on_exec);
 
 /* set a socket to reuse old addresses */
-grpc_error *grpc_set_socket_reuse_addr(int fd, int reuse);
+grpc_error_handle grpc_set_socket_reuse_addr(int fd, int reuse);
+
+/* return true if SO_REUSEPORT is supported */
+bool grpc_is_socket_reuse_port_supported();
 
 /* disable nagle */
-grpc_error *grpc_set_socket_low_latency(int fd, int low_latency);
+grpc_error_handle grpc_set_socket_low_latency(int fd, int low_latency);
 
 /* set SO_REUSEPORT */
-grpc_error *grpc_set_socket_reuse_port(int fd, int reuse);
+grpc_error_handle grpc_set_socket_reuse_port(int fd, int reuse);
+
+/* Configure the default values for TCP_USER_TIMEOUT */
+void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client);
+
+/* Set TCP_USER_TIMEOUT */
+grpc_error_handle grpc_set_socket_tcp_user_timeout(
+    int fd, const grpc_channel_args* channel_args, bool is_client);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
@@ -64,24 +84,29 @@ int grpc_ipv6_loopback_available(void);
 
 /* Tries to set SO_NOSIGPIPE if available on this platform.
    If SO_NO_SIGPIPE is not available, returns 1. */
-grpc_error *grpc_set_socket_no_sigpipe_if_possible(int fd);
+grpc_error_handle grpc_set_socket_no_sigpipe_if_possible(int fd);
 
 /* Tries to set IP_PKTINFO if available on this platform.
    If IP_PKTINFO is not available, returns 1. */
-grpc_error *grpc_set_socket_ip_pktinfo_if_possible(int fd);
+grpc_error_handle grpc_set_socket_ip_pktinfo_if_possible(int fd);
 
 /* Tries to set IPV6_RECVPKTINFO if available on this platform.
    If IPV6_RECVPKTINFO is not available, returns 1. */
-grpc_error *grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
+grpc_error_handle grpc_set_socket_ipv6_recvpktinfo_if_possible(int fd);
 
 /* Tries to set the socket's send buffer to given size. */
-grpc_error *grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
+grpc_error_handle grpc_set_socket_sndbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket's receive buffer to given size. */
-grpc_error *grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
+grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 
 /* Tries to set the socket using a grpc_socket_mutator */
-grpc_error *grpc_set_socket_with_mutator(int fd, grpc_socket_mutator *mutator);
+grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
+                                               grpc_socket_mutator* mutator);
+
+/* Extracts the first socket mutator from args if any and applies on the fd. */
+grpc_error_handle grpc_apply_socket_mutator_in_args(
+    int fd, grpc_fd_usage usage, const grpc_channel_args* args);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 
@@ -101,6 +126,9 @@ typedef enum grpc_dualstack_mode {
 
 /* Only tests should use this flag. */
 extern int grpc_forbid_dualstack_sockets_for_testing;
+
+/* Tries to set the socket to dualstack. Returns 1 on success. */
+int grpc_set_socket_dualstack(int fd);
 
 /* Creates a new socket for connecting to (or listening on) an address.
 
@@ -122,19 +150,14 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
      IPv4, so that bind() or connect() see the correct family.
    Also, it's important to distinguish between DUALSTACK and IPV6 when
    listening on the [::] wildcard address. */
-grpc_error *grpc_create_dualstack_socket(const grpc_resolved_address *addr,
-                                         int type, int protocol,
-                                         grpc_dualstack_mode *dsmode,
-                                         int *newfd);
+grpc_error_handle grpc_create_dualstack_socket(
+    const grpc_resolved_address* addr, int type, int protocol,
+    grpc_dualstack_mode* dsmode, int* newfd);
 
 /* Same as grpc_create_dualstack_socket(), but use the given socket factory (if
    non-null) to create the socket, rather than calling socket() directly. */
-grpc_error *grpc_create_dualstack_socket_using_factory(
-    grpc_socket_factory *factory, const grpc_resolved_address *addr, int type,
-    int protocol, grpc_dualstack_mode *dsmode, int *newfd);
-
-#ifdef __cplusplus
-}
-#endif
+grpc_error_handle grpc_create_dualstack_socket_using_factory(
+    grpc_socket_factory* factory, const grpc_resolved_address* addr, int type,
+    int protocol, grpc_dualstack_mode* dsmode, int* newfd);
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H */

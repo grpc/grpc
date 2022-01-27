@@ -29,8 +29,22 @@ module ClientControl
       self.unmarshal_class_method = :decode
       self.service_name = 'client_control.ClientController'
 
-      rpc :DoEchoRpc, DoEchoRpcRequest, Void
-      rpc :Shutdown, Void, Void
+      rpc :DoEchoRpc, ::ClientControl::DoEchoRpcRequest, ::ClientControl::Void
+      rpc :Shutdown, ::ClientControl::Void, ::ClientControl::Void
+    end
+
+    Stub = Service.rpc_stub_class
+  end
+  module ParentController
+    class Service
+
+      include GRPC::GenericService
+
+      self.marshal_class_method = :encode
+      self.unmarshal_class_method = :decode
+      self.service_name = 'client_control.ParentController'
+
+      rpc :SetClientControllerPort, ::ClientControl::Port, ::ClientControl::Void
     end
 
     Stub = Service.rpc_stub_class

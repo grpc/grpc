@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-RxLibrary'
-  version = '1.8.0-dev'
+  version = '1.45.0-dev'
   s.version  = version
   s.summary  = 'Reactive Extensions library for iOS/OSX.'
   s.homepage = 'https://grpc.io'
@@ -33,15 +33,38 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+  s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   name = 'RxLibrary'
   s.module_name = name
   s.header_dir = name
 
+  s.default_subspec = 'Interface', 'Implementation'
+
+  src_dir = 'src/objective-c/RxLibrary'
+  s.subspec 'Interface' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+    ss.source_files = "#{src_dir}/*.h"
+    ss.public_header_files = "#{src_dir}/*.h"
+  end
+
+  s.subspec 'Implementation' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+    ss.source_files = "#{src_dir}/*.m", "#{src_dir}/**/*.{h,m}"
+    ss.private_header_files = "#{src_dir}/**/*.h"
+
+    ss.dependency "#{s.name}/Interface"
+  end
+
   src_dir = 'src/objective-c/RxLibrary'
   s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
   s.private_header_files = "#{src_dir}/private/*.h"
   s.header_mappings_dir = "#{src_dir}"
+
+  s.pod_target_xcconfig = {
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+  }
 end

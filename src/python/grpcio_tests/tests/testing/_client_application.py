@@ -19,13 +19,12 @@ import threading
 import time
 
 import grpc
-from tests.unit.framework.common import test_constants
 
+from tests.testing import _application_common
 from tests.testing.proto import requests_pb2
 from tests.testing.proto import services_pb2
 from tests.testing.proto import services_pb2_grpc
-
-from tests.testing import _application_common
+from tests.unit.framework.common import test_constants
 
 
 @enum.unique
@@ -130,9 +129,9 @@ def _run_stream_stream(stub):
     request_pipe = _Pipe()
     response_iterator = stub.StreStre(iter(request_pipe))
     request_pipe.add(_application_common.STREAM_STREAM_REQUEST)
-    first_responses = next(response_iterator), next(response_iterator),
+    first_responses = next(response_iterator), next(response_iterator)
     request_pipe.add(_application_common.STREAM_STREAM_REQUEST)
-    second_responses = next(response_iterator), next(response_iterator),
+    second_responses = next(response_iterator), next(response_iterator)
     request_pipe.close()
     try:
         next(response_iterator)
@@ -150,8 +149,8 @@ def _run_stream_stream(stub):
 
 def _run_concurrent_stream_unary(stub):
     future_calls = tuple(
-        stub.StreUn.future(
-            iter((_application_common.STREAM_UNARY_REQUEST,) * 3))
+        stub.StreUn.future(iter((_application_common.STREAM_UNARY_REQUEST,) *
+                                3))
         for _ in range(test_constants.THREAD_CONCURRENCY))
     for future_call in future_calls:
         if future_call.code() is grpc.StatusCode.OK:
@@ -215,30 +214,6 @@ def _run_infinite_request_stream(stub):
         return _UNSATISFACTORY_OUTCOME
 
 
-def run(scenario, channel):
-    stub = services_pb2_grpc.FirstServiceStub(channel)
-    try:
-        if scenario is Scenario.UNARY_UNARY:
-            return _run_unary_unary(stub)
-        elif scenario is Scenario.UNARY_STREAM:
-            return _run_unary_stream(stub)
-        elif scenario is Scenario.STREAM_UNARY:
-            return _run_stream_unary(stub)
-        elif scenario is Scenario.STREAM_STREAM:
-            return _run_stream_stream(stub)
-        elif scenario is Scenario.CONCURRENT_STREAM_UNARY:
-            return _run_concurrent_stream_unary(stub)
-        elif scenario is Scenario.CONCURRENT_STREAM_STREAM:
-            return _run_concurrent_stream_stream(stub)
-        elif scenario is Scenario.CANCEL_UNARY_UNARY:
-            return _run_cancel_unary_unary(stub)
-        elif scenario is Scenario.INFINITE_REQUEST_STREAM:
-            return _run_infinite_request_stream(stub)
-    except grpc.RpcError as rpc_error:
-        return Outcome(Outcome.Kind.RPC_ERROR,
-                       rpc_error.code(), rpc_error.details())
-
-
 _IMPLEMENTATIONS = {
     Scenario.UNARY_UNARY: _run_unary_unary,
     Scenario.UNARY_STREAM: _run_unary_stream,
@@ -256,5 +231,5 @@ def run(scenario, channel):
     try:
         return _IMPLEMENTATIONS[scenario](stub)
     except grpc.RpcError as rpc_error:
-        return Outcome(Outcome.Kind.RPC_ERROR,
-                       rpc_error.code(), rpc_error.details())
+        return Outcome(Outcome.Kind.RPC_ERROR, rpc_error.code(),
+                       rpc_error.details())

@@ -1,0 +1,42 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '9.0'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../..'
+
+%w(
+  test
+  generic
+).each do |target_name|
+  target target_name do
+    pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
+    pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-C++',       :path => GRPC_LOCAL_SRC
+    pod 'BoringSSL-GRPC',      :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
+    end
+
+    # CocoaPods creates duplicated library targets of gRPC-Core when the test targets include
+    # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core'
+    # and require the same error suppresion.
+    if target.name.start_with?('gRPC-Core')
+      target.build_configurations.each do |config|
+        # TODO(zyc): Remove this setting after the issue is resolved
+        # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
+        # function" warning
+        config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+        # Abseil isn't free from the following warning
+        config.build_settings['GCC_WARN_64_TO_32_BIT_CONVERSION'] = 'NO'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
+      end
+    end
+  end
+end

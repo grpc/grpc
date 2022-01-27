@@ -14,14 +14,15 @@
 """Internal utilities for gRPC Python."""
 
 import collections
+import logging
 import threading
 import time
 
-import six
-
 import grpc
 from grpc import _common
-from grpc.framework.foundation import callable_util
+import six
+
+_LOGGER = logging.getLogger(__name__)
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
     'Exception calling connectivity future "done" callback!')
@@ -29,9 +30,15 @@ _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
 
 class RpcMethodHandler(
         collections.namedtuple('_RpcMethodHandler', (
-            'request_streaming', 'response_streaming', 'request_deserializer',
-            'response_serializer', 'unary_unary', 'unary_stream',
-            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming',
+            'response_streaming',
+            'request_deserializer',
+            'response_serializer',
+            'unary_unary',
+            'unary_stream',
+            'stream_unary',
+            'stream_stream',
+        )), grpc.RpcMethodHandler):
     pass
 
 
@@ -92,8 +99,10 @@ class _ChannelReadyFuture(grpc.Future):
                 return
 
         for done_callback in done_callbacks:
-            callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+            try:
+                done_callback(self)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception(_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE)
 
     def cancel(self):
         with self._condition:
@@ -107,8 +116,12 @@ class _ChannelReadyFuture(grpc.Future):
                 return False
 
         for done_callback in done_callbacks:
-            callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self)
+            try:
+                done_callback(self)
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception(_DONE_CALLBACK_EXCEPTION_LOG_MESSAGE)
+
+        return True
 
     def cancelled(self):
         with self._condition:
@@ -124,15 +137,12 @@ class _ChannelReadyFuture(grpc.Future):
 
     def result(self, timeout=None):
         self._block(timeout)
-        return None
 
     def exception(self, timeout=None):
         self._block(timeout)
-        return None
 
     def traceback(self, timeout=None):
         self._block(timeout)
-        return None
 
     def add_done_callback(self, fn):
         with self._condition:

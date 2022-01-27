@@ -18,23 +18,23 @@
 
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
-
-#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -46,9 +46,9 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    gpr_event_set(ev_, (void*)1);
+  Status Echo(ServerContext* context, const EchoRequest* /*request*/,
+              EchoResponse* /*response*/) override {
+    gpr_event_set(ev_, reinterpret_cast<void*>(1));
     while (!context->IsCancelled()) {
     }
     return Status::OK;
@@ -68,7 +68,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
   }
 
   std::unique_ptr<Server> SetUpServer(const int port) {
-    grpc::string server_address = "localhost:" + to_string(port);
+    std::string server_address = "localhost:" + to_string(port);
 
     ServerBuilder builder;
     auto server_creds =
@@ -86,7 +86,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     ChannelArguments args;
     auto channel_creds =
         GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
-    channel_ = CreateCustomChannel(target, channel_creds, args);
+    channel_ = ::grpc::CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -117,7 +117,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
 };
 
 std::vector<string> GetAllCredentialsTypeList() {
-  std::vector<grpc::string> credentials_types;
+  std::vector<std::string> credentials_types;
   if (GetCredentialsProvider()->GetChannelCredentials(kInsecureCredentialsType,
                                                       nullptr) != nullptr) {
     credentials_types.push_back(kInsecureCredentialsType);
@@ -136,8 +136,8 @@ std::vector<string> GetAllCredentialsTypeList() {
   return credentials_types;
 }
 
-INSTANTIATE_TEST_CASE_P(End2EndShutdown, ShutdownTest,
-                        ::testing::ValuesIn(GetAllCredentialsTypeList()));
+INSTANTIATE_TEST_SUITE_P(End2EndShutdown, ShutdownTest,
+                         ::testing::ValuesIn(GetAllCredentialsTypeList()));
 
 // TODO(ctiller): leaked objects in this test
 TEST_P(ShutdownTest, ShutdownTest) {
@@ -164,7 +164,7 @@ TEST_P(ShutdownTest, ShutdownTest) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

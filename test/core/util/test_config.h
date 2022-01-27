@@ -21,9 +21,7 @@
 
 #include <grpc/support/time.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif /*  __cplusplus */
+#include "test/core/util/build.h"
 
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
@@ -37,14 +35,38 @@ gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s);
 /* Converts a given timeout (in milliseconds) to a deadline. */
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 
-#ifndef GRPC_TEST_CUSTOM_PICK_PORT
+#if !defined(GRPC_TEST_CUSTOM_PICK_PORT) && !defined(GRPC_PORT_ISOLATED_RUNTIME)
 #define GRPC_TEST_PICK_PORT
 #endif
 
-void grpc_test_init(int argc, char **argv);
+// Prefer TestEnvironment below.
+void grpc_test_init(int argc, char** argv);
 
-#ifdef __cplusplus
-}
-#endif /*  __cplusplus */
+// Wait until gRPC is fully shut down.
+// Returns if grpc is shutdown
+bool grpc_wait_until_shutdown(int64_t time_s);
+
+namespace grpc {
+namespace testing {
+
+// A TestEnvironment object should be alive in the main function of a test. It
+// provides test init and shutdown inside.
+class TestEnvironment {
+ public:
+  TestEnvironment(int argc, char** argv);
+  ~TestEnvironment();
+};
+
+// A TestGrpcScope makes sure that
+// - when it's created, gRPC will be initialized
+// - when it's destroyed, gRPC will shutdown and it waits until shutdown
+class TestGrpcScope {
+ public:
+  TestGrpcScope();
+  ~TestGrpcScope();
+};
+
+}  // namespace testing
+}  // namespace grpc
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

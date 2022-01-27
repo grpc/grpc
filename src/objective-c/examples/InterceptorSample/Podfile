@@ -1,0 +1,19 @@
+platform :ios, '9.0'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+# Default to use framework, so that providing no 'FRAMEWORK' env parameter works consistently
+# for all Samples, specifically because Swift only supports framework.
+# Only effective for examples/
+use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
+
+ROOT_DIR = '../../../..'
+
+target 'InterceptorSample' do
+  pod 'gRPC-ProtoRPC', :path => ROOT_DIR
+  pod 'gRPC', :path => ROOT_DIR
+  pod 'gRPC-Core', :path => ROOT_DIR
+  pod 'gRPC-RxLibrary', :path => ROOT_DIR
+  pod 'RemoteTest', :path => "../RemoteTestClient"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{ROOT_DIR}/src/objective-c"
+end

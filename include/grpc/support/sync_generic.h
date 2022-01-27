@@ -19,6 +19,8 @@
 #ifndef GRPC_SUPPORT_SYNC_GENERIC_H
 #define GRPC_SUPPORT_SYNC_GENERIC_H
 
-#include <grpc/impl/codegen/sync_generic.h>
+#include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/sync_generic.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_SYNC_GENERIC_H */

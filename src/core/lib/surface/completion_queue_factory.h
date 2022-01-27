@@ -19,12 +19,11 @@
 #ifndef GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 #define GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H
 
-#include <grpc/grpc.h>
-#include "src/core/lib/surface/completion_queue.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/grpc.h>
+
+#include "src/core/lib/surface/completion_queue.h"
 
 typedef struct grpc_completion_queue_factory_vtable {
   grpc_completion_queue* (*create)(const grpc_completion_queue_factory*,
@@ -36,9 +35,5 @@ struct grpc_completion_queue_factory {
   void* data; /* Factory specific data */
   grpc_completion_queue_factory_vtable* vtable;
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_COMPLETION_QUEUE_FACTORY_H */

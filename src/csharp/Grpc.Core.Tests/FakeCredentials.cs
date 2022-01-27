@@ -16,15 +16,7 @@
 
 #endregion
 
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
 using Grpc.Core.Internal;
-using Grpc.Core.Utils;
-using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
@@ -42,17 +34,17 @@ namespace Grpc.Core.Tests
             get { return composable; }
         }
 
-        internal override ChannelCredentialsSafeHandle ToNativeCredentials()
+        public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
         {
-            return null;
+            // not invoking configuration on purpose
         }
     }
 
     internal class FakeCallCredentials : CallCredentials
     {
-        internal override CallCredentialsSafeHandle ToNativeCredentials()
+        public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state)
         {
-            return null;
+            // not invoking the configurator on purpose
         }
     }
 }

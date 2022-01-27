@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2015 The gRPC Authors</Copyright>
+    <Description>Metapackage for gRPC C#</Description>
+    <PackageIconUrl>packageIcon.png</PackageIconUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <!-- This is only a metapackage -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- PrivateAssets set to None to ensure the build targets/props are propagated to parent project -->
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" PrivateAssets="None" />
+  </ItemGroup>
+</Project>

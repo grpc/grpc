@@ -1,0 +1,97 @@
+#@IgnoreInspection BashAddShebang
+# Copyright 2018 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# bazelrc with Foundry setting common to both manual run and runs started by Kokoro
+# see https://github.com/bazelbuild/bazel-toolchains/tree/master/bazelrc
+# for examples and more documentation
+
+startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
+
+build --crosstool_top=@rbe_default//cc:toolchain
+build --extra_toolchains=@rbe_default//config:cc-toolchain
+# Use custom execution platforms defined in third_party/toolchains
+build --extra_execution_platforms=@rbe_default//config:platform
+build --host_platform=@rbe_default//config:platform
+build --platforms=@rbe_default//config:platform
+
+build --spawn_strategy=remote
+build --strategy=Javac=remote
+build --strategy=Closure=remote
+build --genrule_strategy=remote
+build --remote_timeout=7200  # very large value to avoid problems like https://github.com/grpc/grpc/issues/20777
+
+build --remote_instance_name=projects/grpc-testing/instances/default_instance
+
+build --verbose_failures=true
+
+build --experimental_strict_action_env=true
+build --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+
+# don't use port server
+build --define GRPC_PORT_ISOLATED_RUNTIME=1
+# without verbose gRPC logs the test outputs are not very useful
+test --test_env=GRPC_VERBOSITY=debug
+
+# we assume the default bazel RBE build is on linux,
+# so filter out stuff that should not be built or run there.
+build --test_tag_filters=-no_linux
+build --build_tag_filters=-no_linux
+
+# address sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:asan --copt=-gmlt
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:asan --test_timeout=60,600,1800,3600
+build:asan --test_tag_filters=-no_linux,-noasan,-qps_json_driver
+
+# memory sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:msan --copt=-gmlt
+# "moderate" timeout 3x the default, "long" timeout 2x the default
+build:msan --test_timeout=60,900,1800,3600
+# TODO(jtattermusch): revisit the disabled tests
+build:msan --test_tag_filters=-no_linux,-nomsan,-json_run_localhost
+build:msan --cxxopt=--stdlib=libc++
+# setting LD_LIBRARY_PATH is necessary
+# to avoid "libc++.so.1: cannot open shared object file"
+build:msan --action_env=LD_LIBRARY_PATH=/usr/local/lib
+build:msan --host_crosstool_top=@rbe_default//cc:toolchain
+# override the config-agnostic crosstool_top
+build:msan --crosstool_top=@rbe_msan//cc:toolchain
+
+# thread sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:tsan --copt=-gmlt
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:tsan --test_timeout=60,600,1800,3600
+build:tsan --test_tag_filters=-no_linux,-notsan,-qps_json_driver
+
+# undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
+# we only need a few additional ones that are Foundry specific
+build:ubsan --copt=-gmlt
+# use double the default value for "moderate" and "long" timeout as sanitizer
+# tests tend to be slower
+build:ubsan --test_timeout=60,600,1800,3600
+# RBE docker image only has a msan specific version of libc++, so to be able to link against it,
+# we need to involuntarily enable msan as well to be able to build. See b/200667821
+# TODO(jtattermusch): disable memory sanitizer for ubsan build as soon as possible.
+build:ubsan --copt=-fsanitize=memory
+build:ubsan --copt=-fsanitize-recover=memory
+build:ubsan --linkopt=-fsanitize=memory
+build:ubsan --cxxopt=--stdlib=libc++
+build:ubsan --action_env=MSAN_OPTIONS=halt_on_error=0
+build:ubsan --test_tag_filters=-no_linux,-noubsan

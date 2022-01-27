@@ -24,10 +24,10 @@
 #include <grpc/grpc.h>
 
 /* Converts a char* with a length to a grpc_byte_buffer */
-grpc_byte_buffer *grpc_rb_s_to_byte_buffer(char *string, size_t length);
+grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char* string, size_t length);
 
 /* Converts a grpc_byte_buffer to a ruby string */
-VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer *buffer);
+VALUE grpc_rb_byte_buffer_to_s(grpc_byte_buffer* buffer);
 
 /* Converts a grpc_slice to a ruby string */
 VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice);

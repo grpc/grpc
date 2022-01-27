@@ -15,50 +15,24 @@
 
 set -ex
 
+ACTION=${1:---in-place}
+[[ $ACTION == '--in-place' ]] || [[ $ACTION == '--diff' ]]
+
 # change to root directory
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
-    'src/python'
-)
-EXCLUSIONS=(
-    'grpcio/grpc_*.py'
-    'grpcio_health_checking/grpc_*.py'
-    'grpcio_reflection/grpc_*.py'
-    'grpcio_testing/grpc_*.py'
-    'grpcio_tests/grpc_*.py'
+    'examples'
+    'src'
+    'test'
+    'tools'
+    'setup.py'
 )
 
 VIRTUALENV=yapf_virtual_environment
 
-virtualenv $VIRTUALENV
-PYTHON=$(realpath "${VIRTUALENV}/bin/python")
-$PYTHON -m pip install --upgrade pip==9.0.1
-$PYTHON -m pip install --upgrade futures
-$PYTHON -m pip install yapf==0.16.0
+python3 -m virtualenv $VIRTUALENV -p $(which python3)
+PYTHON=${VIRTUALENV}/bin/python
+"$PYTHON" -m pip install yapf==0.30.0
 
-yapf() {
-    local exclusion exclusion_args=()
-    for exclusion in "${EXCLUSIONS[@]}"; do
-        exclusion_args+=( "--exclude" "$1/${exclusion}" )
-    done
-    $PYTHON -m yapf -i -r --style=setup.cfg -p "${exclusion_args[@]}" "${1}"
-}
-
-if [[ -z "${TEST}" ]]; then
-    for dir in "${DIRS[@]}"; do
-	yapf "${dir}"
-    done
-else
-    ok=yes
-    for dir in "${DIRS[@]}"; do
-	tempdir=$(mktemp -d)
-	cp -RT "${dir}" "${tempdir}"
-	yapf "${tempdir}"
-	diff -ru "${dir}" "${tempdir}" || ok=no
-	rm -rf "${tempdir}"
-    done
-    if [[ ${ok} == no ]]; then
-	false
-    fi
-fi
+$PYTHON -m yapf $ACTION --parallel --recursive --style=setup.cfg "${DIRS[@]}"

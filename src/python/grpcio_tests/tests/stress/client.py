@@ -19,9 +19,9 @@ import threading
 
 import grpc
 from six.moves import queue
+
 from src.proto.grpc.testing import metrics_pb2_grpc
 from src.proto.grpc.testing import test_pb2_grpc
-
 from tests.interop import methods
 from tests.interop import resources
 from tests.qps import histogram
@@ -34,46 +34,42 @@ def _args():
         description='gRPC Python stress test client')
     parser.add_argument(
         '--server_addresses',
-        help='comma seperated list of hostname:port to run servers on',
+        help='comma separated list of hostname:port to run servers on',
         default='localhost:8080',
         type=str)
     parser.add_argument(
         '--test_cases',
-        help='comma seperated list of testcase:weighting of tests to run',
+        help='comma separated list of testcase:weighting of tests to run',
         default='large_unary:100',
         type=str)
-    parser.add_argument(
-        '--test_duration_secs',
-        help='number of seconds to run the stress test',
-        default=-1,
-        type=int)
-    parser.add_argument(
-        '--num_channels_per_server',
-        help='number of channels per server',
-        default=1,
-        type=int)
-    parser.add_argument(
-        '--num_stubs_per_channel',
-        help='number of stubs to create per channel',
-        default=1,
-        type=int)
-    parser.add_argument(
-        '--metrics_port',
-        help='the port to listen for metrics requests on',
-        default=8081,
-        type=int)
+    parser.add_argument('--test_duration_secs',
+                        help='number of seconds to run the stress test',
+                        default=-1,
+                        type=int)
+    parser.add_argument('--num_channels_per_server',
+                        help='number of channels per server',
+                        default=1,
+                        type=int)
+    parser.add_argument('--num_stubs_per_channel',
+                        help='number of stubs to create per channel',
+                        default=1,
+                        type=int)
+    parser.add_argument('--metrics_port',
+                        help='the port to listen for metrics requests on',
+                        default=8081,
+                        type=int)
     parser.add_argument(
         '--use_test_ca',
         help='Whether to use our fake CA. Requires --use_tls=true',
         default=False,
         type=bool)
-    parser.add_argument(
-        '--use_tls', help='Whether to use TLS', default=False, type=bool)
-    parser.add_argument(
-        '--server_host_override',
-        default="foo.test.google.fr",
-        help='the server host to which to claim to connect',
-        type=str)
+    parser.add_argument('--use_tls',
+                        help='Whether to use TLS',
+                        default=False,
+                        type=bool)
+    parser.add_argument('--server_host_override',
+                        help='the server host to which to claim to connect',
+                        type=str)
     return parser.parse_args()
 
 
@@ -102,10 +98,13 @@ def _get_channel(target, args):
             root_certificates = None  # will load default roots.
         channel_credentials = grpc.ssl_channel_credentials(
             root_certificates=root_certificates)
-        options = (('grpc.ssl_target_name_override',
-                    args.server_host_override,),)
-        channel = grpc.secure_channel(
-            target, channel_credentials, options=options)
+        options = ((
+            'grpc.ssl_target_name_override',
+            args.server_host_override,
+        ),)
+        channel = grpc.secure_channel(target,
+                                      channel_credentials,
+                                      options=options)
     else:
         channel = grpc.insecure_channel(target)
 
@@ -130,9 +129,9 @@ def run_test(args):
     server.start()
 
     for test_server_target in test_server_targets:
-        for _ in xrange(args.num_channels_per_server):
+        for _ in range(args.num_channels_per_server):
             channel = _get_channel(test_server_target, args)
-            for _ in xrange(args.num_stubs_per_channel):
+            for _ in range(args.num_stubs_per_channel):
                 stub = test_pb2_grpc.TestServiceStub(channel)
                 runner = test_runner.TestRunner(stub, test_cases, hist,
                                                 exception_queue, stop_event)

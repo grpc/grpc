@@ -105,8 +105,8 @@ class TimeTest(object):
                 test_event.set, _QUANTUM * (2 + random.random()))
         for _ in range(_MANY):
             background_noise_futures.append(
-                self._time.call_in(threading.Event().set, _QUANTUM * 1000 *
-                                   random.random()))
+                self._time.call_in(threading.Event().set,
+                                   _QUANTUM * 1000 * random.random()))
         self._time.sleep_for(_QUANTUM)
         cancelled = set()
         for test_event, test_future in possibly_cancelled_futures.items():
@@ -115,8 +115,8 @@ class TimeTest(object):
         self._time.sleep_for(_QUANTUM * 3)
 
         for test_event in test_events:
-            (self.assertFalse if test_event in cancelled else
-             self.assertTrue)(test_event.is_set())
+            (self.assertFalse if test_event in cancelled else self.assertTrue)(
+                test_event.is_set())
         for background_noise_future in background_noise_futures:
             background_noise_future.cancel()
 

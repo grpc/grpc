@@ -14,11 +14,13 @@
 # limitations under the License.
 
 # Regenerates gRPC service stubs from proto files.
-set +e
+set -e
 cd $(dirname $0)/../../..
 
-PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
+# protoc and grpc_*_plugin binaries can be obtained by running
+# $ bazel build @com_google_protobuf//:protoc //src/compiler:all
+PROTOC=bazel-bin/external/com_google_protobuf/protoc
+PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_ruby_plugin
 
 $PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
     --grpc_out=src/ruby/pb \
@@ -32,7 +34,13 @@ $PROTOC -I . \
     --plugin=$PLUGIN
 
 $PROTOC -I . \
-    src/proto/grpc/testing/{messages,payloads,stats,services,control}.proto \
+    src/proto/grpc/core/stats.proto \
+    --grpc_out=src/ruby/qps \
+    --ruby_out=src/ruby/qps \
+    --plugin=$PLUGIN
+
+$PROTOC -I . \
+    src/proto/grpc/testing/{messages,payloads,stats,benchmark_service,report_qps_scenario_service,worker_service,control}.proto \
     --grpc_out=src/ruby/qps \
     --ruby_out=src/ruby/qps \
     --plugin=$PLUGIN

@@ -22,8 +22,17 @@ var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('lodash');
-var grpc = require('grpc');
-var routeguide = grpc.load(PROTO_PATH).routeguide;
+var grpc = require('@grpc/grpc-js');
+var protoLoader = require('@grpc/proto-loader');
+var packageDefinition = protoLoader.loadSync(
+    PROTO_PATH,
+    {keepCase: true,
+     longs: String,
+     enums: String,
+     defaults: true,
+     oneofs: true
+    });
+var routeguide = grpc.loadPackageDefinition(packageDefinition).routeguide;
 
 var COORD_FACTOR = 1e7;
 
@@ -103,7 +112,7 @@ function listFeatures(call) {
 
 /**
  * Calculate the distance between two points using the "haversine" formula.
- * This code was taken from http://www.movable-type.co.uk/scripts/latlong.html.
+ * The formula is based on http://mathforum.org/library/drmath/view/51879.html.
  * @param start The starting point
  * @param end The end point
  * @return The distance between the points in meters
@@ -112,21 +121,18 @@ function getDistance(start, end) {
   function toRadians(num) {
     return num * Math.PI / 180;
   }
-  var lat1 = start.latitude / COORD_FACTOR;
-  var lat2 = end.latitude / COORD_FACTOR;
-  var lon1 = start.longitude / COORD_FACTOR;
-  var lon2 = end.longitude / COORD_FACTOR;
-  var R = 6371000; // metres
-  var φ1 = toRadians(lat1);
-  var φ2 = toRadians(lat2);
-  var Δφ = toRadians(lat2-lat1);
-  var Δλ = toRadians(lon2-lon1);
+  var R = 6371000;  // earth radius in metres
+  var lat1 = toRadians(start.latitude / COORD_FACTOR);
+  var lat2 = toRadians(end.latitude / COORD_FACTOR);
+  var lon1 = toRadians(start.longitude / COORD_FACTOR);
+  var lon2 = toRadians(end.longitude / COORD_FACTOR);
 
-  var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  var deltalat = lat2-lat1;
+  var deltalon = lon2-lon1;
+  var a = Math.sin(deltalat/2) * Math.sin(deltalat/2) +
+      Math.cos(lat1) * Math.cos(lat2) *
+      Math.sin(deltalon/2) * Math.sin(deltalon/2);
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
   return R * c;
 }
 
@@ -212,7 +218,7 @@ function routeChat(call) {
  */
 function getServer() {
   var server = new grpc.Server();
-  server.addProtoService(routeguide.RouteGuide.service, {
+  server.addService(routeguide.RouteGuide.service, {
     getFeature: getFeature,
     listFeatures: listFeatures,
     recordRoute: recordRoute,
@@ -224,14 +230,15 @@ function getServer() {
 if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
-  routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  var argv = parseArgs(process.argv, {
-    string: 'db_path'
-  });
-  fs.readFile(path.resolve(argv.db_path), function(err, data) {
-    if (err) throw err;
-    feature_list = JSON.parse(data);
-    routeServer.start();
+  routeServer.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
+    var argv = parseArgs(process.argv, {
+      string: 'db_path'
+    });
+    fs.readFile(path.resolve(argv.db_path), function(err, data) {
+      if (err) throw err;
+      feature_list = JSON.parse(data);
+      routeServer.start();
+    });
   });
 }
 

@@ -31,6 +31,7 @@ end if ENV['COVERAGE_NAME']
 require 'rspec'
 require 'logging'
 require 'rspec/logging_helper'
+require 'grpc'
 
 require_relative 'support/services'
 require_relative 'support/helpers'

@@ -16,19 +16,20 @@
  *
  */
 
+#include "src/compiler/ruby_generator.h"
+
 #include <cctype>
 #include <map>
 #include <vector>
 
 #include "src/compiler/config.h"
-#include "src/compiler/ruby_generator.h"
 #include "src/compiler/ruby_generator_helpers-inl.h"
 #include "src/compiler/ruby_generator_map-inl.h"
 #include "src/compiler/ruby_generator_string-inl.h"
 
 using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::MethodDescriptor;
+using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using std::map;
@@ -38,20 +39,21 @@ namespace grpc_ruby_generator {
 namespace {
 
 // Prints out the method using the ruby gRPC DSL.
-void PrintMethod(const MethodDescriptor *method, const grpc::string &package,
-                 Printer *out) {
-  grpc::string input_type =
-      RubyTypeOf(method->input_type()->full_name(), package);
+void PrintMethod(const MethodDescriptor* method, Printer* out) {
+  std::string input_type = RubyTypeOf(method->input_type());
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  grpc::string output_type =
-      RubyTypeOf(method->output_type()->full_name(), package);
+  std::string output_type = RubyTypeOf(method->output_type());
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
-  std::map<grpc::string, grpc::string> method_vars = ListToDict({
-      "mth.name", method->name(), "input.type", input_type, "output.type",
+  std::map<std::string, std::string> method_vars = ListToDict({
+      "mth.name",
+      method->name(),
+      "input.type",
+      input_type,
+      "output.type",
       output_type,
   });
   out->Print(GetRubyComments(method, true).c_str());
@@ -60,15 +62,15 @@ void PrintMethod(const MethodDescriptor *method, const grpc::string &package,
 }
 
 // Prints out the service using the ruby gRPC DSL.
-void PrintService(const ServiceDescriptor *service, const grpc::string &package,
-                  Printer *out) {
+void PrintService(const ServiceDescriptor* service, Printer* out) {
   if (service->method_count() == 0) {
     return;
   }
 
   // Begin the service module
-  std::map<grpc::string, grpc::string> module_vars = ListToDict({
-      "module.name", CapitalizeFirst(service->name()),
+  std::map<std::string, std::string> module_vars = ListToDict({
+      "module.name",
+      Modularize(service->name()),
   });
   out->Print(module_vars, "module $module.name$\n");
   out->Indent();
@@ -79,16 +81,16 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
   // Write the indented class body.
   out->Indent();
   out->Print("\n");
-  out->Print("include GRPC::GenericService\n");
+  out->Print("include ::GRPC::GenericService\n");
   out->Print("\n");
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
-  std::map<grpc::string, grpc::string> pkg_vars =
+  std::map<std::string, std::string> pkg_vars =
       ListToDict({"service_full_name", service->full_name()});
   out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintMethod(service->method(i), package, out);
+    PrintMethod(service->method(i), out);
   }
   out->Outdent();
 
@@ -108,7 +110,7 @@ void PrintService(const ServiceDescriptor *service, const grpc::string &package,
 // ruby generator
 // to ensure compatibility (with the exception of int and string type changes).
 // See
-// https://github.com/google/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
+// https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/compiler/ruby/ruby_generator.cc#L250
 // TODO: keep up to date with protoc code generation, though this behavior isn't
 // expected to change
 bool IsLower(char ch) { return ch >= 'a' && ch <= 'z'; }
@@ -119,12 +121,12 @@ char ToUpper(char ch) { return IsLower(ch) ? (ch - 'a' + 'A') : ch; }
 // names must be PascalCased.
 //
 //   foo_bar_baz -> FooBarBaz
-grpc::string PackageToModule(const grpc::string &name) {
+std::string PackageToModule(const std::string& name) {
   bool next_upper = true;
-  grpc::string result;
+  std::string result;
   result.reserve(name.size());
 
-  for (grpc::string::size_type i = 0; i < name.size(); i++) {
+  for (std::string::size_type i = 0; i < name.size(); i++) {
     if (name[i] == '_') {
       next_upper = true;
     } else {
@@ -141,8 +143,8 @@ grpc::string PackageToModule(const grpc::string &name) {
 }
 // end copying of protoc generator for ruby code
 
-grpc::string GetServices(const FileDescriptor *file) {
-  grpc::string output;
+std::string GetServices(const FileDescriptor* file) {
+  std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
 
@@ -155,18 +157,23 @@ grpc::string GetServices(const FileDescriptor *file) {
       return output;
     }
 
+    std::string package_name = RubyPackage(file);
+
     // Write out a file header.
-    std::map<grpc::string, grpc::string> header_comment_vars = ListToDict({
-        "file.name", file->name(), "file.package", file->package(),
+    std::map<std::string, std::string> header_comment_vars = ListToDict({
+        "file.name",
+        file->name(),
+        "file.package",
+        package_name,
     });
     out.Print("# Generated by the protocol buffer compiler.  DO NOT EDIT!\n");
     out.Print(header_comment_vars,
               "# Source: $file.name$ for package '$file.package$'\n");
 
-    grpc::string leading_comments = GetRubyComments(file, true);
+    std::string leading_comments = GetRubyComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("# Original file comments:\n");
-      out.Print(leading_comments.c_str());
+      out.PrintRaw(leading_comments.c_str());
     }
 
     out.Print("\n");
@@ -174,24 +181,26 @@ grpc::string GetServices(const FileDescriptor *file) {
     // Write out require statemment to import the separately generated file
     // that defines the messages used by the service. This is generated by the
     // main ruby plugin.
-    std::map<grpc::string, grpc::string> dep_vars = ListToDict({
-        "dep.name", MessagesRequireName(file),
+    std::map<std::string, std::string> dep_vars = ListToDict({
+        "dep.name",
+        MessagesRequireName(file),
     });
     out.Print(dep_vars, "require '$dep.name$'\n");
 
     // Write out services within the modules
     out.Print("\n");
-    std::vector<grpc::string> modules = Split(file->package(), '.');
+    std::vector<std::string> modules = Split(package_name, '.');
     for (size_t i = 0; i < modules.size(); ++i) {
-      std::map<grpc::string, grpc::string> module_vars = ListToDict({
-          "module.name", PackageToModule(modules[i]),
+      std::map<std::string, std::string> module_vars = ListToDict({
+          "module.name",
+          PackageToModule(modules[i]),
       });
       out.Print(module_vars, "module $module.name$\n");
       out.Indent();
     }
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i);
-      PrintService(service, file->package(), &out);
+      PrintService(service, &out);
     }
     for (size_t i = 0; i < modules.size(); ++i) {
       out.Outdent();

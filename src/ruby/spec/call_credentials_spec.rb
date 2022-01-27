@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 describe GRPC::Core::CallCredentials do
   CallCredentials = GRPC::Core::CallCredentials

@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_py_binary")
+load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
+
 package(
     default_visibility = ["//visibility:public"],
     features = [
@@ -20,30 +23,31 @@ package(
     ],
 )
 
-licenses(["notice"])  # Apache v2
-
-load("//bazel:grpc_build_system.bzl", "grpc_sh_binary", "grpc_py_binary")
-
-load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
+licenses(["notice"])
 
 # Meant to be invoked only through the top-level shell script driver.
-grpc_sh_binary(
+grpc_py_binary(
     name = "resolver_component_tests_runner",
+    testonly = True,
     srcs = [
-        "resolver_component_tests_runner.sh",
+        "resolver_component_tests_runner.py",
     ],
 )
 
-grpc_py_binary(
-  name = "test_dns_server",
-  srcs = ["test_dns_server.py"],
-  data = [
-      "resolver_test_record_groups.yaml",
-  ],
-  deps = [
-      "twisted",
-      "yaml",
-  ]
+grpc_cc_test(
+    name = "cancel_ares_query_test",
+    srcs = ["cancel_ares_query_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:fake_udp_and_tcp_server",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
 
 generate_resolver_component_tests()

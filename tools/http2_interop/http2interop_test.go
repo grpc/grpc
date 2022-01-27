@@ -1,3 +1,17 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package http2interop
 
 import (
@@ -131,7 +145,7 @@ func TestSoonTLSMaxVersion(t *testing.T) {
 	ctx := InteropCtx(t)
 	err := testTLSMaxVersion(ctx, tls.VersionTLS11)
 	// TODO(carl-mastrangelo): maybe this should be some other error.  If the server picks
-	// the wrong protocol version, thats bad too.
+	// the wrong protocol version, that's bad too.
 	matchError(t, err, "EOF", "server selected unsupported protocol")
 }
 

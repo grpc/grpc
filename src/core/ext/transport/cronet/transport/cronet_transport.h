@@ -19,18 +19,12 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-grpc_transport *grpc_create_cronet_transport(void *engine, const char *target,
-                                             const grpc_channel_args *args,
-                                             void *reserved);
-
-#ifdef __cplusplus
-}
-#endif
+grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
+                                             const grpc_channel_args* args,
+                                             void* reserved);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H */

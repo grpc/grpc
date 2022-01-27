@@ -18,6 +18,7 @@ import threading
 
 import grpc
 from grpc import _common
+from grpc.beta import _metadata
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
@@ -65,14 +66,15 @@ class _FaceServicerContext(face.ServicerContext):
         return _ServerProtocolContext(self._servicer_context)
 
     def invocation_metadata(self):
-        return _common.to_cygrpc_metadata(
-            self._servicer_context.invocation_metadata())
+        return _metadata.beta(self._servicer_context.invocation_metadata())
 
     def initial_metadata(self, initial_metadata):
-        self._servicer_context.send_initial_metadata(initial_metadata)
+        self._servicer_context.send_initial_metadata(
+            _metadata.unbeta(initial_metadata))
 
     def terminal_metadata(self, terminal_metadata):
-        self._servicer_context.set_terminal_metadata(terminal_metadata)
+        self._servicer_context.set_terminal_metadata(
+            _metadata.unbeta(terminal_metadata))
 
     def code(self, code):
         self._servicer_context.set_code(code)
@@ -166,11 +168,8 @@ def _run_request_pipe_thread(request_iterator, request_consumer,
                 return
         request_consumer.terminate()
 
-    def stop_request_pipe(timeout):  # pylint: disable=unused-argument
-        thread_joined.set()
-
-    request_pipe_thread = _common.CleanupThread(
-        stop_request_pipe, target=pipe_requests)
+    request_pipe_thread = threading.Thread(target=pipe_requests)
+    request_pipe_thread.daemon = True
     request_pipe_thread.start()
 
 
@@ -243,9 +242,15 @@ def _adapt_stream_stream_event(stream_stream_event):
 
 class _SimpleMethodHandler(
         collections.namedtuple('_MethodHandler', (
-            'request_streaming', 'response_streaming', 'request_deserializer',
-            'response_serializer', 'unary_unary', 'unary_stream',
-            'stream_unary', 'stream_stream',)), grpc.RpcMethodHandler):
+            'request_streaming',
+            'response_streaming',
+            'request_deserializer',
+            'response_serializer',
+            'unary_unary',
+            'unary_stream',
+            'stream_unary',
+            'stream_stream',
+        )), grpc.RpcMethodHandler):
     pass
 
 
@@ -263,11 +268,11 @@ def _simple_method_handler(implementation, request_deserializer,
                 _adapt_unary_request_inline(implementation.unary_stream_inline),
                 None, None)
         elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
-            return _SimpleMethodHandler(True, False, request_deserializer,
-                                        response_serializer, None, None,
-                                        _adapt_stream_request_inline(
-                                            implementation.stream_unary_inline),
-                                        None)
+            return _SimpleMethodHandler(
+                True, False, request_deserializer, response_serializer, None,
+                None,
+                _adapt_stream_request_inline(
+                    implementation.stream_unary_inline), None)
         elif implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True, True, request_deserializer, response_serializer, None,
@@ -296,6 +301,7 @@ def _simple_method_handler(implementation, request_deserializer,
                 True, True, request_deserializer, response_serializer, None,
                 None, None,
                 _adapt_stream_stream_event(implementation.stream_stream_event))
+    raise ValueError()
 
 
 def _flatten_method_pair_map(method_pair_map):
@@ -365,13 +371,14 @@ class _Server(interfaces.Server):
 def server(service_implementations, multi_method_implementation,
            request_deserializers, response_serializers, thread_pool,
            thread_pool_size):
-    generic_rpc_handler = _GenericRpcHandler(
-        service_implementations, multi_method_implementation,
-        request_deserializers, response_serializers)
+    generic_rpc_handler = _GenericRpcHandler(service_implementations,
+                                             multi_method_implementation,
+                                             request_deserializers,
+                                             response_serializers)
     if thread_pool is None:
-        effective_thread_pool = logging_pool.pool(_DEFAULT_POOL_SIZE
-                                                  if thread_pool_size is None
-                                                  else thread_pool_size)
+        effective_thread_pool = logging_pool.pool(
+            _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size
+        )
     else:
         effective_thread_pool = thread_pool
     return _Server(

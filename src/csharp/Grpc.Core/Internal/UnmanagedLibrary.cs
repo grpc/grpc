@@ -51,11 +51,12 @@ namespace Grpc.Core.Internal
 
             Logger.Debug("Attempting to load native library \"{0}\"", this.libraryPath);
 
-            this.handle = PlatformSpecificLoadLibrary(this.libraryPath);
+            this.handle = PlatformSpecificLoadLibrary(this.libraryPath, out string loadLibraryErrorDetail);
 
             if (this.handle == IntPtr.Zero)
             {
-                throw new IOException(string.Format("Error loading native library \"{0}\"", this.libraryPath));
+                throw new IOException(string.Format("Error loading native library \"{0}\". {1}",
+                                                    this.libraryPath, loadLibraryErrorDetail));
             }
         }
 
@@ -64,7 +65,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         /// <param name="symbolName"></param>
         /// <returns></returns>
-        public IntPtr LoadSymbol(string symbolName)
+        private IntPtr LoadSymbol(string symbolName)
         {
             if (PlatformApis.IsWindows)
             {
@@ -119,7 +120,7 @@ namespace Grpc.Core.Internal
             {
                 throw new MissingMethodException(string.Format("The native method \"{0}\" does not exist", methodName));
             }
-#if NETSTANDARD1_5
+#if NETSTANDARD
             return Marshal.GetDelegateForFunctionPointer<T>(ptr);  // non-generic version is obsolete
 #else
             return Marshal.GetDelegateForFunctionPointer(ptr, typeof(T)) as T;  // generic version not available in .NET45
@@ -129,29 +130,52 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Loads library in a platform specific way.
         /// </summary>
-        private static IntPtr PlatformSpecificLoadLibrary(string libraryPath)
+        private static IntPtr PlatformSpecificLoadLibrary(string libraryPath, out string errorMsg)
         {
             if (PlatformApis.IsWindows)
             {
-                return Windows.LoadLibrary(libraryPath);
+                errorMsg = null;
+                var handle = Windows.LoadLibrary(libraryPath);
+                if (handle == IntPtr.Zero)
+                {
+                    int win32Error = Marshal.GetLastWin32Error();
+                    errorMsg = $"LoadLibrary failed with error {win32Error}";
+                    // add extra info for the most common error ERROR_MOD_NOT_FOUND
+                    if (win32Error == 126)
+                    {
+                        errorMsg += ": The specified module could not be found.";
+                    }
+                }
+                return handle;
             }
             if (PlatformApis.IsLinux)
             {
                 if (PlatformApis.IsMono)
                 {
-                    return Mono.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                    return LoadLibraryPosix(Mono.dlopen, Mono.dlerror, libraryPath, out errorMsg);
                 }
                 if (PlatformApis.IsNetCore)
                 {
-                    return CoreCLR.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                    return LoadLibraryPosix(CoreCLR.dlopen, CoreCLR.dlerror, libraryPath, out errorMsg);
                 }
-                return Linux.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                return LoadLibraryPosix(Linux.dlopen, Linux.dlerror, libraryPath, out errorMsg);
             }
             if (PlatformApis.IsMacOSX)
             {
-                return MacOSX.dlopen(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+                return LoadLibraryPosix(MacOSX.dlopen, MacOSX.dlerror, libraryPath, out errorMsg);
             }
             throw new InvalidOperationException("Unsupported platform.");
+        }
+
+        private static IntPtr LoadLibraryPosix(Func<string, int, IntPtr> dlopenFunc, Func<IntPtr> dlerrorFunc, string libraryPath, out string errorMsg)
+        {
+            errorMsg = null;
+            IntPtr ret = dlopenFunc(libraryPath, RTLD_GLOBAL + RTLD_LAZY);
+            if (ret == IntPtr.Zero)
+            {
+                errorMsg = Marshal.PtrToStringAnsi(dlerrorFunc());
+            }
+            return ret;
         }
 
         private static string FirstValidLibraryPath(string[] libraryPathAlternatives)
@@ -165,13 +189,13 @@ namespace Grpc.Core.Internal
                 }
             }
             throw new FileNotFoundException(
-                String.Format("Error loading native library. Not found in any of the possible locations: {0}", 
+                String.Format("Error loading native library. Not found in any of the possible locations: {0}",
                     string.Join(",", libraryPathAlternatives)));
         }
 
         private static class Windows
         {
-            [DllImport("kernel32.dll")]
+            [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
             internal static extern IntPtr LoadLibrary(string filename);
 
             [DllImport("kernel32.dll")]
@@ -184,6 +208,9 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("libdl.so")]
+            internal static extern IntPtr dlerror();
+
+            [DllImport("libdl.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
 
@@ -193,11 +220,14 @@ namespace Grpc.Core.Internal
             internal static extern IntPtr dlopen(string filename, int flags);
 
             [DllImport("libSystem.dylib")]
+            internal static extern IntPtr dlerror();
+
+            [DllImport("libSystem.dylib")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
         }
 
         /// <summary>
-        /// On Linux systems, using using dlopen and dlsym results in
+        /// On Linux systems, using dlopen and dlsym results in
         /// DllNotFoundException("libdl.so not found") if libc6-dev
         /// is not installed. As a workaround, we load symbols for
         /// dlopen and dlsym from the current process as on Linux
@@ -207,6 +237,9 @@ namespace Grpc.Core.Internal
         {
             [DllImport("__Internal")]
             internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("__Internal")]
+            internal static extern IntPtr dlerror();
 
             [DllImport("__Internal")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);
@@ -221,6 +254,9 @@ namespace Grpc.Core.Internal
         {
             [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlopen(string filename, int flags);
+
+            [DllImport("libcoreclr.so")]
+            internal static extern IntPtr dlerror();
 
             [DllImport("libcoreclr.so")]
             internal static extern IntPtr dlsym(IntPtr handle, string symbol);

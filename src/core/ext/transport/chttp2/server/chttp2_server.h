@@ -19,22 +19,29 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/server.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
+
+// A function to modify channel args for a listening addr:port. Note that this
+// is used to create a security connector for listeners when the servers are
+// configured with a config fetcher. Not invoked if there is no config fetcher
+// added to the server. Takes ownership of the args.  Caller takes ownership of
+// returned args. On failure, the error parameter will be set.
+using Chttp2ServerArgsModifier =
+    std::function<grpc_channel_args*(grpc_channel_args*, grpc_error_handle*)>;
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
-grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
-                                        grpc_server *server, const char *addr,
-                                        grpc_channel_args *args, int *port_num);
+grpc_error_handle Chttp2ServerAddPort(
+    Server* server, const char* addr, grpc_channel_args* args,
+    Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
 
-#ifdef __cplusplus
-}
-#endif
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H */

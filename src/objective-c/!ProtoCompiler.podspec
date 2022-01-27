@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.4.0'
+  v = '3.19.2'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -45,7 +45,7 @@ Pod::Spec.new do |s|
     The generated code will have a dependency on the Protobuf Objective-C runtime of the same
     version. The runtime can be obtained as the "Protobuf" pod.
   DESC
-  s.homepage = 'https://github.com/google/protobuf'
+  s.homepage = 'https://github.com/protocolbuffers/protobuf'
   s.license  = {
     :type => 'New BSD',
     :text => <<-LICENSE
@@ -110,25 +110,22 @@ Pod::Spec.new do |s|
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
   s.dependency 'Protobuf', '~> 3.0'
   # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+  s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   # This is only for local development of protoc: If the Podfile brings this pod from a local
   # directory using `:path`, CocoaPods won't download the zip file and so the compiler won't be
   # present in this pod's directory. We use that knowledge to check for the existence of the file
   # and, if absent, build it from the local sources.
   repo_root = '../..'
-  plugin = 'grpc_objective_c_plugin'
+  bazel = "#{repo_root}/tools/bazel"
+
   s.prepare_command = <<-CMD
+    set -e
     if [ ! -f bin/protoc ]; then
-      cd #{repo_root}
-      # This will build protoc from the Protobuf submodule of gRPC, and put it in
-      # #{repo_root}/bins/opt/protobuf.
-      #
-      # TODO(jcanizales): Make won't build protoc from sources if one's locally installed, which
-      # _we do not want_. Find a way for this to always build from source.
-      make #{plugin}
-      cd -
+      #{bazel} build @com_google_protobuf//:protoc
     else
       mv bin/protoc .
       mv include/google .

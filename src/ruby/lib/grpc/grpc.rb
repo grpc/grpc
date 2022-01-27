@@ -17,7 +17,7 @@ begin
   distrib_lib_dir = File.expand_path(ruby_version_dirname,
                                      File.dirname(__FILE__))
   if File.directory?(distrib_lib_dir)
-    require_relative "#{distrib_lib_dir}/grpc_c"
+    require "#{distrib_lib_dir}/grpc_c"
   else
     require 'grpc/grpc_c'
   end

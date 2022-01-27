@@ -32,17 +32,41 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   NodeGrpcGenerator() {}
   ~NodeGrpcGenerator() {}
 
-  bool Generate(const grpc::protobuf::FileDescriptor *file,
-                const grpc::string &parameter,
-                grpc::protobuf::compiler::GeneratorContext *context,
-                grpc::string *error) const {
-    grpc::string code = GenerateFile(file);
+  uint64_t GetSupportedFeatures() const override {
+    return FEATURE_PROTO3_OPTIONAL;
+  }
+
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const std::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                std::string* error) const override {
+    grpc_node_generator::Parameters generator_parameters;
+    generator_parameters.minimum_node_version = 4;
+
+    if (!parameter.empty()) {
+      std::vector<std::string> parameters_list =
+          grpc_generator::tokenize(parameter, ",");
+      for (auto parameter_string = parameters_list.begin();
+           parameter_string != parameters_list.end(); parameter_string++) {
+        std::vector<std::string> param =
+            grpc_generator::tokenize(*parameter_string, "=");
+        if (param[0] == "minimum_node_version") {
+          sscanf(param[1].c_str(), "%d",
+                 &generator_parameters.minimum_node_version);
+        } else {
+          *error = std::string("Unknown parameter: ") + *parameter_string;
+          return false;
+        }
+      }
+    }
+
+    std::string code = GenerateFile(file, generator_parameters);
     if (code.size() == 0) {
       return true;
     }
 
     // Get output file name
-    grpc::string file_name = GetJSServiceFilename(file->name());
+    std::string file_name = GetJSServiceFilename(file->name());
 
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(file_name));
@@ -52,7 +76,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   NodeGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

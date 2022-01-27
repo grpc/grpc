@@ -17,9 +17,9 @@
  *
  */
 
-class CallCredentials2Test extends PHPUnit_Framework_TestCase
+class CallCredentials2Test extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
         $credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
@@ -35,6 +35,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $this->channel = new Grpc\Channel(
             'localhost:'.$this->port,
             [
+            'force_new' => true,
             'grpc.ssl_target_name_override' => $this->host_override,
             'grpc.default_authority' => $this->host_override,
             'credentials' => $credentials,
@@ -42,7 +43,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         unset($this->channel);
         unset($this->server);
@@ -61,7 +62,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              '/abc/dummy_method',
+                              '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -86,7 +87,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $this->assertSame($metadata['k1'], ['v1']);
         $this->assertSame($metadata['k2'], ['v2']);
 
-        $this->assertSame('/abc/dummy_method', $event->method);
+        $this->assertSame('/abc/phony_method', $event->method);
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
@@ -131,7 +132,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              '/abc/dummy_method',
+                              '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -147,7 +148,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
-        $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
+        $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
     }
 
     public function invalidReturnCallbackFunc($context)
@@ -163,7 +164,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              '/abc/dummy_method',
+                              '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -179,6 +180,6 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
-        $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
+        $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
     }
 }

@@ -32,11 +32,12 @@ class ProxyClientServiceClient extends \Grpc\BaseStub {
     }
 
     /**
-     * @param \Grpc\Testing\Void $argument input argument
+     * @param \Grpc\Testing\PBVoid $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\ClientConfig
      */
-    public function GetConfig(\Grpc\Testing\Void $argument,
+    public function GetConfig(\Grpc\Testing\PBVoid $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.ProxyClientService/GetConfig',
         $argument,
@@ -47,20 +48,22 @@ class ProxyClientServiceClient extends \Grpc\BaseStub {
     /**
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\PBVoid
      */
     public function ReportTime($metadata = [], $options = []) {
         return $this->_clientStreamRequest('/grpc.testing.ProxyClientService/ReportTime',
-        ['\Grpc\Testing\Void','decode'],
+        ['\Grpc\Testing\PBVoid','decode'],
         $metadata, $options);
     }
 
     /**
      * @param array $metadata metadata
      * @param array $options call options
+     * @return \Grpc\Testing\PBVoid
      */
     public function ReportHist($metadata = [], $options = []) {
         return $this->_clientStreamRequest('/grpc.testing.ProxyClientService/ReportHist',
-        ['\Grpc\Testing\Void','decode'],
+        ['\Grpc\Testing\PBVoid','decode'],
         $metadata, $options);
     }
 

@@ -29,36 +29,37 @@
    otherwise specified.
 */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
-extern grpc_tracer_flag grpc_tcp_trace;
+/// Create a tcp endpoint given a file desciptor and a read slice size.
+/// Takes ownership of \a fd. Takes ownership of the \a slice_allocator.
+grpc_endpoint* grpc_tcp_create(grpc_fd* fd, const grpc_channel_args* args,
+                               absl::string_view peer_string);
 
-/* Create a tcp endpoint given a file desciptor and a read slice size.
-   Takes ownership of fd. */
-grpc_endpoint *grpc_tcp_create(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                               const grpc_channel_args *args,
-                               const char *peer_string);
+/// Return the tcp endpoint's fd, or -1 if this is not available. Does not
+/// release the fd. Requires: \a ep must be a tcp endpoint.
+int grpc_tcp_fd(grpc_endpoint* ep);
 
-/* Return the tcp endpoint's fd, or -1 if this is not available. Does not
-   release the fd.
-   Requires: ep must be a tcp endpoint.
- */
-int grpc_tcp_fd(grpc_endpoint *ep);
+/// Destroy the tcp endpoint without closing its fd. *fd will be set and done
+/// will be called when the endpoint is destroyed. Requires: \a ep must be a tcp
+/// endpoint and fd must not be NULL.
+void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
+                                     grpc_closure* done);
 
-/* Destroy the tcp endpoint without closing its fd. *fd will be set and done
- * will be called when the endpoint is destroyed.
- * Requires: ep must be a tcp endpoint and fd must not be NULL. */
-void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                     int *fd, grpc_closure *done);
+#ifdef GRPC_POSIX_SOCKET_TCP
 
-#ifdef __cplusplus
-}
-#endif
+void grpc_tcp_posix_init();
+
+void grpc_tcp_posix_shutdown();
+
+#endif /* GRPC_POSIX_SOCKET_TCP */
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */

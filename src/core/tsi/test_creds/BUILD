@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 exports_files([
-        "ca.pem",
-        "server1.key",
-        "server1.pem",
-        "server0.key",
-        "server0.pem",
-        "client.key",
-        "client.pem",
-        "badserver.key",
-        "badserver.pem",
-        "badclient.key",
-        "badclient.pem",
+    "ca.pem",
+    "server1.key",
+    "server1.pem",
+    "server0.key",
+    "server0.pem",
+    "client.key",
+    "client.pem",
+    "badserver.key",
+    "badserver.pem",
+    "badclient.key",
+    "badclient.pem",
+    "multi-domain.key",
+    "multi-domain.pem",
 ])

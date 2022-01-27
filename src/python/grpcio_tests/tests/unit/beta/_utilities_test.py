@@ -20,6 +20,7 @@ import unittest
 from grpc.beta import implementations
 from grpc.beta import utilities
 from grpc.framework.foundation import future
+
 from tests.unit.framework.common import test_constants
 
 
@@ -41,6 +42,7 @@ class _Callback(object):
             return self._value
 
 
+@unittest.skip('https://github.com/grpc/grpc/issues/16134')
 class ChannelConnectivityTest(unittest.TestCase):
 
     def test_lonely_channel_connectivity(self):

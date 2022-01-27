@@ -15,24 +15,23 @@
  * limitations under the License.
  *
  */
-#include <grpc++/support/channel_arguments.h>
-
 #include <sstream>
 
-#include <grpc++/grpc++.h>
-#include <grpc++/resource_quota.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
-extern "C" {
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
-}
+
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + Version());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + grpc::Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
@@ -40,26 +39,26 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   args_.reserve(other.args_.size());
   auto list_it_dst = strings_.begin();
   auto list_it_src = other.strings_.begin();
-  for (auto a = other.args_.begin(); a != other.args_.end(); ++a) {
+  for (const auto& a : other.args_) {
     grpc_arg ap;
-    ap.type = a->type;
-    GPR_ASSERT(list_it_src->c_str() == a->key);
+    ap.type = a.type;
+    GPR_ASSERT(list_it_src->c_str() == a.key);
     ap.key = const_cast<char*>(list_it_dst->c_str());
     ++list_it_src;
     ++list_it_dst;
-    switch (a->type) {
+    switch (a.type) {
       case GRPC_ARG_INTEGER:
-        ap.value.integer = a->value.integer;
+        ap.value.integer = a.value.integer;
         break;
       case GRPC_ARG_STRING:
-        GPR_ASSERT(list_it_src->c_str() == a->value.string);
+        GPR_ASSERT(list_it_src->c_str() == a.value.string);
         ap.value.string = const_cast<char*>(list_it_dst->c_str());
         ++list_it_src;
         ++list_it_dst;
         break;
       case GRPC_ARG_POINTER:
-        ap.value.pointer = a->value.pointer;
-        ap.value.pointer.p = a->value.pointer.vtable->copy(ap.value.pointer.p);
+        ap.value.pointer = a.value.pointer;
+        ap.value.pointer.p = a.value.pointer.vtable->copy(ap.value.pointer.p);
         break;
     }
     args_.push_back(ap);
@@ -67,13 +66,12 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
 }
 
 ChannelArguments::~ChannelArguments() {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  for (auto it = args_.begin(); it != args_.end(); ++it) {
-    if (it->type == GRPC_ARG_POINTER) {
-      it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
+  for (auto& arg : args_) {
+    if (arg.type == GRPC_ARG_POINTER) {
+      grpc_core::ExecCtx exec_ctx;
+      arg.value.pointer.vtable->destroy(arg.value.pointer.p);
     }
   }
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void ChannelArguments::Swap(ChannelArguments& other) {
@@ -96,19 +94,21 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   }
   grpc_arg mutator_arg = grpc_socket_mutator_to_arg(mutator);
   bool replaced = false;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  for (auto it = args_.begin(); it != args_.end(); ++it) {
-    if (it->type == mutator_arg.type &&
-        grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+  grpc_core::ExecCtx exec_ctx;
+  for (auto& arg : args_) {
+    if (arg.type == mutator_arg.type &&
+        std::string(arg.key) == std::string(mutator_arg.key)) {
       GPR_ASSERT(!replaced);
-      it->value.pointer.vtable->destroy(&exec_ctx, it->value.pointer.p);
-      it->value.pointer = mutator_arg.value.pointer;
+      arg.value.pointer.vtable->destroy(arg.value.pointer.p);
+      arg.value.pointer = mutator_arg.value.pointer;
       replaced = true;
     }
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   if (!replaced) {
+    strings_.push_back(std::string(mutator_arg.key));
     args_.push_back(mutator_arg);
+    args_.back().key = const_cast<char*>(strings_.back().c_str());
   }
 }
 
@@ -117,20 +117,19 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
 // prefix. The user can build up a prefix string by calling this multiple times,
 // each with more significant identifier.
 void ChannelArguments::SetUserAgentPrefix(
-    const grpc::string& user_agent_prefix) {
+    const std::string& user_agent_prefix) {
   if (user_agent_prefix.empty()) {
     return;
   }
   bool replaced = false;
   auto strings_it = strings_.begin();
-  for (auto it = args_.begin(); it != args_.end(); ++it) {
-    const grpc_arg& arg = *it;
+  for (auto& arg : args_) {
     ++strings_it;
     if (arg.type == GRPC_ARG_STRING) {
-      if (grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+      if (std::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
         GPR_ASSERT(arg.value.string == strings_it->c_str());
         *(strings_it) = user_agent_prefix + " " + arg.value.string;
-        it->value.string = const_cast<char*>(strings_it->c_str());
+        arg.value.string = const_cast<char*>(strings_it->c_str());
         replaced = true;
         break;
       }
@@ -158,16 +157,16 @@ void ChannelArguments::SetMaxSendMessageSize(int size) {
 }
 
 void ChannelArguments::SetLoadBalancingPolicyName(
-    const grpc::string& lb_policy_name) {
+    const std::string& lb_policy_name) {
   SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
 }
 
 void ChannelArguments::SetServiceConfigJSON(
-    const grpc::string& service_config_json) {
+    const std::string& service_config_json) {
   SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
 }
 
-void ChannelArguments::SetInt(const grpc::string& key, int value) {
+void ChannelArguments::SetInt(const std::string& key, int value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_INTEGER;
   strings_.push_back(key);
@@ -177,7 +176,7 @@ void ChannelArguments::SetInt(const grpc::string& key, int value) {
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
+void ChannelArguments::SetPointer(const std::string& key, void* value) {
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};
@@ -185,7 +184,7 @@ void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
 }
 
 void ChannelArguments::SetPointerWithVtable(
-    const grpc::string& key, void* value,
+    const std::string& key, void* value,
     const grpc_arg_pointer_vtable* vtable) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
@@ -196,8 +195,8 @@ void ChannelArguments::SetPointerWithVtable(
   args_.push_back(arg);
 }
 
-void ChannelArguments::SetString(const grpc::string& key,
-                                 const grpc::string& value) {
+void ChannelArguments::SetString(const std::string& key,
+                                 const std::string& value) {
   grpc_arg arg;
   arg.type = GRPC_ARG_STRING;
   strings_.push_back(key);

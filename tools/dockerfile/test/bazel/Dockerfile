@@ -12,7 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/oss-fuzz-base/base-builder
+# Pinned version of the base image is used to avoid regressions caused
+# by rebuilding of this docker image. To see available versions, you can run
+# "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
+# Image(c7f1523ebd92) is built on Jul 29, 2021
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:c7f1523ebd9234b9ff57e5240f8c06569143373be019c92f1e6df18a1e048f37
+
+# -------------------------- WARNING --------------------------------------
+# If you are making changes to this file, consider changing
+# https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
+# accordingly.
+# -------------------------------------------------------------------------
 
 # Install basic packages and Bazel dependencies.
 RUN apt-get update && apt-get install -y software-properties-common python-software-properties
@@ -21,24 +31,57 @@ RUN apt-get update && apt-get -y install \
   autoconf \
   build-essential \
   curl \
+  wget \
   libtool \
   make \
   openjdk-8-jdk \
   vim
 
+#====================
+# Python dependencies
+
+# Install dependencies
+# TODO(jtattermusch): This installs python3.5. Is it even needed
+# when we install python3.6 in the next step?
+RUN apt-get update && apt-get install -y \
+    python3-all-dev
+
+#=================
+# Compile CPython 3.6.9 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
+    tar xzvf Python-3.6.9.tgz && \
+    cd Python-3.6.9 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+RUN cd /tmp && \
+    echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.6 -m ensurepip && \
+    python3.6 -m pip install coverage
+
+
 #========================
 # Bazel installation
-RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
-RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update
-RUN apt-get -y install bazel
 
-# Pin Bazel to 0.4.4
-# Installing Bazel via apt-get first is required before installing 0.4.4 to
-# allow gRPC to build without errors. See https://github.com/grpc/grpc/issues/10553
-RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.4/bazel-0.4.4-installer-linux-x86_64.sh
-RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
-RUN ./bazel-0.4.4-installer-linux-x86_64.sh
+# Must be in sync with tools/bazel
+ENV BAZEL_VERSION 4.2.1
+
+# The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
+ENV DISABLE_BAZEL_WRAPPER 1
+
+RUN apt-get update && apt-get install -y wget && apt-get clean
+RUN wget "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-installer-linux-x86_64.sh" && \
+  bash ./bazel-$BAZEL_VERSION-installer-linux-x86_64.sh && \
+  rm bazel-$BAZEL_VERSION-installer-linux-x86_64.sh
+
 
 RUN mkdir -p /var/local/jenkins
 

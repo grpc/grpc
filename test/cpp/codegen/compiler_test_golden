@@ -26,23 +26,24 @@
 
 #include "src/proto/grpc/testing/compiler_test.pb.h"
 
-#include <grpc++/impl/codegen/async_stream.h>
-#include <grpc++/impl/codegen/async_unary_call.h>
-#include <grpc++/impl/codegen/method_handler_impl.h>
-#include <grpc++/impl/codegen/proto_utils.h>
-#include <grpc++/impl/codegen/rpc_method.h>
-#include <grpc++/impl/codegen/service_type.h>
-#include <grpc++/impl/codegen/status.h>
-#include <grpc++/impl/codegen/stub_options.h>
-#include <grpc++/impl/codegen/sync_stream.h>
-
-namespace grpc {
-class CompletionQueue;
-class Channel;
-class RpcService;
-class ServerCompletionQueue;
-class ServerContext;
-}  // namespace grpc
+#include <functional>
+#include <grpcpp/impl/codegen/async_generic_service.h>
+#include <grpcpp/impl/codegen/async_stream.h>
+#include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/client_callback.h>
+#include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
+#include <grpcpp/impl/codegen/method_handler.h>
+#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/impl/codegen/rpc_method.h>
+#include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
+#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/stub_options.h>
+#include <grpcpp/impl/codegen/sync_stream.h>
 
 namespace grpc {
 namespace testing {
@@ -105,7 +106,30 @@ class ServiceA final {
       return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::grpc::testing::Request, ::grpc::testing::Response>>(PrepareAsyncMethodA4Raw(context, cq));
     }
     // Method A4 trailing comment 1
-  private:
+    class async_interface {
+     public:
+      virtual ~async_interface() {}
+      // MethodA1 leading comment 1
+      virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // MethodA1 trailing comment 1
+      // MethodA2 detached leading comment 1
+      //
+      // Method A2 leading comment 1
+      // Method A2 leading comment 2
+      virtual void MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::ClientWriteReactor< ::grpc::testing::Request>* reactor) = 0;
+      // MethodA2 trailing comment 1
+      // Method A3 leading comment 1
+      virtual void MethodA3(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::ClientReadReactor< ::grpc::testing::Response>* reactor) = 0;
+      // Method A3 trailing comment 1
+      // Method A4 leading comment 1
+      virtual void MethodA4(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::grpc::testing::Request,::grpc::testing::Response>* reactor) = 0;
+      // Method A4 trailing comment 1
+    };
+    typedef class async_interface experimental_async_interface;
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
+   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* AsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* PrepareAsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientWriterInterface< ::grpc::testing::Request>* MethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response) = 0;
@@ -120,7 +144,7 @@ class ServiceA final {
   };
   class Stub final : public StubInterface {
    public:
-    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
     ::grpc::Status MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>> AsyncMethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>>(AsyncMethodA1Raw(context, request, cq));
@@ -155,9 +179,25 @@ class ServiceA final {
     std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>> PrepareAsyncMethodA4(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>>(PrepareAsyncMethodA4Raw(context, cq));
     }
+    class async final :
+      public StubInterface::async_interface {
+     public:
+      void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      void MethodA1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::ClientWriteReactor< ::grpc::testing::Request>* reactor) override;
+      void MethodA3(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
+      void MethodA4(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::grpc::testing::Request,::grpc::testing::Response>* reactor) override;
+     private:
+      friend class Stub;
+      explicit async(Stub* stub): stub_(stub) { }
+      Stub* stub() { return stub_; }
+      Stub* stub_;
+    };
+    class async* async() override { return &async_stub_; }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* AsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* PrepareAsyncMethodA1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientWriter< ::grpc::testing::Request>* MethodA2Raw(::grpc::ClientContext* context, ::grpc::testing::Response* response) override;
@@ -169,10 +209,10 @@ class ServiceA final {
     ::grpc::ClientReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA4Raw(::grpc::ClientContext* context) override;
     ::grpc::ClientAsyncReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>* AsyncMethodA4Raw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
     ::grpc::ClientAsyncReaderWriter< ::grpc::testing::Request, ::grpc::testing::Response>* PrepareAsyncMethodA4Raw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::RpcMethod rpcmethod_MethodA1_;
-    const ::grpc::RpcMethod rpcmethod_MethodA2_;
-    const ::grpc::RpcMethod rpcmethod_MethodA3_;
-    const ::grpc::RpcMethod rpcmethod_MethodA4_;
+    const ::grpc::internal::RpcMethod rpcmethod_MethodA1_;
+    const ::grpc::internal::RpcMethod rpcmethod_MethodA2_;
+    const ::grpc::internal::RpcMethod rpcmethod_MethodA3_;
+    const ::grpc::internal::RpcMethod rpcmethod_MethodA4_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -199,7 +239,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA1() {
       ::grpc::Service::MarkMethodAsync(0);
@@ -208,7 +248,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodA1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -219,7 +259,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA2 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA2() {
       ::grpc::Service::MarkMethodAsync(1);
@@ -228,7 +268,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA2(::grpc::ServerContext* context, ::grpc::ServerReader< ::grpc::testing::Request>* reader, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodA2(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::grpc::testing::Request>* /*reader*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -239,7 +279,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA3() {
       ::grpc::Service::MarkMethodAsync(2);
@@ -248,7 +288,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA3(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::ServerWriter< ::grpc::testing::Response>* writer) final override {
+    ::grpc::Status MethodA3(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::ServerWriter< ::grpc::testing::Response>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -259,7 +299,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA4 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA4() {
       ::grpc::Service::MarkMethodAsync(3);
@@ -268,7 +308,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA4(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* stream) final override {
+    ::grpc::Status MethodA4(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -278,9 +318,105 @@ class ServiceA final {
   };
   typedef WithAsyncMethod_MethodA1<WithAsyncMethod_MethodA2<WithAsyncMethod_MethodA3<WithAsyncMethod_MethodA4<Service > > > > AsyncService;
   template <class BaseClass>
+  class WithCallbackMethod_MethodA1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_MethodA1() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) { return this->MethodA1(context, request, response); }));}
+    void SetMessageAllocatorFor_MethodA1(
+        ::grpc::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_MethodA1() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* MethodA1(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_MethodA2 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_MethodA2() {
+      ::grpc::Service::MarkMethodCallback(1,
+          new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](
+                   ::grpc::CallbackServerContext* context, ::grpc::testing::Response* response) { return this->MethodA2(context, response); }));
+    }
+    ~WithCallbackMethod_MethodA2() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA2(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::grpc::testing::Request>* /*reader*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerReadReactor< ::grpc::testing::Request>* MethodA2(
+      ::grpc::CallbackServerContext* /*context*/, ::grpc::testing::Response* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_MethodA3 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_MethodA3() {
+      ::grpc::Service::MarkMethodCallback(2,
+          new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::testing::Request* request) { return this->MethodA3(context, request); }));
+    }
+    ~WithCallbackMethod_MethodA3() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA3(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::ServerWriter< ::grpc::testing::Response>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerWriteReactor< ::grpc::testing::Response>* MethodA3(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::testing::Request* /*request*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithCallbackMethod_MethodA4 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_MethodA4() {
+      ::grpc::Service::MarkMethodCallback(3,
+          new ::grpc::internal::CallbackBidiHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](
+                   ::grpc::CallbackServerContext* context) { return this->MethodA4(context); }));
+    }
+    ~WithCallbackMethod_MethodA4() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA4(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA4(
+      ::grpc::CallbackServerContext* /*context*/)
+      { return nullptr; }
+  };
+  typedef WithCallbackMethod_MethodA1<WithCallbackMethod_MethodA2<WithCallbackMethod_MethodA3<WithCallbackMethod_MethodA4<Service > > > > CallbackService;
+  typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
   class WithGenericMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_MethodA1() {
       ::grpc::Service::MarkMethodGeneric(0);
@@ -289,7 +425,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodA1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -297,7 +433,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithGenericMethod_MethodA2 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_MethodA2() {
       ::grpc::Service::MarkMethodGeneric(1);
@@ -306,7 +442,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA2(::grpc::ServerContext* context, ::grpc::ServerReader< ::grpc::testing::Request>* reader, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodA2(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::grpc::testing::Request>* /*reader*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -314,7 +450,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithGenericMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_MethodA3() {
       ::grpc::Service::MarkMethodGeneric(2);
@@ -323,7 +459,7 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA3(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::ServerWriter< ::grpc::testing::Response>* writer) final override {
+    ::grpc::Status MethodA3(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::ServerWriter< ::grpc::testing::Response>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -331,7 +467,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithGenericMethod_MethodA4 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_MethodA4() {
       ::grpc::Service::MarkMethodGeneric(3);
@@ -340,25 +476,201 @@ class ServiceA final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodA4(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* stream) final override {
+    ::grpc::Status MethodA4(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
+  class WithRawMethod_MethodA1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_MethodA1() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_MethodA1() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMethodA1(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_MethodA2 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_MethodA2() {
+      ::grpc::Service::MarkMethodRaw(1);
+    }
+    ~WithRawMethod_MethodA2() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA2(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::grpc::testing::Request>* /*reader*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMethodA2(::grpc::ServerContext* context, ::grpc::ServerAsyncReader< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* reader, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncClientStreaming(1, context, reader, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_MethodA3 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_MethodA3() {
+      ::grpc::Service::MarkMethodRaw(2);
+    }
+    ~WithRawMethod_MethodA3() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA3(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::ServerWriter< ::grpc::testing::Response>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMethodA3(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncWriter< ::grpc::ByteBuffer>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncServerStreaming(2, context, request, writer, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawMethod_MethodA4 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_MethodA4() {
+      ::grpc::Service::MarkMethodRaw(3);
+    }
+    ~WithRawMethod_MethodA4() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA4(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMethodA4(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncBidiStreaming(3, context, stream, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_MethodA1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_MethodA1() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->MethodA1(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_MethodA1() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* MethodA1(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_MethodA2 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_MethodA2() {
+      ::grpc::Service::MarkMethodRawCallback(1,
+          new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, ::grpc::ByteBuffer* response) { return this->MethodA2(context, response); }));
+    }
+    ~WithRawCallbackMethod_MethodA2() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA2(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::grpc::testing::Request>* /*reader*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerReadReactor< ::grpc::ByteBuffer>* MethodA2(
+      ::grpc::CallbackServerContext* /*context*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_MethodA3 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_MethodA3() {
+      ::grpc::Service::MarkMethodRawCallback(2,
+          new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const::grpc::ByteBuffer* request) { return this->MethodA3(context, request); }));
+    }
+    ~WithRawCallbackMethod_MethodA3() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA3(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::ServerWriter< ::grpc::testing::Response>* /*writer*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerWriteReactor< ::grpc::ByteBuffer>* MethodA3(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/)  { return nullptr; }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_MethodA4 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_MethodA4() {
+      ::grpc::Service::MarkMethodRawCallback(3,
+          new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context) { return this->MethodA4(context); }));
+    }
+    ~WithRawCallbackMethod_MethodA4() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodA4(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::grpc::testing::Response, ::grpc::testing::Request>* /*stream*/)  override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA4(
+      ::grpc::CallbackServerContext* /*context*/)
+      { return nullptr; }
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_MethodA1() {
       ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::StreamedUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithStreamedUnaryMethod_MethodA1<BaseClass>::StreamedMethodA1, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
+                       return this->StreamedMethodA1(context,
+                         streamer);
+                  }));
     }
     ~WithStreamedUnaryMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status MethodA1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodA1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -369,17 +681,24 @@ class ServiceA final {
   template <class BaseClass>
   class WithSplitStreamingMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithSplitStreamingMethod_MethodA3() {
       ::grpc::Service::MarkMethodStreamed(2,
-        new ::grpc::SplitServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithSplitStreamingMethod_MethodA3<BaseClass>::StreamedMethodA3, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::SplitServerStreamingHandler<
+          ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerSplitStreamer<
+                     ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
+                       return this->StreamedMethodA3(context,
+                         streamer);
+                  }));
     }
     ~WithSplitStreamingMethod_MethodA3() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status MethodA3(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::ServerWriter< ::grpc::testing::Response>* writer) final override {
+    ::grpc::Status MethodA3(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::ServerWriter< ::grpc::testing::Response>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -408,13 +727,24 @@ class ServiceB final {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>>(PrepareAsyncMethodB1Raw(context, request, cq));
     }
     // MethodB1 trailing comment 1
-  private:
+    class async_interface {
+     public:
+      virtual ~async_interface() {}
+      // MethodB1 leading comment 1
+      virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      // MethodB1 trailing comment 1
+    };
+    typedef class async_interface experimental_async_interface;
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
+   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* AsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::grpc::testing::Response>* PrepareAsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
-    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
     ::grpc::Status MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::testing::Response* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>> AsyncMethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>>(AsyncMethodB1Raw(context, request, cq));
@@ -422,12 +752,25 @@ class ServiceB final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>> PrepareAsyncMethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>>(PrepareAsyncMethodB1Raw(context, request, cq));
     }
+    class async final :
+      public StubInterface::async_interface {
+     public:
+      void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, std::function<void(::grpc::Status)>) override;
+      void MethodB1(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::ClientUnaryReactor* reactor) override;
+     private:
+      friend class Stub;
+      explicit async(Stub* stub): stub_(stub) { }
+      Stub* stub() { return stub_; }
+      Stub* stub_;
+    };
+    class async* async() override { return &async_stub_; }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* AsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::grpc::testing::Response>* PrepareAsyncMethodB1Raw(::grpc::ClientContext* context, const ::grpc::testing::Request& request, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::RpcMethod rpcmethod_MethodB1_;
+    const ::grpc::internal::RpcMethod rpcmethod_MethodB1_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -442,7 +785,7 @@ class ServiceB final {
   template <class BaseClass>
   class WithAsyncMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodB1() {
       ::grpc::Service::MarkMethodAsync(0);
@@ -451,7 +794,7 @@ class ServiceB final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodB1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -461,9 +804,38 @@ class ServiceB final {
   };
   typedef WithAsyncMethod_MethodB1<Service > AsyncService;
   template <class BaseClass>
+  class WithCallbackMethod_MethodB1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithCallbackMethod_MethodB1() {
+      ::grpc::Service::MarkMethodCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) { return this->MethodB1(context, request, response); }));}
+    void SetMessageAllocatorFor_MethodB1(
+        ::grpc::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(handler)
+              ->SetMessageAllocator(allocator);
+    }
+    ~WithCallbackMethod_MethodB1() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodB1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* MethodB1(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/)  { return nullptr; }
+  };
+  typedef WithCallbackMethod_MethodB1<Service > CallbackService;
+  typedef CallbackService ExperimentalCallbackService;
+  template <class BaseClass>
   class WithGenericMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_MethodB1() {
       ::grpc::Service::MarkMethodGeneric(0);
@@ -472,25 +844,74 @@ class ServiceB final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodB1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
+  class WithRawMethod_MethodB1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawMethod_MethodB1() {
+      ::grpc::Service::MarkMethodRaw(0);
+    }
+    ~WithRawMethod_MethodB1() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodB1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestMethodB1(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  template <class BaseClass>
+  class WithRawCallbackMethod_MethodB1 : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
+   public:
+    WithRawCallbackMethod_MethodB1() {
+      ::grpc::Service::MarkMethodRawCallback(0,
+          new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+            [this](
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->MethodB1(context, request, response); }));
+    }
+    ~WithRawCallbackMethod_MethodB1() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status MethodB1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    virtual ::grpc::ServerUnaryReactor* MethodB1(
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service *service) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_MethodB1() {
       ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::StreamedUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(std::bind(&WithStreamedUnaryMethod_MethodB1<BaseClass>::StreamedMethodB1, this, std::placeholders::_1, std::placeholders::_2)));
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::grpc::testing::Request, ::grpc::testing::Response>(
+            [this](::grpc::ServerContext* context,
+                   ::grpc::ServerUnaryStreamer<
+                     ::grpc::testing::Request, ::grpc::testing::Response>* streamer) {
+                       return this->StreamedMethodB1(context,
+                         streamer);
+                  }));
     }
     ~WithStreamedUnaryMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status MethodB1(::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response) final override {
+    ::grpc::Status MethodB1(::grpc::ServerContext* /*context*/, const ::grpc::testing::Request* /*request*/, ::grpc::testing::Response* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }

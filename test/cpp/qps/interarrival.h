@@ -24,7 +24,7 @@
 #include <random>
 #include <vector>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
@@ -81,7 +81,6 @@ class InterarrivalTimer {
     for (int i = 0; i < entries; i++) {
       random_table_.push_back(
           static_cast<int64_t>(1e9 * r.transform(rando(generator))));
-      ;
     }
     // Now set up the thread positions
     for (int i = 0; i < threads; i++) {
@@ -92,8 +91,9 @@ class InterarrivalTimer {
 
   int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
-    if (thread_posns_[thread_num] == random_table_.end())
+    if (thread_posns_[thread_num] == random_table_.end()) {
       thread_posns_[thread_num] = random_table_.begin();
+    }
     return ret;
   }
 
@@ -102,7 +102,7 @@ class InterarrivalTimer {
   std::vector<time_table::const_iterator> thread_posns_;
   time_table random_table_;
 };
-}
-}
+}  // namespace testing
+}  // namespace grpc
 
 #endif

@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_UTIL_STRING_REF_HELPER_H
 #define GRPC_TEST_CPP_UTIL_STRING_REF_HELPER_H
 
-#include <grpc++/support/string_ref.h>
+#include <grpcpp/support/string_ref.h>
 
 namespace grpc {
 namespace testing {
 
-grpc::string ToString(const grpc::string_ref& r);
+std::string ToString(const grpc::string_ref& r);
 
 }  // namespace testing
 }  // namespace grpc

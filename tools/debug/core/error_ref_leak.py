@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -17,31 +17,31 @@
 # Reads stdin to find error_refcount log lines, and prints reference leaks
 # to stdout
 
-# usege: python error_ref_leak < logfile.txt
+# usage: python error_ref_leak < logfile.txt
 
-import sys
 import re
+import sys
 
 data = sys.stdin.readlines()
 
 errs = []
 for line in data:
-  # if we care about the line
-  if re.search(r'error.cc', line):
-    # str manip to cut off left part of log line
-    line = line.partition('error.cc:')[-1]
-    line = re.sub(r'\d+] ', r'', line)
-    line = line.strip().split()
-    err = line[0].strip(":")
-    if line[1] == "create":
-      assert(err not in errs)
-      errs.append(err)
-    elif line[0] == "realloc":
-      errs.remove(line[1])
-      errs.append(line[3])
-    # explicitly look for the last dereference 
-    elif line[1] == "1" and line[3] == "0":
-      assert(err in errs)
-      errs.remove(err)
+    # if we care about the line
+    if re.search(r'error.cc', line):
+        # str manip to cut off left part of log line
+        line = line.partition('error.cc:')[-1]
+        line = re.sub(r'\d+] ', r'', line)
+        line = line.strip().split()
+        err = line[0].strip(":")
+        if line[1] == "create":
+            assert (err not in errs)
+            errs.append(err)
+        elif line[0] == "realloc":
+            errs.remove(line[1])
+            errs.append(line[3])
+        # explicitly look for the last dereference
+        elif line[1] == "1" and line[3] == "0":
+            assert (err in errs)
+            errs.remove(err)
 
-print "leaked:", errs
+print(("leaked:", errs))

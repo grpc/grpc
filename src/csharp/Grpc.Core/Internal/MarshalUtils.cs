@@ -17,8 +17,9 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
+using Grpc.Core.Api.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -28,48 +29,45 @@ namespace Grpc.Core.Internal
     internal static class MarshalUtils
     {
         static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
-        static readonly Encoding EncodingASCII = System.Text.Encoding.ASCII;
 
         /// <summary>
         /// Converts <c>IntPtr</c> pointing to a UTF-8 encoded byte array to <c>string</c>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string PtrToStringUTF8(IntPtr ptr, int len)
         {
-            var bytes = new byte[len];
-            Marshal.Copy(ptr, bytes, 0, len);
-            return EncodingUTF8.GetString(bytes);
+            return EncodingUTF8.GetString(ptr, len);
         }
 
         /// <summary>
-        /// Returns byte array containing UTF-8 encoding of given string.
+        /// UTF-8 encodes the given string into a buffer of sufficient size
         /// </summary>
-        public static byte[] GetBytesUTF8(string str)
+        public static unsafe int GetBytesUTF8(string str, byte* destination, int destinationLength)
         {
-            return EncodingUTF8.GetBytes(str);
+            int charCount = str.Length;
+            if (charCount == 0) return 0;
+            fixed (char* source = str)
+            {
+                return EncodingUTF8.GetBytes(source, charCount, destination, destinationLength);
+            }
         }
 
         /// <summary>
-        /// Get string from a UTF8 encoded byte array.
+        /// Returns the maximum number of bytes required to encode a given string.
         /// </summary>
-        public static string GetStringUTF8(byte[] bytes)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetMaxByteCountUTF8(string str)
         {
-            return EncodingUTF8.GetString(bytes);
+            return EncodingUTF8.GetMaxByteCount(str.Length);
         }
 
         /// <summary>
-        /// Returns byte array containing ASCII encoding of given string.
+        /// Returns the actual number of bytes required to encode a given string.
         /// </summary>
-        public static byte[] GetBytesASCII(string str)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetByteCountUTF8(string str)
         {
-            return EncodingASCII.GetBytes(str);
-        }
-
-        /// <summary>
-        /// Get string from an ASCII encoded byte array.
-        /// </summary>
-        public static string GetStringASCII(byte[] bytes)
-        {
-            return EncodingASCII.GetString(bytes);
+            return EncodingUTF8.GetByteCount(str);
         }
     }
 }

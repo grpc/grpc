@@ -18,6 +18,7 @@ import unittest
 from grpc.beta import implementations
 from grpc.beta import interfaces
 from grpc.framework.interfaces.face import face
+
 from tests.unit.framework.common import test_constants
 
 
@@ -36,12 +37,11 @@ class NotFoundTest(unittest.TestCase):
 
     def test_blocking_unary_unary_not_found(self):
         with self.assertRaises(face.LocalError) as exception_assertion_context:
-            self._generic_stub.blocking_unary_unary(
-                'groop',
-                'meffod',
-                b'abc',
-                test_constants.LONG_TIMEOUT,
-                with_call=True)
+            self._generic_stub.blocking_unary_unary('groop',
+                                                    'meffod',
+                                                    b'abc',
+                                                    test_constants.LONG_TIMEOUT,
+                                                    with_call=True)
         self.assertIs(exception_assertion_context.exception.code,
                       interfaces.StatusCode.UNIMPLEMENTED)
 

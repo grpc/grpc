@@ -1,0 +1,6 @@
+WORKDIR /github/grpc
+
+COPY . .
+
+RUN pear package && ${'\\'}
+  find . -name grpc-*.tgz | xargs -I{} pecl install {}

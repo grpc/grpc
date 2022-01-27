@@ -1,0 +1,35 @@
+# Copy to local-dev.cfg
+# Usage: python -m tests.baseline_test --flagfile=config/local-dev.cfg
+
+# Import common settings
+--flagfile=config/common.cfg
+
+# Project settings
+--project=your_project_id
+--gcp_service_account=project_number-compute@developer.gserviceaccount.com
+--private_api_key_secret_name=projects/project_number/secrets/xds-interop-tests-private-api-access-key
+# Uncomment to ensure the allow health check firewall exists before test case runs
+# --ensure_firewall
+
+# Use a resource prefix to describe usage and ownership
+--resource_prefix=xds-k8s-test
+
+# Use predictable resource suffix to simplify debugging
+# If left blank, the framework will randomly generate one
+--resource_suffix=dev
+
+# The name of kube context to use. See `gcloud container clusters get-credentials` and `kubectl config`
+--kube_context=context_name
+
+# Test images, f.e. java v1.35.x:
+--server_image=gcr.io/grpc-testing/xds-interop/java-server:3b8b3c8f297617848fd6471a76985430dc6bd4c5
+--client_image=gcr.io/grpc-testing/xds-interop/java-client:3b8b3c8f297617848fd6471a76985430dc6bd4c5
+
+# Uncomment for verbose output
+#--logger_levels=__main__:DEBUG,framework:DEBUG
+#--verbosity=1
+
+# Enable port forwarding in local dev
+--debug_use_port_forwarding
+# (convenience) Allow to set always known flags
+--undefok=private_api_key_secret_name

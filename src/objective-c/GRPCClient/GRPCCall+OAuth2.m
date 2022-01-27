@@ -20,9 +20,9 @@
 
 #import "GRPCCall+OAuth2.h"
 
-static NSString * const kAuthorizationHeader = @"authorization";
-static NSString * const kBearerPrefix = @"Bearer ";
-static NSString * const kChallengeHeader = @"www-authenticate";
+static NSString *const kAuthorizationHeader = @"authorization";
+static NSString *const kBearerPrefix = @"Bearer ";
+static NSString *const kChallengeHeader = @"www-authenticate";
 
 @implementation GRPCCall (OAuth2)
 @dynamic tokenProvider;

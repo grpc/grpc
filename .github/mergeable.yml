@@ -1,0 +1,18 @@
+mergeable:
+  pull_requests:
+    label:
+      and:
+        - must_exclude:
+            regex: '^disposition/DO NOT MERGE'
+            message: 'Pull request marked not mergeable'
+        - or:
+          - and:
+            - must_include:
+                regex: '^release notes: yes'
+                message: 'Please add the label (release notes: yes)'
+            - must_include:
+                regex: '^lang\/'
+                message: 'Please add a language label (lang/...)'
+          - must_include:
+              regex: '^release notes: no'
+              message: 'Please add the label (release notes: no)'

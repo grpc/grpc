@@ -12,105 +12,106 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/surface")
 
 grpc_cc_test(
-    name = "alarm_test",
-    srcs = ["alarm_test.c"],
-    language = "C",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
-    srcs = ["byte_buffer_reader_test.c"],
-    language = "C",
+    srcs = ["byte_buffer_reader_test.cc"],
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "channel_create_test",
-    srcs = ["channel_create_test.c"],
-    language = "C",
+    srcs = ["channel_create_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "grpc_completion_queue_test",
-    srcs = ["completion_queue_test.c"],
-    language = "C",
+    srcs = ["completion_queue_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "completion_queue_threading_test",
+    srcs = ["completion_queue_threading_test.cc"],
+    flaky = True,  # TODO(b/153064668)
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "concurrent_connectivity_test",
-    srcs = ["concurrent_connectivity_test.c"],
-    language = "C",
+    srcs = ["concurrent_connectivity_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "init_test",
-    srcs = ["init_test.c"],
-    language = "C",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
+    srcs = ["init_test.cc"],
+    external_deps = [
+        "gtest",
     ],
-)
-
-grpc_cc_test(
-    name = "grpc_invalid_channel_args_test",
-    srcs = ["invalid_channel_args_test.c"],
-    language = "C",
+    language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "lame_client_test",
-    srcs = ["lame_client_test.c"],
-    language = "C",
+    srcs = ["lame_client_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:cq_verifier",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "num_external_connectivity_watchers_test",
+    srcs = ["num_external_connectivity_watchers_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -122,56 +123,60 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "secure_channel_create_test",
-    srcs = ["secure_channel_create_test.c"],
-    language = "C",
+    srcs = ["secure_channel_create_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "sequential_connectivity_test",
-    srcs = ["sequential_connectivity_test.c"],
-    language = "C",
+    srcs = ["sequential_connectivity_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    flaky = True,  # TODO(b/151696318)
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "server_chttp2_test",
-    srcs = ["server_chttp2_test.c"],
-    language = "C",
+    srcs = ["server_chttp2_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "server_test",
-    srcs = ["server_test.c"],
-    language = "C",
+    srcs = ["server_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

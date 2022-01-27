@@ -16,55 +16,170 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 
 #include <string.h>
 
-#include "src/core/lib/support/string.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
-#define MAX_POLICIES 10
+#include "src/core/lib/gpr/string.h"
 
-static grpc_lb_policy_factory *g_all_of_the_lb_policies[MAX_POLICIES];
-static int g_number_of_lb_policies = 0;
+namespace grpc_core {
 
-void grpc_lb_policy_registry_init(void) { g_number_of_lb_policies = 0; }
+namespace {
 
-void grpc_lb_policy_registry_shutdown(void) {
-  int i;
-  for (i = 0; i < g_number_of_lb_policies; i++) {
-    grpc_lb_policy_factory_unref(g_all_of_the_lb_policies[i]);
-  }
-}
+class RegistryState {
+ public:
+  RegistryState() {}
 
-void grpc_register_lb_policy(grpc_lb_policy_factory *factory) {
-  int i;
-  for (i = 0; i < g_number_of_lb_policies; i++) {
-    GPR_ASSERT(0 != gpr_stricmp(factory->vtable->name,
-                                g_all_of_the_lb_policies[i]->vtable->name));
-  }
-  GPR_ASSERT(g_number_of_lb_policies != MAX_POLICIES);
-  grpc_lb_policy_factory_ref(factory);
-  g_all_of_the_lb_policies[g_number_of_lb_policies++] = factory;
-}
-
-static grpc_lb_policy_factory *lookup_factory(const char *name) {
-  int i;
-
-  if (name == NULL) return NULL;
-
-  for (i = 0; i < g_number_of_lb_policies; i++) {
-    if (0 == gpr_stricmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
-      return g_all_of_the_lb_policies[i];
+  void RegisterLoadBalancingPolicyFactory(
+      std::unique_ptr<LoadBalancingPolicyFactory> factory) {
+    gpr_log(GPR_DEBUG, "registering LB policy factory for \"%s\"",
+            factory->name());
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
     }
+    factories_.push_back(std::move(factory));
   }
 
-  return NULL;
+  LoadBalancingPolicyFactory* GetLoadBalancingPolicyFactory(
+      const char* name) const {
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      if (strcmp(name, factories_[i]->name()) == 0) {
+        return factories_[i].get();
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  absl::InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10>
+      factories_;
+};
+
+RegistryState* g_state = nullptr;
+
+}  // namespace
+
+//
+// LoadBalancingPolicyRegistry::Builder
+//
+
+void LoadBalancingPolicyRegistry::Builder::InitRegistry() {
+  if (g_state == nullptr) g_state = new RegistryState();
 }
 
-grpc_lb_policy *grpc_lb_policy_create(grpc_exec_ctx *exec_ctx, const char *name,
-                                      grpc_lb_policy_args *args) {
-  grpc_lb_policy_factory *factory = lookup_factory(name);
-  grpc_lb_policy *lb_policy =
-      grpc_lb_policy_factory_create_lb_policy(exec_ctx, factory, args);
-  return lb_policy;
+void LoadBalancingPolicyRegistry::Builder::ShutdownRegistry() {
+  delete g_state;
+  g_state = nullptr;
 }
+
+void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+    std::unique_ptr<LoadBalancingPolicyFactory> factory) {
+  InitRegistry();
+  g_state->RegisterLoadBalancingPolicyFactory(std::move(factory));
+}
+
+//
+// LoadBalancingPolicyRegistry
+//
+
+OrphanablePtr<LoadBalancingPolicy>
+LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+    const char* name, LoadBalancingPolicy::Args args) {
+  GPR_ASSERT(g_state != nullptr);
+  // Find factory.
+  LoadBalancingPolicyFactory* factory =
+      g_state->GetLoadBalancingPolicyFactory(name);
+  if (factory == nullptr) return nullptr;  // Specified name not found.
+  // Create policy via factory.
+  return factory->CreateLoadBalancingPolicy(std::move(args));
+}
+
+bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+    const char* name, bool* requires_config) {
+  GPR_ASSERT(g_state != nullptr);
+  auto* factory = g_state->GetLoadBalancingPolicyFactory(name);
+  if (factory == nullptr) {
+    return false;
+  }
+  if (requires_config != nullptr) {
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    // Check if the load balancing policy allows an empty config
+    *requires_config =
+        factory->ParseLoadBalancingConfig(Json(), &error) == nullptr;
+    GRPC_ERROR_UNREF(error);
+  }
+  return true;
+}
+
+namespace {
+
+// Returns the JSON node of policy (with both policy name and config content)
+// given the JSON node of a LoadBalancingConfig array.
+grpc_error_handle ParseLoadBalancingConfigHelper(
+    const Json& lb_config_array, Json::Object::const_iterator* result) {
+  if (lb_config_array.type() != Json::Type::ARRAY) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("type should be array");
+  }
+  // Find the first LB policy that this client supports.
+  std::vector<absl::string_view> policies_tried;
+  for (const Json& lb_config : lb_config_array.array_value()) {
+    if (lb_config.type() != Json::Type::OBJECT) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "child entry should be of type object");
+    }
+    if (lb_config.object_value().empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "no policy found in child entry");
+    }
+    if (lb_config.object_value().size() > 1) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("oneOf violation");
+    }
+    auto it = lb_config.object_value().begin();
+    if (it->second.type() != Json::Type::OBJECT) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "child entry should be of type object");
+    }
+    // If we support this policy, then select it.
+    if (LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+            it->first.c_str(), nullptr)) {
+      *result = it;
+      return GRPC_ERROR_NONE;
+    }
+    policies_tried.push_back(it->first);
+  }
+  return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      "No known policies in list: ", absl::StrJoin(policies_tried, " ")));
+}
+
+}  // namespace
+
+RefCountedPtr<LoadBalancingPolicy::Config>
+LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+    const Json& json, grpc_error_handle* error) {
+  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_ASSERT(g_state != nullptr);
+  Json::Object::const_iterator policy;
+  *error = ParseLoadBalancingConfigHelper(json, &policy);
+  if (*error != GRPC_ERROR_NONE) {
+    return nullptr;
+  }
+  // Find factory.
+  LoadBalancingPolicyFactory* factory =
+      g_state->GetLoadBalancingPolicyFactory(policy->first.c_str());
+  if (factory == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrFormat("Factory not found for policy \"%s\"", policy->first));
+    return nullptr;
+  }
+  // Parse load balancing config via factory.
+  return factory->ParseLoadBalancingConfig(policy->second, error);
+}
+
+}  // namespace grpc_core

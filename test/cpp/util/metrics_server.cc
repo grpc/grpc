@@ -18,9 +18,9 @@
 
 #include "test/cpp/util/metrics_server.h"
 
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/support/log.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -51,7 +51,7 @@ long QpsGauge::Get() {
 }
 
 grpc::Status MetricsServiceImpl::GetAllGauges(
-    ServerContext* context, const EmptyMessage* request,
+    ServerContext* /*context*/, const EmptyMessage* /*request*/,
     ServerWriter<GaugeResponse>* writer) {
   gpr_log(GPR_DEBUG, "GetAllGauges called");
 
@@ -66,7 +66,7 @@ grpc::Status MetricsServiceImpl::GetAllGauges(
   return Status::OK;
 }
 
-grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
+grpc::Status MetricsServiceImpl::GetGauge(ServerContext* /*context*/,
                                           const GaugeRequest* request,
                                           GaugeResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
@@ -81,7 +81,7 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
 }
 
 std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
-    const grpc::string& name, bool* already_present) {
+    const std::string& name, bool* already_present) {
   std::lock_guard<std::mutex> lock(mu_);
 
   std::shared_ptr<QpsGauge> qps_gauge(new QpsGauge());
@@ -100,7 +100,7 @@ std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
 std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   gpr_log(GPR_INFO, "Building metrics server..");
 
-  const grpc::string address = "0.0.0.0:" + grpc::to_string(port);
+  const std::string address = "0.0.0.0:" + std::to_string(port);
 
   ServerBuilder builder;
   builder.AddListeningPort(address, grpc::InsecureServerCredentials());

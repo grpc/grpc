@@ -13,9 +13,11 @@
 # limitations under the License.
 """Tests of credentials."""
 
+import logging
 import unittest
 
 import grpc
+import six
 
 
 class CredentialsTest(unittest.TestCase):
@@ -26,8 +28,8 @@ class CredentialsTest(unittest.TestCase):
         third = grpc.access_token_call_credentials('ghi')
 
         first_and_second = grpc.composite_call_credentials(first, second)
-        first_second_and_third = grpc.composite_call_credentials(first, second,
-                                                                 third)
+        first_second_and_third = grpc.composite_call_credentials(
+            first, second, third)
 
         self.assertIsInstance(first_and_second, grpc.CallCredentials)
         self.assertIsInstance(first_second_and_third, grpc.CallCredentials)
@@ -52,6 +54,17 @@ class CredentialsTest(unittest.TestCase):
         self.assertIsInstance(channel_first_second_and_third,
                               grpc.ChannelCredentials)
 
+    @unittest.skipIf(six.PY2, 'only invalid in Python3')
+    def test_invalid_string_certificate(self):
+        self.assertRaises(
+            TypeError,
+            grpc.ssl_channel_credentials,
+            root_certificates='A Certificate',
+            private_key=None,
+            certificate_chain=None,
+        )
+
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

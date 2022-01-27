@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -13,68 +13,76 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """ Python utility to build opt and counters benchmarks """
 
-import bm_constants
-
 import argparse
-import subprocess
 import multiprocessing
 import os
 import shutil
+import subprocess
+
+import bm_constants
 
 
 def _args():
-  argp = argparse.ArgumentParser(description='Builds microbenchmarks')
-  argp.add_argument(
-    '-b',
-    '--benchmarks',
-    nargs='+',
-    choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-    default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
-    help='Which benchmarks to build')
-  argp.add_argument(
-    '-j',
-    '--jobs',
-    type=int,
-    default=multiprocessing.cpu_count(),
-    help='How many CPUs to dedicate to this task')
-  argp.add_argument(
-    '-n',
-    '--name',
-    type=str,
-    help='Unique name of this build. To be used as a handle to pass to the other bm* scripts'
-  )
-  argp.add_argument('--counters', dest='counters', action='store_true')
-  argp.add_argument('--no-counters', dest='counters', action='store_false')
-  argp.set_defaults(counters=True)
-  args = argp.parse_args()
-  assert args.name
-  return args
+    argp = argparse.ArgumentParser(description='Builds microbenchmarks')
+    argp.add_argument('-b',
+                      '--benchmarks',
+                      nargs='+',
+                      choices=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      default=bm_constants._AVAILABLE_BENCHMARK_TESTS,
+                      help='Which benchmarks to build')
+    argp.add_argument(
+        '-j',
+        '--jobs',
+        type=int,
+        default=multiprocessing.cpu_count(),
+        help=
+        'Deprecated. Bazel chooses number of CPUs to build with automatically.')
+    argp.add_argument(
+        '-n',
+        '--name',
+        type=str,
+        help=
+        'Unique name of this build. To be used as a handle to pass to the other bm* scripts'
+    )
+    argp.add_argument('--counters', dest='counters', action='store_true')
+    argp.add_argument('--no-counters', dest='counters', action='store_false')
+    argp.set_defaults(counters=True)
+    args = argp.parse_args()
+    assert args.name
+    return args
 
 
-def _make_cmd(cfg, benchmarks, jobs):
-  return ['make'] + benchmarks + ['CONFIG=%s' % cfg, '-j', '%d' % jobs]
+def _build_cmd(cfg, benchmarks):
+    bazel_targets = [
+        '//test/cpp/microbenchmarks:%s' % benchmark for benchmark in benchmarks
+    ]
+    # --dynamic_mode=off makes sure that we get a monolithic binary that can be safely
+    # moved outside of the bazel-bin directory
+    return ['tools/bazel', 'build',
+            '--config=%s' % cfg, '--dynamic_mode=off'] + bazel_targets
+
+
+def _build_config_and_copy(cfg, benchmarks, dest_dir):
+    """Build given config and copy resulting binaries to dest_dir/CONFIG"""
+    subprocess.check_call(_build_cmd(cfg, benchmarks))
+    cfg_dir = dest_dir + '/%s' % cfg
+    os.makedirs(cfg_dir)
+    subprocess.check_call(['cp'] + [
+        'bazel-bin/test/cpp/microbenchmarks/%s' % benchmark
+        for benchmark in benchmarks
+    ] + [cfg_dir])
 
 
 def build(name, benchmarks, jobs, counters):
-  shutil.rmtree('bm_diff_%s' % name, ignore_errors=True)
-  subprocess.check_call(['git', 'submodule', 'update'])
-  try:
-    subprocess.check_call(_make_cmd('opt', benchmarks, jobs))
+    dest_dir = 'bm_diff_%s' % name
+    shutil.rmtree(dest_dir, ignore_errors=True)
+    _build_config_and_copy('opt', benchmarks, dest_dir)
     if counters:
-      subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
-  except subprocess.CalledProcessError, e:
-    subprocess.check_call(['make', 'clean'])
-    subprocess.check_call(_make_cmd('opt', benchmarks, jobs))
-    if counters:
-      subprocess.check_call(_make_cmd('counters', benchmarks, jobs))
-  os.rename(
-    'bins',
-    'bm_diff_%s' % name,)
+        _build_config_and_copy('counters', benchmarks, dest_dir)
 
 
 if __name__ == '__main__':
-  args = _args()
-  build(args.name, args.benchmarks, args.jobs, args.counters)
+    args = _args()
+    build(args.name, args.benchmarks, args.jobs, args.counters)

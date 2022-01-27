@@ -10,13 +10,13 @@ RPCs.
 
 ### Enable server reflection in C++ servers
 
-C++ Server Reflection is an add-on library, `libgrpc++_reflction`. To enable C++
+C++ Server Reflection is an add-on library, `libgrpc++_reflection`. To enable C++
 server reflection, you can link this library to your server binary.
 
 Some platforms (e.g. Ubuntu 11.10 onwards) only link in libraries that directly
 contain symbols used by the application. On these platforms, LD flag
-`--no-as-needed` is needed for for dynamic linking and `--whole-archive` is
-needed for for static linking.
+`--no-as-needed` is needed for dynamic linking and `--whole-archive` is
+needed for static linking.
 
 This [Makefile](../examples/cpp/helloworld/Makefile#L37#L45) demonstrates
 enabling c++ server reflection on Linux and MacOS.
@@ -178,15 +178,12 @@ descriptor database.
         desc_pool->FindMethodByName("helloworld.Greeter.SayHello");
     ```
 
-  * Get message type descriptors.
+  * Get message type descriptors and create messages dynamically.
 
     ```c++
     const google::protobuf::Descriptor* request_desc =
         desc_pool->FindMessageTypeByName("helloworld.HelloRequest");
+    google::protobuf::DynamicMessageFactory dmf;
+    google::protobuf::Message* request = dmf.GetPrototype(request_desc)->New();
     ```
 
-  * Feed [google::protobuf::DynamicMessageFactory](https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.dynamic_message#DynamicMessageFactory).
-
-    ```c++
-    google::protobuf::DynamicMessageFactory(&desc_pool);
-    ```

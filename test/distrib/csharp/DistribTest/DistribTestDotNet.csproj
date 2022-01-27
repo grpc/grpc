@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+
+    <!-- set TargetFrameworks, but allow skipping selected frameworks by setting env variables -->
+    <TargetFrameworks></TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET45_DISTRIBTEST)' == ''">$(TargetFrameworks);net45</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NETCOREAPP21_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NETCOREAPP31_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET50_DISTRIBTEST)' == ''">$(TargetFrameworks);net5.0</TargetFrameworks>
+
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc" Version="__GRPC_NUGET_VERSION__" />
+    <PackageReference Include="Grpc.Auth" Version="__GRPC_NUGET_VERSION__" />
+    <PackageReference Include="Grpc.Tools" Version="__GRPC_NUGET_VERSION__" />
+    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Protobuf Include="**\*.proto" />
+  </ItemGroup>
+
+  <!-- Needed for the net45 build to work on Unix. See https://github.com/dotnet/designs/pull/33 -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+</Project>

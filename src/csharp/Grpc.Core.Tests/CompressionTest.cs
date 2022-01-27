@@ -129,5 +129,25 @@ namespace Grpc.Core.Tests
 
             Assert.AreEqual(request, response);
         }
+
+        [Test]
+        public void CanReadCompressedMessages_EmptyPayload()
+        {
+            var compressionMetadata = new Metadata
+            {
+                { new Metadata.Entry(Metadata.CompressionRequestAlgorithmMetadataKey, "gzip") }
+            };
+
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (req, context) =>
+            {
+                await context.WriteResponseHeadersAsync(compressionMetadata);
+                return req;
+            });
+
+            var request = "";
+            var response = Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(compressionMetadata)), request);
+
+            Assert.AreEqual(request, response);
+        }
     }
 }

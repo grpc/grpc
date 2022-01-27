@@ -50,8 +50,9 @@ class TestRunner(threading.Thread):
                 test_case.test_interoperability(self._stub, None)
                 end_time = time.time()
                 self._histogram.add((end_time - start_time) * 1e9)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 traceback.print_exc()
                 self._exception_queue.put(
-                    Exception("An exception occured during test {}"
-                              .format(test_case), e))
+                    Exception(
+                        "An exception occurred during test {}".format(
+                            test_case), e))

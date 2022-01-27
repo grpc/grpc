@@ -24,10 +24,6 @@ from tests.testing import _server_application
 from tests.testing.proto import services_pb2
 
 
-# TODO(https://github.com/google/protobuf/issues/3452): Drop this skip.
-@unittest.skipIf(
-    services_pb2.DESCRIPTOR.services_by_name.get('FirstService') is None,
-    'Fix protobuf issue 3452!')
 class FirstServiceServicerTest(unittest.TestCase):
 
     def setUp(self):
@@ -99,6 +95,30 @@ class FirstServiceServicerTest(unittest.TestCase):
                              response)
         self.assertIs(code, grpc.StatusCode.OK)
 
+    def test_mutating_stream_stream(self):
+        rpc = self._real_time_server.invoke_stream_stream(
+            _application_testing_common.FIRST_SERVICE_STRESTRE, (), None)
+        rpc.send_request(_application_common.STREAM_STREAM_MUTATING_REQUEST)
+        initial_metadata = rpc.initial_metadata()
+        responses = [
+            rpc.take_response()
+            for _ in range(_application_common.STREAM_STREAM_MUTATING_COUNT)
+        ]
+        rpc.send_request(_application_common.STREAM_STREAM_MUTATING_REQUEST)
+        responses.extend([
+            rpc.take_response()
+            for _ in range(_application_common.STREAM_STREAM_MUTATING_COUNT)
+        ])
+        rpc.requests_closed()
+        _, _, _ = rpc.termination()
+        expected_responses = (
+            services_pb2.Bottom(first_bottom_field=0),
+            services_pb2.Bottom(first_bottom_field=1),
+            services_pb2.Bottom(first_bottom_field=0),
+            services_pb2.Bottom(first_bottom_field=1),
+        )
+        self.assertSequenceEqual(expected_responses, responses)
+
     def test_server_rpc_idempotence(self):
         rpc = self._real_time_server.invoke_unary_unary(
             _application_testing_common.FIRST_SERVICE_UNUN, (),
@@ -110,14 +130,19 @@ class FirstServiceServicerTest(unittest.TestCase):
         second_termination = rpc.termination()
         third_termination = rpc.termination()
 
-        for later_initial_metadata in (second_initial_metadata,
-                                       third_initial_metadata,):
+        for later_initial_metadata in (
+                second_initial_metadata,
+                third_initial_metadata,
+        ):
             self.assertEqual(first_initial_metadata, later_initial_metadata)
         response = first_termination[0]
         terminal_metadata = first_termination[1]
         code = first_termination[2]
         details = first_termination[3]
-        for later_termination in (second_termination, third_termination,):
+        for later_termination in (
+                second_termination,
+                third_termination,
+        ):
             self.assertEqual(response, later_termination[0])
             self.assertEqual(terminal_metadata, later_termination[1])
             self.assertIs(code, later_termination[2])
@@ -163,6 +188,19 @@ class FirstServiceServicerTest(unittest.TestCase):
         response, trailing_metadata, code, details = rpc.termination()
 
         self.assertIs(code, grpc.StatusCode.DEADLINE_EXCEEDED)
+
+    def test_servicer_context_abort(self):
+        rpc = self._real_time_server.invoke_unary_unary(
+            _application_testing_common.FIRST_SERVICE_UNUN, (),
+            _application_common.ABORT_REQUEST, None)
+        _, _, code, _ = rpc.termination()
+        self.assertIs(code, grpc.StatusCode.PERMISSION_DENIED)
+        rpc = self._real_time_server.invoke_unary_unary(
+            _application_testing_common.FIRST_SERVICE_UNUN, (),
+            _application_common.ABORT_SUCCESS_QUERY, None)
+        response, _, code, _ = rpc.termination()
+        self.assertEqual(_application_common.ABORT_SUCCESS_RESPONSE, response)
+        self.assertIs(code, grpc.StatusCode.OK)
 
 
 if __name__ == '__main__':

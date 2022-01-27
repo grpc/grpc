@@ -19,24 +19,56 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <cstdio>
+#include <fstream>
+#include <iostream>
 #include <mutex>
 #include <unordered_map>
 
+#include "absl/flags/flag.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/security/server_credentials.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
+
+ABSL_FLAG(std::string, tls_cert_file, "",
+          "The TLS cert file used when --use_tls=true");
+ABSL_FLAG(std::string, tls_key_file, "",
+          "The TLS key file used when --use_tls=true");
 
 namespace grpc {
 namespace testing {
 namespace {
 
+std::string ReadFile(const std::string& src_path) {
+  std::ifstream src;
+  src.open(src_path, std::ifstream::in | std::ifstream::binary);
+
+  std::string contents;
+  src.seekg(0, std::ios::end);
+  contents.reserve(src.tellg());
+  src.seekg(0, std::ios::beg);
+  contents.assign((std::istreambuf_iterator<char>(src)),
+                  (std::istreambuf_iterator<char>()));
+  return contents;
+}
+
 class DefaultCredentialsProvider : public CredentialsProvider {
  public:
+  DefaultCredentialsProvider() {
+    if (!absl::GetFlag(FLAGS_tls_key_file).empty()) {
+      custom_server_key_ = ReadFile(absl::GetFlag(FLAGS_tls_key_file));
+    }
+    if (!absl::GetFlag(FLAGS_tls_cert_file).empty()) {
+      custom_server_cert_ = ReadFile(absl::GetFlag(FLAGS_tls_cert_file));
+    }
+  }
   ~DefaultCredentialsProvider() override {}
 
   void AddSecureType(
-      const grpc::string& type,
+      const std::string& type,
       std::unique_ptr<CredentialTypeProvider> type_provider) override {
     // This clobbers any existing entry for type, except the defaults, which
     // can't be clobbered.
@@ -53,13 +85,18 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
-      const grpc::string& type, ChannelArguments* args) override {
+      const std::string& type, ChannelArguments* args) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureChannelCredentials();
+    } else if (type == grpc::testing::kAltsCredentialsType) {
+      grpc::experimental::AltsCredentialsOptions alts_opts;
+      return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
-      return SslCredentials(ssl_opts);
+      return grpc::SslCredentials(ssl_opts);
+    } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
+      return grpc::GoogleDefaultCredentials();
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
@@ -74,15 +111,24 @@ class DefaultCredentialsProvider : public CredentialsProvider {
   }
 
   std::shared_ptr<ServerCredentials> GetServerCredentials(
-      const grpc::string& type) override {
+      const std::string& type) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureServerCredentials();
+    } else if (type == grpc::testing::kAltsCredentialsType) {
+      grpc::experimental::AltsServerCredentialsOptions alts_opts;
+      return grpc::experimental::AltsServerCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
-      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      if (!custom_server_key_.empty() && !custom_server_cert_.empty()) {
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {
+            custom_server_key_, custom_server_cert_};
+        ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      } else {
+        SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+                                                            test_server1_cert};
+        ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      }
       return SslServerCredentials(ssl_opts);
     } else {
       std::unique_lock<std::mutex> lock(mu_);
@@ -96,8 +142,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
           ->GetServerCredentials();
     }
   }
-  std::vector<grpc::string> GetSecureCredentialsTypeList() override {
-    std::vector<grpc::string> types;
+  std::vector<std::string> GetSecureCredentialsTypeList() override {
+    std::vector<std::string> types;
     types.push_back(grpc::testing::kTlsCredentialsType);
     std::unique_lock<std::mutex> lock(mu_);
     for (auto it = added_secure_type_names_.begin();
@@ -109,9 +155,11 @@ class DefaultCredentialsProvider : public CredentialsProvider {
 
  private:
   std::mutex mu_;
-  std::vector<grpc::string> added_secure_type_names_;
+  std::vector<std::string> added_secure_type_names_;
   std::vector<std::unique_ptr<CredentialTypeProvider>>
       added_secure_type_providers_;
+  std::string custom_server_key_;
+  std::string custom_server_cert_;
 };
 
 CredentialsProvider* g_provider = nullptr;

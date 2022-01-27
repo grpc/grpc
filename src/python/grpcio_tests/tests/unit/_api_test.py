@@ -13,11 +13,11 @@
 # limitations under the License.
 """Test of gRPC Python's application-layer API."""
 
+import logging
 import unittest
 
-import six
-
 import grpc
+import six
 
 from tests.unit import _from_grpc_import_star
 
@@ -26,23 +26,71 @@ class AllTest(unittest.TestCase):
 
     def testAll(self):
         expected_grpc_code_elements = (
-            'FutureTimeoutError', 'FutureCancelledError', 'Future',
-            'ChannelConnectivity', 'StatusCode', 'RpcError', 'RpcContext',
-            'Call', 'ChannelCredentials', 'CallCredentials',
-            'AuthMetadataContext', 'AuthMetadataPluginCallback',
-            'AuthMetadataPlugin', 'ServerCredentials',
-            'UnaryUnaryMultiCallable', 'UnaryStreamMultiCallable',
-            'StreamUnaryMultiCallable', 'StreamStreamMultiCallable', 'Channel',
-            'ServicerContext', 'RpcMethodHandler', 'HandlerCallDetails',
-            'GenericRpcHandler', 'ServiceRpcHandler', 'Server',
-            'unary_unary_rpc_method_handler', 'unary_stream_rpc_method_handler',
+            'FutureTimeoutError',
+            'FutureCancelledError',
+            'Future',
+            'ChannelConnectivity',
+            'Compression',
+            'StatusCode',
+            'Status',
+            'RpcError',
+            'RpcContext',
+            'Call',
+            'ChannelCredentials',
+            'CallCredentials',
+            'AuthMetadataContext',
+            'AuthMetadataPluginCallback',
+            'AuthMetadataPlugin',
+            'ServerCertificateConfiguration',
+            'ServerCredentials',
+            'UnaryUnaryMultiCallable',
+            'UnaryStreamMultiCallable',
+            'StreamUnaryMultiCallable',
+            'StreamStreamMultiCallable',
+            'UnaryUnaryClientInterceptor',
+            'UnaryStreamClientInterceptor',
+            'StreamUnaryClientInterceptor',
+            'StreamStreamClientInterceptor',
+            'Channel',
+            'ServicerContext',
+            'RpcMethodHandler',
+            'HandlerCallDetails',
+            'GenericRpcHandler',
+            'ServiceRpcHandler',
+            'Server',
+            'ServerInterceptor',
+            'LocalConnectionType',
+            'local_channel_credentials',
+            'local_server_credentials',
+            'alts_channel_credentials',
+            'alts_server_credentials',
+            'unary_unary_rpc_method_handler',
+            'unary_stream_rpc_method_handler',
             'stream_unary_rpc_method_handler',
+            'ClientCallDetails',
             'stream_stream_rpc_method_handler',
-            'method_handlers_generic_handler', 'ssl_channel_credentials',
-            'metadata_call_credentials', 'access_token_call_credentials',
-            'composite_call_credentials', 'composite_channel_credentials',
-            'ssl_server_credentials', 'channel_ready_future',
-            'insecure_channel', 'secure_channel', 'server',)
+            'method_handlers_generic_handler',
+            'ssl_channel_credentials',
+            'metadata_call_credentials',
+            'access_token_call_credentials',
+            'composite_call_credentials',
+            'composite_channel_credentials',
+            'compute_engine_channel_credentials',
+            'ssl_server_credentials',
+            'ssl_server_certificate_configuration',
+            'dynamic_ssl_server_credentials',
+            'channel_ready_future',
+            'insecure_channel',
+            'secure_channel',
+            'intercept_channel',
+            'server',
+            'protos',
+            'services',
+            'protos_and_services',
+            'xds_channel_credentials',
+            'xds_server_credentials',
+            'insecure_server_credentials',
+        )
 
         six.assertCountEqual(self, expected_grpc_code_elements,
                              _from_grpc_import_star.GRPC_ELEMENTS)
@@ -51,12 +99,13 @@ class AllTest(unittest.TestCase):
 class ChannelConnectivityTest(unittest.TestCase):
 
     def testChannelConnectivity(self):
-        self.assertSequenceEqual(
-            (grpc.ChannelConnectivity.IDLE, grpc.ChannelConnectivity.CONNECTING,
-             grpc.ChannelConnectivity.READY,
-             grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-             grpc.ChannelConnectivity.SHUTDOWN,),
-            tuple(grpc.ChannelConnectivity))
+        self.assertSequenceEqual((
+            grpc.ChannelConnectivity.IDLE,
+            grpc.ChannelConnectivity.CONNECTING,
+            grpc.ChannelConnectivity.READY,
+            grpc.ChannelConnectivity.TRANSIENT_FAILURE,
+            grpc.ChannelConnectivity.SHUTDOWN,
+        ), tuple(grpc.ChannelConnectivity))
 
 
 class ChannelTest(unittest.TestCase):
@@ -64,7 +113,9 @@ class ChannelTest(unittest.TestCase):
     def test_secure_channel(self):
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel('google.com:443', channel_credentials)
+        channel.close()
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

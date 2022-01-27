@@ -19,6 +19,8 @@
 #ifndef GRPC_SUPPORT_ATM_GCC_ATOMIC_H
 #define GRPC_SUPPORT_ATM_GCC_ATOMIC_H
 
-#include <grpc/impl/codegen/atm_gcc_atomic.h>
+#include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/atm_gcc_atomic.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */

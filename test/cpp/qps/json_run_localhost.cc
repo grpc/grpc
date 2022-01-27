@@ -24,9 +24,13 @@
 #include <sstream>
 #include <string>
 
+#ifdef __FreeBSD__
+#include <sys/wait.h>
+#endif
+
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 
@@ -44,9 +48,9 @@ std::string as_string(const T& val) {
   return out.str();
 }
 
-static void sighandler(int sig) {
+static void sighandler(int /*sig*/) {
   const int errno_saved = errno;
-  if (g_driver != NULL) g_driver->Interrupt();
+  if (g_driver != nullptr) g_driver->Interrupt();
   for (int i = 0; i < kNumWorkers; ++i) {
     if (g_workers[i]) g_workers[i]->Interrupt();
   }
@@ -58,8 +62,8 @@ static void register_sighandler() {
   memset(&act, 0, sizeof(act));
   act.sa_handler = sighandler;
 
-  sigaction(SIGINT, &act, NULL);
-  sigaction(SIGTERM, &act, NULL);
+  sigaction(SIGINT, &act, nullptr);
+  sigaction(SIGTERM, &act, nullptr);
 }
 
 static void LogStatus(int status, const char* label) {
@@ -84,12 +88,16 @@ int main(int argc, char** argv) {
   bool first = true;
 
   for (int i = 0; i < kNumWorkers; i++) {
-    const auto port = grpc_pick_unused_port_or_die();
+    const auto driver_port = grpc_pick_unused_port_or_die();
+    // ServerPort can be used or not later depending on the type of worker
+    // but we like to issue all ports required here to avoid port conflict.
+    const auto server_port = grpc_pick_unused_port_or_die();
     std::vector<std::string> args = {bin_dir + "/qps_worker", "-driver_port",
-                                     as_string(port)};
+                                     as_string(driver_port), "-server_port",
+                                     as_string(server_port)};
     g_workers[i] = new SubProcess(args);
     if (!first) env << ",";
-    env << "localhost:" << port;
+    env << "localhost:" << driver_port;
     first = false;
   }
 
@@ -117,9 +125,8 @@ int main(int argc, char** argv) {
     }
   }
 
-  if (g_driver != nullptr) {
-    delete g_driver;
-  }
+  delete g_driver;
+
   g_driver = nullptr;
   for (int i = 0; i < kNumWorkers; ++i) {
     if (g_workers[i] != nullptr) {

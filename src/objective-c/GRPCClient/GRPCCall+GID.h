@@ -16,8 +16,8 @@
  *
  */
 
-#import "GRPCCall.h"
 #import "GRPCCall+OAuth2.h"
+#import "GRPCCallLegacy.h"
 
 #import <Google/SignIn.h>
 

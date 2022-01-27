@@ -18,8 +18,9 @@
 
 #include <limits.h>
 
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
+
+#include <grpc/grpc.h>
 
 namespace grpc {
 namespace testing {
@@ -28,8 +29,8 @@ class MyChannelData : public ChannelData {
  public:
   MyChannelData() {}
 
-  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_channel_element* elem,
-                   grpc_channel_element_args* args) override {
+  grpc_error_handle Init(grpc_channel_element* /*elem*/,
+                         grpc_channel_element_args* args) override {
     (void)args->channel_args;  // Make sure field is available.
     return GRPC_ERROR_NONE;
   }
@@ -39,8 +40,8 @@ class MyCallData : public CallData {
  public:
   MyCallData() {}
 
-  grpc_error* Init(grpc_exec_ctx* exec_ctx, grpc_call_element* elem,
-                   const grpc_call_element_args* args) override {
+  grpc_error_handle Init(grpc_call_element* /*elem*/,
+                         const grpc_call_element_args* args) override {
     (void)args->path;  // Make sure field is available.
     return GRPC_ERROR_NONE;
   }

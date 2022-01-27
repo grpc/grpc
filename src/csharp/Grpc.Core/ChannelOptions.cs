@@ -26,8 +26,10 @@ namespace Grpc.Core
     /// <summary>
     /// Channel option specified when creating a channel.
     /// Corresponds to grpc_channel_args from grpc/grpc.h.
+    /// Commonly used channel option names are defined in <c>ChannelOptions</c>,
+    /// but any of the GRPC_ARG_* channel options names defined in grpc_types.h can be used.
     /// </summary>
-    public sealed class ChannelOption
+    public sealed class ChannelOption : IEquatable<ChannelOption>
     {
         /// <summary>
         /// Type of <c>ChannelOption</c>.
@@ -119,10 +121,60 @@ namespace Grpc.Core
                 return stringValue;
             }
         }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as ChannelOption);
+        }
+
+        /// <summary>
+        /// Determines whether the specified object is equal to the current object.
+        /// </summary>
+        public bool Equals(ChannelOption other)
+        {
+            return other != null &&
+                   type == other.type &&
+                   name == other.name &&
+                   intValue == other.intValue &&
+                   stringValue == other.stringValue;
+        }
+
+        /// <summary>
+        /// A hash code for the current object.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            var hashCode = 1412678443;
+            hashCode = hashCode * -1521134295 + type.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(name);
+            hashCode = hashCode * -1521134295 + intValue.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(stringValue);
+            return hashCode;
+        }
+
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
+        public static bool operator ==(ChannelOption option1, ChannelOption option2)
+        {
+            return EqualityComparer<ChannelOption>.Default.Equals(option1, option2);
+        }
+
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
+        public static bool operator !=(ChannelOption option1, ChannelOption option2)
+        {
+            return !(option1 == option2);
+        }
     }
 
     /// <summary>
-    /// Defines names of supported channel options.
+    /// Defines names of most commonly used channel options.
+    /// Other supported options names can be found in grpc_types.h (GRPC_ARG_* definitions)
     /// </summary>
     public static class ChannelOptions
     {

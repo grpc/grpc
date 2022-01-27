@@ -14,13 +14,12 @@
 # limitations under the License.
 set -ex
 
-SYSTEM=`uname | cut -f 1 -d_`
+# the platform for which we wanna build the native gem
+GEM_PLATFORM="$1"
 
-cd $(dirname $0)/../../..
-set +ex
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
-set -ex
+SYSTEM=$(uname | cut -f 1 -d_)
+
+cd "$(dirname "$0")/../../.."
 
 if [ "$SYSTEM" == "MSYS" ] ; then
   SYSTEM=MINGW32
@@ -34,18 +33,29 @@ if [ "$SYSTEM" == "MINGW32" ] ; then
   exit 1
 fi
 
-set +ex
-rvm use default
-gem install bundler --update
+# log ruby version for easier debugging if things go wrong
+# we assume that the current ruby version has already been selected
+# (e.g. by the top-level CI script or with rvm locally)
+ruby --version
 
+# log gem versions for easier debugging if things go wrong
+gem list || true
+
+# avoid polluting the global gem diretory
+# by configuring "bundle install" to install all the gems
+# into a project-local directory
+export BUNDLE_PATH=bundle_local_gems
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 
-set -ex
-
-rake gem:native
+# set the dockerhub org under which all the gRPC's ruby-compiler-dock docker images
+# are available.
+export DOCKERHUB_ORGANIZATION=grpctesting
+bundle exec rake "gem:native[${GEM_PLATFORM}]"
 
 if [ "$SYSTEM" == "Darwin" ] ; then
-  rm `ls pkg/*.gem | grep -v darwin`
+  # TODO: consider rewriting this to pass shellcheck
+  # shellcheck disable=SC2046,SC2010
+  rm $(ls pkg/*.gem | grep -v darwin)
 fi
 
 mkdir -p "${ARTIFACTS_OUT}"

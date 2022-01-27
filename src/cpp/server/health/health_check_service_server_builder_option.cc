@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/ext/health_check_service_server_builder_option.h>
+#include <grpcpp/ext/health_check_service_server_builder_option.h>
 
 namespace grpc {
 
@@ -30,6 +30,6 @@ void HealthCheckServiceServerBuilderOption::UpdateArguments(
 }
 
 void HealthCheckServiceServerBuilderOption::UpdatePlugins(
-    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) {}
+    std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/) {}
 
 }  // namespace grpc

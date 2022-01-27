@@ -21,10 +21,12 @@ require_relative './end2end_common'
 # interrupt while both a child thread and the main thread are in the
 # middle of a blocking connectivity_state call.
 def main
+  STDERR.puts 'sig_int_during_channel_watch_client.rb main'
+  parent_controller_port = ''
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do
-      STDERR.puts 'client_control_port not used'
+    opts.on('--parent_controller_port=P', String) do |p|
+      parent_controller_port = p
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
@@ -32,6 +34,9 @@ def main
   end.parse!
 
   trap('SIGINT') { exit 0 }
+  STDERR.puts 'sig_int_during_channel_watch_client.rb: SIGINT trap has been set'
+  # notify the parent process that we're ready for signals
+  report_controller_port_to_parent(parent_controller_port, 0)
 
   thd = Thread.new do
     child_thread_channel = GRPC::Core::Channel.new("localhost:#{server_port}",

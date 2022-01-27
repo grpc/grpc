@@ -21,24 +21,48 @@
 
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <GRPCClient/GRPCTransport.h>
+#if COCOAPODS
 #import <HelloWorld/Helloworld.pbrpc.h>
+#else
+#import "examples/protos/Helloworld.pbrpc.h"
+#endif
 
 static NSString * const kHostAddress = @"localhost:50051";
 
+@interface HLWResponseHandler : NSObject<GRPCProtoResponseHandler>
+
+@end
+
+// A response handler object dispatching messages to main queue
+@implementation HLWResponseHandler
+
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
+}
+
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  NSLog(@"%@", message);
+}
+
+@end
+
 int main(int argc, char * argv[]) {
   @autoreleasepool {
-    [GRPCCall useInsecureConnectionsForHost:kHostAddress];
-    [GRPCCall setUserAgentPrefix:@"HelloWorld/1.0" forHost:kHostAddress];
-
     HLWGreeter *client = [[HLWGreeter alloc] initWithHost:kHostAddress];
 
     HLWHelloRequest *request = [HLWHelloRequest message];
     request.name = @"Objective-C";
 
-    [client sayHelloWithRequest:request handler:^(HLWHelloReply *response, NSError *error) {
-      NSLog(@"%@", response.message);
-    }];
-    
+    GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+    // this example does not use TLS (secure channel); use insecure channel instead
+    options.transport = GRPCDefaultTransportImplList.core_insecure;
+    options.userAgentPrefix = @"HelloWorld/1.0";
+
+    [[client sayHelloWithMessage:request
+                 responseHandler:[[HLWResponseHandler alloc] init]
+                     callOptions:options] start];
+
     return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
   }
 }

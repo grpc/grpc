@@ -12,20 +12,30 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Move python installation from _32bit to _32bits where they are expected by python artifact builder
-@rem TODO(jtattermusch): get rid of this hack
-rename C:\Python27_32bit Python27_32bits
-rename C:\Python34_32bit Python34_32bits
-rename C:\Python35_32bit Python35_32bits
-rename C:\Python36_32bit Python36_32bits
+@rem Avoid slow finalization after the script has exited.
+@rem See the script's prologue for info on the correct invocation pattern.
+setlocal EnableDelayedExpansion
+IF "%cd%"=="T:\src" (
+  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
+  echo respawn script has finished with exitcode !errorlevel!
+  exit /b !errorlevel!
+)
+endlocal
+
+@rem Boringssl build no longer supports yasm
+choco uninstall yasm -y --limit-output
+choco install nasm -y --limit-output || exit /b 1
 
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-call tools/internal_ci/helper_scripts/prepare_build_windows.bat
+set PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
+set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-python tools/run_tests/task_runner.py -f artifact windows -j 4 || goto :error
-goto :EOF
+python tools/run_tests/task_runner.py -f artifact windows %TASK_RUNNER_EXTRA_FILTERS% -j 4
+set RUNTESTS_EXITCODE=%errorlevel%
 
-:error
-exit /b %errorlevel%
+bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+
+exit /b %RUNTESTS_EXITCODE%

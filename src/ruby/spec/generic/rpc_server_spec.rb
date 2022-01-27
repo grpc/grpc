@@ -104,7 +104,7 @@ end
 
 SynchronizedCancellationStub = SynchronizedCancellationService.rpc_stub_class
 
-# a test service that hangs onto call objects
+# a test service that holds onto call objects
 # and uses them after the server-side call has been
 # finished
 class CheckCallAfterFinishedService
@@ -125,7 +125,7 @@ class CheckCallAfterFinishedService
     fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
     # iterate through requests so call can complete
-    call.each_remote_read.each { |r| p r }
+    call.each_remote_read.each { |r| GRPC.logger.info(r) }
     EchoMsg.new
   end
 
@@ -138,7 +138,7 @@ class CheckCallAfterFinishedService
   def a_bidi_rpc(requests, call)
     fail 'shouldnt reuse service' unless @server_side_call.nil?
     @server_side_call = call
-    requests.each { |r| p r }
+    requests.each { |r| GRPC.logger.info(r) }
     [EchoMsg.new, EchoMsg.new]
   end
 end
@@ -172,7 +172,7 @@ describe GRPC::RpcServer do
     it 'can be created with just some args' do
       opts = { server_args: { a_channel_arg: 'an_arg' } }
       blk = proc do
-        RpcServer.new(**opts)
+        new_rpc_server_for_testing(**opts)
       end
       expect(&blk).not_to raise_error
     end
@@ -183,7 +183,7 @@ describe GRPC::RpcServer do
           server_args: { a_channel_arg: 'an_arg' },
           creds: Object.new
         }
-        RpcServer.new(**opts)
+        new_rpc_server_for_testing(**opts)
       end
       expect(&blk).to raise_error
     end
@@ -192,7 +192,7 @@ describe GRPC::RpcServer do
   describe '#stopped?' do
     before(:each) do
       opts = { server_args: { a_channel_arg: 'an_arg' }, poll_period: 1.5 }
-      @srv = RpcServer.new(**opts)
+      @srv = new_rpc_server_for_testing(**opts)
       @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     end
 
@@ -224,7 +224,7 @@ describe GRPC::RpcServer do
       opts = {
         server_args: { a_channel_arg: 'an_arg' }
       }
-      r = RpcServer.new(**opts)
+      r = new_rpc_server_for_testing(**opts)
       expect(r.running?).to be(false)
     end
 
@@ -233,7 +233,7 @@ describe GRPC::RpcServer do
         server_args: { a_channel_arg: 'an_arg' },
         poll_period: 2
       }
-      r = RpcServer.new(**opts)
+      r = new_rpc_server_for_testing(**opts)
       r.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
       expect { r.run }.to raise_error(RuntimeError)
     end
@@ -243,7 +243,7 @@ describe GRPC::RpcServer do
         server_args: { a_channel_arg: 'an_arg' },
         poll_period: 2.5
       }
-      r = RpcServer.new(**opts)
+      r = new_rpc_server_for_testing(**opts)
       r.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
       r.handle(EchoService)
       t = Thread.new { r.run }
@@ -257,7 +257,7 @@ describe GRPC::RpcServer do
   describe '#handle' do
     before(:each) do
       @opts = { server_args: { a_channel_arg: 'an_arg' }, poll_period: 1 }
-      @srv = RpcServer.new(**@opts)
+      @srv = new_rpc_server_for_testing(**@opts)
       @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     end
 
@@ -303,7 +303,7 @@ describe GRPC::RpcServer do
         server_opts = {
           poll_period: 1
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         server_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @host = "localhost:#{server_port}"
         @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
@@ -340,6 +340,28 @@ describe GRPC::RpcServer do
         end
         @srv.stop
         t.join
+      end
+
+      it 'should return UNIMPLEMENTED on unimplemented ' \
+         'methods for client_streamer', server: true do
+        @srv.handle(EchoService)
+        t = Thread.new { @srv.run }
+        @srv.wait_till_running
+        blk = proc do
+          stub = EchoStub.new(@host, :this_channel_is_insecure, **client_opts)
+          requests = [EchoMsg.new, EchoMsg.new]
+          stub.a_client_streaming_rpc_unimplemented(requests)
+        end
+
+        begin
+          expect(&blk).to raise_error do |error|
+            expect(error).to be_a(GRPC::BadStatus)
+            expect(error.code).to eq(GRPC::Core::StatusCodes::UNIMPLEMENTED)
+          end
+        ensure
+          @srv.stop # should be call not to crash
+          t.join
+        end
       end
 
       it 'should handle multiple sequential requests', server: true do
@@ -474,7 +496,7 @@ describe GRPC::RpcServer do
           poll_period: 1,
           max_waiting_requests: 1
         }
-        alt_srv = RpcServer.new(**opts)
+        alt_srv = new_rpc_server_for_testing(**opts)
         alt_srv.handle(SlowService)
         alt_port = alt_srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         alt_host = "0.0.0.0:#{alt_port}"
@@ -538,7 +560,7 @@ describe GRPC::RpcServer do
           poll_period: 1,
           connect_md_proc: test_md_proc
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @alt_host = "0.0.0.0:#{alt_port}"
       end
@@ -560,7 +582,7 @@ describe GRPC::RpcServer do
           'connect_k1' => 'connect_v1'
         }
         wanted_md.each do |key, value|
-          puts "key: #{key}"
+          GRPC.logger.info("key: #{key}")
           expect(op.metadata[key]).to eq(value)
         end
         @srv.stop
@@ -573,7 +595,7 @@ describe GRPC::RpcServer do
         server_opts = {
           poll_period: 1
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @alt_host = "0.0.0.0:#{alt_port}"
       end
@@ -624,7 +646,7 @@ describe GRPC::RpcServer do
         server_opts = {
           poll_period: 1
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @alt_host = "0.0.0.0:#{alt_port}"
 

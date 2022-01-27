@@ -1,456 +1,654 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
-#if GRPC_ARES == 1 && !defined(GRPC_UV)
+
+#if GRPC_ARES == 1
 
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+
+#include <address_sorting/address_sorting.h>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/transport/service_config.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/transport/error_utils.h"
 
-#define GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS 1
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_DNS_RECONNECT_JITTER 0.2
 
-typedef struct {
-  /** base class: must be first */
-  grpc_resolver base;
-  /** DNS server to use (if not system default) */
-  char *dns_server;
-  /** name to resolve (usually the same as target_name) */
-  char *name_to_resolve;
-  /** default port to use */
-  char *default_port;
-  /** channel args. */
-  grpc_channel_args *channel_args;
-  /** whether to request the service config */
-  bool request_service_config;
-  /** pollset_set to drive the name resolution process */
-  grpc_pollset_set *interested_parties;
+namespace grpc_core {
 
-  /** Closures used by the combiner */
-  grpc_closure dns_ares_on_retry_timer_locked;
-  grpc_closure dns_ares_on_resolved_locked;
+namespace {
 
-  /** Combiner guarding the rest of the state */
-  grpc_combiner *combiner;
-  /** are we currently resolving? */
-  bool resolving;
-  /** the pending resolving request */
-  grpc_ares_request *pending_request;
-  /** which version of the result have we published? */
-  int published_version;
-  /** which version of the result is current? */
-  int resolved_version;
-  /** pending next completion, or NULL */
-  grpc_closure *next_completion;
-  /** target result address for next completion */
-  grpc_channel_args **target_result;
-  /** current (fully resolved) result */
-  grpc_channel_args *resolved_result;
-  /** retry timer */
-  bool have_retry_timer;
-  grpc_timer retry_timer;
-  /** retry backoff state */
-  grpc_backoff backoff_state;
+class AresClientChannelDNSResolver : public Resolver {
+ public:
+  explicit AresClientChannelDNSResolver(ResolverArgs args);
 
-  /** currently resolving addresses */
-  grpc_lb_addresses *lb_addresses;
-  /** currently resolving service config */
-  char *service_config_json;
-} ares_dns_resolver;
+  void StartLocked() override;
 
-static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
+  void RequestReresolutionLocked() override;
 
-static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
-                                            ares_dns_resolver *r);
-static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
-                                              ares_dns_resolver *r);
+  void ResetBackoffLocked() override;
 
-static void dns_ares_shutdown_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
-static void dns_ares_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
-                                              grpc_resolver *r);
-static void dns_ares_next_locked(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                                 grpc_channel_args **target_result,
-                                 grpc_closure *on_complete);
+  void ShutdownLocked() override;
 
-static const grpc_resolver_vtable dns_ares_resolver_vtable = {
-    dns_ares_destroy, dns_ares_shutdown_locked,
-    dns_ares_channel_saw_error_locked, dns_ares_next_locked};
+ private:
+  ~AresClientChannelDNSResolver() override;
 
-static void dns_ares_shutdown_locked(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver) {
-  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
-  if (r->have_retry_timer) {
-    grpc_timer_cancel(exec_ctx, &r->retry_timer);
-  }
-  if (r->pending_request != NULL) {
-    grpc_cancel_ares_request(exec_ctx, r->pending_request);
-  }
-  if (r->next_completion != NULL) {
-    *r->target_result = NULL;
-    GRPC_CLOSURE_SCHED(
-        exec_ctx, r->next_completion,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
-    r->next_completion = NULL;
+  void MaybeStartResolvingLocked();
+  void StartResolvingLocked();
+
+  static void OnNextResolution(void* arg, grpc_error_handle error);
+  static void OnResolved(void* arg, grpc_error_handle error);
+  void OnNextResolutionLocked(grpc_error_handle error);
+  void OnResolvedLocked(grpc_error_handle error);
+
+  /// DNS server to use (if not system default)
+  std::string dns_server_;
+  /// name to resolve (usually the same as target_name)
+  std::string name_to_resolve_;
+  /// channel args
+  grpc_channel_args* channel_args_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
+  std::unique_ptr<ResultHandler> result_handler_;
+  /// pollset_set to drive the name resolution process
+  grpc_pollset_set* interested_parties_;
+
+  /// whether to request the service config
+  bool request_service_config_;
+  // whether or not to enable SRV DNS queries
+  bool enable_srv_queries_;
+  // timeout in milliseconds for active DNS queries
+  int query_timeout_ms_;
+  /// min interval between DNS requests
+  grpc_millis min_time_between_resolutions_;
+
+  /// closures used by the work_serializer
+  grpc_closure on_next_resolution_;
+  grpc_closure on_resolved_;
+  /// are we currently resolving?
+  bool resolving_ = false;
+  /// the pending resolving request
+  grpc_ares_request* pending_request_ = nullptr;
+  /// next resolution timer
+  bool have_next_resolution_timer_ = false;
+  grpc_timer next_resolution_timer_;
+  /// timestamp of last DNS request
+  grpc_millis last_resolution_timestamp_ = -1;
+  /// retry backoff state
+  BackOff backoff_;
+  /// currently resolving backend addresses
+  std::unique_ptr<ServerAddressList> addresses_;
+  /// currently resolving balancer addresses
+  std::unique_ptr<ServerAddressList> balancer_addresses_;
+  /// currently resolving service config
+  char* service_config_json_ = nullptr;
+  // has shutdown been initiated
+  bool shutdown_initiated_ = false;
+};
+
+AresClientChannelDNSResolver::AresClientChannelDNSResolver(ResolverArgs args)
+    : dns_server_(args.uri.authority()),
+      name_to_resolve_(absl::StripPrefix(args.uri.path(), "/")),
+      channel_args_(grpc_channel_args_copy(args.args)),
+      work_serializer_(std::move(args.work_serializer)),
+      result_handler_(std::move(args.result_handler)),
+      interested_parties_(args.pollset_set),
+      request_service_config_(!grpc_channel_args_find_bool(
+          channel_args_, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, true)),
+      enable_srv_queries_(grpc_channel_args_find_bool(
+          channel_args_, GRPC_ARG_DNS_ENABLE_SRV_QUERIES, false)),
+      query_timeout_ms_(grpc_channel_args_find_integer(
+          channel_args_, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS,
+          {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX})),
+      min_time_between_resolutions_(grpc_channel_args_find_integer(
+          channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
+          {1000 * 30, 0, INT_MAX})),
+      backoff_(
+          BackOff::Options()
+              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
+                                   1000)
+              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
+  // Closure initialization.
+  GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
+}
+
+AresClientChannelDNSResolver::~AresClientChannelDNSResolver() {
+  GRPC_CARES_TRACE_LOG("resolver:%p destroying AresClientChannelDNSResolver",
+                       this);
+  grpc_channel_args_destroy(channel_args_);
+}
+
+void AresClientChannelDNSResolver::StartLocked() {
+  GRPC_CARES_TRACE_LOG(
+      "resolver:%p AresClientChannelDNSResolver::StartLocked() is called.",
+      this);
+  MaybeStartResolvingLocked();
+}
+
+void AresClientChannelDNSResolver::RequestReresolutionLocked() {
+  if (!resolving_) {
+    MaybeStartResolvingLocked();
   }
 }
 
-static void dns_ares_channel_saw_error_locked(grpc_exec_ctx *exec_ctx,
-                                              grpc_resolver *resolver) {
-  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
-  if (!r->resolving) {
-    grpc_backoff_reset(&r->backoff_state);
-    dns_ares_start_resolving_locked(exec_ctx, r);
+void AresClientChannelDNSResolver::ResetBackoffLocked() {
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
+  }
+  backoff_.Reset();
+}
+
+void AresClientChannelDNSResolver::ShutdownLocked() {
+  shutdown_initiated_ = true;
+  if (have_next_resolution_timer_) {
+    grpc_timer_cancel(&next_resolution_timer_);
+  }
+  if (pending_request_ != nullptr) {
+    grpc_cancel_ares_request(pending_request_);
   }
 }
 
-static void dns_ares_on_retry_timer_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                           grpc_error *error) {
-  ares_dns_resolver *r = (ares_dns_resolver *)arg;
-  r->have_retry_timer = false;
-  if (error == GRPC_ERROR_NONE) {
-    if (!r->resolving) {
-      dns_ares_start_resolving_locked(exec_ctx, r);
+void AresClientChannelDNSResolver::OnNextResolution(void* arg,
+                                                    grpc_error_handle error) {
+  AresClientChannelDNSResolver* r =
+      static_cast<AresClientChannelDNSResolver*>(arg);
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
+                           DEBUG_LOCATION);
+}
+
+void AresClientChannelDNSResolver::OnNextResolutionLocked(
+    grpc_error_handle error) {
+  GRPC_CARES_TRACE_LOG(
+      "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
+      "%d",
+      this, grpc_error_std_string(error).c_str(), shutdown_initiated_);
+  have_next_resolution_timer_ = false;
+  if (error == GRPC_ERROR_NONE && !shutdown_initiated_) {
+    if (!resolving_) {
+      GRPC_CARES_TRACE_LOG(
+          "resolver:%p start resolving due to re-resolution timer", this);
+      StartResolvingLocked();
     }
   }
-  GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "retry-timer");
+  Unref(DEBUG_LOCATION, "next_resolution_timer");
+  GRPC_ERROR_UNREF(error);
 }
 
-static bool value_in_json_array(grpc_json *array, const char *value) {
-  for (grpc_json *entry = array->child; entry != NULL; entry = entry->next) {
-    if (entry->type == GRPC_JSON_STRING && strcmp(entry->value, value) == 0) {
+bool ValueInJsonArray(const Json::Array& array, const char* value) {
+  for (const Json& entry : array) {
+    if (entry.type() == Json::Type::STRING && entry.string_value() == value) {
       return true;
     }
   }
   return false;
 }
 
-static char *choose_service_config(char *service_config_choice_json) {
-  grpc_json *choices_json = grpc_json_parse_string(service_config_choice_json);
-  if (choices_json == NULL || choices_json->type != GRPC_JSON_ARRAY) {
-    gpr_log(GPR_ERROR, "cannot parse service config JSON string");
-    return NULL;
+std::string ChooseServiceConfig(char* service_config_choice_json,
+                                grpc_error_handle* error) {
+  Json json = Json::Parse(service_config_choice_json, error);
+  if (*error != GRPC_ERROR_NONE) return "";
+  if (json.type() != Json::Type::ARRAY) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Service Config Choices, error: should be of type array");
+    return "";
   }
-  char *service_config = NULL;
-  for (grpc_json *choice = choices_json->child; choice != NULL;
-       choice = choice->next) {
-    if (choice->type != GRPC_JSON_OBJECT) {
-      gpr_log(GPR_ERROR, "cannot parse service config JSON string");
-      break;
+  const Json* service_config = nullptr;
+  absl::InlinedVector<grpc_error_handle, 4> error_list;
+  for (const Json& choice : json.array_value()) {
+    if (choice.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Service Config Choice, error: should be of type object"));
+      continue;
     }
-    grpc_json *service_config_json = NULL;
-    for (grpc_json *field = choice->child; field != NULL; field = field->next) {
-      // Check client language, if specified.
-      if (strcmp(field->key, "clientLanguage") == 0) {
-        if (field->type != GRPC_JSON_ARRAY ||
-            !value_in_json_array(field, "c++")) {
-          service_config_json = NULL;
-          break;
+    // Check client language, if specified.
+    auto it = choice.object_value().find("clientLanguage");
+    if (it != choice.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clientLanguage error:should be of type array"));
+      } else if (!ValueInJsonArray(it->second.array_value(), "c++")) {
+        continue;
+      }
+    }
+    // Check client hostname, if specified.
+    it = choice.object_value().find("clientHostname");
+    if (it != choice.object_value().end()) {
+      if (it->second.type() != Json::Type::ARRAY) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:clientHostname error:should be of type array"));
+      } else {
+        char* hostname = grpc_gethostname();
+        if (hostname == nullptr ||
+            !ValueInJsonArray(it->second.array_value(), hostname)) {
+          continue;
         }
       }
-      // Check client hostname, if specified.
-      if (strcmp(field->key, "clientHostname") == 0) {
-        char *hostname = grpc_gethostname();
-        if (hostname == NULL || field->type != GRPC_JSON_ARRAY ||
-            !value_in_json_array(field, hostname)) {
-          service_config_json = NULL;
-          break;
-        }
-      }
-      // Check percentage, if specified.
-      if (strcmp(field->key, "percentage") == 0) {
-        if (field->type != GRPC_JSON_NUMBER) {
-          service_config_json = NULL;
-          break;
-        }
+    }
+    // Check percentage, if specified.
+    it = choice.object_value().find("percentage");
+    if (it != choice.object_value().end()) {
+      if (it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:percentage error:should be of type number"));
+      } else {
         int random_pct = rand() % 100;
         int percentage;
-        if (sscanf(field->value, "%d", &percentage) != 1 ||
-            random_pct > percentage || percentage == 0) {
-          service_config_json = NULL;
-          break;
-        }
-      }
-      // Save service config.
-      if (strcmp(field->key, "serviceConfig") == 0) {
-        if (field->type == GRPC_JSON_OBJECT) {
-          service_config_json = field;
+        if (sscanf(it->second.string_value().c_str(), "%d", &percentage) != 1) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:percentage error:should be of type integer"));
+        } else if (random_pct > percentage || percentage == 0) {
+          continue;
         }
       }
     }
-    if (service_config_json != NULL) {
-      service_config = grpc_json_dump_to_string(service_config_json, 0);
-      break;
+    // Found service config.
+    it = choice.object_value().find("serviceConfig");
+    if (it == choice.object_value().end()) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:serviceConfig error:required field missing"));
+    } else if (it->second.type() != Json::Type::OBJECT) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:serviceConfig error:should be of type object"));
+    } else if (service_config == nullptr) {
+      service_config = &it->second;
     }
   }
-  grpc_json_destroy(choices_json);
-  return service_config;
+  if (!error_list.empty()) {
+    service_config = nullptr;
+    *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service Config Choices Parser",
+                                           &error_list);
+  }
+  if (service_config == nullptr) return "";
+  return service_config->Dump();
 }
 
-static void dns_ares_on_resolved_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                                        grpc_error *error) {
-  ares_dns_resolver *r = (ares_dns_resolver *)arg;
-  grpc_channel_args *result = NULL;
-  GPR_ASSERT(r->resolving);
-  r->resolving = false;
-  r->pending_request = NULL;
-  if (r->lb_addresses != NULL) {
-    static const char *args_to_remove[2];
-    size_t num_args_to_remove = 0;
-    grpc_arg new_args[3];
-    size_t num_args_to_add = 0;
-    new_args[num_args_to_add++] =
-        grpc_lb_addresses_create_channel_arg(r->lb_addresses);
-    grpc_service_config *service_config = NULL;
-    char *service_config_string = NULL;
-    if (r->service_config_json != NULL) {
-      service_config_string = choose_service_config(r->service_config_json);
-      gpr_free(r->service_config_json);
-      if (service_config_string != NULL) {
-        gpr_log(GPR_INFO, "selected service config choice: %s",
-                service_config_string);
-        args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
-        new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-            (char *)GRPC_ARG_SERVICE_CONFIG, service_config_string);
-        service_config = grpc_service_config_create(service_config_string);
-        if (service_config != NULL) {
-          const char *lb_policy_name =
-              grpc_service_config_get_lb_policy_name(service_config);
-          if (lb_policy_name != NULL) {
-            args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
-            new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-                (char *)GRPC_ARG_LB_POLICY_NAME, (char *)lb_policy_name);
+void AresClientChannelDNSResolver::OnResolved(void* arg,
+                                              grpc_error_handle error) {
+  AresClientChannelDNSResolver* r =
+      static_cast<AresClientChannelDNSResolver*>(arg);
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
+                           DEBUG_LOCATION);
+}
+
+void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
+  GPR_ASSERT(resolving_);
+  resolving_ = false;
+  delete pending_request_;
+  pending_request_ = nullptr;
+  if (shutdown_initiated_) {
+    Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+  // TODO(roth): Change logic to be able to report failures for addresses
+  // and service config independently of each other.
+  if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
+    Result result;
+    if (addresses_ != nullptr) {
+      result.addresses = std::move(*addresses_);
+    } else {
+      result.addresses = ServerAddressList();
+    }
+    if (service_config_json_ != nullptr) {
+      grpc_error_handle service_config_error = GRPC_ERROR_NONE;
+      std::string service_config_string =
+          ChooseServiceConfig(service_config_json_, &service_config_error);
+      gpr_free(service_config_json_);
+      RefCountedPtr<ServiceConfig> service_config;
+      if (service_config_error == GRPC_ERROR_NONE &&
+          !service_config_string.empty()) {
+        GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
+                             this, service_config_string.c_str());
+        service_config = ServiceConfig::Create(
+            channel_args_, service_config_string, &service_config_error);
+      }
+      if (service_config_error != GRPC_ERROR_NONE) {
+        result.service_config = absl::UnavailableError(
+            absl::StrCat("failed to parse service config: ",
+                         grpc_error_std_string(service_config_error)));
+        GRPC_ERROR_UNREF(service_config_error);
+      } else {
+        result.service_config = std::move(service_config);
+      }
+    }
+    absl::InlinedVector<grpc_arg, 1> new_args;
+    if (balancer_addresses_ != nullptr) {
+      new_args.push_back(
+          CreateGrpclbBalancerAddressesArg(balancer_addresses_.get()));
+    }
+    result.args = grpc_channel_args_copy_and_add(channel_args_, new_args.data(),
+                                                 new_args.size());
+    result_handler_->ReportResult(std::move(result));
+    addresses_.reset();
+    balancer_addresses_.reset();
+    // Reset backoff state so that we start from the beginning when the
+    // next request gets triggered.
+    backoff_.Reset();
+  } else {
+    GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
+                         grpc_error_std_string(error).c_str());
+    std::string error_message;
+    grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "DNS resolution failed for ", name_to_resolve_, ": ", error_message));
+    Result result;
+    result.addresses = status;
+    result.service_config = status;
+    result.args = grpc_channel_args_copy(channel_args_);
+    result_handler_->ReportResult(std::move(result));
+    // Set retry timer.
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
+    grpc_millis next_try = backoff_.NextAttemptTime();
+    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
+                         this, grpc_error_std_string(error).c_str());
+    GPR_ASSERT(!have_next_resolution_timer_);
+    have_next_resolution_timer_ = true;
+    // TODO(roth): We currently deal with this ref manually.  Once the
+    // new closure API is done, find a way to track this ref with the timer
+    // callback as part of the type system.
+    Ref(DEBUG_LOCATION, "retry-timer").release();
+    if (timeout > 0) {
+      GRPC_CARES_TRACE_LOG("resolver:%p retrying in %" PRId64 " milliseconds",
+                           this, timeout);
+    } else {
+      GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", this);
+    }
+    grpc_timer_init(&next_resolution_timer_, next_try, &on_next_resolution_);
+  }
+  Unref(DEBUG_LOCATION, "dns-resolving");
+  GRPC_ERROR_UNREF(error);
+}
+
+void AresClientChannelDNSResolver::MaybeStartResolvingLocked() {
+  // If there is an existing timer, the time it fires is the earliest time we
+  // can start the next resolution.
+  if (have_next_resolution_timer_) return;
+  if (last_resolution_timestamp_ >= 0) {
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
+    const grpc_millis earliest_next_resolution =
+        last_resolution_timestamp_ + min_time_between_resolutions_;
+    const grpc_millis ms_until_next_resolution =
+        earliest_next_resolution - ExecCtx::Get()->Now();
+    if (ms_until_next_resolution > 0) {
+      const grpc_millis last_resolution_ago =
+          ExecCtx::Get()->Now() - last_resolution_timestamp_;
+      GRPC_CARES_TRACE_LOG(
+          "resolver:%p In cooldown from last resolution (from %" PRId64
+          " ms ago). Will resolve again in %" PRId64 " ms",
+          this, last_resolution_ago, ms_until_next_resolution);
+      have_next_resolution_timer_ = true;
+      // TODO(roth): We currently deal with this ref manually.  Once the
+      // new closure API is done, find a way to track this ref with the timer
+      // callback as part of the type system.
+      Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
+      grpc_timer_init(&next_resolution_timer_,
+                      ExecCtx::Get()->Now() + ms_until_next_resolution,
+                      &on_next_resolution_);
+      return;
+    }
+  }
+  StartResolvingLocked();
+}
+
+void AresClientChannelDNSResolver::StartResolvingLocked() {
+  // TODO(roth): We currently deal with this ref manually.  Once the
+  // new closure API is done, find a way to track this ref with the timer
+  // callback as part of the type system.
+  Ref(DEBUG_LOCATION, "dns-resolving").release();
+  GPR_ASSERT(!resolving_);
+  resolving_ = true;
+  service_config_json_ = nullptr;
+  pending_request_ = grpc_dns_lookup_ares(
+      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultSecurePort,
+      interested_parties_, &on_resolved_, &addresses_,
+      enable_srv_queries_ ? &balancer_addresses_ : nullptr,
+      request_service_config_ ? &service_config_json_ : nullptr,
+      query_timeout_ms_);
+  last_resolution_timestamp_ = ExecCtx::Get()->Now();
+  GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
+                       this, pending_request_);
+}
+
+//
+// Factory
+//
+class AresClientChannelDNSResolverFactory : public ResolverFactory {
+ public:
+  bool IsValidUri(const URI& uri) const override {
+    if (absl::StripPrefix(uri.path(), "/").empty()) {
+      gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+      return false;
+    }
+    return true;
+  }
+
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    return MakeOrphanable<AresClientChannelDNSResolver>(std::move(args));
+  }
+
+  const char* scheme() const override { return "dns"; }
+};
+
+class AresDNSResolver : public DNSResolver {
+ public:
+  class AresRequest : public DNSResolver::Request {
+   public:
+    AresRequest(
+        absl::string_view name, absl::string_view default_port,
+        grpc_pollset_set* interested_parties,
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_resolve_address_done)
+        : name_(std::string(name)),
+          default_port_(std::string(default_port)),
+          interested_parties_(interested_parties),
+          on_resolve_address_done_(std::move(on_resolve_address_done)) {
+      GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this);
+      GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
+                        grpc_schedule_on_exec_ctx);
+    }
+
+    ~AresRequest() override {
+      GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
+                           ares_request_.get());
+    }
+
+    void Start() override {
+      absl::MutexLock lock(&mu_);
+      Ref().release();  // ref held by resolution
+      ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
+          "" /* dns_server */, name_.c_str(), default_port_.c_str(),
+          interested_parties_, &on_dns_lookup_done_, &addresses_,
+          nullptr /* balancer_addresses */, nullptr /* service_config_json */,
+          GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+      GRPC_CARES_TRACE_LOG("AresRequest:%p Start ares_request_:%p", this,
+                           ares_request_.get());
+    }
+
+    void Orphan() override {
+      {
+        absl::MutexLock lock(&mu_);
+        GRPC_CARES_TRACE_LOG("AresRequest:%p Orphan ares_request_:%p", this,
+                             ares_request_.get());
+        if (ares_request_ != nullptr) {
+          grpc_cancel_ares_request(ares_request_.get());
+        }
+      }
+      Unref();
+    }
+
+   private:
+    static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
+      AresRequest* r = static_cast<AresRequest*>(arg);
+      std::vector<grpc_resolved_address> resolved_addresses;
+      {
+        absl::MutexLock lock(&r->mu_);
+        GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
+                             grpc_error_std_string(error).c_str());
+        if (r->addresses_ != nullptr) {
+          resolved_addresses.reserve(r->addresses_->size());
+          for (const auto& server_address : *r->addresses_) {
+            resolved_addresses.push_back(server_address.address());
           }
         }
       }
+      if (error == GRPC_ERROR_NONE) {
+        // it's safe to run this inline since we've already been scheduled
+        // on the ExecCtx
+        r->on_resolve_address_done_(std::move(resolved_addresses));
+      } else {
+        r->on_resolve_address_done_(grpc_error_to_absl_status(error));
+      }
+      r->Unref();
     }
-    result = grpc_channel_args_copy_and_add_and_remove(
-        r->channel_args, args_to_remove, num_args_to_remove, new_args,
-        num_args_to_add);
-    if (service_config != NULL) grpc_service_config_destroy(service_config);
-    gpr_free(service_config_string);
-    grpc_lb_addresses_destroy(exec_ctx, r->lb_addresses);
-  } else {
-    const char *msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "dns resolution failed: %s", msg);
-    grpc_millis next_try = grpc_backoff_step(exec_ctx, &r->backoff_state);
-    grpc_millis timeout = next_try - grpc_exec_ctx_now(exec_ctx);
-    gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
-            grpc_error_string(error));
-    GPR_ASSERT(!r->have_retry_timer);
-    r->have_retry_timer = true;
-    GRPC_RESOLVER_REF(&r->base, "retry-timer");
-    if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
-    } else {
-      gpr_log(GPR_DEBUG, "retrying immediately");
-    }
-    grpc_timer_init(exec_ctx, &r->retry_timer, next_try,
-                    &r->dns_ares_on_retry_timer_locked);
+
+    // mutex to synchronize access to this object (but not to the ares_request
+    // object itself).
+    absl::Mutex mu_;
+    // the name to resolve
+    const std::string name_;
+    // the default port to use if name doesn't have one
+    const std::string default_port_;
+    // parties interested in our I/O
+    grpc_pollset_set* const interested_parties_;
+    // user-provided completion callback
+    const std::function<void(
+        absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_resolve_address_done_;
+    // currently resolving addresses
+    std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
+    // closure to call when the resolve_address_ares request completes
+    // a closure wrapping on_resolve_address_done, which should be invoked
+    // when the grpc_dns_lookup_ares operation is done.
+    grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
+    // underlying ares_request that the query is performed on
+    std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);
+  };
+
+  // gets the singleton instance, possibly creating it first
+  static AresDNSResolver* GetOrCreate() {
+    static AresDNSResolver* instance = new AresDNSResolver();
+    return instance;
   }
-  if (r->resolved_result != NULL) {
-    grpc_channel_args_destroy(exec_ctx, r->resolved_result);
+
+  OrphanablePtr<DNSResolver::Request> ResolveName(
+      absl::string_view name, absl::string_view default_port,
+      grpc_pollset_set* interested_parties,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
+    return MakeOrphanable<AresRequest>(name, default_port, interested_parties,
+                                       std::move(on_done));
   }
-  r->resolved_result = result;
-  r->resolved_version++;
-  dns_ares_maybe_finish_next_locked(exec_ctx, r);
-  GRPC_RESOLVER_UNREF(exec_ctx, &r->base, "dns-resolving");
-}
 
-static void dns_ares_next_locked(grpc_exec_ctx *exec_ctx,
-                                 grpc_resolver *resolver,
-                                 grpc_channel_args **target_result,
-                                 grpc_closure *on_complete) {
-  gpr_log(GPR_DEBUG, "dns_ares_next is called.");
-  ares_dns_resolver *r = (ares_dns_resolver *)resolver;
-  GPR_ASSERT(!r->next_completion);
-  r->next_completion = on_complete;
-  r->target_result = target_result;
-  if (r->resolved_version == 0 && !r->resolving) {
-    grpc_backoff_reset(&r->backoff_state);
-    dns_ares_start_resolving_locked(exec_ctx, r);
-  } else {
-    dns_ares_maybe_finish_next_locked(exec_ctx, r);
+  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+      absl::string_view name, absl::string_view default_port) override {
+    // TODO(apolcyn): change this to wrap the async version of the c-ares
+    // API with a promise, and remove the reference to the previous resolver.
+    return default_resolver_->ResolveNameBlocking(name, default_port);
   }
+
+ private:
+  // the previous default DNS resolver, used to delegate blocking DNS calls to
+  DNSResolver* default_resolver_ = GetDNSResolver();
+};
+
+bool ShouldUseAres(const char* resolver_env) {
+  // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
+  // custom IO managers (e.g. gevent).
+  return !g_custom_iomgr_enabled &&
+         (resolver_env == nullptr || strlen(resolver_env) == 0 ||
+          gpr_stricmp(resolver_env, "ares") == 0);
 }
 
-static void dns_ares_start_resolving_locked(grpc_exec_ctx *exec_ctx,
-                                            ares_dns_resolver *r) {
-  GRPC_RESOLVER_REF(&r->base, "dns-resolving");
-  GPR_ASSERT(!r->resolving);
-  r->resolving = true;
-  r->lb_addresses = NULL;
-  r->service_config_json = NULL;
-  r->pending_request = grpc_dns_lookup_ares(
-      exec_ctx, r->dns_server, r->name_to_resolve, r->default_port,
-      r->interested_parties, &r->dns_ares_on_resolved_locked, &r->lb_addresses,
-      true /* check_grpclb */,
-      r->request_service_config ? &r->service_config_json : NULL);
-}
+bool g_use_ares_dns_resolver;
 
-static void dns_ares_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
-                                              ares_dns_resolver *r) {
-  if (r->next_completion != NULL &&
-      r->resolved_version != r->published_version) {
-    *r->target_result = r->resolved_result == NULL
-                            ? NULL
-                            : grpc_channel_args_copy(r->resolved_result);
-    gpr_log(GPR_DEBUG, "dns_ares_maybe_finish_next_locked");
-    GRPC_CLOSURE_SCHED(exec_ctx, r->next_completion, GRPC_ERROR_NONE);
-    r->next_completion = NULL;
-    r->published_version = r->resolved_version;
-  }
-}
+}  // namespace
 
-static void dns_ares_destroy(grpc_exec_ctx *exec_ctx, grpc_resolver *gr) {
-  gpr_log(GPR_DEBUG, "dns_ares_destroy");
-  ares_dns_resolver *r = (ares_dns_resolver *)gr;
-  if (r->resolved_result != NULL) {
-    grpc_channel_args_destroy(exec_ctx, r->resolved_result);
-  }
-  grpc_pollset_set_destroy(exec_ctx, r->interested_parties);
-  gpr_free(r->dns_server);
-  gpr_free(r->name_to_resolve);
-  gpr_free(r->default_port);
-  grpc_channel_args_destroy(exec_ctx, r->channel_args);
-  gpr_free(r);
-}
+}  // namespace grpc_core
 
-static grpc_resolver *dns_ares_create(grpc_exec_ctx *exec_ctx,
-                                      grpc_resolver_args *args,
-                                      const char *default_port) {
-  /* Get name from args. */
-  const char *path = args->uri->path;
-  if (path[0] == '/') ++path;
-  /* Create resolver. */
-  ares_dns_resolver *r =
-      (ares_dns_resolver *)gpr_zalloc(sizeof(ares_dns_resolver));
-  grpc_resolver_init(&r->base, &dns_ares_resolver_vtable, args->combiner);
-  if (0 != strcmp(args->uri->authority, "")) {
-    r->dns_server = gpr_strdup(args->uri->authority);
-  }
-  r->name_to_resolve = gpr_strdup(path);
-  r->default_port = gpr_strdup(default_port);
-  r->channel_args = grpc_channel_args_copy(args->args);
-  const grpc_arg *arg = grpc_channel_args_find(
-      r->channel_args, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION);
-  r->request_service_config = !grpc_channel_arg_get_integer(
-      arg, (grpc_integer_options){false, false, true});
-  r->interested_parties = grpc_pollset_set_create();
-  if (args->pollset_set != NULL) {
-    grpc_pollset_set_add_pollset_set(exec_ctx, r->interested_parties,
-                                     args->pollset_set);
-  }
-  grpc_backoff_init(&r->backoff_state, GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS,
-                    GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER,
-                    GRPC_DNS_RECONNECT_JITTER,
-                    GRPC_DNS_MIN_CONNECT_TIMEOUT_SECONDS * 1000,
-                    GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000);
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_retry_timer_locked,
-                    dns_ares_on_retry_timer_locked, r,
-                    grpc_combiner_scheduler(r->base.combiner));
-  GRPC_CLOSURE_INIT(&r->dns_ares_on_resolved_locked,
-                    dns_ares_on_resolved_locked, r,
-                    grpc_combiner_scheduler(r->base.combiner));
-  return &r->base;
-}
-
-/*
- * FACTORY
- */
-
-static void dns_ares_factory_ref(grpc_resolver_factory *factory) {}
-
-static void dns_ares_factory_unref(grpc_resolver_factory *factory) {}
-
-static grpc_resolver *dns_factory_create_resolver(
-    grpc_exec_ctx *exec_ctx, grpc_resolver_factory *factory,
-    grpc_resolver_args *args) {
-  return dns_ares_create(exec_ctx, args, "https");
-}
-
-static char *dns_ares_factory_get_default_host_name(
-    grpc_resolver_factory *factory, grpc_uri *uri) {
-  const char *path = uri->path;
-  if (path[0] == '/') ++path;
-  return gpr_strdup(path);
-}
-
-static const grpc_resolver_factory_vtable dns_ares_factory_vtable = {
-    dns_ares_factory_ref, dns_ares_factory_unref, dns_factory_create_resolver,
-    dns_ares_factory_get_default_host_name, "dns"};
-static grpc_resolver_factory dns_resolver_factory = {&dns_ares_factory_vtable};
-
-static grpc_resolver_factory *dns_ares_resolver_factory_create() {
-  return &dns_resolver_factory;
-}
-
-extern "C" void grpc_resolver_dns_ares_init(void) {
-  char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  /* TODO(zyc): Turn on c-ares based resolver by default after the address
-     sorter and the CNAME support are added. */
-  if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
-    grpc_error *error = grpc_ares_init();
+void grpc_resolver_dns_ares_init() {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (grpc_core::ShouldUseAres(resolver.get())) {
+    grpc_core::g_use_ares_dns_resolver = true;
+    gpr_log(GPR_DEBUG, "Using ares dns resolver");
+    address_sorting_init();
+    grpc_error_handle error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
-      GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
+      GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }
-    grpc_resolve_address = grpc_resolve_address_ares;
-    grpc_register_resolver_type(dns_ares_resolver_factory_create());
+    grpc_core::SetDNSResolver(grpc_core::AresDNSResolver::GetOrCreate());
+    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+        absl::make_unique<grpc_core::AresClientChannelDNSResolverFactory>());
+  } else {
+    grpc_core::g_use_ares_dns_resolver = false;
   }
-  gpr_free(resolver);
 }
 
-extern "C" void grpc_resolver_dns_ares_shutdown(void) {
-  char *resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (resolver != NULL && gpr_stricmp(resolver, "ares") == 0) {
+void grpc_resolver_dns_ares_shutdown() {
+  if (grpc_core::g_use_ares_dns_resolver) {
+    address_sorting_shutdown();
     grpc_ares_cleanup();
   }
-  gpr_free(resolver);
 }
 
-#else /* GRPC_ARES == 1 && !defined(GRPC_UV) */
+#else /* GRPC_ARES == 1 */
 
-extern "C" void grpc_resolver_dns_ares_init(void) {}
+void grpc_resolver_dns_ares_init(void) {}
 
-extern "C" void grpc_resolver_dns_ares_shutdown(void) {}
+void grpc_resolver_dns_ares_shutdown(void) {}
 
-#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */
+#endif /* GRPC_ARES == 1 */

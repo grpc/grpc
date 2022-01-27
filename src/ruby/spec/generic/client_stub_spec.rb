@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 Thread.abort_on_exception = true
 
@@ -83,7 +83,12 @@ def sanity_check_values_of_accessors(op_view,
          op_view.deadline.is_a?(Time)).to be(true)
 end
 
-describe 'ClientStub' do
+def close_active_server_call(active_server_call)
+  active_server_call.send(:set_input_stream_done)
+  active_server_call.send(:set_output_stream_done)
+end
+
+describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
   let(:noop) { proc { |x| x } }
 
   before(:each) do
@@ -96,7 +101,10 @@ describe 'ClientStub' do
   end
 
   after(:each) do
-    @server.close(from_relative_time(2)) unless @server.nil?
+    unless @server.nil?
+      @server.shutdown_and_notify(from_relative_time(2))
+      @server.close
+    end
   end
 
   describe '#new' do
@@ -228,9 +236,17 @@ describe 'ClientStub' do
         th.join
       end
 
-      it 'should receive UNAUTHENTICATED if call credentials plugin fails' do
+      it 'should receive UNAVAILABLE if call credentials plugin fails' do
         server_port = create_secure_test_server
-        th = run_request_response(@sent_msg, @resp, @pass)
+        server_started_notifier = GRPC::Notifier.new
+        th = Thread.new do
+          @server.start
+          server_started_notifier.notify(nil)
+          # Poll on the server so that the client connection can proceed.
+          # We don't expect the server to actually accept a call though.
+          expect { @server.request_call }.to raise_error(GRPC::Core::CallError)
+        end
+        server_started_notifier.wait
 
         certs = load_test_certs
         secure_channel_creds = GRPC::Core::ChannelCredentials.new(
@@ -249,17 +265,18 @@ describe 'ClientStub' do
         end
         creds = GRPC::Core::CallCredentials.new(failing_auth)
 
-        unauth_error_occured = false
+        unavailable_error_occurred = false
         begin
           get_response(stub, credentials: creds)
-        rescue GRPC::Unauthenticated => e
-          unauth_error_occured = true
+        rescue GRPC::Unavailable => e
+          unavailable_error_occurred = true
           expect(e.details.include?(error_message)).to be true
         end
-        expect(unauth_error_occured).to eq(true)
+        expect(unavailable_error_occurred).to eq(true)
 
-        # Kill the server thread so tests can complete
-        th.kill
+        @server.shutdown_and_notify(Time.now + 3)
+        th.join
+        @server.close
       end
 
       it 'should raise ArgumentError if metadata contains invalid values' do
@@ -276,7 +293,7 @@ describe 'ClientStub' do
 
     describe 'without a call operation' do
       def get_response(stub, credentials: nil)
-        puts credentials.inspect
+        GRPC.logger.info(credentials.inspect)
         stub.request_response(@method, @sent_msg, noop, noop,
                               metadata: @metadata,
                               credentials: credentials)
@@ -287,7 +304,7 @@ describe 'ClientStub' do
 
     describe 'via a call operation' do
       after(:each) do
-        # make sure op.wait doesn't hang, even if there's a bad status
+        # make sure op.wait doesn't freeze, even if there's a bad status
         @op.wait
       end
       def get_response(stub, run_start_call_first: false, credentials: nil)
@@ -325,13 +342,15 @@ describe 'ClientStub' do
       it 'sends metadata to the server ok when running start_call first' do
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
 
       it 'does not crash when used after the call has been finished' do
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
     end
   end
@@ -387,7 +406,7 @@ describe 'ClientStub' do
 
     describe 'via a call operation' do
       after(:each) do
-        # make sure op.wait doesn't hang, even if there's a bad status
+        # make sure op.wait doesn't freeze, even if there's a bad status
         @op.wait
       end
       def get_response(stub, run_start_call_first: false)
@@ -418,13 +437,15 @@ describe 'ClientStub' do
       it 'sends metadata to the server ok when running start_call first' do
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
 
       it 'does not crash when used after the call has been finished' do
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
     end
   end
@@ -493,6 +514,7 @@ describe 'ClientStub' do
             p 'remote_send failed (allowed because call expected to cancel)'
           ensure
             c.send_status(OK, 'OK', true)
+            close_active_server_call(c)
           end
         end
       end
@@ -525,7 +547,7 @@ describe 'ClientStub' do
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't hang
+        @op.wait # make sure wait doesn't freeze
       end
       def get_responses(stub, run_start_call_first: false, unmarshal: noop)
         @op = stub.server_streamer(@method, @sent_msg, noop, unmarshal,
@@ -560,7 +582,7 @@ describe 'ClientStub' do
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
       end
 
@@ -568,8 +590,20 @@ describe 'ClientStub' do
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
+      end
+
+      it 'raises GRPC::Cancelled after the call has been cancelled' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_server_streamer(@sent_msg, @replys, @pass)
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        resp = get_responses(stub, run_start_call_first: false)
+        expect(resp.next).to eq('reply_1')
+        @op.cancel
+        expect { resp.next }.to raise_error(GRPC::Cancelled)
+        th.join
       end
     end
   end
@@ -659,6 +693,7 @@ describe 'ClientStub' do
           end
           # can't fail since initial metadata already sent
           server_call.send_status(@pass, 'OK', true)
+          close_active_server_call(server_call)
         end
 
         def verify_error_from_write_thread(stub, requests_to_push,
@@ -731,6 +766,90 @@ describe 'ClientStub' do
                                                   expected_error_message)
         end
       end
+
+      # Prompted by grpc/github #14853
+      describe 'client-side error handling on bidi streams' do
+        class EnumeratorQueue
+          def initialize(queue)
+            @queue = queue
+          end
+
+          def each
+            loop do
+              msg = @queue.pop
+              break if msg.nil?
+              yield msg
+            end
+          end
+        end
+
+        def run_server_bidi_shutdown_after_one_read
+          @server.start
+          recvd_rpc = @server.request_call
+          recvd_call = recvd_rpc.call
+          server_call = GRPC::ActiveCall.new(
+            recvd_call, noop, noop, INFINITE_FUTURE,
+            metadata_received: true, started: false)
+          expect(server_call.remote_read).to eq('first message')
+          @server.shutdown_and_notify(from_relative_time(0))
+          @server.close
+        end
+
+        it 'receives a grpc status code when writes to a bidi stream fail' do
+          # This test tries to trigger the case when a 'SEND_MESSAGE' op
+          # and subseqeunt 'SEND_CLOSE_FROM_CLIENT' op of a bidi stream fails.
+          # In this case, iteration through the response stream should result
+          # in a grpc status code, and the writer thread should not raise an
+          # exception.
+          server_thread = Thread.new do
+            run_server_bidi_shutdown_after_one_read
+          end
+          stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+          request_queue = Queue.new
+          @sent_msgs = EnumeratorQueue.new(request_queue)
+          responses = get_responses(stub)
+          request_queue.push('first message')
+          # Now wait for the server to shut down.
+          server_thread.join
+          # Sanity check. This test is not interesting if
+          # Thread.abort_on_exception is not set.
+          expect(Thread.abort_on_exception).to be(true)
+          # An attempt to send a second message should fail now that the
+          # server is down.
+          request_queue.push('second message')
+          request_queue.push(nil)
+          expect { responses.next }.to raise_error(GRPC::BadStatus)
+        end
+
+        def run_server_bidi_shutdown_after_one_write
+          @server.start
+          recvd_rpc = @server.request_call
+          recvd_call = recvd_rpc.call
+          server_call = GRPC::ActiveCall.new(
+            recvd_call, noop, noop, INFINITE_FUTURE,
+            metadata_received: true, started: false)
+          server_call.send_initial_metadata
+          server_call.remote_send('message')
+          @server.shutdown_and_notify(from_relative_time(0))
+          @server.close
+        end
+
+        it 'receives a grpc status code when reading from a failed bidi call' do
+          server_thread = Thread.new do
+            run_server_bidi_shutdown_after_one_write
+          end
+          stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+          request_queue = Queue.new
+          @sent_msgs = EnumeratorQueue.new(request_queue)
+          responses = get_responses(stub)
+          expect(responses.next).to eq('message')
+          # Wait for the server to shut down
+          server_thread.join
+          expect { responses.next }.to raise_error(GRPC::BadStatus)
+          # Push a sentinel to allow the writer thread to finish
+          request_queue.push(nil)
+        end
+      end
     end
 
     describe 'without a call operation' do
@@ -746,7 +865,7 @@ describe 'ClientStub' do
 
     describe 'via a call operation' do
       after(:each) do
-        @op.wait # make sure wait doesn't hang
+        @op.wait # make sure wait doesn't freeze
       end
       def get_responses(stub, run_start_call_first: false, deadline: nil,
                         marshal_proc: noop)
@@ -780,7 +899,7 @@ describe 'ClientStub' do
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
       end
 
@@ -788,8 +907,57 @@ describe 'ClientStub' do
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
+      end
+
+      def run_server_bidi_expect_client_to_cancel(wait_for_shutdown_ok_callback)
+        @server.start
+        recvd_rpc = @server.request_call
+        recvd_call = recvd_rpc.call
+        server_call = GRPC::ActiveCall.new(
+          recvd_call, noop, noop, INFINITE_FUTURE,
+          metadata_received: true, started: false)
+        server_call.send_initial_metadata
+        server_call.remote_send('server call received')
+        wait_for_shutdown_ok_callback.call
+        # since the client is cancelling the call,
+        # we should be able to shut down cleanly
+        @server.shutdown_and_notify(nil)
+        @server.close
+      end
+
+      it 'receives a grpc status code when reading from a cancelled bidi call' do
+        # This test tries to trigger a 'RECV_INITIAL_METADATA' and/or
+        # 'RECV_MESSAGE' op failure.
+        # An attempt to read a message might fail; in that case, iteration
+        # through the response stream should still result in a grpc status.
+        server_can_shutdown = false
+        server_can_shutdown_mu = Mutex.new
+        server_can_shutdown_cv = ConditionVariable.new
+        wait_for_shutdown_ok_callback = proc do
+          server_can_shutdown_mu.synchronize do
+            server_can_shutdown_cv.wait(server_can_shutdown_mu) until server_can_shutdown
+          end
+        end
+        server_thread = Thread.new do
+          run_server_bidi_expect_client_to_cancel(wait_for_shutdown_ok_callback)
+        end
+        stub = GRPC::ClientStub.new(@host, :this_channel_is_insecure)
+        request_queue = Queue.new
+        @sent_msgs = EnumeratorQueue.new(request_queue)
+        responses = get_responses(stub)
+        expect(responses.next).to eq('server call received')
+        @op.cancel
+        expect { responses.next }.to raise_error(GRPC::Cancelled)
+        # Now let the server proceed to shut down.
+        server_can_shutdown_mu.synchronize do
+          server_can_shutdown = true
+          server_can_shutdown_cv.broadcast
+        end
+        server_thread.join
+        # Push a sentinel to allow the writer thread to finish
+        request_queue.push(nil)
       end
     end
   end
@@ -809,6 +977,7 @@ describe 'ClientStub' do
       replys.each { |r| c.remote_send(r) }
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
                     metadata: server_trailing_md)
+      close_active_server_call(c)
     end
   end
 
@@ -819,6 +988,7 @@ describe 'ClientStub' do
       expected_inputs.each { |i| expect(c.remote_read).to eq(i) }
       replys.each { |r| c.remote_send(r) }
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true)
+      close_active_server_call(c)
     end
   end
 
@@ -844,6 +1014,7 @@ describe 'ClientStub' do
       end
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
                     metadata: server_trailing_md)
+      close_active_server_call(c)
     end
   end
 
@@ -862,6 +1033,7 @@ describe 'ClientStub' do
       c.remote_send(resp)
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
                     metadata: server_trailing_md)
+      close_active_server_call(c)
     end
   end
 
@@ -880,6 +1052,7 @@ describe 'ClientStub' do
       c.remote_send(resp)
       c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
                     metadata: server_trailing_md)
+      close_active_server_call(c)
     end
   end
 
@@ -888,12 +1061,12 @@ describe 'ClientStub' do
     secure_credentials = GRPC::Core::ServerCredentials.new(
       nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
 
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     @server.add_http2_port('0.0.0.0:0', secure_credentials)
   end
 
   def create_test_server
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     @server.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
   end
 

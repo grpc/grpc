@@ -21,17 +21,17 @@
 
 #include <functional>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 #include "test/cpp/util/cli_credentials.h"
 
 namespace grpc {
 namespace testing {
 
-typedef std::function<bool(const grpc::string &)> GrpcToolOutputCallback;
+typedef std::function<bool(const std::string&)> GrpcToolOutputCallback;
 
-int GrpcToolMainLib(int argc, const char **argv, const CliCredentials &cred,
-                    GrpcToolOutputCallback callback);
+int GrpcToolMainLib(int argc, const char** argv, const CliCredentials& cred,
+                    const GrpcToolOutputCallback& callback);
 
 }  // namespace testing
 }  // namespace grpc

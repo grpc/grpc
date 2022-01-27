@@ -1,31 +1,37 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
-  <Import Project="..\Grpc.Core\Common.csproj.include" />
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2015 The gRPC Authors</Copyright>
+    <Description>gRPC C# Health Checking (for Grpc.Core)</Description>
+    <PackageIcon>packageIcon.png</PackageIcon>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC health check</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix> 
+  </PropertyGroup>
 
   <PropertyGroup>
-    <Copyright>Copyright 2015, Google Inc.</Copyright>
-    <AssemblyTitle>gRPC C# Healthchecking</AssemblyTitle>
-    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
-    <Authors>Google Inc.</Authors>
-    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
-    <AssemblyName>Grpc.HealthCheck</AssemblyName>
-    <PackageId>Grpc.HealthCheck</PackageId>
-    <PackageTags>gRPC health check</PackageTags>
-    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <IncludeSource>true</IncludeSource>
+    <TargetFrameworks>net45;net462;netstandard1.5;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'netstandard1.5' or '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);GRPC_SUPPORT_WATCH;</DefineConstants>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj">
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Grpc.Core.Api/Grpc.Core.Api.csproj">
       <PrivateAssets>None</PrivateAssets>
     </ProjectReference>
   </ItemGroup>
@@ -34,7 +40,11 @@
     <PackageReference Include="Google.Protobuf" Version="$(GoogleProtobufVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'netstandard1.5' or '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Threading.Channels" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net462' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>

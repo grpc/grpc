@@ -17,13 +17,13 @@
  *
  */
 
-class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
+class ChanellCredentialsTest extends \PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
     }
 
@@ -46,19 +46,25 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
         $this->assertNull($channel_credentials);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
+    public function testDefaultRootsPem()
+    {
+        Grpc\ChannelCredentials::setDefaultRootsPem("Pem-Content-Not-Verified");
+        $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+        Grpc\ChannelCredentials::invalidateDefaultRootsPem();
+        $this->assertFalse(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+        Grpc\ChannelCredentials::setDefaultRootsPem("Content-Not-Verified");
+        $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+    }
+
     public function testInvalidCreateSsl()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidCreateComposite()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $channel_credentials = Grpc\ChannelCredentials::createComposite(
             'something', 'something');
     }

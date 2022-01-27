@@ -19,77 +19,127 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 #define GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 
+#include <grpc/support/port_platform.h>
+
+#include <atomic>
+#include <map>
+#include <memory>
+
+#include "absl/status/status.h"
+
 #include <grpc/grpc.h>
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-typedef struct grpc_connectivity_state_watcher {
-  /** we keep watchers in a linked list */
-  struct grpc_connectivity_state_watcher *next;
-  /** closure to notify on change */
-  grpc_closure *notify;
-  /** the current state as believed by the watcher */
-  grpc_connectivity_state *current;
-} grpc_connectivity_state_watcher;
+extern TraceFlag grpc_connectivity_state_trace;
 
-typedef struct {
-  /** current grpc_connectivity_state */
-  gpr_atm current_state_atm;
-  /** error associated with state */
-  grpc_error *current_error;
-  /** all our watchers */
-  grpc_connectivity_state_watcher *watchers;
-  /** a name to help debugging */
-  char *name;
-} grpc_connectivity_state_tracker;
+// Enum to string conversion.
+const char* ConnectivityStateName(grpc_connectivity_state state);
 
-extern grpc_tracer_flag grpc_connectivity_state_trace;
+// Interface for watching connectivity state.
+// Subclasses must implement the Notify() method.
+//
+// Note: Most callers will want to use
+// AsyncConnectivityStateWatcherInterface instead.
+class ConnectivityStateWatcherInterface
+    : public InternallyRefCounted<ConnectivityStateWatcherInterface> {
+ public:
+  ~ConnectivityStateWatcherInterface() override = default;
 
-/** enum --> string conversion */
-const char *grpc_connectivity_state_name(grpc_connectivity_state state);
+  // Notifies the watcher that the state has changed to new_state.
+  virtual void Notify(grpc_connectivity_state new_state,
+                      const absl::Status& status) = 0;
 
-void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
-                                  grpc_connectivity_state init_state,
-                                  const char *name);
-void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
-                                     grpc_connectivity_state_tracker *tracker);
+  void Orphan() override { Unref(); }
+};
 
-/** Set connectivity state; not thread safe; access must be serialized with an
- *  external lock */
-void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
-                                 grpc_connectivity_state_tracker *tracker,
-                                 grpc_connectivity_state state,
-                                 grpc_error *associated_error,
-                                 const char *reason);
+// An alternative watcher interface that performs notifications via an
+// asynchronous callback scheduled on the ExecCtx.
+// Subclasses must implement the OnConnectivityStateChange() method.
+class AsyncConnectivityStateWatcherInterface
+    : public ConnectivityStateWatcherInterface {
+ public:
+  ~AsyncConnectivityStateWatcherInterface() override = default;
 
-/** Return true if this connectivity state has watchers.
-    Access must be serialized with an external lock. */
-bool grpc_connectivity_state_has_watchers(
-    grpc_connectivity_state_tracker *tracker);
+  // Schedules a closure on the ExecCtx to invoke
+  // OnConnectivityStateChange() asynchronously.
+  void Notify(grpc_connectivity_state new_state,
+              const absl::Status& status) final;
 
-/** Return the last seen connectivity state. No need to synchronize access. */
-grpc_connectivity_state grpc_connectivity_state_check(
-    grpc_connectivity_state_tracker *tracker);
+ protected:
+  class Notifier;
 
-/** Return the last seen connectivity state, and the associated error.
-    Access must be serialized with an external lock. */
-grpc_connectivity_state grpc_connectivity_state_get(
-    grpc_connectivity_state_tracker *tracker, grpc_error **error);
+  // If \a work_serializer is nullptr, then the notification will be scheduled
+  // on the ExecCtx.
+  explicit AsyncConnectivityStateWatcherInterface(
+      std::shared_ptr<WorkSerializer> work_serializer = nullptr)
+      : work_serializer_(std::move(work_serializer)) {}
 
-/** Return 1 if the channel should start connecting, 0 otherwise.
-    If current==NULL cancel notify if it is already queued (success==0 in that
-    case).
-    Access must be serialized with an external lock. */
-bool grpc_connectivity_state_notify_on_state_change(
-    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
-    grpc_connectivity_state *current, grpc_closure *notify);
+  // Invoked asynchronously when Notify() is called.
+  virtual void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                         const absl::Status& status) = 0;
 
-#ifdef __cplusplus
-}
-#endif
+ private:
+  std::shared_ptr<WorkSerializer> work_serializer_;
+};
+
+// Tracks connectivity state.  Maintains a list of watchers that are
+// notified whenever the state changes.
+//
+// Note that once the state becomes SHUTDOWN, watchers will be notified
+// and then automatically orphaned (i.e., RemoveWatcher() does not need
+// to be called).
+class ConnectivityStateTracker {
+ public:
+  explicit ConnectivityStateTracker(
+      const char* name, grpc_connectivity_state state = GRPC_CHANNEL_IDLE,
+      const absl::Status& status = absl::Status())
+      : name_(name), state_(state), status_(status) {}
+
+  ~ConnectivityStateTracker();
+
+  // Adds a watcher.
+  // If the current state is different than initial_state, the watcher
+  // will be notified immediately.  Otherwise, it will be notified
+  // whenever the state changes.
+  // Not thread safe; access must be serialized with an external lock.
+  void AddWatcher(grpc_connectivity_state initial_state,
+                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+
+  // Removes a watcher.  The watcher will be orphaned.
+  // Not thread safe; access must be serialized with an external lock.
+  void RemoveWatcher(ConnectivityStateWatcherInterface* watcher);
+
+  // Sets connectivity state.
+  // Not thread safe; access must be serialized with an external lock.
+  void SetState(grpc_connectivity_state state, const absl::Status& status,
+                const char* reason);
+
+  // Gets the current state.
+  // Thread safe; no need to use an external lock.
+  grpc_connectivity_state state() const;
+
+  // Get the current status.
+  // Not thread safe; access must be serialized with an external lock.
+  absl::Status status() const { return status_; }
+
+ private:
+  const char* name_;
+  std::atomic<grpc_connectivity_state> state_{grpc_connectivity_state()};
+  absl::Status status_;
+  // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
+  // be a set instead of a map.
+  std::map<ConnectivityStateWatcherInterface*,
+           OrphanablePtr<ConnectivityStateWatcherInterface>>
+      watchers_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H */

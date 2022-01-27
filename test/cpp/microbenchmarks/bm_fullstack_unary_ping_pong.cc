@@ -18,18 +18,19 @@
 
 /* Benchmark gRPC end2end in various configurations */
 
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
+#include "test/cpp/util/test_config.h"
 
 namespace grpc {
 namespace testing {
-
-// force library initialization
-auto& force_library_initialization = Library::get();
 
 /*******************************************************************************
  * CONFIGURATIONS
  */
 
+// Replace "benchmark::internal::Benchmark" with "::testing::Benchmark" to use
+// internal microbenchmarking tooling
 static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
   b->Args({0, 0});
   for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
@@ -164,4 +165,17 @@ BENCHMARK_TEMPLATE(BM_UnaryPingPong, InProcess, NoOpMutator,
 }  // namespace testing
 }  // namespace grpc
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
+  LibraryInitializer libInit;
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

@@ -16,106 +16,179 @@
  *is % allowed in string
  */
 
-#include <ctime>
-#include <memory>
-#include <string>
-
-#include <gflags/gflags.h>
-#include <grpc++/grpc++.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/cpp/thread_manager/thread_manager.h"
-#include "test/cpp/util/test_config.h"
+
+#include <atomic>
+#include <chrono>
+#include <climits>
+#include <memory>
+#include <thread>
+
+#include <gtest/gtest.h>
+
+#include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
+
+#include "test/core/util/test_config.h"
 
 namespace grpc {
-class ThreadManagerTest final : public grpc::ThreadManager {
+namespace {
+
+struct TestThreadManagerSettings {
+  // The min number of pollers that SHOULD be active in ThreadManager
+  int min_pollers;
+
+  // The max number of pollers that could be active in ThreadManager
+  int max_pollers;
+
+  // The sleep duration in PollForWork() function to simulate "polling"
+  int poll_duration_ms;
+
+  // The sleep duration in DoWork() function to simulate "work"
+  int work_duration_ms;
+
+  // Max number of times PollForWork() is called before shutting down
+  int max_poll_calls;
+
+  // The thread limit (for use in resource quote)
+  int thread_limit;
+
+  // How many should be instantiated
+  int thread_manager_count;
+};
+
+class TestThreadManager final : public grpc::ThreadManager {
  public:
-  ThreadManagerTest()
-      : ThreadManager(kMinPollers, kMaxPollers),
+  TestThreadManager(const char* name, grpc_resource_quota* rq,
+                    const TestThreadManagerSettings& settings)
+      : ThreadManager(name, rq, settings.min_pollers, settings.max_pollers),
+        settings_(settings),
         num_do_work_(0),
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
-  grpc::ThreadManager::WorkStatus PollForWork(void **tag, bool *ok) override;
-  void DoWork(void *tag, bool ok) override;
-  void PerformTest();
+  grpc::ThreadManager::WorkStatus PollForWork(void** tag, bool* ok) override;
+  void DoWork(void* /* tag */, bool /*ok*/, bool /*resources*/) override {
+    num_do_work_.fetch_add(1, std::memory_order_relaxed);
+
+    // Simulate work by sleeping
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(settings_.work_duration_ms));
+  }
+
+  // Get number of times PollForWork() was called
+  int num_poll_for_work() const {
+    return num_poll_for_work_.load(std::memory_order_relaxed);
+  }
+  // Get number of times PollForWork() returned WORK_FOUND
+  int num_work_found() const {
+    return num_work_found_.load(std::memory_order_relaxed);
+  }
+  // Get number of times DoWork() was called
+  int num_do_work() const {
+    return num_do_work_.load(std::memory_order_relaxed);
+  }
 
  private:
-  void SleepForMs(int sleep_time_ms);
+  TestThreadManagerSettings settings_;
 
-  static const int kMinPollers = 2;
-  static const int kMaxPollers = 10;
-
-  static const int kPollingTimeoutMsec = 10;
-  static const int kDoWorkDurationMsec = 1;
-
-  // PollForWork will return SHUTDOWN after these many number of invocations
-  static const int kMaxNumPollForWork = 50;
-
-  gpr_atm num_do_work_;        // Number of calls to DoWork
-  gpr_atm num_poll_for_work_;  // Number of calls to PollForWork
-  gpr_atm num_work_found_;     // Number of times WORK_FOUND was returned
+  // Counters
+  std::atomic_int num_do_work_;        // Number of calls to DoWork
+  std::atomic_int num_poll_for_work_;  // Number of calls to PollForWork
+  std::atomic_int num_work_found_;  // Number of times WORK_FOUND was returned
 };
 
-void ThreadManagerTest::SleepForMs(int duration_ms) {
-  gpr_timespec sleep_time =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                   gpr_time_from_millis(duration_ms, GPR_TIMESPAN));
-  gpr_sleep_until(sleep_time);
-}
-
-grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
-                                                               bool *ok) {
-  int call_num = gpr_atm_no_barrier_fetch_add(&num_poll_for_work_, 1);
-
-  if (call_num >= kMaxNumPollForWork) {
+grpc::ThreadManager::WorkStatus TestThreadManager::PollForWork(void** tag,
+                                                               bool* ok) {
+  int call_num = num_poll_for_work_.fetch_add(1, std::memory_order_relaxed);
+  if (call_num >= settings_.max_poll_calls) {
     Shutdown();
     return SHUTDOWN;
   }
 
-  // Simulate "polling for work" by sleeping for sometime
-  SleepForMs(kPollingTimeoutMsec);
-
+  // Simulate "polling" duration
+  std::this_thread::sleep_for(
+      std::chrono::milliseconds(settings_.poll_duration_ms));
   *tag = nullptr;
   *ok = true;
 
-  // Return timeout roughly 1 out of every 3 calls
+  // Return timeout roughly 1 out of every 3 calls just to make the test a bit
+  // more interesting
   if (call_num % 3 == 0) {
     return TIMEOUT;
-  } else {
-    gpr_atm_no_barrier_fetch_add(&num_work_found_, 1);
-    return WORK_FOUND;
+  }
+
+  num_work_found_.fetch_add(1, std::memory_order_relaxed);
+  return WORK_FOUND;
+}
+
+class ThreadManagerTest
+    : public ::testing::TestWithParam<TestThreadManagerSettings> {
+ protected:
+  void SetUp() override {
+    grpc_resource_quota* rq = grpc_resource_quota_create("Thread manager test");
+    if (GetParam().thread_limit > 0) {
+      grpc_resource_quota_set_max_threads(rq, GetParam().thread_limit);
+    }
+    for (int i = 0; i < GetParam().thread_manager_count; i++) {
+      thread_manager_.emplace_back(
+          new TestThreadManager("TestThreadManager", rq, GetParam()));
+    }
+    grpc_resource_quota_unref(rq);
+    for (auto& tm : thread_manager_) {
+      tm->Initialize();
+    }
+    for (auto& tm : thread_manager_) {
+      tm->Wait();
+    }
+  }
+
+  std::vector<std::unique_ptr<TestThreadManager>> thread_manager_;
+};
+
+TestThreadManagerSettings scenarios[] = {
+    {2 /* min_pollers */, 10 /* max_pollers */, 10 /* poll_duration_ms */,
+     1 /* work_duration_ms */, 50 /* max_poll_calls */,
+     INT_MAX /* thread_limit */, 1 /* thread_manager_count */},
+    {1 /* min_pollers */, 1 /* max_pollers */, 1 /* poll_duration_ms */,
+     10 /* work_duration_ms */, 50 /* max_poll_calls */, 3 /* thread_limit */,
+     2 /* thread_manager_count */}};
+
+INSTANTIATE_TEST_SUITE_P(ThreadManagerTest, ThreadManagerTest,
+                         ::testing::ValuesIn(scenarios));
+
+TEST_P(ThreadManagerTest, TestPollAndWork) {
+  for (auto& tm : thread_manager_) {
+    // Verify that The number of times DoWork() was called is equal to the
+    // number of times WORK_FOUND was returned
+    gpr_log(GPR_DEBUG, "DoWork() called %d times", tm->num_do_work());
+    EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
+    EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
   }
 }
 
-void ThreadManagerTest::DoWork(void *tag, bool ok) {
-  gpr_atm_no_barrier_fetch_add(&num_do_work_, 1);
-  SleepForMs(kDoWorkDurationMsec);  // Simulate doing work by sleeping
+TEST_P(ThreadManagerTest, TestThreadQuota) {
+  if (GetParam().thread_limit > 0) {
+    for (auto& tm : thread_manager_) {
+      EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
+      EXPECT_LE(tm->GetMaxActiveThreadsSoFar(), GetParam().thread_limit);
+    }
+  }
 }
 
-void ThreadManagerTest::PerformTest() {
-  // Initialize() starts the ThreadManager
-  Initialize();
-
-  // Wait for all the threads to gracefully terminate
-  Wait();
-
-  // The number of times DoWork() was called is equal to the number of times
-  // WORK_FOUND was returned
-  gpr_log(GPR_DEBUG, "DoWork() called %" PRIdPTR " times",
-          gpr_atm_no_barrier_load(&num_do_work_));
-  GPR_ASSERT(gpr_atm_no_barrier_load(&num_do_work_) ==
-             gpr_atm_no_barrier_load(&num_work_found_));
-}
+}  // namespace
 }  // namespace grpc
 
-int main(int argc, char **argv) {
-  std::srand(std::time(NULL));
+int main(int argc, char** argv) {
+  std::srand(std::time(nullptr));
+  grpc::testing::TestEnvironment env(argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
 
-  grpc::testing::InitTest(&argc, &argv, true);
-  grpc::ThreadManagerTest test_rpc_manager;
-  test_rpc_manager.PerformTest();
+  grpc_init();
+  auto ret = RUN_ALL_TESTS();
+  grpc_shutdown();
 
-  return 0;
+  return ret;
 }

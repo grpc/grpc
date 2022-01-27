@@ -1,0 +1,215 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file contains the eds protocol and its dependency.
+//
+// TODO(juanlishen): This file is a hack to avoid a problem we're
+// currently having where we can't depend on a proto file in an external
+// repo due to bazel limitations.  Once that's fixed, this should be
+// removed.  Until this, it should be used in the gRPC tests only, or else it
+// will cause a conflict due to the same proto messages being defined in
+// multiple files in the same binary.
+
+syntax = "proto3";
+
+package envoy.api.v2;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+import "src/proto/grpc/testing/xds/cds_for_test.proto";
+import "src/proto/grpc/testing/xds/eds_for_test.proto";
+
+message RegexMatcher {
+  message GoogleRE2 {
+    google.protobuf.UInt32Value max_program_size = 1;
+  }
+  oneof engine_type {
+    GoogleRE2 google_re2 = 1;
+  }
+  string regex = 2;
+}
+
+message Int64Range {
+  // start of the range (inclusive)
+  int64 start = 1;
+
+  // end of the range (exclusive)
+  int64 end = 2;
+}
+
+message BoolValue {
+  // The bool value.
+  bool value = 1;
+}
+
+message HeaderMatcher {
+  string name = 1;
+  oneof header_match_specifier {
+    string exact_match = 4;
+    RegexMatcher safe_regex_match = 11;
+    Int64Range range_match = 6;
+    bool present_match = 7;
+    string prefix_match = 9;
+    string suffix_match = 10;
+  }
+  bool invert_match = 8;
+}
+
+message QueryParameterMatcher {
+  string name = 1;
+}
+
+message RuntimeFractionalPercent {
+  FractionalPercent default_value = 1;
+}
+
+message RouteMatch {
+  oneof path_specifier {
+    // If specified, the route is a prefix rule meaning that the prefix must
+    // match the beginning of the *:path* header.
+    string prefix = 1;
+    string path = 2;
+    RegexMatcher safe_regex = 10;
+  }
+  BoolValue case_sensitive = 4;
+  repeated QueryParameterMatcher query_parameters = 7;
+  RuntimeFractionalPercent runtime_fraction = 9;
+  repeated HeaderMatcher headers = 6;
+}
+
+message WeightedCluster {
+  message ClusterWeight {
+    string name = 1;
+    google.protobuf.UInt32Value weight = 2;
+  }
+  repeated ClusterWeight clusters = 1;
+  google.protobuf.UInt32Value  total_weight = 3;
+}
+
+message RouteAction {
+  oneof cluster_specifier {
+    // Indicates the upstream cluster to which the request should be routed
+    // to.
+    string cluster = 1;
+
+    // Envoy will determine the cluster to route to by reading the value of the
+    // HTTP header named by cluster_header from the request headers. If the
+    // header is not found or the referenced cluster does not exist, Envoy will
+    // return a 404 response.
+    //
+    // .. attention::
+    //
+    //   Internally, Envoy always uses the HTTP/2 *:authority* header to represent the HTTP/1
+    //   *Host* header. Thus, if attempting to match on *Host*, match on *:authority* instead.
+    string cluster_header = 2;
+    // Multiple upstream clusters can be specified for a given route. The
+    // request is routed to one of the upstream clusters based on weights
+    // assigned to each cluster. See
+    // :ref:`traffic splitting <config_http_conn_man_route_table_traffic_splitting_split>`
+    // for additional documentation.
+    WeightedCluster weighted_clusters = 3;
+  }
+}
+
+message RedirectAction {}
+
+message Route {
+   RouteMatch match = 1;
+
+   oneof action {
+     // Route request to some upstream cluster.
+     RouteAction route = 2;
+
+     // Return a redirect.
+     RedirectAction redirect = 3;
+   }
+}
+
+message VirtualHost {
+  repeated string domains = 2;
+  repeated Route routes = 3;
+}
+
+message Rds {
+  // Configuration source specifier for RDS.
+  ConfigSource config_source = 1;
+
+  // The name of the route configuration. This name will be passed to the RDS
+  // API. This allows an Envoy configuration with multiple HTTP listeners (and
+  // associated HTTP connection manager filters) to use different route
+  // configurations.
+  string route_config_name = 2;
+}
+
+message RouteConfiguration {
+  // The name of the route configuration. For example, it might match
+  // :ref:`route_config_name
+  // <envoy_api_field_config.filter.network.http_connection_manager.v2.Rds.route_config_name>` in
+  // :ref:`envoy_api_msg_config.filter.network.http_connection_manager.v2.Rds`.
+  string name = 1;
+
+  // An array of virtual hosts that make up the route table.
+  repeated VirtualHost virtual_hosts = 2;
+}
+
+message ScopedRoutes {}
+
+message HttpConnectionManager {
+  oneof route_specifier {
+    // The connection manager’s route table will be dynamically loaded via the RDS API.
+    Rds rds = 3;
+
+    // The route table for the connection manager is static and is specified in this property.
+    RouteConfiguration route_config = 4;
+
+    // A route table will be dynamically assigned to each request based on request attributes
+    // (e.g., the value of a header). The "routing scopes" (i.e., route tables) and "scope keys" are
+    // specified in this message.
+    ScopedRoutes scoped_routes = 31;
+  }
+}
+
+message ApiListener {
+  // The type in this field determines the type of API listener. At present, the following
+  // types are supported:
+  //   envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager (HTTP)
+  // [#next-major-version: In the v3 API, replace this Any field with a oneof containing the
+  // specific config message for each type of API listener. We could not do this in v2 because
+  // it would have caused circular dependencies for go protos: lds.proto depends on this file,
+  // and http_connection_manager.proto depends on rds.proto, which is in the same directory as
+  // lds.proto, so lds.proto cannot depend on this file.]
+  google.protobuf.Any api_listener = 1;
+}
+
+message Listener {
+  string name = 1;
+
+  // Used to represent an API listener, which is used in non-proxy clients. The type of API
+  // exposed to the non-proxy application depends on the type of API listener.
+  // When this field is set, no other field except for :ref:`name<envoy_api_field_Listener.name>`
+  // should be set.
+  //
+  // .. note::
+  //
+  //  Currently only one ApiListener can be installed; and it can only be done via bootstrap config,
+  //  not LDS.
+  //
+  // [#next-major-version: In the v3 API, instead of this messy approach where the socket
+  // listener fields are directly in the top-level Listener message and the API listener types
+  // are in the ApiListener message, the socket listener messages should be in their own message,
+  // and the top-level Listener should essentially be a oneof that selects between the
+  // socket listener and the various types of API listener. That way, a given Listener message
+  // can structurally only contain the fields of the relevant type.]
+  ApiListener api_listener = 19;
+}

@@ -16,33 +16,4 @@
  *
  */
 
-#include <grpc++/support/error_details.h>
-
-#include "src/proto/grpc/status/status.pb.h"
-
-namespace grpc {
-
-Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to) {
-  if (to == nullptr) {
-    return Status(StatusCode::FAILED_PRECONDITION, "");
-  }
-  if (!to->ParseFromString(from.error_details())) {
-    return Status(StatusCode::INVALID_ARGUMENT, "");
-  }
-  return Status::OK;
-}
-
-Status SetErrorDetails(const ::google::rpc::Status& from, Status* to) {
-  if (to == nullptr) {
-    return Status(StatusCode::FAILED_PRECONDITION, "");
-  }
-  StatusCode code = StatusCode::UNKNOWN;
-  if (from.code() >= StatusCode::OK &&
-      from.code() <= StatusCode::UNAUTHENTICATED) {
-    code = static_cast<StatusCode>(from.code());
-  }
-  *to = Status(code, from.message(), from.SerializeAsString());
-  return Status::OK;
-}
-
-}  // namespace grpc
+#include <grpcpp/support/error_details.h>

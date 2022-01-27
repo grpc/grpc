@@ -182,6 +182,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_syscall_epoll_ctl", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_fd_cache_hits", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_histogram_slow_lookups", 
         "type": "INTEGER"
       }, 
@@ -1010,6 +1020,16 @@
       {
         "mode": "NULLABLE", 
         "name": "core_pollset_kick_own_thread", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_epoll_ctl", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_fd_cache_hits", 
         "type": "INTEGER"
       }, 
       {
@@ -1875,5 +1895,83 @@
     "mode": "NULLABLE", 
     "name": "serverCpuUsage", 
     "type": "FLOAT"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "testMetadata",
+    "type": "STRING"
+  },
+  {
+    "fields": [
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE", 
+            "name": "name", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "podIP", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "nodeName", 
+            "type": "STRING"
+          }
+        ],
+        "mode": "NULLABLE", 
+        "name": "driver", 
+        "type": "RECORD"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE", 
+            "name": "name", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "podIP", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "nodeName", 
+            "type": "STRING"
+          }
+        ],
+        "mode": "REPEATED", 
+        "name": "servers", 
+        "type": "RECORD"
+      }, 
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE", 
+            "name": "name", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "podIP", 
+            "type": "STRING"
+          }, 
+          {
+            "mode": "NULLABLE", 
+            "name": "nodeName", 
+            "type": "STRING"
+          }
+        ],
+        "mode": "REPEATED", 
+        "name": "clients", 
+        "type": "RECORD"
+      }
+    ], 
+    "mode": "NULLABLE", 
+    "name": "nodeMetadata", 
+    "type": "RECORD"
   }
 ]

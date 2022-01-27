@@ -1,0 +1,21 @@
+actions {
+  create_quota {}
+}
+actions {
+  create_allocator {}
+}
+actions {
+  post_reclaimer {
+    msg {
+      actions {
+        create_quota {}
+      }
+      actions {
+        create_allocator {}
+      }
+      actions {
+        post_reclaimer {}
+      }
+    }
+  }
+}

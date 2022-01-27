@@ -1,3 +1,17 @@
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package http2interop
 
 import (
@@ -58,7 +72,7 @@ func testAllSettingsFramesAcked(ctx *HTTP2InteropCtx) error {
 
 	var settingsFramesReceived = 0
 	// The server by default sends a settings frame as part of the handshake, and another
-	// after the receipt of the initial settings frame as part of our conneection preface.
+	// after the receipt of the initial settings frame as part of our connection preface.
 	// This means we expected 1 + 1 + 10 = 12 settings frames in return, with all but the
 	// first having the ack bit.
 	for settingsFramesReceived < 12 {
@@ -72,7 +86,7 @@ func testAllSettingsFramesAcked(ctx *HTTP2InteropCtx) error {
 			settingsFramesReceived += 1
 			if settingsFramesReceived == 1 {
 				if f.Header.Flags&SETTINGS_FLAG_ACK > 0 {
-					return fmt.Errorf("settings frame should not have used ack: %v")
+					return fmt.Errorf("settings frame should not have used ack: %v", f)
 				}
 				continue
 			}

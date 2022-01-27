@@ -15,21 +15,37 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
+export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
+export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # install cython for all python versions
-python2.7 -m pip install cython setuptools wheel
-python3.4 -m pip install cython setuptools wheel
-python3.5 -m pip install cython setuptools wheel
-python3.6 -m pip install cython setuptools wheel
-
-# needed to build ruby artifacts
-time bash tools/distrib/build_ruby_environment_macos.sh
+python2.7 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.5 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.6 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
+python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
 
 gem install rubygems-update
 update_rubygems
 
-tools/run_tests/task_runner.py -f artifact macos
+# needed to build ruby artifacts
+time bash tools/distrib/build_ruby_environment_macos.sh
+
+tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} || FAILED="true"
+
+tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

@@ -25,8 +25,8 @@
 
 namespace grpc_ruby_generator {
 
-inline bool ServicesFilename(const grpc::protobuf::FileDescriptor *file,
-                             grpc::string *file_name_or_error) {
+inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
+                             std::string* file_name_or_error) {
   // Get output file name.
   static const unsigned proto_suffix_length = 6;  // length of ".proto"
   if (file->name().size() > proto_suffix_length &&
@@ -41,15 +41,15 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor *file,
   }
 }
 
-inline grpc::string MessagesRequireName(
-    const grpc::protobuf::FileDescriptor *file) {
+inline std::string MessagesRequireName(
+    const grpc::protobuf::FileDescriptor* file) {
   return Replace(file->name(), ".proto", "_pb");
 }
 
 // Get leading or trailing comments in a string. Comment lines start with "# ".
-// Leading detached comments are put in in front of leading comments.
+// Leading detached comments are put in front of leading comments.
 template <typename DescriptorType>
-inline grpc::string GetRubyComments(const DescriptorType *desc, bool leading) {
+inline std::string GetRubyComments(const DescriptorType* desc, bool leading) {
   return grpc_generator::GetPrefixedComments(desc, leading, "#");
 }
 

@@ -1,0 +1,26 @@
+install! 'cocoapods', :deterministic_uuids => false
+
+use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
+
+ROOT_DIR = '../../../..'
+
+def grpc_deps
+  pod 'gRPC-ProtoRPC', :path => ROOT_DIR
+  pod 'gRPC', :path => ROOT_DIR
+  pod 'gRPC-Core', :path => ROOT_DIR
+  pod 'gRPC-RxLibrary', :path => ROOT_DIR
+  pod 'RemoteTest', :path => "../RemoteTestClient"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{ROOT_DIR}/src/objective-c"
+  pod 'BoringSSL-GRPC', :podspec => "#{ROOT_DIR}/src/objective-c"
+  pod '!ProtoCompiler', :path => "#{ROOT_DIR}/src/objective-c"
+end
+
+target 'watchOS-sample' do
+platform :ios, '9.0'
+  grpc_deps
+end
+
+target 'watchOS-sample WatchKit Extension' do
+platform :watchos, '4.0'
+  grpc_deps
+end

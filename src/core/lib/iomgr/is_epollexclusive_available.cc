@@ -16,17 +16,20 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
 
-#ifdef GRPC_LINUX_EPOLL
+#include "src/core/lib/iomgr/port.h"
 
-#include <grpc/support/log.h>
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 
 #include <errno.h>
+#include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/sys_epoll_wrapper.h"
 
@@ -37,7 +40,7 @@ bool grpc_is_epollexclusive_available(void) {
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
     if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_DEBUG,
               "epoll_create1 failed with error: %d. Not using epollex polling "
               "engine.",
               fd);
@@ -48,7 +51,7 @@ bool grpc_is_epollexclusive_available(void) {
   int evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (evfd < 0) {
     if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_DEBUG,
               "eventfd failed with error: %d. Not using epollex polling "
               "engine.",
               fd);
@@ -61,8 +64,9 @@ bool grpc_is_epollexclusive_available(void) {
   /* choose events that should cause an error on
      EPOLLEXCLUSIVE enabled kernels - specifically the combination of
      EPOLLONESHOT and EPOLLEXCLUSIVE */
-  ev.events = (uint32_t)(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT);
-  ev.data.ptr = NULL;
+  ev.events =
+      static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE | EPOLLONESHOT);
+  ev.data.ptr = nullptr;
   if (epoll_ctl(fd, EPOLL_CTL_ADD, evfd, &ev) != 0) {
     if (errno != EINVAL) {
       if (!logged_why_not) {
@@ -79,10 +83,24 @@ bool grpc_is_epollexclusive_available(void) {
     }
   } else {
     if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_DEBUG,
               "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT succeeded. This is "
               "evidence of no EPOLLEXCLUSIVE support. Not using "
               "epollex polling engine.");
+      logged_why_not = true;
+    }
+    close(fd);
+    close(evfd);
+    return false;
+  }
+  // Check that EPOLLEXCLUSIVE is supported at all.
+  ev.events = static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLEXCLUSIVE);
+  if (epoll_ctl(fd, EPOLL_CTL_ADD, evfd, &ev) != 0) {
+    if (!logged_why_not) {
+      gpr_log(GPR_DEBUG,
+              "epoll_ctl with EPOLLEXCLUSIVE failed with error: "
+              "%d. Not using epollex polling engine.",
+              errno);
       logged_why_not = true;
     }
     close(fd);

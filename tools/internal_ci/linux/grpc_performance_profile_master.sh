@@ -20,9 +20,9 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 
-tools/jenkins/run_performance_profile_hourly.sh || FAILED="true"
+tools/internal_ci/linux/run_performance_profile_hourly.sh || FAILED="true"
 
-# kill port_server.py to prevent the build from hanging
+# kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
 if [ "$FAILED" != "" ]

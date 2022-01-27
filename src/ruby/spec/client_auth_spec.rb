@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 def create_channel_creds
   test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -30,24 +30,13 @@ end
 
 def create_server_creds
   test_root = File.join(File.dirname(__FILE__), 'testdata')
-  p "test root: #{test_root}"
+  GRPC.logger.info("test root: #{test_root}")
   files = ['ca.pem', 'server1.key', 'server1.pem']
   creds = files.map { |f| File.open(File.join(test_root, f)).read }
   GRPC::Core::ServerCredentials.new(
     creds[0],
     [{ private_key: creds[1], cert_chain: creds[2] }],
     true) # force client auth
-end
-
-# A test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
 end
 
 # a test service that checks the cert of its peer
@@ -70,7 +59,7 @@ class SslTestService
 
   def a_client_streaming_rpc(call)
     check_peer_cert(call)
-    call.each_remote_read.each { |r| p r }
+    call.each_remote_read.each { |r| GRPC.logger.info(r) }
     EchoMsg.new
   end
 
@@ -81,7 +70,7 @@ class SslTestService
 
   def a_bidi_rpc(requests, call)
     check_peer_cert(call)
-    requests.each { |r| p r }
+    requests.each { |r| GRPC.logger.info(r) }
     [EchoMsg.new, EchoMsg.new]
   end
 end
@@ -95,8 +84,11 @@ describe 'client-server auth' do
     server_opts = {
       poll_period: 1
     }
-    @srv = RpcServer.new(**server_opts)
-    port = @srv.add_http2_port('0.0.0.0:0', create_server_creds)
+    @srv = new_rpc_server_for_testing(**server_opts)
+    ssl_creds = create_server_creds
+    xds_creds = GRPC::Core::XdsServerCredentials.new(ssl_creds)
+    port = @srv.add_http2_port('0.0.0.0:0', ssl_creds)
+    xds_port = @srv.add_http2_port('0.0.0.0:0', xds_creds)
     @srv.handle(SslTestService)
     @srv_thd = Thread.new { @srv.run }
     @srv.wait_till_running
@@ -109,6 +101,11 @@ describe 'client-server auth' do
     @stub = SslTestServiceStub.new("localhost:#{port}",
                                    create_channel_creds,
                                    **client_opts)
+    # auth should success as the fallback creds wil be used
+    xds_channel_creds = GRPC::Core::XdsChannelCredentials.new(create_channel_creds)
+    @xds_stub = SslTestServiceStub.new("localhost:#{xds_port}",
+                                       xds_channel_creds,
+                                       **client_opts)
   end
 
   after(:all) do
@@ -127,11 +124,29 @@ describe 'client-server auth' do
 
   it 'client-server auth with server streaming RPCs' do
     responses = @stub.a_server_streaming_rpc(EchoMsg.new)
-    responses.each { |r| p r }
+    responses.each { |r| GRPC.logger.info(r) }
   end
 
   it 'client-server auth with bidi RPCs' do
     responses = @stub.a_bidi_rpc([EchoMsg.new, EchoMsg.new])
-    responses.each { |r| p r }
+    responses.each { |r| GRPC.logger.info(r) }
+  end
+
+  it 'xds_client-xds_server ssl fallback auth with unary RPCs' do
+    @xds_stub.an_rpc(EchoMsg.new)
+  end
+
+  it 'xds_client-xds_server ssl fallback auth with client streaming RPCs' do
+    @xds_stub.a_client_streaming_rpc([EchoMsg.new, EchoMsg.new])
+  end
+
+  it 'xds_client-xds_server ssl fallback auth with server streaming RPCs' do
+    responses = @xds_stub.a_server_streaming_rpc(EchoMsg.new)
+    responses.each { |r| GRPC.logger.info(r) }
+  end
+
+  it 'xds_client-xds_server ssl fallback auth with bidi RPCs' do
+    responses = @xds_stub.a_bidi_rpc([EchoMsg.new, EchoMsg.new])
+    responses.each { |r| GRPC.logger.info(r) }
   end
 end

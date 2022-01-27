@@ -15,3 +15,8 @@ number:
   `include/grpc++/server_builder.h` (commit `6980362`)
 - remove `ClientContext::set_fail_fast()` method from
   `include/grpc++/impl/codegen/client_context.h` (commit `9477724`)
+- remove directory `include/grpc++` and all headers in it
+  (commit `eb06572`)
+- make all `Request` and `Mark` methods in `grpc::Service` take a
+  `size_t` argument for `index` rather than `int` (since that is only
+  used as a vector index)

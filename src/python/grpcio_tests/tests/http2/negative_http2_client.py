@@ -14,11 +14,12 @@
 """The Python client used to test negative http2 conditions."""
 
 import argparse
+import time
 
 import grpc
-import time
-from src.proto.grpc.testing import test_pb2_grpc
+
 from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 
 def _validate_payload_type_and_length(response, expected_type, expected_length):
@@ -102,8 +103,9 @@ def _max_streams(stub):
     for _ in range(15):
         futures.append(stub.UnaryCall.future(_SIMPLE_REQUEST))
     for future in futures:
-        _validate_payload_type_and_length(
-            future.result(), messages_pb2.COMPRESSABLE, _RESPONSE_SIZE)
+        _validate_payload_type_and_length(future.result(),
+                                          messages_pb2.COMPRESSABLE,
+                                          _RESPONSE_SIZE)
 
 
 def _run_test_case(test_case, stub):
@@ -125,21 +127,18 @@ def _run_test_case(test_case, stub):
 
 def _args():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--server_host',
-        help='the host to which to connect',
-        type=str,
-        default="127.0.0.1")
-    parser.add_argument(
-        '--server_port',
-        help='the port to which to connect',
-        type=int,
-        default="8080")
-    parser.add_argument(
-        '--test_case',
-        help='the test case to execute',
-        type=str,
-        default="goaway")
+    parser.add_argument('--server_host',
+                        help='the host to which to connect',
+                        type=str,
+                        default="127.0.0.1")
+    parser.add_argument('--server_port',
+                        help='the port to which to connect',
+                        type=int,
+                        default="8080")
+    parser.add_argument('--test_case',
+                        help='the test case to execute',
+                        type=str,
+                        default="goaway")
     return parser.parse_args()
 
 

@@ -17,16 +17,50 @@
 #ifndef GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 extern const grpc_channel_filter grpc_message_size_filter;
 
-#ifdef __cplusplus
-}
-#endif
+namespace grpc_core {
+
+class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
+ public:
+  struct message_size_limits {
+    int max_send_size;
+    int max_recv_size;
+  };
+
+  MessageSizeParsedConfig(int max_send_size, int max_recv_size) {
+    limits_.max_send_size = max_send_size;
+    limits_.max_recv_size = max_recv_size;
+  }
+
+  const message_size_limits& limits() const { return limits_; }
+
+  static const MessageSizeParsedConfig* GetFromCallContext(
+      const grpc_call_context_element* context);
+
+ private:
+  message_size_limits limits_;
+};
+
+class MessageSizeParser : public ServiceConfigParser::Parser {
+ public:
+  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
+      const grpc_channel_args* /*args*/, const Json& json,
+      grpc_error_handle* error) override;
+
+  static void Register();
+
+  static size_t ParserIndex();
+};
+
+int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args);
+int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_MESSAGE_SIZE_MESSAGE_SIZE_FILTER_H */

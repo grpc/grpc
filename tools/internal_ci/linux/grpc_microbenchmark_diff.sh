@@ -17,7 +17,7 @@
 set -ex
 
 # List of benchmarks that provide good signal for analyzing performance changes in pull requests
-BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
+BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset"
 
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
@@ -25,13 +25,13 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 
 tools/run_tests/start_port_server.py
-tools/jenkins/run_c_cpp_test.sh tools/profiling/bloat/bloat_diff.py \
-  -d origin/$ghprbTargetBranch || FAILED="true"
-tools/jenkins/run_c_cpp_test.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
-  -d origin/$ghprbTargetBranch \
+tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/bloat/bloat_diff.py \
+  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" || FAILED="true"
+tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
+  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH" \
   -b $BENCHMARKS_TO_RUN || FAILED="true"
 
-# kill port_server.py to prevent the build from hanging
+# kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
 if [ "$FAILED" != "" ]

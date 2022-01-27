@@ -16,57 +16,68 @@
  *
  */
 
-#include <grpc++/impl/codegen/config.h>
 #include <gtest/gtest.h>
 
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
+#include <grpc/grpc.h>
+#include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace {
 
 testing::EchoTestService::Service g_service;
 
-grpc::string MakePort() {
+std::string MakePort() {
   std::ostringstream s;
   int p = grpc_pick_unused_port_or_die();
   s << "localhost:" << p;
   return s.str();
 }
 
-grpc::string g_port = MakePort();
+const std::string& GetPort() {
+  static std::string g_port = MakePort();
+  return g_port;
+}
 
-TEST(ServerBuilderTest, NoOp) { ServerBuilder b; }
+class ServerBuilderTest : public ::testing::Test {
+ protected:
+  static void SetUpTestCase() { grpc_init(); }
 
-TEST(ServerBuilderTest, CreateServerNoPorts) {
+  static void TearDownTestCase() { grpc_shutdown(); }
+};
+TEST_F(ServerBuilderTest, NoOp) { ServerBuilder b; }
+
+TEST_F(ServerBuilderTest, CreateServerNoPorts) {
   ServerBuilder().RegisterService(&g_service).BuildAndStart()->Shutdown();
 }
 
-TEST(ServerBuilderTest, CreateServerOnePort) {
+TEST_F(ServerBuilderTest, CreateServerOnePort) {
   ServerBuilder()
       .RegisterService(&g_service)
-      .AddListeningPort(g_port, InsecureServerCredentials())
+      .AddListeningPort(GetPort(), InsecureServerCredentials())
       .BuildAndStart()
       ->Shutdown();
 }
 
-TEST(ServerBuilderTest, CreateServerRepeatedPort) {
+TEST_F(ServerBuilderTest, CreateServerRepeatedPort) {
   ServerBuilder()
       .RegisterService(&g_service)
-      .AddListeningPort(g_port, InsecureServerCredentials())
-      .AddListeningPort(g_port, InsecureServerCredentials())
+      .AddListeningPort(GetPort(), InsecureServerCredentials())
+      .AddListeningPort(GetPort(), InsecureServerCredentials())
       .BuildAndStart()
       ->Shutdown();
 }
 
-TEST(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
+TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
   EXPECT_EQ(ServerBuilder()
                 .RegisterService(&g_service)
-                .AddListeningPort(g_port, InsecureServerCredentials())
-                .AddListeningPort(g_port, InsecureServerCredentials())
+                .AddListeningPort(GetPort(), InsecureServerCredentials())
+                .AddListeningPort(GetPort(), InsecureServerCredentials())
                 .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
                 .BuildAndStart(),
             nullptr);
@@ -76,6 +87,8 @@ TEST(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  return ret;
 }

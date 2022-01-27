@@ -1,12 +1,17 @@
-# Install dotnet SDK based on https://www.microsoft.com/net/core#debian
-RUN apt-get update && apt-get install -y curl libunwind8 gettext
-# dotnet-dev-1.0.0-preview2-003131
-RUN curl -sSL -o dotnet100.tar.gz https://go.microsoft.com/fwlink/?LinkID=827530
-RUN mkdir -p /opt/dotnet && tar zxf dotnet100.tar.gz -C /opt/dotnet
-# dotnet-dev-1.0.1
-RUN curl -sSL -o dotnet101.tar.gz https://go.microsoft.com/fwlink/?LinkID=843453
-RUN mkdir -p /opt/dotnet && tar zxf dotnet101.tar.gz -C /opt/dotnet
-RUN ln -s /opt/dotnet/dotnet /usr/local/bin
+# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
+RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.1.415/dotnet-sdk-3.1.415-linux-x64.tar.gz ${'\\'}
+    && mkdir -p /usr/share/dotnet ${'\\'}
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet ${'\\'}
+    && rm dotnet.tar.gz
+
+# Install .NET 6
+RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/6.0.100/dotnet-sdk-6.0.100-linux-x64.tar.gz ${'\\'}
+    && mkdir -p /usr/share/dotnet ${'\\'}
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet ${'\\'}
+    && rm dotnet.tar.gz
+
+# Make sure "dotnet" is on PATH
+RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
 
 # Trigger the population of the local package cache
 ENV NUGET_XMLDOC_MODE skip

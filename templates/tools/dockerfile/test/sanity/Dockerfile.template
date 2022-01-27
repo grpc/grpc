@@ -13,47 +13,52 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-  
-  FROM debian:jessie
-  
+
+  FROM debian:11
+
   <%include file="../../apt_get_basic.include"/>
+  <%include file="../../cxx_deps.include"/>
+
+  # Install Python 3.7 from source (and installed as a default python3)
+  # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
+  RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev ${'\\'}
+                              libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
+  RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && ${'\\'}
+  tar -xf Python-3.7.9.tar.xz && ${'\\'}
+  cd Python-3.7.9 && ${'\\'}
+  ./configure && ${'\\'}
+  make -j 4 && ${'\\'}
+  make install
+  RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+
   <%include file="../../gcp_api_libraries.include"/>
-  <%include file="../../python_deps.include"/>
+  <%include file="../../run_tests_addons.include"/>
+
   #========================
   # Sanity test dependencies
+
   RUN apt-get update && apt-get install -y ${"\\"}
-        python-pip ${"\\"}
         autoconf ${"\\"}
         automake ${"\\"}
         libtool ${"\\"}
         curl ${"\\"}
-        python-virtualenv ${"\\"}
-        python-lxml
-  RUN pip install simplejson mako
-  
-  #======================================
-  # More sanity test dependencies (bazel)
-  RUN echo "deb http://http.debian.net/debian jessie-backports main" >> /etc/apt/sources.list
-  RUN apt-get update
-  RUN apt-get install -y -t jessie-backports openjdk-8-jdk
+        shellcheck
 
-  #========================
-  # Bazel installation
-  RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
-  RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-  RUN apt-get -y update
-  RUN apt-get -y install bazel
+  # otherwise clang-tidy will report missing <gtest/gtest.h> header
+  RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
 
-  # Pin Bazel to 0.4.4
-  # Installing Bazel via apt-get first is required before installing 0.4.4 to
-  # allow gRPC to build without errors. See https://github.com/grpc/grpc/issues/10553
-  RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.4/bazel-0.4.4-installer-linux-x86_64.sh
-  RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
-  RUN ./bazel-0.4.4-installer-linux-x86_64.sh
-  
-  <%include file="../../clang_format.include"/>
-  <%include file="../../run_tests_addons.include"/>
-  
+  RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
+
+  # Upgrade Python's YAML library
+  RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
+
+  # Install clang, clang-format, and clang-tidy
+  RUN apt-get update && apt-get install -y clang clang-format-11 clang-tidy-11 jq
+  ENV CLANG_FORMAT=clang-format-11
+  ENV CLANG_TIDY=clang-tidy-11
+
+  <%include file="../../bazel.include"/>
+  <%include file="../../buildifier.include"/>
+
   # Define the default command.
   CMD ["bash"]
-  

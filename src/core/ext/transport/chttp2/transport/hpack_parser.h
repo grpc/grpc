@@ -19,104 +19,117 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
-#include <grpc/support/port_platform.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_table.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
+// Top level interface for parsing a sequence of header, continuation frames.
+class HPackParser {
+ public:
+  // What kind of stream boundary is provided by this frame?
+  enum class Boundary : uint8_t {
+    // More continuations are expected
+    None,
+    // This marks the end of headers, so data frames should follow
+    EndOfHeaders,
+    // This marks the end of headers *and* the end of the stream
+    EndOfStream
+  };
+  // What kind of priority is represented in the next frame
+  enum class Priority : uint8_t {
+    // No priority field
+    None,
+    // Yes there's a priority field
+    Included
+  };
+  // Details about a frame we only need to know for logging
+  struct LogInfo {
+    // The stream ID
+    uint32_t stream_id;
+    // Headers or trailers?
+    enum Type : uint8_t {
+      kHeaders,
+      kTrailers,
+      kDontKnow,
+    };
+    Type type;
+    // Client or server?
+    bool is_client;
+  };
 
-typedef grpc_error *(*grpc_chttp2_hpack_parser_state)(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_hpack_parser *p, const uint8_t *beg,
-    const uint8_t *end);
+  HPackParser();
+  ~HPackParser();
 
-typedef struct {
-  bool copied;
-  struct {
-    grpc_slice referenced;
-    struct {
-      char *str;
-      uint32_t length;
-      uint32_t capacity;
-    } copied;
-  } data;
-} grpc_chttp2_hpack_parser_string;
+  // Non-copyable/movable
+  HPackParser(const HPackParser&) = delete;
+  HPackParser& operator=(const HPackParser&) = delete;
 
-struct grpc_chttp2_hpack_parser {
-  /* user specified callback for each header output */
-  void (*on_header)(grpc_exec_ctx *exec_ctx, void *user_data, grpc_mdelem md);
-  void *on_header_user_data;
+  // Begin parsing a new frame
+  // Sink receives each parsed header,
+  void BeginFrame(grpc_metadata_batch* metadata_buffer,
+                  uint32_t metadata_size_limit, Boundary boundary,
+                  Priority priority, LogInfo log_info);
+  // Start throwing away any received headers after parsing them.
+  void StopBufferingFrame() { metadata_buffer_ = nullptr; }
+  // Parse one slice worth of data
+  grpc_error_handle Parse(const grpc_slice& slice, bool is_last);
+  // Reset state ready for the next BeginFrame
+  void FinishFrame();
 
-  grpc_error *last_error;
+  // Retrieve the associated hpack table (for tests, debugging)
+  HPackTable* hpack_table() { return &table_; }
+  // Is the current frame a boundary of some sort
+  bool is_boundary() const { return boundary_ != Boundary::None; }
+  // Is the current frame the end of a stream
+  bool is_eof() const { return boundary_ == Boundary::EndOfStream; }
 
-  /* current parse state - or a function that implements it */
-  grpc_chttp2_hpack_parser_state state;
-  /* future states dependent on the opening op code */
-  const grpc_chttp2_hpack_parser_state *next_state;
-  /* what to do after skipping prioritization data */
-  grpc_chttp2_hpack_parser_state after_prioritization;
-  /* the refcount of the slice that we're currently parsing */
-  grpc_slice_refcount *current_slice_refcount;
-  /* the value we're currently parsing */
-  union {
-    uint32_t *value;
-    grpc_chttp2_hpack_parser_string *str;
-  } parsing;
-  /* string parameters for each chunk */
-  grpc_chttp2_hpack_parser_string key;
-  grpc_chttp2_hpack_parser_string value;
-  /* parsed index */
-  uint32_t index;
-  /* length of source bytes for the currently parsing string */
-  uint32_t strlen;
-  /* number of source bytes read for the currently parsing string */
-  uint32_t strgot;
-  /* huffman decoding state */
-  int16_t huff_state;
-  /* is the string being decoded binary? */
-  uint8_t binary;
-  /* is the current string huffman encoded? */
-  uint8_t huff;
-  /* is a dynamic table update allowed? */
-  uint8_t dynamic_table_update_allowed;
-  /* set by higher layers, used by grpc_chttp2_header_parser_parse to signal
-     it should append a metadata boundary at the end of frame */
-  uint8_t is_boundary;
-  uint8_t is_eof;
-  uint32_t base64_buffer;
+ private:
+  // Helper classes: see implementation
+  class Parser;
+  class Input;
+  class String;
 
-  /* hpack table */
-  grpc_chttp2_hptbl table;
+  grpc_error_handle ParseInput(Input input, bool is_last);
+  bool ParseInputInner(Input* input);
+
+  // Target metadata buffer
+  grpc_metadata_batch* metadata_buffer_ = nullptr;
+
+  // Bytes that could not be parsed last parsing round
+  std::vector<uint8_t> unparsed_bytes_;
+  // Buffer kind of boundary
+  // TODO(ctiller): see if we can move this argument to Parse, and avoid
+  // buffering.
+  Boundary boundary_;
+  // Buffer priority
+  // TODO(ctiller): see if we can move this argument to Parse, and avoid
+  // buffering.
+  Priority priority_;
+  uint8_t dynamic_table_updates_allowed_;
+  // Length of frame so far.
+  uint32_t frame_length_;
+  uint32_t metadata_size_limit_;
+  // Information for logging
+  LogInfo log_info_;
+
+  // hpack table
+  HPackTable table_;
 };
 
-void grpc_chttp2_hpack_parser_init(grpc_exec_ctx *exec_ctx,
-                                   grpc_chttp2_hpack_parser *p);
-void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx *exec_ctx,
-                                      grpc_chttp2_hpack_parser *p);
-
-void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p);
-
-grpc_error *grpc_chttp2_hpack_parser_parse(grpc_exec_ctx *exec_ctx,
-                                           grpc_chttp2_hpack_parser *p,
-                                           grpc_slice slice);
+}  // namespace grpc_core
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
-grpc_error *grpc_chttp2_header_parser_parse(grpc_exec_ctx *exec_ctx,
-                                            void *hpack_parser,
-                                            grpc_chttp2_transport *t,
-                                            grpc_chttp2_stream *s,
-                                            grpc_slice slice, int is_last);
-
-#ifdef __cplusplus
-}
-#endif
+grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
+                                                  grpc_chttp2_transport* t,
+                                                  grpc_chttp2_stream* s,
+                                                  const grpc_slice& slice,
+                                                  int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

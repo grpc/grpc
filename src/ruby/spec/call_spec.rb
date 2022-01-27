@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 include GRPC::Core::StatusCodes
 
@@ -171,7 +171,7 @@ describe GRPC::Core::Call do
   end
 
   def make_test_call
-    @ch.create_call(nil, nil, 'dummy_method', nil, deadline)
+    @ch.create_call(nil, nil, 'phony_method', nil, deadline)
   end
 
   def deadline

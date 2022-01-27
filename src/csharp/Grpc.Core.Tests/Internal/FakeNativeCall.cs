@@ -31,43 +31,44 @@ namespace Grpc.Core.Internal.Tests
     /// </summary>
     internal class FakeNativeCall : INativeCall
     {
-        public UnaryResponseClientHandler UnaryResponseClientHandler
+        private bool shouldStartCallFail;
+        public IUnaryResponseClientCallback UnaryResponseClientCallback
         {
             get;
             set;
         }
 
-        public ReceivedStatusOnClientHandler ReceivedStatusOnClientHandler
+        public IReceivedStatusOnClientCallback ReceivedStatusOnClientCallback
         {
             get;
             set;
         }
 
-        public ReceivedMessageHandler ReceivedMessageHandler
+        public IReceivedMessageCallback ReceivedMessageCallback
         {
             get;
             set;
         }
 
-        public ReceivedResponseHeadersHandler ReceivedResponseHeadersHandler
+        public IReceivedResponseHeadersCallback ReceivedResponseHeadersCallback
         {
             get;
             set;
         }
 
-        public SendCompletionHandler SendCompletionHandler
+        public ISendCompletionCallback SendCompletionCallback
         {
             get;
             set;
         }
 
-        public SendCompletionHandler SendStatusFromServerHandler
+        public ISendStatusFromServerCompletionCallback SendStatusFromServerCallback
         {
             get;
             set;
         }
 
-        public ReceivedCloseOnServerHandler ReceivedCloseOnServerHandler
+        public IReceivedCloseOnServerCallback ReceivedCloseOnServerCallback
         {
             get;
             set;
@@ -100,70 +101,92 @@ namespace Grpc.Core.Internal.Tests
             return "PEER";
         }
 
-        public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(IUnaryResponseClientCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            UnaryResponseClientHandler = callback;
+            StartCallMaybeFail();
+            UnaryResponseClientCallback = callback;
         }
 
-        public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(BatchContextSafeHandle ctx, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
+            StartCallMaybeFail();
             throw new NotImplementedException();
         }
 
-        public void StartClientStreaming(UnaryResponseClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartClientStreaming(IUnaryResponseClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            UnaryResponseClientHandler = callback;
+            StartCallMaybeFail();
+            UnaryResponseClientCallback = callback;
         }
 
-        public void StartServerStreaming(ReceivedStatusOnClientHandler callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartServerStreaming(IReceivedStatusOnClientCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            ReceivedStatusOnClientHandler = callback;
+            StartCallMaybeFail();
+            ReceivedStatusOnClientCallback = callback;
         }
 
-        public void StartDuplexStreaming(ReceivedStatusOnClientHandler callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartDuplexStreaming(IReceivedStatusOnClientCallback callback, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            ReceivedStatusOnClientHandler = callback;
+            StartCallMaybeFail();
+            ReceivedStatusOnClientCallback = callback;
         }
 
-        public void StartReceiveMessage(ReceivedMessageHandler callback)
+        public void StartReceiveMessage(IReceivedMessageCallback callback)
         {
-            ReceivedMessageHandler = callback;
+            ReceivedMessageCallback = callback;
         }
 
-        public void StartReceiveInitialMetadata(ReceivedResponseHeadersHandler callback)
+        public void StartReceiveInitialMetadata(IReceivedResponseHeadersCallback callback)
         {
-            ReceivedResponseHeadersHandler = callback;
+            ReceivedResponseHeadersCallback = callback;
         }
 
-        public void StartSendInitialMetadata(SendCompletionHandler callback, MetadataArraySafeHandle metadataArray)
+        public void StartSendInitialMetadata(ISendCompletionCallback callback, MetadataArraySafeHandle metadataArray)
         {
-            SendCompletionHandler = callback;
+            SendCompletionCallback = callback;
         }
 
-        public void StartSendMessage(SendCompletionHandler callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
+        public void StartSendMessage(ISendCompletionCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
         {
-            SendCompletionHandler = callback;
+            SendCompletionCallback = callback;
         }
 
-        public void StartSendCloseFromClient(SendCompletionHandler callback)
+        public void StartSendCloseFromClient(ISendCompletionCallback callback)
         {
-            SendCompletionHandler = callback;
+            SendCompletionCallback = callback;
         }
 
-        public void StartSendStatusFromServer(SendCompletionHandler callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
-            byte[] optionalPayload, WriteFlags writeFlags)
+        public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+            SliceBufferSafeHandle payload, WriteFlags writeFlags)
         {
-            SendStatusFromServerHandler = callback;
+            SendStatusFromServerCallback = callback;
         }
 
-        public void StartServerSide(ReceivedCloseOnServerHandler callback)
+        public void StartServerSide(IReceivedCloseOnServerCallback callback)
         {
-            ReceivedCloseOnServerHandler = callback;
+            ReceivedCloseOnServerCallback = callback;
         }
 
         public void Dispose()
         {
             IsDisposed = true;
+        }
+
+        /// <summary>
+        /// Emulate CallSafeHandle.CheckOk() failure for all future attempts
+        /// to start a call.
+        /// </summary>
+        public void MakeStartCallFail()
+        {
+            shouldStartCallFail = true;
+        }
+
+        private void StartCallMaybeFail()
+        {
+            if (shouldStartCallFail)
+            {
+                throw new InvalidOperationException("Start call has failed.");
+            }
         }
     }
 }

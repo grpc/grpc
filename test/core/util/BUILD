@@ -12,78 +12,89 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
-grpc_package(name = "test/core/util", visibility = "public")
-
-grpc_cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "memory_counters.c",
-        "test_config.c",
-    ],
-    hdrs = [
-        "memory_counters.h",
-        "test_config.h",
-    ],
-    deps = ["//:gpr"],
+grpc_package(
+    name = "test/core/util",
+    visibility = "public",
 )
 
 grpc_cc_library(
-    name = "grpc_debugger_macros",
-    srcs = [
-        "debugger_macros.cc",
-    ],
-    hdrs = [
-        "debugger_macros.h",
-    ],
-    deps = [
-        ":gpr_test_util",
-        "//:grpc_common",
+    name = "grpc_suppressions",
+    data = [
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
-        "grpc_profiler.c",
-        "mock_endpoint.c",
-        "parse_hexstring.c",
-        "passthru_endpoint.c",
-        "port.c",
-        "port_server_client.c",
-        "reconnect_server.c",
-        "slice_splitter.c",
-        "test_tcp_server.c",
-        "trickle_endpoint.c",
+        "cmdline.cc",
+        "fuzzer_util.cc",
+        "grpc_profiler.cc",
+        "histogram.cc",
+        "memory_counters.cc",
+        "mock_endpoint.cc",
+        "parse_hexstring.cc",
+        "passthru_endpoint.cc",
+        "port.cc",
+        "port_isolated_runtime_environment.cc",
+        "port_server_client.cc",
+        "reconnect_server.cc",
+        "resolve_localhost_ip46.cc",
+        "slice_splitter.cc",
+        "subprocess_posix.cc",
+        "subprocess_windows.cc",
+        "test_config.cc",
+        "test_tcp_server.cc",
+        "tracer_util.cc",
     ],
     hdrs = [
+        "cmdline.h",
+        "evaluate_args_test_util.h",
+        "fuzzer_util.h",
         "grpc_profiler.h",
+        "histogram.h",
+        "memory_counters.h",
+        "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
         "port.h",
         "port_server_client.h",
         "reconnect_server.h",
+        "resolve_localhost_ip46.h",
         "slice_splitter.h",
+        "subprocess.h",
+        "test_config.h",
         "test_tcp_server.h",
-        "trickle_endpoint.h",
+        "tracer_util.h",
     ],
-    language = "C",
+    external_deps = [
+        "absl/debugging:failure_signal_handler",
+        "absl/debugging:symbolize",
+        "absl/strings:str_format",
+    ],
+    language = "C++",
     deps = [
-        ":gpr_test_util",
+        ":build",
+        ":grpc_suppressions",
+        ":stack_tracer",
+        "//:gpr",
+        "//:grpc_base",
         "//:grpc_common",
-        ":grpc_debugger_macros"
     ],
 )
 
 grpc_cc_library(
     name = "grpc_test_util",
-    srcs = [],
-    hdrs = [],
-    language = "C",
+    srcs = ["tls_utils.cc"],
+    hdrs = ["tls_utils.h"],
+    language = "C++",
     deps = [
         ":grpc_test_util_base",
         "//:grpc",
@@ -94,27 +105,127 @@ grpc_cc_library(
     name = "grpc_test_util_unsecure",
     srcs = [],
     hdrs = [],
-    language = "C",
+    language = "C++",
     deps = [
         ":grpc_test_util_base",
         "//:grpc_unsecure",
     ],
 )
 
+grpc_cc_test(
+    name = "cmdline_test",
+    srcs = ["cmdline_test.cc"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
+    ],
+)
+
 grpc_cc_library(
     name = "fuzzer_corpus_test",
+    testonly = 1,
     srcs = ["fuzzer_corpus_test.cc"],
-    deps = [
-        ":gpr_test_util",
-        "//:grpc",
-    ],
     external_deps = [
+        "absl/flags:flag",
         "gtest",
-        "gflags",
+    ],
+    linkstatic = True,
+    tags = ["no_windows"],
+    deps = [
+        ":grpc_test_util",
+        "//:grpc",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "histogram_test",
+    srcs = ["histogram_test.cc"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
     ],
 )
 
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
+)
+
+sh_library(
+    name = "run_with_poller_sh",
+    srcs = ["run_with_poller.sh"],
+)
+
+grpc_cc_library(
+    name = "stack_tracer",
+    srcs = [
+        "stack_tracer.cc",
+    ],
+    hdrs = [
+        "stack_tracer.h",
+    ],
+    external_deps = [
+        "absl/debugging:stacktrace",
+        "absl/debugging:symbolize",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc_common",
+    ],
+)
+
+grpc_cc_test(
+    name = "stack_tracer_test",
+    srcs = [
+        "stack_tracer_test.cc",
+    ],
+    external_deps = [
+        "absl/debugging:symbolize",
+        "gtest",
+    ],
+    language = "C++",
+    # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        ":grpc_test_util",
+        ":stack_tracer",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_lb_policies",
+    testonly = 1,
+    srcs = ["test_lb_policies.cc"],
+    hdrs = ["test_lb_policies.h"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_udp_and_tcp_server",
+    srcs = ["fake_udp_and_tcp_server.cc"],
+    hdrs = ["fake_udp_and_tcp_server.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "C++",
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
+    name = "build",
+    srcs = ["build.cc"],
+    hdrs = ["build.h"],
 )

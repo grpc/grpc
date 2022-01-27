@@ -1,0 +1,42 @@
+# Configuration for mac bazel test runs on CI
+# Bazel RBE doesn't currently support MacOS platform,
+# so we configure tests to build and run locally,
+# but try to use RBE build cache and upload results
+# to ResultStore
+
+startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
+
+# remote cache is needed not only for build speedup,
+# but also for the test logs to be available in ResultStore
+# for now, don't upload results to cache, only the test logs.
+# TODO(jtattermusch): setup a "cache-silo-key" before enabling uploads to build cache
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build --remote_instance_name=projects/grpc-testing/instances/default_instance
+build --remote_upload_local_results=false
+
+build --auth_enabled=true
+
+build --verbose_failures=true
+
+build --test_tag_filters=-no_mac
+build --build_tag_filters=-no_mac
+
+# without verbose gRPC logs the test outputs are not very useful
+test --test_env=GRPC_VERBOSITY=debug
+
+# Set flags for uploading to BES in order to view results in the Bazel Build
+# Results UI.
+build --bes_backend=grpcs://buildeventservice.googleapis.com
+build --bes_timeout=600s
+build --bes_results_url="https://source.cloud.google.com/results/invocations/"
+build --project_id=grpc-testing
+
+# print output for tests that fail (default is "summary")
+build --test_output=errors
+
+# Enable strict warnings to keep it warning-free.
+build --define=use_strict_warning=true
+
+# Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
+# https://github.com/bazelbuild/bazel/issues/9190
+build --dynamic_mode=off

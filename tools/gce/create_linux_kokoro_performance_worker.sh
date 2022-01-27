@@ -15,22 +15,29 @@
 
 # Creates a performance worker on GCE to be used on Kokoro.
 
+# IMPORTANT: Instructions for updating
+# If the VM configuration / installed software is updated,
+# - all existing performance worker VMs need to be updated to reflect the changes
+# - a new GCE image named "grpc-performance-kokoro-v1" needs to be created,
+#   incrementing the version number.
+# - kokoro jobs need to be reconfigured to use the new image version
+
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
 
 INSTANCE_NAME="${1:-grpc-kokoro-performance-server1}"
-MACHINE_TYPE=n1-standard-32
+MACHINE_TYPE=e2-standard-32
 
-gcloud compute instances create $INSTANCE_NAME \
+gcloud compute instances create "$INSTANCE_NAME" \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
     --image-project ubuntu-os-cloud \
-    --image-family ubuntu-1704 \
+    --image-family ubuntu-1804-lts \
     --boot-disk-size 300 \
     --scopes https://www.googleapis.com/auth/bigquery \
     --tags=allow-ssh
@@ -41,9 +48,9 @@ sleep 60
 gcloud compute copy-files \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    kokoro_performance.pub linux_kokoro_performance_worker_init.sh kbuilder@${INSTANCE_NAME}:~
+    kokoro_performance.pub linux_kokoro_performance_worker_init.sh "kbuilder@${INSTANCE_NAME}":~
 
 gcloud compute ssh \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    kbuilder@${INSTANCE_NAME} --command "./linux_kokoro_performance_worker_init.sh"
+    "kbuilder@${INSTANCE_NAME}" --command "./linux_kokoro_performance_worker_init.sh"

@@ -16,25 +16,27 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
-  *out++ = (uint8_t)(length >> 16);
-  *out++ = (uint8_t)(length >> 8);
-  *out++ = (uint8_t)(length);
+static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
+  *out++ = static_cast<uint8_t>(length >> 16);
+  *out++ = static_cast<uint8_t>(length >> 8);
+  *out++ = static_cast<uint8_t>(length);
   *out++ = GRPC_CHTTP2_FRAME_SETTINGS;
   *out++ = flags;
   *out++ = 0;
@@ -44,13 +46,13 @@ static uint8_t *fill_header(uint8_t *out, uint32_t length, uint8_t flags) {
   return out;
 }
 
-grpc_slice grpc_chttp2_settings_create(uint32_t *old_settings,
-                                       const uint32_t *new_settings,
+grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
+                                       const uint32_t* new_settings,
                                        uint32_t force_mask, size_t count) {
   size_t i;
   uint32_t n = 0;
   grpc_slice output;
-  uint8_t *p;
+  uint8_t* p;
 
   for (i = 0; i < count; i++) {
     n += (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0);
@@ -61,12 +63,12 @@ grpc_slice grpc_chttp2_settings_create(uint32_t *old_settings,
 
   for (i = 0; i < count; i++) {
     if (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0) {
-      *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i] >> 8);
-      *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i]);
-      *p++ = (uint8_t)(new_settings[i] >> 24);
-      *p++ = (uint8_t)(new_settings[i] >> 16);
-      *p++ = (uint8_t)(new_settings[i] >> 8);
-      *p++ = (uint8_t)(new_settings[i]);
+      *p++ = static_cast<uint8_t>(grpc_setting_id_to_wire_id[i] >> 8);
+      *p++ = static_cast<uint8_t>(grpc_setting_id_to_wire_id[i]);
+      *p++ = static_cast<uint8_t>(new_settings[i] >> 24);
+      *p++ = static_cast<uint8_t>(new_settings[i] >> 16);
+      *p++ = static_cast<uint8_t>(new_settings[i] >> 8);
+      *p++ = static_cast<uint8_t>(new_settings[i]);
       old_settings[i] = new_settings[i];
     }
   }
@@ -82,9 +84,9 @@ grpc_slice grpc_chttp2_settings_ack_create(void) {
   return output;
 }
 
-grpc_error *grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser *parser, uint32_t length, uint8_t flags,
-    uint32_t *settings) {
+grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
+    grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
+    uint32_t* settings) {
   parser->target_settings = settings;
   memcpy(parser->incoming_settings, settings,
          GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
@@ -108,14 +110,31 @@ grpc_error *grpc_chttp2_settings_parser_begin_frame(
   }
 }
 
-grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
-                                              grpc_chttp2_transport *t,
-                                              grpc_chttp2_stream *s,
-                                              grpc_slice slice, int is_last) {
-  grpc_chttp2_settings_parser *parser = (grpc_chttp2_settings_parser *)p;
-  const uint8_t *cur = GRPC_SLICE_START_PTR(slice);
-  const uint8_t *end = GRPC_SLICE_END_PTR(slice);
-  char *msg;
+namespace {
+
+void StreamFlowControlWindowCheck(void* user_data, uint32_t /* key */,
+                                  void* stream) {
+  bool* error = static_cast<bool*>(user_data);
+  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+  if ((s->t->settings[GRPC_PEER_SETTINGS]
+                     [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] +
+       s->t->initial_window_update + s->flow_control->remote_window_delta()) >
+      ((1u << 31) - 1)) {
+    *error = true;
+  }
+}
+
+}  // namespace
+
+grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
+                                                    grpc_chttp2_transport* t,
+                                                    grpc_chttp2_stream* /*s*/,
+                                                    const grpc_slice& slice,
+                                                    int is_last) {
+  grpc_chttp2_settings_parser* parser =
+      static_cast<grpc_chttp2_settings_parser*>(p);
+  const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* end = GRPC_SLICE_END_PTR(slice);
   grpc_chttp2_setting_id id;
 
   if (parser->is_ack) {
@@ -130,45 +149,52 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
           if (is_last) {
             memcpy(parser->target_settings, parser->incoming_settings,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
+            t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            if (t->notify_on_receive_settings != nullptr) {
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                                      t->notify_on_receive_settings,
+                                      GRPC_ERROR_NONE);
+              t->notify_on_receive_settings = nullptr;
+            }
           }
           return GRPC_ERROR_NONE;
         }
-        parser->id = (uint16_t)(((uint16_t)*cur) << 8);
+        parser->id = static_cast<uint16_t>((static_cast<uint16_t>(*cur)) << 8);
         cur++;
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_ID1:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_ID1;
           return GRPC_ERROR_NONE;
         }
-        parser->id = (uint16_t)(parser->id | (*cur));
+        parser->id = static_cast<uint16_t>(parser->id | (*cur));
         cur++;
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL0:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL0;
           return GRPC_ERROR_NONE;
         }
-        parser->value = ((uint32_t)*cur) << 24;
+        parser->value = (static_cast<uint32_t>(*cur)) << 24;
         cur++;
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL1:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL1;
           return GRPC_ERROR_NONE;
         }
-        parser->value |= ((uint32_t)*cur) << 16;
+        parser->value |= (static_cast<uint32_t>(*cur)) << 16;
         cur++;
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL2:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL2;
           return GRPC_ERROR_NONE;
         }
-        parser->value |= ((uint32_t)*cur) << 8;
+        parser->value |= (static_cast<uint32_t>(*cur)) << 8;
         cur++;
-      /* fallthrough */
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_SPS_VAL3:
         if (cur == end) {
           parser->state = GRPC_CHTTP2_SPS_VAL3;
@@ -180,44 +206,64 @@ grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx, void *p,
         cur++;
 
         if (grpc_wire_id_to_setting_id(parser->id, &id)) {
-          const grpc_chttp2_setting_parameters *sp =
+          const grpc_chttp2_setting_parameters* sp =
               &grpc_chttp2_settings_parameters[id];
+          // If flow control is disabled we skip these.
+          if (!t->flow_control->flow_control_enabled() &&
+              (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE ||
+               id == GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE)) {
+            continue;
+          }
           if (parser->value < sp->min_value || parser->value > sp->max_value) {
             switch (sp->invalid_value_behavior) {
               case GRPC_CHTTP2_CLAMP_INVALID_VALUE:
-                parser->value =
-                    GPR_CLAMP(parser->value, sp->min_value, sp->max_value);
+                parser->value = grpc_core::Clamp(parser->value, sp->min_value,
+                                                 sp->max_value);
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
                 grpc_chttp2_goaway_append(
                     t->last_new_stream_id, sp->error_value,
                     grpc_slice_from_static_string("HTTP2 settings error"),
                     &t->qbuf);
-                gpr_asprintf(&msg, "invalid value %u passed for %s",
-                             parser->value, sp->name);
-                grpc_error *err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-                gpr_free(msg);
-                return err;
+                return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                    "invalid value %u passed for %s", parser->value, sp->name));
             }
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
               parser->incoming_settings[id] != parser->value) {
-            t->initial_window_update +=
-                (int64_t)parser->value - parser->incoming_settings[id];
-            if (GRPC_TRACER_ON(grpc_http_trace) ||
-                GRPC_TRACER_ON(grpc_flowctl_trace)) {
-              gpr_log(GPR_DEBUG, "%p[%s] adding %d for initial_window change",
-                      t, t->is_client ? "cli" : "svr",
-                      (int)t->initial_window_update);
+            t->initial_window_update += static_cast<int64_t>(parser->value) -
+                                        parser->incoming_settings[id];
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+                GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
+              gpr_log(GPR_INFO, "%p[%s] adding %d for initial_window change", t,
+                      t->is_client ? "cli" : "svr",
+                      static_cast<int>(t->initial_window_update));
+            }
+            if (grpc_core::chttp2::
+                    g_test_only_transport_flow_control_window_check) {
+              bool error = false;
+              if (parser->value > grpc_core::chttp2::kMaxInitialWindowSize ||
+                  parser->value < grpc_core::chttp2::kMinInitialWindowSize) {
+                error = true;
+              } else {
+                grpc_chttp2_stream_map_for_each(
+                    &t->stream_map, StreamFlowControlWindowCheck, &error);
+              }
+              if (error) {
+                grpc_chttp2_goaway_append(
+                    t->last_new_stream_id, sp->error_value,
+                    grpc_slice_from_static_string("HTTP2 settings error"),
+                    &t->qbuf);
+              }
             }
           }
           parser->incoming_settings[id] = parser->value;
-          if (GRPC_TRACER_ON(grpc_http_trace)) {
-            gpr_log(GPR_DEBUG, "CHTTP2:%s:%s: got setting %s = %d",
-                    t->is_client ? "CLI" : "SVR", t->peer_string, sp->name,
-                    parser->value);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+            gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
+                    t->is_client ? "CLI" : "SVR", t->peer_string.c_str(),
+                    sp->name, parser->value);
           }
-        } else if (GRPC_TRACER_ON(grpc_http_trace)) {
+        } else if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
           gpr_log(GPR_ERROR, "CHTTP2: Ignoring unknown setting %d (value %d)",
                   parser->id, parser->value);
         }

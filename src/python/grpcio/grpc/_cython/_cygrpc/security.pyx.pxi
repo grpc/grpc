@@ -14,14 +14,16 @@
 
 from libc.string cimport memcpy
 
-import pkg_resources
+import pkgutil
 
 
 cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
     char **pem_root_certs) nogil:
   with gil:
-    temporary_pem_root_certs = pkg_resources.resource_string(
-        __name__.rstrip('.cygrpc'), '_credentials/roots.pem')
+    pkg = __name__
+    if pkg.endswith('.cygrpc'):
+      pkg = pkg[:-len('.cygrpc')]
+    temporary_pem_root_certs = pkgutil.get_data(pkg, '_credentials/roots.pem')
     pem_root_certs[0] = <char *>gpr_malloc(len(temporary_pem_root_certs) + 1)
     memcpy(
         pem_root_certs[0], <char *>temporary_pem_root_certs,

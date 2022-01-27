@@ -14,6 +14,7 @@
 """Defines a number of module-scope gRPC scenarios to test clean exit."""
 
 import argparse
+import logging
 import threading
 import time
 
@@ -86,7 +87,7 @@ def hang_stream_stream(request_iterator, servicer_context):
 
 def hang_partial_stream_stream(request_iterator, servicer_context):
     for _ in range(test_constants.STREAM_LENGTH // 2):
-        yield next(request_iterator)
+        yield next(request_iterator)  #pylint: disable=stop-iteration-return
     time.sleep(WAIT_TIME)
 
 
@@ -161,18 +162,20 @@ def infinite_request_iterator():
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     parser = argparse.ArgumentParser()
     parser.add_argument('scenario', type=str)
-    parser.add_argument(
-        '--wait_for_interrupt', dest='wait_for_interrupt', action='store_true')
+    parser.add_argument('--wait_for_interrupt',
+                        dest='wait_for_interrupt',
+                        action='store_true')
     args = parser.parse_args()
 
     if args.scenario == UNSTARTED_SERVER:
-        server = grpc.server(DaemonPool())
+        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == RUNNING_SERVER:
-        server = grpc.server(DaemonPool())
+        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         if args.wait_for_interrupt:
@@ -187,7 +190,7 @@ if __name__ == '__main__':
         if args.wait_for_interrupt:
             time.sleep(WAIT_TIME)
     elif args.scenario == POLL_CONNECTIVITY:
-        server = grpc.server(DaemonPool())
+        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         channel = grpc.insecure_channel('localhost:%d' % port)
@@ -201,7 +204,7 @@ if __name__ == '__main__':
 
     else:
         handler = GenericHandler()
-        server = grpc.server(DaemonPool())
+        server = grpc.server(DaemonPool(), options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.add_generic_rpc_handlers((handler,))
         server.start()

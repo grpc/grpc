@@ -1,8 +1,0 @@
-# Regression test for issue 141: wrong encoded size #define for oneof messages
-
-Import("env")
-
-env.NanopbProto("testproto")
-env.Object('testproto.pb.c')
-env.Match(['testproto.pb.h', 'testproto.expected'])
-

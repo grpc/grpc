@@ -42,9 +42,8 @@
     } else if (error) {
       singleHandler(nil, error);
     } else {
-      NSDictionary *userInfo = @{
-        NSLocalizedDescriptionKey: @"The writer finished without producing any value."
-      };
+      NSDictionary *userInfo =
+          @{NSLocalizedDescriptionKey : @"The writer finished without producing any value."};
       // Even though RxLibrary is independent of gRPC, the domain and code here are, for the moment,
       // set to the values of kGRPCErrorDomain and GRPCErrorCodeInternal. This way, the error formed
       // is the one user of gRPC would expect if the server failed to produce a response.
@@ -71,11 +70,13 @@
   if (!handler) {
     return [[self alloc] init];
   }
-  return [[self alloc] initWithValueHandler:^(id value) {
-    handler(NO, value, nil);
-  } completionHandler:^(NSError *errorOrNil) {
-    handler(YES, nil, errorOrNil);
-  }];
+  return [[self alloc]
+      initWithValueHandler:^(id value) {
+        handler(NO, value, nil);
+      }
+      completionHandler:^(NSError *errorOrNil) {
+        handler(YES, nil, errorOrNil);
+      }];
 }
 
 - (instancetype)init {

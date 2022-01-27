@@ -19,14 +19,14 @@
 #ifndef GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H
 #define GRPC_IMPL_CODEGEN_CONNECTIVITY_STATE_H
 
+// IWYU pragma: private
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /** Connectivity state of a channel. */
 typedef enum {
-  /** channel has just been initialized */
-  GRPC_CHANNEL_INIT = -1,
   /** channel is idle */
   GRPC_CHANNEL_IDLE,
   /** channel is connecting */

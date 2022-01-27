@@ -1,0 +1,11 @@
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+
+COPY --from=grpc-base /github/grpc/cmake/build/third_party/protobuf/protoc ${'\\'}
+  /usr/local/bin/protoc
+
+COPY --from=grpc-base /github/grpc/cmake/build/grpc_php_plugin ${'\\'}
+  /usr/local/bin/protoc-gen-grpc
+
+COPY --from=grpc-base ${'\\'}
+  /usr/local/lib/php/extensions/no-debug-non-zts-20170718/grpc.so ${'\\'}
+  /usr/local/lib/php/extensions/no-debug-non-zts-20170718/grpc.so

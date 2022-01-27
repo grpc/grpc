@@ -31,13 +31,13 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Manages server side native call lifecycle.
     /// </summary>
-    internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>
+    internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>, IReceivedCloseOnServerCallback, ISendStatusFromServerCompletionCallback
     {
         readonly TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
-        public AsyncCallServer(Func<TResponse, byte[]> serializer, Func<byte[], TRequest> deserializer, Server server) : base(serializer, deserializer)
+        public AsyncCallServer(Action<TResponse, SerializationContext> serializer, Func<DeserializationContext, TRequest> deserializer, Server server) : base(serializer, deserializer)
         {
             this.server = GrpcPreconditions.CheckNotNull(server);
         }
@@ -70,7 +70,7 @@ namespace Grpc.Core.Internal
 
                 started = true;
 
-                call.StartServerSide(HandleFinishedServerside);
+                call.StartServerSide(ReceiveCloseOnServerCallback);
                 return finishedServersideTcs.Task;
             }
         }
@@ -114,7 +114,7 @@ namespace Grpc.Core.Internal
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(headers))
                 {
-                    call.StartSendInitialMetadata(HandleSendFinished, metadataArray);
+                    call.StartSendInitialMetadata(SendCompletionCallback, metadataArray);
                 }
 
                 this.initialMetadataSent = true;
@@ -127,30 +127,33 @@ namespace Grpc.Core.Internal
         /// Sends call result status, indicating we are done with writes.
         /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public Task SendStatusFromServerAsync(Status status, Metadata trailers, Tuple<TResponse, WriteFlags> optionalWrite)
+        public Task SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
         {
-            byte[] payload = optionalWrite != null ? UnsafeSerialize(optionalWrite.Item1) : null;
-            var writeFlags = optionalWrite != null ? optionalWrite.Item2 : default(WriteFlags);
-
-            lock (myLock)
+            using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
             {
-                GrpcPreconditions.CheckState(started);
-                GrpcPreconditions.CheckState(!disposed);
-                GrpcPreconditions.CheckState(!halfcloseRequested, "Can only send status from server once.");
+                var payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response, serializationScope.Context) : SliceBufferSafeHandle.NullInstance;
+                var writeFlags = optionalWrite.HasValue ? optionalWrite.Value.WriteFlags : default(WriteFlags);
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
+                lock (myLock)
                 {
-                    call.StartSendStatusFromServer(HandleSendStatusFromServerFinished, status, metadataArray, !initialMetadataSent,
-                        payload, writeFlags);
+                    GrpcPreconditions.CheckState(started);
+                    GrpcPreconditions.CheckState(!disposed);
+                    GrpcPreconditions.CheckState(!halfcloseRequested, "Can only send status from server once.");
+
+                    using (var metadataArray = MetadataArraySafeHandle.Create(trailers))
+                    {
+                        call.StartSendStatusFromServer(SendStatusFromServerCompletionCallback, status, metadataArray, !initialMetadataSent,
+                            payload, writeFlags);
+                    }
+                    halfcloseRequested = true;
+                    initialMetadataSent = true;
+                    sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                    if (optionalWrite.HasValue)
+                    {
+                        streamingWritesCounter++;
+                    }
+                    return sendStatusFromServerTcs.Task;
                 }
-                halfcloseRequested = true;
-                initialMetadataSent = true;
-                sendStatusFromServerTcs = new TaskCompletionSource<object>();
-                if (optionalWrite != null)
-                {
-                    streamingWritesCounter++;
-                }
-                return sendStatusFromServerTcs.Task;
             }
         }
 
@@ -184,7 +187,7 @@ namespace Grpc.Core.Internal
             throw new InvalidOperationException("Call be only called for client calls");
         }
 
-        protected override void OnAfterReleaseResources()
+        protected override void OnAfterReleaseResourcesLocked()
         {
             server.RemoveCallReference(this);
         }
@@ -206,6 +209,7 @@ namespace Grpc.Core.Internal
         {
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_CLOSE_ON_SERVER,
             // success will be always set to true.
+            bool releasedResources;
             lock (myLock)
             {
                 finished = true;
@@ -217,7 +221,12 @@ namespace Grpc.Core.Internal
                     streamingReadTcs = new TaskCompletionSource<TRequest>();
                     streamingReadTcs.SetResult(default(TRequest));
                 }
-                ReleaseResourcesIfPossible();
+                releasedResources = ReleaseResourcesIfPossible();
+            }
+
+            if (releasedResources)
+            {
+                OnAfterReleaseResourcesUnlocked();
             }
 
             if (cancelled)
@@ -226,6 +235,32 @@ namespace Grpc.Core.Internal
             }
 
             finishedServersideTcs.SetResult(null);
+        }
+
+        IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;
+
+        void IReceivedCloseOnServerCallback.OnReceivedCloseOnServer(bool success, bool cancelled)
+        {
+            HandleFinishedServerside(success, cancelled);
+        }
+
+        ISendStatusFromServerCompletionCallback SendStatusFromServerCompletionCallback => this;
+
+        void ISendStatusFromServerCompletionCallback.OnSendStatusFromServerCompletion(bool success)
+        {
+            HandleSendStatusFromServerFinished(success);
+        }
+
+        public struct ResponseWithFlags
+        {
+            public ResponseWithFlags(TResponse response, WriteFlags writeFlags)
+            {
+                this.Response = response;
+                this.WriteFlags = writeFlags;
+            }
+
+            public TResponse Response { get; }
+            public WriteFlags WriteFlags { get; }
         }
     }
 }

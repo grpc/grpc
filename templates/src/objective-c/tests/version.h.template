@@ -24,6 +24,5 @@
   // instead. This file can be regenerated from the template by running
   // `tools/buildgen/generate_projects.sh`.
 
-
   #define GRPC_OBJC_VERSION_STRING @"${settings.version}"
   #define GRPC_C_VERSION_STRING @"${settings.core_version}"

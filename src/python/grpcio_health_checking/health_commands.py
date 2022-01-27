@@ -20,10 +20,12 @@ import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 HEALTH_PROTO = os.path.join(ROOT_DIR, '../../proto/grpc/health/v1/health.proto')
+LICENSE = os.path.join(ROOT_DIR, '../../../LICENSE')
 
 
-class CopyProtoModules(setuptools.Command):
-    """Command to copy proto modules from grpc/src/proto."""
+class Preprocess(setuptools.Command):
+    """Command to copy proto modules from grpc/src/proto and LICENSE from
+    the root directory"""
 
     description = ''
     user_options = []
@@ -39,6 +41,8 @@ class CopyProtoModules(setuptools.Command):
             shutil.copyfile(
                 HEALTH_PROTO,
                 os.path.join(ROOT_DIR, 'grpc_health/v1/health.proto'))
+        if os.path.isfile(LICENSE):
+            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, 'LICENSE'))
 
 
 class BuildPackageProtos(setuptools.Command):

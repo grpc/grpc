@@ -95,7 +95,7 @@ end
 
 # creates a test stub that accesses host:port securely.
 def create_stub(opts)
-  address = "#{opts.host}:#{opts.port}"
+  address = "#{opts.server_host}:#{opts.server_port}"
 
   # Provide channel args that request compression by default
   # for compression interop tests
@@ -111,10 +111,13 @@ def create_stub(opts)
   if opts.secure
     creds = ssl_creds(opts.use_test_ca)
     stub_opts = {
-      channel_args: {
-        GRPC::Core::Channel::SSL_TARGET => opts.host_override
-      }
+      channel_args: {}
     }
+    unless opts.server_host_override.empty?
+      stub_opts[:channel_args].merge!({
+          GRPC::Core::Channel::SSL_TARGET => opts.server_host_override
+      })
+    end
 
     # Add service account creds if specified
     wants_creds = %w(all compute_engine_creds service_account_creds)
@@ -603,7 +606,7 @@ class NamedTests
     if not op.metadata.has_key?(initial_metadata_key)
       fail AssertionError, "Expected initial metadata. None received"
     elsif op.metadata[initial_metadata_key] != metadata[initial_metadata_key]
-      fail AssertionError, 
+      fail AssertionError,
              "Expected initial metadata: #{metadata[initial_metadata_key]}. "\
              "Received: #{op.metadata[initial_metadata_key]}"
     end
@@ -611,7 +614,7 @@ class NamedTests
       fail AssertionError, "Expected trailing metadata. None received"
     elsif op.trailing_metadata[trailing_metadata_key] !=
           metadata[trailing_metadata_key]
-      fail AssertionError, 
+      fail AssertionError,
             "Expected trailing metadata: #{metadata[trailing_metadata_key]}. "\
             "Received: #{op.trailing_metadata[trailing_metadata_key]}"
     end
@@ -639,7 +642,7 @@ class NamedTests
       fail AssertionError, "Expected trailing metadata. None received"
     elsif duplex_op.trailing_metadata[trailing_metadata_key] !=
           metadata[trailing_metadata_key]
-      fail AssertionError, 
+      fail AssertionError,
           "Expected trailing metadata: #{metadata[trailing_metadata_key]}. "\
           "Received: #{duplex_op.trailing_metadata[trailing_metadata_key]}"
     end
@@ -681,13 +684,13 @@ class NamedTests
   # Send probing message for compressed request on the server, to see
   # if it's implemented.
   def send_probe_for_compressed_request_support(&send_probe)
-    bad_status_occured = false
+    bad_status_occurred = false
 
     begin
       send_probe.call
     rescue GRPC::BadStatus => e
       if e.code == GRPC::Core::StatusCodes::INVALID_ARGUMENT
-        bad_status_occured = true
+        bad_status_occurred = true
       else
         fail AssertionError, "Bad status received but code is #{e.code}"
       end
@@ -696,26 +699,26 @@ class NamedTests
     end
 
     assert('CompressedRequest probe failed') do
-      bad_status_occured
+      bad_status_occurred
     end
   end
 
 end
 
 # Args is used to hold the command line info.
-Args = Struct.new(:default_service_account, :host, :host_override,
-                  :oauth_scope, :port, :secure, :test_case,
+Args = Struct.new(:default_service_account, :server_host, :server_host_override,
+                  :oauth_scope, :server_port, :secure, :test_case,
                   :use_test_ca)
 
-# validates the the command line options, returning them as a Hash.
+# validates the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
-  args.host_override = 'foo.test.google.fr'
+  args.server_host_override = ''
   OptionParser.new do |opts|
     opts.on('--oauth_scope scope',
             'Scope for OAuth tokens') { |v| args['oauth_scope'] = v }
     opts.on('--server_host SERVER_HOST', 'server hostname') do |v|
-      args['host'] = v
+      args['server_host'] = v
     end
     opts.on('--default_service_account email_address',
             'email address of the default service account') do |v|
@@ -723,9 +726,11 @@ def parse_args
     end
     opts.on('--server_host_override HOST_OVERRIDE',
             'override host via a HTTP header') do |v|
-      args['host_override'] = v
+      args['server_host_override'] = v
     end
-    opts.on('--server_port SERVER_PORT', 'server port') { |v| args['port'] = v }
+    opts.on('--server_port SERVER_PORT', 'server port') do |v|
+      args['server_port'] = v
+    end
     # instance_methods(false) gives only the methods defined in that class
     test_cases = NamedTests.instance_methods(false).map(&:to_s)
     test_case_list = test_cases.join(',')
@@ -734,7 +739,7 @@ def parse_args
     opts.on('--use_tls USE_TLS', ['false', 'true'],
             'require a secure connection?') do |v|
       args['secure'] = v == 'true'
-p    end
+    end
     opts.on('--use_test_ca USE_TEST_CA', ['false', 'true'],
             'if secure, use the test certificate?') do |v|
       args['use_test_ca'] = v == 'true'
@@ -744,7 +749,7 @@ p    end
 end
 
 def _check_args(args)
-  %w(host port test_case).each do |a|
+  %w(server_host server_port test_case).each do |a|
     if args[a].nil?
       fail(OptionParser::MissingArgument, "please specify --#{a}")
     end

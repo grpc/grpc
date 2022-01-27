@@ -19,20 +19,22 @@
 #ifndef GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 #define GRPC_TEST_CORE_END2END_TESTS_CANCEL_TEST_HELPERS_H
 
+#include <grpc/grpc.h>
+
 typedef struct {
-  const char *name;
-  grpc_call_error (*initiate_cancel)(grpc_call *call, void *reserved);
+  const char* name;
+  grpc_call_error (*initiate_cancel)(grpc_call* call, void* reserved);
   grpc_status_code expect_status;
-  const char *expect_details;
+  const char* expect_details;
 } cancellation_mode;
 
-static grpc_call_error wait_for_deadline(grpc_call *call, void *reserved) {
+static grpc_call_error wait_for_deadline(grpc_call* /*call*/, void* reserved) {
   (void)reserved;
   return GRPC_CALL_OK;
 }
 
 static const cancellation_mode cancellation_modes[] = {
-    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, "Cancelled"},
+    {"cancel", grpc_call_cancel, GRPC_STATUS_CANCELLED, "CANCELLED"},
     {"deadline", wait_for_deadline, GRPC_STATUS_DEADLINE_EXCEEDED,
      "Deadline Exceeded"},
 };

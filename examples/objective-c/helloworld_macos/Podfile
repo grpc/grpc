@@ -1,0 +1,9 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :macos, '10.10'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+target 'HelloWorld' do
+  # Depend on the generated HelloWorld library.
+  pod 'HelloWorld', :path => '.'
+end

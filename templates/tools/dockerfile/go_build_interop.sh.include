@@ -16,13 +16,13 @@
 # Builds Go interop server and client in a base image.
 set -e
 
+# Turn on support for Go modules.
+export GO111MODULE=on
+
 # Clone just the grpc-go source code without any dependencies.
 # We are cloning from a local git repo that contains the right revision
 # to test instead of using "go get" to download from Github directly.
 git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
-
-# Get all gRPC Go dependencies
-(cd src/google.golang.org/grpc && make deps && make testdeps)
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true

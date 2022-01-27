@@ -21,8 +21,10 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 #define TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PUMP_H
 
-#include <benchmark/benchmark.h>
 #include <sstream>
+
+#include <benchmark/benchmark.h>
+
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -62,12 +64,12 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
     response_rw.Read(&recv_request, tag(0));
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(1));
       while (true) {
@@ -85,7 +87,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -95,7 +97,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -131,12 +133,12 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
     request_rw->Read(&recv_response, tag(0));
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {
@@ -154,7 +156,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }

@@ -13,24 +13,21 @@
 # limitations under the License.
 """Provides distutils command classes for the GRPC Python setup process."""
 
-import distutils
+# NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
+# patch distutils
+import setuptools  # isort:skip
+
 import glob
 import os
 import os.path
-import platform
-import re
 import shutil
 import subprocess
 import sys
+import sysconfig
 import traceback
 
-import setuptools
 from setuptools.command import build_ext
 from setuptools.command import build_py
-from setuptools.command import easy_install
-from setuptools.command import install
-from setuptools.command import test
-
 import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
@@ -38,36 +35,6 @@ GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
 PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
 PROTO_GEN_STEM = os.path.join(GRPC_STEM, 'src', 'python', 'gens')
 CYTHON_STEM = os.path.join(PYTHON_STEM, 'grpc', '_cython')
-
-CONF_PY_ADDENDUM = """
-extensions.append('sphinx.ext.napoleon')
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_special_with_doc = True
-
-html_theme = 'sphinx_rtd_theme'
-copyright = "2016, The gRPC Authors"
-"""
-
-API_GLOSSARY = """
-
-Glossary
-================
-
-.. glossary::
-
-  metadatum
-    A key-value pair included in the HTTP header.  It is a 
-    2-tuple where the first entry is the key and the
-    second is the value, i.e. (key, value).  The metadata key is an ASCII str,
-    and must be a valid HTTP header name.  The metadata value can be
-    either a valid HTTP ASCII str, or bytes.  If bytes are provided,
-    the key must end with '-bin', i.e.
-    ``('binary-metadata-bin', b'\\x00\\xFF')``
-
-  metadata
-    A sequence of metadatum.
-"""
 
 
 class CommandError(Exception):
@@ -104,8 +71,8 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
         with open(bdist_path, 'w') as bdist_file:
             bdist_file.write(bdist_data)
     except IOError as error:
-        raise CommandError('{}\n\nCould not write grpcio bdist: {}'
-                           .format(traceback.format_exc(), error.message))
+        raise CommandError('{}\n\nCould not write grpcio bdist: {}'.format(
+            traceback.format_exc(), error.message))
     return bdist_path
 
 
@@ -124,24 +91,14 @@ class SphinxDocumentation(setuptools.Command):
     def run(self):
         # We import here to ensure that setup.py has had a chance to install the
         # relevant package eggs first.
-        import sphinx
-        import sphinx.apidoc
-        metadata = self.distribution.metadata
-        src_dir = os.path.join(PYTHON_STEM, 'grpc')
-        sys.path.append(src_dir)
-        sphinx.apidoc.main([
-            '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
-            '-V', metadata.version, '-R', metadata.version, '-o',
-            os.path.join('doc', 'src'), src_dir
-        ])
-        conf_filepath = os.path.join('doc', 'src', 'conf.py')
-        with open(conf_filepath, 'a') as conf_file:
-            conf_file.write(CONF_PY_ADDENDUM)
-        glossary_filepath = os.path.join('doc', 'src', 'grpc.rst')
-        with open(glossary_filepath, 'a') as glossary_filepath:
-            glossary_filepath.write(API_GLOSSARY)
-        sphinx.main(
-            ['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
+        import sphinx.cmd.build
+        source_dir = os.path.join(GRPC_STEM, 'doc', 'python', 'sphinx')
+        target_dir = os.path.join(GRPC_STEM, 'doc', 'build')
+        exit_code = sphinx.cmd.build.build_main(
+            ['-b', 'html', '-W', '--keep-going', source_dir, target_dir])
+        if exit_code != 0:
+            raise CommandError(
+                "Documentation generation has warnings or errors")
 
 
 class BuildProjectMetadata(setuptools.Command):
@@ -189,10 +146,10 @@ def check_and_update_cythonization(extensions):
         for source in extension.sources:
             base, file_ext = os.path.splitext(source)
             if file_ext == '.pyx':
-                generated_pyx_source = next((base + gen_ext
-                                             for gen_ext in ('.c', '.cpp',)
-                                             if os.path.isfile(base + gen_ext)),
-                                            None)
+                generated_pyx_source = next((base + gen_ext for gen_ext in (
+                    '.c',
+                    '.cpp',
+                ) if os.path.isfile(base + gen_ext)), None)
                 if generated_pyx_source:
                     generated_pyx_sources.append(generated_pyx_source)
                 else:
@@ -234,8 +191,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     return Cython.Build.cythonize(
         extensions,
         include_path=[
-            include_dir
-            for extension in extensions
+            include_dir for extension in extensions
             for include_dir in extension.include_dirs
         ] + [CYTHON_STEM],
         compiler_directives=cython_compiler_directives)
@@ -250,30 +206,64 @@ class BuildExt(build_ext.build_ext):
     }
     LINK_OPTIONS = {}
 
+    def get_ext_filename(self, ext_name):
+        # since python3.5, python extensions' shared libraries use a suffix that corresponds to the value
+        # of sysconfig.get_config_var('EXT_SUFFIX') and contains info about the architecture the library targets.
+        # E.g. on x64 linux the suffix is ".cpython-XYZ-x86_64-linux-gnu.so"
+        # When crosscompiling python wheels, we need to be able to override this suffix
+        # so that the resulting file name matches the target architecture and we end up with a well-formed
+        # wheel.
+        filename = build_ext.build_ext.get_ext_filename(self, ext_name)
+        orig_ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        new_ext_suffix = os.getenv('GRPC_PYTHON_OVERRIDE_EXT_SUFFIX')
+        if new_ext_suffix and filename.endswith(orig_ext_suffix):
+            filename = filename[:-len(orig_ext_suffix)] + new_ext_suffix
+        return filename
+
     def build_extensions(self):
-        if "darwin" in sys.platform:
-            config = os.environ.get('CONFIG', 'opt')
-            target_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)), '..', '..',
-                    '..', 'libs', config))
-            targets = [
-                os.path.join(target_path, 'libboringssl.a'),
-                os.path.join(target_path, 'libares.a'),
-                os.path.join(target_path, 'libgpr.a'),
-                os.path.join(target_path, 'libgrpc.a')
-            ]
-            make_process = subprocess.Popen(
-                ['make'] + targets,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-            make_out, make_err = make_process.communicate()
-            if make_out and make_process.returncode != 0:
-                sys.stdout.write(str(make_out) + '\n')
-            if make_err:
-                sys.stderr.write(str(make_err) + '\n')
-            if make_process.returncode != 0:
-                raise Exception("make command failed!")
+
+        def compiler_ok_with_extra_std():
+            """Test if default compiler is okay with specifying c++ version
+            when invoked in C mode. GCC is okay with this, while clang is not.
+            """
+            try:
+                # TODO(lidiz) Remove the generated a.out for success tests.
+                cc_test = subprocess.Popen(['cc', '-x', 'c', '-std=c++11', '-'],
+                                           stdin=subprocess.PIPE,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
+                _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
+                return not 'invalid argument' in str(cc_err)
+            except:
+                sys.stderr.write('Non-fatal exception:' +
+                                 traceback.format_exc() + '\n')
+                return False
+
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #
+        #   If we are not using a permissive compiler that's OK with being
+        #   passed wrong std flags, swap out compile function by adding a filter
+        #   for it.
+        if not compiler_ok_with_extra_std():
+            old_compile = self.compiler._compile
+
+            def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+                if src.endswith('.c'):
+                    extra_postargs = [
+                        arg for arg in extra_postargs if not '-std=c++' in arg
+                    ]
+                elif src.endswith('.cc') or src.endswith('.cpp'):
+                    extra_postargs = [
+                        arg for arg in extra_postargs if not '-std=gnu99' in arg
+                    ]
+                return old_compile(obj, src, ext, cc_args, extra_postargs,
+                                   pp_opts)
+
+            self.compiler._compile = new_compile
 
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
@@ -318,3 +308,43 @@ class Gather(setuptools.Command):
                 self.distribution.install_requires)
         if self.test and self.distribution.tests_require:
             self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
+class Clean(setuptools.Command):
+    """Command to clean build artifacts."""
+
+    description = 'Clean build artifacts.'
+    user_options = [
+        ('all', 'a', 'a phony flag to allow our script to continue'),
+    ]
+
+    _FILE_PATTERNS = (
+        'python_build',
+        'src/python/grpcio/__pycache__/',
+        'src/python/grpcio/grpc/_cython/cygrpc.cpp',
+        'src/python/grpcio/grpc/_cython/*.so',
+        'src/python/grpcio/grpcio.egg-info/',
+    )
+    _CURRENT_DIRECTORY = os.path.normpath(
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../.."))
+
+    def initialize_options(self):
+        self.all = False
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        for path_spec in self._FILE_PATTERNS:
+            this_glob = os.path.normpath(
+                os.path.join(Clean._CURRENT_DIRECTORY, path_spec))
+            abs_paths = glob.glob(this_glob)
+            for path in abs_paths:
+                if not str(path).startswith(Clean._CURRENT_DIRECTORY):
+                    raise ValueError(
+                        "Cowardly refusing to delete {}.".format(path))
+                print("Removing {}".format(os.path.relpath(path)))
+                if os.path.isfile(path):
+                    os.remove(str(path))
+                else:
+                    shutil.rmtree(str(path))

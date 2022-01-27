@@ -23,27 +23,22 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
-
     internal class NativeMetadataCredentialsPlugin
     {
-        const string GetMetadataExceptionMsg = "Exception occured in metadata credentials plugin.";
+        const string GetMetadataExceptionStatusMsg = "Exception occurred in metadata credentials plugin.";
+        const string GetMetadataExceptionLogMsg = GetMetadataExceptionStatusMsg + " This is likely not a problem with gRPC itself. Please verify that the code supplying the metadata (usually an authentication token) works correctly.";
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
         static readonly NativeMethods Native = NativeMethods.Get();
 
         AsyncAuthInterceptor interceptor;
-        GCHandle gcHandle;
-        NativeMetadataInterceptor nativeInterceptor;
         CallCredentialsSafeHandle credentials;
+        NativeCallbackRegistration callbackRegistration;
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
             this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
-            this.nativeInterceptor = NativeMetadataInterceptorHandler;
-
-            // Make sure the callback doesn't get garbage collected until it is destroyed.
-            this.gcHandle = GCHandle.Alloc(this.nativeInterceptor, GCHandleType.Normal);
-            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
+            this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
+            this.credentials = Native.grpcsharp_metadata_credentials_create_from_plugin(this.callbackRegistration.Tag);
         }
 
         public CallCredentialsSafeHandle Credentials
@@ -51,24 +46,34 @@ namespace Grpc.Core.Internal
             get { return credentials; }
         }
 
-        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
+        private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        {
+            NativeMetadataInterceptorHandler(arg0, arg1, arg2, arg3, arg4 != IntPtr.Zero);
+            return 0;
+        }
+
+        private void NativeMetadataInterceptorHandler(IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
         {
             if (isDestroy)
             {
-                gcHandle.Free();
+                this.callbackRegistration.Dispose();
                 return;
             }
 
             try
             {
+                // NOTE: The serviceUrlPtr and methodNamePtr values come from the grpc_auth_metadata_context
+                // and are only guaranteed to be valid until synchronous return of this handler.
+                // We are effectively making a copy of these strings by creating C# string from the native char pointers,
+                // and passing the resulting C# strings to the context is therefore safe.
                 var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr), Marshal.PtrToStringAnsi(methodNamePtr));
                 // Make a guarantee that credentials_notify_from_plugin is invoked async to be compliant with c-core API.
                 ThreadPool.QueueUserWorkItem(async (stateInfo) => await GetMetadataAsync(context, callbackPtr, userDataPtr));
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                // eat the exception, we must not throw when inside callback from native code.
+                Logger.Error(e, "Exception occurred while invoking native metadata interceptor handler.");
             }
         }
 
@@ -86,8 +91,9 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                string detail = GetMetadataExceptionStatusMsg + " " + e.ToString();
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, detail);
+                Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }
     }

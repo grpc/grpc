@@ -13,25 +13,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Houses grpc_bad_ssl_tests.
+"""
+
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
 def test_options():
-  return struct()
-
+    return struct()
 
 # maps test names to options
-BAD_SSL_TESTS = ['cert', 'alpn']
+BAD_SSL_TESTS = ["cert", "alpn"]
 
+# buildifier: disable=unnamed-macro
 def grpc_bad_ssl_tests():
-  native.cc_library(
-      name = 'bad_ssl_test_server',
-      srcs = ['server_common.c'],
-      hdrs = ['server_common.h'],
-      deps = ['//test/core/util:grpc_test_util', '//:grpc', '//test/core/end2end:ssl_test_data']
-  )
-  for t in BAD_SSL_TESTS:
-    native.cc_test(
-        name = 'bad_ssl_%s_server' % t,
-        srcs = ['servers/%s.c' % t],
-        deps = [':bad_ssl_test_server'],
-    )
+    """Instantiates gRPC bad SSL tests."""
 
+    grpc_cc_library(
+        name = "bad_ssl_test_server",
+        srcs = ["server_common.cc"],
+        hdrs = ["server_common.h"],
+        deps = [
+            "//test/core/util:grpc_test_util",
+            "//:grpc",
+        ],
+    )
+    for t in BAD_SSL_TESTS:
+        grpc_cc_binary(
+            name = "bad_ssl_%s_server" % t,
+            srcs = ["servers/%s.cc" % t],
+            deps = [":bad_ssl_test_server"],
+        )
+        grpc_cc_test(
+            name = "bad_ssl_%s_test" % t,
+            srcs = ["bad_ssl_test.cc"],
+            data = [
+                ":bad_ssl_%s_server" % t,
+                "//src/core/tsi/test_creds:badserver.key",
+                "//src/core/tsi/test_creds:badserver.pem",
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
+            deps = [
+                "//test/core/util:grpc_test_util",
+                "//:gpr",
+                "//test/core/end2end:cq_verifier",
+            ],
+            tags = ["no_windows"],
+        )

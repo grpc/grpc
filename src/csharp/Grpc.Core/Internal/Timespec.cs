@@ -25,8 +25,49 @@ namespace Grpc.Core.Internal
     /// gpr_timespec from grpc/support/time.h
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    internal struct Timespec
+    internal struct Timespec : IEquatable<Timespec>
     {
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        public override bool Equals(object obj)
+        {
+            return obj is Timespec && Equals((Timespec)obj);
+        }
+
+        /// <summary>
+        /// Returns the hash code for this instance.
+        /// </summary>
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                const int Prime = 373587911;
+                int i = (int)clock_type;
+                i = (i * Prime) ^ tv_nsec;
+                i = (i * Prime) ^ tv_nsec.GetHashCode();
+                return i;
+            }
+        }
+
+        /// <summary>
+        /// Returns the full type name of this instance.
+        /// </summary>
+        public override string ToString()
+        {
+            return typeof(Timespec).FullName;
+        }
+
+        /// <summary>
+        /// Indicates whether this instance and a specified object are equal.
+        /// </summary>
+        public bool Equals(Timespec other)
+        {
+            return this.clock_type == other.clock_type
+                && this.tv_nsec == other.tv_nsec
+                && this.tv_sec == other.tv_sec;
+        }
+
         const long NanosPerSecond = 1000 * 1000 * 1000;
         const long NanosPerTick = 100;
         const long TicksPerSecond = NanosPerSecond / NanosPerTick;

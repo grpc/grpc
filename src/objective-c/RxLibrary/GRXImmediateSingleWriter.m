@@ -20,7 +20,6 @@
 
 @implementation GRXImmediateSingleWriter {
   id _value;
-  id<GRXWriteable> _writeable;
 }
 
 @synthesize state = _state;
@@ -38,17 +37,16 @@
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
-  _state = GRXWriterStateStarted;
-  _writeable = writeable;
-  [writeable writeValue:_value];
-  [self finish];
-}
-
-- (void)finish {
-  _state = GRXWriterStateFinished;
-  _value = nil;
-  id<GRXWriteable> writeable = _writeable;
-  _writeable = nil;
+  id copiedValue = nil;
+  @synchronized(self) {
+    if (_state != GRXWriterStateNotStarted) {
+      return;
+    }
+    copiedValue = _value;
+    _value = nil;
+    _state = GRXWriterStateFinished;
+  }
+  [writeable writeValue:copiedValue];
   [writeable writesFinishedWithError:nil];
 }
 
@@ -65,9 +63,11 @@
 // the original \a map function returns a new Writer of another type. So we
 // need to override this function here.
 - (GRXWriter *)map:(id (^)(id))map {
-  // Since _value is available when creating the object, we can simply
-  // apply the map and store the output.
-  _value = map(_value);
+  @synchronized(self) {
+    // Since _value is available when creating the object, we can simply
+    // apply the map and store the output.
+    _value = map(_value);
+  }
   return self;
 }
 

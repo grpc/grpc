@@ -18,20 +18,17 @@
 
 set -e
 
-export CONFIG=$config
+export CONFIG=${config:-opt}
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer
 export PATH=$PATH:/usr/bin/llvm-symbolizer
 
-# Ensure that programs depending on current-user-ownership of cache directories
-# are satisfied (it's being mounted from outside the image).
-chown $(whoami) $XDG_CACHE_HOME
-
 mkdir -p /var/local/git
-git clone  /var/local/jenkins/grpc /var/local/git/grpc
+git clone /var/local/jenkins/grpc /var/local/git/grpc
 # clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
+# TODO: figure out a way to eliminate this shellcheck suppression:
+# shellcheck disable=SC2016
+(cd /var/local/jenkins/grpc/ && git submodule foreach 'git clone /var/local/jenkins/grpc/${name} /var/local/git/grpc/${name}')
+(cd /var/local/git/grpc/ && git submodule init)
 
 mkdir -p reports
 
@@ -41,19 +38,16 @@ exit_code=0
 
 $RUN_TESTS_COMMAND || exit_code=$?
 
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
+# The easiest way to copy all the reports files from inside of
+# the docker container is to zip them and then copy the zip.
 zip -r reports.zip reports
-find . -name report.xml | xargs -r zip reports.zip
-find . -name sponge_log.xml | xargs -r zip reports.zip
-find . -name 'report_*.xml' | xargs -r zip reports.zip
+find . -name report.xml -print0 | xargs -0 -r zip reports.zip
+find . -name sponge_log.xml -print0 | xargs -0 -r zip reports.zip
+find . -name 'report_*.xml' -print0 | xargs -0 -r zip reports.zip
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
 
 exit $exit_code

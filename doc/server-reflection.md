@@ -23,29 +23,8 @@ We want to be able to answer the following queries:
 Specifically, what are the names of the methods, are those methods unary or
 streaming, and what are the types of the argument and result?
 
-```
-#TODO(dklempner): link to an actual .proto later.
-package grpc.reflection.v1alpha;
-
-message ListApisRequest {
-}
-
-message ListApisResponse {
-  repeated google.protobuf.Api apis = 1;
-}
-
-message GetMethodRequest {
-  string method = 1;
-}
-message GetMethodResponse {
-  google.protobuf.Method method = 1;
-}
-
-service ServerReflection {
-  rpc ListApis (ListApisRequest) returns (ListApisResponse);
-  rpc GetMethod (GetMethodRequest) returns (GetMethodResponse);
-}
-```
+The first proposed version of the protocol is here:
+https://github.com/grpc/grpc/blob/master/src/proto/grpc/reflection/v1alpha/reflection.proto
 
 Note that a server is under no obligation to return a complete list of all
 methods it supports. For example, a reverse proxy may support server reflection
@@ -161,6 +140,7 @@ which FileDescriptorProtos have been sent on a given stream, for a given value
 of valid_host, and avoid sending them repeatedly for overlapping requests.
 
 | message_request message     | Result                                          |
+| --------------------------- | ----------------------------------------------- |
 | files_for_file_name         | transitive closure of file name                 |
 | files_for_symbol_name       | transitive closure file containing symbol       |
 | file_containing_extension   | transitive closure of file containing a given extension number of a given symbol |
@@ -181,3 +161,16 @@ will need to index those FileDescriptorProtos by file and symbol and imports.
 One issue is that some grpc implementations are very loosely coupled with
 protobufs; in such implementations it probably makes sense to split apart these
 reflection APIs so as not to take an additional proto dependency.
+
+## Known Implementations
+
+Enabling server reflection differs language-to-language. Here are links to docs relevant to
+each language:
+
+- [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
+- [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md#enable-server-reflection)
+- [C++](https://grpc.io/grpc/cpp/md_doc_server_reflection_tutorial.html)
+- [C#](https://github.com/grpc/grpc/blob/master/doc/csharp/server_reflection.md)
+- [Python](https://github.com/grpc/grpc/blob/master/doc/python/server_reflection.md)
+- Ruby: not yet implemented [#2567](https://github.com/grpc/grpc/issues/2567)
+- Node: not yet implemented [#2568](https://github.com/grpc/grpc/issues/2568)

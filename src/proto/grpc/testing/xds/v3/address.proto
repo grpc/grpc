@@ -1,0 +1,69 @@
+// Copyright 2020 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Local copy of Envoy xDS proto file, used for testing only.
+
+syntax = "proto3";
+
+package envoy.config.core.v3;
+
+import "google/protobuf/wrappers.proto";
+
+// [#protodoc-title: Network addresses]
+
+// [#next-free-field: 7]
+message SocketAddress {
+  // The address for this socket. :ref:`Listeners <config_listeners>` will bind
+  // to the address. An empty address is not allowed. Specify ``0.0.0.0`` or ``::``
+  // to bind to any address. [#comment:TODO(zuercher) reinstate when implemented:
+  // It is possible to distinguish a Listener address via the prefix/suffix matching
+  // in :ref:`FilterChainMatch <envoy_api_msg_config.listener.v3.FilterChainMatch>`.] When used
+  // within an upstream :ref:`BindConfig <envoy_api_msg_config.core.v3.BindConfig>`, the address
+  // controls the source address of outbound connections. For :ref:`clusters
+  // <envoy_api_msg_config.cluster.v3.Cluster>`, the cluster type determines whether the
+  // address must be an IP (*STATIC* or *EDS* clusters) or a hostname resolved by DNS
+  // (*STRICT_DNS* or *LOGICAL_DNS* clusters). Address resolution can be customized
+  // via :ref:`resolver_name <envoy_api_field_config.core.v3.SocketAddress.resolver_name>`.
+  string address = 2;
+
+  oneof port_specifier {
+    uint32 port_value = 3;
+  }
+
+  // The name of the custom resolver. This must have been registered with Envoy. If
+  // this is empty, a context dependent default applies. If the address is a concrete
+  // IP address, no resolution will occur. If address is a hostname this
+  // should be set for resolution other than DNS. Specifying a custom resolver with
+  // *STRICT_DNS* or *LOGICAL_DNS* will generate an error at runtime.
+  string resolver_name = 5;
+}
+
+// Addresses specify either a logical or physical address and port, which are
+// used to tell Envoy where to bind/listen, connect to upstream and find
+// management servers.
+message Address {
+  oneof address {
+    SocketAddress socket_address = 1;
+  }
+}
+
+// CidrRange specifies an IP Address and a prefix length to construct
+// the subnet mask for a `CIDR <https://tools.ietf.org/html/rfc4632>`_ range.
+message CidrRange {
+  // IPv4 or IPv6 address, e.g. ``192.0.0.0`` or ``2001:db8::``.
+  string address_prefix = 1;
+
+  // Length of prefix, e.g. 0, 32.
+  google.protobuf.UInt32Value prefix_len = 2;
+}

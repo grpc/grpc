@@ -7,38 +7,40 @@ Pod::Spec.new do |s|
   s.summary = "RemoteTest example"
   s.source = { :git => 'https://github.com/grpc/grpc.git' }
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+  s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   s.dependency "!ProtoCompiler-gRPCPlugin"
 
   repo_root = '../../../..'
-  bin_dir = "#{repo_root}/bins/$CONFIG"
+  bazel_exec_root = "#{repo_root}/bazel-out/darwin-fastbuild/bin"
 
-  protoc = "#{bin_dir}/protobuf/protoc"
+  protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
-  plugin = "#{bin_dir}/grpc_objective_c_plugin"
+  plugin = "#{bazel_exec_root}/src/compiler/grpc_objective_c_plugin"
 
   s.prepare_command = <<-CMD
     #{protoc} \
         --plugin=protoc-gen-grpc=#{plugin} \
         --objc_out=. \
         --grpc_out=. \
-        -I . \
+        -I #{repo_root} \
         -I #{well_known_types_dir} \
-        *.proto
+        #{repo_root}/src/objective-c/tests/RemoteTestClient/*.proto
   CMD
 
   s.subspec "Messages" do |ms|
-    ms.source_files = "*.pbobjc.{h,m}"
+    ms.source_files = "src/objective-c/tests/RemoteTestClient/*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
     ms.dependency "Protobuf"
   end
 
   s.subspec "Services" do |ss|
-    ss.source_files = "*.pbrpc.{h,m}"
+    ss.source_files = "src/objective-c/tests/RemoteTestClient/*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
     ss.dependency "gRPC-ProtoRPC"

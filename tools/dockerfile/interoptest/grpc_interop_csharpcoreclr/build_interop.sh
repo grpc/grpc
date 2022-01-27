@@ -29,4 +29,4 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc
 
 # build C# interop client & server
-tools/run_tests/run_tests.py -l csharp -c dbg --compiler coreclr --build_only
+tools/run_tests/run_tests.py -l csharp -c dbg --build_only

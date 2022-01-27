@@ -19,18 +19,93 @@
 #ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H
 
-#include "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
+#include <grpc/support/port_platform.h>
+
+#include <string>
+
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/cpp/common/channel_filter.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc {
 
-extern const grpc_channel_filter grpc_server_load_reporting_filter;
+class ServerLoadReportingChannelData : public ChannelData {
+ public:
+  grpc_error_handle Init(grpc_channel_element* elem,
+                         grpc_channel_element_args* args) override;
 
-#ifdef __cplusplus
-}
-#endif
+  // Getters.
+  const char* peer_identity() { return peer_identity_; }
+  size_t peer_identity_len() { return peer_identity_len_; }
+
+ private:
+  // The peer's authenticated identity.
+  char* peer_identity_ = nullptr;
+  size_t peer_identity_len_ = 0;
+};
+
+class ServerLoadReportingCallData : public CallData {
+ public:
+  grpc_error_handle Init(grpc_call_element* elem,
+                         const grpc_call_element_args* args) override;
+
+  void Destroy(grpc_call_element* elem, const grpc_call_final_info* final_info,
+               grpc_closure* then_call_closure) override;
+
+  void StartTransportStreamOpBatch(grpc_call_element* elem,
+                                   TransportStreamOpBatch* op) override;
+
+ private:
+  // From the peer_string_ in calld, extracts the client IP string (owned by
+  // caller), e.g., "01020a0b". Upon failure, returns empty string.
+  std::string GetCensusSafeClientIpString();
+
+  // Concatenates the client IP address and the load reporting token, then
+  // stores the result into the call data.
+  void StoreClientIpAndLrToken(const char* lr_token, size_t lr_token_len);
+
+  // This matches the classification of the status codes in
+  // googleapis/google/rpc/code.proto.
+  static const char* GetStatusTagForStatus(grpc_status_code status);
+
+  // Records the call start.
+  static void RecvInitialMetadataReady(void* arg, grpc_error_handle err);
+
+  // The peer string (a member of the recv_initial_metadata op). Note that
+  // gpr_atm itself is a pointer type here, making "peer_string_" effectively a
+  // double pointer.
+  const gpr_atm* peer_string_;
+
+  // The received initial metadata (a member of the recv_initial_metadata op).
+  // When it is ready, we will extract some data from it via
+  // recv_initial_metadata_ready_ closure, before the original
+  // recv_initial_metadata_ready closure.
+  grpc_metadata_batch* recv_initial_metadata_;
+
+  // The original recv_initial_metadata closure, which is wrapped by our own
+  // closure (recv_initial_metadata_ready_) to capture the incoming initial
+  // metadata.
+  grpc_closure* original_recv_initial_metadata_ready_;
+
+  // The closure that wraps the original closure. Scheduled when
+  // recv_initial_metadata_ is ready.
+  grpc_closure recv_initial_metadata_ready_;
+
+  // Corresponds to the :path header.
+  grpc_slice service_method_;
+
+  // The backend host that the client thinks it's talking to. This may be
+  // different from the actual backend in the case of, for example,
+  // load-balanced targets. We store a copy of the metadata slice in order to
+  // lowercase it. */
+  std::string target_host_;
+
+  // The client IP address (including a length prefix) and the load reporting
+  // token.
+  char* client_ip_and_lr_token_;
+  size_t client_ip_and_lr_token_len_;
+};
+
+}  // namespace grpc
 
 #endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H \
-          */
+        */

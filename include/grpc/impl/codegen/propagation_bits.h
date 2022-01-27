@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H
 #define GRPC_IMPL_CODEGEN_PROPAGATION_BITS_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus

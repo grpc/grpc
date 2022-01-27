@@ -15,28 +15,22 @@
  * limitations under the License.
  *
  */
-#ifdef GRPC_COMPILE_WITH_CRONET
-#import <Cronet/Cronet.h>
 
-#import "GRPCCall.h"
+#import "GRPCCallLegacy.h"
+#import "GRPCTypes.h"
+
+typedef struct stream_engine stream_engine;
+
+// Transport id for Cronet transport
+extern const GRPCTransportID gGRPCCoreCronetID;
 
 /**
- * Methods for using cronet transport.
+ * The interface is deprecated. Please use GRPCCallOptions instead for corresponding configurations.
  */
 @interface GRPCCall (Cronet)
 
-/**
- * This method should be called before issuing the first RPC. It should be
- * called only once. Create an instance of Cronet engine in your app elsewhere
- * and pass the instance pointer in the stream_engine parameter. Once set,
- * all subsequent RPCs will use Cronet transport. The method is not thread
- * safe.
- */
-+(void)useCronetWithEngine:(stream_engine *)engine;
-
-+(stream_engine *)cronetEngine;
-
-+(BOOL)isUsingCronet;
++ (void)useCronetWithEngine:(stream_engine*)engine;
++ (stream_engine*)cronetEngine;
++ (BOOL)isUsingCronet;
 
 @end
-#endif

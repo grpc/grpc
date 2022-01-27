@@ -15,8 +15,7 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
-using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Math
@@ -26,7 +25,7 @@ namespace Math
         const string Host = "0.0.0.0";
         const int Port = 23456;
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             Server server = new Server
             {
@@ -40,7 +39,7 @@ namespace Math
             Console.WriteLine("Press any key to stop the server...");
             Console.ReadKey();
 
-            server.ShutdownAsync().Wait();
+            await server.ShutdownAsync();
         }
     }
 }

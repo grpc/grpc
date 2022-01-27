@@ -16,23 +16,25 @@
  *
  */
 
-#include <grpc++/security/server_credentials.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/security/server_credentials.h>
 
 namespace grpc {
 namespace {
 class InsecureServerCredentialsImpl final : public ServerCredentials {
  public:
-  int AddPortToServer(const grpc::string& addr, grpc_server* server) override {
+  int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_server_add_insecure_http2_port(server, addr.c_str());
   }
   void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& processor) override {
+      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override {
     (void)processor;
     GPR_ASSERT(0);  // Should not be called on InsecureServerCredentials.
   }
+
+ private:
+  bool IsInsecure() const override { return true; }
 };
 }  // namespace
 

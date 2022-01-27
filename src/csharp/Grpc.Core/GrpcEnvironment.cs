@@ -33,6 +33,10 @@ namespace Grpc.Core
     public class GrpcEnvironment
     {
         const int MinDefaultThreadPoolSize = 4;
+        const int DefaultBatchContextPoolSharedCapacity = 10000;
+        const int DefaultBatchContextPoolThreadLocalCapacity = 64;
+        const int DefaultRequestCallContextPoolSharedCapacity = 10000;
+        const int DefaultRequestCallContextPoolThreadLocalCapacity = 64;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
@@ -40,11 +44,18 @@ namespace Grpc.Core
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
         static bool inlineHandlers;
+        static int batchContextPoolSharedCapacity = DefaultBatchContextPoolSharedCapacity;
+        static int batchContextPoolThreadLocalCapacity = DefaultBatchContextPoolThreadLocalCapacity;
+        static int requestCallContextPoolSharedCapacity = DefaultRequestCallContextPoolSharedCapacity;
+        static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
+        static readonly AtomicCounter nativeInitCounter = new AtomicCounter();
 
         static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
+        readonly IObjectPool<BatchContextSafeHandle> batchContextPool;
+        readonly IObjectPool<RequestCallContextSafeHandle> requestCallContextPool;
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
@@ -186,7 +197,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
-        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
         /// Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
         /// Most users should rely on the default value provided by gRPC library.
         /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
@@ -203,7 +214,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Sets the number of completion queues in the  gRPC thread pool that polls for internal RPC events.
-        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
         /// Setting the number of completions queues is an advanced setting and you should only use it if you know what you are doing.
         /// Most users should rely on the default value provided by gRPC library.
         /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
@@ -238,6 +249,46 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the parameters for a pool that caches batch context instances. Reusing batch context instances
+        /// instead of creating a new one for every C core operation helps reducing the GC pressure.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// This is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetBatchContextPoolParams(int sharedCapacity, int threadLocalCapacity)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(sharedCapacity >= 0, "Shared capacity needs to be a non-negative number");
+                GrpcPreconditions.CheckArgument(threadLocalCapacity >= 0, "Thread local capacity needs to be a non-negative number");
+                batchContextPoolSharedCapacity = sharedCapacity;
+                batchContextPoolThreadLocalCapacity = threadLocalCapacity;
+            }
+        }
+
+        /// <summary>
+        /// Sets the parameters for a pool that caches request call context instances. Reusing request call context instances
+        /// instead of creating a new one for every requested call in C core helps reducing the GC pressure.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// This is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetRequestCallContextPoolParams(int sharedCapacity, int threadLocalCapacity)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(sharedCapacity >= 0, "Shared capacity needs to be a non-negative number");
+                GrpcPreconditions.CheckArgument(threadLocalCapacity >= 0, "Thread local capacity needs to be a non-negative number");
+                requestCallContextPoolSharedCapacity = sharedCapacity;
+                requestCallContextPoolThreadLocalCapacity = threadLocalCapacity;
+            }
+        }
+
+        /// <summary>
         /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
         /// If <c>GrpcEnvironment</c> is later initialized and shutdown, the event will be fired again (unless unregistered first).
         /// </summary>
@@ -249,6 +300,8 @@ namespace Grpc.Core
         private GrpcEnvironment()
         {
             GrpcNativeInit();
+            batchContextPool = new DefaultObjectPool<BatchContextSafeHandle>(() => BatchContextSafeHandle.Create(), batchContextPoolSharedCapacity, batchContextPoolThreadLocalCapacity);
+            requestCallContextPool = new DefaultObjectPool<RequestCallContextSafeHandle>(() => RequestCallContextSafeHandle.Create(), requestCallContextPoolSharedCapacity, requestCallContextPoolThreadLocalCapacity);
             threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault(), inlineHandlers);
             threadPool.Start();
         }
@@ -263,6 +316,10 @@ namespace Grpc.Core
                 return this.threadPool.CompletionQueues;
             }
         }
+
+        internal IObjectPool<BatchContextSafeHandle> BatchContextPool => batchContextPool;
+
+        internal IObjectPool<RequestCallContextSafeHandle> RequestCallContextPool => requestCallContextPool;
 
         internal bool IsAlive
         {
@@ -304,12 +361,25 @@ namespace Grpc.Core
 
         internal static void GrpcNativeInit()
         {
+            if (!IsNativeShutdownAllowed && nativeInitCounter.Count > 0)
+            {
+                // Normally grpc_init and grpc_shutdown calls should come in pairs (C core does reference counting),
+                // but in case we avoid grpc_shutdown calls altogether, calling grpc_init has no effect
+                // besides incrementing an internal C core counter that could theoretically overflow.
+                // To avoid this theoretical possibility we guard repeated calls to grpc_init()
+                // with a 64-bit atomic counter (that can't realistically overflow).
+                return;
+            }
             NativeMethods.Get().grpcsharp_init();
+            nativeInitCounter.Increment();
         }
 
         internal static void GrpcNativeShutdown()
         {
-            NativeMethods.Get().grpcsharp_shutdown();
+            if (IsNativeShutdownAllowed)
+            {
+                NativeMethods.Get().grpcsharp_shutdown();
+            }
         }
 
         /// <summary>
@@ -325,6 +395,8 @@ namespace Grpc.Core
             await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
 
             await threadPool.StopAsync().ConfigureAwait(false);
+            requestCallContextPool.Dispose();
+            batchContextPool.Dispose();
             GrpcNativeShutdown();
             isShutdown = true;
 
@@ -353,6 +425,14 @@ namespace Grpc.Core
             return GetThreadPoolSizeOrDefault();
         }
 
+        // On some platforms (specifically iOS), thread local variables in native code
+        // require initialization/destruction. By skipping the grpc_shutdown() call,
+        // we avoid a potential crash where grpc_shutdown() has already destroyed
+        // the thread local variables, but some C core's *_destroy() methods still
+        // need to run (e.g. they may be run by finalizer thread which is out of our control)
+        // For more context, see https://github.com/grpc/grpc/issues/16294
+        private static bool IsNativeShutdownAllowed => !PlatformApis.IsXamarinIOS && !PlatformApis.IsUnityIOS;
+
         private static class ShutdownHooks
         {
             static object staticLock = new object();
@@ -364,9 +444,32 @@ namespace Grpc.Core
                 {
                     if (!hooksRegistered)
                     {
-#if NETSTANDARD1_5
-                        System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += (assemblyLoadContext) => { HandleShutdown(); };
+                        // Under normal circumstances, the user is expected to shutdown all
+                        // the gRPC channels and servers before the application exits. The following
+                        // hooks provide some extra handling for cases when this is not the case,
+                        // in the effort to achieve a reasonable behavior on shutdown.
+#if NETSTANDARD
+                        // No action required at shutdown on .NET Core
+                        // - In-progress P/Invoke calls (such as grpc_completion_queue_next) don't seem
+                        //   to prevent a .NET core application from terminating, so no special handling
+                        //   is needed.
+                        // - .NET core doesn't run finalizers on shutdown, so there's no risk of getting
+                        //   a crash because grpc_*_destroy methods for native objects being invoked
+                        //   in wrong order.
+                        // TODO(jtattermusch): Verify that the shutdown hooks are still not needed
+                        // once we add support for new platforms using netstandard (e.g. Xamarin).
 #else
+                        // On desktop .NET framework and Mono, we need to register for a shutdown
+                        // event to explicitly shutdown the GrpcEnvironment.
+                        // - On Desktop .NET framework, we need to do a proper shutdown to prevent a crash
+                        //   when the framework attempts to run the finalizers for SafeHandle object representing the native
+                        //   grpc objects. The finalizers calls the native grpc_*_destroy methods (e.g. grpc_server_destroy)
+                        //   in a random order, which is not supported by gRPC.
+                        // - On Mono, the process would freeze as the GrpcThreadPool threads are sleeping
+                        //   in grpc_completion_queue_next P/Invoke invocation and mono won't let the
+                        //   process shutdown until the P/Invoke calls return. We achieve that by shutting down
+                        //   the completion queue(s) which associated with the GrpcThreadPool, which will
+                        //   cause the grpc_completion_queue_next calls to return immediately.
                         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { HandleShutdown(); };
                         AppDomain.CurrentDomain.DomainUnload += (sender, eventArgs) => { HandleShutdown(); };
 #endif

@@ -45,7 +45,7 @@ namespace Grpc.Core.Tests
             var writeOptions = new WriteOptions();
             Assert.AreSame(writeOptions, options.WithWriteOptions(writeOptions).WriteOptions);
 
-            var propagationToken = new ContextPropagationToken(CallSafeHandle.NullInstance, DateTime.UtcNow, 
+            var propagationToken = new ContextPropagationTokenImpl(CallSafeHandle.NullInstance, DateTime.UtcNow,
                 CancellationToken.None, ContextPropagationOptions.Default);
             Assert.AreSame(propagationToken, options.WithPropagationToken(propagationToken).PropagationToken);
 
@@ -72,13 +72,13 @@ namespace Grpc.Core.Tests
             Assert.AreEqual(DateTime.MaxValue, new CallOptions().Normalize().Deadline.Value);
 
             var deadline = DateTime.UtcNow;
-            var propagationToken1 = new ContextPropagationToken(CallSafeHandle.NullInstance, deadline, CancellationToken.None,
+            var propagationToken1 = new ContextPropagationTokenImpl(CallSafeHandle.NullInstance, deadline, CancellationToken.None,
                 new ContextPropagationOptions(propagateDeadline: true, propagateCancellation: false));
             Assert.AreEqual(deadline, new CallOptions(propagationToken: propagationToken1).Normalize().Deadline.Value);
             Assert.Throws(typeof(ArgumentException), () => new CallOptions(deadline: deadline, propagationToken: propagationToken1).Normalize());
 
             var token = new CancellationTokenSource().Token;
-            var propagationToken2 = new ContextPropagationToken(CallSafeHandle.NullInstance, deadline, token,
+            var propagationToken2 = new ContextPropagationTokenImpl(CallSafeHandle.NullInstance, deadline, token,
                 new ContextPropagationOptions(propagateDeadline: false, propagateCancellation: true));
             Assert.AreEqual(token, new CallOptions(propagationToken: propagationToken2).Normalize().CancellationToken);
             Assert.Throws(typeof(ArgumentException), () => new CallOptions(cancellationToken: token, propagationToken: propagationToken2).Normalize());

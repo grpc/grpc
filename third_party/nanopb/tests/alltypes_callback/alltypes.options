@@ -1,4 +1,0 @@
-# Generate all fields as callbacks.
-AllTypes.*              type:FT_CALLBACK
-SubMessage.substuff1    max_size:16
-AllTypes.oneof          no_unions:true

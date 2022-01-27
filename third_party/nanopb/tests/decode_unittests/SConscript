@@ -1,4 +1,0 @@
-Import('env')
-p = env.Program(["decode_unittests.c", "$COMMON/unittestproto.pb.c"])
-env.RunTest(p)
-

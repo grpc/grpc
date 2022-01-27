@@ -17,15 +17,22 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
-SYSTEM=`uname | cut -f 1 -d_`
+SYSTEM=$(uname | cut -f 1 -d_)
 
 if [ "$SYSTEM" == "Darwin" ] ; then
   # Workaround for crash during bundle install
   # See suggestion in https://github.com/bundler/bundler/issues/3692
   BUNDLE_SPECIFIC_PLATFORM=true bundle install
 else
-  bundle install
+  # TODO(jtattermusch): remove the retry hack
+  # on linux artifact build, multiple instances of "bundle install" run in parallel
+  # in different workspaces. That should work fine since the workspaces
+  # are isolated, but causes occasional
+  # failures (builder/gem bug?). Retrying fixes the issue.
+  # Note that using bundle install --retry is not enough because
+  # that only retries downloading, not installation.
+  bundle install || (sleep 10; bundle install)
 fi
 
