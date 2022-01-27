@@ -22,7 +22,6 @@
 #include "test/core/util/test_config.h"
 
 using ::testing::MockFunction;
-using ::testing::Return;
 
 class EventEngineSmokeTest : public testing::Test {};
 
