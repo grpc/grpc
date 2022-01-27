@@ -21,6 +21,8 @@
 
 #include "test/core/util/test_config.h"
 
+namespace {
+
 using ::testing::MockFunction;
 
 class EventEngineSmokeTest : public testing::Test {};
@@ -35,6 +37,8 @@ TEST_F(EventEngineSmokeTest, SetDefaultEventEngineFactoryLinks) {
   grpc_event_engine::experimental::SetDefaultEventEngineFactory(&stdfn_fact);
   EXPECT_EQ(nullptr, grpc_event_engine::experimental::CreateEventEngine());
 }
+
+}  // namespace
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
