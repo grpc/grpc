@@ -335,11 +335,11 @@ def main(argv):
     # leaked target-proxy is guaranteed to be a super set of leaked
     # forwarding-rule.
     compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
-    r = compute.list_health_check()
-    leakedHealthChecks = [
-        ii for ii in r['items'] if datetime.datetime.fromisoformat(
-            ii['creationTimestamp']) <= get_expire_timestamp()
-    ]
+    leakedHealthChecks = []
+    for item in compute.list_health_check()['items']:
+        if datetime.datetime.fromisoformat(item['creationTimestamp']) <= get_expire_timestamp():
+            leakedHealthChecks.append(item)
+    
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedHealthChecks)
 
