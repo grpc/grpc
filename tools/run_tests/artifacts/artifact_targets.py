@@ -34,6 +34,7 @@ def create_docker_jobspec(name,
                           verbose_success=False):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
+    environ['RUN_COMMAND'] = shell_command
     environ['ARTIFACTS_OUT'] = 'artifacts/%s' % name
 
     docker_args = []
@@ -42,7 +43,6 @@ def create_docker_jobspec(name,
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
         'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
-        'DOCKER_RUN_SCRIPT_COMMAND': shell_command,
         'OUTPUT_DIR': 'artifacts'
     }
     if extra_docker_args is not None:
