@@ -378,7 +378,7 @@ class EventEngine {
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
-/// Replace gRPC's default EventEngine factory.
+/// Replace gRPC's default EventEngine factory
 ///
 /// Applications may call \a SetDefaultEventEngineFactory at any time to replace
 /// the default factory used within gRPC. EventEngines will be created when
@@ -390,7 +390,7 @@ class EventEngine {
 void SetDefaultEventEngineFactory(
     const std::function<std::unique_ptr<EventEngine>()>* factory);
 
-/// Create an EventEngine using the default factory.
+/// Create an EventEngine using the default factory
 std::unique_ptr<EventEngine> CreateEventEngine();
 
 }  // namespace experimental

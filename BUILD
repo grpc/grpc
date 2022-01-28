@@ -1709,8 +1709,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "event_engine_base_hdrs",
-    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS,
+    name = "event_engine_base",
+    srcs = [
+        "src/core/lib/event_engine/event_engine.cc",
+    ],
+    hdrs = GRPC_PUBLIC_EVENT_ENGINE_HDRS + GRPC_PUBLIC_HDRS + [
+        "src/core/lib/event_engine/event_engine_factory.h",
+    ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -1718,44 +1723,8 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "default_event_engine_factory_hdrs",
-    hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
-    ],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "default_event_engine_factory",
-    srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
-    ],
-    external_deps = [
-        # TODO(hork): uv, in a subsequent PR
-    ],
-    deps = [
-        "default_event_engine_factory_hdrs",
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "event_engine_base",
-    srcs = [
-        "src/core/lib/event_engine/event_engine.cc",
-    ],
-    deps = [
-        "default_event_engine_factory",
-        "default_event_engine_factory_hdrs",
-        "event_engine_base_hdrs",
-        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
     ],
 )
 
@@ -1775,6 +1744,22 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "default_event_engine_factory",
+    srcs = [
+        "src/core/lib/event_engine/event_engine_factory.cc",
+    ],
+    hdrs = [],
+    external_deps = [
+        # TODO(hork): uv, in a subsequent PR
+    ],
+    deps = [
+        "event_engine_base",
+        "gpr_base",
+        "gpr_platform",
     ],
 )
 
