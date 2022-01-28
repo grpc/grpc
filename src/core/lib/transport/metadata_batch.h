@@ -504,6 +504,7 @@ struct LbCostBinMetadata {
 // Annotation added by a transport to note whether a failed request was never
 // placed on the wire, or never seen by a server.
 struct GrpcStreamNetworkState {
+  static absl::string_view DebugKey() { return "GrpcStreamNetworkState"; }
   static constexpr bool kRepeatable = false;
   enum ValueType : uint8_t {
     kNotSentOnWire,
@@ -733,6 +734,15 @@ class GetStringValueHelper {
   std::string* backing_;
 };
 
+// Sink for key value logs
+using LogFn = absl::FunctionRef<void(absl::string_view, absl::string_view)>;
+
+template <typename T, typename U, typename V>
+GPR_ATTRIBUTE_NOINLINE void LogKeyValueTo(absl::string_view key, const T& value,
+                                          V (*display_value)(U), LogFn log_fn) {
+  log_fn(key, absl::StrCat(display_value(value)));
+}
+
 // Generate a strong type for metadata values per trait.
 template <typename Which, typename Ignored = void>
 struct Value;
@@ -756,6 +766,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
   void EncodeTo(Encoder* encoder) const {
     encoder->Encode(Which(), value);
   }
+  void LogTo(LogFn log_fn) const {
+    LogKeyValueTo(Which::key(), value, Which::DisplayValue, log_fn);
+  }
   using StorageType = typename Which::ValueType;
   GPR_NO_UNIQUE_ADDRESS StorageType value;
 };
@@ -777,6 +790,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
   }
   template <typename Encoder>
   void EncodeTo(Encoder*) const {}
+  void LogTo(LogFn log_fn) const {
+    LogKeyValueTo(Which::DebugKey(), value, Which::DisplayValue, log_fn);
+  }
   using StorageType = typename Which::ValueType;
   GPR_NO_UNIQUE_ADDRESS StorageType value;
 };
@@ -803,28 +819,13 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
       encoder->Encode(Which(), v);
     }
   }
+  void LogTo(LogFn log_fn) const {
+    for (const auto& v : value) {
+      LogKeyValueTo(Which::key(), v, Which::DisplayValue, log_fn);
+    }
+  }
   using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
   StorageType value;
-};
-
-// Encoder to log some metadata
-class LogEncoder {
- public:
-  explicit LogEncoder(
-      absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-      : log_fn_(log_fn) {}
-
-  template <typename Which>
-  void Encode(Which, const typename Which::ValueType& value) {
-    log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
-  }
-
-  void Encode(const Slice& key, const Slice& value) {
-    log_fn_(key.as_string_view(), value.as_string_view());
-  }
-
- private:
-  absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
 };
 
 // Encoder to copy some metadata
@@ -849,6 +850,55 @@ class CopySink {
 
  private:
   Output* dst_;
+};
+
+// Callable for the ForEach in Encode() -- for each value, call the
+// appropriate encoder method.
+template <typename Encoder>
+struct EncodeWrapper {
+  Encoder* encoder;
+  template <typename Which>
+  void operator()(const Value<Which>& which) {
+    which.EncodeTo(encoder);
+  }
+};
+
+// Callable for the ForEach in Log()
+struct LogWrapper {
+  LogFn log_fn;
+  template <typename Which>
+  void operator()(const Value<Which>& which) {
+    which.LogTo(log_fn);
+  }
+};
+
+// Encoder to compute TransportSize
+class TransportSizeEncoder {
+ public:
+  void Encode(const Slice& key, const Slice& value) {
+    size_ += key.length() + value.length() + 32;
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    Add(Which(), value);
+  }
+
+  void Encode(ContentTypeMetadata,
+              const typename ContentTypeMetadata::ValueType& value) {
+    if (value == ContentTypeMetadata::kInvalid) return;
+    Add(ContentTypeMetadata(), value);
+  }
+
+  size_t size() const { return size_; }
+
+ private:
+  template <typename Which>
+  void Add(Which, const typename Which::ValueType& value) {
+    size_ += Which::key().length() + Which::Encode(value).length() + 32;
+  }
+
+  uint32_t size_ = 0;
 };
 
 }  // namespace metadata_detail
@@ -928,6 +978,9 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // name):
 // // Traits for the GrpcXyz field:
 // struct GrpcXyz {
+//   // The string key that should be used for debug dumps - should not be a
+//   // valid http2 key (ie all lower case)
+//   static absl::string_view DebugKey() { return "GRPC_XYZ"; }
 //   // Can this metadata field be repeated?
 //   static constexpr bool kRepeatable = ...;
 //   // The type that's stored on MetadataBatch
@@ -985,7 +1038,7 @@ class MetadataMap {
   // transitions.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    table_.ForEach(EncodeWrapper<Encoder>{encoder});
+    table_.ForEach(metadata_detail::EncodeWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);
     }
@@ -993,8 +1046,12 @@ class MetadataMap {
 
   // Similar to Encode, but targeted at logging: for each metadatum,
   // call f(key, value) as absl::string_views.
-  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-      const;
+  void Log(metadata_detail::LogFn log_fn) const {
+    table_.ForEach(metadata_detail::LogWrapper{log_fn});
+    for (const auto& unk : unknown_) {
+      log_fn(unk.first.as_string_view(), unk.second.as_string_view());
+    }
+  }
 
   std::string DebugString() const {
     std::string out;
@@ -1149,46 +1206,6 @@ class MetadataMap {
   template <typename Which>
   using Value = metadata_detail::Value<Which>;
 
-  // Callable for the ForEach in Encode() -- for each value, call the
-  // appropriate encoder method.
-  template <typename Encoder>
-  struct EncodeWrapper {
-    Encoder* encoder;
-    template <typename Which>
-    void operator()(const Value<Which>& which) {
-      which.EncodeTo(encoder);
-    }
-  };
-
-  // Encoder to compute TransportSize
-  class TransportSizeEncoder {
-   public:
-    void Encode(const Slice& key, const Slice& value) {
-      size_ += key.length() + value.length() + 32;
-    }
-
-    template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      Add(Which(), value);
-    }
-
-    void Encode(ContentTypeMetadata,
-                const typename ContentTypeMetadata::ValueType& value) {
-      if (value == ContentTypeMetadata::kInvalid) return;
-      Add(ContentTypeMetadata(), value);
-    }
-
-    size_t size() const { return size_; }
-
-   private:
-    template <typename Which>
-    void Add(Which, const typename Which::ValueType& value) {
-      size_ += Which::key().length() + Which::Encode(value).length() + 32;
-    }
-
-    uint32_t size_ = 0;
-  };
-
   void AppendUnknown(absl::string_view key, Slice value) {
     unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
   }
@@ -1258,7 +1275,7 @@ void MetadataMap<Derived, Traits...>::Clear() {
 
 template <typename Derived, typename... Traits>
 size_t MetadataMap<Derived, Traits...>::TransportSize() const {
-  TransportSizeEncoder enc;
+  metadata_detail::TransportSizeEncoder enc;
   Encode(&enc);
   return enc.size();
 }
@@ -1269,14 +1286,6 @@ Derived MetadataMap<Derived, Traits...>::Copy() const {
   metadata_detail::CopySink<Derived> sink(&out);
   Encode(&sink);
   return out;
-}
-
-template <typename Derived, typename... Traits>
-void MetadataMap<Derived, Traits...>::Log(
-    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-    const {
-  metadata_detail::LogEncoder enc(log_fn);
-  Encode(&enc);
 }
 
 }  // namespace grpc_core
