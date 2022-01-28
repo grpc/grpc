@@ -35,9 +35,6 @@ fi
 # ensure the "reports" directory exists
 mkdir -p reports
 
-# TODO(jtattermusch): this is garbage, remove it.
-$POST_GIT_STEP
-
 # TODO(jtattermusch): is this necessary?
 cd /var/local/git/grpc
 
