@@ -2482,6 +2482,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       if (child_error != GRPC_ERROR_NONE) {
         error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "field:routeLookupChannelServiceConfig", &child_error, 1));
+        GRPC_ERROR_UNREF(child_error);
       }
     }
     // Parse childPolicyConfigTargetFieldName.
