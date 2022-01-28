@@ -173,7 +173,6 @@ namespace {
 TestOnlyGlobalHttp2TransportInitCallback test_only_init_callback = nullptr;
 TestOnlyGlobalHttp2TransportDestructCallback test_only_destruct_callback =
     nullptr;
-bool test_only_disable_transient_failure_state_notification = false;
 }  // namespace
 
 void TestOnlySetGlobalHttp2TransportInitCallback(
@@ -184,11 +183,6 @@ void TestOnlySetGlobalHttp2TransportInitCallback(
 void TestOnlySetGlobalHttp2TransportDestructCallback(
     TestOnlyGlobalHttp2TransportDestructCallback callback) {
   test_only_destruct_callback = callback;
-}
-
-void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
-    bool disable) {
-  test_only_disable_transient_failure_state_notification = disable;
 }
 
 }  // namespace grpc_core
@@ -1049,19 +1043,6 @@ static void queue_setting_update(grpc_chttp2_transport* t,
   }
 }
 
-// Cancel out streams that haven't yet started if we have received a GOAWAY
-static void cancel_unstarted_streams(grpc_chttp2_transport* t,
-                                     grpc_error_handle error) {
-  grpc_chttp2_stream* s;
-  while (grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
-    s->trailing_metadata_buffer.Set(
-        grpc_core::GrpcStreamNetworkState(),
-        grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
-    grpc_chttp2_cancel_stream(t, s, GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
-}
-
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
@@ -1087,22 +1068,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string.c_str(),
             goaway_error, grpc_error_std_string(t->goaway_error).c_str());
   }
-  cancel_unstarted_streams(t, GRPC_ERROR_REF(t->goaway_error));
-  // Cancel all unseen streams
-  grpc_chttp2_stream_map_for_each(
-      &t->stream_map,
-      [](void* user_data, uint32_t /* key */, void* stream) {
-        uint32_t last_stream_id = *(static_cast<uint32_t*>(user_data));
-        grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
-        if (s->id > last_stream_id) {
-          s->trailing_metadata_buffer.Set(
-              grpc_core::GrpcStreamNetworkState(),
-              grpc_core::GrpcStreamNetworkState::kNotSeenByServer);
-          grpc_chttp2_cancel_stream(s->t, s,
-                                    GRPC_ERROR_REF(s->t->goaway_error));
-        }
-      },
-      &last_stream_id);
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
@@ -1127,18 +1092,21 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   }
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
-  if (!grpc_core::test_only_disable_transient_failure_state_notification) {
-    connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-                           "got_goaway");
-  }
+  connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+                         "got_goaway");
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   grpc_chttp2_stream* s;
-  // maybe cancel out streams that haven't yet started if we have received a
-  // GOAWAY
+  // cancel out streams that haven't yet started if we have received a GOAWAY
   if (t->goaway_error != GRPC_ERROR_NONE) {
-    cancel_unstarted_streams(t, GRPC_ERROR_REF(t->goaway_error));
+    while (grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
+      grpc_chttp2_cancel_stream(
+          t, s,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    }
     return;
   }
   // start streams where we have free grpc_chttp2_stream ids and free
@@ -1173,9 +1141,6 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   // cancel out streams that will never be started
   if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
     while (grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
-      s->trailing_metadata_buffer.Set(
-          grpc_core::GrpcStreamNetworkState(),
-          grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
       grpc_chttp2_cancel_stream(
           t, s,
           grpc_error_set_int(
@@ -1443,9 +1408,6 @@ static void perform_stream_op_locked(void* stream_op,
           grpc_chttp2_list_add_waiting_for_concurrency(t, s);
           maybe_start_some_streams(t);
         } else {
-          s->trailing_metadata_buffer.Set(
-              grpc_core::GrpcStreamNetworkState(),
-              grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
           grpc_chttp2_cancel_stream(
               t, s,
               grpc_error_set_int(
@@ -2348,7 +2310,6 @@ static void end_all_the_calls(grpc_chttp2_transport* t,
     error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                GRPC_STATUS_UNAVAILABLE);
   }
-  cancel_unstarted_streams(t, GRPC_ERROR_REF(error));
   cancel_stream_cb_args args = {error, t};
   grpc_chttp2_stream_map_for_each(&t->stream_map, cancel_stream_cb, &args);
   GRPC_ERROR_UNREF(error);
