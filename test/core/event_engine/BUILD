@@ -50,12 +50,13 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_test(
-    name = "smoke_test",
-    srcs = ["smoke_test.cc"],
-    external_deps = ["gtest"],
-    deps = [
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
+# TODO(hork): re-enable after #28721 is imported
+# grpc_cc_test(
+#     name = "smoke_test",
+#     srcs = ["smoke_test.cc"],
+#     external_deps = ["gtest"],
+#     deps = [
+#         "//:grpc",
+#         "//test/core/util:grpc_test_util",
+#     ],
+# )
