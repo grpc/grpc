@@ -181,16 +181,11 @@ TEST(MemoryQuotaTest, ContainerAllocator) {
 TEST(MemoryQuotaTest, NoBunchingIfIdle) {
   // Ensure that we don't queue up useless reclamations even if there are no
   // memory reclamations needed.
-  ExecCtx exec_ctx;
-
   MemoryQuota memory_quota("foo");
-  auto start = exec_ctx.Now();
   std::atomic<size_t> count_reclaimers_called{0};
-  for (;;) {
-    exec_ctx.Flush();
-    exec_ctx.InvalidateNow();
-    if (exec_ctx.Now() - start > 5000) break;
 
+  for (size_t i = 0; i < 10000; i++) {
+    ExecCtx exec_ctx;
     auto memory_owner = memory_quota.CreateMemoryOwner("bar");
     memory_owner.PostReclaimer(
         ReclamationPass::kDestructive,
@@ -200,7 +195,8 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
         });
     auto object = memory_owner.MakeUnique<Sized<2048>>();
   }
-  EXPECT_GE(count_reclaimers_called.load(std::memory_order_relaxed), 1);
+
+  EXPECT_GE(count_reclaimers_called.load(std::memory_order_relaxed), 8000);
 }
 
 }  // namespace testing
