@@ -7845,6 +7845,17 @@ targets:
   - linux
   - posix
   - mac
+- name: streams_not_seen_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/streams_not_seen_test.cc
+  deps:
+  - grpc_test_util
 - name: string_ref_test
   gtest: true
   build: test
