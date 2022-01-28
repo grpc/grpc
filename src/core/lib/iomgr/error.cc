@@ -35,7 +35,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_utils.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
@@ -86,7 +85,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                             const char* call_name) {
   char* utf8_message = gpr_format_message(err);
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, "WSA Error", location, {});
+      StatusCreate(absl::StatusCode::kUnavailable, "WSA Error", location, {});
   StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
@@ -959,15 +958,17 @@ grpc_error_handle grpc_os_error(const char* file, int line, int err,
 grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
                                  const char* call_name) {
   char* utf8_message = gpr_format_message(err);
-  grpc_error_handle error = grpc_error_set_str(
+  grpc_error_handle error = grpc_error_set_int(
       grpc_error_set_str(
-          grpc_error_set_int(
-              grpc_error_create(file, line,
-                                grpc_slice_from_static_string("OS Error"), NULL,
-                                0),
-              GRPC_ERROR_INT_WSA_ERROR, err),
-          GRPC_ERROR_STR_OS_ERROR, utf8_message),
-      GRPC_ERROR_STR_SYSCALL, call_name);
+          grpc_error_set_str(
+              grpc_error_set_int(
+                  grpc_error_create(file, line,
+                                    grpc_slice_from_static_string("OS Error"),
+                                    NULL, 0),
+                  GRPC_ERROR_INT_WSA_ERROR, err),
+              GRPC_ERROR_STR_OS_ERROR, utf8_message),
+          GRPC_ERROR_STR_SYSCALL, call_name),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   gpr_free(utf8_message);
   return error;
 }

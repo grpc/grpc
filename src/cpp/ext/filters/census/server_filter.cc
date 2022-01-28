@@ -38,16 +38,16 @@ namespace {
 
 // server metadata elements
 struct ServerMetadataElements {
-  grpc_slice path;
+  grpc_core::Slice path;
   grpc_core::Slice tracing_slice;
   grpc_core::Slice census_proto;
 };
 
 void FilterInitialMetadata(grpc_metadata_batch* b,
                            ServerMetadataElements* sml) {
-  if (b->legacy_index()->named.path != nullptr) {
-    sml->path = grpc_slice_ref_internal(
-        GRPC_MDVALUE(b->legacy_index()->named.path->md));
+  const auto* path = b->get_pointer(grpc_core::HttpPathMetadata());
+  if (path != nullptr) {
+    sml->path = path->Ref();
   }
   auto grpc_trace_bin = b->Take(grpc_core::GrpcTraceBinMetadata());
   if (grpc_trace_bin.has_value()) {
@@ -88,14 +88,12 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
     GPR_ASSERT(initial_metadata != nullptr);
     ServerMetadataElements sml;
-    sml.path = grpc_empty_slice();
     FilterInitialMetadata(initial_metadata, &sml);
-    calld->path_ = grpc_slice_ref_internal(sml.path);
-    calld->method_ = GetMethod(&calld->path_);
+    calld->path_ = std::move(sml.path);
+    calld->method_ = GetMethod(calld->path_);
     calld->qualified_method_ = absl::StrCat("Recv.", calld->method_);
     GenerateServerContext(sml.tracing_slice.as_string_view(),
                           calld->qualified_method_, &calld->context_);
-    grpc_slice_unref_internal(sml.path);
     grpc_census_call_set_context(
         calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
   }
@@ -130,7 +128,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
     if (len > 0) {
       op->send_trailing_metadata()->batch()->Set(
           grpc_core::GrpcServerStatsBinMetadata(),
-          grpc_core::Slice(grpc_core::UnmanagedMemorySlice(stats_buf_, len)));
+          grpc_core::Slice::FromCopiedBuffer(stats_buf_, len));
     }
   }
   // Call next op.
@@ -166,7 +164,6 @@ void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,
        {RpcServerReceivedMessagesPerRpc(), recv_message_count_}},
       {{ServerMethodTagKey(), method_},
        {ServerStatusTagKey(), StatusCodeToString(final_info->final_status)}});
-  grpc_slice_unref_internal(path_);
   context_.EndSpan();
 }
 

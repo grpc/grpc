@@ -30,7 +30,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -163,7 +162,8 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  grpc_slice status_details1 = grpc_slice_from_static_string("message1");
+  grpc_slice status_details2 = grpc_slice_from_static_string("message2");
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -215,7 +215,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   op->data.send_status_from_server.trailing_metadata_count = 1;
   op->data.send_status_from_server.trailing_metadata = &pushback_md;
   op->data.send_status_from_server.status = GRPC_STATUS_ABORTED;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = &status_details1;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -270,7 +270,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  op->data.send_status_from_server.status_details = &status_details;
+  op->data.send_status_from_server.status_details = &status_details2;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
@@ -284,7 +284,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "message2"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 0);

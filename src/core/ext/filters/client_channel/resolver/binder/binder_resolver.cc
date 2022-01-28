@@ -23,11 +23,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 namespace {
@@ -46,7 +46,7 @@ class BinderResolver : public Resolver {
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
     channel_args_ = nullptr;
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
   }
 
   void ShutdownLocked() override {}

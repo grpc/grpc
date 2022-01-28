@@ -27,9 +27,13 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_route_config.h"
 
 namespace grpc_core {
@@ -187,12 +191,9 @@ struct XdsListenerResource {
   std::string ToString() const;
 };
 
-class XdsListenerResourceType : public XdsResourceType {
+class XdsListenerResourceType
+    : public XdsResourceTypeImpl<XdsListenerResourceType, XdsListenerResource> {
  public:
-  struct ListenerData : public ResourceData {
-    XdsListenerResource resource;
-  };
-
   absl::string_view type_url() const override {
     return "envoy.config.listener.v3.Listener";
   }
@@ -203,6 +204,15 @@ class XdsListenerResourceType : public XdsResourceType {
   absl::StatusOr<DecodeResult> Decode(const XdsEncodingContext& context,
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
+
+  bool AllResourcesRequiredInSotW() const override { return true; }
+
+  void InitUpbSymtab(upb_symtab* symtab) const override {
+    envoy_config_listener_v3_Listener_getmsgdef(symtab);
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+        symtab);
+    XdsHttpFilterRegistry::PopulateSymtab(symtab);
+  }
 };
 
 }  // namespace grpc_core

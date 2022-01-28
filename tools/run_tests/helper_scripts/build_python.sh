@@ -125,17 +125,9 @@ export LANG=en_US.UTF-8
 DEFAULT_PARALLEL_JOBS=$(nproc) || DEFAULT_PARALLEL_JOBS=4
 export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-$DEFAULT_PARALLEL_JOBS}
 
-# If ccache is available on Linux, use it.
-if [ "$(is_linux)" ]; then
-  # We're not on Darwin (Mac OS X)
-  if [ -x "$(command -v ccache)" ]; then
-    if [ -x "$(command -v gcc)" ]; then
-      export CC='ccache gcc'
-    elif [ -x "$(command -v clang)" ]; then
-      export CC='ccache clang'
-    fi
-  fi
-fi
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 ############################
 # Perform build operations #
@@ -150,10 +142,21 @@ else
   VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 fi
 
-# See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
-# on pip to upgrade itself because if pip is too old, it may not have the required
-# TLS version to run `pip install`.
-curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | $VENV_PYTHON
+
+# On library/version/platforms combo that do not have a binary
+# published, we may end up building a dependency from source. In that
+# case, several of our build environment variables may disrupt the
+# third-party build process. This function pipes through only the
+# minimal environment necessary.
+pip_install() {
+  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+}
+
+# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
+# https://github.com/pypa/setuptools/pull/2896
+export SETUPTOOLS_USE_DISTUTILS=stdlib
+pip_install --upgrade pip==21.3.1
+pip_install --upgrade setuptools==59.6.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -165,28 +168,14 @@ pip_install_dir() {
   cd "$PWD"
 }
 
-# On library/version/platforms combo that do not have a binary
-# published, we may end up building a dependency from source. In that
-# case, several of our build environment variables may disrupt the
-# third-party build process. This function pipes through only the
-# minimal environment necessary.
-pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
-}
-
-case "$VENV" in
-  *py36_gevent*)
+# Install gevent
+if [[ "$VENV" == "py36" ]]; then
   # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
   pip_install gevent==1.3.b1
-  ;;
-  *gevent*)
+else
   pip_install -U gevent
-  ;;
-esac
+fi
 
-
-pip_install --upgrade setuptools==44.1.1
-pip_install --upgrade pip==19.3.1
 pip_install --upgrade cython
 pip_install --upgrade six protobuf
 

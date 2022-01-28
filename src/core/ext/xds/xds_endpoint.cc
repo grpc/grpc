@@ -34,6 +34,7 @@
 #include "upb/upb.hpp"
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 namespace grpc_core {
@@ -330,20 +331,31 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsEndpointResourceType::Decode(
   auto* resource = envoy_config_endpoint_v3_ClusterLoadAssignment_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    return absl::InvalidArgumentError(
+        "Can't parse ClusterLoadAssignment resource.");
   }
   MaybeLogClusterLoadAssignment(context, resource);
   // Validate resource.
   DecodeResult result;
   result.name = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
-  auto endpoint_data = absl::make_unique<EndpointData>();
+  auto endpoint_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       EdsResourceParse(context, resource, is_v2, &endpoint_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
+    std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      gpr_log(GPR_ERROR, "[xds_client %p] invalid ClusterLoadAssignment %s: %s",
+              context.client, result.name.c_str(), error_str.c_str());
+    }
+    result.resource = absl::InvalidArgumentError(error_str);
   } else {
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      gpr_log(GPR_INFO, "[xds_client %p] parsed ClusterLoadAssignment %s: %s",
+              context.client, result.name.c_str(),
+              endpoint_data->resource.ToString().c_str());
+    }
     result.resource = std::move(endpoint_data);
   }
   return std::move(result);

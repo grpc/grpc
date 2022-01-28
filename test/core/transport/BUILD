@@ -106,33 +106,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "metadata_test",
-    srcs = ["metadata_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "pid_controller_test",
     srcs = ["pid_controller_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "static_metadata_test",
-    srcs = ["static_metadata_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -159,6 +134,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timeout_encoding_test",
     srcs = ["timeout_encoding_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [

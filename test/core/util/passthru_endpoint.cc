@@ -99,8 +99,8 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
       m->read_buffer.length,
       m->parent->channel_effects->allowed_read_bytes - m->bytes_read_so_far);
   GPR_ASSERT(readable_length > 0);
-  grpc_slice_buffer_move_first_no_ref(&m->read_buffer, readable_length,
-                                      m->pending_read_op.slices);
+  grpc_slice_buffer_move_first(&m->read_buffer, readable_length,
+                               m->pending_read_op.slices);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb, error);
   if (m->parent->simulate_channel_actions) {
     m->bytes_read_so_far += readable_length;
@@ -307,9 +307,7 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  half* m = reinterpret_cast<half*>(ep);
-  gpr_mu_lock(&m->parent->mu);
+static void shutdown_locked(half* m, grpc_error_handle why) {
   m->parent->shutdown = true;
   flush_pending_ops_locked(m, GRPC_ERROR_NONE);
   if (m->on_read) {
@@ -326,6 +324,12 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Shutdown", &why, 1));
     m->on_read = nullptr;
   }
+}
+
+static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+  half* m = reinterpret_cast<half*>(ep);
+  gpr_mu_lock(&m->parent->mu);
+  shutdown_locked(m, why);
   gpr_mu_unlock(&m->parent->mu);
   GRPC_ERROR_UNREF(why);
 }
@@ -472,7 +476,10 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    m->parent->channel_effects->on_complete();
+    auto* err =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
+    shutdown_locked(m, err);
+    GRPC_ERROR_UNREF(err);
     return;
   }
   grpc_timer_init(&m->parent->channel_effects->timer,
@@ -484,8 +491,7 @@ static void sched_next_channel_action_locked(half* m) {
 
 void start_scheduling_grpc_passthru_endpoint_channel_effects(
     grpc_endpoint* ep,
-    const std::vector<grpc_passthru_endpoint_channel_action>& actions,
-    std::function<void()> on_complete) {
+    const std::vector<grpc_passthru_endpoint_channel_action>& actions) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (!m->parent->simulate_channel_actions || m->parent->shutdown) {
@@ -493,7 +499,6 @@ void start_scheduling_grpc_passthru_endpoint_channel_effects(
     return;
   }
   m->parent->channel_effects->actions = actions;
-  m->parent->channel_effects->on_complete = std::move(on_complete);
   sched_next_channel_action_locked(m);
   gpr_mu_unlock(&m->parent->mu);
 }

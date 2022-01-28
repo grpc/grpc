@@ -605,6 +605,7 @@ static void tsi_test_channel_destroy(tsi_test_channel* channel) {
 }
 
 void tsi_test_fixture_init(tsi_test_fixture* fixture) {
+  memset(fixture, 0, sizeof(tsi_test_fixture));
   fixture->config = tsi_test_frame_protector_config_create(
       true, true, true, true, true, true, true);
   fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
@@ -628,10 +629,9 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   tsi_test_channel_destroy(fixture->channel);
   GPR_ASSERT(fixture->vtable != nullptr);
   GPR_ASSERT(fixture->vtable->destruct != nullptr);
-  fixture->vtable->destruct(fixture);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
-  gpr_free(fixture);
+  fixture->vtable->destruct(fixture);
 }
 
 tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create() {

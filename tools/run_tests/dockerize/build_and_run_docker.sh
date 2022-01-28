@@ -43,6 +43,13 @@ else
   docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
 fi
 
+if [[ -t 0 ]]; then
+  DOCKER_TTY_ARGS="-it"
+else
+  # The input device on kokoro is not a TTY, so -it does not work.
+  DOCKER_TTY_ARGS=
+fi
+
 # Choose random name for docker container
 CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
 
@@ -53,14 +60,11 @@ docker run \
   "$@" \
   --cap-add SYS_PTRACE \
   -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
-  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
-  -e "KOKORO_BUILD_ID=$KOKORO_BUILD_ID" \
-  -e "KOKORO_BUILD_NUMBER=$KOKORO_BUILD_NUMBER" \
-  -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
-  -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
+  --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -w /var/local/git/grpc \
   --name="$CONTAINER_NAME" \
+  $DOCKER_TTY_ARGS \
   $EXTRA_DOCKER_ARGS \
   "$DOCKER_IMAGE_NAME" \
   /bin/bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"

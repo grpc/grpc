@@ -18,64 +18,21 @@
 
 #include "src/core/ext/xds/xds_api.h"
 
-#include <algorithm>
-#include <cctype>
-#include <cstdint>
-#include <cstdlib>
+#include <set>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 #include "envoy/admin/v3/config_dump.upb.h"
-#include "envoy/config/cluster/v3/circuit_breaker.upb.h"
-#include "envoy/config/cluster/v3/cluster.upb.h"
-#include "envoy/config/cluster/v3/cluster.upbdefs.h"
-#include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/core/v3/base.upbdefs.h"
-#include "envoy/config/core/v3/config_source.upb.h"
-#include "envoy/config/core/v3/health_check.upb.h"
-#include "envoy/config/core/v3/protocol.upb.h"
-#include "envoy/config/endpoint/v3/endpoint.upb.h"
-#include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
-#include "envoy/config/listener/v3/api_listener.upb.h"
-#include "envoy/config/listener/v3/listener.upb.h"
-#include "envoy/config/listener/v3/listener.upbdefs.h"
-#include "envoy/config/listener/v3/listener_components.upb.h"
-#include "envoy/config/route/v3/route.upb.h"
-#include "envoy/config/route/v3/route.upbdefs.h"
-#include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/config/route/v3/route_components.upbdefs.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
-#include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
-#include "envoy/service/cluster/v3/cds.upb.h"
-#include "envoy/service/cluster/v3/cds.upbdefs.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
-#include "envoy/service/endpoint/v3/eds.upb.h"
-#include "envoy/service/endpoint/v3/eds.upbdefs.h"
-#include "envoy/service/listener/v3/lds.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
-#include "envoy/service/route/v3/rds.upb.h"
-#include "envoy/service/route/v3/rds.upbdefs.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "envoy/service/status/v3/csds.upbdefs.h"
-#include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
-#include "envoy/type/v3/percent.upb.h"
-#include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -83,18 +40,16 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
-#include "xds/type/v3/typed_struct.upb.h"
 
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -102,112 +57,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
-
-//
-// XdsApi
-//
-
-// TODO(roth): All constants and functions for individual resource types
-// should be merged into the XdsResourceType abstraction.
-const char* XdsApi::kLdsTypeUrl = "envoy.config.listener.v3.Listener";
-const char* XdsApi::kRdsTypeUrl = "envoy.config.route.v3.RouteConfiguration";
-const char* XdsApi::kCdsTypeUrl = "envoy.config.cluster.v3.Cluster";
-const char* XdsApi::kEdsTypeUrl =
-    "envoy.config.endpoint.v3.ClusterLoadAssignment";
-
-namespace {
-
-const char* kLdsV2TypeUrl = "envoy.api.v2.Listener";
-const char* kRdsV2TypeUrl = "envoy.api.v2.RouteConfiguration";
-const char* kCdsV2TypeUrl = "envoy.api.v2.Cluster";
-const char* kEdsV2TypeUrl = "envoy.api.v2.ClusterLoadAssignment";
-
-bool IsLdsInternal(absl::string_view type_url, bool* is_v2 = nullptr) {
-  if (type_url == XdsApi::kLdsTypeUrl) return true;
-  if (type_url == kLdsV2TypeUrl) {
-    if (is_v2 != nullptr) *is_v2 = true;
-    return true;
-  }
-  return false;
-}
-
-bool IsRdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kRdsTypeUrl || type_url == kRdsV2TypeUrl;
-}
-
-bool IsCdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kCdsTypeUrl || type_url == kCdsV2TypeUrl;
-}
-
-bool IsEdsInternal(absl::string_view type_url, bool* /*is_v2*/ = nullptr) {
-  return type_url == XdsApi::kEdsTypeUrl || type_url == kEdsV2TypeUrl;
-}
-
-absl::string_view TypeUrlExternalToInternal(bool use_v3,
-                                            const std::string& type_url) {
-  if (!use_v3) {
-    if (type_url == XdsApi::kLdsTypeUrl) {
-      return kLdsV2TypeUrl;
-    }
-    if (type_url == XdsApi::kRdsTypeUrl) {
-      return kRdsV2TypeUrl;
-    }
-    if (type_url == XdsApi::kCdsTypeUrl) {
-      return kCdsV2TypeUrl;
-    }
-    if (type_url == XdsApi::kEdsTypeUrl) {
-      return kEdsV2TypeUrl;
-    }
-  }
-  return type_url;
-}
-
-std::string TypeUrlInternalToExternal(absl::string_view type_url) {
-  if (type_url == kLdsV2TypeUrl) {
-    return XdsApi::kLdsTypeUrl;
-  } else if (type_url == kRdsV2TypeUrl) {
-    return XdsApi::kRdsTypeUrl;
-  } else if (type_url == kCdsV2TypeUrl) {
-    return XdsApi::kCdsTypeUrl;
-  } else if (type_url == kEdsV2TypeUrl) {
-    return XdsApi::kEdsTypeUrl;
-  }
-  return std::string(type_url);
-}
-
-absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
-    absl::string_view name,
-    std::function<bool(absl::string_view, bool*)> is_expected_type) {
-  // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
-    return XdsApi::ResourceName{"old:", std::string(name)};
-  }
-  // New style name.  Parse URI.
-  auto uri = URI::Parse(name);
-  if (!uri.ok()) return uri.status();
-  // Split the resource type off of the path to get the id.
-  std::pair<absl::string_view, absl::string_view> path_parts =
-      absl::StrSplit(uri->path(), absl::MaxSplits('/', 1));
-  if (!is_expected_type(path_parts.first, nullptr)) {
-    return absl::InvalidArgumentError(
-        "xdstp URI path must indicate valid xDS resource type");
-  }
-  std::vector<std::pair<absl::string_view, absl::string_view>> query_parameters(
-      uri->query_parameter_map().begin(), uri->query_parameter_map().end());
-  std::sort(query_parameters.begin(), query_parameters.end());
-  return XdsApi::ResourceName{
-      absl::StrCat("xdstp:", uri->authority()),
-      absl::StrCat(
-          path_parts.second, (query_parameters.empty() ? "?" : ""),
-          absl::StrJoin(query_parameters, "&", absl::PairFormatter("=")))};
-}
-
-}  // namespace
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
@@ -230,11 +83,13 @@ absl::StatusOr<XdsApi::ResourceName> ParseResourceNameInternal(
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node,
                const CertificateProviderStore::PluginDefinitionMap*
-                   certificate_provider_definition_map)
+                   certificate_provider_definition_map,
+               upb::SymbolTable* symtab)
     : client_(client),
       tracer_(tracer),
       node_(node),
       certificate_provider_definition_map_(certificate_provider_definition_map),
+      symtab_(symtab),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
                                   GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
@@ -244,58 +99,7 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       user_agent_version_(
           absl::StrCat("C-core ", grpc_version_string(),
                        GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
-                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {
-  // Populate upb symtab with xDS proto messages that we want to print
-  // properly in logs.
-  // Note: This won't actually work properly until upb adds support for
-  // Any fields in textproto printing (internal b/178821188).
-  envoy_config_listener_v3_Listener_getmsgdef(symtab_.ptr());
-  envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab_.ptr());
-  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
-  envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab_.ptr());
-  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
-  envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab_.ptr());
-  envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
-      symtab_.ptr());
-  envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
-      symtab_.ptr());
-  // Load HTTP filter proto messages into the upb symtab.
-  XdsHttpFilterRegistry::PopulateSymtab(symtab_.ptr());
-}
-
-bool XdsApi::IsLds(absl::string_view type_url) {
-  return IsLdsInternal(type_url);
-}
-
-bool XdsApi::IsRds(absl::string_view type_url) {
-  return IsRdsInternal(type_url);
-}
-
-bool XdsApi::IsCds(absl::string_view type_url) {
-  return IsCdsInternal(type_url);
-}
-
-bool XdsApi::IsEds(absl::string_view type_url) {
-  return IsEdsInternal(type_url);
-}
-
-absl::StatusOr<XdsApi::ResourceName> XdsApi::ParseResourceName(
-    absl::string_view name, bool (*is_expected_type)(absl::string_view)) {
-  return ParseResourceNameInternal(
-      name, [is_expected_type](absl::string_view type, bool*) {
-        return is_expected_type(type);
-      });
-}
-
-std::string XdsApi::ConstructFullResourceName(absl::string_view authority,
-                                              absl::string_view resource_type,
-                                              absl::string_view name) {
-  if (absl::ConsumePrefix(&authority, "xdstp:")) {
-    return absl::StrCat("xdstp://", authority, "/", resource_type, "/", name);
-  } else {
-    return std::string(absl::StripPrefix(name, "old:"));
-  }
-}
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {}
 
 namespace {
 
@@ -467,15 +271,15 @@ grpc_slice SerializeDiscoveryRequest(
 }  // namespace
 
 grpc_slice XdsApi::CreateAdsRequest(
-    const XdsBootstrap::XdsServer& server, const std::string& type_url,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>& resource_names,
-    const std::string& version, const std::string& nonce,
-    grpc_error_handle error, bool populate_node) {
+    const XdsBootstrap::XdsServer& server, absl::string_view type_url,
+    absl::string_view version, absl::string_view nonce,
+    const std::vector<std::string>& resource_names, grpc_error_handle error,
+    bool populate_node) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
+                                      server,
                                       tracer_,
-                                      symtab_.ptr(),
+                                      symtab_->ptr(),
                                       arena.ptr(),
                                       server.ShouldUseV3(),
                                       certificate_provider_definition_map_};
@@ -483,12 +287,9 @@ grpc_slice XdsApi::CreateAdsRequest(
   envoy_service_discovery_v3_DiscoveryRequest* request =
       envoy_service_discovery_v3_DiscoveryRequest_new(arena.ptr());
   // Set type_url.
-  absl::string_view real_type_url =
-      TypeUrlExternalToInternal(server.ShouldUseV3(), type_url);
-  std::string real_type_url_str =
-      absl::StrCat("type.googleapis.com/", real_type_url);
+  std::string type_url_str = absl::StrCat("type.googleapis.com/", type_url);
   envoy_service_discovery_v3_DiscoveryRequest_set_type_url(
-      request, StdStringToUpbString(real_type_url_str));
+      request, StdStringToUpbString(type_url_str));
   // Set version_info.
   if (!version.empty()) {
     envoy_service_discovery_v3_DiscoveryRequest_set_version_info(
@@ -524,27 +325,10 @@ grpc_slice XdsApi::CreateAdsRequest(
     PopulateNode(context, node_, build_version_, user_agent_name_,
                  user_agent_version_, node_msg);
   }
-  // A vector for temporary local storage of resource name strings.
-  std::vector<std::string> resource_name_storage;
-  // Make sure the vector is sized right up-front, so that reallocations
-  // don't move the strings out from under the upb proto object that
-  // points to them.
-  size_t size = 0;
-  for (const auto& p : resource_names) {
-    size += p.second.size();
-  }
-  resource_name_storage.reserve(size);
   // Add resource_names.
-  for (const auto& a : resource_names) {
-    absl::string_view authority = a.first;
-    for (const auto& p : a.second) {
-      absl::string_view resource_id = p;
-      resource_name_storage.push_back(
-          ConstructFullResourceName(authority, real_type_url, resource_id));
-      envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
-          request, StdStringToUpbString(resource_name_storage.back()),
-          arena.ptr());
-    }
+  for (const std::string& resource_name : resource_names) {
+    envoy_service_discovery_v3_DiscoveryRequest_add_resource_names(
+        request, StdStringToUpbString(resource_name), arena.ptr());
   }
   MaybeLogDiscoveryRequest(context, request);
   return SerializeDiscoveryRequest(context, request);
@@ -566,114 +350,16 @@ void MaybeLogDiscoveryResponse(
   }
 }
 
-grpc_error_handle AdsResourceParse(
-    const XdsEncodingContext& context, XdsResourceType* type, size_t idx,
-    const google_protobuf_Any* resource_any,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_resource_names,
-    std::function<grpc_error_handle(
-        absl::string_view, XdsApi::ResourceName,
-        std::unique_ptr<XdsResourceType::ResourceData>, std::string)>
-        add_result_func,
-    std::set<XdsApi::ResourceName>* resource_names_failed) {
-  // Check the type_url of the resource.
-  absl::string_view type_url = absl::StripPrefix(
-      UpbStringToAbsl(google_protobuf_Any_type_url(resource_any)),
-      "type.googleapis.com/");
-  bool is_v2 = false;
-  if (!type->IsType(type_url, &is_v2)) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": found resource type ", type_url,
-                     " in response for type ", type->type_url()));
-  }
-  // Parse the resource.
-  absl::string_view serialized_resource =
-      UpbStringToAbsl(google_protobuf_Any_value(resource_any));
-  absl::StatusOr<XdsResourceType::DecodeResult> result =
-      type->Decode(context, serialized_resource, is_v2);
-  if (!result.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("resource index ", idx, ": ", result.status().ToString()));
-  }
-  // Check the resource name.
-  auto resource_name = ParseResourceNameInternal(
-      result->name, [type](absl::string_view type_url, bool* is_v2) {
-        return type->IsType(type_url, is_v2);
-      });
-  if (!resource_name.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "resource index ", idx, ": Cannot parse xDS resource name \"",
-        result->name, "\""));
-  }
-  // Ignore unexpected names.
-  auto iter = subscribed_resource_names.find(resource_name->authority);
-  if (iter == subscribed_resource_names.end() ||
-      iter->second.find(resource_name->id) == iter->second.end()) {
-    return GRPC_ERROR_NONE;
-  }
-  // Check that resource was valid.
-  if (!result->resource.ok()) {
-    resource_names_failed->insert(*resource_name);
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "resource index ", idx, ": ", result->name,
-        ": validation error: ", result->resource.status().ToString()));
-  }
-  // Add result.
-  grpc_error_handle error = add_result_func(result->name, *resource_name,
-                                            std::move(*result->resource),
-                                            std::string(serialized_resource));
-  if (error != GRPC_ERROR_NONE) {
-    resource_names_failed->insert(*resource_name);
-    return grpc_error_add_child(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            "resource index ", idx, ": ", result->name, ": validation error")),
-        error);
-  }
-  return GRPC_ERROR_NONE;
-}
-
-template <typename UpdateMap, typename ResourceTypeData>
-grpc_error_handle AddResult(
-    UpdateMap* update_map, absl::string_view resource_name_string,
-    XdsApi::ResourceName resource_name,
-    std::unique_ptr<XdsResourceType::ResourceData> resource,
-    std::string serialized_resource) {
-  // Reject duplicate names.
-  if (update_map->find(resource_name) != update_map->end()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("duplicate resource name \"", resource_name_string, "\""));
-  }
-  // Save result.
-  auto& resource_data = (*update_map)[resource_name];
-  ResourceTypeData* typed_resource =
-      static_cast<ResourceTypeData*>(resource.get());
-  resource_data.resource = std::move(typed_resource->resource);
-  resource_data.serialized_proto = std::move(serialized_resource);
-  return GRPC_ERROR_NONE;
-}
-
 }  // namespace
 
-XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
-    const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_listener_names,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_route_config_names,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_cluster_names,
-    const std::map<absl::string_view /*authority*/,
-                   std::set<absl::string_view /*name*/>>&
-        subscribed_eds_service_names) {
-  AdsParseResult result;
+absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
+                                      const grpc_slice& encoded_response,
+                                      AdsResponseParserInterface* parser) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
+                                      server,
                                       tracer_,
-                                      symtab_.ptr(),
+                                      symtab_->ptr(),
                                       arena.ptr(),
                                       server.ShouldUseV3(),
                                       certificate_provider_definition_map_};
@@ -682,99 +368,38 @@ XdsApi::AdsParseResult XdsApi::ParseAdsResponse(
       envoy_service_discovery_v3_DiscoveryResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
-  // If decoding fails, output an empty type_url and return.
+  // If decoding fails, report a fatal error and return.
   if (response == nullptr) {
-    result.parse_error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode DiscoveryResponse.");
-    return result;
+    return absl::InvalidArgumentError("Can't decode DiscoveryResponse.");
   }
   MaybeLogDiscoveryResponse(context, response);
-  // Record the type_url, the version_info, and the nonce of the response.
-  result.type_url = TypeUrlInternalToExternal(absl::StripPrefix(
+  // Report the type_url, version, nonce, and number of resources to the parser.
+  AdsResponseParserInterface::AdsResponseFields fields;
+  fields.type_url = std::string(absl::StripPrefix(
       UpbStringToAbsl(
           envoy_service_discovery_v3_DiscoveryResponse_type_url(response)),
       "type.googleapis.com/"));
-  result.version = UpbStringToStdString(
+  fields.version = UpbStringToStdString(
       envoy_service_discovery_v3_DiscoveryResponse_version_info(response));
-  result.nonce = UpbStringToStdString(
+  fields.nonce = UpbStringToStdString(
       envoy_service_discovery_v3_DiscoveryResponse_nonce(response));
-  // Get the resources from the response.
-  std::vector<grpc_error_handle> errors;
-  size_t size;
+  size_t num_resources;
   const google_protobuf_Any* const* resources =
-      envoy_service_discovery_v3_DiscoveryResponse_resources(response, &size);
-  for (size_t i = 0; i < size; ++i) {
-    // Parse the response according to the resource type.
-    // TODO(roth): When we have time, change the API here to avoid the need
-    // for templating and conditionals.
-    grpc_error_handle parse_error = GRPC_ERROR_NONE;
-    if (IsLds(result.type_url)) {
-      XdsListenerResourceType resource_type;
-      auto& update_map = result.lds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i], subscribed_listener_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<LdsUpdateMap,
-                             XdsListenerResourceType::ListenerData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    } else if (IsRds(result.type_url)) {
-      XdsRouteConfigResourceType resource_type;
-      auto& update_map = result.rds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i],
-          subscribed_route_config_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<RdsUpdateMap,
-                             XdsRouteConfigResourceType::RouteConfigData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    } else if (IsCds(result.type_url)) {
-      XdsClusterResourceType resource_type;
-      auto& update_map = result.cds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i], subscribed_cluster_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<CdsUpdateMap, XdsClusterResourceType::ClusterData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    } else if (IsEds(result.type_url)) {
-      XdsEndpointResourceType resource_type;
-      auto& update_map = result.eds_update_map;
-      parse_error = AdsResourceParse(
-          context, &resource_type, i, resources[i],
-          subscribed_eds_service_names,
-          [&update_map](absl::string_view resource_name_string,
-                        XdsApi::ResourceName resource_name,
-                        std::unique_ptr<XdsResourceType::ResourceData> resource,
-                        std::string serialized_resource) {
-            return AddResult<EdsUpdateMap,
-                             XdsEndpointResourceType::EndpointData>(
-                &update_map, resource_name_string, std::move(resource_name),
-                std::move(resource), std::move(serialized_resource));
-          },
-          &result.resource_names_failed);
-    }
-    if (parse_error != GRPC_ERROR_NONE) errors.push_back(parse_error);
+      envoy_service_discovery_v3_DiscoveryResponse_resources(response,
+                                                             &num_resources);
+  fields.num_resources = num_resources;
+  absl::Status status = parser->ProcessAdsResponseFields(std::move(fields));
+  if (!status.ok()) return status;
+  // Process each resource.
+  for (size_t i = 0; i < num_resources; ++i) {
+    absl::string_view type_url = absl::StripPrefix(
+        UpbStringToAbsl(google_protobuf_Any_type_url(resources[i])),
+        "type.googleapis.com/");
+    absl::string_view serialized_resource =
+        UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
+    parser->ParseResource(context, i, type_url, serialized_resource);
   }
-  result.parse_error =
-      GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing ADS response", &errors);
-  return result;
+  return absl::OkStatus();
 }
 
 namespace {
@@ -808,8 +433,9 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
+                                      server,
                                       tracer_,
-                                      symtab_.ptr(),
+                                      symtab_->ptr(),
                                       arena.ptr(),
                                       server.ShouldUseV3(),
                                       certificate_provider_definition_map_};
@@ -882,9 +508,16 @@ void LocalityStatsPopulate(
 grpc_slice XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
-  const XdsEncodingContext context = {
-      client_,     tracer_, symtab_.ptr(),
-      arena.ptr(), false,   certificate_provider_definition_map_};
+  // The xDS server info is not actually needed here, so we seed it with an
+  // empty value.
+  XdsBootstrap::XdsServer empty_server;
+  const XdsEncodingContext context = {client_,
+                                      empty_server,
+                                      tracer_,
+                                      symtab_->ptr(),
+                                      arena.ptr(),
+                                      false,
+                                      certificate_provider_definition_map_};
   // Create a request.
   envoy_service_load_stats_v3_LoadStatsRequest* request =
       envoy_service_load_stats_v3_LoadStatsRequest_new(arena.ptr());
@@ -1006,9 +639,16 @@ std::string XdsApi::AssembleClientConfig(
   // Fill-in the node information
   auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
                                                                  arena.ptr());
-  const XdsEncodingContext context = {
-      client_,     tracer_, symtab_.ptr(),
-      arena.ptr(), true,    certificate_provider_definition_map_};
+  // The xDS server info is not actually needed here, so we seed it with an
+  // empty value.
+  XdsBootstrap::XdsServer empty_server;
+  const XdsEncodingContext context = {client_,
+                                      empty_server,
+                                      tracer_,
+                                      symtab_->ptr(),
+                                      arena.ptr(),
+                                      true,
+                                      certificate_provider_definition_map_};
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node);
   // Dump each resource.

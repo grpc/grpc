@@ -24,6 +24,9 @@
 extern "C" JNIEXPORT jstring JNICALL
 Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
     JNIEnv* env, jobject /*this*/, jobject application) {
+  // Lower the gRPC logging level, here it is just for demo and debugging
+  // purpose.
+  setenv("GRPC_VERBOSITY", "INFO", true);
   if (grpc::experimental::InitializeBinderChannelJavaClass(env)) {
     __android_log_print(ANDROID_LOG_INFO, "DemoClient",
                         "InitializeBinderChannelJavaClass succeed");
@@ -35,12 +38,17 @@ Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
   static std::shared_ptr<grpc::Channel> channel;
   if (first) {
     first = false;
-    // TODO(mingcl): Use same signature security after it become available
+    JavaVM* jvm;
+    {
+      jint result = env->GetJavaVM(&jvm);
+      assert(result == 0);
+    }
     channel = grpc::experimental::CreateBinderChannel(
         env, application, "io.grpc.binder.cpp.exampleserver",
         "io.grpc.binder.cpp.exampleserver.ExportedEndpointService",
         std::make_shared<
-            grpc::experimental::binder::UntrustedSecurityPolicy>());
+            grpc::experimental::binder::SameSignatureSecurityPolicy>(
+            jvm, application));
     return env->NewStringUTF("Clicked 1 time, channel created");
   } else {
     auto stub = helloworld::Greeter::NewStub(channel);

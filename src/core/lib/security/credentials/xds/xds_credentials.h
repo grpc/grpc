@@ -23,7 +23,7 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {

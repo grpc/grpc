@@ -70,9 +70,9 @@ std::string XdsClusterResource::ToString() const {
     contents.push_back(absl::StrFormat("common_tls_context=%s",
                                        common_tls_context.ToString()));
   }
-  if (lrs_load_reporting_server_name.has_value()) {
+  if (lrs_load_reporting_server.has_value()) {
     contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
-                                       lrs_load_reporting_server_name.value()));
+                                       lrs_load_reporting_server->server_uri));
   }
   contents.push_back(absl::StrCat("lb_policy=", lb_policy));
   if (lb_policy == "RING_HASH") {
@@ -235,9 +235,10 @@ grpc_error_handle CdsResourceParse(
     const envoy_config_core_v3_ConfigSource* eds_config =
         envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(
             eds_cluster_config);
-    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config)) {
-      errors.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("EDS ConfigSource is not ADS."));
+    if (!envoy_config_core_v3_ConfigSource_has_ads(eds_config) &&
+        !envoy_config_core_v3_ConfigSource_has_self(eds_config)) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "EDS ConfigSource is not ADS or SELF."));
     }
     // Record EDS service_name (if any).
     upb_strview service_name =
@@ -368,7 +369,7 @@ grpc_error_handle CdsResourceParse(
       errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           ": LRS ConfigSource is not self."));
     }
-    cds_update->lrs_load_reporting_server_name.emplace("");
+    cds_update->lrs_load_reporting_server.emplace(context.server);
   }
   // The Cluster resource encodes the circuit breaking parameters in a list of
   // Thresholds messages, where each message specifies the parameters for a
@@ -420,20 +421,29 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   auto* resource = envoy_config_cluster_v3_Cluster_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    return absl::InvalidArgumentError("Can't parse Listener resource.");
+    return absl::InvalidArgumentError("Can't parse Cluster resource.");
   }
   MaybeLogCluster(context, resource);
   // Validate resource.
   DecodeResult result;
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
-  auto cluster_data = absl::make_unique<ClusterData>();
+  auto cluster_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
   if (error != GRPC_ERROR_NONE) {
-    result.resource = absl::InvalidArgumentError(grpc_error_std_string(error));
+    std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      gpr_log(GPR_ERROR, "[xds_client %p] invalid Cluster %s: %s",
+              context.client, result.name.c_str(), error_str.c_str());
+    }
+    result.resource = absl::InvalidArgumentError(error_str);
   } else {
+    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
+              result.name.c_str(), cluster_data->resource.ToString().c_str());
+    }
     result.resource = std::move(cluster_data);
   }
   return std::move(result);

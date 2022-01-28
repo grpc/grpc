@@ -46,4 +46,17 @@ grpc_cc_library(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    # Ensure the linker doesn't throw away test cases.
+    alwayslink = 1,
 )
+
+# TODO(hork): re-enable after #28721 is imported
+# grpc_cc_test(
+#     name = "smoke_test",
+#     srcs = ["smoke_test.cc"],
+#     external_deps = ["gtest"],
+#     deps = [
+#         "//:grpc",
+#         "//test/core/util:grpc_test_util",
+#     ],
+# )

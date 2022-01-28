@@ -19,11 +19,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/service_config/service_config_call_data.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
@@ -123,6 +123,7 @@ void ServiceConfigChannelArgDestroyChannelElem(grpc_channel_element* elem) {
 
 const grpc_channel_filter ServiceConfigChannelArgFilter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     sizeof(ServiceConfigChannelArgCallData),
     ServiceConfigChannelArgInitCallElem,
@@ -140,16 +141,15 @@ void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        const grpc_channel_args* channel_args =
-            grpc_channel_stack_builder_get_channel_arguments(builder);
+      [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* channel_args = builder->channel_args();
         if (grpc_channel_args_want_minimal_stack(channel_args) ||
             grpc_channel_args_find_string(channel_args,
                                           GRPC_ARG_SERVICE_CONFIG) == nullptr) {
           return true;
         }
-        return grpc_channel_stack_builder_prepend_filter(
-            builder, &ServiceConfigChannelArgFilter, nullptr, nullptr);
+        builder->PrependFilter(&ServiceConfigChannelArgFilter, nullptr);
+        return true;
       });
 }
 

@@ -23,15 +23,16 @@
 #include <iterator>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -325,8 +326,20 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Data passed to the UpdateLocked() method when new addresses and
   /// config are available.
   struct UpdateArgs {
-    ServerAddressList addresses;
+    /// A list of addresses, or an error indicating a failure to obtain the
+    /// list of addresses.
+    absl::StatusOr<ServerAddressList> addresses;
+    /// The LB policy config.
     RefCountedPtr<Config> config;
+    /// A human-readable note providing context about the name resolution that
+    /// provided this update.  LB policies may wish to include this message
+    /// in RPC failure status messages.  For example, if the update has an
+    /// empty list of addresses, this message might say "no DNS entries
+    /// found for <name>".
+    std::string resolution_note;
+
+    // TODO(roth): Before making this a public API, find a better
+    // abstraction for representing channel args.
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
@@ -368,6 +381,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
   /// the resolver returns a new result.
+  // TODO(roth): Change this to return some indication as to whether the
+  // update has been accepted, so that we can indicate to the resolver
+  // whether it should go into backoff to retry the resolution.
   virtual void UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
@@ -438,4 +454,4 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H

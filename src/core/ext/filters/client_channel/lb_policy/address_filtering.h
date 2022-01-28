@@ -23,7 +23,9 @@
 #include <string>
 #include <vector>
 
-#include "src/core/ext/filters/client_channel/server_address.h"
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/resolver/server_address.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
 // LB policies is in use, each leaf of the hierarchy will need a
@@ -92,10 +94,9 @@ MakeHierarchicalPathAttribute(std::vector<std::string> path);
 using HierarchicalAddressMap = std::map<std::string, ServerAddressList>;
 
 // Splits up the addresses into a separate list for each child.
-HierarchicalAddressMap MakeHierarchicalAddressMap(
-    const ServerAddressList& addresses);
+absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
+    const absl::StatusOr<ServerAddressList>& addresses);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ADDRESS_FILTERING_H \
-        */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_ADDRESS_FILTERING_H

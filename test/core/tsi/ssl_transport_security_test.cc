@@ -22,6 +22,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -34,12 +38,6 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
-
-extern "C" {
-#include <openssl/crypto.h>
-#include <openssl/err.h>
-#include <openssl/pem.h>
-}
 
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"
@@ -415,6 +413,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
       ssl_fixture->server_handshaker_factory);
   tsi_ssl_client_handshaker_factory_unref(
       ssl_fixture->client_handshaker_factory);
+  gpr_free(ssl_fixture);
 }
 
 static const struct tsi_test_fixture_vtable vtable = {
