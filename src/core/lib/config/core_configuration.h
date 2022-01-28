@@ -19,6 +19,7 @@
 
 #include <atomic>
 
+#include "src/core/ext/xds/xds_channel_creds.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -46,12 +47,17 @@ class CoreConfiguration {
       return &handshaker_registry_;
     }
 
+    XdsChannelCredsRegistry::Builder* xds_channel_creds_registry() {
+      return &xds_channel_creds_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
     ChannelArgsPreconditioning::Builder channel_args_preconditioning_;
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
+    XdsChannelCredsRegistry::Builder xds_channel_creds_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -127,6 +133,10 @@ class CoreConfiguration {
     return handshaker_registry_;
   }
 
+  const XdsChannelCredsRegistry& xds_channel_creds_registry() const {
+    return xds_channel_creds_registry_;
+  }
+
  private:
   explicit CoreConfiguration(Builder* builder);
 
@@ -148,6 +158,7 @@ class CoreConfiguration {
   ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
+  XdsChannelCredsRegistry xds_channel_creds_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

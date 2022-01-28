@@ -33,6 +33,7 @@
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_creds.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -65,10 +66,11 @@ grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                        /*required=*/false);
   // Select the first channel creds type that we support.
   if (server->channel_creds_type.empty() &&
-      XdsChannelCredsRegistry::IsSupported(type)) {
+      CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(type)) {
     Json config;
     if (config_ptr != nullptr) config = *config_ptr;
-    if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
+    if (!CoreConfiguration::Get().xds_channel_creds_registry().IsValidConfig(
+            type, config)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "invalid config for channel creds type \"", type, "\"")));
     }

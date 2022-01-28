@@ -946,6 +946,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_channel_args.h',
                       'src/core/ext/xds/xds_channel_creds.cc',
                       'src/core/ext/xds/xds_channel_creds.h',
+                      'src/core/ext/xds/xds_channel_default_creds.cc',
                       'src/core/ext/xds/xds_channel_stack_modifier.cc',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',

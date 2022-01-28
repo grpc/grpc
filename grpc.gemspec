@@ -865,6 +865,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_channel_args.h )
   s.files += %w( src/core/ext/xds/xds_channel_creds.cc )
   s.files += %w( src/core/ext/xds/xds_channel_creds.h )
+  s.files += %w( src/core/ext/xds/xds_channel_default_creds.cc )
   s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.cc )
   s.files += %w( src/core/ext/xds/xds_channel_stack_modifier.h )
   s.files += %w( src/core/ext/xds/xds_client.cc )

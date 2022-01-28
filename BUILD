@@ -413,6 +413,7 @@ GRPC_XDS_TARGETS = [
     "grpc_lb_policy_xds_cluster_resolver",
     "grpc_resolver_xds",
     "grpc_resolver_c2p",
+    "grpc_xds_channel_default_creds",
     "grpc_xds_server_config_fetcher",
 ]
 
@@ -982,6 +983,7 @@ grpc_cc_library(
         "channel_init",
         "gpr_base",
         "handshaker_registry",
+        "xds_channel_creds",
     ],
 )
 
@@ -1461,6 +1463,21 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_channel_creds",
+    srcs = [
+        "src/core/ext/xds/xds_channel_creds.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/ext/xds/xds_channel_creds.h",
+    ],
+    deps = [
+        "gpr_base",
+        "json",
     ],
 )
 
@@ -2778,7 +2795,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
-        "src/core/ext/xds/xds_channel_creds.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
@@ -2803,7 +2819,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_channel_creds.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
@@ -2834,6 +2849,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
@@ -2896,6 +2912,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "uri_parser",
+        "xds_channel_creds",
         "xds_type_upb",
         "xds_type_upbdefs",
     ],
@@ -2939,6 +2956,21 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_channel_default_creds",
+    srcs = [
+        "src/core/ext/xds/xds_channel_default_creds.cc",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_secure",
+        "grpc_security_base",
+        "json",
     ],
 )
 

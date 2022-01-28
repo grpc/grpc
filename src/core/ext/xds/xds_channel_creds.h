@@ -19,30 +19,45 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/credentials/credentials.h"
+
+struct grpc_channel_credentials;
 
 namespace grpc_core {
 
-class XdsChannelCredsImpl {
+class XdsChannelCredsFactory {
  public:
-  virtual ~XdsChannelCredsImpl() {}
+  virtual ~XdsChannelCredsFactory() {}
   virtual absl::string_view creds_type() const = 0;
   virtual bool IsValidConfig(const Json& config) const = 0;
-  virtual RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
+  virtual grpc_channel_credentials* CreateXdsChannelCreds(
       const Json& config) const = 0;
 };
 
 class XdsChannelCredsRegistry {
  public:
-  static bool IsSupported(const std::string& creds_type);
-  static bool IsValidConfig(const std::string& creds_type, const Json& config);
-  static RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
-      const std::string& creds_type, const Json& config);
-  static void Init();
-  static void Shutdown();
-  static void RegisterXdsChannelCreds(
-      std::unique_ptr<XdsChannelCredsImpl> creds);
+  class Builder {
+   public:
+    void RegisterXdsChannelCredsFactory(
+        std::unique_ptr<XdsChannelCredsFactory> factory);
+    XdsChannelCredsRegistry Build();
+
+   private:
+    std::map<absl::string_view, std::unique_ptr<XdsChannelCredsFactory>>
+        factories_;
+  };
+
+  bool IsSupported(const std::string& creds_type) const;
+  bool IsValidConfig(const std::string& creds_type, const Json& config) const;
+  grpc_channel_credentials* CreateXdsChannelCreds(const std::string& creds_type,
+                                                  const Json& config) const;
+
+ private:
+  XdsChannelCredsRegistry() = default;
+  std::map<absl::string_view, std::unique_ptr<XdsChannelCredsFactory>>
+      factories_;
 };
 
 }  // namespace grpc_core

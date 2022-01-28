@@ -23,6 +23,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_creds.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/util/test_config.h"
 
@@ -30,40 +31,64 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class TestXdsChannelCredsImpl : public XdsChannelCredsImpl {
+class TestXdsChannelCredsFactory : public XdsChannelCredsFactory {
  public:
   absl::string_view creds_type() const override { return "test"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
+  grpc_channel_credentials* CreateXdsChannelCreds(
       const Json& /*config*/) const override {
-    return RefCountedPtr<grpc_channel_credentials>(
-        grpc_fake_transport_security_credentials_create());
+    return grpc_fake_transport_security_credentials_create();
   }
 };
 
-TEST(XdsChannelCredsRegistryTest, DefaultCreds) {  // Default creds.
-  EXPECT_TRUE(XdsChannelCredsRegistry::IsSupported("google_default"));
-  EXPECT_TRUE(XdsChannelCredsRegistry::IsSupported("insecure"));
-  EXPECT_TRUE(XdsChannelCredsRegistry::IsSupported("fake"));
+TEST(XdsChannelCredsRegistry2Test, DefaultCreds) {
+  // Default creds.
+  EXPECT_TRUE(CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(
+      "google_default"));
+  EXPECT_TRUE(CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(
+      "insecure"));
+  EXPECT_TRUE(CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(
+      "fake"));
 
   // Non-default creds.
-  EXPECT_EQ(XdsChannelCredsRegistry::CreateXdsChannelCreds("test", Json()),
+  EXPECT_EQ(CoreConfiguration::Get()
+                .xds_channel_creds_registry()
+                .CreateXdsChannelCreds("test", Json()),
             nullptr);
-  EXPECT_EQ(XdsChannelCredsRegistry::CreateXdsChannelCreds("", Json()),
+  EXPECT_EQ(CoreConfiguration::Get()
+                .xds_channel_creds_registry()
+                .CreateXdsChannelCreds("", Json()),
             nullptr);
 }
 
-TEST(XdsChannelCredsRegistryTest, Register) {
+TEST(XdsChannelCredsRegistry2Test, Register) {
+  CoreConfiguration::Reset();
+  grpc_init();
+
   // Before registration.
-  EXPECT_FALSE(XdsChannelCredsRegistry::IsSupported("test"));
-  EXPECT_EQ(XdsChannelCredsRegistry::CreateXdsChannelCreds("test", Json()),
+  EXPECT_FALSE(
+      CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(
+          "test"));
+  EXPECT_EQ(CoreConfiguration::Get()
+                .xds_channel_creds_registry()
+                .CreateXdsChannelCreds("test", Json()),
             nullptr);
 
   // Registration.
-  XdsChannelCredsRegistry::RegisterXdsChannelCreds(
-      absl::make_unique<TestXdsChannelCredsImpl>());
-  EXPECT_NE(XdsChannelCredsRegistry::CreateXdsChannelCreds("test", Json()),
-            nullptr);
+  CoreConfiguration::BuildSpecialConfiguration(
+      [](CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        builder->xds_channel_creds_registry()->RegisterXdsChannelCredsFactory(
+            absl::make_unique<TestXdsChannelCredsFactory>());
+      });
+
+  RefCountedPtr<grpc_channel_credentials> test_cred(
+      CoreConfiguration::Get()
+          .xds_channel_creds_registry()
+          .CreateXdsChannelCreds("test", Json()));
+  EXPECT_TRUE(CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(
+      "test"));
+  EXPECT_NE(test_cred.get(), nullptr);
 }
 
 }  // namespace

@@ -845,6 +845,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_default_creds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />

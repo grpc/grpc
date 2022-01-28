@@ -404,6 +404,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/xds/xds_bootstrap.cc',
     'src/core/ext/xds/xds_certificate_provider.cc',
     'src/core/ext/xds/xds_channel_creds.cc',
+    'src/core/ext/xds/xds_channel_default_creds.cc',
     'src/core/ext/xds/xds_channel_stack_modifier.cc',
     'src/core/ext/xds/xds_client.cc',
     'src/core/ext/xds/xds_client_stats.cc',

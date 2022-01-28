@@ -1411,6 +1411,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_creds.cc \
+    src/core/ext/xds/xds_channel_default_creds.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
@@ -1924,6 +1925,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
+    src/core/ext/xds/xds_channel_creds.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
@@ -3108,7 +3110,7 @@ src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_api.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
-src/core/ext/xds/xds_channel_creds.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_channel_default_creds.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_channel_stack_modifier.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
