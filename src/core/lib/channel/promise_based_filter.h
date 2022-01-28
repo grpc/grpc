@@ -507,8 +507,8 @@ class CallData<ChannelFilter, false> : public BaseCallData {
   ArenaPromise<TrailingMetadata> MakeNextPromise(
       ClientInitialMetadata initial_metadata) {
     GPR_ASSERT(recv_initial_state_ == RecvInitialState::kComplete);
-    GPR_ASSERT(UnwrapMetadata(initial_metadata) ==
-               recv_initial_metadata_->payload->metadata.send_initial_metadata);
+    GPR_ASSERT(UnwrapMetadata(std::move(initial_metadata)) ==
+               recv_initial_metadata_);
     forward_recv_initial_metadata_callback_ = true;
     return ArenaPromise<TrailingMetadata>(
         [this]() { return PollTrailingMetadata(); });
