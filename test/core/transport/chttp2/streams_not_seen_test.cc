@@ -181,12 +181,14 @@ class StreamsNotSeenTest : public ::testing::Test {
         channel_, /*try_to_connect=*/true);
     while (state != GRPC_CHANNEL_READY) {
       grpc_channel_watch_connectivity_state(
-          channel_, state, grpc_timeout_seconds_to_deadline(5), cq_, Tag(1));
+          channel_, state, grpc_timeout_seconds_to_deadline(1), cq_, Tag(1));
       CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-      cq_verify(cqv_);
+      cq_verify(cqv_, 5);
       state = grpc_channel_check_connectivity_state(channel_, false);
     }
-    connect_notification_.WaitForNotificationWithTimeout(absl::Seconds(1));
+    ExecCtx::Get()->Flush();
+    GPR_ASSERT(
+        connect_notification_.WaitForNotificationWithTimeout(absl::Seconds(1)));
   }
 
   ~StreamsNotSeenTest() override {
@@ -201,7 +203,9 @@ class StreamsNotSeenTest : public ::testing::Test {
     grpc_channel_destroy(channel_);
     grpc_endpoint_shutdown(
         tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
-    read_end_notification_.WaitForNotificationWithTimeout(absl::Seconds(5));
+    ExecCtx::Get()->Flush();
+    GPR_ASSERT(read_end_notification_.WaitForNotificationWithTimeout(
+        absl::Seconds(5)));
     grpc_endpoint_destroy(tcp_);
     shutdown_ = true;
     server_poll_thread_->join();
@@ -217,22 +221,28 @@ class StreamsNotSeenTest : public ::testing::Test {
     self->tcp_ = tcp;
     grpc_endpoint_add_to_pollset(tcp, self->server_.pollset[0]);
     grpc_endpoint_read(tcp, &self->read_buffer_, &self->on_read_done_, false);
-    // Send settings frame from server
-    if (self->server_allows_streams_) {
-      constexpr char kHttp2SettingsFrame[] =
-          "\x00\x00\x00\x04\x00\x00\x00\x00\x00";
-      self->Write(absl::string_view(kHttp2SettingsFrame,
-                                    sizeof(kHttp2SettingsFrame) - 1));
-    } else {
-      // Create a settings frame with a max concurrent stream setting of 0
-      constexpr char kHttp2SettingsFrame[] =
-          "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00";
-      self->Write(absl::string_view(kHttp2SettingsFrame,
-                                    sizeof(kHttp2SettingsFrame) - 1));
-    }
-    self->connect_notification_.Notify();
+    std::thread([self]() {
+      ExecCtx exec_ctx;
+      // Send settings frame from server
+      if (self->server_allows_streams_) {
+        constexpr char kHttp2SettingsFrame[] =
+            "\x00\x00\x00\x04\x00\x00\x00\x00\x00";
+        self->Write(absl::string_view(kHttp2SettingsFrame,
+                                      sizeof(kHttp2SettingsFrame) - 1));
+      } else {
+        // Create a settings frame with a max concurrent stream setting of 0
+        constexpr char kHttp2SettingsFrame[] =
+            "\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00";
+        self->Write(absl::string_view(kHttp2SettingsFrame,
+                                      sizeof(kHttp2SettingsFrame) - 1));
+      }
+      self->connect_notification_.Notify();
+    }).detach();
   }
 
+  // This is a blocking call. It waits for the write callback to be invoked
+  // before returning. (In other words, do not call this from a thread that
+  // should not be blocked, for example, a polling thread.)
   void Write(absl::string_view bytes) {
     grpc_slice slice =
         StaticSlice::FromStaticBuffer(bytes.data(), bytes.size()).TakeCSlice();
@@ -267,8 +277,9 @@ class StreamsNotSeenTest : public ::testing::Test {
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
     grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr);
-    on_write_done_notification_.WaitForNotificationWithTimeout(
-        absl::Seconds(5));
+    ExecCtx::Get()->Flush();
+    GPR_ASSERT(on_write_done_notification_.WaitForNotificationWithTimeout(
+        absl::Seconds(5)));
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
