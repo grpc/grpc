@@ -72,14 +72,14 @@ struct ReclaimerQueue::State {
 };
 
 void ReclaimerQueue::Handle::Orphan() {
-  if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_relaxed)) {
+  if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
     sweep->RunAndDelete(absl::nullopt);
   }
   Unref();
 }
 
 void ReclaimerQueue::Handle::Run(ReclamationSweep reclamation_sweep) {
-  if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_relaxed)) {
+  if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
     sweep->RunAndDelete(std::move(reclamation_sweep));
   }
 }
