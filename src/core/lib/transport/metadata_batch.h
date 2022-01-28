@@ -520,6 +520,14 @@ struct GrpcStreamNetworkState {
   }
 };
 
+// Annotation added by various systems to describe the reason for a failure.
+struct GrpcStatusContext {
+  static absl::string_view DebugKey() { return "GrpcStatusContext"; }
+  static constexpr bool kRepeatable = true;
+  using ValueType = std::string;
+  static const std::string& DisplayValue(const std::string& x) { return x; }
+};
+
 namespace metadata_detail {
 
 // IsEncodable: Given a trait, determine if that trait is encodable, or is just
@@ -798,7 +806,9 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
 };
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
+                                          IsEncodableTrait<Which>::value,
+                                      void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) {
     this->value.push_back(value);
@@ -822,6 +832,35 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
   void LogTo(LogFn log_fn) const {
     for (const auto& v : value) {
       LogKeyValueTo(Which::key(), v, Which::DisplayValue, log_fn);
+    }
+  }
+  using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
+  StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
+                                          !IsEncodableTrait<Which>::value,
+                                      void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) {
+    this->value.push_back(value);
+  }
+  explicit Value(typename Which::ValueType&& value) {
+    this->value.emplace_back(std::forward<typename Which::ValueType>(value));
+  }
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&& other) noexcept : value(std::move(other.value)) {}
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder* encoder) const {}
+  void LogTo(LogFn log_fn) const {
+    for (const auto& v : value) {
+      LogKeyValueTo(Which::DebugKey(), v, Which::DisplayValue, log_fn);
     }
   }
   using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
@@ -1309,7 +1348,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::GrpcStreamNetworkState>;
+    // Non-encodable things
+    grpc_core::GrpcStreamNetworkState, grpc_core::GrpcStatusContext>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;
