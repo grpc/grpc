@@ -51,9 +51,9 @@ cdef extern from "<mutex>" namespace "std" nogil:
 
 cdef extern from "<condition_variable>" namespace "std" nogil:
   cdef cppclass condition_variable:
-    condition_variable() except +
+    condition_variable()
     void notify_all()
-    void wait(unique_lock[mutex]&) except +
+    void wait(unique_lock[mutex]&)
 
 # gRPC Core Declarations
 
