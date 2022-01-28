@@ -82,9 +82,6 @@ cdef class _ChannelState:
     self.connectivity_due = set()
     self.closed_reason = None
 
-  def pointer(self):
-    return hex(int(<uintptr_t>self.c_channel))
-
 
 cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   cdef grpc_call_error c_call_error
@@ -463,9 +460,6 @@ cdef class Channel:
       self._state.c_channel = grpc_secure_channel_create(
           c_channel_credentials, <char *>target, channel_args.c_args(), NULL)
       grpc_channel_credentials_release(c_channel_credentials)
-
-  def pointer(self):
-    return self._state.pointer()
 
   def target(self):
     cdef char *c_target
