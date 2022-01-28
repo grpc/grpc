@@ -1,4 +1,5 @@
-/**
+/*
+ *
  * Copyright 2022 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,13 +13,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- **/
+ *
+ */
 
+#include <iostream>
 #include <memory>
 #include <string>
-#include <sstream>
-#include <fstream>
-#include <iostream>
 
 #include <grpcpp/grpcpp.h>
 
@@ -27,36 +27,32 @@
 #else
 #include "helloworld.grpc.pb.h"
 #endif
+#include "greeter_utils.h"
 
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
+using ::grpc::Channel;
+using ::grpc::ClientContext;
+using ::grpc::Status;
 
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
+using ::helloworld::Greeter;
+using ::helloworld::HelloReply;
+using ::helloworld::HelloRequest;
 
-class GreeterClient
-{
-public:
-  GreeterClient ( const std::string& cert,
-                  const std::string& key,
-                  const std::string& root,
-                  const std::string& server )
-  {
-    grpc::SslCredentialsOptions opts = {root,	key, cert};
+class GreeterClient {
+ public:
+  GreeterClient(const std::string& cert, const std::string& key,
+                const std::string& root, const std::string& server) {
+    grpc::SslCredentialsOptions opts = {root, key, cert};
 
-    _stub = Greeter::NewStub ( grpc::CreateChannel ( 
-    server, grpc::SslCredentials ( opts ) ));
+    stub_ = Greeter::NewStub(
+        grpc::CreateChannel(server, grpc::SslCredentials(opts)));
   }
 
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
-  std::string say_hello ( const std::string& user )
-  {
+  std::string say_hello(const std::string& user) {
     // Data we are sending to the server.
     HelloRequest request;
-    request.set_name ( user );
+    request.set_name(user);
 
     // Container for the data we expect from the server.
     HelloReply reply;
@@ -66,58 +62,44 @@ public:
     ClientContext context;
 
     // The actual RPC.
-    Status status = _stub->SayHello ( &context, request, &reply );
+    Status status = stub_->SayHello(&context, request, &reply);
 
-    std::string msg { "RPC failed" };
+    std::string msg{"RPC failed"};
 
     // Act upon its status.
-    if ( status.ok () )
-    {
-      msg = reply.message ();
-    }
-    else
-    {
-      std::cout << status.error_code () << ": " 
-        << status.error_message () << std::endl;
+    if (status.ok()) {
+      msg = reply.message();
+    } else {
+      std::cout << status.error_code() << ": " << status.error_message()
+                << std::endl;
     }
 
     return msg;
   }
-private:
-  std::unique_ptr<Greeter::Stub> _stub;
+
+ private:
+  std::unique_ptr<Greeter::Stub> stub_;
 };
 
-void read ( const std::string& filename, std::string& data )
-{
-  std::ifstream file ( filename.c_str (), std::ios::in );
+int main(int, char**) {
+  std::string server{"localhost:50051"};
 
-  if ( file.is_open () )
-  {
-    std::stringstream ss;
-    ss << file.rdbuf ();
+  try {
+    // Use the gen_certs.sh for the generation of required certificates
+    std::string cert, key, root;
 
-    file.close ();
+    read("client.crt", cert);
+    read("client.key", key);
+    read("ca.crt", root);
 
-    data = ss.str ();
+    GreeterClient greeter{cert, key, root, server};
+
+    std::string reply = greeter.say_hello("world");
+
+    std::cout << "Greeter received: " << reply << std::endl;
+  } catch (const std::exception& ex) {
+    std::cerr << ex.what() << std::endl;
   }
-}
-
-int main ( int, char** )
-{
-  std::string server { "localhost:50051" };
-
-  // Use the gen_certs.sh for the generation of required certificates
-  std::string cert, key, root;
-  
-  read ( "client.crt", cert );
-  read ( "client.key", key );
-  read ( "ca.crt", root );
-
-  GreeterClient greeter { cert, key, root, server };
-
-  std::string reply = greeter.say_hello ( "world" );
-
-  std::cout << "Greeter received: " << reply << std::endl;
 
   return 0;
 }
