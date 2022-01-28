@@ -857,7 +857,7 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
     return *this;
   }
   template <typename Encoder>
-  void EncodeTo(Encoder* encoder) const {}
+  void EncodeTo(Encoder*) const {}
   void LogTo(LogFn log_fn) const {
     for (const auto& v : value) {
       LogKeyValueTo(Which::DebugKey(), v, Which::DisplayValue, log_fn);
