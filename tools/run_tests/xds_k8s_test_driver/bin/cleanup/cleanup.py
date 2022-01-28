@@ -334,8 +334,13 @@ def main(argv):
     # target proxy cannot deleted unless the forwarding rule is deleted). The
     # leaked target-proxy is guaranteed to be a super set of leaked
     # forwarding-rule.
-    leakedHealthChecks = exec_gcloud(project, 'compute', 'health-checks',
-                                     'list')
+    compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
+    leakedHealthChecks = []
+    for item in compute.list_health_check()['items']:
+        if datetime.datetime.fromisoformat(
+                item['creationTimestamp']) <= get_expire_timestamp():
+            leakedHealthChecks.append(item)
+
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedHealthChecks)
 

@@ -7750,15 +7750,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: smoke_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/smoke_test.cc
-  deps:
-  - grpc_test_util
 - name: sockaddr_utils_test
   gtest: true
   build: test
