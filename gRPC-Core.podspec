@@ -2497,6 +2497,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
+                      'test/core/end2end/tests/retry_recv_message_replay.cc',
                       'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',
                       'test/core/end2end/tests/retry_send_initial_metadata_refs.cc',
                       'test/core/end2end/tests/retry_send_op_fails.cc',
