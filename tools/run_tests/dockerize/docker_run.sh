@@ -18,9 +18,6 @@
 
 set -e
 
-# TODO(jtattermusch): added in https://github.com/grpc/grpc/pull/17303, should be removed.
-export CONFIG=${config:-opt}
-
 if [ "$RELATIVE_COPY_PATH" == "" ]
 then
   mkdir -p /var/local/git
