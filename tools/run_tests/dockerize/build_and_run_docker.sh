@@ -51,6 +51,8 @@ else
 fi
 
 # Git root as seen by the docker instance
+# TODO(jtattermusch): rename to a more descriptive directory name
+# currently that's nontrivial because the name is hardcoded in many places.
 EXTERNAL_GIT_ROOT=/var/local/jenkins/grpc
 
 # temporary directory that will be mounted to the docker container
@@ -78,7 +80,6 @@ docker run \
   -v "${git_root}:${EXTERNAL_GIT_ROOT}" \
   -v "${TEMP_REPORT_DIR}:/var/local/report_dir" \
   -v "${TEMP_OUTPUT_DIR}:/var/local/output_dir" \
-  -w /var/local/git/grpc \
   "${DOCKER_IMAGE_NAME}" \
   bash -l "/var/local/jenkins/grpc/${DOCKER_RUN_SCRIPT}" || DOCKER_EXIT_CODE=$?
 
