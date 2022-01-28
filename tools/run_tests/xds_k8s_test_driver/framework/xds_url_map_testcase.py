@@ -85,6 +85,7 @@ class DumpedXdsConfig(dict):
         self.json_config = xds_json
         self.lds = None
         self.rds = None
+        self.rds_version = None
         self.cds = []
         self.eds = []
         self.endpoints = []
@@ -96,6 +97,8 @@ class DumpedXdsConfig(dict):
                 elif 'routeConfig' in xds_config:
                     self.rds = xds_config['routeConfig']['dynamicRouteConfigs'][
                         0]['routeConfig']
+                    self.rds_version = xds_config['routeConfig']['dynamicRouteConfigs'][
+                        0]['versionInfo']
                 elif 'clusterConfig' in xds_config:
                     for cluster in xds_config['clusterConfig'][
                             'dynamicActiveClusters']:
@@ -114,6 +117,7 @@ class DumpedXdsConfig(dict):
                 elif re.search(r'\.RouteConfiguration$',
                                generic_xds_config['typeUrl']):
                     self.rds = generic_xds_config["xdsConfig"]
+                    self.rds_version = generic_xds_config["versionInfo"]
                 elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
                     self.cds.append(generic_xds_config["xdsConfig"])
                 elif re.search(r'\.ClusterLoadAssignment$',

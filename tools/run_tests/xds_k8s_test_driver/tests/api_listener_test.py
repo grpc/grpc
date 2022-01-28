@@ -17,6 +17,8 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
+from google.protobuf import json_format
+from framework.xds_url_map_testcase import DumpedXdsConfig
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -87,8 +89,7 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 log_level=logging.INFO)
             logger.info('received client config from CSDS, dump config: %s',
                         config)
-            previous_route_config_version = self.extractRouteConfigVersion(
-                config)
+            previous_route_config_version = DumpedXdsConfig(json_format.MessageToDict(config)).rds_version
 
         with self.subTest('14_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()

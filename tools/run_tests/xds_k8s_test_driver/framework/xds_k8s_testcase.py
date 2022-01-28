@@ -36,8 +36,9 @@ from framework.rpc import grpc_channelz
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
+from framework.xds_url_map_testcase import DumpedXdsConfig
 
-from framework.rpc.grpc_csds import ClientConfig
+ClientConfig = framework.rpc.grpc_csds.ClientConfig
 
 logger = logging.getLogger(__name__)
 _FORCE_CLEANUP = flags.DEFINE_bool(
@@ -352,23 +353,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                      json_format.MessageToJson(config, indent=2))
         self.assertSameElements(want, seen)
 
-    @staticmethod
-    def extractRouteConfigVersion(config: ClientConfig) -> Optional[str]:
-        route_config_version = None
-        for xds_config in config.xds_config:
-            if xds_config.WhichOneof('per_xds_config') == "route_config":
-                route_config = xds_config.route_config
-                logger.info('Route config found: %s',
-                            json_format.MessageToJson(route_config, indent=2))
-                route_config_version = route_config.dynamic_route_configs[
-                    0].version_info
-                logger.info('found routing config version: %s',
-                            route_config_version)
-                break
-        if not route_config_version:
-            logger.info('no route config version found.')
-        return route_config_version
-
     def assertRouteConfigUpdateTrafficHandoff(
             self, test_client: XdsTestClient,
             previous_route_config_version: str, retry_wait_second: int,
@@ -388,8 +372,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                     self.assertSuccessfulRpcs(test_client)
                     config = test_client.csds.fetch_client_status(
                         log_level=logging.INFO)
-                    route_config_version = self.extractRouteConfigVersion(
-                        config)
+                    route_config_version = DumpedXdsConfig(json_format.MessageToDict(config)).rds_version
                     if previous_route_config_version == route_config_version:
                         logger.info(
                             'Routing config not propagated yet. Retrying.')
