@@ -75,7 +75,6 @@ if contextvars_supported():
     class TestCallCredentials(grpc.AuthMetadataPlugin):
 
         def __call__(self, context, callback):
-            sys.stderr.write("TestCallCredentials called.\n"); sys.stderr.flush()
             if test_var.get() != _EXPECTED_VALUE and not test_common.running_under_gevent():
                 # contextvars do not work under gevent, but the rest of this
                 # test is still valuable as a test of concurrent runs of the

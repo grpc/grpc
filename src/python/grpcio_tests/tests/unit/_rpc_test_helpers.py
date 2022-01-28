@@ -232,7 +232,6 @@ def stream_stream_non_blocking_multi_callable(channel):
 class BaseRPCTest(object):
 
     def setUp(self):
-        import sys; sys.stderr.write("Starting setup\n"); sys.stderr.flush()
         self._control = test_control.PauseFailControl()
         self._thread_pool = thread_pool.RecordingThreadPool(max_workers=None)
         self._handler = _Handler(self._control, self._thread_pool)
@@ -243,14 +242,10 @@ class BaseRPCTest(object):
         self._server.start()
 
         self._channel = grpc.insecure_channel('localhost:%d' % port)
-        import sys; sys.stderr.write("Finished setup\n"); sys.stderr.flush()
 
     def tearDown(self):
-        import sys; sys.stderr.write("Stopping server\n"); sys.stderr.flush()
         self._server.stop(None)
-        import sys; sys.stderr.write("Closing channel\n"); sys.stderr.flush()
         self._channel.close()
-        import sys; sys.stderr.write("Channel closed\n"); sys.stderr.flush()
 
     def _consume_one_stream_response_unary_request(self, multi_callable):
         request = b'\x57\x38'
