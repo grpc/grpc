@@ -15,8 +15,7 @@
 
 # Source this rc script to create symlinks to ccache
 
-# TODO: handle values like "0", "false" etc.
-if [ "${GRPC_BUILD_ENABLE_CCACHE}" != "" ]
+if [ "${GRPC_BUILD_ENABLE_CCACHE}" != "" ] && [ "${GRPC_BUILD_ENABLE_CCACHE}" != "false" ] && [ "${GRPC_BUILD_ENABLE_CCACHE}" != "0" ]
 then
   if [ -x "$(command -v ccache)" ]
   then
