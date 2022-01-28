@@ -94,10 +94,6 @@ def init_grpc_gevent():
   g_gevent_activated = True
   g_interrupt_check_period_ms = 2000
 
-  # TODO: Move this to test runner.
-  g_gevent_threadpool.maxsize = 1024
-  g_gevent_threadpool.size = 32
-
   g_gevent_pool = gevent.pool.Group()
 
   g_gevent_pool.spawn(spawn_greenlets)

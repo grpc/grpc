@@ -38,7 +38,13 @@ class SingleLoader(object):
         return self.suite
 
 if __name__ == "__main__":
+    import gevent
     from gevent import monkey
+
+    threadpool = gevent.hub.get_hub().threadpool
+    threadpool.maxsize = 1024
+    threadpool.size = 32
+
 
     monkey.patch_all()
 
