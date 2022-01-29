@@ -63,7 +63,7 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 ////////////////////////////////////////////////////////////////////////////////
 // global state
 
-static gpr_timespec g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+static gpr_timespec g_now;
 static grpc_server* g_server;
 static grpc_channel* g_channel;
 static grpc_resource_quota* g_resource_quota;
@@ -758,6 +758,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
+  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+  grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
