@@ -459,7 +459,7 @@ class CallData<ChannelFilter, false> : public BaseCallData {
   }
 
  private:
-  // At what stage is our handling of send initial metadata?
+  // At what stage is our handling of recv initial metadata?
   enum class RecvInitialState {
     // Start state: no op seen
     kInitial,
@@ -472,7 +472,7 @@ class CallData<ChannelFilter, false> : public BaseCallData {
     // We've sent the response to the next filter up.
     kResponded,
   };
-  // At what stage is our handling of recv trailing metadata?
+  // At what stage is our handling of send trailing metadata?
   enum class SendTrailingState {
     // Start state: no op seen
     kInitial,
