@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <ostream>
 #include <string>
 
 #include <grpc/support/time.h>
@@ -232,6 +233,9 @@ inline Timestamp& Timestamp::operator+=(Duration duration) {
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch);
+
+std::ostream& operator<<(std::ostream& out, Timestamp timestamp);
+std::ostream& operator<<(std::ostream& out, Duration duration);
 
 }  // namespace grpc_core
 

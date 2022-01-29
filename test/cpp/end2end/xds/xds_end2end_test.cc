@@ -4828,12 +4828,13 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
       grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_rpc_service(SERVICE_ECHO1)
-                  .set_rpc_method(METHOD_ECHO1)
-                  .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_rpc_options(RpcOptions()
+                               .set_rpc_service(SERVICE_ECHO1)
+                               .set_rpc_method(METHOD_ECHO1)
+                               .set_wait_for_ready(true)
+                               .set_timeout_ms(grpc_core::Duration::Seconds(
+                                                   kTimeoutApplicationSecond)
+                                                   .millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   t0 = NowFromCycleCounter();
   EXPECT_GE(t0, t1);
@@ -4846,12 +4847,13 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
        grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_rpc_service(SERVICE_ECHO2)
-                  .set_rpc_method(METHOD_ECHO2)
-                  .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_rpc_options(RpcOptions()
+                               .set_rpc_service(SERVICE_ECHO2)
+                               .set_rpc_method(METHOD_ECHO2)
+                               .set_wait_for_ready(true)
+                               .set_timeout_ms(grpc_core::Duration::Seconds(
+                                                   kTimeoutApplicationSecond)
+                                                   .millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   t0 = NowFromCycleCounter();
   EXPECT_GE(t0, t1);

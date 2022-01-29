@@ -170,4 +170,12 @@ void TestOnlySetProcessEpoch(gpr_timespec epoch) {
       gpr_convert_clock_type(epoch, GPR_CLOCK_MONOTONIC).tv_sec);
 }
 
+std::ostream& operator<<(std::ostream& out, Timestamp timestamp) {
+  return out << timestamp.ToString();
+}
+
+std::ostream& operator<<(std::ostream& out, Duration duration) {
+  return out << duration.ToString();
+}
+
 }  // namespace grpc_core
