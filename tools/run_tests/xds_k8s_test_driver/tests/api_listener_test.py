@@ -18,7 +18,6 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from google.protobuf import json_format
-from framework.xds_url_map_testcase import DumpedXdsConfig
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -26,6 +25,7 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_DumpedXdsConfig = xds_k8s_testcase.DumpedXdsConfig
 
 _TD_CONFIG_RETRY_WAIT_SEC = 2
 
@@ -85,12 +85,14 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('13_test_server_received_rpcs_with_two_url_maps'):
             self.assertSuccessfulRpcs(test_client)
-            config = test_client.csds.fetch_client_status(
+            raw_config = test_client.csds.fetch_client_status(
                 log_level=logging.INFO)
-            logger.info('received client config from CSDS, dump config: %s',
-                        config)
-            previous_route_config_version = DumpedXdsConfig(
-                json_format.MessageToDict(config)).rds_version
+            dumped_config = _DumpedXdsConfig(
+                json_format.MessageToDict(raw_config))
+            previous_route_config_version = dumped_config.rds_version
+            logger.info(
+                'received client config from CSDS with two url maps, dump config: %s, rds version: %s',
+                dumped_config, previous_route_config_version)
 
         with self.subTest('14_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()
