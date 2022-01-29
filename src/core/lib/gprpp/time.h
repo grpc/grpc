@@ -37,7 +37,8 @@ class Timestamp {
  public:
   constexpr Timestamp() = default;
   // Constructs a Timestamp from a gpr_timespec.
-  explicit Timestamp(gpr_timespec t);
+  static Timestamp FromTimespecRoundDown(gpr_timespec t);
+  static Timestamp FromTimespecRoundUp(gpr_timespec t);
 
   // Construct a Timestamp from a gpr_cycle_counter.
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);

@@ -114,11 +114,31 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
   return static_cast<int64_t>(x);
 }
 
+int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
+  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
+  if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
+    return std::numeric_limits<int64_t>::min();
+  }
+  if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
+    return std::numeric_limits<int64_t>::max();
+  }
+  return static_cast<int64_t>(x);
+}
+
 }  // namespace
 
-Timestamp::Timestamp(gpr_timespec ts)
-    : millis_(TimespanToMillisRoundUp(gpr_time_sub(
-          gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime()))) {}
+Timestamp Timestamp::FromTimespecRoundUp(gpr_timespec ts) {
+  return FromMillisecondsAfterProcessEpoch(TimespanToMillisRoundUp(gpr_time_sub(
+      gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
+}
+
+Timestamp Timestamp::FromTimespecRoundDown(gpr_timespec ts) {
+  return FromMillisecondsAfterProcessEpoch(
+      TimespanToMillisRoundDown(gpr_time_sub(
+          gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
+}
 
 Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
   return Timestamp::FromMillisecondsAfterProcessEpoch(

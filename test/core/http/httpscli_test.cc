@@ -42,7 +42,8 @@
 namespace {
 
 static grpc_core::Timestamp NSecondsTime(int seconds) {
-  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(seconds));
 }
 
 absl::Time AbslDeadlineSeconds(int s) {

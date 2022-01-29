@@ -207,7 +207,7 @@ void long_running_service_cleanup_test(void) {
   /* grpc_timespec_to_millis_round_up is how users usually compute a millisecond
     input value into grpc_timer_init, so we mimic that behavior here */
   grpc_timer_init(
-      &timers[3], grpc_core::Timestamp(deadline_spec),
+      &timers[3], grpc_core::Timestamp::FromTimespecRoundUp(deadline_spec),
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(

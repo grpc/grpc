@@ -240,8 +240,8 @@ static void test_no_op_with_port_and_start(void) {
 
 static grpc_error_handle tcp_connect(const test_addr* remote,
                                      on_connect_result* result) {
-  grpc_core::Timestamp deadline =
-      grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(10));
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(10));
   int clifd;
   int nconnects_before;
   const struct sockaddr* remote_addr =

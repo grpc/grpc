@@ -89,7 +89,7 @@ bool ExecCtx::Flush() {
 
 Timestamp ExecCtx::Now() {
   if (!now_is_valid_) {
-    now_ = Timestamp(gpr_now(GPR_CLOCK_MONOTONIC));
+    now_ = Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
     now_is_valid_ = true;
   }
   return now_;

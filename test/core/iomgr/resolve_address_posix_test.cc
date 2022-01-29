@@ -84,7 +84,8 @@ void args_finish(args_struct* args) {
 }
 
 static grpc_core::Timestamp n_sec_deadline(int seconds) {
-  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void actually_poll(void* argsp) {

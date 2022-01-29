@@ -377,7 +377,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       host != nullptr
           ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
           : absl::nullopt,
-      grpc_core::Timestamp(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }
@@ -464,7 +464,7 @@ grpc_call* grpc_channel_create_registered_call(
       rc->authority.has_value()
           ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
           : absl::nullopt,
-      grpc_core::Timestamp(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }

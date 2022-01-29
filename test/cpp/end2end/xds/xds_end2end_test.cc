@@ -519,7 +519,8 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 // GPR round the number at millisecond-level. This creates a 1ms difference,
 // which could cause flake.
 grpc_core::Timestamp NowFromCycleCounter() {
-  return grpc_core::Timestamp(gpr_now(GPR_CLOCK_MONOTONIC));
+  return grpc_core::Timestamp::FromTimespecRoundDown(
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
