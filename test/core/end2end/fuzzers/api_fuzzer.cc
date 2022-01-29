@@ -63,7 +63,7 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 ////////////////////////////////////////////////////////////////////////////////
 // global state
 
-static gpr_timespec g_now;
+static gpr_timespec g_now = {1, 0, GPR_CLOCK_MONOTONIC};
 static grpc_server* g_server;
 static grpc_channel* g_channel;
 static grpc_resource_quota* g_resource_quota;
