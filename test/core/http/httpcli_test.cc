@@ -40,7 +40,7 @@
 
 namespace {
 
-static grpc_core::Timestamp NSecondsTime(int seconds) {
+grpc_core::Timestamp NSecondsTime(int seconds) {
   return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
 }
 
