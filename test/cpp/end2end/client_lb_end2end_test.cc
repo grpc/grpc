@@ -720,7 +720,7 @@ TEST_F(ClientLbEnd2endTest,
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited less than kInitialBackOffMs.
-  EXPECT_LT(waited.millis(), kInitialBackOffMs);
+  EXPECT_LT(waited.millis(), kWaitMs);
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
