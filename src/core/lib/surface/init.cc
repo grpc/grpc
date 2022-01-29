@@ -36,7 +36,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -104,7 +103,6 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
-    grpc_slice_intern_init();
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
@@ -139,7 +137,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_slice_intern_shutdown();
     grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();

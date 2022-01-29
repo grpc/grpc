@@ -235,6 +235,7 @@ void CallData::Destroy(grpc_call_element* elem,
 
 const grpc_channel_filter grpc_client_idle_filter = {
     grpc_call_next_op,
+    nullptr,
     ChannelData::StartTransportOp,
     sizeof(CallData),
     CallData::Init,
@@ -251,16 +252,13 @@ const grpc_channel_filter grpc_client_idle_filter = {
 void RegisterClientIdleFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        const grpc_channel_args* channel_args =
-            grpc_channel_stack_builder_get_channel_arguments(builder);
+      [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* channel_args = builder->channel_args();
         if (!grpc_channel_args_want_minimal_stack(channel_args) &&
             GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
-          return grpc_channel_stack_builder_prepend_filter(
-              builder, &grpc_client_idle_filter, nullptr, nullptr);
-        } else {
-          return true;
+          builder->PrependFilter(&grpc_client_idle_filter, nullptr);
         }
+        return true;
       });
 }
 }  // namespace grpc_core

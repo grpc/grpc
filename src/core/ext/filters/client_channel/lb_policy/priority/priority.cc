@@ -625,8 +625,9 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   connectivity_state_ = state;
   connectivity_status_ = status;
   picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  // If READY or TRANSIENT_FAILURE, cancel failover timer.
-  if (state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  // If READY or IDLE or TRANSIENT_FAILURE, cancel failover timer.
+  if (state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_IDLE ||
+      state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     MaybeCancelFailoverTimerLocked();
   }
   // Notify the parent policy.

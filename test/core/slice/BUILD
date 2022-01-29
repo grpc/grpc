@@ -96,18 +96,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "slice_intern_test",
-    srcs = ["slice_intern_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
     language = "C++",

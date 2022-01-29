@@ -137,6 +137,25 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   return server;
 }
 
+Json::Object XdsBootstrap::XdsServer::ToJson() const {
+  Json::Object channel_creds_json{{"type", channel_creds_type}};
+  if (channel_creds_config.type() != Json::Type::JSON_NULL) {
+    channel_creds_json["config"] = channel_creds_config;
+  }
+  Json::Object json{
+      {"server_uri", server_uri},
+      {"channel_creds", Json::Array{std::move(channel_creds_json)}},
+  };
+  if (!server_features.empty()) {
+    Json::Array server_features_json;
+    for (auto& feature : server_features) {
+      server_features_json.emplace_back(feature);
+    }
+    json["server_features"] = std::move(server_features_json);
+  }
+  return json;
+}
+
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
   return server_features.find("xds_v3") != server_features.end();
 }
@@ -242,6 +261,17 @@ const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
     return &it->second;
   }
   return nullptr;
+}
+
+bool XdsBootstrap::XdsServerExists(
+    const XdsBootstrap::XdsServer& server) const {
+  if (server == servers_[0]) return true;
+  for (auto& authority : authorities_) {
+    for (auto& xds_server : authority.second.xds_servers) {
+      if (server == xds_server) return true;
+    }
+  }
+  return false;
 }
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(

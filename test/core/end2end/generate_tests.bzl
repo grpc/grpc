@@ -339,6 +339,7 @@ END2END_TESTS = {
     ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),
+    "retry_recv_message_replay": _test_options(needs_client_channel = True),
     "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True),
     "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True),
     "retry_send_op_fails": _test_options(needs_client_channel = True),

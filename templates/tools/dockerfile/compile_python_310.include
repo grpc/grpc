@@ -1,0 +1,20 @@
+#=================
+# Compile CPython 3.10.2 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && ${'\\'}
+    wget -q https://www.python.org/ftp/python/3.10.2/Python-3.10.2.tgz && ${'\\'}
+    tar xzvf Python-3.10.2.tgz && ${'\\'}
+    cd Python-3.10.2 && ${'\\'}
+    ./configure && ${'\\'}
+    make -j4 && ${'\\'}
+    make install
+
+RUN cd /tmp && ${'\\'}
+    echo "67c92270be6701f4a6fed57c4530139b Python-3.10.2.tgz" > checksum.md5 && ${'\\'}
+    md5sum -c checksum.md5
+
+RUN python3.10 -m ensurepip && ${'\\'}
+    python3.10 -m pip install coverage

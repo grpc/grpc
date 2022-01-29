@@ -113,12 +113,21 @@ task 'dlls', [:plat] do |t, args|
 
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
+  # propagate env variables with ccache configuration to the rake-compiler-dock docker container
+  # and setup ccache symlinks as needed.
+  # TODO(jtattermusch): deduplicate creation of prepare_ccache_cmd
+  prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
+  prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+  prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
+  prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
+
   build_configs.each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
     run_rake_compiler(opt[:platform], <<~EOT)
+      #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
       #{env} #{env_comp} make -j#{nproc_override} #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
@@ -152,6 +161,13 @@ task 'gem:native', [:plat] do |t, args|
     # use env variable to set artifact build paralellism
     nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
 
+    # propagate env variables with ccache configuration to the rake-compiler-dock docker container
+    # and setup ccache symlinks as needed.
+    prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
+    prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+    prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
+    prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
+
     supported_windows_platforms = ['x86-mingw32', 'x64-mingw32']
     supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin']
     supported_platforms = supported_windows_platforms + supported_unix_platforms
@@ -178,6 +194,7 @@ task 'gem:native', [:plat] do |t, args|
 
     windows_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
+        #{prepare_ccache_cmd} && \
         gem update --system --no-document && \
         bundle && \
         bundle exec rake clean && \
@@ -196,6 +213,7 @@ task 'gem:native', [:plat] do |t, args|
 
     unix_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
+        #{prepare_ccache_cmd} && \
         gem update --system --no-document && \
         bundle && \
         bundle exec rake clean && \

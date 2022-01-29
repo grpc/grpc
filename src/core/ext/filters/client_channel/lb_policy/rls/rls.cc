@@ -29,6 +29,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -571,6 +572,7 @@ class RlsLb : public LoadBalancingPolicy {
       Duration window_size_;
       double ratio_for_successes_;
       int padding_;
+      std::mt19937 rng_{std::random_device()()};
 
       // Logged timestamp of requests.
       std::deque<Timestamp> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
@@ -1478,11 +1480,9 @@ bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
       (num_requests - (num_successes * ratio_for_successes_)) /
       (num_requests + padding_);
   // Generate a random number for the request.
-  std::random_device rd;
-  std::mt19937 mt(rd());
   std::uniform_real_distribution<float> dist(0, 1.0);
   // Check if we should throttle the request.
-  bool throttle = dist(mt) < throttle_probability;
+  bool throttle = dist(rng_) < throttle_probability;
   // If we're throttling, record the request and the failure.
   if (throttle) {
     requests_.push_back(now);

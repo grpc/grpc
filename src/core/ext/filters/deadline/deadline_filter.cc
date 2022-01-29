@@ -339,6 +339,7 @@ static void deadline_server_start_transport_stream_op_batch(
 
 const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_client_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(base_call_data),
     deadline_init_call_elem,
@@ -353,6 +354,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
 
 const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_server_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(server_call_data),
     deadline_init_call_elem,
@@ -377,11 +379,9 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
                                    const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](grpc_channel_stack_builder* builder) {
-          if (grpc_deadline_checking_enabled(
-                  grpc_channel_stack_builder_get_channel_arguments(builder))) {
-            return grpc_channel_stack_builder_prepend_filter(builder, filter,
-                                                             nullptr, nullptr);
+        [filter](ChannelStackBuilder* builder) {
+          if (grpc_deadline_checking_enabled(builder->channel_args())) {
+            builder->PrependFilter(filter, nullptr);
           }
           return true;
         });

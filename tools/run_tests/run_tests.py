@@ -94,6 +94,19 @@ def max_parallel_tests_for_current_platform():
     return 1024
 
 
+def _print_debug_info_epilogue(dockerfile_dir=None):
+    """Use to print useful info for debug/repro just before exiting."""
+    print('')
+    print('=== run_tests.py DEBUG INFO ===')
+    print('command: \"%s\"' % ' '.join(sys.argv))
+    if dockerfile_dir:
+        print('dockerfile: %s' % dockerfile_dir)
+    kokoro_job_name = os.getenv('KOKORO_JOB_NAME')
+    if kokoro_job_name:
+        print('kokoro job name: %s' % kokoro_job_name)
+    print('===============================')
+
+
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class Config(object):
 
@@ -459,13 +472,13 @@ class CLanguage(object):
             _check_compiler(compiler, ['default', 'cmake'])
 
         if compiler == 'default' or compiler == 'cmake':
-            return ('debian9', [])
+            return ('debian11', [])
         elif compiler == 'gcc4.9':
             return ('gcc_4.9', [])
-        elif compiler == 'gcc8.3':
-            return ('debian10', [])
-        elif compiler == 'gcc8.3_openssl102':
-            return ('debian10_openssl102', [
+        elif compiler == 'gcc10.2':
+            return ('debian11', [])
+        elif compiler == 'gcc10.2_openssl102':
+            return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':
@@ -474,8 +487,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang4':
             return ('clang_4', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang12':
-            return ('clang_12', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang13':
+            return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -588,7 +601,7 @@ class Php7Language(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_stretch_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_debian11_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -678,16 +691,15 @@ class PythonLanguage(object):
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_docker_distro_name(),
+            _docker_arch_suffix(self.args.arch))
 
-    def _python_manager_name(self):
+    def _python_docker_distro_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
-            return 'stretch_' + self.args.compiler[len('python'):]
-        elif self.args.compiler == 'python_alpine':
+        if self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
-            return 'stretch_default'
+            return 'debian11_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -862,7 +874,7 @@ class RubyLanguage(object):
         return 'Makefile'
 
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/ruby_buster_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/ruby_debian11_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -889,7 +901,7 @@ class CSharpLanguage(object):
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
         else:
-            self._docker_distro = 'buster'
+            self._docker_distro = 'debian11'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -1329,11 +1341,6 @@ argp.add_argument('-p',
                   default=100.0,
                   type=percent_type,
                   help='Run a random sample with that percentage of tests')
-argp.add_argument('-f',
-                  '--forever',
-                  default=False,
-                  action='store_const',
-                  const=True)
 argp.add_argument(
     '-t',
     '--travis',
@@ -1383,12 +1390,12 @@ argp.add_argument(
     choices=[
         'default',
         'gcc4.9',
-        'gcc8.3',
-        'gcc8.3_openssl102',
+        'gcc10.2',
+        'gcc10.2_openssl102',
         'gcc11',
         'gcc_musl',
         'clang4',
-        'clang12',
+        'clang13',
         'python2.7',
         'python3.5',
         'python3.6',
@@ -1582,11 +1589,12 @@ if args.use_docker:
     if args.xml_report:
         env['XML_REPORT'] = args.xml_report
 
-    subprocess.check_call(
+    retcode = subprocess.call(
         'tools/run_tests/dockerize/build_docker_and_run_tests.sh',
         shell=True,
         env=env)
-    sys.exit(0)
+    _print_debug_info_epilogue(dockerfile_dir=dockerfile_dir)
+    sys.exit(retcode)
 
 _check_arch_option(args.arch)
 
@@ -1670,7 +1678,6 @@ post_tests_steps = list(
         for l in languages
         for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
-forever = args.forever
 
 
 def _shut_down_legacy_server(legacy_server_port):
@@ -1861,37 +1868,25 @@ def _build_and_run(check_cancelled,
     return out
 
 
-if forever:
-    success = True
-    while True:
-        dw = watch_dirs.DirWatcher(['src', 'include', 'test', 'examples'])
-        initial_time = dw.most_recent_change()
-        have_files_changed = lambda: dw.most_recent_change() != initial_time
-        previous_success = success
-        errors = _build_and_run(check_cancelled=have_files_changed,
-                                newline_on_success=False,
-                                build_only=args.build_only) == 0
-        if not previous_success and not errors:
-            jobset.message('SUCCESS',
-                           'All tests are now passing properly',
-                           do_newline=True)
-        jobset.message('IDLE', 'No change detected')
-        while not have_files_changed():
-            time.sleep(1)
+errors = _build_and_run(check_cancelled=lambda: False,
+                        newline_on_success=args.newline_on_success,
+                        xml_report=args.xml_report,
+                        build_only=args.build_only)
+if not errors:
+    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 else:
-    errors = _build_and_run(check_cancelled=lambda: False,
-                            newline_on_success=args.newline_on_success,
-                            xml_report=args.xml_report,
-                            build_only=args.build_only)
-    if not errors:
-        jobset.message('SUCCESS', 'All tests passed', do_newline=True)
-    else:
-        jobset.message('FAILED', 'Some tests failed', do_newline=True)
-    exit_code = 0
-    if BuildAndRunError.BUILD in errors:
-        exit_code |= 1
-    if BuildAndRunError.TEST in errors:
-        exit_code |= 2
-    if BuildAndRunError.POST_TEST in errors:
-        exit_code |= 4
-    sys.exit(exit_code)
+    jobset.message('FAILED', 'Some tests failed', do_newline=True)
+
+if not _is_use_docker_child():
+    # if --use_docker was used, the outer invocation of run_tests.py will
+    # print the debug info instead.
+    _print_debug_info_epilogue()
+
+exit_code = 0
+if BuildAndRunError.BUILD in errors:
+    exit_code |= 1
+if BuildAndRunError.TEST in errors:
+    exit_code |= 2
+if BuildAndRunError.POST_TEST in errors:
+    exit_code |= 4
+sys.exit(exit_code)

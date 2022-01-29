@@ -323,6 +323,7 @@ static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_client_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     sizeof(final_status_data),
     init_call_elem,
@@ -336,6 +337,7 @@ static const grpc_channel_filter test_client_filter = {
 
 static const grpc_channel_filter test_server_filter = {
     server_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(final_status_data),
     init_call_elem,
@@ -358,20 +360,16 @@ void filter_status_code(grpc_end2end_test_config config) {
         auto register_stage = [builder](grpc_channel_stack_type type,
                                         const grpc_channel_filter* filter) {
           builder->channel_init()->RegisterStage(
-              type, INT_MAX, [filter](grpc_channel_stack_builder* builder) {
+              type, INT_MAX, [filter](grpc_core::ChannelStackBuilder* builder) {
                 // Want to add the filter as close to the end as possible, to
                 // make sure that all of the filters work well together.
                 // However, we can't add it at the very end, because the
                 // connected_channel/client_channel filter must be the last one.
                 // So we add it right before the last one.
-                grpc_channel_stack_builder_iterator* it =
-                    grpc_channel_stack_builder_create_iterator_at_last(builder);
-                GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-                const bool retval =
-                    grpc_channel_stack_builder_add_filter_before(
-                        it, filter, nullptr, nullptr);
-                grpc_channel_stack_builder_iterator_destroy(it);
-                return retval;
+                auto it = builder->mutable_stack()->end();
+                --it;
+                builder->mutable_stack()->insert(it, {filter, nullptr});
+                return true;
               });
         };
         register_stage(GRPC_CLIENT_CHANNEL, &test_client_filter);
