@@ -30,6 +30,7 @@
 #include "re2/re2.h"
 
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -43,6 +44,9 @@ bool XdsRbacEnabled();
 struct XdsRouteConfigResource {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+
+  using TypedPerPluginConfig =
+      std::map<std::string, XdsClusterSpecifierPluginImpl::PluginConfig>;
 
   struct RetryPolicy {
     internal::StatusCodeSet retry_on;
@@ -134,6 +138,7 @@ struct XdsRouteConfigResource {
       // here, to enforce the fact that only one of the two fields can be set.
       std::string cluster_name;
       std::vector<ClusterWeight> weighted_clusters;
+      std::string cluster_specifier_plugin_name;
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
       // RouteAction.max_stream_duration.max_stream_duration if the former is
@@ -158,6 +163,7 @@ struct XdsRouteConfigResource {
 
     absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
+    TypedPerPluginConfig typed_per_plugin_config;
 
     bool operator==(const Route& other) const {
       return matchers == other.matchers && action == other.action &&

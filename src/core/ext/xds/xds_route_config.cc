@@ -700,8 +700,16 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
+  } else if (envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(route_action)) {
+    route->cluster_specifier_plugin_name = UpbStringToStdString(
+        envoy_config_route_v3_RouteAction_cluster_specifier_plugin(route_action));
+    if (route->cluster_specifier_plugin_name.empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction cluster contains empty cluster specifier plugin name.");
+    }
+    gpr_log(GPR_INFO, "donna found plugin in RouteAction, validate that it exists in RouteConfigSource via a stored map");
   } else {
-    // No cluster or weighted_clusters found in RouteAction, ignore this route.
+    // No cluster or weighted_clusters or plugin found in RouteAction, ignore this route.
     *ignore_route = true;
   }
   if (!*ignore_route) {
@@ -926,6 +934,14 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     if (vhost.routes.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
     }
+  }
+  size_t num_cluster_specifier_plugins;
+  const envoy_config_route_v3_ClusterSpecifierPlugin* const* cluster_specifier_plugin =
+      envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
+          route_config, &num_cluster_specifier_plugins);
+  gpr_log(GPR_INFO, "donna size is currently %d", num_cluster_specifier_plugins);
+  for (size_t i=0; i < num_cluster_specifier_plugins; ++i) {
+    gpr_log(GPR_INFO, "donna here is the loop");
   }
   return GRPC_ERROR_NONE;
 }
