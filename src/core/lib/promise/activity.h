@@ -336,6 +336,8 @@ class PromiseActivity final : public Activity,
                               private ActivityContexts<Contexts...> {
  public:
   using Factory = PromiseFactory<void, F>;
+  using ResultType = typename Factory::Promise::Result;
+
   PromiseActivity(F promise_factory, WakeupScheduler wakeup_scheduler,
                   OnDone on_done, Contexts&&... contexts)
       : Activity(),
@@ -444,7 +446,7 @@ class PromiseActivity final : public Activity,
   // The main body of a step: set the current activity, and any contexts, and
   // then run the main polling loop. Contained in a function by itself in
   // order to keep the scoping rules a little easier in Step().
-  absl::optional<absl::Status> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  absl::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
     return StepLoop();
@@ -453,7 +455,7 @@ class PromiseActivity final : public Activity,
   // Similarly to RunStep, but additionally construct the promise from a
   // promise factory before entering the main loop. Called once from the
   // constructor.
-  absl::optional<absl::Status> Start(Factory promise_factory)
+  absl::optional<ResultType> Start(Factory promise_factory)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
@@ -463,7 +465,7 @@ class PromiseActivity final : public Activity,
 
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
-  absl::optional<absl::Status> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     GPR_ASSERT(is_current());
     while (true) {
       // Run the promise.

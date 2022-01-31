@@ -43,7 +43,7 @@ class ChannelStackBuilder {
   };
 
   // Initialize with a name.
-  explicit ChannelStackBuilder(std::string name) : name_(std::move(name)) {}
+  explicit ChannelStackBuilder(const char* name) : name_(name) {}
 
   ~ChannelStackBuilder();
 
@@ -88,10 +88,12 @@ class ChannelStackBuilder {
                           void** result);
 
  private:
+  static std::string unknown_target() { return "unknown"; }
+
   // The name of the stack
-  const std::string name_;
+  const char* const name_;
   // The target
-  std::string target_;
+  std::string target_{unknown_target()};
   // The transport
   grpc_transport* transport_ = nullptr;
   // Channel args

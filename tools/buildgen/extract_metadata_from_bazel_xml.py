@@ -408,7 +408,8 @@ def _expand_upb_proto_library_rules(bazel_rules):
     EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
                       ('@com_google_googleapis//', ''),
                       ('@com_github_cncf_udpa//', ''),
-                      ('@com_envoyproxy_protoc_gen_validate//', '')]
+                      ('@com_envoyproxy_protoc_gen_validate//', ''),
+                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get('generator_function', None)
         if gen_func in ('grpc_upb_proto_library',
