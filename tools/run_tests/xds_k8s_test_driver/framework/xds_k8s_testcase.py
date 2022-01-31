@@ -27,6 +27,7 @@ import grpc
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework import xds_url_map_testcase
 from framework.helpers import retryers
 import framework.helpers.rand
 from framework.infrastructure import gcp
@@ -36,7 +37,6 @@ from framework.rpc import grpc_channelz
 from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from framework.test_app import server_app
-from framework import xds_url_map_testcase
 
 logger = logging.getLogger(__name__)
 _FORCE_CLEANUP = flags.DEFINE_bool(
