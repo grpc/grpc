@@ -14,4 +14,8 @@
 # distutils: language=c++
 
 g_gevent_threadpool = None
-cdef bint g_gevent_activated = False
+g_gevent_activated = False
+
+cpdef void gevent_increment_channel_count()
+
+cpdef void gevent_decrement_channel_count()
