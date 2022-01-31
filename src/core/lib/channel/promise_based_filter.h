@@ -493,11 +493,13 @@ class CallData<ChannelFilter, false> : public BaseCallData {
     // Stop running the promise.
     promise_ = ArenaPromise<TrailingMetadata>();
     if (send_trailing_state_ == SendTrailingState::kQueued) {
+      send_trailing_state_ = SendTrailingState::kCancelled;
       grpc_transport_stream_op_batch_finish_with_failure(
           absl::exchange(send_trailing_metadata_batch_, nullptr),
           GRPC_ERROR_REF(cancelled_error_), call_combiner());
+    } else {
+      send_trailing_state_ = SendTrailingState::kCancelled;
     }
-    send_trailing_state_ = SendTrailingState::kCancelled;
   }
 
   // Construct a promise that will "call" the next filter.
@@ -623,7 +625,7 @@ class CallData<ChannelFilter, false> : public BaseCallData {
       }
     }
     is_polling_ = false;
-    if (absl::exchange(forward_send_trailing_metadata, false)) {
+    if (forward_send_trailing_metadata) {
       grpc_call_next_op(elem(),
                         absl::exchange(send_trailing_metadata_batch_, nullptr));
     }
