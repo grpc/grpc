@@ -157,6 +157,8 @@ extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
 extern void retry_recv_initial_metadata_pre_init(void);
 extern void retry_recv_message(grpc_end2end_test_config config);
 extern void retry_recv_message_pre_init(void);
+extern void retry_recv_message_replay(grpc_end2end_test_config config);
+extern void retry_recv_message_replay_pre_init(void);
 extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
 extern void retry_recv_trailing_metadata_error_pre_init(void);
 extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
@@ -271,6 +273,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_per_attempt_recv_timeout_on_last_attempt_pre_init();
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
+  retry_recv_message_replay_pre_init();
   retry_recv_trailing_metadata_error_pre_init();
   retry_send_initial_metadata_refs_pre_init();
   retry_send_op_fails_pre_init();
@@ -368,6 +371,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_per_attempt_recv_timeout_on_last_attempt(config);
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
+    retry_recv_message_replay(config);
     retry_recv_trailing_metadata_error(config);
     retry_send_initial_metadata_refs(config);
     retry_send_op_fails(config);
@@ -649,6 +653,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_recv_message", argv[i])) {
       retry_recv_message(config);
+      continue;
+    }
+    if (0 == strcmp("retry_recv_message_replay", argv[i])) {
+      retry_recv_message_replay(config);
       continue;
     }
     if (0 == strcmp("retry_recv_trailing_metadata_error", argv[i])) {

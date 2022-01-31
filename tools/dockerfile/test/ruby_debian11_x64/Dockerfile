@@ -121,5 +121,8 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 RUN mkdir /var/local/jenkins
 
 
+# Seems required by XDS interop tests.
+RUN python3 -m pip install virtualenv==16.7.9
+
 # Define the default command.
 CMD ["bash"]

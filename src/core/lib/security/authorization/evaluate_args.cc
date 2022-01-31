@@ -90,16 +90,6 @@ absl::string_view EvaluateArgs::GetPath() const {
   return absl::string_view();
 }
 
-absl::string_view EvaluateArgs::GetHost() const {
-  absl::string_view host;
-  if (metadata_ != nullptr) {
-    if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
-      host = host_md->as_string_view();
-    }
-  }
-  return host;
-}
-
 absl::string_view EvaluateArgs::GetAuthority() const {
   absl::string_view authority;
   if (metadata_ != nullptr) {
