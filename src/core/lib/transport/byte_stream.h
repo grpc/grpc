@@ -21,10 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice.h"
 
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
  * compression for the message. (Does not apply for stream compression.) */
@@ -43,30 +46,9 @@ class ByteStream : public Orphanable {
  public:
   ~ByteStream() override {}
 
-  // Returns true if the bytes are available immediately (in which case
-  // on_complete will not be called), or false if the bytes will be available
-  // asynchronously (in which case on_complete will be called when they
-  // are available). Should not be called if there is no data left on the
-  // stream.
-  //
-  // max_size_hint can be set as a hint as to the maximum number
-  // of bytes that would be acceptable to read.
-  virtual bool Next(size_t max_size_hint, grpc_closure* on_complete) = 0;
-
-  // Returns the next slice in the byte stream when it is available, as
-  // indicated by Next().
-  //
-  // Once a slice is returned into *slice, it is owned by the caller.
-  virtual grpc_error_handle Pull(grpc_slice* slice) = 0;
-
-  // Shuts down the byte stream.
-  //
-  // If there is a pending call to on_complete from Next(), it will be
-  // invoked with the error passed to Shutdown().
-  //
-  // The next call to Pull() (if any) will return the error passed to
-  // Shutdown().
-  virtual void Shutdown(grpc_error_handle error) = 0;
+  // Returns the next slice if it's available, an error if one has occurred, or
+  // Pending{} if nothing is yet ready.
+  virtual Poll<absl::StatusOr<Slice>> PollNext(size_t max_size_hint) = 0;
 
   uint32_t length() const { return length_; }
   uint32_t flags() const { return flags_; }
@@ -97,12 +79,9 @@ class SliceBufferByteStream : public ByteStream {
 
   void Orphan() override;
 
-  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-  grpc_error_handle Pull(grpc_slice* slice) override;
-  void Shutdown(grpc_error_handle error) override;
+  Poll<absl::StatusOr<Slice>> PollNext(size_t max_size_hint) final;
 
  private:
-  grpc_error_handle shutdown_error_ = GRPC_ERROR_NONE;
   grpc_slice_buffer backing_buffer_;
 };
 
@@ -131,9 +110,7 @@ class ByteStreamCache {
 
     void Orphan() override;
 
-    bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-    grpc_error_handle Pull(grpc_slice* slice) override;
-    void Shutdown(grpc_error_handle error) override;
+    Poll<absl::StatusOr<Slice>> PollNext(size_t max_size_hint) final;
 
     // Resets the byte stream to the start of the underlying stream.
     void Reset();
@@ -142,7 +119,6 @@ class ByteStreamCache {
     ByteStreamCache* cache_;
     size_t cursor_ = 0;
     size_t offset_ = 0;
-    grpc_error_handle shutdown_error_ = GRPC_ERROR_NONE;
   };
 
   explicit ByteStreamCache(OrphanablePtr<ByteStream> underlying_stream);
@@ -156,6 +132,7 @@ class ByteStreamCache {
 
  private:
   OrphanablePtr<ByteStream> underlying_stream_;
+  absl::Status error_ = absl::OkStatus();
   uint32_t length_;
   uint32_t flags_;
   grpc_slice_buffer cache_buffer_;

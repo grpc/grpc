@@ -50,30 +50,16 @@ SliceBufferByteStream::~SliceBufferByteStream() {}
 
 void SliceBufferByteStream::Orphan() {
   grpc_slice_buffer_destroy_internal(&backing_buffer_);
-  GRPC_ERROR_UNREF(shutdown_error_);
   // Note: We do not actually delete the object here, since
   // SliceBufferByteStream is usually allocated as part of a larger
   // object and has an OrphanablePtr of itself passed down through the
   // filter stack.
 }
 
-bool SliceBufferByteStream::Next(size_t /*max_size_hint*/,
-                                 grpc_closure* /*on_complete*/) {
+Poll<absl::StatusOr<Slice>> SliceBufferByteStream::PollNext(
+    size_t /*max_size_hint*/) {
   GPR_DEBUG_ASSERT(backing_buffer_.count > 0);
-  return true;
-}
-
-grpc_error_handle SliceBufferByteStream::Pull(grpc_slice* slice) {
-  if (GPR_UNLIKELY(shutdown_error_ != GRPC_ERROR_NONE)) {
-    return GRPC_ERROR_REF(shutdown_error_);
-  }
-  *slice = grpc_slice_buffer_take_first(&backing_buffer_);
-  return GRPC_ERROR_NONE;
-}
-
-void SliceBufferByteStream::Shutdown(grpc_error_handle error) {
-  GRPC_ERROR_UNREF(shutdown_error_);
-  shutdown_error_ = error;
+  return Slice(grpc_slice_buffer_take_first(&backing_buffer_));
 }
 
 //
@@ -106,52 +92,35 @@ ByteStreamCache::CachingByteStream::CachingByteStream(ByteStreamCache* cache)
 ByteStreamCache::CachingByteStream::~CachingByteStream() {}
 
 void ByteStreamCache::CachingByteStream::Orphan() {
-  GRPC_ERROR_UNREF(shutdown_error_);
   // Note: We do not actually delete the object here, since
   // CachingByteStream is usually allocated as part of a larger
   // object and has an OrphanablePtr of itself passed down through the
   // filter stack.
 }
 
-bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint,
-                                              grpc_closure* on_complete) {
-  if (shutdown_error_ != GRPC_ERROR_NONE) return true;
-  if (cursor_ < cache_->cache_buffer_.count) return true;
-  GPR_ASSERT(cache_->underlying_stream_ != nullptr);
-  return cache_->underlying_stream_->Next(max_size_hint, on_complete);
-}
-
-grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
-  if (shutdown_error_ != GRPC_ERROR_NONE) {
-    return GRPC_ERROR_REF(shutdown_error_);
-  }
+Poll<absl::StatusOr<Slice>> ByteStreamCache::CachingByteStream::PollNext(
+    size_t max_size_hint) {
+  if (!cache_->error_.ok()) return cache_->error_;
   if (cursor_ < cache_->cache_buffer_.count) {
-    *slice = grpc_slice_ref_internal(cache_->cache_buffer_.slices[cursor_]);
+    Slice out(grpc_slice_ref_internal(cache_->cache_buffer_.slices[cursor_]));
     ++cursor_;
-    offset_ += GRPC_SLICE_LENGTH(*slice);
-    return GRPC_ERROR_NONE;
+    offset_ += out.length();
+    return std::move(out);
   }
   GPR_ASSERT(cache_->underlying_stream_ != nullptr);
-  grpc_error_handle error = cache_->underlying_stream_->Pull(slice);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&cache_->cache_buffer_,
-                          grpc_slice_ref_internal(*slice));
-    ++cursor_;
-    offset_ += GRPC_SLICE_LENGTH(*slice);
-    // Orphan the underlying stream if it's been drained.
-    if (offset_ == cache_->underlying_stream_->length()) {
-      cache_->underlying_stream_.reset();
-    }
+  auto r = cache_->underlying_stream_->PollNext(max_size_hint);
+  if (absl::holds_alternative<Pending>(r)) return r;
+  auto& underlying_status = absl::get<absl::StatusOr<Slice>>(r);
+  if (!underlying_status.ok()) {
+    cache_->error_ = underlying_status.status();
+    return cache_->error_;
   }
-  return error;
-}
-
-void ByteStreamCache::CachingByteStream::Shutdown(grpc_error_handle error) {
-  GRPC_ERROR_UNREF(shutdown_error_);
-  shutdown_error_ = GRPC_ERROR_REF(error);
-  if (cache_->underlying_stream_ != nullptr) {
-    cache_->underlying_stream_->Shutdown(error);
-  }
+  auto& underlying_slice = *underlying_status;
+  grpc_slice_buffer_add(&cache_->cache_buffer_,
+                        underlying_slice.Ref().TakeCSlice());
+  ++cursor_;
+  offset_ += underlying_slice.length();
+  return std::move(underlying_slice);
 }
 
 void ByteStreamCache::CachingByteStream::Reset() {
