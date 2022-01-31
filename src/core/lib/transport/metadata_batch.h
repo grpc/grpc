@@ -154,7 +154,7 @@ struct ContentTypeMetadata {
       case kApplicationGrpc:
         return StaticSlice::FromStaticString("application/grpc");
       case kInvalid:
-        abort();
+        return StaticSlice::FromStaticString("application/grpc+unknown");
     }
     GPR_UNREACHABLE_CODE(
         return StaticSlice::FromStaticString("unrepresentable value"));
