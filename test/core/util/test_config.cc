@@ -39,6 +39,7 @@
 #include "src/core/lib/surface/init.h"
 #include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
+#include "test/core/event_engine/test_init.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -91,10 +92,11 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 }
 
 void grpc_test_init(int /*argc*/, char** argv) {
+  gpr_log_verbosity_init();
+  grpc_event_engine::experimental::InitializeTestingEventEngineFactory();
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
-  gpr_log_verbosity_init();
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
           ", poller=%" PRId64 ", total=%" PRId64,

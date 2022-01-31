@@ -41,11 +41,8 @@ EVENT_ENGINES = [
     {
         "name": "libuv",
         "tags": [],
+        "deps": ["//test/core/event_engine:event_engine_test_init@libuv"],
     },
-    # {
-    #     "name": "poll",
-    #     "tags": ["no_windows", "no_mac"],
-    # },
 ]
 
 def if_not_windows(a):
@@ -272,7 +269,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, test_ios = True, exclude_pollers = []):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -295,6 +292,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         flaky: Whether this test is flaky.
         copts: Add these to the compiler invocation.
         linkstatic: link the binary in static mode
+        test_ios: whether to create an ios_test.
+        exclude_pollers: list of poller names to exclude for this set of tests.
     """
     copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
@@ -303,17 +302,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     # Base library for all expanded poller & EventEngine tests.
     base_lib_name = name + "_lib_internal"
     base_lib_dep = ":" + base_lib_name
-    native.cc_library(
-        name = base_lib_name,
-        testonly = True,
-        srcs = srcs,
-        deps = deps + _get_external_deps(external_deps),
-        copts = GRPC_DEFAULT_COPTS + copts,
-        linkopts = if_not_windows(["-pthread"]),
-        linkstatic = linkstatic,
-    )
+    base_deps = [base_lib_dep] + deps + _get_external_deps(external_deps)
+
+    # Test args for all tests
     test_args = {
-        "deps": [base_lib_dep] + deps + _get_external_deps(external_deps),
         "args": args,
         "data": data,
         "copts": GRPC_DEFAULT_COPTS + copts,
@@ -326,11 +318,15 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "flaky": flaky,
         "linkstatic": linkstatic,
     }
-    ios_cc_test(
-        name = name,
-        tags = tags,
-        **test_args
-    )
+
+    if test_ios:
+        ios_cc_test(
+            name = name,
+            tags = tags,
+            deps = base_deps,
+            **test_args
+        )
+
     if not uses_polling:
         # the test behavior doesn't depend on polling, just generate the test
         # TODO(hork): identify if any non-polling tests should be exercised by
@@ -339,11 +335,22 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         native.cc_test(
             name = name,
             tags = tags + ["no_uses_polling"],
+            deps = base_deps + EVENT_ENGINES[0]["deps"],
             **test_args
         )
         return
 
     # -- Tests that exercise the polling system --
+    native.cc_library(
+        name = base_lib_name,
+        testonly = True,
+        srcs = srcs,
+        deps = deps + _get_external_deps(external_deps),
+        copts = GRPC_DEFAULT_COPTS + copts,
+        linkopts = if_not_windows(["-pthread"]),
+        linkstatic = linkstatic,
+        visibility = ["//visibility:private"],
+    )
 
     # Non-Linux platforms.
     for engine in EVENT_ENGINES:
@@ -352,10 +359,10 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             # so just create a target for each EventEngine.
             native.cc_test(
                 name = name + "@engine=" + engine["name"],
+                deps = base_deps + engine["deps"],
                 tags = (tags + engine["tags"] + [
                     "no_linux",  # linux supports multiple pollers
                 ]),
-                env = {"GRPC_EVENTENGINE_STRATEGY": engine["name"]},
                 **test_args
             )
 
@@ -365,11 +372,13 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 
     # On linux we run the same test multiple times, once for each poller, with the default EventEngine.
     for poller in POLLERS:
+        if poller in exclude_pollers:
+            continue
         native.cc_test(
             name = name + "@poller=" + poller + "@engine=" + EVENT_ENGINES[0]["name"],
+            deps = base_deps + EVENT_ENGINES[0]["deps"],
             env = {
                 "GRPC_POLL_STRATEGY": poller,
-                "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
             },
             tags = (tags + EVENT_ENGINES[0]["tags"] + ["no_windows", "no_mac"]),
             **test_args
@@ -382,9 +391,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     for engine in EVENT_ENGINES[1:]:
         native.cc_test(
             name = name + "@poller=" + POLLERS[0] + "@engine=" + engine["name"],
+            deps = base_deps + engine["deps"],
             env = {
                 "GRPC_POLL_STRATEGY": POLLERS[0],
-                "GRPC_EVENTENGINE_STRATEGY": engine["name"],
             },
             tags = (tags + engine["tags"] + ["no_windows", "no_mac"]),
             **test_args

@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine")
+grpc_package(name = "test/core/event_engine", visibility = "tests")
 
 grpc_cc_test(
     name = "endpoint_config_test",
@@ -58,4 +58,22 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+cc_library(
+    name = "event_engine_test_init_base",
+    textual_hdrs = [
+        "test_init.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_test_init@libuv",
+    srcs = ["event_engine_test_init_libuv.cc"],
+    language = "C++",
+    deps = [
+        ":event_engine_test_init_base",
+        "//:event_engine_base",
+    ],
+    alwayslink = True,
 )

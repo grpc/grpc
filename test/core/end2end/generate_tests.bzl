@@ -14,21 +14,7 @@
 # limitations under the License.
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
-
-POLLERS = ["epollex", "epoll1", "poll"]
-
-# The set of known EventEngines to test
-EVENT_ENGINES = [
-    {
-        "name": "libuv",
-        "tags": [],
-    },
-    # {
-    #     "name": "poll",
-    #     "tags": ["no_windows", "no_mac"],
-    # },
-]
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
 def _fixture_options(
         fullstack = True,
@@ -454,8 +440,8 @@ def grpc_end2end_tests():
             "//test/core/compression:args_utils",
         ],
     )
-
     for f, fopt in END2END_FIXTURES.items():
+        # TODO(hork): try removing this to see if we no longer need the raw bin.
         grpc_cc_binary(
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
@@ -472,78 +458,36 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
                 "//test/core/compression:args_utils",
+                "//test/core/event_engine:event_engine_test_init@libuv",
             ],
             tags = _platform_support_tags(fopt),
         )
 
         for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
-
-            # Non-Linux platforms
-            for engine in EVENT_ENGINES:
-                if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
-                    # These platforms do not support multiple polling engines,
-                    # so just create a target for each EventEngine.
-                    native.sh_test(
-                        name = "%s_test@%s@engine=%s" % (f, test_short_name, engine["name"]),
-                        data = [":%s_test" % f],
-                        srcs = ["end2end_test.sh"],
-                        env = {
-                            "GRPC_EVENTENGINE_STRATEGY": engine["name"],
-                        },
-                        args = [
-                            "$(location %s_test)" % f,
-                            t,
-                        ],
-                        tags = ["no_linux"] + engine["tags"] + _platform_support_tags(fopt),
-                        flaky = t in fopt.flaky_tests,
-                    )
-
-            # Linux platforms
-            if "no_linux" in EVENT_ENGINES[0]["tags"]:
-                fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_test@%s@poller=%s@engine=%s" % (f, test_short_name, poller, EVENT_ENGINES[0]["name"]),
-                    data = [":%s_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                        "GRPC_POLL_STRATEGY": poller,
-                        "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
-                    },
-                    args = [
-                        "$(location %s_test)" % f,
-                        t,
-                    ],
-                    tags = EVENT_ENGINES[0]["tags"] + ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
-
-            # Now generate one test for each subsequent EventEngine, all using the first
-            # poller.
-            if len(EVENT_ENGINES) < 2:
-                continue
-            for engine in EVENT_ENGINES[1:]:
-                native.sh_test(
-                    name = "%s_test@%s@poller=%s@engine=%s" % (f, test_short_name, POLLERS[0], engine["name"]),
-                    data = [":%s_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                        "GRPC_POLL_STRATEGY": POLLERS[0],
-                        "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
-                    },
-                    args = [
-                        "$(location %s_test)" % f,
-                        t,
-                    ],
-                    tags = EVENT_ENGINES[0]["tags"] + ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
+            grpc_cc_test(
+                name = "%s_test@%s" % (f, test_short_name),
+                srcs = ["fixtures/%s.cc" % f],
+                data = [
+                    "//src/core/tsi/test_creds:ca.pem",
+                    "//src/core/tsi/test_creds:server1.key",
+                    "//src/core/tsi/test_creds:server1.pem",
+                ],
+                args = [t],
+                deps = [
+                    ":end2end_tests",
+                    "//test/core/util:grpc_test_util",
+                    "//:grpc",
+                    "//:gpr",
+                    "//test/core/compression:args_utils",
+                ],
+                tags = _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
+                test_ios = False,
+                exclude_pollers = topt.exclude_pollers,
+            )
 
 # buildifier: disable=unnamed-macro
 def grpc_end2end_nosec_tests():
@@ -571,99 +515,45 @@ def grpc_end2end_nosec_tests():
             "//test/core/compression:args_utils",
         ],
     )
-
     for f, fopt in END2END_NOSEC_FIXTURES.items():
         if fopt.secure:
             continue
+        # TODO(hork): try removing this to see if we no longer need the raw bin.
         grpc_cc_binary(
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
             testonly = 1,
-            data = [
-                "//src/core/tsi/test_creds:ca.pem",
-                "//src/core/tsi/test_creds:server1.key",
-                "//src/core/tsi/test_creds:server1.pem",
-            ],
             deps = [
                 ":end2end_nosec_tests",
                 "//test/core/util:grpc_test_util_unsecure",
                 "//:grpc_unsecure",
                 "//:gpr",
                 "//test/core/compression:args_utils",
+                "//test/core/event_engine:event_engine_test_init@libuv", # temporary
             ],
             tags = _platform_support_tags(fopt),
         )
+
         for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
             if topt.secure:
                 continue
-
             test_short_name = str(t) if not topt.short_name else topt.short_name
-
-            # Non-Linux platforms
-            for engine in EVENT_ENGINES:
-                if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
-                    # These platforms do not support multiple polling engines,
-                    # so just create a target for each EventEngine.
-                    native.sh_test(
-                        name = "%s_nosec_test@%s@engine=%s" % (f, test_short_name, engine["name"]),
-                        data = [":%s_nosec_test" % f],
-                        srcs = ["end2end_test.sh"],
-                        env = {
-                            "GRPC_EVENTENGINE_STRATEGY": engine["name"],
-                        },
-                        args = [
-                            "$(location %s_nosec_test)" % f,
-                            t,
-                        ],
-                        tags = ["no_linux"] + engine["tags"] + _platform_support_tags(fopt),
-                        flaky = t in fopt.flaky_tests,
-                    )
-
-            # Linux platforms
-            if "no_linux" in EVENT_ENGINES[0]["tags"]:
-                fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s@engine=%s" %
-                           (f, test_short_name, poller, EVENT_ENGINES[0]["name"]),
-                    data = [":%s_nosec_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                        "GRPC_POLL_STRATEGY": poller,
-                        "GRPC_EVENTENGINE_STRATEGY": EVENT_ENGINES[0]["name"],
-                    },
-                    args = [
-                        "$(location %s_nosec_test)" % f,
-                        t,
-                    ],
-                    tags = ["no_mac", "no_windows"] + EVENT_ENGINES[0]["tags"],
-                    flaky = t in fopt.flaky_tests,
-                )
-
-            # Now generate one test for each subsequent EventEngine, all using the first
-            # poller.
-            if len(EVENT_ENGINES) < 2:
-                continue
-            for engine in EVENT_ENGINES[1:]:
-                native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s@engine=%s" %
-                           (f, test_short_name, POLLERS[0], engine["name"]),
-                    data = [":%s_nosec_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                        "GRPC_POLL_STRATEGY": POLLERS[0],
-                        "GRPC_EVENTENGINE_STRATEGY": engine["name"],
-                    },
-                    args = [
-                        "$(location %s_nosec_test)" % f,
-                        t,
-                    ],
-                    tags = ["no_mac", "no_windows"] + engine["tags"],
-                    flaky = t in fopt.flaky_tests,
-                )
+            grpc_cc_test(
+                name = "%s_nosec_test@%s" % (f, test_short_name),
+                srcs = ["fixtures/%s.cc" % f],
+                args = [t],
+                deps = [
+                    ":end2end_tests",
+                    "//test/core/util:grpc_test_util",
+                    "//:grpc",
+                    "//:gpr",
+                    "//test/core/compression:args_utils",
+                ],
+                tags = _platform_support_tags(fopt),
+                flaky = t in fopt.flaky_tests,
+                test_ios = False,
+                exclude_pollers = topt.exclude_pollers,
+            )

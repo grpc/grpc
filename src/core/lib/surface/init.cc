@@ -34,7 +34,6 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/init.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -66,7 +65,6 @@ static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 static void do_basic_init(void) {
-  grpc_event_engine::experimental::InitEventEngineFactory();
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
   g_shutting_down_cv = new grpc_core::CondVar();
