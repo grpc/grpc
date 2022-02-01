@@ -83,6 +83,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "chttp2_byte_stream_test",
+    srcs = ["chttp2_byte_stream_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "flow_control_test",
     size = "large",
     srcs = ["flow_control_test.cc"],
