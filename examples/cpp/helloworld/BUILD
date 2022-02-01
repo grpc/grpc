@@ -26,7 +26,7 @@ cc_binary(
 
 cc_binary(
     name = "greeter_client_ssl",
-    srcs = ["greeter_client_ssl.cc"],
+    srcs = ["greeter_client_ssl.cc","greeter_utils.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
@@ -89,7 +89,7 @@ cc_binary(
 
 cc_binary(
     name = "greeter_server_ssl",
-    srcs = ["greeter_server_ssl.cc"],
+    srcs = ["greeter_server_ssl.cc","greeter_utils.h"],
     defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
