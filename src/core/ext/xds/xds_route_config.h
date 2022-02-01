@@ -163,7 +163,6 @@ struct XdsRouteConfigResource {
 
     absl::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
-    TypedPerPluginConfig typed_per_plugin_config;
 
     bool operator==(const Route& other) const {
       return matchers == other.matchers && action == other.action &&
@@ -184,6 +183,7 @@ struct XdsRouteConfigResource {
   };
 
   std::vector<VirtualHost> virtual_hosts;
+  TypedPerPluginConfig typed_per_plugin_config;
 
   bool operator==(const XdsRouteConfigResource& other) const {
     return virtual_hosts == other.virtual_hosts;

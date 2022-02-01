@@ -23,6 +23,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -45,6 +46,8 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/proto/grpc/lookup/v1/rls.upb.h"
+#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 
 namespace grpc_core {
 
@@ -700,16 +703,21 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
-  } else if (envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(route_action)) {
+  } else if (envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
+                 route_action)) {
     route->cluster_specifier_plugin_name = UpbStringToStdString(
-        envoy_config_route_v3_RouteAction_cluster_specifier_plugin(route_action));
+        envoy_config_route_v3_RouteAction_cluster_specifier_plugin(
+            route_action));
     if (route->cluster_specifier_plugin_name.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster specifier plugin name.");
     }
-    gpr_log(GPR_INFO, "donna found plugin in RouteAction, validate that it exists in RouteConfigSource via a stored map");
+    gpr_log(GPR_INFO,
+            "donna found plugin in RouteAction, validate that it exists in "
+            "RouteConfigSource via a stored map");
   } else {
-    // No cluster or weighted_clusters or plugin found in RouteAction, ignore this route.
+    // No cluster or weighted_clusters or plugin found in RouteAction, ignore
+    // this route.
     *ignore_route = true;
   }
   if (!*ignore_route) {
@@ -936,12 +944,40 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     }
   }
   size_t num_cluster_specifier_plugins;
-  const envoy_config_route_v3_ClusterSpecifierPlugin* const* cluster_specifier_plugin =
-      envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
-          route_config, &num_cluster_specifier_plugins);
-  gpr_log(GPR_INFO, "donna size is currently %d", num_cluster_specifier_plugins);
-  for (size_t i=0; i < num_cluster_specifier_plugins; ++i) {
-    gpr_log(GPR_INFO, "donna here is the loop");
+  const envoy_config_route_v3_ClusterSpecifierPlugin* const*
+      cluster_specifier_plugin =
+          envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
+              route_config, &num_cluster_specifier_plugins);
+  gpr_log(GPR_INFO, "donna size is currently %d",
+          num_cluster_specifier_plugins);
+  for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
+    const envoy_config_core_v3_TypedExtensionConfig* extension =
+        envoy_config_route_v3_ClusterSpecifierPlugin_extension(
+            cluster_specifier_plugin[i]);
+    std::string name = UpbStringToStdString(
+        envoy_config_core_v3_TypedExtensionConfig_name(extension));
+    gpr_log(GPR_INFO, "donna here is the loop with name identifier %s",
+            name.c_str());
+    const google_protobuf_Any* any =
+        envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
+    GPR_ASSERT(any != nullptr);
+    absl::string_view plugin_type =
+        UpbStringToAbsl(google_protobuf_Any_type_url(any));
+    if (plugin_type.empty()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("no plugin config specified for plugin name ", name));
+    }
+    if (plugin_type ==
+        "type.googleapis.com/grpc.lookup.v1.RouteLookupClusterSpecifier") {
+      gpr_log(GPR_INFO, "donna parse it out");
+      upb_strview any_value = google_protobuf_Any_value(any);
+      const auto* plugin_config = grpc_lookup_v1_RouteLookupConfig_parse(
+          any_value.data, any_value.size, context.arena);
+      if (plugin_config == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "could not parse RouteLookupConfig wrapper for ", name));
+      }
+    }
   }
   return GRPC_ERROR_NONE;
 }

@@ -28,7 +28,20 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
+grpc_proto_library(
+    name = "rls_config_proto",
+    srcs = ["rls_config.proto"],
+    well_known_protos = True,
+)
 proto_library(
     name = "rls_proto_descriptor",
     srcs = ["rls.proto"],
+)
+
+proto_library(
+    name = "rls_config_proto_descriptor",
+    srcs = ["rls_config.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+    ],
 )

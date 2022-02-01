@@ -28,7 +28,8 @@ const char* kXdRouteLookupClusterSpecifierPluginConfigName =
 
 namespace {
 
-class XdsRouteLookupClusterSpecifierPlugin : public XdsClusterSpecifierPluginImpl {
+class XdsRouteLookupClusterSpecifierPlugin
+    : public XdsClusterSpecifierPluginImpl {
  public:
   /*
   void PopulateSymtab(upb_symtab* symtab) const override {
@@ -68,8 +69,10 @@ class XdsRouteLookupClusterSpecifierPlugin : public XdsClusterSpecifierPluginImp
   bool IsTerminalPlugin() const override { return true; }*/
 };
 
-using PluginOwnerList = std::vector<std::unique_ptr<XdsClusterSpecifierPluginImpl>>;
-using PluginRegistryMap = std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
+using PluginOwnerList =
+    std::vector<std::unique_ptr<XdsClusterSpecifierPluginImpl>>;
+using PluginRegistryMap =
+    std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
 
 PluginOwnerList* g_plugins = nullptr;
 PluginRegistryMap* g_plugin_registry = nullptr;
@@ -85,7 +88,8 @@ void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
   g_plugins->push_back(std::move(plugin));
 }
 
-const XdsClusterSpecifierPluginImpl* XdsClusterSpecifierPluginRegistry::GetPluginForType(
+const XdsClusterSpecifierPluginImpl*
+XdsClusterSpecifierPluginRegistry::GetPluginForType(
     absl::string_view proto_type_name) {
   auto it = g_plugin_registry->find(proto_type_name);
   if (it == g_plugin_registry->end()) return nullptr;

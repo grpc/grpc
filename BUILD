@@ -2862,6 +2862,8 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
+        "rls_upb",
+        "rls_config_upb",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -5047,6 +5049,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "rls_upb",
     deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+)
+
+grpc_upb_proto_library(
+    name = "rls_config_upb",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
