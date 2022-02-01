@@ -22,7 +22,6 @@ grpc_cc_test(
     name = "alloc_test",
     srcs = ["alloc_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -34,7 +33,6 @@ grpc_cc_test(
     name = "arena_test",
     srcs = ["arena_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -46,7 +44,6 @@ grpc_cc_test(
     name = "cpu_test",
     srcs = ["cpu_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -58,7 +55,6 @@ grpc_cc_test(
     name = "env_test",
     srcs = ["env_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -73,7 +69,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -85,19 +80,6 @@ grpc_cc_test(
     name = "murmur_hash_test",
     srcs = ["murmur_hash_test.cc"],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "string_test",
-    srcs = ["string_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -109,7 +91,17 @@ grpc_cc_test(
     name = "spinlock_test",
     srcs = ["spinlock_test.cc"],
     language = "C++",
-    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "string_test",
+    srcs = ["string_test.cc"],
+    language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -121,7 +113,6 @@ grpc_cc_test(
     name = "sync_test",
     srcs = ["sync_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -133,7 +124,6 @@ grpc_cc_test(
     name = "time_test",
     srcs = ["time_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -148,7 +138,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

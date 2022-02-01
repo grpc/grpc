@@ -31,7 +31,6 @@ grpc_cc_test(
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -44,7 +43,6 @@ grpc_cc_test(
     srcs = ["fork_test.cc"],
     language = "C++",
     tags = ["no_windows"],
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -59,7 +57,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -75,7 +72,6 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -87,7 +83,6 @@ grpc_cc_test(
     name = "manual_constructor_test",
     srcs = ["manual_constructor_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -154,7 +149,6 @@ grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -168,7 +162,6 @@ grpc_cc_test(
     exec_properties = LARGE_MACHINE,
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -248,7 +241,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -264,7 +256,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -279,7 +270,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -335,7 +325,6 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "chunked_vector_fuzzer.proto",
     tags = ["no_windows"],
-    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:chunked_vector",

@@ -198,7 +198,7 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_binary(
     name = "interop_test",
     srcs = ["interop_test.cc"],
     data = [
