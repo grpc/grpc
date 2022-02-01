@@ -1973,6 +1973,7 @@ add_library(grpc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/event_engine_common.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
@@ -2624,6 +2625,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/event_engine_common.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc

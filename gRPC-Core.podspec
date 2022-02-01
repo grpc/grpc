@@ -1024,6 +1024,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/event_engine.cc',
+                      'src/core/lib/event_engine/event_engine_common.cc',
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
                       'src/core/lib/event_engine/sockaddr.cc',
