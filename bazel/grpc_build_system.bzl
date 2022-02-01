@@ -269,7 +269,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, test_ios = True, exclude_pollers = [], uses_event_engine = True):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -292,7 +292,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         flaky: Whether this test is flaky.
         copts: Add these to the compiler invocation.
         linkstatic: link the binary in static mode
-        test_ios: whether to create an ios_test.
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_event_engine: set to False if grpc::testing::TestEnvironment is not called.
     """
@@ -317,14 +316,13 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
 
-    if test_ios:
-        ios_cc_test(
-            name = name,
-            srcs = srcs,
-            tags = tags,
-            deps = core_deps,
-            **test_args
-        )
+    ios_cc_test(
+        name = name,
+        srcs = srcs,
+        tags = tags,
+        deps = core_deps,
+        **test_args
+    )
 
     if not uses_polling:
         # the test behavior doesn't depend on polling, just generate the test

@@ -27,16 +27,8 @@ namespace experimental {
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 EventEngine* GetDefaultEventEngine();
 
-<<<<<<< HEAD
-/// Replace gRPC's default EventEngine factory *if* one has not been set already
-///
-/// Related: \a SetDefaultEventEngineFactory.
-void MaybeSetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory);
-=======
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();
->>>>>>> master
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

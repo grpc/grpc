@@ -486,9 +486,9 @@ def grpc_end2end_tests():
                 ],
                 tags = _platform_support_tags(fopt) + [
                     "no_extract",  # do not run end2end tests on CMake
+                    "no_test_ios",
                 ],
                 flaky = t in fopt.flaky_tests,
-                test_ios = False,
                 exclude_pollers = topt.exclude_pollers,
             )
 
@@ -558,8 +558,8 @@ def grpc_end2end_nosec_tests():
                 ],
                 tags = _platform_support_tags(fopt) + [
                     "no_extract",  # do not run end2end tests on CMake
+                    "no_test_ios",
                 ],
                 flaky = t in fopt.flaky_tests,
-                test_ios = False,
                 exclude_pollers = topt.exclude_pollers,
             )
