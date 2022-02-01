@@ -597,21 +597,6 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/tls.proto
 )
 protobuf_generate_grpc_cpp(
-  test/core/end2end/fuzzers/api_fuzzer.proto
-)
-protobuf_generate_grpc_cpp(
-  test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.proto
-)
-protobuf_generate_grpc_cpp(
-  test/core/transport/binder/end2end/fuzzers/client.proto
-)
-protobuf_generate_grpc_cpp(
-  test/core/transport/binder/end2end/fuzzers/server.proto
-)
-protobuf_generate_grpc_cpp(
-  test/core/transport/chttp2/hpack_parser_fuzzer.proto
-)
-protobuf_generate_grpc_cpp(
   test/core/tsi/alts/fake_handshaker/handshaker.proto
 )
 protobuf_generate_grpc_cpp(
@@ -621,95 +606,95 @@ protobuf_generate_grpc_cpp(
 if(gRPC_BUILD_TESTS)
   add_custom_target(buildtests_c)
   add_dependencies(buildtests_c alloc_test)
-  add_dependencies(buildtests_c alpn_test_engine_libuv)
-  add_dependencies(buildtests_c alts_counter_test_engine_libuv)
-  add_dependencies(buildtests_c alts_crypt_test_engine_libuv)
-  add_dependencies(buildtests_c alts_crypter_test_engine_libuv)
-  add_dependencies(buildtests_c alts_frame_protector_test_engine_libuv)
-  add_dependencies(buildtests_c alts_grpc_record_protocol_test_engine_libuv)
-  add_dependencies(buildtests_c alts_handshaker_client_test_engine_libuv)
-  add_dependencies(buildtests_c alts_iovec_record_protocol_test_engine_libuv)
-  add_dependencies(buildtests_c alts_security_connector_test_engine_libuv)
-  add_dependencies(buildtests_c alts_tsi_handshaker_test_engine_libuv)
-  add_dependencies(buildtests_c alts_tsi_utils_test_engine_libuv)
-  add_dependencies(buildtests_c alts_zero_copy_grpc_protector_test_engine_libuv)
+  add_dependencies(buildtests_c alpn_test)
+  add_dependencies(buildtests_c alts_counter_test)
+  add_dependencies(buildtests_c alts_crypt_test)
+  add_dependencies(buildtests_c alts_crypter_test)
+  add_dependencies(buildtests_c alts_frame_protector_test)
+  add_dependencies(buildtests_c alts_grpc_record_protocol_test)
+  add_dependencies(buildtests_c alts_handshaker_client_test)
+  add_dependencies(buildtests_c alts_iovec_record_protocol_test)
+  add_dependencies(buildtests_c alts_security_connector_test)
+  add_dependencies(buildtests_c alts_tsi_handshaker_test)
+  add_dependencies(buildtests_c alts_tsi_utils_test)
+  add_dependencies(buildtests_c alts_zero_copy_grpc_protector_test)
   add_dependencies(buildtests_c arena_test)
   add_dependencies(buildtests_c auth_context_test)
   add_dependencies(buildtests_c b64_test)
-  add_dependencies(buildtests_c bad_server_response_test_engine_libuv)
+  add_dependencies(buildtests_c bad_server_response_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c bad_ssl_alpn_test_engine_libuv)
+    add_dependencies(buildtests_c bad_ssl_alpn_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c bad_ssl_cert_test_engine_libuv)
+    add_dependencies(buildtests_c bad_ssl_cert_test)
   endif()
   add_dependencies(buildtests_c bin_decoder_test)
   add_dependencies(buildtests_c bin_encoder_test)
-  add_dependencies(buildtests_c buffer_list_test_engine_libuv)
+  add_dependencies(buildtests_c buffer_list_test)
   add_dependencies(buildtests_c channel_args_test)
-  add_dependencies(buildtests_c channel_create_test_engine_libuv)
+  add_dependencies(buildtests_c channel_create_test)
   add_dependencies(buildtests_c channel_stack_test)
-  add_dependencies(buildtests_c check_gcp_environment_linux_test_engine_libuv)
-  add_dependencies(buildtests_c check_gcp_environment_windows_test_engine_libuv)
+  add_dependencies(buildtests_c check_gcp_environment_linux_test)
+  add_dependencies(buildtests_c check_gcp_environment_windows_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c client_ssl_test_engine_libuv)
+    add_dependencies(buildtests_c client_ssl_test)
   endif()
   add_dependencies(buildtests_c cmdline_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c combiner_test_engine_libuv)
+    add_dependencies(buildtests_c combiner_test)
   endif()
-  add_dependencies(buildtests_c completion_queue_threading_test_engine_libuv)
+  add_dependencies(buildtests_c completion_queue_threading_test)
   add_dependencies(buildtests_c compression_test)
-  add_dependencies(buildtests_c concurrent_connectivity_test_engine_libuv)
-  add_dependencies(buildtests_c connection_refused_test_engine_libuv)
+  add_dependencies(buildtests_c concurrent_connectivity_test)
+  add_dependencies(buildtests_c connection_refused_test)
   add_dependencies(buildtests_c cpu_test)
-  add_dependencies(buildtests_c dns_resolver_connectivity_using_ares_test_engine_libuv)
-  add_dependencies(buildtests_c dns_resolver_connectivity_using_native_test_engine_libuv)
-  add_dependencies(buildtests_c dns_resolver_cooldown_test_engine_libuv)
-  add_dependencies(buildtests_c dns_resolver_test_engine_libuv)
+  add_dependencies(buildtests_c dns_resolver_connectivity_using_ares_test)
+  add_dependencies(buildtests_c dns_resolver_connectivity_using_native_test)
+  add_dependencies(buildtests_c dns_resolver_cooldown_test)
+  add_dependencies(buildtests_c dns_resolver_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c dualstack_socket_test_engine_libuv)
+    add_dependencies(buildtests_c dualstack_socket_test)
   endif()
-  add_dependencies(buildtests_c endpoint_pair_test_engine_libuv)
+  add_dependencies(buildtests_c endpoint_pair_test)
   add_dependencies(buildtests_c env_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c ev_epollex_linux_test_engine_libuv)
+    add_dependencies(buildtests_c ev_epollex_linux_test)
   endif()
-  add_dependencies(buildtests_c fake_resolver_test_engine_libuv)
-  add_dependencies(buildtests_c fake_transport_security_test_engine_libuv)
+  add_dependencies(buildtests_c fake_resolver_test)
+  add_dependencies(buildtests_c fake_transport_security_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fd_conservation_posix_test_engine_libuv)
-  endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fd_posix_test_engine_libuv)
+    add_dependencies(buildtests_c fd_conservation_posix_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fling_stream_test_engine_libuv)
+    add_dependencies(buildtests_c fd_posix_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c fling_test_engine_libuv)
+    add_dependencies(buildtests_c fling_stream_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c fling_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fork_test)
   endif()
-  add_dependencies(buildtests_c format_request_test_engine_libuv)
-  add_dependencies(buildtests_c frame_handler_test_engine_libuv)
-  add_dependencies(buildtests_c goaway_server_test_engine_libuv)
-  add_dependencies(buildtests_c grpc_alts_credentials_options_test_engine_libuv)
+  add_dependencies(buildtests_c format_request_test)
+  add_dependencies(buildtests_c frame_handler_test)
+  add_dependencies(buildtests_c goaway_server_test)
+  add_dependencies(buildtests_c grpc_alts_credentials_options_test)
   add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
-  add_dependencies(buildtests_c grpc_completion_queue_test_engine_libuv)
-  add_dependencies(buildtests_c grpc_ipv6_loopback_available_test_engine_libuv)
+  add_dependencies(buildtests_c grpc_completion_queue_test)
+  add_dependencies(buildtests_c grpc_ipv6_loopback_available_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c handshake_server_with_readahead_handshaker_test_engine_libuv)
+    add_dependencies(buildtests_c handshake_server_with_readahead_handshaker_test)
   endif()
   add_dependencies(buildtests_c histogram_test)
   add_dependencies(buildtests_c host_port_test)
   add_dependencies(buildtests_c hpack_encoder_test)
   add_dependencies(buildtests_c inproc_callback_test)
-  add_dependencies(buildtests_c invalid_call_argument_test_engine_libuv)
+  add_dependencies(buildtests_c invalid_call_argument_test)
   add_dependencies(buildtests_c json_token_test)
   add_dependencies(buildtests_c jwt_verifier_test)
-  add_dependencies(buildtests_c lame_client_test_engine_libuv)
+  add_dependencies(buildtests_c lame_client_test)
   add_dependencies(buildtests_c load_file_test)
   add_dependencies(buildtests_c manual_constructor_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -721,290 +706,278 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c mpscq_test)
   endif()
-  add_dependencies(buildtests_c multiple_server_queues_test_engine_libuv)
+  add_dependencies(buildtests_c multiple_server_queues_test)
   add_dependencies(buildtests_c murmur_hash_test)
-  add_dependencies(buildtests_c no_server_test_engine_libuv)
-  add_dependencies(buildtests_c num_external_connectivity_watchers_test_engine_libuv)
-  add_dependencies(buildtests_c parse_address_test_engine_libuv)
+  add_dependencies(buildtests_c no_server_test)
+  add_dependencies(buildtests_c num_external_connectivity_watchers_test)
+  add_dependencies(buildtests_c parse_address_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c parse_address_with_named_scope_id_test)
   endif()
   add_dependencies(buildtests_c parser_test)
   add_dependencies(buildtests_c percent_encoding_test)
-  add_dependencies(buildtests_c public_headers_must_be_c89_engine_libuv)
+  add_dependencies(buildtests_c public_headers_must_be_c89)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c resolve_address_using_ares_resolver_posix_test_engine_libuv)
+    add_dependencies(buildtests_c resolve_address_using_ares_resolver_posix_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c resolve_address_using_native_resolver_posix_test_engine_libuv)
+    add_dependencies(buildtests_c resolve_address_using_native_resolver_posix_test)
   endif()
-  add_dependencies(buildtests_c secure_channel_create_test_engine_libuv)
-  add_dependencies(buildtests_c secure_endpoint_test_engine_libuv)
-  add_dependencies(buildtests_c security_connector_test_engine_libuv)
-  add_dependencies(buildtests_c sequential_connectivity_test_engine_libuv)
+  add_dependencies(buildtests_c secure_channel_create_test)
+  add_dependencies(buildtests_c secure_endpoint_test)
+  add_dependencies(buildtests_c security_connector_test)
+  add_dependencies(buildtests_c sequential_connectivity_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c server_ssl_test_engine_libuv)
+    add_dependencies(buildtests_c server_ssl_test)
   endif()
-  add_dependencies(buildtests_c server_test_engine_libuv)
+  add_dependencies(buildtests_c server_test)
   add_dependencies(buildtests_c slice_buffer_test)
   add_dependencies(buildtests_c slice_split_test)
   add_dependencies(buildtests_c slice_string_helpers_test)
-  add_dependencies(buildtests_c sockaddr_resolver_test_engine_libuv)
+  add_dependencies(buildtests_c sockaddr_resolver_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c socket_utils_test_engine_libuv)
+    add_dependencies(buildtests_c socket_utils_test)
   endif()
   add_dependencies(buildtests_c spinlock_test)
-  add_dependencies(buildtests_c ssl_credentials_test_engine_libuv)
+  add_dependencies(buildtests_c ssl_credentials_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c ssl_transport_security_test_engine_libuv)
+    add_dependencies(buildtests_c ssl_transport_security_test)
   endif()
   add_dependencies(buildtests_c status_conversion_test)
-  add_dependencies(buildtests_c stream_map_test_engine_libuv)
+  add_dependencies(buildtests_c stream_map_test)
   add_dependencies(buildtests_c string_test)
   add_dependencies(buildtests_c sync_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c tcp_client_posix_test_engine_libuv)
+    add_dependencies(buildtests_c tcp_client_posix_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c tcp_posix_test_engine_libuv)
+    add_dependencies(buildtests_c tcp_posix_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c tcp_server_posix_test_engine_libuv)
+    add_dependencies(buildtests_c tcp_server_posix_test)
   endif()
   add_dependencies(buildtests_c test_core_gpr_time_test)
-  add_dependencies(buildtests_c test_core_security_credentials_test_engine_libuv)
+  add_dependencies(buildtests_c test_core_security_credentials_test)
   add_dependencies(buildtests_c thd_test)
   add_dependencies(buildtests_c threadpool_test)
   add_dependencies(buildtests_c time_averaged_stats_test)
   add_dependencies(buildtests_c timer_heap_test)
   add_dependencies(buildtests_c timer_list_test)
-  add_dependencies(buildtests_c transport_security_common_api_test_engine_libuv)
-  add_dependencies(buildtests_c transport_security_test_engine_libuv)
+  add_dependencies(buildtests_c transport_security_common_api_test)
+  add_dependencies(buildtests_c transport_security_test)
   add_dependencies(buildtests_c varint_test)
 
   add_custom_target(buildtests_cxx)
   add_dependencies(buildtests_cxx activity_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx address_sorting_test_engine_libuv)
+    add_dependencies(buildtests_cxx address_sorting_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx address_sorting_test_unsecure_engine_libuv)
+    add_dependencies(buildtests_cxx address_sorting_test_unsecure)
   endif()
-  add_dependencies(buildtests_cxx admin_services_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx admin_services_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx alarm_test_engine_libuv)
+    add_dependencies(buildtests_cxx alarm_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx alts_concurrent_connectivity_test_engine_libuv)
+    add_dependencies(buildtests_cxx alts_concurrent_connectivity_test)
   endif()
-  add_dependencies(buildtests_cxx alts_util_test_engine_libuv)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx api_fuzzer_engine_libuv)
-  endif()
+  add_dependencies(buildtests_cxx alts_util_test)
   add_dependencies(buildtests_cxx arena_promise_test)
-  add_dependencies(buildtests_cxx async_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx async_end2end_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
-  add_dependencies(buildtests_cxx authorization_matchers_test_engine_libuv)
-  add_dependencies(buildtests_cxx authorization_policy_provider_test_engine_libuv)
+  add_dependencies(buildtests_cxx authorization_matchers_test)
+  add_dependencies(buildtests_cxx authorization_policy_provider_test)
   add_dependencies(buildtests_cxx avl_test)
-  add_dependencies(buildtests_cxx aws_request_signer_test_engine_libuv)
+  add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backoff_test)
-  add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx badreq_bad_client_test_engine_libuv)
+  add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
+  add_dependencies(buildtests_cxx badreq_bad_client_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx bdp_estimator_test)
   endif()
-  add_dependencies(buildtests_cxx binder_resolver_test_engine_libuv)
-  add_dependencies(buildtests_cxx binder_server_test_engine_libuv)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx binder_transport_client_fuzzer_engine_libuv)
-  endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx binder_transport_server_fuzzer_engine_libuv)
-  endif()
+  add_dependencies(buildtests_cxx binder_resolver_test)
+  add_dependencies(buildtests_cxx binder_server_test)
   add_dependencies(buildtests_cxx binder_transport_test)
   add_dependencies(buildtests_cxx bitset_test)
   add_dependencies(buildtests_cxx byte_buffer_test)
   add_dependencies(buildtests_cxx byte_stream_test)
-  add_dependencies(buildtests_cxx cancel_ares_query_test_engine_libuv)
+  add_dependencies(buildtests_cxx cancel_ares_query_test)
   add_dependencies(buildtests_cxx capture_test)
-  add_dependencies(buildtests_cxx cel_authorization_engine_test_engine_libuv)
-  add_dependencies(buildtests_cxx certificate_provider_registry_test_engine_libuv)
-  add_dependencies(buildtests_cxx certificate_provider_store_test_engine_libuv)
-  add_dependencies(buildtests_cxx cfstream_test_engine_libuv)
+  add_dependencies(buildtests_cxx cel_authorization_engine_test)
+  add_dependencies(buildtests_cxx certificate_provider_registry_test)
+  add_dependencies(buildtests_cxx certificate_provider_store_test)
+  add_dependencies(buildtests_cxx cfstream_test)
   add_dependencies(buildtests_cxx channel_arguments_test)
   add_dependencies(buildtests_cxx channel_filter_test)
-  add_dependencies(buildtests_cxx channel_stack_builder_test_engine_libuv)
-  add_dependencies(buildtests_cxx channel_trace_test_engine_libuv)
+  add_dependencies(buildtests_cxx channel_stack_builder_test)
+  add_dependencies(buildtests_cxx channel_trace_test)
   add_dependencies(buildtests_cxx channelz_registry_test)
-  add_dependencies(buildtests_cxx channelz_service_test_engine_libuv)
-  add_dependencies(buildtests_cxx channelz_test_engine_libuv)
+  add_dependencies(buildtests_cxx channelz_service_test)
+  add_dependencies(buildtests_cxx channelz_test)
   add_dependencies(buildtests_cxx chunked_vector_test)
-  add_dependencies(buildtests_cxx cli_call_test_engine_libuv)
+  add_dependencies(buildtests_cxx cli_call_test)
   add_dependencies(buildtests_cxx client_authority_filter_test)
-  add_dependencies(buildtests_cxx client_callback_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx client_callback_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx client_channel_stress_test_engine_libuv)
+    add_dependencies(buildtests_cxx client_channel_stress_test)
   endif()
-  add_dependencies(buildtests_cxx client_context_test_peer_test_engine_libuv)
-  add_dependencies(buildtests_cxx client_interceptors_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx client_context_test_peer_test)
+  add_dependencies(buildtests_cxx client_interceptors_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx client_lb_end2end_test_engine_libuv)
+    add_dependencies(buildtests_cxx client_lb_end2end_test)
   endif()
   add_dependencies(buildtests_cxx codegen_test_full)
   add_dependencies(buildtests_cxx codegen_test_minimal)
-  add_dependencies(buildtests_cxx connection_prefix_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx connectivity_state_test_engine_libuv)
-  add_dependencies(buildtests_cxx context_allocator_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
+  add_dependencies(buildtests_cxx connectivity_state_test)
+  add_dependencies(buildtests_cxx context_allocator_end2end_test)
   add_dependencies(buildtests_cxx context_list_test)
   add_dependencies(buildtests_cxx context_test)
   add_dependencies(buildtests_cxx core_configuration_test)
   add_dependencies(buildtests_cxx cpp_impl_of_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx crl_ssl_transport_security_test_engine_libuv)
+    add_dependencies(buildtests_cxx crl_ssl_transport_security_test)
   endif()
-  add_dependencies(buildtests_cxx delegating_channel_test_engine_libuv)
-  add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv)
-  add_dependencies(buildtests_cxx dual_ref_counted_test_engine_libuv)
-  add_dependencies(buildtests_cxx duplicate_header_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx end2end_binder_transport_test_engine_libuv)
-  add_dependencies(buildtests_cxx end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx delegating_channel_test)
+  add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
+  add_dependencies(buildtests_cxx dual_ref_counted_test)
+  add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
+  add_dependencies(buildtests_cxx end2end_binder_transport_test)
+  add_dependencies(buildtests_cxx end2end_test)
   add_dependencies(buildtests_cxx endpoint_binder_pool_test)
   add_dependencies(buildtests_cxx endpoint_config_test)
-  add_dependencies(buildtests_cxx error_details_test_engine_libuv)
+  add_dependencies(buildtests_cxx error_details_test)
   add_dependencies(buildtests_cxx error_test)
-  add_dependencies(buildtests_cxx error_utils_test_engine_libuv)
-  add_dependencies(buildtests_cxx evaluate_args_test_engine_libuv)
+  add_dependencies(buildtests_cxx error_utils_test)
+  add_dependencies(buildtests_cxx evaluate_args_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx examine_stack_test)
   endif()
-  add_dependencies(buildtests_cxx exception_test_engine_libuv)
+  add_dependencies(buildtests_cxx exception_test)
   add_dependencies(buildtests_cxx exec_ctx_wakeup_scheduler_test)
   add_dependencies(buildtests_cxx fake_binder_test)
-  add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test_engine_libuv)
-  add_dependencies(buildtests_cxx filter_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx flaky_network_test_engine_libuv)
-  add_dependencies(buildtests_cxx flow_control_test_engine_libuv)
+  add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
+  add_dependencies(buildtests_cxx filter_end2end_test)
+  add_dependencies(buildtests_cxx flaky_network_test)
+  add_dependencies(buildtests_cxx flow_control_test)
   add_dependencies(buildtests_cxx for_each_test)
-  add_dependencies(buildtests_cxx generic_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx generic_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx global_config_env_test)
   endif()
   add_dependencies(buildtests_cxx global_config_test)
-  add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test_engine_libuv)
-  add_dependencies(buildtests_cxx grpc_authorization_engine_test_engine_libuv)
-  add_dependencies(buildtests_cxx grpc_authorization_policy_provider_test_engine_libuv)
+  add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
+  add_dependencies(buildtests_cxx grpc_authorization_engine_test)
+  add_dependencies(buildtests_cxx grpc_authorization_policy_provider_test)
   add_dependencies(buildtests_cxx grpc_cli)
-  add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test_engine_libuv)
-  add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test_engine_libuv)
-  add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test_engine_libuv)
-  add_dependencies(buildtests_cxx grpc_tls_credentials_options_test_engine_libuv)
+  add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
+  add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
+  add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test)
+  add_dependencies(buildtests_cxx grpc_tls_credentials_options_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx grpc_tool_test_engine_libuv)
+    add_dependencies(buildtests_cxx grpc_tool_test)
   endif()
-  add_dependencies(buildtests_cxx grpclb_api_test_engine_libuv)
+  add_dependencies(buildtests_cxx grpclb_api_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx grpclb_end2end_test_engine_libuv)
+    add_dependencies(buildtests_cxx grpclb_end2end_test)
   endif()
-  add_dependencies(buildtests_cxx h2_ssl_session_reuse_test_engine_libuv)
-  add_dependencies(buildtests_cxx head_of_line_blocking_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx headers_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx health_service_end2end_test_engine_libuv)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx hpack_parser_fuzzer_engine_libuv)
-  endif()
+  add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
+  add_dependencies(buildtests_cxx head_of_line_blocking_bad_client_test)
+  add_dependencies(buildtests_cxx headers_bad_client_test)
+  add_dependencies(buildtests_cxx health_service_end2end_test)
   add_dependencies(buildtests_cxx hpack_parser_table_test)
   add_dependencies(buildtests_cxx hpack_parser_test)
   add_dependencies(buildtests_cxx http2_client)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx httpcli_test_engine_libuv)
+    add_dependencies(buildtests_cxx httpcli_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx httpscli_test_engine_libuv)
+    add_dependencies(buildtests_cxx httpscli_test)
   endif()
-  add_dependencies(buildtests_cxx hybrid_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx hybrid_end2end_test)
   add_dependencies(buildtests_cxx idle_filter_state_test)
   add_dependencies(buildtests_cxx if_test)
   add_dependencies(buildtests_cxx init_test)
-  add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx insecure_security_connector_test_engine_libuv)
+  add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
+  add_dependencies(buildtests_cxx insecure_security_connector_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
   add_dependencies(buildtests_cxx join_test)
   add_dependencies(buildtests_cxx json_test)
-  add_dependencies(buildtests_cxx large_metadata_bad_client_test_engine_libuv)
+  add_dependencies(buildtests_cxx large_metadata_bad_client_test)
   add_dependencies(buildtests_cxx latch_test)
-  add_dependencies(buildtests_cxx lb_get_cpu_stats_test_engine_libuv)
-  add_dependencies(buildtests_cxx lb_load_data_store_test_engine_libuv)
-  add_dependencies(buildtests_cxx linux_system_roots_test_engine_libuv)
+  add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
+  add_dependencies(buildtests_cxx lb_load_data_store_test)
+  add_dependencies(buildtests_cxx linux_system_roots_test)
   add_dependencies(buildtests_cxx log_test)
   add_dependencies(buildtests_cxx loop_test)
   add_dependencies(buildtests_cxx match_test)
-  add_dependencies(buildtests_cxx matchers_test_engine_libuv)
+  add_dependencies(buildtests_cxx matchers_test)
   add_dependencies(buildtests_cxx memory_quota_test)
-  add_dependencies(buildtests_cxx message_allocator_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx metadata_map_test_engine_libuv)
+  add_dependencies(buildtests_cxx message_allocator_end2end_test)
+  add_dependencies(buildtests_cxx metadata_map_test)
   add_dependencies(buildtests_cxx miscompile_with_no_unique_address_test)
-  add_dependencies(buildtests_cxx mock_stream_test_engine_libuv)
-  add_dependencies(buildtests_cxx mock_test_engine_libuv)
-  add_dependencies(buildtests_cxx nonblocking_test_engine_libuv)
+  add_dependencies(buildtests_cxx mock_stream_test)
+  add_dependencies(buildtests_cxx mock_test)
+  add_dependencies(buildtests_cxx nonblocking_test)
   add_dependencies(buildtests_cxx observable_test)
-  add_dependencies(buildtests_cxx orphanable_test_engine_libuv)
-  add_dependencies(buildtests_cxx out_of_bounds_bad_client_test_engine_libuv)
+  add_dependencies(buildtests_cxx orphanable_test)
+  add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx overload_test)
-  add_dependencies(buildtests_cxx parsed_metadata_test_engine_libuv)
-  add_dependencies(buildtests_cxx pid_controller_test_engine_libuv)
+  add_dependencies(buildtests_cxx parsed_metadata_test)
+  add_dependencies(buildtests_cxx pid_controller_test)
   add_dependencies(buildtests_cxx pipe_test)
   add_dependencies(buildtests_cxx poll_test)
-  add_dependencies(buildtests_cxx port_sharing_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx port_sharing_end2end_test)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
   add_dependencies(buildtests_cxx promise_test)
-  add_dependencies(buildtests_cxx proto_server_reflection_test_engine_libuv)
+  add_dependencies(buildtests_cxx proto_server_reflection_test)
   add_dependencies(buildtests_cxx proto_utils_test)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx race_test)
-  add_dependencies(buildtests_cxx raw_end2end_test_engine_libuv)
+  add_dependencies(buildtests_cxx raw_end2end_test)
   add_dependencies(buildtests_cxx rbac_service_config_parser_test)
-  add_dependencies(buildtests_cxx rbac_translator_test_engine_libuv)
-  add_dependencies(buildtests_cxx ref_counted_ptr_test_engine_libuv)
-  add_dependencies(buildtests_cxx ref_counted_test_engine_libuv)
+  add_dependencies(buildtests_cxx rbac_translator_test)
+  add_dependencies(buildtests_cxx ref_counted_ptr_test)
+  add_dependencies(buildtests_cxx ref_counted_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test_engine_libuv)
+    add_dependencies(buildtests_cxx remove_stream_from_stalled_lists_test)
   endif()
-  add_dependencies(buildtests_cxx resolve_address_using_ares_resolver_test_engine_libuv)
-  add_dependencies(buildtests_cxx resolve_address_using_native_resolver_test_engine_libuv)
+  add_dependencies(buildtests_cxx resolve_address_using_ares_resolver_test)
+  add_dependencies(buildtests_cxx resolve_address_using_native_resolver_test)
   add_dependencies(buildtests_cxx resource_quota_test)
   add_dependencies(buildtests_cxx retry_throttle_test)
-  add_dependencies(buildtests_cxx rls_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx rls_lb_config_parser_test_engine_libuv)
-  add_dependencies(buildtests_cxx sdk_authz_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx secure_auth_context_test_engine_libuv)
+  add_dependencies(buildtests_cxx rls_end2end_test)
+  add_dependencies(buildtests_cxx rls_lb_config_parser_test)
+  add_dependencies(buildtests_cxx sdk_authz_end2end_test)
+  add_dependencies(buildtests_cxx secure_auth_context_test)
   add_dependencies(buildtests_cxx seq_test)
-  add_dependencies(buildtests_cxx server_builder_plugin_test_engine_libuv)
+  add_dependencies(buildtests_cxx server_builder_plugin_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx server_builder_test_engine_libuv)
+    add_dependencies(buildtests_cxx server_builder_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test_engine_libuv)
+    add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
   endif()
-  add_dependencies(buildtests_cxx server_chttp2_test_engine_libuv)
+  add_dependencies(buildtests_cxx server_chttp2_test)
   add_dependencies(buildtests_cxx server_config_selector_test)
-  add_dependencies(buildtests_cxx server_context_test_spouse_test_engine_libuv)
-  add_dependencies(buildtests_cxx server_early_return_test_engine_libuv)
-  add_dependencies(buildtests_cxx server_interceptors_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx server_registered_method_bad_client_test_engine_libuv)
+  add_dependencies(buildtests_cxx server_context_test_spouse_test)
+  add_dependencies(buildtests_cxx server_early_return_test)
+  add_dependencies(buildtests_cxx server_interceptors_end2end_test)
+  add_dependencies(buildtests_cxx server_registered_method_bad_client_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx server_request_call_test_engine_libuv)
+    add_dependencies(buildtests_cxx server_request_call_test)
   endif()
-  add_dependencies(buildtests_cxx service_config_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx service_config_test_engine_libuv)
-  add_dependencies(buildtests_cxx settings_timeout_test_engine_libuv)
-  add_dependencies(buildtests_cxx shutdown_test_engine_libuv)
-  add_dependencies(buildtests_cxx simple_request_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx smoke_test_engine_libuv)
-  add_dependencies(buildtests_cxx sockaddr_utils_test_engine_libuv)
+  add_dependencies(buildtests_cxx service_config_end2end_test)
+  add_dependencies(buildtests_cxx service_config_test)
+  add_dependencies(buildtests_cxx settings_timeout_test)
+  add_dependencies(buildtests_cxx shutdown_test)
+  add_dependencies(buildtests_cxx simple_request_bad_client_test)
+  add_dependencies(buildtests_cxx smoke_test)
+  add_dependencies(buildtests_cxx sockaddr_utils_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx stack_tracer_test)
   endif()
@@ -1013,58 +986,58 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx status_helper_test)
   add_dependencies(buildtests_cxx status_util_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx stranded_event_test_engine_libuv)
+    add_dependencies(buildtests_cxx stranded_event_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx streaming_throughput_test_engine_libuv)
+    add_dependencies(buildtests_cxx streaming_throughput_test)
   endif()
-  add_dependencies(buildtests_cxx streams_not_seen_test_engine_libuv)
+  add_dependencies(buildtests_cxx streams_not_seen_test)
   add_dependencies(buildtests_cxx string_ref_test)
   add_dependencies(buildtests_cxx table_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
-  add_dependencies(buildtests_cxx test_cpp_client_credentials_test_engine_libuv)
-  add_dependencies(buildtests_cxx test_cpp_server_credentials_test_engine_libuv)
+  add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
+  add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_util_slice_test)
   add_dependencies(buildtests_cxx test_cpp_util_time_test)
-  add_dependencies(buildtests_cxx thread_manager_test_engine_libuv)
+  add_dependencies(buildtests_cxx thread_manager_test)
   add_dependencies(buildtests_cxx thread_quota_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx thread_stress_test_engine_libuv)
+    add_dependencies(buildtests_cxx thread_stress_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx time_jump_test_engine_libuv)
+    add_dependencies(buildtests_cxx time_jump_test)
   endif()
   add_dependencies(buildtests_cxx time_util_test)
   add_dependencies(buildtests_cxx timeout_encoding_test)
-  add_dependencies(buildtests_cxx timer_test_engine_libuv)
-  add_dependencies(buildtests_cxx tls_certificate_verifier_test_engine_libuv)
-  add_dependencies(buildtests_cxx tls_key_export_test_engine_libuv)
-  add_dependencies(buildtests_cxx tls_security_connector_test_engine_libuv)
+  add_dependencies(buildtests_cxx timer_test)
+  add_dependencies(buildtests_cxx tls_certificate_verifier_test)
+  add_dependencies(buildtests_cxx tls_key_export_test)
+  add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx tls_test)
-  add_dependencies(buildtests_cxx too_many_pings_test_engine_libuv)
+  add_dependencies(buildtests_cxx too_many_pings_test)
   add_dependencies(buildtests_cxx transport_stream_receiver_test)
   add_dependencies(buildtests_cxx try_join_test)
   add_dependencies(buildtests_cxx try_seq_metadata_test)
   add_dependencies(buildtests_cxx try_seq_test)
-  add_dependencies(buildtests_cxx unknown_frame_bad_client_test_engine_libuv)
-  add_dependencies(buildtests_cxx uri_parser_test_engine_libuv)
+  add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
+  add_dependencies(buildtests_cxx uri_parser_test)
   add_dependencies(buildtests_cxx useful_test)
-  add_dependencies(buildtests_cxx window_overflow_bad_client_test_engine_libuv)
+  add_dependencies(buildtests_cxx window_overflow_bad_client_test)
   add_dependencies(buildtests_cxx wire_reader_test)
   add_dependencies(buildtests_cxx wire_writer_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx work_serializer_test_engine_libuv)
+    add_dependencies(buildtests_cxx work_serializer_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx writes_per_rpc_test_engine_libuv)
+    add_dependencies(buildtests_cxx writes_per_rpc_test)
   endif()
-  add_dependencies(buildtests_cxx xds_bootstrap_test_engine_libuv)
-  add_dependencies(buildtests_cxx xds_certificate_provider_test_engine_libuv)
-  add_dependencies(buildtests_cxx xds_channel_creds_registry_test_engine_libuv)
-  add_dependencies(buildtests_cxx xds_credentials_end2end_test_engine_libuv)
-  add_dependencies(buildtests_cxx xds_credentials_test_engine_libuv)
+  add_dependencies(buildtests_cxx xds_bootstrap_test)
+  add_dependencies(buildtests_cxx xds_certificate_provider_test)
+  add_dependencies(buildtests_cxx xds_channel_creds_registry_test)
+  add_dependencies(buildtests_cxx xds_credentials_end2end_test)
+  add_dependencies(buildtests_cxx xds_credentials_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx xds_end2end_test_engine_libuv)
+    add_dependencies(buildtests_cxx xds_end2end_test)
   endif()
   add_dependencies(buildtests_cxx xds_interop_client)
   add_dependencies(buildtests_cxx xds_interop_server)
@@ -4234,12 +4207,12 @@ target_link_libraries(alloc_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alpn_test_engine_libuv
+add_executable(alpn_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/alpn_test.cc
 )
 
-target_include_directories(alpn_test_engine_libuv
+target_include_directories(alpn_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4253,7 +4226,7 @@ target_include_directories(alpn_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alpn_test_engine_libuv
+target_link_libraries(alpn_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4262,13 +4235,13 @@ target_link_libraries(alpn_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_counter_test_engine_libuv
+add_executable(alts_counter_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_counter_test.cc
 )
 
-target_include_directories(alts_counter_test_engine_libuv
+target_include_directories(alts_counter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4282,7 +4255,7 @@ target_include_directories(alts_counter_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_counter_test_engine_libuv
+target_link_libraries(alts_counter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4291,13 +4264,13 @@ target_link_libraries(alts_counter_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_crypt_test_engine_libuv
+add_executable(alts_crypt_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/aes_gcm_test.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
 )
 
-target_include_directories(alts_crypt_test_engine_libuv
+target_include_directories(alts_crypt_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4311,7 +4284,7 @@ target_include_directories(alts_crypt_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_crypt_test_engine_libuv
+target_link_libraries(alts_crypt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4320,13 +4293,13 @@ target_link_libraries(alts_crypt_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_crypter_test_engine_libuv
+add_executable(alts_crypter_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_crypter_test.cc
 )
 
-target_include_directories(alts_crypter_test_engine_libuv
+target_include_directories(alts_crypter_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4340,7 +4313,7 @@ target_include_directories(alts_crypter_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_crypter_test_engine_libuv
+target_link_libraries(alts_crypter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4349,14 +4322,14 @@ target_link_libraries(alts_crypter_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_frame_protector_test_engine_libuv
+add_executable(alts_frame_protector_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
 
-target_include_directories(alts_frame_protector_test_engine_libuv
+target_include_directories(alts_frame_protector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4370,7 +4343,7 @@ target_include_directories(alts_frame_protector_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_frame_protector_test_engine_libuv
+target_link_libraries(alts_frame_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4379,13 +4352,13 @@ target_link_libraries(alts_frame_protector_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_grpc_record_protocol_test_engine_libuv
+add_executable(alts_grpc_record_protocol_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
 )
 
-target_include_directories(alts_grpc_record_protocol_test_engine_libuv
+target_include_directories(alts_grpc_record_protocol_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4399,7 +4372,7 @@ target_include_directories(alts_grpc_record_protocol_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_grpc_record_protocol_test_engine_libuv
+target_link_libraries(alts_grpc_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4408,13 +4381,13 @@ target_link_libraries(alts_grpc_record_protocol_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_handshaker_client_test_engine_libuv
+add_executable(alts_handshaker_client_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
 
-target_include_directories(alts_handshaker_client_test_engine_libuv
+target_include_directories(alts_handshaker_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4428,7 +4401,7 @@ target_include_directories(alts_handshaker_client_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_handshaker_client_test_engine_libuv
+target_link_libraries(alts_handshaker_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4437,13 +4410,13 @@ target_link_libraries(alts_handshaker_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_iovec_record_protocol_test_engine_libuv
+add_executable(alts_iovec_record_protocol_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
 )
 
-target_include_directories(alts_iovec_record_protocol_test_engine_libuv
+target_include_directories(alts_iovec_record_protocol_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4457,7 +4430,7 @@ target_include_directories(alts_iovec_record_protocol_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_iovec_record_protocol_test_engine_libuv
+target_link_libraries(alts_iovec_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4466,12 +4439,12 @@ target_link_libraries(alts_iovec_record_protocol_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_security_connector_test_engine_libuv
+add_executable(alts_security_connector_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/alts_security_connector_test.cc
 )
 
-target_include_directories(alts_security_connector_test_engine_libuv
+target_include_directories(alts_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4485,7 +4458,7 @@ target_include_directories(alts_security_connector_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_security_connector_test_engine_libuv
+target_link_libraries(alts_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4494,13 +4467,13 @@ target_link_libraries(alts_security_connector_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_tsi_handshaker_test_engine_libuv
+add_executable(alts_tsi_handshaker_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
 )
 
-target_include_directories(alts_tsi_handshaker_test_engine_libuv
+target_include_directories(alts_tsi_handshaker_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4514,7 +4487,7 @@ target_include_directories(alts_tsi_handshaker_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_tsi_handshaker_test_engine_libuv
+target_link_libraries(alts_tsi_handshaker_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4523,13 +4496,13 @@ target_link_libraries(alts_tsi_handshaker_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_tsi_utils_test_engine_libuv
+add_executable(alts_tsi_utils_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
 )
 
-target_include_directories(alts_tsi_utils_test_engine_libuv
+target_include_directories(alts_tsi_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4543,7 +4516,7 @@ target_include_directories(alts_tsi_utils_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_tsi_utils_test_engine_libuv
+target_link_libraries(alts_tsi_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4552,13 +4525,13 @@ target_link_libraries(alts_tsi_utils_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_zero_copy_grpc_protector_test_engine_libuv
+add_executable(alts_zero_copy_grpc_protector_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
 )
 
-target_include_directories(alts_zero_copy_grpc_protector_test_engine_libuv
+target_include_directories(alts_zero_copy_grpc_protector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4572,7 +4545,7 @@ target_include_directories(alts_zero_copy_grpc_protector_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(alts_zero_copy_grpc_protector_test_engine_libuv
+target_link_libraries(alts_zero_copy_grpc_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4665,13 +4638,13 @@ target_link_libraries(b64_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(bad_server_response_test_engine_libuv
+add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
   test/core/end2end/cq_verifier.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(bad_server_response_test_engine_libuv
+target_include_directories(bad_server_response_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4685,7 +4658,7 @@ target_include_directories(bad_server_response_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(bad_server_response_test_engine_libuv
+target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4695,13 +4668,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(bad_ssl_alpn_test_engine_libuv
+  add_executable(bad_ssl_alpn_test
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/event_engine/event_engine_test_init_libuv.cc
   )
 
-  target_include_directories(bad_ssl_alpn_test_engine_libuv
+  target_include_directories(bad_ssl_alpn_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4715,7 +4688,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(bad_ssl_alpn_test_engine_libuv
+  target_link_libraries(bad_ssl_alpn_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4726,13 +4699,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(bad_ssl_cert_test_engine_libuv
+  add_executable(bad_ssl_cert_test
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/event_engine/event_engine_test_init_libuv.cc
   )
 
-  target_include_directories(bad_ssl_cert_test_engine_libuv
+  target_include_directories(bad_ssl_cert_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4746,7 +4719,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(bad_ssl_cert_test_engine_libuv
+  target_link_libraries(bad_ssl_cert_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -4812,12 +4785,12 @@ target_link_libraries(bin_encoder_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(buffer_list_test_engine_libuv
+add_executable(buffer_list_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/iomgr/buffer_list_test.cc
 )
 
-target_include_directories(buffer_list_test_engine_libuv
+target_include_directories(buffer_list_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4831,7 +4804,7 @@ target_include_directories(buffer_list_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(buffer_list_test_engine_libuv
+target_link_libraries(buffer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4868,12 +4841,12 @@ target_link_libraries(channel_args_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(channel_create_test_engine_libuv
+add_executable(channel_create_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/channel_create_test.cc
 )
 
-target_include_directories(channel_create_test_engine_libuv
+target_include_directories(channel_create_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4887,7 +4860,7 @@ target_include_directories(channel_create_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(channel_create_test_engine_libuv
+target_link_libraries(channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4924,12 +4897,12 @@ target_link_libraries(channel_stack_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(check_gcp_environment_linux_test_engine_libuv
+add_executable(check_gcp_environment_linux_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/check_gcp_environment_linux_test.cc
 )
 
-target_include_directories(check_gcp_environment_linux_test_engine_libuv
+target_include_directories(check_gcp_environment_linux_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4943,7 +4916,7 @@ target_include_directories(check_gcp_environment_linux_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(check_gcp_environment_linux_test_engine_libuv
+target_link_libraries(check_gcp_environment_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4952,12 +4925,12 @@ target_link_libraries(check_gcp_environment_linux_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(check_gcp_environment_windows_test_engine_libuv
+add_executable(check_gcp_environment_windows_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/check_gcp_environment_windows_test.cc
 )
 
-target_include_directories(check_gcp_environment_windows_test_engine_libuv
+target_include_directories(check_gcp_environment_windows_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -4971,7 +4944,7 @@ target_include_directories(check_gcp_environment_windows_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(check_gcp_environment_windows_test_engine_libuv
+target_link_libraries(check_gcp_environment_windows_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -4981,12 +4954,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(client_ssl_test_engine_libuv
+  add_executable(client_ssl_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/handshake/client_ssl.cc
   )
 
-  target_include_directories(client_ssl_test_engine_libuv
+  target_include_directories(client_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5000,7 +4973,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(client_ssl_test_engine_libuv
+  target_link_libraries(client_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5039,12 +5012,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(combiner_test_engine_libuv
+  add_executable(combiner_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/combiner_test.cc
   )
 
-  target_include_directories(combiner_test_engine_libuv
+  target_include_directories(combiner_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5058,7 +5031,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(combiner_test_engine_libuv
+  target_link_libraries(combiner_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5068,12 +5041,12 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(completion_queue_threading_test_engine_libuv
+add_executable(completion_queue_threading_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/completion_queue_threading_test.cc
 )
 
-target_include_directories(completion_queue_threading_test_engine_libuv
+target_include_directories(completion_queue_threading_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5087,7 +5060,7 @@ target_include_directories(completion_queue_threading_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(completion_queue_threading_test_engine_libuv
+target_link_libraries(completion_queue_threading_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5125,12 +5098,12 @@ target_link_libraries(compression_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(concurrent_connectivity_test_engine_libuv
+add_executable(concurrent_connectivity_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/concurrent_connectivity_test.cc
 )
 
-target_include_directories(concurrent_connectivity_test_engine_libuv
+target_include_directories(concurrent_connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5144,7 +5117,7 @@ target_include_directories(concurrent_connectivity_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(concurrent_connectivity_test_engine_libuv
+target_link_libraries(concurrent_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5153,13 +5126,13 @@ target_link_libraries(concurrent_connectivity_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(connection_refused_test_engine_libuv
+add_executable(connection_refused_test
   test/core/end2end/connection_refused_test.cc
   test/core/end2end/cq_verifier.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(connection_refused_test_engine_libuv
+target_include_directories(connection_refused_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5173,7 +5146,7 @@ target_include_directories(connection_refused_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(connection_refused_test_engine_libuv
+target_link_libraries(connection_refused_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5210,12 +5183,12 @@ target_link_libraries(cpu_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(dns_resolver_connectivity_using_ares_test_engine_libuv
+add_executable(dns_resolver_connectivity_using_ares_test
   test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(dns_resolver_connectivity_using_ares_test_engine_libuv
+target_include_directories(dns_resolver_connectivity_using_ares_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5229,7 +5202,7 @@ target_include_directories(dns_resolver_connectivity_using_ares_test_engine_libu
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(dns_resolver_connectivity_using_ares_test_engine_libuv
+target_link_libraries(dns_resolver_connectivity_using_ares_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5238,12 +5211,12 @@ target_link_libraries(dns_resolver_connectivity_using_ares_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(dns_resolver_connectivity_using_native_test_engine_libuv
+add_executable(dns_resolver_connectivity_using_native_test
   test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(dns_resolver_connectivity_using_native_test_engine_libuv
+target_include_directories(dns_resolver_connectivity_using_native_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5257,7 +5230,7 @@ target_include_directories(dns_resolver_connectivity_using_native_test_engine_li
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(dns_resolver_connectivity_using_native_test_engine_libuv
+target_link_libraries(dns_resolver_connectivity_using_native_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5266,12 +5239,12 @@ target_link_libraries(dns_resolver_connectivity_using_native_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(dns_resolver_cooldown_test_engine_libuv
+add_executable(dns_resolver_cooldown_test
   test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(dns_resolver_cooldown_test_engine_libuv
+target_include_directories(dns_resolver_cooldown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5285,7 +5258,7 @@ target_include_directories(dns_resolver_cooldown_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(dns_resolver_cooldown_test_engine_libuv
+target_link_libraries(dns_resolver_cooldown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5294,12 +5267,12 @@ target_link_libraries(dns_resolver_cooldown_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(dns_resolver_test_engine_libuv
+add_executable(dns_resolver_test
   test/core/client_channel/resolvers/dns_resolver_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(dns_resolver_test_engine_libuv
+target_include_directories(dns_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5313,7 +5286,7 @@ target_include_directories(dns_resolver_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(dns_resolver_test_engine_libuv
+target_link_libraries(dns_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5323,13 +5296,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(dualstack_socket_test_engine_libuv
+  add_executable(dualstack_socket_test
     test/core/end2end/cq_verifier.cc
     test/core/end2end/dualstack_socket_test.cc
     test/core/event_engine/event_engine_test_init_libuv.cc
   )
 
-  target_include_directories(dualstack_socket_test_engine_libuv
+  target_include_directories(dualstack_socket_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5343,7 +5316,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(dualstack_socket_test_engine_libuv
+  target_link_libraries(dualstack_socket_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5353,13 +5326,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(endpoint_pair_test_engine_libuv
+add_executable(endpoint_pair_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/iomgr/endpoint_pair_test.cc
   test/core/iomgr/endpoint_tests.cc
 )
 
-target_include_directories(endpoint_pair_test_engine_libuv
+target_include_directories(endpoint_pair_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5373,7 +5346,7 @@ target_include_directories(endpoint_pair_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(endpoint_pair_test_engine_libuv
+target_link_libraries(endpoint_pair_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5411,12 +5384,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(ev_epollex_linux_test_engine_libuv
+  add_executable(ev_epollex_linux_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/ev_epollex_linux_test.cc
   )
 
-  target_include_directories(ev_epollex_linux_test_engine_libuv
+  target_include_directories(ev_epollex_linux_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5430,7 +5403,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(ev_epollex_linux_test_engine_libuv
+  target_link_libraries(ev_epollex_linux_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5440,12 +5413,12 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(fake_resolver_test_engine_libuv
+add_executable(fake_resolver_test
   test/core/client_channel/resolvers/fake_resolver_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(fake_resolver_test_engine_libuv
+target_include_directories(fake_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5459,7 +5432,7 @@ target_include_directories(fake_resolver_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(fake_resolver_test_engine_libuv
+target_link_libraries(fake_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5468,13 +5441,13 @@ target_link_libraries(fake_resolver_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(fake_transport_security_test_engine_libuv
+add_executable(fake_transport_security_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/fake_transport_security_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
 
-target_include_directories(fake_transport_security_test_engine_libuv
+target_include_directories(fake_transport_security_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5488,7 +5461,7 @@ target_include_directories(fake_transport_security_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(fake_transport_security_test_engine_libuv
+target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5498,12 +5471,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(fd_conservation_posix_test_engine_libuv
+  add_executable(fd_conservation_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/fd_conservation_posix_test.cc
   )
 
-  target_include_directories(fd_conservation_posix_test_engine_libuv
+  target_include_directories(fd_conservation_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5517,7 +5490,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(fd_conservation_posix_test_engine_libuv
+  target_link_libraries(fd_conservation_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5528,12 +5501,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(fd_posix_test_engine_libuv
+  add_executable(fd_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/fd_posix_test.cc
   )
 
-  target_include_directories(fd_posix_test_engine_libuv
+  target_include_directories(fd_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5547,7 +5520,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(fd_posix_test_engine_libuv
+  target_link_libraries(fd_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5558,7 +5531,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(fling_stream_test_engine_libuv
+  add_executable(fling_stream_test
     test/core/end2end/data/client_certs.cc
     test/core/end2end/data/server1_cert.cc
     test/core/end2end/data/server1_key.cc
@@ -5567,7 +5540,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/fling/fling_stream_test.cc
   )
 
-  target_include_directories(fling_stream_test_engine_libuv
+  target_include_directories(fling_stream_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5581,7 +5554,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(fling_stream_test_engine_libuv
+  target_link_libraries(fling_stream_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5592,7 +5565,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(fling_test_engine_libuv
+  add_executable(fling_test
     test/core/end2end/data/client_certs.cc
     test/core/end2end/data/server1_cert.cc
     test/core/end2end/data/server1_key.cc
@@ -5601,7 +5574,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/fling/fling_test.cc
   )
 
-  target_include_directories(fling_test_engine_libuv
+  target_include_directories(fling_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5615,7 +5588,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(fling_test_engine_libuv
+  target_link_libraries(fling_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5655,7 +5628,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(format_request_test_engine_libuv
+add_executable(format_request_test
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
@@ -5664,7 +5637,7 @@ add_executable(format_request_test_engine_libuv
   test/core/http/format_request_test.cc
 )
 
-target_include_directories(format_request_test_engine_libuv
+target_include_directories(format_request_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5678,7 +5651,7 @@ target_include_directories(format_request_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(format_request_test_engine_libuv
+target_link_libraries(format_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5687,13 +5660,13 @@ target_link_libraries(format_request_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(frame_handler_test_engine_libuv
+add_executable(frame_handler_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/frame_handler_test.cc
 )
 
-target_include_directories(frame_handler_test_engine_libuv
+target_include_directories(frame_handler_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5707,7 +5680,7 @@ target_include_directories(frame_handler_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(frame_handler_test_engine_libuv
+target_link_libraries(frame_handler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5716,13 +5689,13 @@ target_link_libraries(frame_handler_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(goaway_server_test_engine_libuv
+add_executable(goaway_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/goaway_server_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(goaway_server_test_engine_libuv
+target_include_directories(goaway_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5736,7 +5709,7 @@ target_include_directories(goaway_server_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(goaway_server_test_engine_libuv
+target_link_libraries(goaway_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5745,12 +5718,12 @@ target_link_libraries(goaway_server_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_alts_credentials_options_test_engine_libuv
+add_executable(grpc_alts_credentials_options_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/grpc_alts_credentials_options_test.cc
 )
 
-target_include_directories(grpc_alts_credentials_options_test_engine_libuv
+target_include_directories(grpc_alts_credentials_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5764,7 +5737,7 @@ target_include_directories(grpc_alts_credentials_options_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(grpc_alts_credentials_options_test_engine_libuv
+target_link_libraries(grpc_alts_credentials_options_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5801,12 +5774,12 @@ target_link_libraries(grpc_byte_buffer_reader_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_completion_queue_test_engine_libuv
+add_executable(grpc_completion_queue_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/completion_queue_test.cc
 )
 
-target_include_directories(grpc_completion_queue_test_engine_libuv
+target_include_directories(grpc_completion_queue_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5820,7 +5793,7 @@ target_include_directories(grpc_completion_queue_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(grpc_completion_queue_test_engine_libuv
+target_link_libraries(grpc_completion_queue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5829,12 +5802,12 @@ target_link_libraries(grpc_completion_queue_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_ipv6_loopback_available_test_engine_libuv
+add_executable(grpc_ipv6_loopback_available_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
 )
 
-target_include_directories(grpc_ipv6_loopback_available_test_engine_libuv
+target_include_directories(grpc_ipv6_loopback_available_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5848,7 +5821,7 @@ target_include_directories(grpc_ipv6_loopback_available_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(grpc_ipv6_loopback_available_test_engine_libuv
+target_link_libraries(grpc_ipv6_loopback_available_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5858,13 +5831,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(handshake_server_with_readahead_handshaker_test_engine_libuv
+  add_executable(handshake_server_with_readahead_handshaker_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/handshake/readahead_handshaker_server_ssl.cc
     test/core/handshake/server_ssl_common.cc
   )
 
-  target_include_directories(handshake_server_with_readahead_handshaker_test_engine_libuv
+  target_include_directories(handshake_server_with_readahead_handshaker_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5878,7 +5851,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(handshake_server_with_readahead_handshaker_test_engine_libuv
+  target_link_libraries(handshake_server_with_readahead_handshaker_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -5999,13 +5972,13 @@ target_link_libraries(inproc_callback_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(invalid_call_argument_test_engine_libuv
+add_executable(invalid_call_argument_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/invalid_call_argument_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(invalid_call_argument_test_engine_libuv
+target_include_directories(invalid_call_argument_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6019,7 +5992,7 @@ target_include_directories(invalid_call_argument_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(invalid_call_argument_test_engine_libuv
+target_link_libraries(invalid_call_argument_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6084,13 +6057,13 @@ target_link_libraries(jwt_verifier_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(lame_client_test_engine_libuv
+add_executable(lame_client_test
   test/core/end2end/cq_verifier.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/lame_client_test.cc
 )
 
-target_include_directories(lame_client_test_engine_libuv
+target_include_directories(lame_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6104,7 +6077,7 @@ target_include_directories(lame_client_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(lame_client_test_engine_libuv
+target_link_libraries(lame_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6330,13 +6303,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(multiple_server_queues_test_engine_libuv
+add_executable(multiple_server_queues_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/multiple_server_queues_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(multiple_server_queues_test_engine_libuv
+target_include_directories(multiple_server_queues_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6350,7 +6323,7 @@ target_include_directories(multiple_server_queues_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(multiple_server_queues_test_engine_libuv
+target_link_libraries(multiple_server_queues_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6387,13 +6360,13 @@ target_link_libraries(murmur_hash_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(no_server_test_engine_libuv
+add_executable(no_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/no_server_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(no_server_test_engine_libuv
+target_include_directories(no_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6407,7 +6380,7 @@ target_include_directories(no_server_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(no_server_test_engine_libuv
+target_link_libraries(no_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6416,12 +6389,12 @@ target_link_libraries(no_server_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(num_external_connectivity_watchers_test_engine_libuv
+add_executable(num_external_connectivity_watchers_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/num_external_connectivity_watchers_test.cc
 )
 
-target_include_directories(num_external_connectivity_watchers_test_engine_libuv
+target_include_directories(num_external_connectivity_watchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6435,7 +6408,7 @@ target_include_directories(num_external_connectivity_watchers_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(num_external_connectivity_watchers_test_engine_libuv
+target_link_libraries(num_external_connectivity_watchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6444,12 +6417,12 @@ target_link_libraries(num_external_connectivity_watchers_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(parse_address_test_engine_libuv
+add_executable(parse_address_test
   test/core/address_utils/parse_address_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(parse_address_test_engine_libuv
+target_include_directories(parse_address_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6463,7 +6436,7 @@ target_include_directories(parse_address_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(parse_address_test_engine_libuv
+target_link_libraries(parse_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6562,14 +6535,14 @@ target_link_libraries(percent_encoding_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(public_headers_must_be_c89_engine_libuv
+add_executable(public_headers_must_be_c89
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/public_headers_must_be_c89.c
 )
 
-target_include_directories(public_headers_must_be_c89_engine_libuv
+target_include_directories(public_headers_must_be_c89
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6583,7 +6556,7 @@ target_include_directories(public_headers_must_be_c89_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(public_headers_must_be_c89_engine_libuv
+target_link_libraries(public_headers_must_be_c89
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6593,12 +6566,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(resolve_address_using_ares_resolver_posix_test_engine_libuv
+  add_executable(resolve_address_using_ares_resolver_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/resolve_address_posix_test.cc
   )
 
-  target_include_directories(resolve_address_using_ares_resolver_posix_test_engine_libuv
+  target_include_directories(resolve_address_using_ares_resolver_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6612,7 +6585,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(resolve_address_using_ares_resolver_posix_test_engine_libuv
+  target_link_libraries(resolve_address_using_ares_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -6623,12 +6596,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(resolve_address_using_native_resolver_posix_test_engine_libuv
+  add_executable(resolve_address_using_native_resolver_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/resolve_address_posix_test.cc
   )
 
-  target_include_directories(resolve_address_using_native_resolver_posix_test_engine_libuv
+  target_include_directories(resolve_address_using_native_resolver_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6642,7 +6615,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(resolve_address_using_native_resolver_posix_test_engine_libuv
+  target_link_libraries(resolve_address_using_native_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -6652,12 +6625,12 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(secure_channel_create_test_engine_libuv
+add_executable(secure_channel_create_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/secure_channel_create_test.cc
 )
 
-target_include_directories(secure_channel_create_test_engine_libuv
+target_include_directories(secure_channel_create_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6671,7 +6644,7 @@ target_include_directories(secure_channel_create_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(secure_channel_create_test_engine_libuv
+target_link_libraries(secure_channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6680,13 +6653,13 @@ target_link_libraries(secure_channel_create_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(secure_endpoint_test_engine_libuv
+add_executable(secure_endpoint_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/security/secure_endpoint_test.cc
 )
 
-target_include_directories(secure_endpoint_test_engine_libuv
+target_include_directories(secure_endpoint_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6700,7 +6673,7 @@ target_include_directories(secure_endpoint_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(secure_endpoint_test_engine_libuv
+target_link_libraries(secure_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6709,12 +6682,12 @@ target_link_libraries(secure_endpoint_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(security_connector_test_engine_libuv
+add_executable(security_connector_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/security_connector_test.cc
 )
 
-target_include_directories(security_connector_test_engine_libuv
+target_include_directories(security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6728,7 +6701,7 @@ target_include_directories(security_connector_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(security_connector_test_engine_libuv
+target_link_libraries(security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6737,12 +6710,12 @@ target_link_libraries(security_connector_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(sequential_connectivity_test_engine_libuv
+add_executable(sequential_connectivity_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/sequential_connectivity_test.cc
 )
 
-target_include_directories(sequential_connectivity_test_engine_libuv
+target_include_directories(sequential_connectivity_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6756,7 +6729,7 @@ target_include_directories(sequential_connectivity_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(sequential_connectivity_test_engine_libuv
+target_link_libraries(sequential_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6766,13 +6739,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(server_ssl_test_engine_libuv
+  add_executable(server_ssl_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/handshake/server_ssl.cc
     test/core/handshake/server_ssl_common.cc
   )
 
-  target_include_directories(server_ssl_test_engine_libuv
+  target_include_directories(server_ssl_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6786,7 +6759,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(server_ssl_test_engine_libuv
+  target_link_libraries(server_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -6796,12 +6769,12 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_test_engine_libuv
+add_executable(server_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/server_test.cc
 )
 
-target_include_directories(server_test_engine_libuv
+target_include_directories(server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6815,7 +6788,7 @@ target_include_directories(server_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(server_test_engine_libuv
+target_link_libraries(server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6915,12 +6888,12 @@ target_link_libraries(slice_string_helpers_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(sockaddr_resolver_test_engine_libuv
+add_executable(sockaddr_resolver_test
   test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
-target_include_directories(sockaddr_resolver_test_engine_libuv
+target_include_directories(sockaddr_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6934,7 +6907,7 @@ target_include_directories(sockaddr_resolver_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(sockaddr_resolver_test_engine_libuv
+target_link_libraries(sockaddr_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6944,12 +6917,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(socket_utils_test_engine_libuv
+  add_executable(socket_utils_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/socket_utils_test.cc
   )
 
-  target_include_directories(socket_utils_test_engine_libuv
+  target_include_directories(socket_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6963,7 +6936,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(socket_utils_test_engine_libuv
+  target_link_libraries(socket_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -7001,12 +6974,12 @@ target_link_libraries(spinlock_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(ssl_credentials_test_engine_libuv
+add_executable(ssl_credentials_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/ssl_credentials_test.cc
 )
 
-target_include_directories(ssl_credentials_test_engine_libuv
+target_include_directories(ssl_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7020,7 +6993,7 @@ target_include_directories(ssl_credentials_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(ssl_credentials_test_engine_libuv
+target_link_libraries(ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7030,13 +7003,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(ssl_transport_security_test_engine_libuv
+  add_executable(ssl_transport_security_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/tsi/ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
 
-  target_include_directories(ssl_transport_security_test_engine_libuv
+  target_include_directories(ssl_transport_security_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7050,7 +7023,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(ssl_transport_security_test_engine_libuv
+  target_link_libraries(ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -7088,12 +7061,12 @@ target_link_libraries(status_conversion_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(stream_map_test_engine_libuv
+add_executable(stream_map_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/stream_map_test.cc
 )
 
-target_include_directories(stream_map_test_engine_libuv
+target_include_directories(stream_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7107,7 +7080,7 @@ target_include_directories(stream_map_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(stream_map_test_engine_libuv
+target_link_libraries(stream_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7173,12 +7146,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(tcp_client_posix_test_engine_libuv
+  add_executable(tcp_client_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/tcp_client_posix_test.cc
   )
 
-  target_include_directories(tcp_client_posix_test_engine_libuv
+  target_include_directories(tcp_client_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7192,7 +7165,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(tcp_client_posix_test_engine_libuv
+  target_link_libraries(tcp_client_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -7203,13 +7176,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(tcp_posix_test_engine_libuv
+  add_executable(tcp_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/endpoint_tests.cc
     test/core/iomgr/tcp_posix_test.cc
   )
 
-  target_include_directories(tcp_posix_test_engine_libuv
+  target_include_directories(tcp_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7223,7 +7196,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(tcp_posix_test_engine_libuv
+  target_link_libraries(tcp_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -7234,12 +7207,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(tcp_server_posix_test_engine_libuv
+  add_executable(tcp_server_posix_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/tcp_server_posix_test.cc
   )
 
-  target_include_directories(tcp_server_posix_test_engine_libuv
+  target_include_directories(tcp_server_posix_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7253,7 +7226,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
-  target_link_libraries(tcp_server_posix_test_engine_libuv
+  target_link_libraries(tcp_server_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
   )
@@ -7291,12 +7264,12 @@ target_link_libraries(test_core_gpr_time_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_security_credentials_test_engine_libuv
+add_executable(test_core_security_credentials_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/credentials_test.cc
 )
 
-target_include_directories(test_core_security_credentials_test_engine_libuv
+target_include_directories(test_core_security_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7310,7 +7283,7 @@ target_include_directories(test_core_security_credentials_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(test_core_security_credentials_test_engine_libuv
+target_link_libraries(test_core_security_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7459,12 +7432,12 @@ target_link_libraries(timer_list_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(transport_security_common_api_test_engine_libuv
+add_executable(transport_security_common_api_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
 )
 
-target_include_directories(transport_security_common_api_test_engine_libuv
+target_include_directories(transport_security_common_api_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7478,7 +7451,7 @@ target_include_directories(transport_security_common_api_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(transport_security_common_api_test_engine_libuv
+target_link_libraries(transport_security_common_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7487,12 +7460,12 @@ target_link_libraries(transport_security_common_api_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(transport_security_test_engine_libuv
+add_executable(transport_security_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/tsi/transport_security_test.cc
 )
 
-target_include_directories(transport_security_test_engine_libuv
+target_include_directories(transport_security_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7506,7 +7479,7 @@ target_include_directories(transport_security_test_engine_libuv
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
-target_link_libraries(transport_security_test_engine_libuv
+target_link_libraries(transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -7640,13 +7613,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(address_sorting_test_engine_libuv
+  add_executable(address_sorting_test
     test/cpp/naming/address_sorting_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(address_sorting_test_engine_libuv
+  target_include_directories(address_sorting_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7665,7 +7638,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(address_sorting_test_engine_libuv
+  target_link_libraries(address_sorting_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_config
@@ -7678,7 +7651,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(address_sorting_test_unsecure_engine_libuv
+  add_executable(address_sorting_test_unsecure
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/naming/address_sorting_test.cc
     test/cpp/util/byte_buffer_proto_helper.cc
@@ -7688,7 +7661,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(address_sorting_test_unsecure_engine_libuv
+  target_include_directories(address_sorting_test_unsecure
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7707,7 +7680,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(address_sorting_test_unsecure_engine_libuv
+  target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
@@ -7720,7 +7693,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(admin_services_end2end_test_engine_libuv
+add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
@@ -7744,7 +7717,7 @@ add_executable(admin_services_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(admin_services_end2end_test_engine_libuv
+target_include_directories(admin_services_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7763,7 +7736,7 @@ target_include_directories(admin_services_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(admin_services_end2end_test_engine_libuv
+target_link_libraries(admin_services_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_reflection
@@ -7776,14 +7749,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(alarm_test_engine_libuv
+  add_executable(alarm_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/common/alarm_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(alarm_test_engine_libuv
+  target_include_directories(alarm_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7802,7 +7775,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(alarm_test_engine_libuv
+  target_link_libraries(alarm_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
@@ -7815,7 +7788,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(alts_concurrent_connectivity_test_engine_libuv
+  add_executable(alts_concurrent_connectivity_test
     ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.pb.h
@@ -7833,7 +7806,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(alts_concurrent_connectivity_test_engine_libuv
+  target_include_directories(alts_concurrent_connectivity_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7852,7 +7825,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(alts_concurrent_connectivity_test_engine_libuv
+  target_link_libraries(alts_concurrent_connectivity_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
@@ -7864,13 +7837,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(alts_util_test_engine_libuv
+add_executable(alts_util_test
   test/cpp/common/alts_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(alts_util_test_engine_libuv
+target_include_directories(alts_util_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7889,7 +7862,7 @@ target_include_directories(alts_util_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(alts_util_test_engine_libuv
+target_link_libraries(alts_util_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_alts
@@ -7897,55 +7870,6 @@ target_link_libraries(alts_util_test_engine_libuv
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(api_fuzzer_engine_libuv
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.grpc.pb.h
-    test/core/end2end/data/client_certs.cc
-    test/core/end2end/data/server1_cert.cc
-    test/core/end2end/data/server1_key.cc
-    test/core/end2end/data/test_root_cert.cc
-    test/core/end2end/fuzzers/api_fuzzer.cc
-    test/core/event_engine/event_engine_test_init_libuv.cc
-    test/core/util/fuzzer_corpus_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(api_fuzzer_engine_libuv
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(api_fuzzer_engine_libuv
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::flags
-    grpc_test_util
-    grpc++_test_config
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -8002,7 +7926,7 @@ target_link_libraries(arena_promise_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(async_end2end_test_engine_libuv
+add_executable(async_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
@@ -8028,7 +7952,7 @@ add_executable(async_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(async_end2end_test_engine_libuv
+target_include_directories(async_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8047,7 +7971,7 @@ target_include_directories(async_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(async_end2end_test_engine_libuv
+target_link_libraries(async_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -8092,14 +8016,14 @@ target_link_libraries(auth_property_iterator_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(authorization_matchers_test_engine_libuv
+add_executable(authorization_matchers_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/authorization_matchers_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(authorization_matchers_test_engine_libuv
+target_include_directories(authorization_matchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8118,7 +8042,7 @@ target_include_directories(authorization_matchers_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(authorization_matchers_test_engine_libuv
+target_link_libraries(authorization_matchers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8128,7 +8052,7 @@ target_link_libraries(authorization_matchers_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(authorization_policy_provider_test_engine_libuv
+add_executable(authorization_policy_provider_test
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
   src/cpp/server/authorization_policy_provider.cc
@@ -8138,7 +8062,7 @@ add_executable(authorization_policy_provider_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(authorization_policy_provider_test_engine_libuv
+target_include_directories(authorization_policy_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8157,7 +8081,7 @@ target_include_directories(authorization_policy_provider_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(authorization_policy_provider_test_engine_libuv
+target_link_libraries(authorization_policy_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -8202,14 +8126,14 @@ target_link_libraries(avl_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(aws_request_signer_test_engine_libuv
+add_executable(aws_request_signer_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/aws_request_signer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(aws_request_signer_test_engine_libuv
+target_include_directories(aws_request_signer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8228,7 +8152,7 @@ target_include_directories(aws_request_signer_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(aws_request_signer_test_engine_libuv
+target_link_libraries(aws_request_signer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8274,7 +8198,7 @@ target_link_libraries(backoff_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(bad_streaming_id_bad_client_test_engine_libuv
+add_executable(bad_streaming_id_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/bad_streaming_id.cc
   test/core/end2end/cq_verifier.cc
@@ -8283,7 +8207,7 @@ add_executable(bad_streaming_id_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(bad_streaming_id_bad_client_test_engine_libuv
+target_include_directories(bad_streaming_id_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8302,7 +8226,7 @@ target_include_directories(bad_streaming_id_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(bad_streaming_id_bad_client_test_engine_libuv
+target_link_libraries(bad_streaming_id_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8312,7 +8236,7 @@ target_link_libraries(bad_streaming_id_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(badreq_bad_client_test_engine_libuv
+add_executable(badreq_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/badreq.cc
   test/core/end2end/cq_verifier.cc
@@ -8321,7 +8245,7 @@ add_executable(badreq_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(badreq_bad_client_test_engine_libuv
+target_include_directories(badreq_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8340,7 +8264,7 @@ target_include_directories(badreq_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(badreq_bad_client_test_engine_libuv
+target_link_libraries(badreq_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8388,14 +8312,14 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(binder_resolver_test_engine_libuv
+add_executable(binder_resolver_test
   test/core/client_channel/resolvers/binder_resolver_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(binder_resolver_test_engine_libuv
+target_include_directories(binder_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8414,7 +8338,7 @@ target_include_directories(binder_resolver_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(binder_resolver_test_engine_libuv
+target_link_libraries(binder_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8424,7 +8348,7 @@ target_link_libraries(binder_resolver_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(binder_server_test_engine_libuv
+add_executable(binder_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -8444,7 +8368,7 @@ add_executable(binder_server_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(binder_server_test_engine_libuv
+target_include_directories(binder_server_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8463,115 +8387,13 @@ target_include_directories(binder_server_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(binder_server_test_engine_libuv
+target_link_libraries(binder_server_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(binder_transport_client_fuzzer_engine_libuv
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/client.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/client.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/client.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/client.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
-    test/core/transport/binder/end2end/fuzzers/client_fuzzer.cc
-    test/core/transport/binder/end2end/fuzzers/fuzzer_utils.cc
-    test/core/util/fuzzer_corpus_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(binder_transport_client_fuzzer_engine_libuv
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(binder_transport_client_fuzzer_engine_libuv
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::flags
-    grpc++
-    grpc_test_util
-    grpc++_test_config
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(binder_transport_server_fuzzer_engine_libuv
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/server.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/server.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/server.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/binder/end2end/fuzzers/server.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
-    test/core/transport/binder/end2end/fuzzers/fuzzer_utils.cc
-    test/core/transport/binder/end2end/fuzzers/server_fuzzer.cc
-    test/core/util/fuzzer_corpus_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(binder_transport_server_fuzzer_engine_libuv
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(binder_transport_server_fuzzer_engine_libuv
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::flags
-    grpc++
-    grpc_test_util
-    grpc++_test_config
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -8772,7 +8594,7 @@ target_link_libraries(byte_stream_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(cancel_ares_query_test_engine_libuv
+add_executable(cancel_ares_query_test
   test/core/end2end/cq_verifier.cc
   test/core/util/fake_udp_and_tcp_server.cc
   test/cpp/naming/cancel_ares_query_test.cc
@@ -8780,7 +8602,7 @@ add_executable(cancel_ares_query_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(cancel_ares_query_test_engine_libuv
+target_include_directories(cancel_ares_query_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8799,7 +8621,7 @@ target_include_directories(cancel_ares_query_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(cancel_ares_query_test_engine_libuv
+target_link_libraries(cancel_ares_query_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
@@ -8845,7 +8667,7 @@ target_link_libraries(capture_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(cel_authorization_engine_test_engine_libuv
+add_executable(cel_authorization_engine_test
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/cel_authorization_engine_test.cc
@@ -8853,7 +8675,7 @@ add_executable(cel_authorization_engine_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(cel_authorization_engine_test_engine_libuv
+target_include_directories(cel_authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8872,7 +8694,7 @@ target_include_directories(cel_authorization_engine_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(cel_authorization_engine_test_engine_libuv
+target_link_libraries(cel_authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
@@ -8883,14 +8705,14 @@ target_link_libraries(cel_authorization_engine_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(certificate_provider_registry_test_engine_libuv
+add_executable(certificate_provider_registry_test
   test/core/client_channel/certificate_provider_registry_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(certificate_provider_registry_test_engine_libuv
+target_include_directories(certificate_provider_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8909,7 +8731,7 @@ target_include_directories(certificate_provider_registry_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(certificate_provider_registry_test_engine_libuv
+target_link_libraries(certificate_provider_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8919,14 +8741,14 @@ target_link_libraries(certificate_provider_registry_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(certificate_provider_store_test_engine_libuv
+add_executable(certificate_provider_store_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/xds/certificate_provider_store_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(certificate_provider_store_test_engine_libuv
+target_include_directories(certificate_provider_store_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8945,7 +8767,7 @@ target_include_directories(certificate_provider_store_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(certificate_provider_store_test_engine_libuv
+target_link_libraries(certificate_provider_store_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -8955,7 +8777,7 @@ target_link_libraries(certificate_provider_store_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(cfstream_test_engine_libuv
+add_executable(cfstream_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -8974,7 +8796,7 @@ add_executable(cfstream_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(cfstream_test_engine_libuv
+target_include_directories(cfstream_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8993,7 +8815,7 @@ target_include_directories(cfstream_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(cfstream_test_engine_libuv
+target_link_libraries(cfstream_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -9077,14 +8899,14 @@ target_link_libraries(channel_filter_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(channel_stack_builder_test_engine_libuv
+add_executable(channel_stack_builder_test
   test/core/channel/channel_stack_builder_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(channel_stack_builder_test_engine_libuv
+target_include_directories(channel_stack_builder_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9103,7 +8925,7 @@ target_include_directories(channel_stack_builder_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(channel_stack_builder_test_engine_libuv
+target_link_libraries(channel_stack_builder_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -9113,7 +8935,7 @@ target_link_libraries(channel_stack_builder_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(channel_trace_test_engine_libuv
+add_executable(channel_trace_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
@@ -9125,7 +8947,7 @@ add_executable(channel_trace_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(channel_trace_test_engine_libuv
+target_include_directories(channel_trace_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9144,7 +8966,7 @@ target_include_directories(channel_trace_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(channel_trace_test_engine_libuv
+target_link_libraries(channel_trace_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -9192,7 +9014,7 @@ target_link_libraries(channelz_registry_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(channelz_service_test_engine_libuv
+add_executable(channelz_service_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -9211,7 +9033,7 @@ add_executable(channelz_service_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(channelz_service_test_engine_libuv
+target_include_directories(channelz_service_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9230,7 +9052,7 @@ target_include_directories(channelz_service_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(channelz_service_test_engine_libuv
+target_link_libraries(channelz_service_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpcpp_channelz
@@ -9241,7 +9063,7 @@ target_link_libraries(channelz_service_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(channelz_test_engine_libuv
+add_executable(channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
@@ -9253,7 +9075,7 @@ add_executable(channelz_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(channelz_test_engine_libuv
+target_include_directories(channelz_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9272,7 +9094,7 @@ target_include_directories(channelz_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(channelz_test_engine_libuv
+target_link_libraries(channelz_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -9337,7 +9159,7 @@ target_link_libraries(chunked_vector_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(cli_call_test_engine_libuv
+add_executable(cli_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
@@ -9365,7 +9187,7 @@ add_executable(cli_call_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(cli_call_test_engine_libuv
+target_include_directories(cli_call_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9384,7 +9206,7 @@ target_include_directories(cli_call_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(cli_call_test_engine_libuv
+target_link_libraries(cli_call_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -9430,7 +9252,7 @@ target_link_libraries(client_authority_filter_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(client_callback_end2end_test_engine_libuv
+add_executable(client_callback_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -9450,7 +9272,7 @@ add_executable(client_callback_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(client_callback_end2end_test_engine_libuv
+target_include_directories(client_callback_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9469,7 +9291,7 @@ target_include_directories(client_callback_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(client_callback_end2end_test_engine_libuv
+target_link_libraries(client_callback_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -9480,7 +9302,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(client_channel_stress_test_engine_libuv
+  add_executable(client_channel_stress_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
@@ -9507,7 +9329,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(client_channel_stress_test_engine_libuv
+  target_include_directories(client_channel_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9526,7 +9348,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(client_channel_stress_test_engine_libuv
+  target_link_libraries(client_channel_stress_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
@@ -9537,13 +9359,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(client_context_test_peer_test_engine_libuv
+add_executable(client_context_test_peer_test
   test/cpp/test/client_context_test_peer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(client_context_test_peer_test_engine_libuv
+target_include_directories(client_context_test_peer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9562,7 +9384,7 @@ target_include_directories(client_context_test_peer_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(client_context_test_peer_test_engine_libuv
+target_link_libraries(client_context_test_peer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
@@ -9573,7 +9395,7 @@ target_link_libraries(client_context_test_peer_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(client_interceptors_end2end_test_engine_libuv
+add_executable(client_interceptors_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -9593,7 +9415,7 @@ add_executable(client_interceptors_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(client_interceptors_end2end_test_engine_libuv
+target_include_directories(client_interceptors_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9612,7 +9434,7 @@ target_include_directories(client_interceptors_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(client_interceptors_end2end_test_engine_libuv
+target_link_libraries(client_interceptors_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -9623,7 +9445,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(client_lb_end2end_test_engine_libuv
+  add_executable(client_lb_end2end_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -9651,7 +9473,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(client_lb_end2end_test_engine_libuv
+  target_include_directories(client_lb_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9670,7 +9492,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(client_lb_end2end_test_engine_libuv
+  target_link_libraries(client_lb_end2end_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
@@ -9755,7 +9577,7 @@ target_link_libraries(codegen_test_minimal
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(connection_prefix_bad_client_test_engine_libuv
+add_executable(connection_prefix_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/connection_prefix.cc
   test/core/end2end/cq_verifier.cc
@@ -9764,7 +9586,7 @@ add_executable(connection_prefix_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(connection_prefix_bad_client_test_engine_libuv
+target_include_directories(connection_prefix_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9783,7 +9605,7 @@ target_include_directories(connection_prefix_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(connection_prefix_bad_client_test_engine_libuv
+target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -9793,14 +9615,14 @@ target_link_libraries(connection_prefix_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(connectivity_state_test_engine_libuv
+add_executable(connectivity_state_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/connectivity_state_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(connectivity_state_test_engine_libuv
+target_include_directories(connectivity_state_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9819,7 +9641,7 @@ target_include_directories(connectivity_state_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(connectivity_state_test_engine_libuv
+target_link_libraries(connectivity_state_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -9829,7 +9651,7 @@ target_link_libraries(connectivity_state_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(context_allocator_end2end_test_engine_libuv
+add_executable(context_allocator_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -9848,7 +9670,7 @@ add_executable(context_allocator_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(context_allocator_end2end_test_engine_libuv
+target_include_directories(context_allocator_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9867,7 +9689,7 @@ target_include_directories(context_allocator_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(context_allocator_end2end_test_engine_libuv
+target_link_libraries(context_allocator_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -10084,7 +9906,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(crl_ssl_transport_security_test_engine_libuv
+  add_executable(crl_ssl_transport_security_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/tsi/crl_ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
@@ -10092,7 +9914,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(crl_ssl_transport_security_test_engine_libuv
+  target_include_directories(crl_ssl_transport_security_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10111,7 +9933,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(crl_ssl_transport_security_test_engine_libuv
+  target_link_libraries(crl_ssl_transport_security_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -10122,7 +9944,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(delegating_channel_test_engine_libuv
+add_executable(delegating_channel_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -10141,7 +9963,7 @@ add_executable(delegating_channel_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(delegating_channel_test_engine_libuv
+target_include_directories(delegating_channel_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10160,7 +9982,7 @@ target_include_directories(delegating_channel_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(delegating_channel_test_engine_libuv
+target_link_libraries(delegating_channel_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -10170,13 +9992,13 @@ target_link_libraries(delegating_channel_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv
+add_executable(destroy_grpclb_channel_with_active_connect_stress_test
   test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv
+target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10195,7 +10017,7 @@ target_include_directories(destroy_grpclb_channel_with_active_connect_stress_tes
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv
+target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -10205,14 +10027,14 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test_eng
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(dual_ref_counted_test_engine_libuv
+add_executable(dual_ref_counted_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/dual_ref_counted_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(dual_ref_counted_test_engine_libuv
+target_include_directories(dual_ref_counted_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10231,7 +10053,7 @@ target_include_directories(dual_ref_counted_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(dual_ref_counted_test_engine_libuv
+target_link_libraries(dual_ref_counted_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -10241,7 +10063,7 @@ target_link_libraries(dual_ref_counted_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(duplicate_header_bad_client_test_engine_libuv
+add_executable(duplicate_header_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/duplicate_header.cc
   test/core/end2end/cq_verifier.cc
@@ -10250,7 +10072,7 @@ add_executable(duplicate_header_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(duplicate_header_bad_client_test_engine_libuv
+target_include_directories(duplicate_header_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10269,7 +10091,7 @@ target_include_directories(duplicate_header_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(duplicate_header_bad_client_test_engine_libuv
+target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -10279,7 +10101,7 @@ target_link_libraries(duplicate_header_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(end2end_binder_transport_test_engine_libuv
+add_executable(end2end_binder_transport_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -10300,7 +10122,7 @@ add_executable(end2end_binder_transport_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(end2end_binder_transport_test_engine_libuv
+target_include_directories(end2end_binder_transport_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10319,7 +10141,7 @@ target_include_directories(end2end_binder_transport_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(end2end_binder_transport_test_engine_libuv
+target_link_libraries(end2end_binder_transport_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -10329,7 +10151,7 @@ target_link_libraries(end2end_binder_transport_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(end2end_test_engine_libuv
+add_executable(end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -10353,7 +10175,7 @@ add_executable(end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(end2end_test_engine_libuv
+target_include_directories(end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10372,7 +10194,7 @@ target_include_directories(end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(end2end_test_engine_libuv
+target_link_libraries(end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
@@ -10511,7 +10333,7 @@ target_link_libraries(endpoint_config_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(error_details_test_engine_libuv
+add_executable(error_details_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.h
@@ -10526,7 +10348,7 @@ add_executable(error_details_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(error_details_test_engine_libuv
+target_include_directories(error_details_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10545,7 +10367,7 @@ target_include_directories(error_details_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(error_details_test_engine_libuv
+target_link_libraries(error_details_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_error_details
@@ -10593,14 +10415,14 @@ target_link_libraries(error_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(error_utils_test_engine_libuv
+add_executable(error_utils_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/error_utils_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(error_utils_test_engine_libuv
+target_include_directories(error_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10619,7 +10441,7 @@ target_include_directories(error_utils_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(error_utils_test_engine_libuv
+target_link_libraries(error_utils_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -10629,14 +10451,14 @@ target_link_libraries(error_utils_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(evaluate_args_test_engine_libuv
+add_executable(evaluate_args_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/evaluate_args_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(evaluate_args_test_engine_libuv
+target_include_directories(evaluate_args_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10655,7 +10477,7 @@ target_include_directories(evaluate_args_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(evaluate_args_test_engine_libuv
+target_link_libraries(evaluate_args_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -10703,7 +10525,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(exception_test_engine_libuv
+add_executable(exception_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -10721,7 +10543,7 @@ add_executable(exception_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(exception_test_engine_libuv
+target_include_directories(exception_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10740,7 +10562,7 @@ target_include_directories(exception_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(exception_test_engine_libuv
+target_link_libraries(exception_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -10889,14 +10711,14 @@ target_link_libraries(fake_binder_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(file_watcher_certificate_provider_factory_test_engine_libuv
+add_executable(file_watcher_certificate_provider_factory_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/xds/file_watcher_certificate_provider_factory_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(file_watcher_certificate_provider_factory_test_engine_libuv
+target_include_directories(file_watcher_certificate_provider_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10915,7 +10737,7 @@ target_include_directories(file_watcher_certificate_provider_factory_test_engine
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(file_watcher_certificate_provider_factory_test_engine_libuv
+target_link_libraries(file_watcher_certificate_provider_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -10925,7 +10747,7 @@ target_link_libraries(file_watcher_certificate_provider_factory_test_engine_libu
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(filter_end2end_test_engine_libuv
+add_executable(filter_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -10947,7 +10769,7 @@ add_executable(filter_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(filter_end2end_test_engine_libuv
+target_include_directories(filter_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10966,7 +10788,7 @@ target_include_directories(filter_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(filter_end2end_test_engine_libuv
+target_link_libraries(filter_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -10976,7 +10798,7 @@ target_link_libraries(filter_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(flaky_network_test_engine_libuv
+add_executable(flaky_network_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -10995,7 +10817,7 @@ add_executable(flaky_network_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(flaky_network_test_engine_libuv
+target_include_directories(flaky_network_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11014,7 +10836,7 @@ target_include_directories(flaky_network_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(flaky_network_test_engine_libuv
+target_link_libraries(flaky_network_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -11024,7 +10846,7 @@ target_link_libraries(flaky_network_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(flow_control_test_engine_libuv
+add_executable(flow_control_test
   test/core/end2end/cq_verifier.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/flow_control_test.cc
@@ -11032,7 +10854,7 @@ add_executable(flow_control_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(flow_control_test_engine_libuv
+target_include_directories(flow_control_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11051,7 +10873,7 @@ target_include_directories(flow_control_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(flow_control_test_engine_libuv
+target_link_libraries(flow_control_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11115,7 +10937,7 @@ target_link_libraries(for_each_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(generic_end2end_test_engine_libuv
+add_executable(generic_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -11137,7 +10959,7 @@ add_executable(generic_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(generic_end2end_test_engine_libuv
+target_include_directories(generic_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11156,7 +10978,7 @@ target_include_directories(generic_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(generic_end2end_test_engine_libuv
+target_link_libraries(generic_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -11240,7 +11062,7 @@ target_link_libraries(global_config_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(google_mesh_ca_certificate_provider_factory_test_engine_libuv
+add_executable(google_mesh_ca_certificate_provider_factory_test
   src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
@@ -11248,7 +11070,7 @@ add_executable(google_mesh_ca_certificate_provider_factory_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(google_mesh_ca_certificate_provider_factory_test_engine_libuv
+target_include_directories(google_mesh_ca_certificate_provider_factory_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11267,7 +11089,7 @@ target_include_directories(google_mesh_ca_certificate_provider_factory_test_engi
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(google_mesh_ca_certificate_provider_factory_test_engine_libuv
+target_link_libraries(google_mesh_ca_certificate_provider_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11277,14 +11099,14 @@ target_link_libraries(google_mesh_ca_certificate_provider_factory_test_engine_li
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_authorization_engine_test_engine_libuv
+add_executable(grpc_authorization_engine_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/grpc_authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_authorization_engine_test_engine_libuv
+target_include_directories(grpc_authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11303,7 +11125,7 @@ target_include_directories(grpc_authorization_engine_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_authorization_engine_test_engine_libuv
+target_link_libraries(grpc_authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11313,7 +11135,7 @@ target_link_libraries(grpc_authorization_engine_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_authorization_policy_provider_test_engine_libuv
+add_executable(grpc_authorization_policy_provider_test
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
@@ -11322,7 +11144,7 @@ add_executable(grpc_authorization_policy_provider_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_authorization_policy_provider_test_engine_libuv
+target_include_directories(grpc_authorization_policy_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11341,7 +11163,7 @@ target_include_directories(grpc_authorization_policy_provider_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_authorization_policy_provider_test_engine_libuv
+target_link_libraries(grpc_authorization_policy_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11678,14 +11500,14 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_tls_certificate_distributor_test_engine_libuv
+add_executable(grpc_tls_certificate_distributor_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/grpc_tls_certificate_distributor_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_tls_certificate_distributor_test_engine_libuv
+target_include_directories(grpc_tls_certificate_distributor_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11704,7 +11526,7 @@ target_include_directories(grpc_tls_certificate_distributor_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_tls_certificate_distributor_test_engine_libuv
+target_link_libraries(grpc_tls_certificate_distributor_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11714,14 +11536,14 @@ target_link_libraries(grpc_tls_certificate_distributor_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_tls_certificate_provider_test_engine_libuv
+add_executable(grpc_tls_certificate_provider_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/grpc_tls_certificate_provider_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_tls_certificate_provider_test_engine_libuv
+target_include_directories(grpc_tls_certificate_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11740,7 +11562,7 @@ target_include_directories(grpc_tls_certificate_provider_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_tls_certificate_provider_test_engine_libuv
+target_link_libraries(grpc_tls_certificate_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11750,14 +11572,14 @@ target_link_libraries(grpc_tls_certificate_provider_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_tls_certificate_verifier_test_engine_libuv
+add_executable(grpc_tls_certificate_verifier_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/grpc_tls_certificate_verifier_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_tls_certificate_verifier_test_engine_libuv
+target_include_directories(grpc_tls_certificate_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11776,7 +11598,7 @@ target_include_directories(grpc_tls_certificate_verifier_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_tls_certificate_verifier_test_engine_libuv
+target_link_libraries(grpc_tls_certificate_verifier_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11786,14 +11608,14 @@ target_link_libraries(grpc_tls_certificate_verifier_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_tls_credentials_options_test_engine_libuv
+add_executable(grpc_tls_credentials_options_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/grpc_tls_credentials_options_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpc_tls_credentials_options_test_engine_libuv
+target_include_directories(grpc_tls_credentials_options_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11812,7 +11634,7 @@ target_include_directories(grpc_tls_credentials_options_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpc_tls_credentials_options_test_engine_libuv
+target_link_libraries(grpc_tls_credentials_options_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -11823,7 +11645,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(grpc_tool_test_engine_libuv
+  add_executable(grpc_tool_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -11847,7 +11669,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(grpc_tool_test_engine_libuv
+  target_include_directories(grpc_tool_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11866,7 +11688,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(grpc_tool_test_engine_libuv
+  target_link_libraries(grpc_tool_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_reflection
@@ -11879,7 +11701,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpclb_api_test_engine_libuv
+add_executable(grpclb_api_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
@@ -11889,7 +11711,7 @@ add_executable(grpclb_api_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(grpclb_api_test_engine_libuv
+target_include_directories(grpclb_api_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11908,7 +11730,7 @@ target_include_directories(grpclb_api_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(grpclb_api_test_engine_libuv
+target_link_libraries(grpclb_api_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -11919,7 +11741,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(grpclb_end2end_test_engine_libuv
+  add_executable(grpclb_end2end_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
@@ -11946,7 +11768,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(grpclb_end2end_test_engine_libuv
+  target_include_directories(grpclb_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11965,7 +11787,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(grpclb_end2end_test_engine_libuv
+  target_link_libraries(grpclb_end2end_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_config
@@ -11977,13 +11799,13 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(h2_ssl_session_reuse_test_engine_libuv
+add_executable(h2_ssl_session_reuse_test
   test/core/end2end/h2_ssl_session_reuse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(h2_ssl_session_reuse_test_engine_libuv
+target_include_directories(h2_ssl_session_reuse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12002,7 +11824,7 @@ target_include_directories(h2_ssl_session_reuse_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(h2_ssl_session_reuse_test_engine_libuv
+target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
@@ -12012,7 +11834,7 @@ target_link_libraries(h2_ssl_session_reuse_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(head_of_line_blocking_bad_client_test_engine_libuv
+add_executable(head_of_line_blocking_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/head_of_line_blocking.cc
   test/core/end2end/cq_verifier.cc
@@ -12021,7 +11843,7 @@ add_executable(head_of_line_blocking_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(head_of_line_blocking_bad_client_test_engine_libuv
+target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12040,7 +11862,7 @@ target_include_directories(head_of_line_blocking_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(head_of_line_blocking_bad_client_test_engine_libuv
+target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12050,7 +11872,7 @@ target_link_libraries(head_of_line_blocking_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(headers_bad_client_test_engine_libuv
+add_executable(headers_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/headers.cc
   test/core/end2end/cq_verifier.cc
@@ -12059,7 +11881,7 @@ add_executable(headers_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(headers_bad_client_test_engine_libuv
+target_include_directories(headers_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12078,7 +11900,7 @@ target_include_directories(headers_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(headers_bad_client_test_engine_libuv
+target_link_libraries(headers_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12088,7 +11910,7 @@ target_link_libraries(headers_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(health_service_end2end_test_engine_libuv
+add_executable(health_service_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
@@ -12116,7 +11938,7 @@ add_executable(health_service_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(health_service_end2end_test_engine_libuv
+target_include_directories(health_service_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12135,58 +11957,13 @@ target_include_directories(health_service_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(health_service_end2end_test_engine_libuv
+target_link_libraries(health_service_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(hpack_parser_fuzzer_engine_libuv
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/chttp2/hpack_parser_fuzzer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/chttp2/hpack_parser_fuzzer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/chttp2/hpack_parser_fuzzer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/transport/chttp2/hpack_parser_fuzzer.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
-    test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
-    test/core/util/fuzzer_corpus_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(hpack_parser_fuzzer_engine_libuv
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(hpack_parser_fuzzer_engine_libuv
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::flags
-    grpc_test_util
-    grpc++_test_config
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -12311,7 +12088,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(httpcli_test_engine_libuv
+  add_executable(httpcli_test
     test/core/http/httpcli_test.cc
     test/core/http/httpcli_test_util.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -12319,7 +12096,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(httpcli_test_engine_libuv
+  target_include_directories(httpcli_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12338,7 +12115,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(httpcli_test_engine_libuv
+  target_link_libraries(httpcli_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
@@ -12350,7 +12127,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(httpscli_test_engine_libuv
+  add_executable(httpscli_test
     test/core/http/httpcli_test_util.cc
     test/core/http/httpscli_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -12358,7 +12135,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(httpscli_test_engine_libuv
+  target_include_directories(httpscli_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12377,7 +12154,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(httpscli_test_engine_libuv
+  target_link_libraries(httpscli_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
@@ -12388,7 +12165,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(hybrid_end2end_test_engine_libuv
+add_executable(hybrid_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -12411,7 +12188,7 @@ add_executable(hybrid_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(hybrid_end2end_test_engine_libuv
+target_include_directories(hybrid_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12430,7 +12207,7 @@ target_include_directories(hybrid_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(hybrid_end2end_test_engine_libuv
+target_link_libraries(hybrid_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -12547,7 +12324,7 @@ target_link_libraries(init_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(initial_settings_frame_bad_client_test_engine_libuv
+add_executable(initial_settings_frame_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/initial_settings_frame.cc
   test/core/end2end/cq_verifier.cc
@@ -12556,7 +12333,7 @@ add_executable(initial_settings_frame_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(initial_settings_frame_bad_client_test_engine_libuv
+target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12575,7 +12352,7 @@ target_include_directories(initial_settings_frame_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(initial_settings_frame_bad_client_test_engine_libuv
+target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12585,14 +12362,14 @@ target_link_libraries(initial_settings_frame_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(insecure_security_connector_test_engine_libuv
+add_executable(insecure_security_connector_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/insecure_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(insecure_security_connector_test_engine_libuv
+target_include_directories(insecure_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12611,7 +12388,7 @@ target_include_directories(insecure_security_connector_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(insecure_security_connector_test_engine_libuv
+target_link_libraries(insecure_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12793,7 +12570,7 @@ target_link_libraries(json_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(large_metadata_bad_client_test_engine_libuv
+add_executable(large_metadata_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/large_metadata.cc
   test/core/end2end/cq_verifier.cc
@@ -12802,7 +12579,7 @@ add_executable(large_metadata_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(large_metadata_bad_client_test_engine_libuv
+target_include_directories(large_metadata_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12821,7 +12598,7 @@ target_include_directories(large_metadata_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(large_metadata_bad_client_test_engine_libuv
+target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12926,7 +12703,7 @@ target_link_libraries(latch_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(lb_get_cpu_stats_test_engine_libuv
+add_executable(lb_get_cpu_stats_test
   src/cpp/server/load_reporter/get_cpu_stats_linux.cc
   src/cpp/server/load_reporter/get_cpu_stats_macos.cc
   src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc
@@ -12937,7 +12714,7 @@ add_executable(lb_get_cpu_stats_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(lb_get_cpu_stats_test_engine_libuv
+target_include_directories(lb_get_cpu_stats_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12956,7 +12733,7 @@ target_include_directories(lb_get_cpu_stats_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(lb_get_cpu_stats_test_engine_libuv
+target_link_libraries(lb_get_cpu_stats_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -12967,7 +12744,7 @@ target_link_libraries(lb_get_cpu_stats_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(lb_load_data_store_test_engine_libuv
+add_executable(lb_load_data_store_test
   src/cpp/server/load_reporter/load_data_store.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/server/load_reporter/load_data_store_test.cc
@@ -12975,7 +12752,7 @@ add_executable(lb_load_data_store_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(lb_load_data_store_test_engine_libuv
+target_include_directories(lb_load_data_store_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12994,7 +12771,7 @@ target_include_directories(lb_load_data_store_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(lb_load_data_store_test_engine_libuv
+target_link_libraries(lb_load_data_store_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -13005,14 +12782,14 @@ target_link_libraries(lb_load_data_store_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(linux_system_roots_test_engine_libuv
+add_executable(linux_system_roots_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/linux_system_roots_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(linux_system_roots_test_engine_libuv
+target_include_directories(linux_system_roots_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13031,7 +12808,7 @@ target_include_directories(linux_system_roots_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(linux_system_roots_test_engine_libuv
+target_link_libraries(linux_system_roots_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13147,14 +12924,14 @@ target_link_libraries(match_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(matchers_test_engine_libuv
+add_executable(matchers_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/matchers_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(matchers_test_engine_libuv
+target_include_directories(matchers_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13173,7 +12950,7 @@ target_include_directories(matchers_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(matchers_test_engine_libuv
+target_link_libraries(matchers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13236,7 +13013,7 @@ target_link_libraries(memory_quota_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(message_allocator_end2end_test_engine_libuv
+add_executable(message_allocator_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -13255,7 +13032,7 @@ add_executable(message_allocator_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(message_allocator_end2end_test_engine_libuv
+target_include_directories(message_allocator_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13274,7 +13051,7 @@ target_include_directories(message_allocator_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(message_allocator_end2end_test_engine_libuv
+target_link_libraries(message_allocator_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -13284,14 +13061,14 @@ target_link_libraries(message_allocator_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(metadata_map_test_engine_libuv
+add_executable(metadata_map_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/metadata_map_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(metadata_map_test_engine_libuv
+target_include_directories(metadata_map_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13310,7 +13087,7 @@ target_include_directories(metadata_map_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(metadata_map_test_engine_libuv
+target_link_libraries(metadata_map_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13354,7 +13131,7 @@ target_link_libraries(miscompile_with_no_unique_address_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(mock_stream_test_engine_libuv
+add_executable(mock_stream_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -13372,7 +13149,7 @@ add_executable(mock_stream_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(mock_stream_test_engine_libuv
+target_include_directories(mock_stream_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13391,7 +13168,7 @@ target_include_directories(mock_stream_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(mock_stream_test_engine_libuv
+target_link_libraries(mock_stream_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
@@ -13402,7 +13179,7 @@ target_link_libraries(mock_stream_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(mock_test_engine_libuv
+add_executable(mock_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -13424,7 +13201,7 @@ add_executable(mock_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(mock_test_engine_libuv
+target_include_directories(mock_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13443,7 +13220,7 @@ target_include_directories(mock_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(mock_test_engine_libuv
+target_link_libraries(mock_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
@@ -13454,7 +13231,7 @@ target_link_libraries(mock_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(nonblocking_test_engine_libuv
+add_executable(nonblocking_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -13472,7 +13249,7 @@ add_executable(nonblocking_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(nonblocking_test_engine_libuv
+target_include_directories(nonblocking_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13491,7 +13268,7 @@ target_include_directories(nonblocking_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(nonblocking_test_engine_libuv
+target_link_libraries(nonblocking_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -13597,14 +13374,14 @@ target_link_libraries(observable_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(orphanable_test_engine_libuv
+add_executable(orphanable_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/orphanable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(orphanable_test_engine_libuv
+target_include_directories(orphanable_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13623,7 +13400,7 @@ target_include_directories(orphanable_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(orphanable_test_engine_libuv
+target_link_libraries(orphanable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13633,7 +13410,7 @@ target_link_libraries(orphanable_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(out_of_bounds_bad_client_test_engine_libuv
+add_executable(out_of_bounds_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/out_of_bounds.cc
   test/core/end2end/cq_verifier.cc
@@ -13642,7 +13419,7 @@ add_executable(out_of_bounds_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(out_of_bounds_bad_client_test_engine_libuv
+target_include_directories(out_of_bounds_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13661,7 +13438,7 @@ target_include_directories(out_of_bounds_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(out_of_bounds_bad_client_test_engine_libuv
+target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13705,14 +13482,14 @@ target_link_libraries(overload_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(parsed_metadata_test_engine_libuv
+add_executable(parsed_metadata_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/parsed_metadata_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(parsed_metadata_test_engine_libuv
+target_include_directories(parsed_metadata_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13731,7 +13508,7 @@ target_include_directories(parsed_metadata_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(parsed_metadata_test_engine_libuv
+target_link_libraries(parsed_metadata_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13741,14 +13518,14 @@ target_link_libraries(parsed_metadata_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(pid_controller_test_engine_libuv
+add_executable(pid_controller_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/pid_controller_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(pid_controller_test_engine_libuv
+target_include_directories(pid_controller_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13767,7 +13544,7 @@ target_include_directories(pid_controller_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(pid_controller_test_engine_libuv
+target_link_libraries(pid_controller_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -13865,7 +13642,7 @@ target_link_libraries(poll_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(port_sharing_end2end_test_engine_libuv
+add_executable(port_sharing_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -13884,7 +13661,7 @@ add_executable(port_sharing_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(port_sharing_end2end_test_engine_libuv
+target_include_directories(port_sharing_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13903,7 +13680,7 @@ target_include_directories(port_sharing_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(port_sharing_end2end_test_engine_libuv
+target_link_libraries(port_sharing_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -14023,7 +13800,7 @@ target_link_libraries(promise_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(proto_server_reflection_test_engine_libuv
+add_executable(proto_server_reflection_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -14047,7 +13824,7 @@ add_executable(proto_server_reflection_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(proto_server_reflection_test_engine_libuv
+target_include_directories(proto_server_reflection_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14066,7 +13843,7 @@ target_include_directories(proto_server_reflection_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(proto_server_reflection_test_engine_libuv
+target_link_libraries(proto_server_reflection_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_reflection
@@ -14305,7 +14082,7 @@ target_link_libraries(race_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(raw_end2end_test_engine_libuv
+add_executable(raw_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -14328,7 +14105,7 @@ add_executable(raw_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(raw_end2end_test_engine_libuv
+target_include_directories(raw_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14347,7 +14124,7 @@ target_include_directories(raw_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(raw_end2end_test_engine_libuv
+target_link_libraries(raw_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -14393,7 +14170,7 @@ target_link_libraries(rbac_service_config_parser_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(rbac_translator_test_engine_libuv
+add_executable(rbac_translator_test
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
@@ -14402,7 +14179,7 @@ add_executable(rbac_translator_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(rbac_translator_test_engine_libuv
+target_include_directories(rbac_translator_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14421,7 +14198,7 @@ target_include_directories(rbac_translator_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(rbac_translator_test_engine_libuv
+target_link_libraries(rbac_translator_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -14431,14 +14208,14 @@ target_link_libraries(rbac_translator_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(ref_counted_ptr_test_engine_libuv
+add_executable(ref_counted_ptr_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/ref_counted_ptr_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(ref_counted_ptr_test_engine_libuv
+target_include_directories(ref_counted_ptr_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14457,7 +14234,7 @@ target_include_directories(ref_counted_ptr_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(ref_counted_ptr_test_engine_libuv
+target_link_libraries(ref_counted_ptr_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -14467,14 +14244,14 @@ target_link_libraries(ref_counted_ptr_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(ref_counted_test_engine_libuv
+add_executable(ref_counted_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/ref_counted_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(ref_counted_test_engine_libuv
+target_include_directories(ref_counted_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14493,7 +14270,7 @@ target_include_directories(ref_counted_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(ref_counted_test_engine_libuv
+target_link_libraries(ref_counted_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -14504,14 +14281,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(remove_stream_from_stalled_lists_test_engine_libuv
+  add_executable(remove_stream_from_stalled_lists_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(remove_stream_from_stalled_lists_test_engine_libuv
+  target_include_directories(remove_stream_from_stalled_lists_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14530,7 +14307,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(remove_stream_from_stalled_lists_test_engine_libuv
+  target_link_libraries(remove_stream_from_stalled_lists_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -14541,7 +14318,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(resolve_address_using_ares_resolver_test_engine_libuv
+add_executable(resolve_address_using_ares_resolver_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/iomgr/resolve_address_test.cc
   test/core/util/fake_udp_and_tcp_server.cc
@@ -14549,7 +14326,7 @@ add_executable(resolve_address_using_ares_resolver_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(resolve_address_using_ares_resolver_test_engine_libuv
+target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14568,7 +14345,7 @@ target_include_directories(resolve_address_using_ares_resolver_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(resolve_address_using_ares_resolver_test_engine_libuv
+target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -14579,7 +14356,7 @@ target_link_libraries(resolve_address_using_ares_resolver_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(resolve_address_using_native_resolver_test_engine_libuv
+add_executable(resolve_address_using_native_resolver_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/iomgr/resolve_address_test.cc
   test/core/util/fake_udp_and_tcp_server.cc
@@ -14587,7 +14364,7 @@ add_executable(resolve_address_using_native_resolver_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(resolve_address_using_native_resolver_test_engine_libuv
+target_include_directories(resolve_address_using_native_resolver_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14606,7 +14383,7 @@ target_include_directories(resolve_address_using_native_resolver_test_engine_lib
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(resolve_address_using_native_resolver_test_engine_libuv
+target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -14708,7 +14485,7 @@ target_link_libraries(retry_throttle_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(rls_end2end_test_engine_libuv
+add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
@@ -14736,7 +14513,7 @@ add_executable(rls_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(rls_end2end_test_engine_libuv
+target_include_directories(rls_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14755,7 +14532,7 @@ target_include_directories(rls_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(rls_end2end_test_engine_libuv
+target_link_libraries(rls_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
@@ -14766,14 +14543,14 @@ target_link_libraries(rls_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(rls_lb_config_parser_test_engine_libuv
+add_executable(rls_lb_config_parser_test
   test/core/client_channel/rls_lb_config_parser_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(rls_lb_config_parser_test_engine_libuv
+target_include_directories(rls_lb_config_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14792,7 +14569,7 @@ target_include_directories(rls_lb_config_parser_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(rls_lb_config_parser_test_engine_libuv
+target_link_libraries(rls_lb_config_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -14802,7 +14579,7 @@ target_link_libraries(rls_lb_config_parser_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(sdk_authz_end2end_test_engine_libuv
+add_executable(sdk_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -14824,7 +14601,7 @@ add_executable(sdk_authz_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(sdk_authz_end2end_test_engine_libuv
+target_include_directories(sdk_authz_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14843,7 +14620,7 @@ target_include_directories(sdk_authz_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(sdk_authz_end2end_test_engine_libuv
+target_link_libraries(sdk_authz_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -14853,13 +14630,13 @@ target_link_libraries(sdk_authz_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(secure_auth_context_test_engine_libuv
+add_executable(secure_auth_context_test
   test/cpp/common/secure_auth_context_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(secure_auth_context_test_engine_libuv
+target_include_directories(secure_auth_context_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14878,7 +14655,7 @@ target_include_directories(secure_auth_context_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(secure_auth_context_test_engine_libuv
+target_link_libraries(secure_auth_context_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -14923,7 +14700,7 @@ target_link_libraries(seq_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_builder_plugin_test_engine_libuv
+add_executable(server_builder_plugin_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -14946,7 +14723,7 @@ add_executable(server_builder_plugin_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(server_builder_plugin_test_engine_libuv
+target_include_directories(server_builder_plugin_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14965,7 +14742,7 @@ target_include_directories(server_builder_plugin_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(server_builder_plugin_test_engine_libuv
+target_link_libraries(server_builder_plugin_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -14976,7 +14753,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(server_builder_test_engine_libuv
+  add_executable(server_builder_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -14995,7 +14772,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(server_builder_test_engine_libuv
+  target_include_directories(server_builder_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15014,7 +14791,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(server_builder_test_engine_libuv
+  target_link_libraries(server_builder_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
@@ -15027,7 +14804,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(server_builder_with_socket_mutator_test_engine_libuv
+  add_executable(server_builder_with_socket_mutator_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -15046,7 +14823,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(server_builder_with_socket_mutator_test_engine_libuv
+  target_include_directories(server_builder_with_socket_mutator_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15065,7 +14842,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(server_builder_with_socket_mutator_test_engine_libuv
+  target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
@@ -15077,14 +14854,14 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_chttp2_test_engine_libuv
+add_executable(server_chttp2_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/surface/server_chttp2_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(server_chttp2_test_engine_libuv
+target_include_directories(server_chttp2_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15103,7 +14880,7 @@ target_include_directories(server_chttp2_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(server_chttp2_test_engine_libuv
+target_link_libraries(server_chttp2_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15149,13 +14926,13 @@ target_link_libraries(server_config_selector_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_context_test_spouse_test_engine_libuv
+add_executable(server_context_test_spouse_test
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(server_context_test_spouse_test_engine_libuv
+target_include_directories(server_context_test_spouse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15174,7 +14951,7 @@ target_include_directories(server_context_test_spouse_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(server_context_test_spouse_test_engine_libuv
+target_link_libraries(server_context_test_spouse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test
@@ -15185,7 +14962,7 @@ target_link_libraries(server_context_test_spouse_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_early_return_test_engine_libuv
+add_executable(server_early_return_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -15203,7 +14980,7 @@ add_executable(server_early_return_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(server_early_return_test_engine_libuv
+target_include_directories(server_early_return_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15222,7 +14999,7 @@ target_include_directories(server_early_return_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(server_early_return_test_engine_libuv
+target_link_libraries(server_early_return_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -15232,7 +15009,7 @@ target_link_libraries(server_early_return_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_interceptors_end2end_test_engine_libuv
+add_executable(server_interceptors_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -15252,7 +15029,7 @@ add_executable(server_interceptors_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(server_interceptors_end2end_test_engine_libuv
+target_include_directories(server_interceptors_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15271,7 +15048,7 @@ target_include_directories(server_interceptors_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(server_interceptors_end2end_test_engine_libuv
+target_link_libraries(server_interceptors_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -15281,7 +15058,7 @@ target_link_libraries(server_interceptors_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(server_registered_method_bad_client_test_engine_libuv
+add_executable(server_registered_method_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/server_registered_method.cc
   test/core/end2end/cq_verifier.cc
@@ -15290,7 +15067,7 @@ add_executable(server_registered_method_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(server_registered_method_bad_client_test_engine_libuv
+target_include_directories(server_registered_method_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15309,7 +15086,7 @@ target_include_directories(server_registered_method_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(server_registered_method_bad_client_test_engine_libuv
+target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15320,7 +15097,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(server_request_call_test_engine_libuv
+  add_executable(server_request_call_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -15339,7 +15116,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(server_request_call_test_engine_libuv
+  target_include_directories(server_request_call_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15358,7 +15135,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(server_request_call_test_engine_libuv
+  target_link_libraries(server_request_call_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
@@ -15370,7 +15147,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(service_config_end2end_test_engine_libuv
+add_executable(service_config_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -15393,7 +15170,7 @@ add_executable(service_config_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(service_config_end2end_test_engine_libuv
+target_include_directories(service_config_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15412,7 +15189,7 @@ target_include_directories(service_config_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(service_config_end2end_test_engine_libuv
+target_link_libraries(service_config_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -15422,14 +15199,14 @@ target_link_libraries(service_config_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(service_config_test_engine_libuv
+add_executable(service_config_test
   test/core/client_channel/service_config_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(service_config_test_engine_libuv
+target_include_directories(service_config_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15448,7 +15225,7 @@ target_include_directories(service_config_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(service_config_test_engine_libuv
+target_link_libraries(service_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15458,14 +15235,14 @@ target_link_libraries(service_config_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(settings_timeout_test_engine_libuv
+add_executable(settings_timeout_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/settings_timeout_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(settings_timeout_test_engine_libuv
+target_include_directories(settings_timeout_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15484,7 +15261,7 @@ target_include_directories(settings_timeout_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(settings_timeout_test_engine_libuv
+target_link_libraries(settings_timeout_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15494,7 +15271,7 @@ target_link_libraries(settings_timeout_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(shutdown_test_engine_libuv
+add_executable(shutdown_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -15516,7 +15293,7 @@ add_executable(shutdown_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(shutdown_test_engine_libuv
+target_include_directories(shutdown_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15535,7 +15312,7 @@ target_include_directories(shutdown_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(shutdown_test_engine_libuv
+target_link_libraries(shutdown_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -15545,7 +15322,7 @@ target_link_libraries(shutdown_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(simple_request_bad_client_test_engine_libuv
+add_executable(simple_request_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/simple_request.cc
   test/core/end2end/cq_verifier.cc
@@ -15554,7 +15331,7 @@ add_executable(simple_request_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(simple_request_bad_client_test_engine_libuv
+target_include_directories(simple_request_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15573,7 +15350,7 @@ target_include_directories(simple_request_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(simple_request_bad_client_test_engine_libuv
+target_link_libraries(simple_request_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15583,14 +15360,14 @@ target_link_libraries(simple_request_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(smoke_test_engine_libuv
+add_executable(smoke_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/event_engine/smoke_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(smoke_test_engine_libuv
+target_include_directories(smoke_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15609,7 +15386,7 @@ target_include_directories(smoke_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(smoke_test_engine_libuv
+target_link_libraries(smoke_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15619,14 +15396,14 @@ target_link_libraries(smoke_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(sockaddr_utils_test_engine_libuv
+add_executable(sockaddr_utils_test
   test/core/address_utils/sockaddr_utils_test.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(sockaddr_utils_test_engine_libuv
+target_include_directories(sockaddr_utils_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15645,7 +15422,7 @@ target_include_directories(sockaddr_utils_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(sockaddr_utils_test_engine_libuv
+target_link_libraries(sockaddr_utils_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -15838,7 +15615,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(stranded_event_test_engine_libuv
+  add_executable(stranded_event_test
     test/core/end2end/cq_verifier.cc
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/stranded_event_test.cc
@@ -15846,7 +15623,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(stranded_event_test_engine_libuv
+  target_include_directories(stranded_event_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15865,7 +15642,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(stranded_event_test_engine_libuv
+  target_link_libraries(stranded_event_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -15877,7 +15654,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(streaming_throughput_test_engine_libuv
+  add_executable(streaming_throughput_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -15899,7 +15676,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(streaming_throughput_test_engine_libuv
+  target_include_directories(streaming_throughput_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15918,7 +15695,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(streaming_throughput_test_engine_libuv
+  target_link_libraries(streaming_throughput_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
@@ -15929,7 +15706,7 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(streams_not_seen_test_engine_libuv
+add_executable(streams_not_seen_test
   test/core/end2end/cq_verifier.cc
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/streams_not_seen_test.cc
@@ -15937,7 +15714,7 @@ add_executable(streams_not_seen_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(streams_not_seen_test_engine_libuv
+target_include_directories(streams_not_seen_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15956,7 +15733,7 @@ target_include_directories(streams_not_seen_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(streams_not_seen_test_engine_libuv
+target_link_libraries(streams_not_seen_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -16083,7 +15860,7 @@ target_link_libraries(test_core_slice_slice_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_cpp_client_credentials_test_engine_libuv
+add_executable(test_cpp_client_credentials_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/client/credentials_test.cc
   test/cpp/util/tls_test_utils.cc
@@ -16091,7 +15868,7 @@ add_executable(test_cpp_client_credentials_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(test_cpp_client_credentials_test_engine_libuv
+target_include_directories(test_cpp_client_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16110,7 +15887,7 @@ target_include_directories(test_cpp_client_credentials_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(test_cpp_client_credentials_test_engine_libuv
+target_link_libraries(test_cpp_client_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -16121,7 +15898,7 @@ target_link_libraries(test_cpp_client_credentials_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_cpp_server_credentials_test_engine_libuv
+add_executable(test_cpp_server_credentials_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/server/credentials_test.cc
   test/cpp/util/tls_test_utils.cc
@@ -16129,7 +15906,7 @@ add_executable(test_cpp_server_credentials_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(test_cpp_server_credentials_test_engine_libuv
+target_include_directories(test_cpp_server_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16148,7 +15925,7 @@ target_include_directories(test_cpp_server_credentials_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(test_cpp_server_credentials_test_engine_libuv
+target_link_libraries(test_cpp_server_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -16229,13 +16006,13 @@ target_link_libraries(test_cpp_util_time_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(thread_manager_test_engine_libuv
+add_executable(thread_manager_test
   test/cpp/thread_manager/thread_manager_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(thread_manager_test_engine_libuv
+target_include_directories(thread_manager_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16254,7 +16031,7 @@ target_include_directories(thread_manager_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(thread_manager_test_engine_libuv
+target_link_libraries(thread_manager_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
@@ -16307,7 +16084,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(thread_stress_test_engine_libuv
+  add_executable(thread_stress_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -16329,7 +16106,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(thread_stress_test_engine_libuv
+  target_include_directories(thread_stress_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16348,7 +16125,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(thread_stress_test_engine_libuv
+  target_link_libraries(thread_stress_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
@@ -16360,14 +16137,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(time_jump_test_engine_libuv
+  add_executable(time_jump_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/common/time_jump_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(time_jump_test_engine_libuv
+  target_include_directories(time_jump_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16386,7 +16163,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(time_jump_test_engine_libuv
+  target_link_libraries(time_jump_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
@@ -16470,14 +16247,14 @@ target_link_libraries(timeout_encoding_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(timer_test_engine_libuv
+add_executable(timer_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/common/timer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(timer_test_engine_libuv
+target_include_directories(timer_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16496,7 +16273,7 @@ target_include_directories(timer_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(timer_test_engine_libuv
+target_link_libraries(timer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -16507,7 +16284,7 @@ target_link_libraries(timer_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(tls_certificate_verifier_test_engine_libuv
+add_executable(tls_certificate_verifier_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/security/tls_certificate_verifier_test.cc
   test/cpp/util/tls_test_utils.cc
@@ -16515,7 +16292,7 @@ add_executable(tls_certificate_verifier_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(tls_certificate_verifier_test_engine_libuv
+target_include_directories(tls_certificate_verifier_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16534,7 +16311,7 @@ target_include_directories(tls_certificate_verifier_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(tls_certificate_verifier_test_engine_libuv
+target_link_libraries(tls_certificate_verifier_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
@@ -16545,7 +16322,7 @@ target_link_libraries(tls_certificate_verifier_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(tls_key_export_test_engine_libuv
+add_executable(tls_key_export_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -16563,7 +16340,7 @@ add_executable(tls_key_export_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(tls_key_export_test_engine_libuv
+target_include_directories(tls_key_export_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16582,7 +16359,7 @@ target_include_directories(tls_key_export_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(tls_key_export_test_engine_libuv
+target_link_libraries(tls_key_export_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -16592,14 +16369,14 @@ target_link_libraries(tls_key_export_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(tls_security_connector_test_engine_libuv
+add_executable(tls_security_connector_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(tls_security_connector_test_engine_libuv
+target_include_directories(tls_security_connector_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16618,7 +16395,7 @@ target_include_directories(tls_security_connector_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(tls_security_connector_test_engine_libuv
+target_link_libraries(tls_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -16664,14 +16441,14 @@ target_link_libraries(tls_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(too_many_pings_test_engine_libuv
+add_executable(too_many_pings_test
   test/core/end2end/cq_verifier.cc
   test/core/transport/chttp2/too_many_pings_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(too_many_pings_test_engine_libuv
+target_include_directories(too_many_pings_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16690,7 +16467,7 @@ target_include_directories(too_many_pings_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(too_many_pings_test_engine_libuv
+target_link_libraries(too_many_pings_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
@@ -16901,7 +16678,7 @@ target_link_libraries(try_seq_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(unknown_frame_bad_client_test_engine_libuv
+add_executable(unknown_frame_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/unknown_frame.cc
   test/core/end2end/cq_verifier.cc
@@ -16910,7 +16687,7 @@ add_executable(unknown_frame_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(unknown_frame_bad_client_test_engine_libuv
+target_include_directories(unknown_frame_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16929,7 +16706,7 @@ target_include_directories(unknown_frame_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(unknown_frame_bad_client_test_engine_libuv
+target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -16939,14 +16716,14 @@ target_link_libraries(unknown_frame_bad_client_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(uri_parser_test_engine_libuv
+add_executable(uri_parser_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/uri/uri_parser_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(uri_parser_test_engine_libuv
+target_include_directories(uri_parser_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16965,7 +16742,7 @@ target_include_directories(uri_parser_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(uri_parser_test_engine_libuv
+target_link_libraries(uri_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17009,7 +16786,7 @@ target_link_libraries(useful_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(window_overflow_bad_client_test_engine_libuv
+add_executable(window_overflow_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/window_overflow.cc
   test/core/end2end/cq_verifier.cc
@@ -17018,7 +16795,7 @@ add_executable(window_overflow_bad_client_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(window_overflow_bad_client_test_engine_libuv
+target_include_directories(window_overflow_bad_client_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17037,7 +16814,7 @@ target_include_directories(window_overflow_bad_client_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(window_overflow_bad_client_test_engine_libuv
+target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17232,14 +17009,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(work_serializer_test_engine_libuv
+  add_executable(work_serializer_test
     test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/iomgr/work_serializer_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(work_serializer_test_engine_libuv
+  target_include_directories(work_serializer_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17258,7 +17035,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(work_serializer_test_engine_libuv
+  target_link_libraries(work_serializer_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
@@ -17270,7 +17047,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(writes_per_rpc_test_engine_libuv
+  add_executable(writes_per_rpc_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -17310,7 +17087,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(writes_per_rpc_test_engine_libuv
+  target_include_directories(writes_per_rpc_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17329,7 +17106,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(writes_per_rpc_test_engine_libuv
+  target_link_libraries(writes_per_rpc_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::failure_signal_handler
@@ -17343,14 +17120,14 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(xds_bootstrap_test_engine_libuv
+add_executable(xds_bootstrap_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/xds/xds_bootstrap_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(xds_bootstrap_test_engine_libuv
+target_include_directories(xds_bootstrap_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17369,7 +17146,7 @@ target_include_directories(xds_bootstrap_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(xds_bootstrap_test_engine_libuv
+target_link_libraries(xds_bootstrap_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17379,14 +17156,14 @@ target_link_libraries(xds_bootstrap_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(xds_certificate_provider_test_engine_libuv
+add_executable(xds_certificate_provider_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/xds/xds_certificate_provider_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(xds_certificate_provider_test_engine_libuv
+target_include_directories(xds_certificate_provider_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17405,7 +17182,7 @@ target_include_directories(xds_certificate_provider_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(xds_certificate_provider_test_engine_libuv
+target_link_libraries(xds_certificate_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17415,14 +17192,14 @@ target_link_libraries(xds_certificate_provider_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(xds_channel_creds_registry_test_engine_libuv
+add_executable(xds_channel_creds_registry_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/xds/xds_channel_creds_registry_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(xds_channel_creds_registry_test_engine_libuv
+target_include_directories(xds_channel_creds_registry_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17441,7 +17218,7 @@ target_include_directories(xds_channel_creds_registry_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(xds_channel_creds_registry_test_engine_libuv
+target_link_libraries(xds_channel_creds_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17451,7 +17228,7 @@ target_link_libraries(xds_channel_creds_registry_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(xds_credentials_end2end_test_engine_libuv
+add_executable(xds_credentials_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -17470,7 +17247,7 @@ add_executable(xds_credentials_end2end_test_engine_libuv
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(xds_credentials_end2end_test_engine_libuv
+target_include_directories(xds_credentials_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17489,7 +17266,7 @@ target_include_directories(xds_credentials_end2end_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(xds_credentials_end2end_test_engine_libuv
+target_link_libraries(xds_credentials_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
@@ -17499,14 +17276,14 @@ target_link_libraries(xds_credentials_end2end_test_engine_libuv
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(xds_credentials_test_engine_libuv
+add_executable(xds_credentials_test
   test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/security/xds_credentials_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(xds_credentials_test_engine_libuv
+target_include_directories(xds_credentials_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17525,7 +17302,7 @@ target_include_directories(xds_credentials_test_engine_libuv
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(xds_credentials_test_engine_libuv
+target_link_libraries(xds_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -17536,7 +17313,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(xds_end2end_test_engine_libuv
+  add_executable(xds_end2end_test
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -17702,7 +17479,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(xds_end2end_test_engine_libuv
+  target_include_directories(xds_end2end_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17721,7 +17498,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(xds_end2end_test_engine_libuv
+  target_link_libraries(xds_end2end_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_config
