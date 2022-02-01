@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_XDS_XDS_CHANNEL_CREDS_H
-#define GRPC_CORE_EXT_XDS_XDS_CHANNEL_CREDS_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CHANNEL_CREDS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CHANNEL_CREDS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -62,4 +62,4 @@ class XdsChannelCredsRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_XDS_XDS_CHANNEL_CREDS_H
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CHANNEL_CREDS_H

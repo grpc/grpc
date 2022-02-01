@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_channel_creds.h"
+#include "src/core/lib/security/credentials/xds/xds_channel_creds.h"
 
 namespace grpc_core {
 

@@ -22,9 +22,9 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_channel_creds.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/xds/xds_channel_creds.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

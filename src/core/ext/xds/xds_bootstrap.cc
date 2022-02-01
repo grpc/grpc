@@ -32,7 +32,6 @@
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_channel_creds.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/security/credentials/xds/xds_channel_creds.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {

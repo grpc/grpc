@@ -843,9 +843,6 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_creds.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_default_creds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
@@ -1308,6 +1305,9 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_channel_creds.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_channel_creds.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_channel_default_creds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts/alts_security_connector.cc" role="src" />

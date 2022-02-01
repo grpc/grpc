@@ -774,7 +774,6 @@ libs:
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
-  - src/core/ext/xds/xds_channel_creds.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
@@ -972,6 +971,7 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
+  - src/core/lib/security/credentials/xds/xds_channel_creds.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
@@ -1445,8 +1445,6 @@ libs:
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_certificate_provider.cc
-  - src/core/ext/xds/xds_channel_creds.cc
-  - src/core/ext/xds/xds_channel_default_creds.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
@@ -1640,6 +1638,8 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
+  - src/core/lib/security/credentials/xds/xds_channel_creds.cc
+  - src/core/lib/security/credentials/xds/xds_channel_default_creds.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
@@ -1974,7 +1974,6 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
-  - src/core/ext/xds/xds_channel_creds.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -2126,6 +2125,7 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
+  - src/core/lib/security/credentials/xds/xds_channel_creds.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -2284,7 +2284,6 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
-  - src/core/ext/xds/xds_channel_creds.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -2427,6 +2426,7 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  - src/core/lib/security/credentials/xds/xds_channel_creds.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -5380,7 +5380,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/xds/xds_channel_creds.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/handshaker_factory.h
@@ -5398,6 +5397,7 @@ targets:
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/json/json.h
+  - src/core/lib/security/credentials/xds/xds_channel_creds.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
@@ -5406,7 +5406,6 @@ targets:
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   src:
-  - src/core/ext/xds/xds_channel_creds.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/handshaker_registry.cc
@@ -5419,6 +5418,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/credentials/xds/xds_channel_creds.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc

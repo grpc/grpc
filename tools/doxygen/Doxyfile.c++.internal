@@ -1842,9 +1842,6 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
-src/core/ext/xds/xds_channel_creds.cc \
-src/core/ext/xds/xds_channel_creds.h \
-src/core/ext/xds/xds_channel_default_creds.cc \
 src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
@@ -2307,6 +2304,9 @@ src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/credentials/tls/tls_utils.cc \
 src/core/lib/security/credentials/tls/tls_utils.h \
+src/core/lib/security/credentials/xds/xds_channel_creds.cc \
+src/core/lib/security/credentials/xds/xds_channel_creds.h \
+src/core/lib/security/credentials/xds/xds_channel_default_creds.cc \
 src/core/lib/security/credentials/xds/xds_credentials.cc \
 src/core/lib/security/credentials/xds/xds_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \
