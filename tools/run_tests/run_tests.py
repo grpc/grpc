@@ -181,7 +181,7 @@ def _check_arch(arch, supported_archs):
 
 def _is_use_docker_child():
     """Returns True if running running as a --use_docker child."""
-    return True if os.getenv('RUN_TESTS_COMMAND') else False
+    return True if os.getenv('DOCKER_RUN_SCRIPT_COMMAND') else False
 
 
 _PythonConfigVars = collections.namedtuple('_ConfigVars', [
@@ -1583,14 +1583,15 @@ if args.use_docker:
         child_argv[1:])
 
     env = os.environ.copy()
-    env['RUN_TESTS_COMMAND'] = run_tests_cmd
     env['DOCKERFILE_DIR'] = dockerfile_dir
-    env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
+    env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run.sh'
+    env['DOCKER_RUN_SCRIPT_COMMAND'] = run_tests_cmd
+    # TODO(jtattermusch): is the XML_REPORT env variable any useful?
     if args.xml_report:
         env['XML_REPORT'] = args.xml_report
 
     retcode = subprocess.call(
-        'tools/run_tests/dockerize/build_docker_and_run_tests.sh',
+        'tools/run_tests/dockerize/build_and_run_docker.sh',
         shell=True,
         env=env)
     _print_debug_info_epilogue(dockerfile_dir=dockerfile_dir)
