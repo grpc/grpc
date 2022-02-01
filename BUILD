@@ -1747,6 +1747,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_common",
+    srcs = [
+        "src/core/lib/event_engine/event_engine_common.cc",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
@@ -1758,6 +1769,7 @@ grpc_cc_library(
         "gpr_base",
     ],
 )
+
 
 grpc_cc_library(
     name = "uri_parser",
