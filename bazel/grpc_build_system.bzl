@@ -412,6 +412,33 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+def _deps_contain_an_event_engine(deps):
+    """Heuristically identify if an EventEngine test factory dep is provided.
+
+    Args:
+      deps: list of bazel dependencies for the target
+
+    Returns:
+      True if an EventEngine test factory dep is contained in deps.
+    """
+    return any([True for d in deps if d.startswith("//test/core/event_engine:event_engine_test_init@")])
+
+def _needs_event_engine_dep(deps):
+    """Determine if an EventEngine dep is missing.
+
+    Binaries that depend on grpc::testing::TestEnvironment need an EventEngine
+    factory injected.
+
+    Args:
+      deps: list of bazel dependencies for the target
+
+    Returns:
+      True if a required dep is missing
+    """
+    return (("//test/cpp/util:test_util" in deps or
+             "//test/core/util:grpc_test_util" in deps) and
+            not _deps_contain_an_event_engine(deps))
+
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     """Generates a cc_binary for use in the gRPC repo.
 
@@ -432,6 +459,9 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
+    if _needs_event_engine_dep(deps):
+        # print("generic binary is using a test util: %s" % name)
+        deps.extend(EVENT_ENGINES[0]["deps"])
     native.cc_binary(
         name = name,
         srcs = srcs,
