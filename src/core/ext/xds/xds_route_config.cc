@@ -603,8 +603,7 @@ grpc_error_handle RetryPolicyParse(
     if (max_interval != nullptr) {
       max = ParseDuration(max_interval);
     } else {
-      // if max interval is not set, it is 10x the base, if the value in nanos
-      // can yield another second, adjust the value in seconds accordingly.
+      // if max interval is not set, it is 10x the base.
       max = 10 * retry_to_return.retry_back_off.base_interval;
     }
     retry_to_return.retry_back_off.max_interval = max;
