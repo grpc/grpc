@@ -51,8 +51,7 @@ bool ParseDurationFromJson(const Json& field, Duration* duration) {
   int seconds =
       decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
   if (seconds == -1) return false;
-  *duration =
-      Duration::Seconds(seconds) + Duration::NanosecondsRoundDown(nanos);
+  *duration = Duration::FromSecondsAndNanoseconds(seconds, nanos);
   return true;
 }
 

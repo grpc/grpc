@@ -38,9 +38,18 @@ namespace metadata_detail {
 // or (if not) we'll need to take the memory allocation path.
 template <typename Which>
 struct HasSimpleMemento {
+#if __GNUG__ && __GNUC__ < 5
+  // GCC 4.9 and earlier don't implement std::is_trivially_copyable.
+  // This workaround will mean that we'll take the memory allocation path
+  // for these metadata types, incurring a small performance hit.
+  static constexpr bool value =
+      std::is_trivial<typename Which::memento_type>::value &&
+      sizeof(typename Which::MementoType) <= sizeof(grpc_slice);
+#else
   static constexpr bool value =
       std::is_trivially_copyable<typename Which::MementoType>::value &&
       sizeof(typename Which::MementoType) <= sizeof(grpc_slice);
+#endif
 };
 
 // Storage type for a single metadata entry.
