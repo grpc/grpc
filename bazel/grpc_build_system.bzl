@@ -354,6 +354,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]),
         linkstatic = linkstatic,
+        tags = tags,
         visibility = ["//visibility:private"],
     )
 
