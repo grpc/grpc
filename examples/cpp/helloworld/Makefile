@@ -76,7 +76,7 @@ greeter_callback_server: helloworld.pb.o helloworld.grpc.pb.o greeter_callback_s
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server 
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server greeter_callback_client greeter_callback_server greeter_client_ssl greeter_server_ssl 
 
 
 # The following is to test your system and ensure a smoother experience.
