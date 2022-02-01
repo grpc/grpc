@@ -122,22 +122,24 @@ class ReflectionServicerTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.desc_pool.FindServiceByName(_INVALID_SYMBOL_NAME)
 
-    def testFindServiceFindMethod(self):
+    def testFindMethodError(self):
         service_name = self._SERVICE_NAMES[0]
         service_desc = self.desc_pool.FindServiceByName(service_name)
 
         with self.assertRaises(KeyError):
             service_desc.FindMethodByName(_INVALID_SYMBOL_NAME)
 
-    def testFindExtension(self):
+    def testFindExtensionNotImplemented(self):
+        """
+        Extensions aren't implemented in Protobuf for Python.
+        For now, simply assert that indeed they don't work.
+        """
         message_name = _EMPTY_EXTENSIONS_SYMBOL_NAME
         message_desc = self.desc_pool.FindMessageTypeByName(message_name)
         self.assertEqual(message_name, message_desc.full_name)
         self.assertTrue(message_name.endswith(message_desc.name))
         extension_field_descs = self.desc_pool.FindAllExtensions(message_desc)
 
-        # TODO: Extensions aren't implemented in Protobuf for Python.
-        # For now, simply assert that indeed they don't work
         self.assertEqual(0, len(extension_field_descs))
         with self.assertRaises(KeyError):
             self.desc_pool.FindExtensionByName(message_name)
