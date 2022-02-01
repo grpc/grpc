@@ -1749,7 +1749,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_common",
     srcs = [
-        "src/core/lib/event_engine/event_engine_common.cc",
+        "src/core/lib/event_engine/resolved_address.cc",
     ],
     deps = [
         "event_engine_base_hdrs",
