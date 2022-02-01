@@ -101,6 +101,7 @@ libs:
   - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/end2end/tests/retry_recv_message.cc
+  - test/core/end2end/tests/retry_recv_message_replay.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   - test/core/end2end/tests/retry_send_op_fails.cc
@@ -220,6 +221,7 @@ libs:
   - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/end2end/tests/retry_recv_message.cc
+  - test/core/end2end/tests/retry_recv_message_replay.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   - test/core/end2end/tests/retry_send_op_fails.cc
@@ -1480,8 +1482,8 @@ libs:
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
@@ -2301,8 +2303,8 @@ libs:
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/event_engine_factory.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
@@ -8207,6 +8209,17 @@ targets:
   - linux
   - posix
   - mac
+- name: streams_not_seen_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/streams_not_seen_test.cc
+  deps:
+  - grpc_test_util
 - name: string_ref_test
   gtest: true
   build: test

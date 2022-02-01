@@ -148,6 +148,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "streams_not_seen_test",
+    srcs = ["streams_not_seen_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "settings_timeout_test",
     srcs = ["settings_timeout_test.cc"],
     external_deps = [
