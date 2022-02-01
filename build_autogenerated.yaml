@@ -6643,6 +6643,7 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/interop/http2_client.cc
   deps:
   - grpc++_test_config
@@ -7570,6 +7571,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
   - src/cpp/util/core_stats.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -7610,6 +7612,7 @@ targets:
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
   - src/cpp/util/core_stats.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
@@ -9082,6 +9085,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - absl/flags:flag
@@ -9107,6 +9111,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:

@@ -16,7 +16,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine", visibility = "tests")
+grpc_package(
+    name = "test/core/event_engine",
+    visibility = "tests",
+)
 
 grpc_cc_test(
     name = "endpoint_config_test",
