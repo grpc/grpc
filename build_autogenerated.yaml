@@ -3968,6 +3968,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
@@ -4264,6 +4265,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
@@ -5646,6 +5648,7 @@ targets:
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -7097,6 +7100,7 @@ targets:
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
@@ -7776,6 +7780,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
@@ -8209,7 +8214,7 @@ targets:
   - linux
   - posix
   - mac
-- name: streams_not_seen_test
+- name: streams_not_seen_test_engine_libuv
   gtest: true
   build: test
   language: c++
@@ -8217,6 +8222,7 @@ targets:
   - test/core/end2end/cq_verifier.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
   deps:
   - grpc_test_util
@@ -8264,6 +8270,7 @@ targets:
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
@@ -8347,6 +8354,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - test/core/event_engine/event_engine_test_init_libuv.cc

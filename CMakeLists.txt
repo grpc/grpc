@@ -1021,7 +1021,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx streaming_throughput_test_engine_libuv)
   endif()
-  add_dependencies(buildtests_cxx streams_not_seen_test)
+  add_dependencies(buildtests_cxx streams_not_seen_test_engine_libuv)
   add_dependencies(buildtests_cxx string_ref_test)
   add_dependencies(buildtests_cxx table_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
@@ -6165,6 +6165,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(memory_quota_stress_test
     src/core/lib/debug/trace.cc
+    src/core/lib/event_engine/default_event_engine_factory.cc
     src/core/lib/event_engine/event_engine.cc
     src/core/lib/event_engine/memory_allocator.cc
     src/core/lib/iomgr/combiner.cc
@@ -6872,6 +6873,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -9956,6 +9958,7 @@ add_executable(core_configuration_test
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/config/core_configuration.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/gpr/alloc.cc
   src/core/lib/gpr/atm.cc
@@ -13237,6 +13240,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(memory_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/iomgr/combiner.cc
@@ -14677,6 +14681,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(resource_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/iomgr/combiner.cc
@@ -15994,14 +15999,15 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(streams_not_seen_test
+add_executable(streams_not_seen_test_engine_libuv
   test/core/end2end/cq_verifier.cc
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/streams_not_seen_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(streams_not_seen_test
+target_include_directories(streams_not_seen_test_engine_libuv
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16020,7 +16026,7 @@ target_include_directories(streams_not_seen_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(streams_not_seen_test
+target_link_libraries(streams_not_seen_test_engine_libuv
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -16105,6 +16111,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_slice_slice_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -16333,6 +16340,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(thread_quota_test
   src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/resource_quota/thread_quota.cc
   test/core/event_engine/event_engine_test_init_libuv.cc

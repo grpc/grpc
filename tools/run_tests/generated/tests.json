@@ -6796,7 +6796,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "streams_not_seen_test",
+    "name": "streams_not_seen_test_engine_libuv",
     "platforms": [
       "linux",
       "mac",
