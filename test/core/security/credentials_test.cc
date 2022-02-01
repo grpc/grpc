@@ -434,12 +434,15 @@ class RequestMetadataState {
   void RunRequestMetadataTest(grpc_call_credentials* creds,
                               grpc_auth_metadata_context auth_md_ctx) {
     grpc_error_handle error = GRPC_ERROR_NONE;
+    // DO NOT SUBMIT: wrap this in an activity and make it work
+    /*
     if (creds->get_request_metadata(&pollent_, auth_md_ctx, &md_array_,
                                     &on_request_metadata_, &error)) {
       // Synchronous result.  Invoke the callback directly.
       CheckRequestMetadata(error);
       GRPC_ERROR_UNREF(error);
     }
+*/
   }
 
  private:
@@ -587,7 +590,7 @@ static void test_oauth2_google_iam_composite_creds(void) {
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
-      "authorization", test_oauth2_bearer_token, false);
+      "authorization", test_oauth2_bearer_token);
 
   /* Check security level of fake credentials. */
   GPR_ASSERT(oauth2_creds->min_security_level() == GRPC_SECURITY_NONE);
@@ -1752,19 +1755,14 @@ struct fake_call_creds : public grpc_call_credentials {
  public:
   fake_call_creds() : grpc_call_credentials("fake") {}
 
-  bool get_request_metadata(grpc_polling_entity* /*pollent*/,
-                            grpc_auth_metadata_context /*context*/,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* /*on_request_metadata*/,
-                            grpc_error_handle* /*error*/) override {
-    md_array->emplace_back(grpc_core::Slice::FromStaticString("foo"),
-                           grpc_core::Slice::FromStaticString("oof"));
-    return true;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+  GetRequestMetadata(
+      grpc_core::ClientInitialMetadata initial_metadata) override {
+    initial_metadata->Append(
+        "foo", grpc_core::Slice::FromStaticString("oof"),
+        [](absl::string_view, const grpc_core::Slice&) { abort(); });
+    return grpc_core::Immediate(std::move(initial_metadata));
   }
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* /*md_array*/,
-      grpc_error_handle /*error*/) override {}
 };
 
 static void test_google_default_creds_not_default(void) {
