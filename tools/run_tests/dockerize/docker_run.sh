@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is invoked by build_docker_* inside a docker
+# This script is invoked by build_and_run_docker.sh inside a docker
 # container. You should never need to call this script on your own.
 
-set -ex
+set -e
+
+# TODO(jtattermusch): added in https://github.com/grpc/grpc/pull/17303, should be removed.
+export CONFIG=${config:-opt}
 
 if [ "$RELATIVE_COPY_PATH" == "" ]
 then
@@ -32,13 +35,39 @@ else
   cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
 fi
 
+# ensure the "reports" directory exists
+mkdir -p reports
+
+# TODO(jtattermusch): this is garbage, remove it.
 $POST_GIT_STEP
 
-if [ -x "$(command -v rvm)" ]
-then
-  rvm use ruby-2.1
-fi
-
+# TODO(jtattermusch): is this necessary?
 cd /var/local/git/grpc
 
-$RUN_COMMAND
+exit_code=0
+${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
+
+# copy reports/ dir and files matching one of the patterns to the well-known
+# location of report dir mounted to the docker container.
+# --parents preserves the directory structure for files matched by find.
+cp -r reports/ /var/local/report_dir
+find . -name report.xml -exec cp --parents {} /var/local/report_dir \;
+find . -name sponge_log.xml -exec cp --parents {} /var/local/report_dir \;
+find . -name 'report_*.xml' -exec cp --parents {} /var/local/report_dir \;
+chmod -R ugo+r /var/local/report_dir || true
+
+# Move contents of OUTPUT_DIR from under the workspace to a directory that will be visible to the docker host.
+if [ "${OUTPUT_DIR}" != "" ]
+then
+  # create the directory if it doesn't exist yet.
+  mkdir -p "${OUTPUT_DIR}"
+  mv "${OUTPUT_DIR}" /var/local/output_dir || exit_code=$?
+  chmod -R ugo+r /var/local/output_dir || true
+fi
+
+if [ -x "$(command -v ccache)" ]
+then
+  ccache --show-stats || true
+fi
+
+exit $exit_code
