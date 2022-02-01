@@ -930,9 +930,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx insecure_security_connector_test_engine_libuv)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx interop_test_engine_libuv)
-  endif()
   add_dependencies(buildtests_cxx join_test)
   add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx large_metadata_bad_client_test_engine_libuv)
@@ -1228,6 +1225,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/trailing_metadata.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/util/test_lb_policies.cc
 )
 
@@ -1371,6 +1369,7 @@ add_library(end2end_tests
   test/core/end2end/tests/trailing_metadata.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/util/test_lb_policies.cc
 )
 
@@ -2927,6 +2926,7 @@ add_library(benchmark_helpers
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/microbenchmarks/helpers.cc
 )
 
@@ -3610,6 +3610,7 @@ add_library(grpc++_test_util
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
   test/core/end2end/data/test_root_cert.cc
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/util/byte_buffer_proto_helper.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
@@ -4206,6 +4207,7 @@ target_link_libraries(gen_hpack_tables
 if(gRPC_BUILD_TESTS)
 
 add_executable(alloc_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/alloc_test.cc
 )
 
@@ -4580,6 +4582,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(arena_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/arena_test.cc
 )
 
@@ -5180,6 +5183,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cpu_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/cpu_test.cc
 )
 
@@ -5379,6 +5383,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(env_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/env_test.cc
 )
 
@@ -5622,6 +5627,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(fork_test
+    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/gprpp/fork_test.cc
   )
 
@@ -5911,6 +5917,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(host_port_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/host_port_test.cc
 )
 
@@ -5967,7 +5974,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(inproc_callback_test
   test/core/end2end/inproc_callback_test.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
 )
 
 target_include_directories(inproc_callback_test
@@ -6136,6 +6142,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(manual_constructor_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/manual_constructor_test.cc
 )
 
@@ -6295,6 +6302,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(mpscq_test
+    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/gprpp/mpscq_test.cc
   )
 
@@ -6352,6 +6360,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(murmur_hash_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/murmur_hash_test.cc
 )
 
@@ -6965,6 +6974,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(spinlock_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/spinlock_test.cc
 )
 
@@ -7107,6 +7117,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(string_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/string_test.cc
 )
 
@@ -7134,6 +7145,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sync_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/sync_test.cc
 )
 
@@ -7252,6 +7264,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_gpr_time_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/time_test.cc
 )
 
@@ -7628,7 +7641,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test_engine_libuv
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/naming/address_sorting_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -7727,7 +7739,6 @@ add_executable(admin_services_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
   src/cpp/server/admin/admin_services.cc
   src/cpp/server/csds/csds.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/admin_services_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -7854,7 +7865,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_util_test_engine_libuv
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/common/alts_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8013,7 +8023,6 @@ add_executable(async_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/async_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8049,7 +8058,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(auth_property_iterator_test
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/common/auth_property_iterator_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8429,7 +8437,6 @@ add_executable(binder_server_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/binder/end2end/binder_server_test.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/cpp/end2end/test_service_impl.cc
@@ -8695,7 +8702,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(byte_buffer_test
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/util/byte_buffer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8768,7 +8774,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_ares_query_test_engine_libuv
   test/core/end2end/cq_verifier.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/util/fake_udp_and_tcp_server.cc
   test/cpp/naming/cancel_ares_query_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -8963,7 +8968,6 @@ add_executable(cfstream_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/cfstream_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9201,7 +9205,6 @@ add_executable(channelz_service_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/channelz_service_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9351,7 +9354,6 @@ add_executable(cli_call_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_call_test.cc
   test/cpp/util/cli_credentials.cc
@@ -9441,7 +9443,6 @@ add_executable(client_callback_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/client_callback_end2end_test.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
@@ -9500,7 +9501,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/client/client_channel_stress_test.cc
     test/cpp/end2end/test_service_impl.cc
     third_party/googletest/googletest/src/gtest-all.cc
@@ -9538,7 +9538,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_context_test_peer_test_engine_libuv
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/test/client_context_test_peer_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -9587,7 +9586,6 @@ add_executable(client_interceptors_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/client_interceptors_end2end_test.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
@@ -9646,7 +9644,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/util/test_lb_policies.cc
     test/cpp/end2end/client_lb_end2end_test.cc
     test/cpp/end2end/test_service_impl.cc
@@ -9845,7 +9842,6 @@ add_executable(context_allocator_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/context_allocator_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10139,7 +10135,6 @@ add_executable(delegating_channel_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/delegating_channel_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10176,7 +10171,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(destroy_grpclb_channel_with_active_connect_stress_test_engine_libuv
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10298,7 +10292,6 @@ add_executable(end2end_binder_transport_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   test/core/transport/binder/end2end/fake_binder.cc
   test/core/transport/binder/end2end/testing_channel_create.cc
@@ -10353,7 +10346,6 @@ add_executable(end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/end2end_test.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/test_service_impl.cc
@@ -10675,6 +10667,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(examine_stack_test
+    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/gprpp/examine_stack_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -10723,7 +10716,6 @@ add_executable(exception_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/exception_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10950,7 +10942,6 @@ add_executable(filter_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/filter_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10998,7 +10989,6 @@ add_executable(flaky_network_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/flaky_network_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11142,7 +11132,6 @@ add_executable(generic_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/generic_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11179,6 +11168,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(global_config_env_test
+    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/gprpp/global_config_env_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -11215,6 +11205,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(global_config_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/global_config_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11845,7 +11836,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/util/cli_call.cc
     test/cpp/util/cli_credentials.cc
     test/cpp/util/grpc_tool.cc
@@ -11894,7 +11884,6 @@ add_executable(grpclb_api_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/grpclb/grpclb_api_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -11951,7 +11940,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/end2end/grpclb_end2end_test.cc
     test/cpp/end2end/test_service_impl.cc
     third_party/googletest/googletest/src/gtest-all.cc
@@ -11991,7 +11979,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_session_reuse_test_engine_libuv
   test/core/end2end/h2_ssl_session_reuse_test.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -12122,7 +12109,6 @@ add_executable(health_service_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/health_service_end2end_test.cc
   test/cpp/end2end/test_health_check_service_impl.cc
   test/cpp/end2end/test_service_impl.cc
@@ -12289,7 +12275,6 @@ add_executable(http2_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/interop/http2_client.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12327,7 +12312,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test_engine_libuv
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/http/httpcli_test.cc
     test/core/http/httpcli_test_util.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -12367,7 +12351,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpscli_test_engine_libuv
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/core/http/httpcli_test_util.cc
     test/core/http/httpscli_test.cc
     test/core/util/fake_udp_and_tcp_server.cc
@@ -12422,7 +12405,6 @@ add_executable(hybrid_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/hybrid_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12737,45 +12719,6 @@ target_link_libraries(interop_server
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(interop_test_engine_libuv
-    test/core/event_engine/event_engine_test_init_libuv.cc
-    test/cpp/interop/interop_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(interop_test_engine_libuv
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(interop_test_engine_libuv
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc++_test_config
-    grpc++_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -13099,6 +13042,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(log_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/log_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13305,7 +13249,6 @@ add_executable(message_allocator_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/message_allocator_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13424,7 +13367,6 @@ add_executable(mock_stream_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/test/mock_stream_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13477,7 +13419,6 @@ add_executable(mock_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/mock_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13526,7 +13467,6 @@ add_executable(nonblocking_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/nonblocking_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13938,7 +13878,6 @@ add_executable(port_sharing_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/port_sharing_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14101,7 +14040,6 @@ add_executable(proto_server_reflection_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/proto_server_reflection_test.cc
   test/cpp/end2end/test_service_impl.cc
   test/cpp/util/proto_reflection_descriptor_database.cc
@@ -14210,7 +14148,6 @@ add_executable(qps_json_driver
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   src/cpp/util/core_stats.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
@@ -14289,7 +14226,6 @@ add_executable(qps_worker
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   src/cpp/util/core_stats.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
   test/cpp/qps/client_sync.cc
@@ -14386,7 +14322,6 @@ add_executable(raw_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/raw_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14794,7 +14729,6 @@ add_executable(rls_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/util/test_lb_policies.cc
   test/cpp/end2end/rls_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
@@ -14884,7 +14818,6 @@ add_executable(sdk_authz_end2end_test_engine_libuv
   src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/rbac_translator.cc
   src/cpp/server/authorization_policy_provider.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/sdk_authz_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14921,7 +14854,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(secure_auth_context_test_engine_libuv
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/common/secure_auth_context_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15008,7 +14940,6 @@ add_executable(server_builder_plugin_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/server_builder_plugin_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -15219,7 +15150,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_context_test_spouse_test_engine_libuv
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/test/server_context_test_spouse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15268,7 +15198,6 @@ add_executable(server_early_return_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/server_early_return_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15316,7 +15245,6 @@ add_executable(server_interceptors_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/interceptors_util.cc
   test/cpp/end2end/server_interceptors_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
@@ -15459,7 +15387,6 @@ add_executable(service_config_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/service_config_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -15584,7 +15511,6 @@ add_executable(shutdown_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/shutdown_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15768,6 +15694,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(stat_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/stat_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15839,6 +15766,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(status_helper_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/status_helper_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15966,7 +15894,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/end2end/streaming_throughput_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -16233,7 +16160,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_cpp_util_slice_test
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/util/slice_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16269,7 +16195,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_cpp_util_time_test
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/util/time_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16305,7 +16230,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_manager_test_engine_libuv
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/thread_manager/thread_manager_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16400,7 +16324,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/end2end/thread_stress_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
@@ -16476,6 +16399,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(time_util_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gprpp/time_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16634,7 +16558,6 @@ add_executable(tls_key_export_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/tls_key_export_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16706,6 +16629,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tls_test
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/gpr/tls_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16742,7 +16666,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(too_many_pings_test_engine_libuv
   test/core/end2end/cq_verifier.cc
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/too_many_pings_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -17541,7 +17464,6 @@ add_executable(xds_credentials_end2end_test_engine_libuv
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  test/core/event_engine/event_engine_test_init_libuv.cc
   test/cpp/end2end/test_service_impl.cc
   test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -17772,7 +17694,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
     src/cpp/server/csds/csds.cc
-    test/core/event_engine/event_engine_test_init_libuv.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc

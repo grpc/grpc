@@ -2521,6 +2521,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/trailing_metadata.cc',
                       'test/core/end2end/tests/write_buffering.cc',
                       'test/core/end2end/tests/write_buffering_at_end.cc',
+                      'test/core/event_engine/event_engine_test_init_libuv.cc',
                       'test/core/util/build.cc',
                       'test/core/util/build.h',
                       'test/core/util/cmdline.cc',

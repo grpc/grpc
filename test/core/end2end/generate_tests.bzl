@@ -502,6 +502,11 @@ def grpc_end2end_nosec_tests():
             for t in sorted(END2END_TESTS.keys())
             if not END2END_TESTS[t].secure
         ],
+        data = [
+            "//src/core/tsi/test_creds:ca.pem",
+            "//src/core/tsi/test_creds:server1.key",
+            "//src/core/tsi/test_creds:server1.pem",
+        ],
         hdrs = [
             "tests/cancel_test_helpers.h",
             "end2end_tests.h",
@@ -526,6 +531,7 @@ def grpc_end2end_nosec_tests():
         grpc_cc_binary(
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
+            data = [":end2end_nosec_tests"],
             language = "C++",
             testonly = 1,
             deps = [
@@ -548,6 +554,7 @@ def grpc_end2end_nosec_tests():
             grpc_cc_test(
                 name = "%s_nosec_test@%s" % (f, test_short_name),
                 srcs = ["fixtures/%s.cc" % f],
+                data = [":end2end_nosec_tests"],
                 args = [t],
                 deps = [
                     ":end2end_tests",

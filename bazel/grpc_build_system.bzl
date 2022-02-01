@@ -437,7 +437,7 @@ def _needs_event_engine_dep(deps):
       True if a required dep is missing
     """
     return (("//test/cpp/util:test_util" in deps or
-            "//test/cpp/util:test_util_unsecure" in deps or
+             "//test/cpp/util:test_util_unsecure" in deps or
              "//test/core/util:grpc_test_util" in deps or
              "//test/core/util:grpc_test_util_unsecure" in deps) and
             not _deps_contain_an_event_engine(deps))
