@@ -924,8 +924,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/init.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />

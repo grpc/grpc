@@ -269,7 +269,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, test_ios = True, exclude_pollers = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, test_ios = True, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -294,12 +294,14 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         linkstatic: link the binary in static mode
         test_ios: whether to create an ios_test.
         exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_event_engine: set to False if grpc::testing::TestEnvironment is not called.
     """
     copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
     core_deps = deps + _get_external_deps(external_deps)
+
     # Test args for all tests
     test_args = {
         "args": args,
@@ -329,11 +331,14 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # TODO(hork): identify if any non-polling tests should be exercised by
         # all known EventEngines. It is assumed that non-polling tests are
         # engine-agnostic.
+        ee_deps = []
+        if uses_event_engine == True:
+            ee_deps = EVENT_ENGINES[0]["deps"]
         native.cc_test(
             name = name,
             srcs = srcs,
             tags = tags + ["no_uses_polling"],
-            deps = core_deps + EVENT_ENGINES[0]["deps"],
+            deps = core_deps + ee_deps,
             **test_args
         )
         return
@@ -382,7 +387,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             env = {
                 "GRPC_POLL_STRATEGY": poller,
             },
-            tags = (tags + EVENT_ENGINES[0]["tags"] + ["no_windows", "no_mac"]),
+            tags = (tags + EVENT_ENGINES[0]["tags"] + [
+                "no_windows",
+                "no_mac",
+                "no_extract",  # do not run with CMake
+            ]),
             **test_args
         )
 
@@ -397,7 +406,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             env = {
                 "GRPC_POLL_STRATEGY": POLLERS[0],
             },
-            tags = (tags + engine["tags"] + ["no_windows", "no_mac"]),
+            tags = (tags + engine["tags"] + [
+                "no_windows",
+                "no_mac",
+                "no_extract",  # do not run with CMake
+            ]),
             **test_args
         )
 

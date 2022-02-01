@@ -24,6 +24,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr_platform",
         "//test/core/util:grpc_suppressions",

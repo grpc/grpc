@@ -108,9 +108,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
-                if "@poller=" in rule_name:
-                    # only exercise tests that rely on the default poller for
-                    # the current platform.
+                if "no_extract" in rule_dict["tags"]:
                     continue
                 rule_name = _sanitize_rule_name(rule_name)
                 rule_dict['name'] = rule_name

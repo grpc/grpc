@@ -483,7 +483,9 @@ def grpc_end2end_tests():
                     "//:gpr",
                     "//test/core/compression:args_utils",
                 ],
-                tags = _platform_support_tags(fopt),
+                tags = _platform_support_tags(fopt) + [
+                    "no_extract",  # do not run end2end tests on CMake
+                ],
                 flaky = t in fopt.flaky_tests,
                 test_ios = False,
                 exclude_pollers = topt.exclude_pollers,
@@ -518,6 +520,7 @@ def grpc_end2end_nosec_tests():
     for f, fopt in END2END_NOSEC_FIXTURES.items():
         if fopt.secure:
             continue
+
         # TODO(hork): try removing this to see if we no longer need the raw bin.
         grpc_cc_binary(
             name = "%s_nosec_test" % f,
@@ -552,7 +555,9 @@ def grpc_end2end_nosec_tests():
                     "//:gpr",
                     "//test/core/compression:args_utils",
                 ],
-                tags = _platform_support_tags(fopt),
+                tags = _platform_support_tags(fopt) + [
+                    "no_extract",  # do not run end2end tests on CMake
+                ],
                 flaky = t in fopt.flaky_tests,
                 test_ios = False,
                 exclude_pollers = topt.exclude_pollers,

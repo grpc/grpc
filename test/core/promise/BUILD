@@ -37,6 +37,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:poll",
         "//test/core/util:grpc_suppressions",
@@ -49,6 +50,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:context",
         "//test/core/util:grpc_suppressions",
@@ -61,6 +63,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:promise",
         "//test/core/util:grpc_suppressions",
@@ -73,6 +76,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:arena_promise",
         "//:resource_quota",
@@ -91,6 +95,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:map",
         "//:promise",
@@ -104,6 +109,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:race",
         "//test/core/util:grpc_suppressions",
@@ -119,6 +125,7 @@ grpc_cc_test(
     ],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:capture",
         "//:promise",
@@ -133,6 +140,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:if",
         "//test/core/util:grpc_suppressions",
@@ -145,6 +153,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:loop",
         "//:seq",
@@ -158,6 +167,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:join",
         "//test/core/util:grpc_suppressions",
@@ -170,6 +180,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:try_join",
         "//test/core/util:grpc_suppressions",
@@ -182,6 +193,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:seq",
         "//test/core/util:grpc_suppressions",
@@ -194,6 +206,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:try_seq",
         "//test/core/util:grpc_suppressions",
@@ -206,6 +219,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:grpc",
         "//:grpc_base",
@@ -220,6 +234,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "test_wakeup_schedulers",
         "//:activity",
@@ -237,6 +252,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "test_wakeup_schedulers",
         "//:join",
@@ -252,6 +268,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "test_wakeup_schedulers",
         "//:observable",
@@ -267,6 +284,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "test_wakeup_schedulers",
         "//:for_each",
@@ -286,6 +304,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "test_wakeup_schedulers",
         "//:join",
@@ -305,6 +324,7 @@ grpc_proto_fuzzer(
     proto = "promise_fuzzer.proto",
     tags = ["no_windows"],
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:activity",
         "//:join",
@@ -322,6 +342,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:activity",
         "//:exec_ctx_wakeup_scheduler",

@@ -814,7 +814,6 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
-  - src/core/lib/event_engine/init.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -1483,7 +1482,6 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
-  - src/core/lib/event_engine/init.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
@@ -1999,7 +1997,6 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
-  - src/core/lib/event_engine/init.h
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -2306,7 +2303,6 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/event_engine_factory.cc
-  - src/core/lib/event_engine/init.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
@@ -3201,6 +3197,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/alpn_test.cc
   deps:
   - grpc_test_util
@@ -3210,6 +3207,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_counter_test.cc
   deps:
@@ -3220,6 +3218,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/aes_gcm_test.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   deps:
@@ -3230,6 +3229,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
   deps:
@@ -3241,6 +3241,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   - test/core/tsi/transport_security_test_lib.cc
@@ -3252,6 +3253,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
   deps:
@@ -3262,6 +3264,7 @@ targets:
   headers:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
@@ -3272,6 +3275,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
@@ -3281,6 +3285,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/alts_security_connector_test.cc
   deps:
   - grpc_test_util
@@ -3290,6 +3295,7 @@ targets:
   headers:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
   deps:
@@ -3300,6 +3306,7 @@ targets:
   headers:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
   deps:
@@ -3310,6 +3317,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
@@ -3328,6 +3336,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/auth_context_test.cc
   deps:
   - grpc_test_util
@@ -3337,6 +3346,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/slice/b64_test.cc
   deps:
   - grpc_test_util
@@ -3349,6 +3359,7 @@ targets:
   src:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: bad_ssl_alpn_test_engine_libuv
@@ -3359,6 +3370,7 @@ targets:
   src:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   platforms:
@@ -3373,6 +3385,7 @@ targets:
   src:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   platforms:
@@ -3384,6 +3397,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/bin_decoder_test.cc
   deps:
   - grpc_test_util
@@ -3393,6 +3407,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/bin_encoder_test.cc
   deps:
   - grpc_test_util
@@ -3402,6 +3417,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
@@ -3411,6 +3427,7 @@ targets:
   headers: []
   src:
   - test/core/channel/channel_args_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3419,6 +3436,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/channel_create_test.cc
   deps:
   - grpc_test_util
@@ -3428,6 +3446,7 @@ targets:
   headers: []
   src:
   - test/core/channel/channel_stack_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3436,6 +3455,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/check_gcp_environment_linux_test.cc
   deps:
   - grpc_test_util
@@ -3444,6 +3464,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/check_gcp_environment_windows_test.cc
   deps:
   - grpc_test_util
@@ -3452,6 +3473,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/handshake/client_ssl.cc
   deps:
   - grpc_test_util
@@ -3464,6 +3486,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/cmdline_test.cc
   deps:
   - grpc_test_util
@@ -3473,6 +3496,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/combiner_test.cc
   deps:
   - grpc_test_util
@@ -3486,6 +3510,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/completion_queue_threading_test.cc
   deps:
   - grpc_test_util
@@ -3497,6 +3522,7 @@ targets:
   src:
   - test/core/compression/args_utils.cc
   - test/core/compression/compression_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3505,6 +3531,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/concurrent_connectivity_test.cc
   deps:
   - grpc_test_util
@@ -3516,6 +3543,7 @@ targets:
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: cpu_test
@@ -3533,6 +3561,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   args:
@@ -3543,6 +3572,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   args:
@@ -3553,6 +3583,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: dns_resolver_test_engine_libuv
@@ -3561,6 +3592,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/dns_resolver_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: dualstack_socket_test_engine_libuv
@@ -3571,6 +3603,7 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   platforms:
@@ -3583,6 +3616,7 @@ targets:
   headers:
   - test/core/iomgr/endpoint_tests.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/endpoint_pair_test.cc
   - test/core/iomgr/endpoint_tests.cc
   deps:
@@ -3601,6 +3635,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/ev_epollex_linux_test.cc
   deps:
   - grpc_test_util
@@ -3614,6 +3649,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/fake_resolver_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: fake_transport_security_test_engine_libuv
@@ -3622,6 +3658,7 @@ targets:
   headers:
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
@@ -3631,6 +3668,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/fd_conservation_posix_test.cc
   deps:
   - grpc_test_util
@@ -3643,6 +3681,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/fd_posix_test.cc
   deps:
   - grpc_test_util
@@ -3660,6 +3699,7 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/fling/fling_stream_test.cc
   deps:
   - grpc_test_util
@@ -3677,6 +3717,7 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/fling/fling_test.cc
   deps:
   - grpc_test_util
@@ -3707,6 +3748,7 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/http/format_request_test.cc
   deps:
   - grpc_test_util
@@ -3716,6 +3758,7 @@ targets:
   headers:
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/frame_handler_test.cc
   deps:
@@ -3728,6 +3771,7 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: grpc_alts_credentials_options_test_engine_libuv
@@ -3735,6 +3779,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_alts_credentials_options_test.cc
   deps:
   - grpc_test_util
@@ -3743,6 +3788,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/byte_buffer_reader_test.cc
   deps:
   - grpc_test_util
@@ -3752,6 +3798,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/completion_queue_test.cc
   deps:
   - grpc_test_util
@@ -3760,6 +3807,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
@@ -3769,6 +3817,7 @@ targets:
   headers:
   - test/core/handshake/server_ssl_common.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/handshake/readahead_handshaker_server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
   deps:
@@ -3782,6 +3831,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/histogram_test.cc
   deps:
   - grpc_test_util
@@ -3800,6 +3850,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
   - grpc_test_util
@@ -3810,6 +3861,7 @@ targets:
   headers: []
   src:
   - test/core/end2end/inproc_callback_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - end2end_tests
   uses_polling: false
@@ -3821,6 +3873,7 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: json_token_test
@@ -3828,6 +3881,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/json_token_test.cc
   deps:
   - grpc_test_util
@@ -3837,6 +3891,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/jwt_verifier_test.cc
   deps:
   - grpc_test_util
@@ -3848,6 +3903,7 @@ targets:
   - test/core/end2end/cq_verifier.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/lame_client_test.cc
   deps:
   - grpc_test_util
@@ -3856,6 +3912,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/load_file_test.cc
   deps:
   - grpc_test_util
@@ -3874,6 +3931,7 @@ targets:
   language: c
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
@@ -3908,6 +3966,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
@@ -3920,6 +3979,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/status:statusor
@@ -3935,6 +3995,7 @@ targets:
   headers: []
   src:
   - test/core/compression/message_compress_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3944,6 +4005,7 @@ targets:
   headers: []
   src:
   - test/core/channel/minimal_stack_is_minimal_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3952,6 +4014,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/mpmcqueue_test.cc
   deps:
   - grpc_test_util
@@ -3977,6 +4040,7 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/multiple_server_queues_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: murmur_hash_test
@@ -3996,6 +4060,7 @@ targets:
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: num_external_connectivity_watchers_test_engine_libuv
@@ -4003,6 +4068,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
@@ -4012,6 +4078,7 @@ targets:
   headers: []
   src:
   - test/core/address_utils/parse_address_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: parse_address_with_named_scope_id_test
@@ -4020,6 +4087,7 @@ targets:
   headers: []
   src:
   - test/core/address_utils/parse_address_with_named_scope_id_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   platforms:
@@ -4037,6 +4105,7 @@ targets:
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/http/parser_test.cc
   deps:
   - grpc_test_util
@@ -4046,6 +4115,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/slice/percent_encoding_test.cc
   deps:
   - grpc_test_util
@@ -4059,6 +4129,7 @@ targets:
   src:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
@@ -4067,6 +4138,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - grpc_test_util
@@ -4081,6 +4153,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
   - grpc_test_util
@@ -4095,6 +4168,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/secure_channel_create_test.cc
   deps:
   - grpc_test_util
@@ -4104,6 +4178,7 @@ targets:
   headers:
   - test/core/iomgr/endpoint_tests.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/security/secure_endpoint_test.cc
   deps:
@@ -4113,6 +4188,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/security_connector_test.cc
   deps:
   - grpc_test_util
@@ -4122,6 +4198,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/sequential_connectivity_test.cc
   deps:
   - grpc_test_util
@@ -4131,6 +4208,7 @@ targets:
   headers:
   - test/core/handshake/server_ssl_common.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/handshake/server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
   deps:
@@ -4144,6 +4222,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
@@ -4152,6 +4231,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/slice/slice_buffer_test.cc
   deps:
   - grpc_test_util
@@ -4161,6 +4241,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/slice/slice_split_test.cc
   deps:
   - grpc_test_util
@@ -4170,6 +4251,7 @@ targets:
   language: c
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -4180,11 +4262,14 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
+  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test_engine_libuv
@@ -4193,6 +4278,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: socket_utils_test_engine_libuv
@@ -4200,6 +4286,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/socket_utils_test.cc
   deps:
   - grpc_test_util
@@ -4221,6 +4308,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
@@ -4230,6 +4318,7 @@ targets:
   headers:
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
@@ -4243,6 +4332,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/status_conversion_test.cc
   deps:
   - grpc_test_util
@@ -4252,6 +4342,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/stream_map_test.cc
   deps:
   - grpc_test_util
@@ -4278,6 +4369,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/tcp_client_posix_test.cc
   deps:
   - grpc_test_util
@@ -4291,6 +4383,7 @@ targets:
   headers:
   - test/core/iomgr/endpoint_tests.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/tcp_posix_test.cc
   deps:
@@ -4303,6 +4396,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/tcp_server_posix_test.cc
   deps:
   - grpc_test_util
@@ -4324,6 +4418,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
@@ -4332,6 +4427,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/gprpp/thd_test.cc
   deps:
   - grpc_test_util
@@ -4341,6 +4437,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/threadpool_test.cc
   deps:
   - grpc_test_util
@@ -4350,6 +4447,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/time_averaged_stats_test.cc
   deps:
   - grpc_test_util
@@ -4359,6 +4457,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/timer_heap_test.cc
   deps:
   - grpc_test_util
@@ -4368,6 +4467,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/timer_list_test.cc
   deps:
   - grpc_test_util
@@ -4377,6 +4477,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
   deps:
   - grpc_test_util
@@ -4385,6 +4486,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/transport_security_test.cc
   deps:
   - grpc_test_util
@@ -4393,6 +4495,7 @@ targets:
   language: c
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/varint_test.cc
   deps:
   - grpc_test_util
@@ -4520,6 +4623,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/naming/address_sorting_test.cc
   deps:
   - grpc++_test_config
@@ -4537,6 +4641,7 @@ targets:
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/naming/address_sorting_test.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/string_ref_helper.cc
@@ -4562,6 +4667,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
   - src/cpp/server/csds/csds.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/admin_services_end2end_test.cc
   deps:
   - grpc++_reflection
@@ -4573,6 +4679,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/alarm_test.cc
   deps:
   - grpc++_unsecure
@@ -4593,6 +4700,7 @@ targets:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -4608,6 +4716,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/alts_util_test.cc
   deps:
   - grpc++_alts
@@ -4625,6 +4734,7 @@ targets:
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/end2end/fuzzers/api_fuzzer.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
   - absl/flags:flag
@@ -4714,6 +4824,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -4723,6 +4834,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/auth_property_iterator_test.cc
   deps:
   - grpc++_test_util
@@ -4733,6 +4845,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/authorization_matchers_test.cc
   deps:
   - grpc_test_util
@@ -4747,6 +4860,7 @@ targets:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/cpp/server/authorization_policy_provider.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/authorization_policy_provider_test.cc
   deps:
   - grpc++
@@ -4767,6 +4881,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/aws_request_signer_test.cc
   deps:
   - grpc_test_util
@@ -4777,6 +4892,7 @@ targets:
   headers: []
   src:
   - test/core/backoff/backoff_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4791,6 +4907,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: badreq_bad_client_test_engine_libuv
@@ -4804,6 +4921,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: bdp_estimator_test
@@ -4812,6 +4930,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/bdp_estimator_test.cc
   deps:
   - grpc_test_util
@@ -4827,6 +4946,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/resolvers/binder_resolver_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: binder_server_test_engine_libuv
@@ -4840,6 +4960,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/end2end/binder_server_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -4854,6 +4975,7 @@ targets:
   src:
   - test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.proto
   - test/core/transport/binder/end2end/fuzzers/client.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/end2end/fuzzers/client_fuzzer.cc
   - test/core/transport/binder/end2end/fuzzers/fuzzer_utils.cc
   - test/core/util/fuzzer_corpus_test.cc
@@ -4877,6 +4999,7 @@ targets:
   src:
   - test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.proto
   - test/core/transport/binder/end2end/fuzzers/server.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/end2end/fuzzers/fuzzer_utils.cc
   - test/core/transport/binder/end2end/fuzzers/server_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
@@ -4980,6 +5103,7 @@ targets:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
@@ -5002,6 +5126,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/byte_buffer_test.cc
   deps:
   - grpc++_test_util
@@ -5012,6 +5137,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/byte_stream_test.cc
   deps:
   - grpc_test_util
@@ -5025,6 +5151,7 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/fake_udp_and_tcp_server.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
@@ -5055,6 +5182,7 @@ targets:
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   src:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
   - absl/container:flat_hash_set
@@ -5066,6 +5194,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/certificate_provider_registry_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: certificate_provider_store_test_engine_libuv
@@ -5074,6 +5203,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - grpc_test_util
@@ -5088,6 +5218,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/cfstream_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5098,6 +5229,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/channel_arguments_test.cc
   deps:
   - grpc++
@@ -5109,6 +5241,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/channel_filter_test.cc
   deps:
   - grpc++
@@ -5121,6 +5254,7 @@ targets:
   headers: []
   src:
   - test/core/channel/channel_stack_builder_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: channel_trace_test_engine_libuv
@@ -5132,6 +5266,7 @@ targets:
   src:
   - src/proto/grpc/channelz/channelz.proto
   - test/core/channel/channel_trace_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - grpc++
@@ -5143,6 +5278,7 @@ targets:
   headers: []
   src:
   - test/core/channel/channelz_registry_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc++
   - grpc_test_util
@@ -5157,6 +5293,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/channelz_service_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5171,6 +5308,7 @@ targets:
   src:
   - src/proto/grpc/channelz/channelz.proto
   - test/core/channel/channelz_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - grpc++
@@ -5259,6 +5397,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_call_test.cc
   - test/cpp/util/cli_credentials.cc
@@ -5274,6 +5413,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/filters/client_authority_filter_test.cc
   deps:
   - grpc
@@ -5289,6 +5429,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/client_callback_end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5307,6 +5448,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/client/client_channel_stress_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5321,6 +5463,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/test/client_context_test_peer_test.cc
   deps:
   - grpc++_test
@@ -5336,6 +5479,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/client_interceptors_end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5355,6 +5499,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5370,6 +5515,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/codegen/codegen_test_full.cc
   deps:
   - grpc++
@@ -5381,6 +5527,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
   - grpc++
@@ -5397,6 +5544,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: connectivity_state_test_engine_libuv
@@ -5405,6 +5553,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/connectivity_state_test.cc
   deps:
   - grpc_test_util
@@ -5418,6 +5567,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/context_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5428,6 +5578,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/context_list_test.cc
   deps:
   - grpc_test_util
@@ -5455,6 +5606,7 @@ targets:
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/config/core_configuration.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/murmur_hash.h
@@ -5492,6 +5644,7 @@ targets:
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
   - src/core/lib/gpr/cpu_iphone.cc
@@ -5539,12 +5692,14 @@ targets:
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/config/core_configuration_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
+  - absl/status:statusor
   - absl/strings:cord
   - absl/strings:str_format
   - absl/strings:strings
@@ -5570,6 +5725,7 @@ targets:
   headers:
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/tsi/crl_ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
@@ -5588,6 +5744,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/delegating_channel_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5598,6 +5755,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
   - grpc++_test_util
@@ -5607,6 +5765,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/gprpp/dual_ref_counted_test.cc
   deps:
   - grpc_test_util
@@ -5621,6 +5780,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: end2end_binder_transport_test_engine_libuv
@@ -5635,6 +5795,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/testing_channel_create.cc
@@ -5654,6 +5815,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5749,6 +5911,7 @@ targets:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/endpoint_binder_pool_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
@@ -5761,6 +5924,7 @@ targets:
   headers: []
   src:
   - test/core/event_engine/endpoint_config_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -5772,6 +5936,7 @@ targets:
   src:
   - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/error_details_test.cc
   deps:
   - grpc++_error_details
@@ -5783,6 +5948,7 @@ targets:
   headers:
   - test/core/iomgr/endpoint_tests.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/error_test.cc
   deps:
@@ -5794,6 +5960,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/error_utils_test.cc
   deps:
   - grpc_test_util
@@ -5803,6 +5970,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
@@ -5829,6 +5997,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/exception_test.cc
   deps:
   - grpc++_test_util
@@ -5966,6 +6135,7 @@ targets:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
@@ -5977,6 +6147,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
@@ -5990,6 +6161,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -6004,6 +6176,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/flaky_network_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6016,6 +6189,7 @@ targets:
   - test/core/end2end/cq_verifier.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
   - grpc_test_util
@@ -6104,6 +6278,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -6139,6 +6314,7 @@ targets:
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h
   src:
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
@@ -6148,6 +6324,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -6161,6 +6338,7 @@ targets:
   src:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
   - grpc_test_util
@@ -6251,6 +6429,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_tls_certificate_distributor_test.cc
   deps:
   - grpc_test_util
@@ -6260,6 +6439,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_tls_certificate_provider_test.cc
   deps:
   - grpc_test_util
@@ -6269,6 +6449,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_tls_certificate_verifier_test.cc
   deps:
   - grpc_test_util
@@ -6278,6 +6459,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/grpc_tls_credentials_options_test.cc
   deps:
   - grpc_test_util
@@ -6297,6 +6479,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
@@ -6318,6 +6501,7 @@ targets:
   headers: []
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - grpc++_test_util
@@ -6335,6 +6519,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6351,6 +6536,7 @@ targets:
   headers: []
   src:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - end2end_tests
 - name: head_of_line_blocking_bad_client_test_engine_libuv
@@ -6364,6 +6550,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: headers_bad_client_test_engine_libuv
@@ -6377,6 +6564,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: health_service_end2end_test_engine_libuv
@@ -6392,6 +6580,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/health_service_end2end_test.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -6404,6 +6593,7 @@ targets:
   headers: []
   src:
   - test/core/transport/chttp2/hpack_parser_fuzzer.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
@@ -6423,6 +6613,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/hpack_parser_table_test.cc
   deps:
   - grpc_test_util
@@ -6433,6 +6624,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
   - grpc_test_util
@@ -6458,6 +6650,7 @@ targets:
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/http/httpcli_test.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -6475,6 +6668,7 @@ targets:
   - test/core/http/httpcli_test_util.h
   - test/core/util/fake_udp_and_tcp_server.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/http/httpcli_test_util.cc
   - test/core/http/httpscli_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
@@ -6495,6 +6689,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/hybrid_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6531,6 +6726,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/init_test.cc
   deps:
   - grpc_test_util
@@ -6546,6 +6742,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: insecure_security_connector_test_engine_libuv
@@ -6554,6 +6751,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/insecure_security_connector_test.cc
   deps:
   - grpc_test_util
@@ -6597,6 +6795,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/interop/interop_test.cc
   deps:
   - grpc++_test_config
@@ -6629,6 +6828,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/json/json_test.cc
   deps:
   - grpc_test_util
@@ -6644,6 +6844,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/large_metadata.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: latch_test
@@ -6773,6 +6974,7 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_macos.cc
   - src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
   - grpc++
@@ -6786,6 +6988,7 @@ targets:
   - src/cpp/server/load_reporter/load_data_store.h
   src:
   - src/cpp/server/load_reporter/load_data_store.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/load_reporter/load_data_store_test.cc
   deps:
   - grpc++
@@ -6796,6 +6999,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/linux_system_roots_test.cc
   deps:
   - grpc_test_util
@@ -6845,6 +7049,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/matchers_test.cc
   deps:
   - grpc_test_util
@@ -6854,6 +7059,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
@@ -6889,6 +7095,7 @@ targets:
   - test/core/resource_quota/call_checker.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
@@ -6901,6 +7108,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/status:statusor
@@ -6917,6 +7125,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/message_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6927,6 +7136,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/metadata_map_test.cc
   deps:
   - grpc_test_util
@@ -6948,6 +7158,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/test/mock_stream_test.cc
   deps:
   - grpc++_test
@@ -6962,6 +7173,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test
@@ -6975,6 +7187,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - grpc++_test_util
@@ -7099,6 +7312,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/gprpp/orphanable_test.cc
   deps:
   - grpc_test_util
@@ -7113,6 +7327,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: overload_test
@@ -7131,6 +7346,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/parsed_metadata_test.cc
   deps:
   - grpc_test_util
@@ -7140,6 +7356,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/pid_controller_test.cc
   deps:
   - grpc_test_util
@@ -7236,6 +7453,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/port_sharing_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7299,6 +7517,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/proto_server_reflection_test.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
@@ -7311,6 +7530,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/codegen/proto_utils_test.cc
   deps:
   - grpc++
@@ -7420,6 +7640,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/raw_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7430,6 +7651,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
   deps:
   - grpc_test_util
@@ -7444,6 +7666,7 @@ targets:
   src:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/rbac_translator_test.cc
   deps:
   - grpc_test_util
@@ -7453,6 +7676,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/gprpp/ref_counted_ptr_test.cc
   deps:
   - grpc_test_util
@@ -7462,6 +7686,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/gprpp/ref_counted_test.cc
   deps:
   - grpc_test_util
@@ -7471,6 +7696,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   deps:
   - grpc_test_util
@@ -7485,6 +7711,7 @@ targets:
   headers:
   - test/core/util/fake_udp_and_tcp_server.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/resolve_address_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
@@ -7497,6 +7724,7 @@ targets:
   headers:
   - test/core/util/fake_udp_and_tcp_server.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/resolve_address_test.cc
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
@@ -7508,6 +7736,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -7545,6 +7774,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
@@ -7559,6 +7789,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/status:statusor
@@ -7572,6 +7803,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/retry_throttle_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7589,6 +7821,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -7602,6 +7835,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/rls_lb_config_parser_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: sdk_authz_end2end_test_engine_libuv
@@ -7619,6 +7853,7 @@ targets:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/cpp/server/authorization_policy_provider.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/sdk_authz_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7629,6 +7864,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/secure_auth_context_test.cc
   deps:
   - grpc++_test_util
@@ -7660,6 +7896,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/server_builder_plugin_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7673,6 +7910,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/server_builder_test.cc
   deps:
   - grpc++_unsecure
@@ -7690,6 +7928,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - grpc++_unsecure
@@ -7704,6 +7943,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/surface/server_chttp2_test.cc
   deps:
   - grpc_test_util
@@ -7713,6 +7953,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/server_config_selector/server_config_selector_test.cc
   deps:
   - grpc_test_util
@@ -7723,6 +7964,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
   - grpc++_test
@@ -7736,6 +7978,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - grpc++_test_util
@@ -7750,6 +7993,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -7766,6 +8010,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: server_request_call_test_engine_libuv
@@ -7777,6 +8022,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/server_request_call_test.cc
   deps:
   - grpc++_unsecure
@@ -7796,6 +8042,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/service_config_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7807,6 +8054,7 @@ targets:
   headers: []
   src:
   - test/core/client_channel/service_config_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: settings_timeout_test_engine_libuv
@@ -7816,6 +8064,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/settings_timeout_test.cc
   deps:
   - grpc_test_util
@@ -7829,6 +8078,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - grpc++_test_util
@@ -7843,6 +8093,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: smoke_test_engine_libuv
@@ -7851,6 +8102,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/event_engine/smoke_test.cc
   deps:
   - grpc_test_util
@@ -7861,6 +8113,7 @@ targets:
   headers: []
   src:
   - test/core/address_utils/sockaddr_utils_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: stack_tracer_test
@@ -7869,6 +8122,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/stack_tracer_test.cc
   deps:
   - grpc_test_util
@@ -7894,6 +8148,7 @@ targets:
   headers: []
   src:
   - test/core/debug/stats_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7914,6 +8169,7 @@ targets:
   headers: []
   src:
   - test/core/channel/status_util_test.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7925,6 +8181,7 @@ targets:
   - test/core/end2end/cq_verifier.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/stranded_event_test.cc
   deps:
   - grpc_test_util
@@ -7942,6 +8199,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/streaming_throughput_test.cc
   deps:
   - grpc++_test_util
@@ -7955,6 +8213,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/string_ref_test.cc
   deps:
   - grpc++
@@ -7980,6 +8239,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -7991,12 +8251,15 @@ targets:
   - test/core/util/build.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/slice/slice_test.cc
   - test/core/util/build.cc
   deps:
+  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test_engine_libuv
@@ -8006,6 +8269,7 @@ targets:
   headers:
   - test/cpp/util/tls_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/client/credentials_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
@@ -8018,6 +8282,7 @@ targets:
   headers:
   - test/cpp/util/tls_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/server/credentials_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
@@ -8029,6 +8294,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/slice_test.cc
   deps:
   - grpc++_test_util
@@ -8039,6 +8305,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/util/time_test.cc
   deps:
   - grpc++_test_util
@@ -8049,6 +8316,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/thread_manager/thread_manager_test.cc
   deps:
   - grpc++_test_config
@@ -8059,15 +8327,19 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/resource_quota/thread_quota.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/resource_quota/thread_quota.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/resource_quota/thread_quota_test.cc
   deps:
+  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: thread_stress_test_engine_libuv
@@ -8080,6 +8352,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/thread_stress_test.cc
   deps:
   - grpc++_test_util
@@ -8094,6 +8367,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/time_jump_test.cc
   deps:
   - grpc++
@@ -8118,6 +8392,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/timeout_encoding_test.cc
   deps:
   - grpc_test_util
@@ -8128,6 +8403,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/common/timer_test.cc
   deps:
   - grpc++
@@ -8139,6 +8415,7 @@ targets:
   headers:
   - test/cpp/util/tls_test_utils.h
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/security/tls_certificate_verifier_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
@@ -8153,6 +8430,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
   - grpc++_test_util
@@ -8162,6 +8440,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util
@@ -8183,6 +8462,7 @@ targets:
   - test/core/end2end/cq_verifier.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - grpc++_test_config
@@ -8275,6 +8555,7 @@ targets:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
   - grpc_test_util
@@ -8342,6 +8623,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: uri_parser_test_engine_libuv
@@ -8350,6 +8632,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/uri/uri_parser_test.cc
   deps:
   - grpc_test_util
@@ -8374,6 +8657,7 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   deps:
   - grpc_test_util
 - name: wire_reader_test
@@ -8465,6 +8749,7 @@ targets:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
@@ -8559,6 +8844,7 @@ targets:
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:
@@ -8570,6 +8856,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/iomgr/work_serializer_test.cc
   deps:
   - grpc_test_util
@@ -8607,6 +8894,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -8644,6 +8932,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/xds/xds_bootstrap_test.cc
   deps:
   - grpc_test_util
@@ -8653,6 +8942,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
@@ -8662,6 +8952,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/xds/xds_channel_creds_registry_test.cc
   deps:
   - grpc_test_util
@@ -8675,6 +8966,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
@@ -8685,6 +8977,7 @@ targets:
   language: c++
   headers: []
   src:
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/xds_credentials_test.cc
   deps:
   - grpc_test_util
@@ -8740,6 +9033,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/cpp/server/csds/csds.cc
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc

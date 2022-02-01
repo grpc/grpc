@@ -32,6 +32,7 @@ grpc_cc_test(
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -44,6 +45,7 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -58,6 +60,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -73,6 +76,7 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -84,6 +88,7 @@ grpc_cc_test(
     srcs = ["manual_constructor_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -96,6 +101,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:bitset",
         "//test/core/util:grpc_suppressions",
@@ -108,6 +114,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:match",
         "//test/core/util:grpc_suppressions",
@@ -120,6 +127,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:overload",
         "//test/core/util:grpc_suppressions",
@@ -135,6 +143,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:table",
         "//test/core/util:grpc_suppressions",
@@ -146,6 +155,7 @@ grpc_cc_test(
     srcs = ["host_port_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -159,6 +169,7 @@ grpc_cc_test(
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -238,6 +249,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -253,6 +265,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -267,6 +280,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -279,6 +293,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:capture",
         "//test/core/util:grpc_suppressions",
@@ -291,6 +306,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:cpp_impl_of",
         "//test/core/util:grpc_suppressions",
@@ -303,6 +319,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:chunked_vector",
         "//:gpr_base",
@@ -319,6 +336,7 @@ grpc_proto_fuzzer(
     proto = "chunked_vector_fuzzer.proto",
     tags = ["no_windows"],
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:chunked_vector",
         "//:resource_quota",

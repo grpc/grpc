@@ -23,6 +23,7 @@ grpc_cc_test(
     srcs = ["alloc_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -34,6 +35,7 @@ grpc_cc_test(
     srcs = ["arena_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -45,6 +47,7 @@ grpc_cc_test(
     srcs = ["cpu_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -56,6 +59,7 @@ grpc_cc_test(
     srcs = ["env_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -70,6 +74,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -81,6 +86,7 @@ grpc_cc_test(
     srcs = ["murmur_hash_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -92,6 +98,7 @@ grpc_cc_test(
     srcs = ["string_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -103,6 +110,7 @@ grpc_cc_test(
     srcs = ["spinlock_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -114,6 +122,7 @@ grpc_cc_test(
     srcs = ["sync_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -125,6 +134,7 @@ grpc_cc_test(
     srcs = ["time_test.cc"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -139,6 +149,7 @@ grpc_cc_test(
     ],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
@@ -151,6 +162,7 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
+    uses_event_engine = False,
     deps = [
         "//:gpr_platform",
         "//:useful",
