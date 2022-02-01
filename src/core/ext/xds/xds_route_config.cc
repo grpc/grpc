@@ -40,6 +40,7 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
@@ -971,11 +972,12 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         "type.googleapis.com/grpc.lookup.v1.RouteLookupClusterSpecifier") {
       gpr_log(GPR_INFO, "donna parse it out");
       upb_strview any_value = google_protobuf_Any_value(any);
-      const auto* plugin_config = grpc_lookup_v1_RouteLookupConfig_parse(
-          any_value.data, any_value.size, context.arena);
-      if (plugin_config == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            "could not parse RouteLookupConfig wrapper for ", name));
+      auto lb_policy_config =
+          XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
+              plugin_type, any_value, context.arena);
+      if (lb_policy_config.ok()) {
+        rds_update->cluster_specifier_plugin_map[std::string(name)] =
+            std::move(lb_policy_config.value());
       }
     }
   }

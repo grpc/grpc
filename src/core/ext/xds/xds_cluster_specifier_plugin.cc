@@ -21,6 +21,8 @@
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
+#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
+
 namespace grpc_core {
 
 const char* kXdRouteLookupClusterSpecifierPluginConfigName =
@@ -94,6 +96,20 @@ XdsClusterSpecifierPluginRegistry::GetPluginForType(
   auto it = g_plugin_registry->find(proto_type_name);
   if (it == g_plugin_registry->end()) return nullptr;
   return it->second;
+}
+
+absl::StatusOr<std::string>
+XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
+    absl::string_view proto_type_name, upb_strview serialized_plugin_config,
+    upb_arena* arena) {
+  const auto* plugin_config = grpc_lookup_v1_RouteLookupConfig_parse(
+      serialized_plugin_config.data, serialized_plugin_config.size, arena);
+  if (plugin_config == nullptr) {
+    return absl::InvalidArgumentError("Could not parse plugin config");
+  }
+  std::string result;
+  // donna parse and build json.
+  return result;
 }
 
 /*void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {

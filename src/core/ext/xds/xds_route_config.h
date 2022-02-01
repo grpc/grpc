@@ -45,9 +45,6 @@ struct XdsRouteConfigResource {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
-  using TypedPerPluginConfig =
-      std::map<std::string, XdsClusterSpecifierPluginImpl::PluginConfig>;
-
   struct RetryPolicy {
     internal::StatusCodeSet retry_on;
     uint32_t num_retries;
@@ -183,7 +180,9 @@ struct XdsRouteConfigResource {
   };
 
   std::vector<VirtualHost> virtual_hosts;
-  TypedPerPluginConfig typed_per_plugin_config;
+  std::map<std::string /*cluster_specifier_plugin_name*/,
+           std::string /*LB policy config*/>
+      cluster_specifier_plugin_map;
 
   bool operator==(const XdsRouteConfigResource& other) const {
     return virtual_hosts == other.virtual_hosts;

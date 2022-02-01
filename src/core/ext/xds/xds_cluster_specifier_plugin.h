@@ -38,34 +38,12 @@ namespace grpc_core {
 
 class XdsClusterSpecifierPluginImpl {
  public:
-  struct PluginConfig {
-    absl::string_view config_proto_type_name;
-    Json config;
-
-    bool operator==(const PluginConfig& other) const {
-      return config_proto_type_name == other.config_proto_type_name &&
-             config == other.config;
-    }
-    std::string ToString() const {
-      return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
-                          " config=", config.Dump(), "}");
-    }
-  };
-
-  // Service config data for the plugin, returned by GenerateServiceConfig().
-  struct ServiceConfigJsonEntry {
-    // The top-level field name in the method config.
-    // Plugin implementations should use their primary config proto type
-    // name for this.
-    // The value of this field in the method config will be a JSON array,
-    // which will be populated with the elements returned by each plugin
-    // instance.
-    std::string service_config_field_name;
-    // The element to add to the JSON array.
-    std::string element;
-  };
-
   virtual ~XdsClusterSpecifierPluginImpl() = default;
+
+  // Returns the LB policy config in JSON form.
+  static absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
+      absl::string_view proto_type_name, upb_strview serialized_plugin_config,
+      upb_arena* arena);
 
   /*
 
