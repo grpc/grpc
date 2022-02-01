@@ -16,13 +16,13 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
@@ -91,4 +91,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return ret;
 }
-
