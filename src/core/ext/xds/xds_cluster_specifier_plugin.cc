@@ -21,6 +21,7 @@
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 
 namespace grpc_core {
@@ -107,9 +108,30 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
   if (plugin_config == nullptr) {
     return absl::InvalidArgumentError("Could not parse plugin config");
   }
-  std::string result;
+  Json::Object result;
+  size_t num_keybuilders;
+  Json::Array keybuilders_result;
+  const grpc_lookup_v1_GrpcKeyBuilder* const* keybuilders =
+      grpc_lookup_v1_RouteLookupConfig_grpc_keybuilders(plugin_config,
+                                                        &num_keybuilders);
+  for (size_t i = 0; i < num_keybuilders; ++i) {
+    gpr_log(GPR_INFO, "donna for each key builder");
+    size_t num_names;
+    Json::Array key_builder_names;
+    const grpc_lookup_v1_GrpcKeyBuilder_Name* const* names =
+        grpc_lookup_v1_GrpcKeyBuilder_names(keybuilders[i], &num_names);
+    for (size_t j = 0; j < num_names; ++j) {
+      gpr_log(GPR_INFO, "donna for each key builder name");
+      Json::Object name_result;
+      name_result["service"] = UpbStringToStdString(
+          grpc_lookup_v1_GrpcKeyBuilder_Name_service(names[j]));
+      name_result["method"] = UpbStringToStdString(
+          grpc_lookup_v1_GrpcKeyBuilder_Name_method(names[j]));
+    }
+  }
+
   // donna parse and build json.
-  return result;
+  return Json(result).Dump();
 }
 
 /*void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {
