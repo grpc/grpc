@@ -5102,6 +5102,16 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: chttp2_byte_stream_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/chttp2_byte_stream_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: chunked_vector_test
   gtest: true
   build: test
