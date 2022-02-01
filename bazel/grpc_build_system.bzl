@@ -37,13 +37,12 @@ load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl
 POLLERS = ["epollex", "epoll1", "poll"]
 
 # The set of known EventEngines to test
-EVENT_ENGINES = [
-    {
-        "name": "libuv",
-        "tags": [],
+EVENT_ENGINES = {
+    "default": {
+        "tags": [],  # the default *must not* include "no_linux"
         "deps": ["//test/core/event_engine:event_engine_test_init@libuv"],
     },
-]
+}
 
 def if_not_windows(a):
     return select({
@@ -166,7 +165,7 @@ def grpc_cc_library(
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
     if _needs_event_engine_dep(deps):
-        deps.extend(EVENT_ENGINES[0]["deps"])
+        deps.extend(EVENT_ENGINES["default"]["deps"])
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -331,7 +330,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # engine-agnostic.
         ee_deps = []
         if uses_event_engine == True:
-            ee_deps = EVENT_ENGINES[0]["deps"]
+            ee_deps = EVENT_ENGINES["default"]["deps"]
         native.cc_test(
             name = name,
             srcs = srcs,
@@ -359,12 +358,15 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     )
 
     # Non-Linux platforms.
-    for engine in EVENT_ENGINES:
+    for engine_name, engine in EVENT_ENGINES.items():
         if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
             # These platforms do not support multiple polling engines,
             # so just create a target for each EventEngine.
+            test_name = name
+            if engine_name != "default":
+                test_name += "@engine=" + engine_name
             native.cc_test(
-                name = name + "@engine=" + engine["name"],
+                name = test_name,
                 deps = base_deps + engine["deps"],
                 tags = (tags + engine["tags"] + [
                     "no_linux",  # linux supports multiple pollers
@@ -372,21 +374,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 **test_args
             )
 
-    # Linux platforms
-    if "no_linux" in EVENT_ENGINES[0]["tags"]:
-        fail("EVENT_ENGINES[0] should be the default engine, and must support linux.")
-
     # On linux we run the same test multiple times, once for each poller, with the default EventEngine.
     for poller in POLLERS:
         if poller in exclude_pollers:
             continue
         native.cc_test(
-            name = name + "@poller=" + poller + "@engine=" + EVENT_ENGINES[0]["name"],
-            deps = base_deps + EVENT_ENGINES[0]["deps"],
+            name = name + "@poller=" + poller,
+            deps = base_deps + EVENT_ENGINES["default"]["deps"],
             env = {
                 "GRPC_POLL_STRATEGY": poller,
             },
-            tags = (tags + EVENT_ENGINES[0]["tags"] + [
+            tags = (tags + EVENT_ENGINES["default"]["tags"] + [
                 "no_windows",
                 "no_mac",
                 "no_extract",  # do not run with CMake
@@ -396,11 +394,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 
     # Now generate one test for each subsequent EventEngine, all using the first
     # poller.
-    if len(EVENT_ENGINES) < 2:
-        return
-    for engine in EVENT_ENGINES[1:]:
+    for engine_name, engine in EVENT_ENGINES.items():
+        if engine_name == "default":
+            continue
         native.cc_test(
-            name = name + "@poller=" + POLLERS[0] + "@engine=" + engine["name"],
+            name = name + "@poller=" + POLLERS[0] + "@engine=" + engine_name,
             deps = base_deps + engine["deps"],
             env = {
                 "GRPC_POLL_STRATEGY": POLLERS[0],
@@ -464,7 +462,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = ["-std=c99"]
     if _needs_event_engine_dep(deps):
         # print("generic binary is using a test util: %s" % name)
-        deps.extend(EVENT_ENGINES[0]["deps"])
+        deps.extend(EVENT_ENGINES["default"]["deps"])
     native.cc_binary(
         name = name,
         srcs = srcs,
