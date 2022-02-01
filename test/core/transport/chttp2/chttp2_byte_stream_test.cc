@@ -68,7 +68,12 @@ TEST(Chttp2ByteStream, ShutdownTest) {
   // ref is not taken here, the subsequent unref will lead to a double free.
   chttp2_byte_stream->Shutdown(GRPC_ERROR_REF(shutdown_error));
   exec_ctx.Flush();
-  GRPC_ERROR_UNREF(shutdown_error);
+
+  EXPECT_EQ(s->read_closed_error, shutdown_error);
+  EXPECT_EQ(s->write_closed_error, shutdown_error);
+  ASSERT_TRUE(s->read_closed);
+  ASSERT_TRUE(s->write_closed);
+
   // Clean up.
   chttp2_byte_stream->Orphan();
   grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
@@ -77,6 +82,8 @@ TEST(Chttp2ByteStream, ShutdownTest) {
   gpr_free(s);
   grpc_transport_destroy(t);
   exec_ctx.Flush();
+
+  GRPC_ERROR_UNREF(shutdown_error);
 }
 
 }  // namespace
