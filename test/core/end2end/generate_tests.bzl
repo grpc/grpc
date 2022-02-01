@@ -458,7 +458,7 @@ def grpc_end2end_tests():
                 "//:grpc",
                 "//:gpr",
                 "//test/core/compression:args_utils",
-                "//test/core/event_engine:event_engine_test_init@libuv",
+                "//test/core/event_engine:event_engine_test_init@libuv",  # temporary
             ],
             tags = _platform_support_tags(fopt),
         )
@@ -530,7 +530,7 @@ def grpc_end2end_nosec_tests():
                 "//:grpc_unsecure",
                 "//:gpr",
                 "//test/core/compression:args_utils",
-                "//test/core/event_engine:event_engine_test_init@libuv", # temporary
+                "//test/core/event_engine:event_engine_test_init@libuv",  # temporary
             ],
             tags = _platform_support_tags(fopt),
         )

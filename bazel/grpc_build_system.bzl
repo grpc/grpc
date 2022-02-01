@@ -299,11 +299,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
-    # Base library for all expanded poller & EventEngine tests.
-    base_lib_name = name + "_lib_internal"
-    base_lib_dep = ":" + base_lib_name
-    base_deps = [base_lib_dep] + deps + _get_external_deps(external_deps)
-
+    core_deps = deps + _get_external_deps(external_deps)
     # Test args for all tests
     test_args = {
         "args": args,
@@ -322,8 +318,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if test_ios:
         ios_cc_test(
             name = name,
+            srcs = srcs,
             tags = tags,
-            deps = base_deps,
+            deps = core_deps,
             **test_args
         )
 
@@ -334,13 +331,18 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # engine-agnostic.
         native.cc_test(
             name = name,
+            srcs = srcs,
             tags = tags + ["no_uses_polling"],
-            deps = base_deps + EVENT_ENGINES[0]["deps"],
+            deps = core_deps + EVENT_ENGINES[0]["deps"],
             **test_args
         )
         return
 
     # -- Tests that exercise the polling system --
+
+    # Base library for all expanded poller & EventEngine tests.
+    base_lib_name = name + "_lib_internal"
+    base_deps = [":" + base_lib_name] + core_deps
     native.cc_library(
         name = base_lib_name,
         testonly = True,
