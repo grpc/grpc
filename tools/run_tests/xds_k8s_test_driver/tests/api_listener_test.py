@@ -18,6 +18,7 @@ from absl.testing import absltest
 from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
+from framework import xds_url_map_testcase
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -25,7 +26,7 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
-_DumpedXdsConfig = xds_k8s_testcase.DumpedXdsConfig
+_DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 
 _TD_CONFIG_RETRY_WAIT_SEC = 2
 
