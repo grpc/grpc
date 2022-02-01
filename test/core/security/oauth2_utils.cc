@@ -28,6 +28,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 typedef struct oauth2_request {
@@ -39,6 +40,10 @@ typedef struct oauth2_request {
   grpc_core::CredentialsMetadataArray md_array;
   grpc_closure closure = {};
 } oauth2_request;
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static void on_oauth2_response(void* arg, grpc_error_handle error) {
   oauth2_request* request = static_cast<oauth2_request*>(arg);
@@ -84,7 +89,17 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   GRPC_CLOSURE_INIT(&request.closure, on_oauth2_response, &request,
                     grpc_schedule_on_exec_ctx);
 
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_metadata_batch initial_metadata{arena.get()};
+
+  abort();
+  // DO NOT SUBMIT: needs fixing for promises
+  /*
+  auto activity = grpc_core::MakeActivity(
+      [&initial_metadata]() { return creds->GetRequestMetadata() },
+      WakeupScheduler wakeup_scheduler, OnDone on_done, Contexts && contexts...)
+
+      grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array,
                                   &request.closure, &error)) {
     // Synchronous result; invoke callback directly.
@@ -110,5 +125,6 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   grpc_core::ExecCtx::Get()->Flush();
   grpc_pollset_destroy(grpc_polling_entity_pollset(&request.pops));
   gpr_free(pollset);
+*/
   return request.token;
 }

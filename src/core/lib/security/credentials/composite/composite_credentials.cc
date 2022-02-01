@@ -34,10 +34,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/transport.h"
 
 /* -- Composite call credentials. -- */
-
-static void composite_call_metadata_cb(void* arg, grpc_error_handle error);
 
 namespace {
 struct grpc_composite_call_credentials_metadata_context {
@@ -50,10 +49,7 @@ struct grpc_composite_call_credentials_metadata_context {
         pollent(pollent),
         auth_md_context(auth_md_context),
         md_array(md_array),
-        on_request_metadata(on_request_metadata) {
-    GRPC_CLOSURE_INIT(&internal_on_request_metadata, composite_call_metadata_cb,
-                      this, grpc_schedule_on_exec_ctx);
-  }
+        on_request_metadata(on_request_metadata) {}
 
   grpc_composite_call_credentials* composite_creds;
   size_t creds_index = 0;
@@ -65,59 +61,19 @@ struct grpc_composite_call_credentials_metadata_context {
 };
 }  // namespace
 
-static void composite_call_metadata_cb(void* arg, grpc_error_handle error) {
-  grpc_composite_call_credentials_metadata_context* ctx =
-      static_cast<grpc_composite_call_credentials_metadata_context*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    const grpc_composite_call_credentials::CallCredentialsList& inner =
-        ctx->composite_creds->inner();
-    /* See if we need to get some more metadata. */
-    if (ctx->creds_index < inner.size()) {
-      if (inner[ctx->creds_index++]->get_request_metadata(
-              ctx->pollent, ctx->auth_md_context, ctx->md_array,
-              &ctx->internal_on_request_metadata, &error)) {
-        // Synchronous response, so call ourselves recursively.
-        composite_call_metadata_cb(arg, error);
-        GRPC_ERROR_UNREF(error);
-      }
-      return;
-    }
-    // We're done!
-  }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, ctx->on_request_metadata,
-                          GRPC_ERROR_REF(error));
-  delete ctx;
-}
-
-bool grpc_composite_call_credentials::get_request_metadata(
-    grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
-    grpc_core::CredentialsMetadataArray* md_array,
-    grpc_closure* on_request_metadata, grpc_error_handle* error) {
-  grpc_composite_call_credentials_metadata_context* ctx;
-  ctx = new grpc_composite_call_credentials_metadata_context(
-      this, pollent, auth_md_context, md_array, on_request_metadata);
-  bool synchronous = true;
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_composite_call_credentials::GetRequestMetadata(
+    grpc_core::ClientInitialMetadata initial_metadata) {
+  abort();
+  /* DO NOT SUBMIT: implement TrySeqIter
   const CallCredentialsList& inner = ctx->composite_creds->inner();
-  while (ctx->creds_index < inner.size()) {
-    if (inner[ctx->creds_index++]->get_request_metadata(
-            ctx->pollent, ctx->auth_md_context, ctx->md_array,
-            &ctx->internal_on_request_metadata, error)) {
-      if (*error != GRPC_ERROR_NONE) break;
-    } else {
-      synchronous = false;  // Async return.
-      break;
-    }
-  }
-  if (synchronous) delete ctx;
-  return synchronous;
-}
-
-void grpc_composite_call_credentials::cancel_get_request_metadata(
-    grpc_core::CredentialsMetadataArray* md_array, grpc_error_handle error) {
-  for (size_t i = 0; i < inner_.size(); ++i) {
-    inner_[i]->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
-  }
-  GRPC_ERROR_UNREF(error);
+  return TrySeqIter(
+      inner.begin(), inner.end(), std::move(initial_metadata),
+      [](grpc_call_credentials* creds,
+         grpc_core::ClientInitialMetadata initial_metadata) {
+        return creds->GetRequestMetadata(std::move(initial_metadata));
+      });
+  */
 }
 
 std::string grpc_composite_call_credentials::debug_string() {

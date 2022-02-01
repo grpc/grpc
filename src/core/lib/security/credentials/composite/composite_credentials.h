@@ -79,15 +79,8 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
       grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
   ~grpc_composite_call_credentials() override = default;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+      GetRequestMetadata(grpc_core::ClientInitialMetadata) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;

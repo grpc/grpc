@@ -90,15 +90,8 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   grpc_oauth2_token_fetcher_credentials();
   ~grpc_oauth2_token_fetcher_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+      GetRequestMetadata(grpc_core::ClientInitialMetadata) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error_handle error);
@@ -148,15 +141,8 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+      GetRequestMetadata(grpc_core::ClientInitialMetadata) override;
 
   std::string debug_string() override;
 

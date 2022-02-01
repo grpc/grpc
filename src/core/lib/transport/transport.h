@@ -101,6 +101,13 @@ class MetadataHandle {
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
 
+// Ok/not-ok check for trailing metadata, so that it can be used as result types
+// for TrySeq.
+inline bool IsStatusOk(const TrailingMetadata& m) {
+  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+         GRPC_STATUS_OK;
+}
+
 // Client initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;

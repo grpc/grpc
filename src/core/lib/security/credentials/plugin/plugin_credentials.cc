@@ -152,10 +152,10 @@ static void plugin_md_request_metadata_ready(void* request,
   gpr_free(r);
 }
 
-bool grpc_plugin_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
-    grpc_core::CredentialsMetadataArray* md_array,
-    grpc_closure* on_request_metadata, grpc_error_handle* error) {
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_plugin_credentials::GetRequestMetadata(grpc_core::ClientInitialMetadata) {
+  abort();
+  /* DO NOT SUBMIT: port implementation
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
     // Create pending_request object.
@@ -225,28 +225,7 @@ bool grpc_plugin_credentials::get_request_metadata(
     gpr_free(request);
   }
   return retval;
-}
-
-void grpc_plugin_credentials::cancel_get_request_metadata(
-    grpc_core::CredentialsMetadataArray* md_array, grpc_error_handle error) {
-  gpr_mu_lock(&mu_);
-  for (pending_request* pending_request = pending_requests_;
-       pending_request != nullptr; pending_request = pending_request->next) {
-    if (pending_request->md_array == md_array) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
-        gpr_log(GPR_INFO, "plugin_credentials[%p]: cancelling request %p", this,
-                pending_request);
-      }
-      pending_request->cancelled = true;
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                              pending_request->on_request_metadata,
-                              GRPC_ERROR_REF(error));
-      pending_request_remove_locked(pending_request);
-      break;
-    }
-  }
-  gpr_mu_unlock(&mu_);
-  GRPC_ERROR_UNREF(error);
+*/
 }
 
 grpc_plugin_credentials::grpc_plugin_credentials(

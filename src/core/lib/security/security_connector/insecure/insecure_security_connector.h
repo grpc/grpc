@@ -45,12 +45,8 @@ class InsecureChannelSecurityConnector
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)) {}
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
-                       grpc_error_handle* error) override;
-
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /* interested_parties */,

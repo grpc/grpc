@@ -31,8 +31,10 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 struct grpc_http_response;
 
@@ -172,21 +174,9 @@ struct grpc_call_credentials
 
   ~grpc_call_credentials() override = default;
 
-  // Returns true if completed synchronously, in which case \a error will
-  // be set to indicate the result.  Otherwise, \a on_request_metadata will
-  // be invoked asynchronously when complete.  \a md_array will be populated
-  // with the resulting metadata once complete.
-  virtual bool get_request_metadata(
-      grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_closure* on_request_metadata, grpc_error_handle* error) = 0;
-
-  // Cancels a pending asynchronous operation started by
-  // grpc_call_credentials_get_request_metadata() with the corresponding
-  // value of \a md_array.
-  virtual void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) = 0;
+  virtual grpc_core::ArenaPromise<
+      absl::StatusOr<grpc_core::ClientInitialMetadata>>
+      GetRequestMetadata(grpc_core::ClientInitialMetadata) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
@@ -206,7 +196,7 @@ struct grpc_call_credentials
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
 grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value, bool is_async);
+    const char* md_key, const char* md_value);
 
 /* --- grpc_server_credentials. --- */
 

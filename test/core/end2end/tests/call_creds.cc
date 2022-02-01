@@ -171,8 +171,7 @@ static void request_response_with_payload_and_call_creds(
     creds =
         grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
   } else {
-    creds =
-        grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+    creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   }
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -185,8 +184,8 @@ static void request_response_with_payload_and_call_creds(
         creds = grpc_google_iam_credentials_create(
             overridden_iam_token, overridden_iam_selector, nullptr);
       } else {
-        creds = grpc_md_only_test_credentials_create(
-            overridden_fake_md_key, overridden_fake_md_value, false);
+        creds = grpc_md_only_test_credentials_create(overridden_fake_md_key,
+                                                     overridden_fake_md_value);
       }
       GPR_ASSERT(creds != nullptr);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -453,8 +452,7 @@ static void test_request_with_server_rejecting_client_creds(
                                deadline, nullptr);
   GPR_ASSERT(c);
 
-  creds =
-      grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+  creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_call_credentials_release(creds);

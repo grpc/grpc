@@ -24,9 +24,37 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/transport/transport.h"
 
 extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
+
+namespace grpc_core {
+
+class ClientAuthFilter {
+ public:
+  static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args);
+
+  static constexpr bool is_client() { return true; }
+  static constexpr const char* name() { return "client-auth"; }
+
+  // Construct a promise for one call.
+  ArenaPromise<TrailingMetadata> MakeCallPromise(
+      ClientInitialMetadata initial_metadata,
+      NextPromiseFactory next_promise_factory);
+
+ private:
+  ClientAuthFilter(grpc_channel_security_connector* security_connector,
+                   grpc_auth_context* auth_context);
+
+  ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
+      ClientInitialMetadata initial_metadata);
+
+  RefCountedPtr<grpc_channel_security_connector> security_connector_;
+  RefCountedPtr<grpc_auth_context> auth_context_;
+};
+
+}  // namespace grpc_core
 
 void grpc_auth_metadata_context_build(
     const char* url_scheme, const grpc_slice& call_host,

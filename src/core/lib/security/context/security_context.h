@@ -24,6 +24,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
@@ -124,6 +125,11 @@ struct grpc_client_security_context {
 grpc_client_security_context* grpc_client_security_context_create(
     grpc_core::Arena* arena, grpc_call_credentials* creds);
 void grpc_client_security_context_destroy(void* ctx);
+
+namespace grpc_core {
+template <>
+struct ContextType<grpc_client_security_context> {};
+}  // namespace grpc_core
 
 /* --- grpc_server_security_context ---
 
