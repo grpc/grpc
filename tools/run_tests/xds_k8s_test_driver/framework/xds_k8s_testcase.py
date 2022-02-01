@@ -63,7 +63,6 @@ KubernetesClientRunner = client_app.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
-DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 ClientConfig = framework.rpc.grpc_csds.ClientConfig
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
@@ -369,7 +368,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                     self.assertSuccessfulRpcs(test_client)
                     raw_config = test_client.csds.fetch_client_status(
                         log_level=logging.INFO)
-                    dumped_config = DumpedXdsConfig(
+                    dumped_config = xds_url_map_testcase.DumpedXdsConfig(
                         json_format.MessageToDict(raw_config))
                     route_config_version = dumped_config.rds_version
                     if previous_route_config_version == route_config_version:
