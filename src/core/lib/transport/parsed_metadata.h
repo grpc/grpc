@@ -43,7 +43,7 @@ struct HasSimpleMemento {
   // This workaround will mean that we'll take the memory allocation path
   // for these metadata types, incurring a small performance hit.
   static constexpr bool value =
-      std::is_trivial<typename Which::memento_type>::value &&
+      std::is_trivial<typename Which::MementoType>::value &&
       sizeof(typename Which::MementoType) <= sizeof(grpc_slice);
 #else
   static constexpr bool value =
