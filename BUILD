@@ -1770,7 +1770,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "uri_parser",
     srcs = [
