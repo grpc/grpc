@@ -2120,6 +2120,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "event_engine_base",
+        "event_engine_common",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
