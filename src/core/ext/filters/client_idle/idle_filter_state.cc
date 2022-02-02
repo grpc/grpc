@@ -18,6 +18,8 @@
 
 #include <assert.h>
 
+#include <stdint>
+
 namespace grpc_core {
 
 IdleFilterState::IdleFilterState(bool start_timer)
