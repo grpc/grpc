@@ -32,6 +32,7 @@ load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
+load("@bazel_skylib//lib:new_sets.bzl", "sets")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -164,8 +165,6 @@ def grpc_cc_library(
     linkopts = if_not_windows(["-pthread"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
-    if _needs_event_engine_dep(deps):
-        deps.extend(EVENT_ENGINES["default"]["deps"])
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -329,6 +328,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # all known EventEngines. It is assumed that non-polling tests are
         # engine-agnostic.
         ee_deps = []
+        # TODO(hork): only add an EventEngine if deps aren't satisfied already.
+        # I'm not sure how to examine selects in deps from starlark.
         if uses_event_engine == True:
             ee_deps = EVENT_ENGINES["default"]["deps"]
         native.cc_test(
@@ -434,10 +435,13 @@ def _needs_event_engine_dep(deps):
     Returns:
       True if a required dep is missing
     """
-    return (("//test/cpp/util:test_util" in deps or
-             "//test/cpp/util:test_util_unsecure" in deps or
-             "//test/core/util:grpc_test_util" in deps or
-             "//test/core/util:grpc_test_util_unsecure" in deps) and
+    test_util_targets = [
+        "//test/cpp/util:test_util",
+        "//test/cpp/util:test_util_unsecure",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
+    ]
+    return (any([util in deps for util in test_util_targets]) and
             not _deps_contain_an_event_engine(deps))
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
