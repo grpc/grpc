@@ -18,8 +18,10 @@
 
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 
+#include "absl/strings/str_format.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "google/protobuf/duration.upb.h"
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
@@ -109,6 +111,7 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
     return absl::InvalidArgumentError("Could not parse plugin config");
   }
   Json::Object result;
+  // parse array of grpc keybuilders
   size_t num_keybuilders;
   Json::Array keybuilders_array_result;
   const grpc_lookup_v1_GrpcKeyBuilder* const* keybuilders =
@@ -189,6 +192,40 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
     keybuilders_array_result.emplace_back(std::move(builder_result));
   }
   result["grpcKeybuilders"] = std::move(keybuilders_array_result);
+  // parse lookupService
+  result["lookupService"] = UpbStringToStdString(
+      grpc_lookup_v1_RouteLookupConfig_lookup_service(plugin_config));
+  // parse lookupServiceTimeout
+  if (grpc_lookup_v1_RouteLookupConfig_has_lookup_service_timeout(
+          plugin_config)) {
+    const auto* timeout =
+        grpc_lookup_v1_RouteLookupConfig_lookup_service_timeout(plugin_config);
+    result["lookupServiceTimeout"] =
+        absl::StrFormat("%d.%09ds", google_protobuf_Duration_seconds(timeout),
+                        google_protobuf_Duration_nanos(timeout));
+  }
+  // parse maxAge
+  if (grpc_lookup_v1_RouteLookupConfig_has_max_age(plugin_config)) {
+    const auto* max_age =
+        grpc_lookup_v1_RouteLookupConfig_max_age(plugin_config);
+    result["maxAge"] =
+        absl::StrFormat("%d.%09ds", google_protobuf_Duration_seconds(max_age),
+                        google_protobuf_Duration_nanos(max_age));
+  }
+  // parse staleAge
+  if (grpc_lookup_v1_RouteLookupConfig_has_stale_age(plugin_config)) {
+    const auto* stale_age =
+        grpc_lookup_v1_RouteLookupConfig_stale_age(plugin_config);
+    result["staleAge"] =
+        absl::StrFormat("%d.%09ds", google_protobuf_Duration_seconds(stale_age),
+                        google_protobuf_Duration_nanos(stale_age));
+  }
+  // parse cashSizeBytes
+  result["cashSizeBytes"] =
+      grpc_lookup_v1_RouteLookupConfig_cache_size_bytes(plugin_config);
+  // parse defaultTarget
+  result["defaultTarget"] = UpbStringToStdString(
+      grpc_lookup_v1_RouteLookupConfig_default_target(plugin_config));
   return Json(result).Dump();
 }
 
