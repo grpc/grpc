@@ -110,14 +110,16 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
   }
   Json::Object result;
   size_t num_keybuilders;
-  Json::Array keybuilders_result;
+  Json::Array keybuilders_array_result;
   const grpc_lookup_v1_GrpcKeyBuilder* const* keybuilders =
       grpc_lookup_v1_RouteLookupConfig_grpc_keybuilders(plugin_config,
                                                         &num_keybuilders);
   for (size_t i = 0; i < num_keybuilders; ++i) {
     gpr_log(GPR_INFO, "donna for each key builder");
+    Json::Object builder_result;
+    // parse array of names
     size_t num_names;
-    Json::Array key_builder_names;
+    Json::Array keybuilder_names_array_result;
     const grpc_lookup_v1_GrpcKeyBuilder_Name* const* names =
         grpc_lookup_v1_GrpcKeyBuilder_names(keybuilders[i], &num_names);
     for (size_t j = 0; j < num_names; ++j) {
@@ -127,10 +129,66 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
           grpc_lookup_v1_GrpcKeyBuilder_Name_service(names[j]));
       name_result["method"] = UpbStringToStdString(
           grpc_lookup_v1_GrpcKeyBuilder_Name_method(names[j]));
+      keybuilder_names_array_result.emplace_back(std::move(name_result));
     }
+    builder_result["names"] = std::move(keybuilder_names_array_result);
+    // parse extra_keys
+    if (grpc_lookup_v1_GrpcKeyBuilder_has_extra_keys(keybuilders[i])) {
+      const auto* extra_keys =
+          grpc_lookup_v1_GrpcKeyBuilder_extra_keys(keybuilders[i]);
+      Json::Object extra_keys_result;
+      extra_keys_result["host"] = UpbStringToStdString(
+          grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_host(extra_keys));
+      extra_keys_result["service"] = UpbStringToStdString(
+          grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_service(extra_keys));
+      extra_keys_result["method"] = UpbStringToStdString(
+          grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_method(extra_keys));
+      builder_result["extra_keys"] = std::move(extra_keys_result);
+    }
+    // parse headers
+    size_t num_headers;
+    Json::Array keybuilder_headers_array_result;
+    const grpc_lookup_v1_NameMatcher* const* headers =
+        grpc_lookup_v1_GrpcKeyBuilder_headers(keybuilders[i], &num_headers);
+    for (size_t k = 0; k < num_headers; ++k) {
+      gpr_log(GPR_INFO, "donna for each key builder header");
+      Json::Object header_result;
+      header_result["key"] =
+          UpbStringToStdString(grpc_lookup_v1_NameMatcher_key(headers[k]));
+      size_t num_header_names;
+      Json::Array header_names_result;
+      upb_strview const* header_names =
+          grpc_lookup_v1_NameMatcher_names(headers[k], &num_header_names);
+      for (size_t l = 0; l < num_header_names; ++l) {
+        header_names_result.emplace_back(UpbStringToStdString(header_names[l]));
+      }
+      header_result["names"] = std::move(header_names_result);
+      header_result["required_match"] =
+          grpc_lookup_v1_NameMatcher_required_match(headers[k]);
+      keybuilder_headers_array_result.emplace_back(std::move(header_result));
+    }
+    builder_result["header"] = std::move(keybuilder_headers_array_result);
+    // parse constant keys
+    Json::Object const_keys_map_result;
+    size_t const_key_it = UPB_MAP_BEGIN;
+    while (true) {
+      const auto* const_key_entry =
+          grpc_lookup_v1_GrpcKeyBuilder_constant_keys_next(keybuilders[i],
+                                                           &const_key_it);
+      if (const_key_entry != nullptr) break;
+      Json::Object const_key_entry_result;
+      std::string key = UpbStringToStdString(
+          grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_key(const_key_entry));
+      if (!key.empty()) {
+        const_keys_map_result[std::move(key)] = UpbStringToStdString(
+            grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_value(
+                const_key_entry));
+      }
+    }
+    builder_result["const_keys"] = std::move(const_keys_map_result);
+    keybuilders_array_result.emplace_back(std::move(builder_result));
   }
-
-  // donna parse and build json.
+  result["grpcKeybuilders"] = std::move(keybuilders_array_result);
   return Json(result).Dump();
 }
 
