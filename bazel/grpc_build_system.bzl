@@ -32,7 +32,6 @@ load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
-load("@bazel_skylib//lib:new_sets.bzl", "sets")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -328,6 +327,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         # all known EventEngines. It is assumed that non-polling tests are
         # engine-agnostic.
         ee_deps = []
+
         # TODO(hork): only add an EventEngine if deps aren't satisfied already.
         # I'm not sure how to examine selects in deps from starlark.
         if uses_event_engine == True:
