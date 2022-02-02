@@ -136,7 +136,8 @@ namespace grpc_core {
 ClientAuthFilter::ClientAuthFilter(
     grpc_channel_security_connector* security_connector,
     grpc_auth_context* auth_context)
-    : security_connector_(security_connector), auth_context_(auth_context) {}
+    : security_connector_(security_connector->Ref()),
+      auth_context_(auth_context->Ref()) {}
 
 ArenaPromise<absl::StatusOr<ClientInitialMetadata>>
 ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
