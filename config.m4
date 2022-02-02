@@ -266,6 +266,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/security.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
@@ -433,6 +434,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
+    src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \

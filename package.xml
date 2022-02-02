@@ -516,6 +516,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/migrate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/annotations/security.upb.c" role="src" />
@@ -853,6 +855,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.cc" role="src" />

@@ -1248,6 +1248,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/security.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
@@ -1415,6 +1416,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
+    src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
@@ -2947,6 +2949,7 @@ src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/migrate.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/security.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
@@ -3111,6 +3114,7 @@ src/core/ext/xds/xds_channel_stack_modifier.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_cluster_specifier_plugin.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_common_types.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_endpoint.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)
