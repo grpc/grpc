@@ -924,15 +924,33 @@ XdsResolver::CreateServiceConfig() {
     std::vector<absl::string_view> cluster_elements =
         absl::StrSplit(cluster.first, absl::MaxSplits(':', 1));
     GPR_ASSERT(cluster_elements.size() == 2);
-    clusters.push_back(
-        absl::StrFormat("      \"%s\":{\n"
-                        "        \"childPolicy\":[ {\n"
-                        "          \"cds_experimental\":{\n"
-                        "            \"cluster\": \"%s\"\n"
-                        "          }\n"
-                        "        } ]\n"
-                        "       }",
-                        cluster.first, cluster_elements[1]));
+    if (cluster_elements[0] == "cluster_specifier_plugin") {
+      clusters.push_back(absl::StrFormat(
+          "      \"%s\":{\n"
+          "        \"childPolicy\":[ {\n"
+          "          \"rls_experimental\":{\n"
+          "            \"routeLookupConfig\": \"%s\"\n"
+          "           },\n"
+          "           \"childPolicy\":[ {\n"
+          "             \"cds_experimental\": {}}\n"
+          "           ],\n"
+          "           \"childPolicyConfigTargetFieldName\": \"%s\"\n"
+          "        } ]\n"
+          "       }",
+          cluster.first,
+          cluster_specifier_plugin_map_[std::string(cluster_elements[1])],
+          cluster_elements[1]));
+    } else {
+      clusters.push_back(
+          absl::StrFormat("      \"%s\":{\n"
+                          "        \"childPolicy\":[ {\n"
+                          "          \"cds_experimental\":{\n"
+                          "            \"cluster\": \"%s\"\n"
+                          "          }\n"
+                          "        } ]\n"
+                          "       }",
+                          cluster.first, cluster_elements[1]));
+    }
   }
   std::vector<std::string> config_parts;
   config_parts.push_back(
