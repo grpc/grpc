@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/utility/utility.h"
+#include "context.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -44,13 +45,18 @@ class BaseCallData {
       : elem_(elem),
         arena_(args->arena),
         call_combiner_(args->call_combiner),
-        deadline_(args->deadline) {}
+        deadline_(args->deadline),
+        context_(args->context) {}
 
  protected:
-  class ScopedContext : public promise_detail::Context<Arena> {
+  class ScopedContext
+      : public promise_detail::Context<Arena>,
+        public promise_detail::Context<grpc_call_context_element> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
-        : promise_detail::Context<Arena>(call_data->arena_) {}
+        : promise_detail::Context<Arena>(call_data->arena_),
+          promise_detail::Context<grpc_call_context_element>(
+              call_data->context_) {}
   };
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
@@ -72,6 +78,7 @@ class BaseCallData {
   Arena* const arena_;
   CallCombiner* const call_combiner_;
   const grpc_millis deadline_;
+  grpc_call_context_element* const context_;
 };
 
 // Specific call data per channel filter.
@@ -325,24 +332,71 @@ class CallData<ChannelFilter, true> : public BaseCallData {
     GPR_ASSERT(!is_polling_);
     grpc_closure* call_closure = nullptr;
     is_polling_ = true;
+    grpc_error_handle cancel_send_initial_metadata_error = GRPC_ERROR_NONE;
+    grpc_transport_stream_op_batch* forward_batch = nullptr;
     switch (send_initial_state_) {
       case SendInitialState::kQueued:
       case SendInitialState::kForwarded: {
         // Poll the promise once since we're waiting for it.
         Poll<TrailingMetadata> poll = promise_();
         if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
-          GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kComplete);
-          GPR_ASSERT(recv_trailing_metadata_ == UnwrapMetadata(std::move(*r)));
-          recv_trailing_state_ = RecvTrailingState::kResponded;
-          call_closure =
-              absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
+          gpr_log(GPR_INFO, "Got trailing metadata %s",
+                  (*r)->DebugString().c_str());
+          auto* md = UnwrapMetadata(std::move(*r));
+          bool destroy_md = true;
+          switch (recv_trailing_state_) {
+            case RecvTrailingState::kComplete:
+              if (recv_trailing_metadata_ != md) {
+                *recv_trailing_metadata_ = std::move(*md);
+              } else {
+                destroy_md = false;
+              }
+              recv_trailing_state_ = RecvTrailingState::kResponded;
+              call_closure = absl::exchange(
+                  original_recv_trailing_metadata_ready_, nullptr);
+              break;
+            case RecvTrailingState::kQueued:
+            case RecvTrailingState::kForwarded: {
+              GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
+                         GRPC_STATUS_OK);
+              grpc_error_handle error = grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "early return from promise based filter"),
+                  GRPC_ERROR_INT_GRPC_STATUS,
+                  *md->get_pointer(GrpcStatusMetadata()));
+              if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
+                error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                           message->as_string_view());
+              }
+              if (recv_trailing_state_ == RecvTrailingState::kQueued) {
+                GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
+                send_initial_state_ = SendInitialState::kCancelled;
+                cancel_send_initial_metadata_error = error;
+              } else {
+                forward_batch =
+                    grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+                        [](void*, grpc_error*) {}, nullptr, nullptr));
+                forward_batch->cancel_stream = true;
+                forward_batch->payload->cancel_stream.cancel_error = error;
+              }
+              recv_trailing_state_ = RecvTrailingState::kCancelled;
+            } break;
+            case RecvTrailingState::kInitial:
+              abort();  // unimplemented
+            case RecvTrailingState::kResponded:
+            case RecvTrailingState::kCancelled:
+              abort();  // unreachable
+          }
+          if (destroy_md) {
+            md->~grpc_metadata_batch();
+          }
         }
       } break;
       case SendInitialState::kInitial:
       case SendInitialState::kCancelled:
-        // If we get a response without sending anything, we just propagate that
-        // up. (note: that situation isn't possible once we finish the promise
-        // transition).
+        // If we get a response without sending anything, we just propagate
+        // that up. (note: that situation isn't possible once we finish the
+        // promise transition).
         if (recv_trailing_state_ == RecvTrailingState::kComplete) {
           recv_trailing_state_ = RecvTrailingState::kResponded;
           call_closure =
@@ -351,6 +405,15 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         break;
     }
     is_polling_ = false;
+    if (forward_batch != nullptr) {
+      grpc_call_next_op(elem(), forward_batch);
+    }
+    if (cancel_send_initial_metadata_error != GRPC_ERROR_NONE) {
+      forward_send_initial_metadata_ = false;
+      grpc_transport_stream_op_batch_finish_with_failure(
+          absl::exchange(send_initial_metadata_batch_, nullptr),
+          cancel_send_initial_metadata_error, call_combiner());
+    }
     if (absl::exchange(forward_send_initial_metadata_, false)) {
       grpc_call_next_op(elem(),
                         absl::exchange(send_initial_metadata_batch_, nullptr));
@@ -403,8 +466,8 @@ class CallData<ChannelFilter, false> : public BaseCallData {
     // Fake out the activity based context.
     ScopedContext context(this);
 
-    // If this is a cancel stream, cancel anything we have pending and propagate
-    // the cancellation.
+    // If this is a cancel stream, cancel anything we have pending and
+    // propagate the cancellation.
     if (batch->cancel_stream) {
       GPR_ASSERT(!batch->send_initial_metadata &&
                  !batch->send_trailing_metadata && !batch->send_message &&

@@ -126,11 +126,6 @@ grpc_client_security_context* grpc_client_security_context_create(
     grpc_core::Arena* arena, grpc_call_credentials* creds);
 void grpc_client_security_context_destroy(void* ctx);
 
-namespace grpc_core {
-template <>
-struct ContextType<grpc_client_security_context> {};
-}  // namespace grpc_core
-
 /* --- grpc_server_security_context ---
 
    Internal server-side security context. */

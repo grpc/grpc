@@ -141,7 +141,8 @@ ClientAuthFilter::ClientAuthFilter(
 
 ArenaPromise<absl::StatusOr<ClientInitialMetadata>>
 ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
-  auto* ctx = GetContext<grpc_client_security_context>();
+  auto* ctx = static_cast<grpc_client_security_context*>(
+      GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY].value);
   grpc_call_credentials* channel_call_creds =
       security_connector_->mutable_request_metadata_creds();
   const bool call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
@@ -194,6 +195,18 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
 ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
     ClientInitialMetadata initial_metadata,
     NextPromiseFactory next_promise_factory) {
+  auto* legacy_ctx = GetContext<grpc_call_context_element>();
+  if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {
+    legacy_ctx[GRPC_CONTEXT_SECURITY].value =
+        grpc_client_security_context_create(GetContext<Arena>(),
+                                            /*creds=*/nullptr);
+    legacy_ctx[GRPC_CONTEXT_SECURITY].destroy =
+        grpc_client_security_context_destroy;
+  }
+  static_cast<grpc_client_security_context*>(
+      legacy_ctx[GRPC_CONTEXT_SECURITY].value)
+      ->auth_context = auth_context_;
+
   auto* host = initial_metadata->get_pointer(HttpAuthorityMetadata());
   if (host == nullptr) {
     return next_promise_factory(std::move(initial_metadata));

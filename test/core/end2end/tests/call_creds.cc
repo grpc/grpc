@@ -156,8 +156,8 @@ static void request_response_with_payload_and_call_creds(
   grpc_slice details;
   int was_cancelled = 2;
   grpc_call_credentials* creds = nullptr;
-  grpc_auth_context* s_auth_context = nullptr;
-  grpc_auth_context* c_auth_context = nullptr;
+  grpc_auth_context* server_auth_context = nullptr;
+  grpc_auth_context* client_auth_context = nullptr;
 
   f = begin_test(config, test_name, use_secure_call_creds, 0);
   cqv = cq_verifier_create(f.cq);
@@ -254,15 +254,15 @@ static void request_response_with_payload_and_call_creds(
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
     cq_verify(cqv);
-    s_auth_context = grpc_call_auth_context(s);
-    GPR_ASSERT(s_auth_context != nullptr);
-    print_auth_context(0, s_auth_context);
-    grpc_auth_context_release(s_auth_context);
+    server_auth_context = grpc_call_auth_context(s);
+    GPR_ASSERT(server_auth_context != nullptr);
+    print_auth_context(0, server_auth_context);
+    grpc_auth_context_release(server_auth_context);
 
-    c_auth_context = grpc_call_auth_context(c);
-    GPR_ASSERT(c_auth_context != nullptr);
-    print_auth_context(1, c_auth_context);
-    grpc_auth_context_release(c_auth_context);
+    client_auth_context = grpc_call_auth_context(c);
+    GPR_ASSERT(client_auth_context != nullptr);
+    print_auth_context(1, client_auth_context);
+    grpc_auth_context_release(client_auth_context);
 
     /* Cannot set creds on the server call object. */
     GPR_ASSERT(grpc_call_set_credentials(s, nullptr) != GRPC_CALL_OK);
