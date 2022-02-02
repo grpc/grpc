@@ -23,7 +23,7 @@ namespace experimental {
 void InitializeTestingEventEngineFactory() {
   // Set the default EventEngine factory
   // TODO(hork): SetDefaultEventEngineFactory(LibuvEventEngineFactory)
-  gpr_log(GPR_ERROR, "Libuv EventEngine initialized.");
+  gpr_log(GPR_DEBUG, "Libuv EventEngine initialized.");
 }
 
 }  // namespace experimental

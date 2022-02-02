@@ -430,6 +430,11 @@ def grpc_end2end_tests():
         ],
         language = "C++",
         testonly = 1,
+        data = [
+            "//src/core/tsi/test_creds:ca.pem",
+            "//src/core/tsi/test_creds:server1.key",
+            "//src/core/tsi/test_creds:server1.pem",
+        ],
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
@@ -448,18 +453,13 @@ def grpc_end2end_tests():
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
             testonly = 1,
-            data = [
-                "//src/core/tsi/test_creds:ca.pem",
-                "//src/core/tsi/test_creds:server1.key",
-                "//src/core/tsi/test_creds:server1.pem",
-            ],
+            data = [":end2end_tests"],
             deps = [
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
                 "//test/core/compression:args_utils",
-                "//test/core/event_engine:event_engine_test_init@libuv",  # temporary
             ],
             tags = _platform_support_tags(fopt),
         )
@@ -471,11 +471,7 @@ def grpc_end2end_tests():
             grpc_cc_test(
                 name = "%s_test@%s" % (f, test_short_name),
                 srcs = ["fixtures/%s.cc" % f],
-                data = [
-                    "//src/core/tsi/test_creds:ca.pem",
-                    "//src/core/tsi/test_creds:server1.key",
-                    "//src/core/tsi/test_creds:server1.pem",
-                ],
+                data = [":end2end_tests"],
                 args = [t],
                 deps = [
                     ":end2end_tests",
@@ -540,7 +536,6 @@ def grpc_end2end_nosec_tests():
                 "//:grpc_unsecure",
                 "//:gpr",
                 "//test/core/compression:args_utils",
-                "//test/core/event_engine:event_engine_test_init@libuv",  # temporary
             ],
             tags = _platform_support_tags(fopt),
         )

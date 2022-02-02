@@ -312,26 +312,24 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "flaky": flaky,
         "linkstatic": linkstatic,
     }
-
+    # TODO(hork): only add an EventEngine if deps aren't satisfied already.
+    # This would be the case for tests that link against specific engines.
+    # I'm not sure how to examine selects in deps using starlark.
+    ee_deps = []
+    if uses_event_engine == True:
+        ee_deps = EVENT_ENGINES["default"]["deps"]
     ios_cc_test(
         name = name,
         srcs = srcs,
         tags = tags,
-        deps = core_deps,
+        deps = core_deps + ee_deps,
         **test_args
     )
-
     if not uses_polling:
         # the test behavior doesn't depend on polling, just generate the test
         # TODO(hork): identify if any non-polling tests should be exercised by
         # all known EventEngines. It is assumed that non-polling tests are
         # engine-agnostic.
-        ee_deps = []
-
-        # TODO(hork): only add an EventEngine if deps aren't satisfied already.
-        # I'm not sure how to examine selects in deps from starlark.
-        if uses_event_engine == True:
-            ee_deps = EVENT_ENGINES["default"]["deps"]
         native.cc_test(
             name = name,
             srcs = srcs,

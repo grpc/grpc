@@ -96,7 +96,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
         if child.tag == 'rule':
             rule_dict = _rule_dict_from_xml_node(child)
             rule_clazz = rule_dict['class']
-            rule_name = rule_dict['name']
+            rule_name = _sanitize_rule_name(rule_dict['name'])
             if rule_clazz in [
                     'cc_library',
                     'cc_binary',
@@ -110,7 +110,6 @@ def _extract_rules_from_bazel_xml(xml_tree):
                     raise Exception('Rule %s already present' % rule_name)
                 if "no_extract" in rule_dict["tags"]:
                     continue
-                rule_name = _sanitize_rule_name(rule_name)
                 rule_dict['name'] = rule_name
                 result[rule_name] = rule_dict
     return result
