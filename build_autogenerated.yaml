@@ -6694,6 +6694,7 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/core/security/oauth2_utils.cc
   - test/cpp/interop/client.cc
   - test/cpp/interop/client_helper.cc
@@ -6711,6 +6712,7 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/interop/interop_server.cc
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/server_helper.cc

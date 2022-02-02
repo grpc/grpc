@@ -43,9 +43,9 @@ def grpc_bad_ssl_tests():
             name = "bad_ssl_%s_server" % t,
             srcs = ["servers/%s.cc" % t],
             deps = [
-              ":bad_ssl_test_server",
-            "//test/core/util:grpc_test_util",
-              ],
+                ":bad_ssl_test_server",
+                "//test/core/util:grpc_test_util",
+            ],
         )
         grpc_cc_test(
             name = "bad_ssl_%s_test" % t,
