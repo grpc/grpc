@@ -1305,7 +1305,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/tls/tls_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_channel_creds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_channel_creds.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_channel_default_creds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/xds/xds_credentials.cc" role="src" />

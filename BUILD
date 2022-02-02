@@ -1468,9 +1468,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_channel_creds",
-    srcs = [
-        "src/core/lib/security/credentials/xds/xds_channel_creds.cc",
-    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/security/credentials/xds/xds_channel_creds.h",

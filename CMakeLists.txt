@@ -2128,7 +2128,6 @@ add_library(grpc
   src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   src/core/lib/security/credentials/tls/tls_credentials.cc
   src/core/lib/security/credentials/tls/tls_utils.cc
-  src/core/lib/security/credentials/xds/xds_channel_creds.cc
   src/core/lib/security/credentials/xds/xds_channel_default_creds.cc
   src/core/lib/security/credentials/xds/xds_credentials.cc
   src/core/lib/security/security_connector/alts/alts_security_connector.cc
@@ -2745,7 +2744,6 @@ add_library(grpc_unsecure
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
-  src/core/lib/security/credentials/xds/xds_channel_creds.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -9639,7 +9637,6 @@ add_executable(core_configuration_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/security/credentials/xds/xds_channel_creds.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc

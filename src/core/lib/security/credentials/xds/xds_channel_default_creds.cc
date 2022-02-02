@@ -25,33 +25,36 @@
 
 namespace grpc_core {
 
-class GoogleDefaultXdsChannelCredsFactory : public XdsChannelCredsFactory {
+class GoogleDefaultXdsChannelCredsFactory : public XdsChannelCredsFactory<> {
  public:
   absl::string_view creds_type() const override { return "google_default"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  grpc_channel_credentials* CreateXdsChannelCreds(
+  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
       const Json& /*config*/) const override {
-    return grpc_google_default_credentials_create(nullptr);
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_google_default_credentials_create(nullptr));
   }
 };
 
-class InsecureXdsChannelCredsFactory : public XdsChannelCredsFactory {
+class InsecureXdsChannelCredsFactory : public XdsChannelCredsFactory<> {
  public:
   absl::string_view creds_type() const override { return "insecure"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  grpc_channel_credentials* CreateXdsChannelCreds(
+  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
       const Json& /*config*/) const override {
-    return grpc_insecure_credentials_create();
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
   }
 };
 
-class FakeXdsChannelCredsFactory : public XdsChannelCredsFactory {
+class FakeXdsChannelCredsFactory : public XdsChannelCredsFactory<> {
  public:
   absl::string_view creds_type() const override { return "fake"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  grpc_channel_credentials* CreateXdsChannelCreds(
+  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
       const Json& /*config*/) const override {
-    return grpc_fake_transport_security_credentials_create();
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_fake_transport_security_credentials_create());
   }
 };
 

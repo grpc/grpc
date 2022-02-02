@@ -1325,7 +1325,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/tls/tls_credentials.h )
   s.files += %w( src/core/lib/security/credentials/tls/tls_utils.cc )
   s.files += %w( src/core/lib/security/credentials/tls/tls_utils.h )
-  s.files += %w( src/core/lib/security/credentials/xds/xds_channel_creds.cc )
   s.files += %w( src/core/lib/security/credentials/xds/xds_channel_creds.h )
   s.files += %w( src/core/lib/security/credentials/xds/xds_channel_default_creds.cc )
   s.files += %w( src/core/lib/security/credentials/xds/xds_credentials.cc )

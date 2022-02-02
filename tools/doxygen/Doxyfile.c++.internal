@@ -2304,7 +2304,6 @@ src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/credentials/tls/tls_utils.cc \
 src/core/lib/security/credentials/tls/tls_utils.h \
-src/core/lib/security/credentials/xds/xds_channel_creds.cc \
 src/core/lib/security/credentials/xds/xds_channel_creds.h \
 src/core/lib/security/credentials/xds/xds_channel_default_creds.cc \
 src/core/lib/security/credentials/xds/xds_credentials.cc \
