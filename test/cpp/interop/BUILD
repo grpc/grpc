@@ -70,6 +70,7 @@ grpc_cc_binary(
     deps = [
         ":interop_server_lib",
         "//:grpc++",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -132,6 +133,7 @@ grpc_cc_binary(
     deps = [
         ":interop_client_main",
         "//:grpc++",
+        "//test/cpp/util:test_util",
     ],
 )
 
