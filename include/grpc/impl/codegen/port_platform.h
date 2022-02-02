@@ -52,7 +52,7 @@
  * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
  */
 #ifndef GRPC_ERROR_IS_ABSEIL_STATUS
-// #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+#define GRPC_ERROR_IS_ABSEIL_STATUS 1
 #endif
 
 /* Get windows.h included everywhere (we need it) */
