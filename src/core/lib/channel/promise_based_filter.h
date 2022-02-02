@@ -340,8 +340,6 @@ class CallData<ChannelFilter, true> : public BaseCallData {
         // Poll the promise once since we're waiting for it.
         Poll<TrailingMetadata> poll = promise_();
         if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
-          gpr_log(GPR_INFO, "Got trailing metadata %s",
-                  (*r)->DebugString().c_str());
           auto* md = UnwrapMetadata(std::move(*r));
           bool destroy_md = true;
           switch (recv_trailing_state_) {
