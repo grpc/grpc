@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,61 +45,12 @@ class XdsClusterSpecifierPluginImpl {
       absl::string_view proto_type_name, upb_strview serialized_plugin_config,
       upb_arena* arena);
 
-  /*
-
   // Loads the proto message into the upb symtab.
-  virtual void PopulateSymtab(upb_symtab* symtab) const = 0;
-
-  // Generates a Config from the xDS plugin config proto.
-  // Used for the top-level config in the HCM HTTP plugin list.
-  virtual absl::StatusOr<PluginConfig> GeneratePluginConfig(
-      upb_strview serialized_plugin_config, upb_arena* arena) const = 0;
-
-  // Generates a Config from the xDS plugin config proto.
-  // Used for the typed_per_plugin_config override in VirtualHost and Route.
-  virtual absl::StatusOr<PluginConfig> GeneratePluginConfigOverride(
-      upb_strview serialized_plugin_config, upb_arena* arena) const = 0;
-
-  // C-core channel plugin implementation.
-  virtual const grpc_channel_plugin* channel_plugin() const = 0;
-
-  // Modifies channel args that may affect service config parsing (not
-  // visible to the channel as a whole).
-  // Takes ownership of args.  Caller takes ownership of return value.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const {
-    return args;
-  }
-
-  // Function to convert the Configs into a JSON string to be added to the
-  // per-method part of the service config.
-  // The hcm_plugin_config comes from the HttpConnectionManager config.
-  // The plugin_config_override comes from the first of the ClusterWeight,
-  // Route, or VirtualHost entries that it is found in, or null if
-  // there is no override in any of those locations.
-  virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const PluginConfig& hcm_plugin_config,
-      const PluginConfig* plugin_config_override) const = 0;
-
-  // Returns true if the plugin is supported on clients; false otherwise
-  virtual bool IsSupportedOnClients() const = 0;
-
-  // Returns true if the plugin is supported on servers; false otherwise
-  virtual bool IsSupportedOnServers() const = 0;
-
-  // Returns true if the plugin must be the last plugin in the chain.
-  virtual bool IsTerminalPlugin() const { return false; }
-  */
+  // virtual void PopulateSymtab(upb_symtab* symtab) const = 0;
 };
 
 class XdsClusterSpecifierPluginRegistry {
  public:
-  static void RegisterPlugin(
-      std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-      const std::set<absl::string_view>& config_proto_type_names);
-
-  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
-      absl::string_view proto_type_name);
-
   static void PopulateSymtab(upb_symtab* symtab);
 
   // Global init and shutdown.
