@@ -57,9 +57,8 @@ TEST(Chttp2ByteStream, ShutdownTest) {
                              nullptr);
 
   // Create a Chttp2 stream and immediately shut it down
-  Chttp2IncomingByteStream* chttp2_byte_stream =
-      new Chttp2IncomingByteStream(
-          reinterpret_cast<grpc_chttp2_transport*>(t), s, 1000, 0);
+  Chttp2IncomingByteStream* chttp2_byte_stream = new Chttp2IncomingByteStream(
+      reinterpret_cast<grpc_chttp2_transport*>(t), s, 1000, 0);
 
   grpc_error_handle shutdown_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
