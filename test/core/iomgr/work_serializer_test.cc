@@ -19,10 +19,12 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 
 #include <memory>
+#include <thread>
 
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+#include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -30,6 +32,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "test/core/util/test_config.h"
 
 namespace {
@@ -187,6 +190,27 @@ TEST(WorkSerializerTest, ExecuteManyMixedRunScheduleAndDrain) {
       schedule_threads.push_back(
           absl::make_unique<TestThreadScheduleAndDrain>(&lock));
     }
+  }
+}
+
+// Tests that work serializers allow destruction from the last callback
+TEST(WorkSerializerTest, CallbackDestroysWorkSerializer) {
+  auto lock = std::make_shared<grpc_core::WorkSerializer>();
+  lock->Run([&]() { lock.reset(); }, DEBUG_LOCATION);
+}
+
+// Tests additional racy conditions when the last callback triggers work
+// serializer destruction.
+TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
+  for (int i = 0; i < 1000; ++i) {
+    auto lock = std::make_shared<grpc_core::WorkSerializer>();
+    absl::Notification notification;
+    std::thread t1([&]() {
+      notification.WaitForNotification();
+      lock.reset();
+    });
+    lock->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
+    t1.join();
   }
 }
 

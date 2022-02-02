@@ -123,8 +123,7 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
   }
   uint64_t prev_ref_pair =
       refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
-  if (GetSize(prev_ref_pair) == 1) {
-    GPR_DEBUG_ASSERT(GetOwners(prev_ref_pair) == 0);
+  if (GetSize(prev_ref_pair) == 1 && GetOwners(prev_ref_pair) == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
       gpr_log(GPR_INFO, "  Destroying");
     }
@@ -175,8 +174,16 @@ void WorkSerializer::WorkSerializerImpl::DrainQueueOwned() {
       // failure since we don't care about that value.
       uint64_t expected = MakeRefPair(1, 1);
       if (refs_.compare_exchange_strong(expected, MakeRefPair(0, 1),
-                                        std::memory_order_acq_rel,
-                                        std::memory_order_relaxed)) {
+                                        std::memory_order_acq_rel)) {
+        // Queue is drained.
+        return;
+      }
+      if (GetSize(expected) == 0) {
+        // WorkSerializer got orphaned while this was running
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
+          gpr_log(GPR_INFO, "  Queue Drained. Destroying");
+        }
+        delete this;
         return;
       }
     }
