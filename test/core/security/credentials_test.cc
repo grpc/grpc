@@ -439,14 +439,18 @@ class RequestMetadataState {
   void RunRequestMetadataTest(grpc_call_credentials* creds,
                               grpc_auth_metadata_context auth_md_ctx) {
     MakeActivity(
-        Seq(creds->GetRequestMetadata(
-                grpc_core::ClientInitialMetadata::TestOnlyWrap(&md_)),
-            [this](absl::StatusOr<grpc_core::ClientInitialMetadata> metadata) {
-              if (metadata.ok()) {
-                GPR_ASSERT(metadata->get() == &md_);
-              }
-              return metadata.status();
-            }),
+        [this, creds] {
+          return Seq(
+              creds->GetRequestMetadata(
+                  grpc_core::ClientInitialMetadata::TestOnlyWrap(&md_)),
+              [this](
+                  absl::StatusOr<grpc_core::ClientInitialMetadata> metadata) {
+                if (metadata.ok()) {
+                  GPR_ASSERT(metadata->get() == &md_);
+                }
+                return metadata.status();
+              });
+        },
         grpc_core::ExecCtxWakeupScheduler(),
         [this](absl::Status status) {
           CheckRequestMetadata(absl_status_to_grpc_error(std::move(status)));
