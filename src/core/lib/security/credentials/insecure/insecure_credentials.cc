@@ -20,6 +20,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
@@ -38,6 +39,11 @@ class InsecureCredentials final : public grpc_channel_credentials {
       grpc_channel_args** /* new_args */) override {
     return MakeRefCounted<InsecureChannelSecurityConnector>(
         Ref(), std::move(call_creds));
+  }
+
+  int cmp(const grpc_channel_credentials* other) const override {
+    GPR_ASSERT(other != nullptr);
+    return strcmp(type(), other->type());
   }
 };
 
