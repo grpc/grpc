@@ -928,6 +928,7 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -2110,6 +2111,7 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -7163,6 +7165,7 @@ targets:
   - test/core/promise/promise_factory_test.cc
   deps:
   - absl/functional:bind_front
+  - absl/status:status
   - absl/types:optional
   - absl/types:variant
   - absl/utility:utility
@@ -7179,6 +7182,7 @@ targets:
   src:
   - test/core/promise/map_test.cc
   deps:
+  - absl/status:status
   - absl/types:optional
   - absl/types:variant
   uses_polling: false
@@ -7193,6 +7197,7 @@ targets:
   src:
   - test/core/promise/promise_test.cc
   deps:
+  - absl/status:status
   - absl/types:optional
   - absl/types:variant
   uses_polling: false
@@ -8224,8 +8229,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/promise/try_seq.h
+  headers: []
   src:
   - test/core/promise/try_seq_metadata_test.cc
   deps:
