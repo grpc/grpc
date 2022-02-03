@@ -39,36 +39,14 @@
 
 /* -- Composite call credentials. -- */
 
-namespace {
-struct grpc_composite_call_credentials_metadata_context {
-  grpc_composite_call_credentials_metadata_context(
-      grpc_composite_call_credentials* composite_creds,
-      grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_closure* on_request_metadata)
-      : composite_creds(composite_creds),
-        pollent(pollent),
-        auth_md_context(auth_md_context),
-        md_array(md_array),
-        on_request_metadata(on_request_metadata) {}
-
-  grpc_composite_call_credentials* composite_creds;
-  size_t creds_index = 0;
-  grpc_polling_entity* pollent;
-  grpc_auth_metadata_context auth_md_context;
-  grpc_core::CredentialsMetadataArray* md_array;
-  grpc_closure* on_request_metadata;
-  grpc_closure internal_on_request_metadata;
-};
-}  // namespace
-
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_composite_call_credentials::GetRequestMetadata(
     grpc_core::ClientInitialMetadata initial_metadata) {
+  auto self = Ref();
   return TrySeqIter(
       inner_.begin(), inner_.end(), std::move(initial_metadata),
-      [](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
-         grpc_core::ClientInitialMetadata initial_metadata) {
+      [self](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
+             grpc_core::ClientInitialMetadata initial_metadata) {
         return creds->GetRequestMetadata(std::move(initial_metadata));
       });
 }
