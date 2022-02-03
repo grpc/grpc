@@ -56,8 +56,6 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
 
   // Remove service name from service_url to follow the audience format
   // dictated in https://google.aip.dev/auth/4111.
-  abort();
-  /* DO NOT SUBMIT: implement
   absl::StatusOr<std::string> uri =
       grpc_core::RemoveServiceNameFromJwtUri(context.service_url);
   if (!uri.ok()) {
@@ -78,7 +76,7 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
 
   if (!jwt_value.has_value()) {
     char* jwt = nullptr;
-    //Generate a new jwt.
+    // Generate a new jwt.
     gpr_mu_lock(&cache_mu_);
     cached_.reset();
     jwt = grpc_jwt_encode_and_sign(&key_, uri->c_str(), jwt_lifetime_, nullptr);
@@ -100,7 +98,6 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  */
   return grpc_core::Immediate(std::move(initial_metadata));
 }
 
