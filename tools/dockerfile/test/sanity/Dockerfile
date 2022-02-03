@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM silkeh/clang:13
 
 #=================
 # Basic C core dependencies
@@ -98,10 +98,8 @@ RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 # Upgrade Python's YAML library
 RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
-# Install clang, clang-format, and clang-tidy
-RUN apt-get update && apt-get install -y clang clang-format-11 clang-tidy-11 jq
-ENV CLANG_FORMAT=clang-format-11
-ENV CLANG_TIDY=clang-tidy-11
+# Install prerequisites for the clang-tidy script
+RUN apt-get update && apt-get install -y jq git
 
 #========================
 # Bazel installation

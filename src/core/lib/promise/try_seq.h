@@ -109,6 +109,23 @@ promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
   return promise_detail::TrySeq<Functors...>(std::move(functors)...);
 }
 
+// Try a sequence of operations of unknown length.
+// Asynchronously:
+//   for (element in (begin, end)) {
+//     auto r = wait_for factory(element, argument);
+//     if (!r.ok()) return r;
+//     argument = *r;
+//   }
+//   return argument;
+template <typename Iter, typename Factory, typename Argument>
+promise_detail::BasicSeqIter<promise_detail::TrySeqTraits<Argument>, Factory,
+                             Iter>
+TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+  return promise_detail::BasicSeqIter<promise_detail::TrySeqTraits<Argument>,
+                                      Factory, Iter>(
+      begin, end, std::move(factory), std::move(argument));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_TRY_SEQ_H

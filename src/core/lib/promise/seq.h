@@ -66,6 +66,20 @@ F Seq(F functor) {
   return functor;
 }
 
+// Execute a sequence of operations of unknown length.
+// Asynchronously:
+//   for (element in (begin, end)) {
+//     argument = wait_for factory(element, argument);
+//   }
+//   return argument;
+template <typename Iter, typename Factory, typename Argument>
+promise_detail::BasicSeqIter<promise_detail::SeqTraits<Argument>, Factory, Iter>
+SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+  return promise_detail::BasicSeqIter<promise_detail::SeqTraits<Argument>,
+                                      Factory, Iter>(
+      begin, end, std::move(factory), std::move(argument));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_SEQ_H

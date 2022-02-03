@@ -401,6 +401,92 @@ class BasicSeq {
   }
 };
 
+// As above, but models a sequence of unknown size
+// At each element, the accumulator A and the current value V is passed to some
+// function of type F as f(V, A); f is expected to return a promise that
+// resolves to Traits::WrappedType.
+template <typename Traits, typename F, typename Iter>
+class BasicSeqIter {
+ private:
+  using IterValue = decltype(*std::declval<Iter>());
+  using Arg = typename Traits::WrappedType;
+  using State = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                           std::declval<Arg>()));
+
+ public:
+  BasicSeqIter(Iter begin, Iter end, F f, Arg arg)
+      : cur_(begin), end_(end), f_(std::move(f)) {
+    if (cur_ == end_) {
+      Construct(&result_, std::move(arg));
+    } else {
+      Construct(&state_, f_(*cur_, std::move(arg)));
+    }
+  }
+
+  ~BasicSeqIter() {
+    if (cur_ == end_) {
+      Destruct(&result_);
+    } else {
+      Destruct(&state_);
+    }
+  }
+
+  BasicSeqIter(const BasicSeqIter& other) = delete;
+  BasicSeqIter& operator=(const BasicSeqIter&) = delete;
+
+  BasicSeqIter(BasicSeqIter&& other) noexcept
+      : cur_(other.cur_), end_(other.end_), f_(std::move(other.f_)) {
+    if (cur_ == end_) {
+      Construct(&result_, std::move(other.result_));
+    } else {
+      Construct(&state_, std::move(other.state_));
+    }
+  }
+  BasicSeqIter& operator=(BasicSeqIter&& other) noexcept {
+    cur_ = other.cur_;
+    end_ = other.end_;
+    if (cur_ == end_) {
+      Construct(&result_, std::move(other.result_));
+    } else {
+      Construct(&state_, std::move(other.state_));
+    }
+    return *this;
+  }
+
+  Poll<Arg> operator()() {
+    if (cur_ == end_) {
+      return std::move(result_);
+    }
+    return PollNonEmpty();
+  }
+
+ private:
+  Poll<Arg> PollNonEmpty() {
+    Poll<Arg> r = state_();
+    if (absl::holds_alternative<Pending>(r)) return r;
+    return Traits::template CheckResultAndRunNext<Arg>(
+        std::move(absl::get<Arg>(r)), [this](Arg arg) -> Poll<Arg> {
+          auto next = cur_;
+          ++next;
+          if (next == end_) {
+            return std::move(arg);
+          }
+          cur_ = next;
+          state_.~State();
+          new (&state_) State(f_(*cur_, std::move(arg)));
+          return PollNonEmpty();
+        });
+  }
+
+  Iter cur_;
+  const Iter end_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
+  union {
+    GPR_NO_UNIQUE_ADDRESS State state_;
+    GPR_NO_UNIQUE_ADDRESS Arg result_;
+  };
+};
+
 }  // namespace promise_detail
 }  // namespace grpc_core
 
