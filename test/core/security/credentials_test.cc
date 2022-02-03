@@ -3544,7 +3544,7 @@ test_external_account_credentials_create_failure_invalid_workforce_pool_audience
 static void test_insecure_credentials_compare_success(void) {
   auto* insecure_creds_1 = grpc_insecure_credentials_create();
   auto* insecure_creds_2 = grpc_insecure_credentials_create();
-  GPR_ASSERT(insecure_creds_1->cmp(insecure_creds_2) == 0);
+  GPR_ASSERT(grpc_core::QsortCompare(insecure_creds_1, insecure_creds_2) == 0);
   grpc_arg arg_1 = grpc_channel_credentials_to_arg(insecure_creds_1);
   grpc_channel_args args_1 = {1, &arg_1};
   grpc_arg arg_2 = grpc_channel_credentials_to_arg(insecure_creds_2);
@@ -3557,8 +3557,7 @@ static void test_insecure_credentials_compare_success(void) {
 static void test_insecure_credentials_compare_failure(void) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_creds = grpc_fake_transport_security_credentials_create();
-  GPR_ASSERT(insecure_creds->cmp(fake_creds) != 0);
-  GPR_ASSERT(fake_creds->cmp(insecure_creds) != 0);
+  GPR_ASSERT(grpc_core::QsortCompare(insecure_creds, fake_creds) != 0);
   grpc_arg arg_1 = grpc_channel_credentials_to_arg(insecure_creds);
   grpc_channel_args args_1 = {1, &arg_1};
   grpc_arg arg_2 = grpc_channel_credentials_to_arg(fake_creds);

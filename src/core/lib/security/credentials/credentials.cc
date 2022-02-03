@@ -58,8 +58,7 @@ static void* credentials_pointer_arg_copy(void* p) {
 }
 
 static int credentials_pointer_cmp(void* a, void* b) {
-  return static_cast<const grpc_channel_credentials*>(a)->cmp(
-      static_cast<const grpc_channel_credentials*>(b));
+  return grpc_core::QsortCompare(a, b);
 }
 
 static const grpc_arg_pointer_vtable credentials_pointer_vtable = {
