@@ -29,7 +29,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -60,7 +60,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
-              grpc_pollset_set* interested_parties_);
+              grpc_pollset_set* interested_parties);
     ~CallState() override;
 
     void Orphan() override;
@@ -111,7 +111,6 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
     // send_initial_metadata
     grpc_metadata_batch send_initial_metadata_;
-    grpc_linked_mdelem path_metadata_storage_;
 
     // send_message
     ManualConstructor<SliceBufferByteStream> send_message_;
@@ -155,6 +154,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+  MemoryAllocator call_allocator_;
 
   Mutex mu_;
   RefCountedPtr<ConnectivityStateWatcherInterface> watcher_

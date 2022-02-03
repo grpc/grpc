@@ -19,6 +19,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/resolver.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -30,7 +31,6 @@ extern grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable;
 extern grpc_timer_vtable grpc_event_engine_timer_vtable;
 extern grpc_pollset_vtable grpc_event_engine_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable;
-extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
 // Disabled by default. grpc_polling_trace must be defined in all iomgr
 // implementations due to its usage in lockfree_event.
@@ -75,7 +75,8 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_event_engine_timer_vtable);
   grpc_set_pollset_vtable(&grpc_event_engine_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_event_engine_pollset_set_vtable);
-  grpc_set_resolver_impl(&grpc_event_engine_resolver_vtable);
+  grpc_core::SetDNSResolver(
+      grpc_core::experimental::EventEngineDNSResolver::GetOrCreate());
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 

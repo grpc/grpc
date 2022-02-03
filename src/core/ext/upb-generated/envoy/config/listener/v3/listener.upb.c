@@ -58,7 +58,7 @@ static const upb_msglayout_sub envoy_config_listener_v3_Listener_submsgs[14] = {
   {.submsg = &google_protobuf_UInt32Value_msginit},
 };
 
-static const upb_msglayout_field envoy_config_listener_v3_Listener__fields[27] = {
+static const upb_msglayout_field envoy_config_listener_v3_Listener__fields[29] = {
   {1, UPB_SIZE(16, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
   {2, UPB_SIZE(32, 48), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {3, UPB_SIZE(96, 176), 0, 5, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
@@ -86,12 +86,14 @@ static const upb_msglayout_field envoy_config_listener_v3_Listener__fields[27] =
   {27, UPB_SIZE(112, 208), UPB_SIZE(-117, -217), 8, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {28, UPB_SIZE(24, 32), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
   {29, UPB_SIZE(92, 168), 16, 11, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {30, UPB_SIZE(14, 14), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {31, UPB_SIZE(15, 15), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_listener_v3_Listener_msginit = {
   &envoy_config_listener_v3_Listener_submsgs[0],
   &envoy_config_listener_v3_Listener__fields[0],
-  UPB_SIZE(120, 224), 27, _UPB_MSGEXT_NONE, 13, 255,
+  UPB_SIZE(120, 224), 29, _UPB_MSGEXT_NONE, 13, 255,
 };
 
 static const upb_msglayout_sub envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[1] = {

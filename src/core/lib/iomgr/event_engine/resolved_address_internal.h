@@ -29,6 +29,8 @@ EventEngine::ResolvedAddress CreateResolvedAddress(
 grpc_resolved_address CreateGRPCResolvedAddress(
     const EventEngine::ResolvedAddress& ra);
 
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

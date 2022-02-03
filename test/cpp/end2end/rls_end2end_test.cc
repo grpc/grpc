@@ -19,6 +19,7 @@
 // - RLS channel is down; wait_for_ready request is sent and RLS request fails
 //   and goes into backoff; RLS channel comes back up before backoff timer
 //   fires; request is processed at that point
+// - find some deterministic way to exercise adaptive throttler code
 
 #include <deque>
 #include <map>
@@ -228,13 +229,13 @@ class FakeResolverResponseGeneratorWrapper {
   static grpc_core::Resolver::Result BuildFakeResults(
       absl::string_view service_config_json) {
     grpc_core::Resolver::Result result;
-    result.service_config_error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config = grpc_core::ServiceConfig::Create(
-        result.args, service_config_json, &result.service_config_error);
-    EXPECT_EQ(result.service_config_error, GRPC_ERROR_NONE)
+        result.args, service_config_json, &error);
+    EXPECT_EQ(error, GRPC_ERROR_NONE)
         << "JSON: " << service_config_json
-        << "Error: " << grpc_error_std_string(result.service_config_error);
-    EXPECT_NE(result.service_config, nullptr);
+        << "Error: " << grpc_error_std_string(error);
+    EXPECT_NE(*result.service_config, nullptr);
     return result;
   }
 
@@ -912,6 +913,28 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
           .Build());
+  // The test below has one RLS RPC fail and then a subsequent one that
+  // should succeed.  However, once the first RPC fails, the adaptive
+  // throttling code will throttle the second RPC with about 11% probability,
+  // which would cause the test to be flaky.  To avoid that, we seed the
+  // throttling state by sending two successful RPCs before we start the
+  // real test, which ensures that the second RPC of the real test will
+  // not be throttled (with 3 successes and 1 failure, the throttling
+  // probability will be negative, so the subsequent request will never be
+  // throttled).
+  const char* kTestValue2 = "test_value_2";
+  const char* kTestValue3 = "test_value_3";
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue2}}),
+      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue3}}),
+      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue2}}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue3}}));
+  // Now start the real test.
   // Send an RPC before we give the RLS server a response.
   // The RLS request will fail, and thus so will the data plane RPC.
   CheckRpcSendFailure(DEBUG_LOCATION,
@@ -932,9 +955,9 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(3));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
-  EXPECT_EQ(rls_server_->service_.request_count(), 2);
-  EXPECT_EQ(rls_server_->service_.response_count(), 1);
-  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.request_count(), 4);
+  EXPECT_EQ(rls_server_->service_.response_count(), 3);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 3);
 }
 
 TEST_F(RlsEnd2endTest, FailedRlsRequestWithDefaultTarget) {
@@ -1325,7 +1348,7 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
-          // First target will report TRANSIENT_FAILURE..
+          // First target will report TRANSIENT_FAILURE.
           {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));

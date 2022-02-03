@@ -920,6 +920,16 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * If set, gRPC will read all hashed x.509 CRL files in the directory and
+ * enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
+ * version > 1.1.
+ * It is used for experimental purpose for now and subject to change.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
+    grpc_tls_credentials_options* options, const char* crl_directory);
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -1265,6 +1275,26 @@ grpc_authorization_policy_provider_file_watcher_create(
  */
 GRPCAPI void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider);
+
+/** --- TLS session key logging. ---
+ * Experimental API to control tls session key logging. Tls session key logging
+ * is expected to be used only for debugging purposes and never in production.
+ * Tls session key logging is only enabled when:
+ *  At least one grpc_tls_credentials_options object is assigned a tls session
+ *  key logging file path using the API specified below.
+ */
+
+/**
+ * EXPERIMENTAL API - Subject to change.
+ * Configures a grpc_tls_credentials_options object with tls session key
+ * logging capability. TLS channels using these credentials have tls session
+ * key logging enabled.
+ * - options is the grpc_tls_credentials_options object
+ * - path is a string pointing to the location where TLS session keys would be
+ *   stored.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+    grpc_tls_credentials_options* options, const char* path);
 
 #ifdef __cplusplus
 }

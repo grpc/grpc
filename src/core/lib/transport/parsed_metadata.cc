@@ -31,5 +31,7 @@ void DestroySliceValue(const Buffer& value) {
   grpc_slice_unref_internal(value.slice);
 }
 
+void DestroyTrivialMemento(const Buffer&) {}
+
 }  // namespace metadata_detail
 }  // namespace grpc_core

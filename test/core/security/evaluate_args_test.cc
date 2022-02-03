@@ -34,7 +34,7 @@ TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetPath(), nullptr);
   EXPECT_EQ(args.GetMethod(), nullptr);
-  EXPECT_EQ(args.GetHost(), nullptr);
+  EXPECT_EQ(args.GetAuthority(), nullptr);
   EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
@@ -44,10 +44,10 @@ TEST_F(EvaluateArgsTest, GetPathSuccess) {
   EXPECT_EQ(args.GetPath(), "/expected/path");
 }
 
-TEST_F(EvaluateArgsTest, GetHostSuccess) {
-  util_.AddPairToMetadata("host", "host123");
+TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetHost(), "host123");
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
 }
 
 TEST_F(EvaluateArgsTest, GetMethodSuccess) {
@@ -64,6 +64,16 @@ TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
       args.GetHeaderValue("key123", &concatenated_value);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), "value123");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      args.GetHeaderValue("host", &concatenated_value);
+  ASSERT_TRUE(value.has_value());
+  EXPECT_EQ(value.value(), "test.google.com");
 }
 
 TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {

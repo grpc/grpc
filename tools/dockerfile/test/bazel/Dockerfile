@@ -41,22 +41,23 @@ RUN apt-get update && apt-get -y install \
 # Python dependencies
 
 # Install dependencies
+# TODO(jtattermusch): This installs python3.5. Is it even needed
+# when we install python3.6 in the next step?
 RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
+    python3-all-dev
 
 #=================
 # Compile CPython 3.6.9 from source
 
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
     wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
     tar xzvf Python-3.6.9.tgz && \
     cd Python-3.6.9 && \
     ./configure && \
+    make -j4 && \
     make install
 
 RUN cd /tmp && \

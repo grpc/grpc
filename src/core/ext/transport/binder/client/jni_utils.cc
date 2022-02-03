@@ -25,12 +25,20 @@
 namespace grpc_binder {
 
 jclass FindNativeConnectionHelper(JNIEnv* env) {
-  auto do_find = [env]() {
-    jclass cl = env->FindClass("io/grpc/binder/cpp/NativeConnectionHelper");
+  return FindNativeConnectionHelper(
+      env, [env](std::string cl) { return env->FindClass(cl.c_str()); });
+}
+
+jclass FindNativeConnectionHelper(
+    JNIEnv* env, std::function<void*(std::string)> class_finder) {
+  auto do_find = [env, class_finder]() {
+    jclass cl = static_cast<jclass>(
+        class_finder("io/grpc/binder/cpp/NativeConnectionHelper"));
     if (cl == nullptr) {
       return cl;
     }
     jclass global_cl = static_cast<jclass>(env->NewGlobalRef(cl));
+    env->DeleteLocalRef(cl);
     GPR_ASSERT(global_cl != nullptr);
     return global_cl;
   };
@@ -77,6 +85,24 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
                             env->NewStringUTF(std::string(pkg).c_str()),
                             env->NewStringUTF(std::string(cls).c_str()),
                             env->NewStringUTF(std::string(conn_id).c_str()));
+}
+
+bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2) {
+  const std::string method = "isSignatureMatch";
+  const std::string type = "(Landroid/content/Context;II)Z";
+
+  jclass cl = FindNativeConnectionHelper(env);
+  if (cl == nullptr) {
+    return false;
+  }
+
+  jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
+  if (mid == nullptr) {
+    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+  }
+
+  jboolean result = env->CallStaticBooleanMethod(cl, mid, context, uid1, uid2);
+  return result == JNI_TRUE;
 }
 
 }  // namespace grpc_binder

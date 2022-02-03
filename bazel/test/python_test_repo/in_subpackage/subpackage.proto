@@ -21,7 +21,9 @@ option objc_class_prefix = "SP";
 
 package subpackage;
 
+import "proto/my.proto";
+
 message Subpackaged {
   string name = 1;
+  somewhere_else.MyMessage msg = 2;
 }
-

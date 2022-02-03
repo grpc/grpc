@@ -20,6 +20,7 @@ cd $(dirname $0)/../..
 tools/buildgen/generate_libuv_source_wrappers.py
 tools/buildgen/generate_projects.sh
 tools/distrib/check_include_guards.py --fix
+tools/distrib/check_naked_includes.py --fix || true
 tools/distrib/check_copyright.py --fix
 tools/distrib/add-iwyu.py
 tools/distrib/check_trailing_newlines.sh --fix

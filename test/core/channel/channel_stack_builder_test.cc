@@ -54,13 +54,6 @@ void CallDestroyFunc(grpc_call_element* /*elem*/,
 
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
-void SetArgOnceFn(grpc_channel_stack* /*channel_stack*/,
-                  grpc_channel_element* /*elem*/, void* arg) {
-  bool* called = static_cast<bool*>(arg);
-  // Make sure this function is only called once per arg.
-  GPR_ASSERT(*called == false);
-  *called = true;
-}
 
 TEST(ChannelStackBuilderTest, ReplaceFilter) {
   grpc_channel* channel =
@@ -75,6 +68,7 @@ TEST(ChannelStackBuilderTest, ReplaceFilter) {
 
 const grpc_channel_filter replacement_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     CallInitFunc,
@@ -88,6 +82,7 @@ const grpc_channel_filter replacement_filter = {
 
 const grpc_channel_filter original_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     CallInitFunc,
@@ -99,18 +94,34 @@ const grpc_channel_filter original_filter = {
     grpc_channel_next_get_info,
     "filter_name"};
 
-bool AddReplacementFilter(grpc_channel_stack_builder* builder) {
+bool AddReplacementFilter(ChannelStackBuilder* builder) {
   // Get rid of any other version of the filter, as determined by having the
   // same name.
-  GPR_ASSERT(grpc_channel_stack_builder_remove_filter(builder,
-                                                      replacement_filter.name));
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &replacement_filter, SetArgOnceFn, &g_replacement_fn_called);
+  auto* stk = builder->mutable_stack();
+  stk->erase(std::remove_if(stk->begin(), stk->end(),
+                            [](const ChannelStackBuilder::StackEntry& entry) {
+                              return strcmp(entry.filter->name,
+                                            "filter_name") == 0;
+                            }),
+             stk->end());
+  builder->PrependFilter(&replacement_filter,
+                         [](grpc_channel_stack*, grpc_channel_element*) {
+                           g_replacement_fn_called = true;
+                         });
+  return true;
 }
 
-bool AddOriginalFilter(grpc_channel_stack_builder* builder) {
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &original_filter, SetArgOnceFn, &g_original_fn_called);
+bool AddOriginalFilter(ChannelStackBuilder* builder) {
+  builder->PrependFilter(&original_filter,
+                         [](grpc_channel_stack*, grpc_channel_element*) {
+                           g_original_fn_called = true;
+                         });
+  return true;
+}
+
+TEST(ChannelStackBuilder, UnknownTarget) {
+  ChannelStackBuilder builder("alpha-beta-gamma");
+  EXPECT_EQ(builder.target(), "unknown");
 }
 
 }  // namespace

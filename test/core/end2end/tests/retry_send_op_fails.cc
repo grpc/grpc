@@ -34,7 +34,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -246,10 +245,11 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+    if (grpc_slice_eq(
+            request_metadata_recv.metadata[i].key,
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               grpc_slice_from_static_string("1")));
       found_retry_header = true;
       break;
     }
@@ -344,6 +344,7 @@ class FailFirstSendOpFilter {
 
 grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -364,18 +365,18 @@ void retry_send_op_fails(grpc_end2end_test_config config) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);
         builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_SUBCHANNEL, 0, [](grpc_channel_stack_builder* builder) {
+            GRPC_CLIENT_SUBCHANNEL, 0,
+            [](grpc_core::ChannelStackBuilder* builder) {
               // Skip on proxy (which explicitly disables retries).
-              const grpc_channel_args* args =
-                  grpc_channel_stack_builder_get_channel_arguments(builder);
+              const grpc_channel_args* args = builder->channel_args();
               if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES,
                                                true)) {
                 return true;
               }
               // Install filter.
-              return grpc_channel_stack_builder_prepend_filter(
-                  builder, &FailFirstSendOpFilter::kFilterVtable, nullptr,
-                  nullptr);
+              builder->PrependFilter(&FailFirstSendOpFilter::kFilterVtable,
+                                     nullptr);
+              return true;
             });
       },
       [config] { test_retry_send_op_fails(config); });

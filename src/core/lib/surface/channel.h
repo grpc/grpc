@@ -29,7 +29,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata.h"
 
 /// Creates a grpc_channel.
 grpc_channel* grpc_channel_create(const char* target,
@@ -45,7 +44,7 @@ void grpc_channel_destroy_internal(grpc_channel* channel);
 /// Creates a grpc_channel with a builder. See the description of
 /// \a grpc_channel_create for variable definitions.
 grpc_channel* grpc_channel_create_with_builder(
-    grpc_channel_stack_builder* builder,
+    grpc_core::ChannelStackBuilder* builder,
     grpc_channel_stack_type channel_stack_type,
     grpc_error_handle* error = nullptr);
 
@@ -74,8 +73,8 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 namespace grpc_core {
 
 struct RegisteredCall {
-  grpc_mdelem path;
-  grpc_mdelem authority;
+  Slice path;
+  absl::optional<Slice> authority;
 
   explicit RegisteredCall(const char* method_arg, const char* host_arg);
   RegisteredCall(const RegisteredCall& other);
@@ -110,8 +109,9 @@ struct grpc_channel {
   grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
       registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
+  grpc_core::ManualConstructor<grpc_core::MemoryAllocator> allocator;
 
-  char* target;
+  grpc_core::ManualConstructor<std::string> target;
 };
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 

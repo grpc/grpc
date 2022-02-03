@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -32,7 +33,9 @@ struct CharTrait {
   static char test_value() { return 'a'; }
   static size_t test_memento_transport_size() { return 34; }
   static char MementoToValue(char memento) { return memento; }
-  static char ParseMemento(Slice slice) { return slice[0]; }
+  static char ParseMemento(Slice slice, MetadataParseErrorFn) {
+    return slice[0];
+  }
   static std::string DisplayValue(char value) { return std::string(1, value); }
 };
 
@@ -43,7 +46,7 @@ struct Int32Trait {
   static int32_t test_value() { return -1; }
   static size_t test_memento_transport_size() { return 478; }
   static int32_t MementoToValue(int32_t memento) { return memento; }
-  static int32_t ParseMemento(Slice slice) {
+  static int32_t ParseMemento(Slice slice, MetadataParseErrorFn) {
     int32_t out;
     GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
@@ -60,7 +63,7 @@ struct Int64Trait {
   static int64_t test_value() { return -83481847284179298; }
   static size_t test_memento_transport_size() { return 87; }
   static int64_t MementoToValue(int64_t memento) { return -memento; }
-  static int64_t ParseMemento(Slice slice) {
+  static int64_t ParseMemento(Slice slice, MetadataParseErrorFn) {
     int64_t out;
     GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
@@ -77,7 +80,7 @@ struct IntptrTrait {
   static intptr_t test_value() { return test_memento() / 2; }
   static size_t test_memento_transport_size() { return 800; }
   static intptr_t MementoToValue(intptr_t memento) { return memento / 2; }
-  static intptr_t ParseMemento(Slice slice) {
+  static intptr_t ParseMemento(Slice slice, MetadataParseErrorFn) {
     intptr_t out;
     GPR_ASSERT(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
@@ -96,7 +99,7 @@ struct StringTrait {
   static std::string MementoToValue(std::string memento) {
     return "hi " + memento;
   }
-  static std::string ParseMemento(Slice slice) {
+  static std::string ParseMemento(Slice slice, MetadataParseErrorFn) {
     auto view = slice.as_string_view();
     return std::string(view.begin(), view.end());
   }
@@ -112,7 +115,7 @@ class FakeContainer {
   void Set(StringTrait, std::string x) { SetString(x); }
 
   void Set(const ::grpc_core::ParsedMetadata<FakeContainer>& metadata) {
-    EXPECT_EQ(GRPC_ERROR_NONE, metadata.SetOnContainer(this));
+    metadata.SetOnContainer(this);
   }
 
   MOCK_METHOD1(SetChar, void(char));
@@ -122,40 +125,40 @@ class FakeContainer {
   MOCK_METHOD1(SetString, void(std::string));
 };
 
-using ParsedMetadata = ::grpc_core::ParsedMetadata<FakeContainer>;
+using FakeParsedMetadata = ::grpc_core::ParsedMetadata<FakeContainer>;
 
-TEST(ParsedMetadataTest, Noop) { ParsedMetadata(); }
+TEST(ParsedMetadataTest, Noop) { FakeParsedMetadata(); }
 
 TEST(ParsedMetadataTest, DebugString) {
-  ParsedMetadata parsed(CharTrait(), 'x', 36);
+  FakeParsedMetadata parsed(CharTrait(), 'x', 36);
   EXPECT_EQ(parsed.DebugString(), "key: x");
 }
 
 TEST(ParsedMetadataTest, IsNotBinary) {
-  ParsedMetadata parsed(CharTrait(), 'x', 36);
+  FakeParsedMetadata parsed(CharTrait(), 'x', 36);
   EXPECT_FALSE(parsed.is_binary_header());
 }
 
 TEST(ParsedMetadataTest, IsBinary) {
-  ParsedMetadata parsed(StringTrait(), "s", 36);
+  FakeParsedMetadata parsed(StringTrait(), "s", 36);
   EXPECT_TRUE(parsed.is_binary_header());
 }
 
 TEST(ParsedMetadataTest, Set) {
   FakeContainer c;
-  ParsedMetadata p(CharTrait(), 'x', 36);
+  FakeParsedMetadata p(CharTrait(), 'x', 36);
   EXPECT_CALL(c, SetChar('x')).Times(1);
   c.Set(p);
-  p = ParsedMetadata(Int32Trait(), -1, 478);
+  p = FakeParsedMetadata(Int32Trait(), -1, 478);
   EXPECT_CALL(c, SetInt32(-1)).Times(1);
   c.Set(p);
-  p = ParsedMetadata(Int64Trait(), 83481847284179298, 87);
+  p = FakeParsedMetadata(Int64Trait(), 83481847284179298, 87);
   EXPECT_CALL(c, SetInt64(-83481847284179298)).Times(1);
   c.Set(p);
-  p = ParsedMetadata(IntptrTrait(), 8374298, 800);
+  p = FakeParsedMetadata(IntptrTrait(), 8374298, 800);
   EXPECT_CALL(c, SetIntptr(4187149)).Times(1);
   c.Set(p);
-  p = ParsedMetadata(StringTrait(), "hello", 599);
+  p = FakeParsedMetadata(StringTrait(), "hello", 599);
   EXPECT_CALL(c, SetString("hi hello")).Times(1);
   c.Set(p);
 }
@@ -166,28 +169,28 @@ class TraitSpecializedTest : public ::testing::Test {};
 TYPED_TEST_SUITE_P(TraitSpecializedTest);
 
 TYPED_TEST_P(TraitSpecializedTest, Noop) {
-  ParsedMetadata(TypeParam(), TypeParam::test_memento(),
-                 TypeParam::test_memento_transport_size());
+  FakeParsedMetadata(TypeParam(), TypeParam::test_memento(),
+                     TypeParam::test_memento_transport_size());
 }
 
 TYPED_TEST_P(TraitSpecializedTest, CanMove) {
-  ParsedMetadata a(TypeParam(), TypeParam::test_memento(),
-                   TypeParam::test_memento_transport_size());
-  ParsedMetadata b = std::move(a);
+  FakeParsedMetadata a(TypeParam(), TypeParam::test_memento(),
+                       TypeParam::test_memento_transport_size());
+  FakeParsedMetadata b = std::move(a);
   a = std::move(b);
 }
 
 TYPED_TEST_P(TraitSpecializedTest, DebugString) {
-  ParsedMetadata p(TypeParam(), TypeParam::test_memento(),
-                   TypeParam::test_memento_transport_size());
+  FakeParsedMetadata p(TypeParam(), TypeParam::test_memento(),
+                       TypeParam::test_memento_transport_size());
   EXPECT_EQ(p.DebugString(),
             absl::StrCat(TypeParam::key(), ": ",
                          TypeParam::DisplayValue(TypeParam::test_memento())));
 }
 
 TYPED_TEST_P(TraitSpecializedTest, TransportSize) {
-  ParsedMetadata p(TypeParam(), TypeParam::test_memento(),
-                   TypeParam::test_memento_transport_size());
+  FakeParsedMetadata p(TypeParam(), TypeParam::test_memento(),
+                       TypeParam::test_memento_transport_size());
   EXPECT_EQ(p.transport_size(), TypeParam::test_memento_transport_size());
 }
 
@@ -197,6 +200,64 @@ REGISTER_TYPED_TEST_SUITE_P(TraitSpecializedTest, Noop, CanMove, DebugString,
 using InterestingTraits = ::testing::Types<CharTrait, Int32Trait, Int64Trait,
                                            IntptrTrait, StringTrait>;
 INSTANTIATE_TYPED_TEST_SUITE_P(My, TraitSpecializedTest, InterestingTraits);
+
+TEST(KeyValueTest, Simple) {
+  using PM = ParsedMetadata<grpc_metadata_batch>;
+  using PMPtr = std::unique_ptr<PM>;
+  PMPtr p = absl::make_unique<PM>(Slice::FromCopiedString("key"),
+                                  Slice::FromCopiedString("value"));
+  EXPECT_EQ(p->DebugString(), "key: value");
+  EXPECT_EQ(p->transport_size(), 40);
+  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
+                          [](absl::string_view msg, const Slice& value) {
+                            ASSERT_TRUE(false)
+                                << "Should not be called: msg=" << msg
+                                << ", value=" << value.as_string_view();
+                          });
+  EXPECT_EQ(p->DebugString(), "key: value");
+  EXPECT_EQ(p2.DebugString(), "key: some_other_value");
+  EXPECT_EQ(p2.transport_size(), 51);
+  p.reset();
+  EXPECT_EQ(p2.DebugString(), "key: some_other_value");
+  EXPECT_EQ(p2.transport_size(), 51);
+  PM p3 = std::move(p2);
+  EXPECT_EQ(p3.DebugString(), "key: some_other_value");
+  EXPECT_EQ(p3.transport_size(), 51);
+}
+
+TEST(KeyValueTest, LongKey) {
+  using PM = ParsedMetadata<grpc_metadata_batch>;
+  using PMPtr = std::unique_ptr<PM>;
+  PMPtr p = absl::make_unique<PM>(Slice::FromCopiedString(std::string(60, 'a')),
+                                  Slice::FromCopiedString("value"));
+  EXPECT_EQ(
+      p->DebugString(),
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");
+  EXPECT_EQ(p->transport_size(), 97);
+  PM p2 = p->WithNewValue(Slice::FromCopiedString("some_other_value"),
+                          [](absl::string_view msg, const Slice& value) {
+                            ASSERT_TRUE(false)
+                                << "Should not be called: msg=" << msg
+                                << ", value=" << value.as_string_view();
+                          });
+  EXPECT_EQ(
+      p->DebugString(),
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: value");
+  EXPECT_EQ(p2.DebugString(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: "
+            "some_other_value");
+  EXPECT_EQ(p2.transport_size(), 108);
+  p.reset();
+  EXPECT_EQ(p2.DebugString(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: "
+            "some_other_value");
+  EXPECT_EQ(p2.transport_size(), 108);
+  PM p3 = std::move(p2);
+  EXPECT_EQ(p3.DebugString(),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: "
+            "some_other_value");
+  EXPECT_EQ(p3.transport_size(), 108);
+}
 
 }  // namespace testing
 }  // namespace grpc_core

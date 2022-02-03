@@ -70,7 +70,7 @@ bool DomainMatch(MatchType match_type, absl::string_view domain_pattern_in,
 
 MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
   if (domain_pattern.empty()) return INVALID_MATCH;
-  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
+  if (!absl::StrContains(domain_pattern, '*')) return EXACT_MATCH;
   if (domain_pattern == "*") return UNIVERSE_MATCH;
   if (domain_pattern[0] == '*') return SUFFIX_MATCH;
   if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
@@ -147,7 +147,7 @@ absl::optional<size_t> XdsRouting::GetRouteForRequest(
     const RouteListIterator& route_list_iterator, absl::string_view path,
     grpc_metadata_batch* initial_metadata) {
   for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
-    const XdsApi::Route::Matchers& matchers =
+    const XdsRouteConfigResource::Route::Matchers& matchers =
         route_list_iterator.GetMatchersForRoute(i);
     if (matchers.path_matcher.Match(path) &&
         HeadersMatch(matchers.header_matchers, initial_metadata) &&
@@ -174,16 +174,17 @@ absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return grpc_metadata_batch_get_value(initial_metadata, header_name,
-                                       concatenated_value);
+  return initial_metadata->GetStringValue(header_name, concatenated_value);
 }
 
 namespace {
 
 const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
-    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
-    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight) {
+    const XdsRouteConfigResource::VirtualHost& vhost,
+    const XdsRouteConfigResource::Route& route,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight) {
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
@@ -203,10 +204,12 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
 
 XdsRouting::GeneratePerHttpFilterConfigsResult
 XdsRouting::GeneratePerHTTPFilterConfigs(
-    const std::vector<XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter>&
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
-    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
-    const XdsApi::Route::RouteAction::ClusterWeight* cluster_weight,
+    const XdsRouteConfigResource::VirtualHost& vhost,
+    const XdsRouteConfigResource::Route& route,
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
+        cluster_weight,
     grpc_channel_args* args) {
   GeneratePerHttpFilterConfigsResult result;
   result.args = args;

@@ -1,20 +1,16 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <algorithm>
 #include <memory>
@@ -48,8 +44,6 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -57,7 +51,9 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -199,6 +195,7 @@ class FakeResolverResponseGeneratorWrapper {
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
           nullptr) {
     grpc_core::Resolver::Result result;
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -211,13 +208,14 @@ class FakeResolverResponseGeneratorWrapper {
       if (attribute != nullptr) {
         attributes[attribute_key] = attribute->Copy();
       }
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */, std::move(attributes));
+      result.addresses->emplace_back(address.addr, address.len,
+                                     nullptr /* args */, std::move(attributes));
     }
     if (service_config_json != nullptr) {
+      grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(
-          nullptr, service_config_json, &result.service_config_error);
-      GPR_ASSERT(result.service_config != nullptr);
+          nullptr, service_config_json, &error);
+      GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;
   }
@@ -1075,6 +1073,34 @@ TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest,
+       PickFirstStaysTransientFailureOnFailedConnectionAttemptUntilReady) {
+  // Allocate 3 ports, with no servers running.
+  std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die()};
+  // Create channel with a 1-second backoff.
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              1000 * grpc_test_slowdown_factor());
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(ports);
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(false));
+  // Send an RPC, which should fail.
+  CheckRpcSendFailure(stub);
+  // Channel should be in TRANSIENT_FAILURE.
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
+  // Now start a server on the last port.
+  StartServers(1, {ports.back()});
+  // Channel should remain in TRANSIENT_FAILURE until it transitions to READY.
+  EXPECT_TRUE(channel->WaitForStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                          grpc_timeout_seconds_to_deadline(4)));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {

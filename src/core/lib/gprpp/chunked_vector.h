@@ -17,8 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/arena.h"
+#include <cstddef>
+
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 
@@ -48,8 +50,9 @@ class ChunkedVector {
   }
   ChunkedVector(const ChunkedVector& other)
       : ChunkedVector(other.arena_, other.begin(), other.end()) {}
-  ChunkedVector& operator=(ChunkedVector other) {
-    Swap(&other);
+  ChunkedVector& operator=(const ChunkedVector& other) {
+    ChunkedVector tmp(other);
+    Swap(&tmp);
     return *this;
   }
   ChunkedVector(ChunkedVector&& other) noexcept
@@ -113,6 +116,12 @@ class ChunkedVector {
    public:
     ForwardIterator(Chunk* chunk, size_t n) : chunk_(chunk), n_(n) {}
 
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+
     T& operator*() const { return *chunk_->data[n_]; }
     T* operator->() const { return &*chunk_->data[n_]; }
     ForwardIterator& operator++() {
@@ -123,6 +132,11 @@ class ChunkedVector {
       }
       return *this;
     }
+    ForwardIterator& operator++(int) {
+      ForwardIterator tmp = *this;
+      ++*this;
+      return tmp;
+    }
     bool operator==(const ForwardIterator& other) const {
       return chunk_ == other.chunk_ && n_ == other.n_;
     }
@@ -131,6 +145,8 @@ class ChunkedVector {
     }
 
    private:
+    friend class ChunkedVector;
+
     Chunk* chunk_;
     size_t n_;
   };
@@ -139,6 +155,8 @@ class ChunkedVector {
   class ConstForwardIterator {
    public:
     ConstForwardIterator(const Chunk* chunk, size_t n) : chunk_(chunk), n_(n) {}
+
+    using iterator_category = std::forward_iterator_tag;
 
     const T& operator*() const { return *chunk_->data[n_]; }
     const T* operator->() const { return &*chunk_->data[n_]; }
@@ -149,6 +167,11 @@ class ChunkedVector {
         n_ = 0;
       }
       return *this;
+    }
+    ConstForwardIterator& operator++(int) {
+      ConstForwardIterator tmp = *this;
+      ++*this;
+      return tmp;
     }
     bool operator==(const ConstForwardIterator& other) const {
       return chunk_ == other.chunk_ && n_ == other.n_;
@@ -184,6 +207,25 @@ class ChunkedVector {
       n += chunk->count;
     }
     return n;
+  }
+
+  // Return true if the vector is empty.
+  bool empty() const { return first_ == nullptr || first_->count == 0; }
+
+  void SetEnd(ForwardIterator it) {
+    if (it == end()) return;
+    Chunk* chunk = it.chunk_;
+    for (size_t i = it.n_; i < chunk->count; i++) {
+      chunk->data[i].Destroy();
+    }
+    chunk->count = it.n_;
+    append_ = chunk;
+    while ((chunk = chunk->next) != nullptr) {
+      for (size_t i = 0; i < chunk->count; i++) {
+        chunk->data[i].Destroy();
+      }
+      chunk->count = 0;
+    }
   }
 
  private:

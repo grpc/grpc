@@ -30,8 +30,8 @@
 #include "src/core/lib/transport/transport_impl.h"
 
 static bool is_building_http_like_transport(
-    grpc_channel_stack_builder* builder) {
-  grpc_transport* t = grpc_channel_stack_builder_get_transport(builder);
+    grpc_core::ChannelStackBuilder* builder) {
+  grpc_transport* t = builder->transport();
   return t != nullptr && strstr(t->vtable->name, "http");
 }
 
@@ -44,27 +44,26 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [enable_in_minimal_stack, control_channel_arg,
-         filter](grpc_channel_stack_builder* builder) {
+         filter](ChannelStackBuilder* builder) {
           if (!is_building_http_like_transport(builder)) return true;
-          const grpc_channel_args* channel_args =
-              grpc_channel_stack_builder_get_channel_arguments(builder);
+          const grpc_channel_args* channel_args = builder->channel_args();
           bool enable = grpc_channel_arg_get_bool(
               grpc_channel_args_find(channel_args, control_channel_arg),
               enable_in_minimal_stack ||
                   !grpc_channel_args_want_minimal_stack(channel_args));
-          if (!enable) return true;
-          return grpc_channel_stack_builder_prepend_filter(builder, filter,
-                                                           nullptr, nullptr);
+          if (enable) builder->PrependFilter(filter, nullptr);
+          return true;
         });
   };
   auto required = [builder](grpc_channel_stack_type channel_type,
                             const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](grpc_channel_stack_builder* builder) {
-          if (!is_building_http_like_transport(builder)) return true;
-          return grpc_channel_stack_builder_prepend_filter(builder, filter,
-                                                           nullptr, nullptr);
+        [filter](ChannelStackBuilder* builder) {
+          if (is_building_http_like_transport(builder)) {
+            builder->PrependFilter(filter, nullptr);
+          }
+          return true;
         });
   };
   optional(GRPC_CLIENT_SUBCHANNEL, false,

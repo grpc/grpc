@@ -9,27 +9,31 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "envoy/config/route/v3/scoped_route.upb.h"
+#include "envoy/config/route/v3/route.upb.h"
+#include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_config_route_v3_ScopedRouteConfiguration_submsgs[1] = {
+static const upb_msglayout_sub envoy_config_route_v3_ScopedRouteConfiguration_submsgs[2] = {
+  {.submsg = &envoy_config_route_v3_RouteConfiguration_msginit},
   {.submsg = &envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit},
 };
 
-static const upb_msglayout_field envoy_config_route_v3_ScopedRouteConfiguration__fields[4] = {
+static const upb_msglayout_field envoy_config_route_v3_ScopedRouteConfiguration__fields[5] = {
   {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
   {2, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+  {3, UPB_SIZE(20, 40), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
   {4, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+  {5, UPB_SIZE(24, 48), 2, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
 };
 
 const upb_msglayout envoy_config_route_v3_ScopedRouteConfiguration_msginit = {
   &envoy_config_route_v3_ScopedRouteConfiguration_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration__fields[0],
-  UPB_SIZE(24, 48), 4, _UPB_MSGEXT_NONE, 4, 255,
+  UPB_SIZE(32, 64), 5, _UPB_MSGEXT_NONE, 5, 255,
 };
 
 static const upb_msglayout_sub envoy_config_route_v3_ScopedRouteConfiguration_Key_submsgs[1] = {

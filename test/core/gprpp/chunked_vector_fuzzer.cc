@@ -15,11 +15,16 @@
 #include <vector>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/gprpp/chunked_vector_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 static constexpr size_t kChunkSize = 17;
 using IntHdl = std::shared_ptr<int>;
@@ -66,7 +71,7 @@ class Fuzzer {
         // Remove some value to the back of a comparison, assert that both
         // vectors are equivalent.
         auto* c = Mutate(action.pop_back().vector());
-        if (c->chunked.size() > 0) {
+        if (!c->chunked.empty()) {
           c->chunked.PopBack();
           c->std.pop_back();
           c->AssertOk();
@@ -125,6 +130,19 @@ class Fuzzer {
         from->std.swap(to->std);
         from->AssertOk();
       } break;
+      case chunked_vector_fuzzer::Action::kRemoveIf: {
+        // Apply std::remove_if to a vector, assert that underlying vectors
+        // remain equivalent.
+        auto cond = [&](const IntHdl& hdl) {
+          return *hdl == action.remove_if().value();
+        };
+        auto* c = Mutate(action.remove_if().vector());
+        c->chunked.SetEnd(
+            std::remove_if(c->chunked.begin(), c->chunked.end(), cond));
+        c->std.erase(std::remove_if(c->std.begin(), c->std.end(), cond),
+                     c->std.end());
+        c->AssertOk();
+      } break;
       case chunked_vector_fuzzer::Action::ACTION_TYPE_NOT_SET:
         break;
     }
@@ -139,7 +157,7 @@ class Fuzzer {
     return &vectors_.emplace(index, Comparison(arena_.get())).first->second;
   }
 
-  ScopedArenaPtr arena_ = MakeScopedArena(128);
+  ScopedArenaPtr arena_ = MakeScopedArena(128, g_memory_allocator);
   std::map<int, Comparison> vectors_;
 };
 }  // namespace grpc_core

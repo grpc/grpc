@@ -29,6 +29,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -52,7 +53,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -64,13 +64,13 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
@@ -93,9 +93,9 @@ const grpc_millis kCacheBackoffInitial = 1 * GPR_MS_PER_SEC;
 const double kCacheBackoffMultiplier = 1.6;
 const double kCacheBackoffJitter = 0.2;
 const grpc_millis kCacheBackoffMax = 120 * GPR_MS_PER_SEC;
-const grpc_millis kDefaultThrottleWindowSize = 30 * GPR_MS_PER_SEC;
-const double kDefaultThrottleRatioForSuccesses = 2.0;
-const int kDefaultThrottlePaddings = 8;
+const grpc_millis kDefaultThrottleWindowSizeMs = 30 * GPR_MS_PER_SEC;
+const float kDefaultThrottleRatioForSuccesses = 2.0;
+const int kDefaultThrottlePadding = 8;
 const grpc_millis kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
@@ -557,8 +557,13 @@ class RlsLb : public LoadBalancingPolicy {
     // Throttle state for RLS requests.
     class Throttle {
      public:
-      explicit Throttle(int window_size_seconds = 0,
-                        double ratio_for_successes = 0, int paddings = 0);
+      explicit Throttle(
+          int window_size_ms = kDefaultThrottleWindowSizeMs,
+          float ratio_for_successes = kDefaultThrottleRatioForSuccesses,
+          int padding = kDefaultThrottlePadding)
+          : window_size_ms_(window_size_ms),
+            ratio_for_successes_(ratio_for_successes),
+            padding_(padding) {}
 
       bool ShouldThrottle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
@@ -566,15 +571,16 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
-      grpc_millis window_size_;
-      double ratio_for_successes_;
-      int paddings_;
+      grpc_millis window_size_ms_;
+      float ratio_for_successes_;
+      int padding_;
+      std::mt19937 rng_{std::random_device()()};
 
-      // Logged timestamp of requests.
+      // Logged timestamps of requests.
       std::deque<grpc_millis> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
 
-      // Logged timestamp of responses that were successful.
-      std::deque<grpc_millis> successes_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      // Logged timestamps of failures.
+      std::deque<grpc_millis> failures_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
@@ -669,7 +675,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  ServerAddressList addresses_;
+  absl::StatusOr<ServerAddressList> addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -1459,41 +1465,38 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 // RlsLb::RlsChannel::Throttle
 //
 
-RlsLb::RlsChannel::Throttle::Throttle(int window_size_seconds,
-                                      double ratio_for_successes,
-                                      int paddings) {
-  GPR_DEBUG_ASSERT(window_size_seconds >= 0);
-  GPR_DEBUG_ASSERT(ratio_for_successes >= 0);
-  GPR_DEBUG_ASSERT(paddings >= 0);
-  window_size_ = window_size_seconds == 0 ? window_size_seconds * GPR_MS_PER_SEC
-                                          : kDefaultThrottleWindowSize;
-  ratio_for_successes_ = ratio_for_successes == 0
-                             ? kDefaultThrottleRatioForSuccesses
-                             : ratio_for_successes;
-  paddings_ = paddings == 0 ? kDefaultThrottlePaddings : paddings;
-}
-
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
   grpc_millis now = ExecCtx::Get()->Now();
-  while (!requests_.empty() && now - requests_.front() > window_size_) {
+  while (!requests_.empty() && now - requests_.front() > window_size_ms_) {
     requests_.pop_front();
   }
-  while (!successes_.empty() && now - successes_.front() > window_size_) {
-    successes_.pop_front();
+  while (!failures_.empty() && now - failures_.front() > window_size_ms_) {
+    failures_.pop_front();
   }
-  int successes = successes_.size();
-  int requests = requests_.size();
-  bool result = ((rand() % (requests + paddings_)) <
-                 static_cast<double>(requests) -
-                     static_cast<double>(successes) * ratio_for_successes_);
-  requests_.push_back(now);
-  return result;
+  // Compute probability of throttling.
+  float num_requests = requests_.size();
+  float num_successes = num_requests - failures_.size();
+  // Note: it's possible that this ratio will be negative, in which case
+  // no throttling will be done.
+  float throttle_probability =
+      (num_requests - (num_successes * ratio_for_successes_)) /
+      (num_requests + padding_);
+  // Generate a random number for the request.
+  std::uniform_real_distribution<float> dist(0, 1.0);
+  // Check if we should throttle the request.
+  bool throttle = dist(rng_) < throttle_probability;
+  // If we're throttling, record the request and the failure.
+  if (throttle) {
+    requests_.push_back(now);
+    failures_.push_back(now);
+  }
+  return throttle;
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  if (success) {
-    successes_.push_back(ExecCtx::Get()->Now());
-  }
+  grpc_millis now = ExecCtx::Get()->Now();
+  requests_.push_back(now);
+  if (!success) failures_.push_back(now);
 }
 
 //
@@ -1762,7 +1765,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
-    rls_channel_->ReportResponseLocked(!response.status.ok());
+    rls_channel_->ReportResponseLocked(response.status.ok());
     Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
     child_policies_to_finish_update = cache_entry->OnRlsResponseLocked(
         std::move(response), std::move(backoff_state_));
@@ -1863,19 +1866,28 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
-  // Swap out config, addresses, and channel args.
+  // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
   config_ = std::move(args.config);
-  ServerAddressList old_addresses = std::move(addresses_);
-  addresses_ = std::move(args.addresses);
-  grpc_channel_args_destroy(channel_args_);
-  channel_args_ = grpc_channel_args_copy(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
     gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
             config_->child_policy_config().Dump().c_str());
   }
+  // Swap out addresses.
+  // If the new address list is an error and we have an existing address list,
+  // stick with the existing addresses.
+  absl::StatusOr<ServerAddressList> old_addresses;
+  if (args.addresses.ok()) {
+    old_addresses = std::move(addresses_);
+    addresses_ = std::move(args.addresses);
+  } else {
+    old_addresses = addresses_;
+  }
+  // Swap out channel args.
+  grpc_channel_args_destroy(channel_args_);
+  channel_args_ = grpc_channel_args_copy(args.args);
   // Determine whether we need to update all child policies.
   bool update_child_policies =
       old_config == nullptr ||

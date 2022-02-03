@@ -16,7 +16,7 @@ FROM i386/debian:buster
 
 RUN apt-get update && apt-get install -y python3 python3-pip
 
-RUN pip3 install virtualenv==16.7.9
+RUN python3 -m pip install virtualenv==16.7.9
 
 # docker is running on a 64-bit machine, so we need to
 # override "uname -m" to report i686 instead of x86_64, otherwise

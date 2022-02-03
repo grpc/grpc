@@ -26,6 +26,7 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -50,7 +51,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // Strong and weak refs.
@@ -141,14 +141,14 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      callstk,           /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
+      callstk,             /* call_stack */
+      nullptr,             /* server_transport_data */
+      args.context,        /* context */
+      args.path.c_slice(), /* path */
+      args.start_time,     /* start_time */
+      args.deadline,       /* deadline */
+      args.arena,          /* arena */
+      args.call_combiner   /* call_combiner */
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
@@ -252,12 +252,7 @@ void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
-    if (md_batch->legacy_index()->named.grpc_status != nullptr) {
-      *status = grpc_get_status_code_from_metadata(
-          md_batch->legacy_index()->named.grpc_status->md);
-    } else {
-      *status = GRPC_STATUS_UNKNOWN;
-    }
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -969,20 +964,16 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
-  grpc_channel_stack_builder_set_channel_arguments(
-      builder, connecting_result_.channel_args);
-  grpc_channel_stack_builder_set_transport(builder,
-                                           connecting_result_.transport);
+  ChannelStackBuilder builder("subchannel");
+  builder.SetChannelArgs(connecting_result_.channel_args)
+      .SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(
-          builder, GRPC_CLIENT_SUBCHANNEL)) {
-    grpc_channel_stack_builder_destroy(builder);
+          &builder, GRPC_CLIENT_SUBCHANNEL)) {
     return false;
   }
   grpc_channel_stack* stk;
-  grpc_error_handle error = grpc_channel_stack_builder_finish(
-      builder, 0, 1, ConnectionDestroy, nullptr,
-      reinterpret_cast<void**>(&stk));
+  grpc_error_handle error = builder.Build(0, 1, ConnectionDestroy, nullptr,
+                                          reinterpret_cast<void**>(&stk));
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR,

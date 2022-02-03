@@ -77,6 +77,7 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
 static void test_create_channel_stack(void) {
   const grpc_channel_filter filter = {
       call_func,
+      nullptr,
       channel_func,
       sizeof(int),
       call_init_func,

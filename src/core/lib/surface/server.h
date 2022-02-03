@@ -176,8 +176,8 @@ class Server : public InternallyRefCounted<Server>,
     RegisteredMethod* server_registered_method = nullptr;
     uint32_t flags;
     bool has_host;
-    ExternallyManagedSlice method;
-    ExternallyManagedSlice host;
+    Slice method;
+    Slice host;
   };
 
   class RequestMatcherInterface;
@@ -293,8 +293,8 @@ class Server : public InternallyRefCounted<Server>,
 
     std::atomic<CallState> state_{CallState::NOT_STARTED};
 
-    absl::optional<grpc_slice> path_;
-    absl::optional<grpc_slice> host_;
+    absl::optional<Slice> path_;
+    absl::optional<Slice> host_;
     grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
 
     grpc_completion_queue* cq_new_ = nullptr;

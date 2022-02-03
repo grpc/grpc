@@ -38,6 +38,7 @@
 		5EA4770522736AC4000F72FC /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
 		5ECFED8623030DCC00626501 /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
 		65EB19E418B39A8374D407BB /* libPods-CronetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B1511C20E16A8422B58D61A /* libPods-CronetTests.a */; };
+		74E1354127A0D22B009FC4F3 /* GRPCCallOptionsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 74E1354027A0D22A009FC4F3 /* GRPCCallOptionsTests.m */; };
 		903163C7FE885838580AEC7A /* libPods-InteropTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D457AD9797664CFA191C3280 /* libPods-InteropTests.a */; };
 		953CD2942A3A6D6CE695BE87 /* libPods-MacTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 276873A05AC5479B60DF6079 /* libPods-MacTests.a */; };
 		9BF9672E0D0BF5B42D4F2B72 /* libPods-PerfTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D6F190224A515F9A4D09E4CF /* libPods-PerfTests.a */; };
@@ -158,6 +159,7 @@
 		6793C9D019CB268C5BB491A2 /* Pods-CoreCronetEnd2EndTests.test.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CoreCronetEnd2EndTests.test.xcconfig"; path = "Pods/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests.test.xcconfig"; sourceTree = "<group>"; };
 		680439AC2BC8761EDD54A1EA /* Pods-InteropTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTests/Pods-InteropTests.debug.xcconfig"; sourceTree = "<group>"; };
 		73D2DF07027835BA0FB0B1C0 /* Pods-InteropTestsCallOptions.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsCallOptions.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsCallOptions/Pods-InteropTestsCallOptions.cronet.xcconfig"; sourceTree = "<group>"; };
+		74E1354027A0D22A009FC4F3 /* GRPCCallOptionsTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GRPCCallOptionsTests.m; sourceTree = "<group>"; };
 		781089FAE980F51F88A3BE0B /* Pods-RxLibraryUnitTests.test.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RxLibraryUnitTests.test.xcconfig"; path = "Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests.test.xcconfig"; sourceTree = "<group>"; };
 		79C68EFFCB5533475D810B79 /* Pods-RxLibraryUnitTests.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RxLibraryUnitTests.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests.cronet.xcconfig"; sourceTree = "<group>"; };
 		7A2E97E3F469CC2A758D77DE /* Pods-InteropTestsLocalSSL.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalSSL.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL.release.xcconfig"; sourceTree = "<group>"; };
@@ -415,6 +417,7 @@
 		5E0282E7215AA697007AC99D /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				74E1354027A0D22A009FC4F3 /* GRPCCallOptionsTests.m */,
 				5E9F1C58232302E200837469 /* TransportTests.m */,
 				5E9F1C322321AB1700837469 /* TransportRegistryTests.m */,
 				5E7F488A22778B5D006656AD /* RxLibraryUnitTests.m */,
@@ -1035,6 +1038,7 @@
 				5E0282E9215AA697007AC99D /* NSErrorUnitTests.m in Sources */,
 				5E7F4880227782C1006656AD /* APIv2Tests.m in Sources */,
 				5E7F487D22778256006656AD /* ChannelPoolTest.m in Sources */,
+				74E1354127A0D22B009FC4F3 /* GRPCCallOptionsTests.m in Sources */,
 				5E9F1C59232302E200837469 /* TransportTests.m in Sources */,
 				5E9F1C332321AB1700837469 /* TransportRegistryTests.m in Sources */,
 				5E7F488722778AEA006656AD /* GRPCClientTests.m in Sources */,
@@ -1280,7 +1284,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -1621,7 +1624,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -1664,7 +1666,6 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
@@ -1701,7 +1702,6 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;

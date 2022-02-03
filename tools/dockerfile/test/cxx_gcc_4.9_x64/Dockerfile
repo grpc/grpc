@@ -14,64 +14,31 @@
 
 FROM gcc:4.9
 
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  dnsutils \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
-
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
-
-# Remove the expired letsencrypt.org cert and update the CA certificates
-RUN apt-get install -y ca-certificates
-RUN rm /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt
-RUN update-ca-certificates
-
+RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
 #====================
-# Python dependencies
+# run_tests.py python dependencies
 
-# Install dependencies
-
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
 RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
+  python3 \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
+  && apt-get clean
 
-# Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv==16.7.9
-RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
+# use pinned version of pip to avoid sudden breakages
+RUN python3 -m pip install --upgrade pip==19.3.1
 
-# Google Cloud platform API libraries
-RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
+# but since our python2 usage is deprecated, we should get rid of it.
+RUN python3 -m pip install six==1.16.0
+
+# Google Cloud Platform API libraries
+# These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
+RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+
 
 #=================
 # Use cmake 3.6 from jessie-backports

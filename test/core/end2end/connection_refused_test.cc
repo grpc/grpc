@@ -27,7 +27,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
