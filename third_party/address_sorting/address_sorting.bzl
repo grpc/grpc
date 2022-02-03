@@ -36,7 +36,7 @@ def address_sorting_cc_library(name, srcs, hdrs, copts, includes):
         copts = copts,
         includes = includes,
         linkopts = select({
-          ":windows": ["-DEFAULTLIB:ws2_32.lib"],
+          "//:windows": ["-DEFAULTLIB:ws2_32.lib"],
           "//conditions:default": [],
         }),
     )
