@@ -405,13 +405,15 @@ class BasicSeq {
 // At each element, the accumulator A and the current value V is passed to some
 // function of type F as f(V, A); f is expected to return a promise that
 // resolves to Traits::WrappedType.
-template <typename Traits, typename F, typename Iter>
+template <template <typename Wrapped> class Traits, typename F, typename Arg,
+          typename Iter>
 class BasicSeqIter {
  private:
   using IterValue = decltype(*std::declval<Iter>());
-  using Arg = typename Traits::WrappedType;
-  using State = decltype(std::declval<F>()(std::declval<IterValue>(),
-                                           std::declval<Arg>()));
+  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                  std::declval<Arg>()));
+  using State = PromiseLike<StateCreated>;
+  using Wrapped = typename State::Result;
 
  public:
   BasicSeqIter(Iter begin, Iter end, F f, Arg arg)
@@ -453,7 +455,7 @@ class BasicSeqIter {
     return *this;
   }
 
-  Poll<Arg> operator()() {
+  Poll<Wrapped> operator()() {
     if (cur_ == end_) {
       return std::move(result_);
     }
@@ -461,11 +463,11 @@ class BasicSeqIter {
   }
 
  private:
-  Poll<Arg> PollNonEmpty() {
-    Poll<Arg> r = state_();
+  Poll<Wrapped> PollNonEmpty() {
+    Poll<Wrapped> r = state_();
     if (absl::holds_alternative<Pending>(r)) return r;
-    return Traits::template CheckResultAndRunNext<Arg>(
-        std::move(absl::get<Arg>(r)), [this](Arg arg) -> Poll<Arg> {
+    return Traits<Wrapped>::template CheckResultAndRunNext<Wrapped>(
+        std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
           auto next = cur_;
           ++next;
           if (next == end_) {
@@ -473,7 +475,8 @@ class BasicSeqIter {
           }
           cur_ = next;
           state_.~State();
-          new (&state_) State(f_(*cur_, std::move(arg)));
+          Construct(&state_,
+                    Traits<Wrapped>::CallSeqFactory(f_, *cur_, std::move(arg)));
           return PollNonEmpty();
         });
   }
