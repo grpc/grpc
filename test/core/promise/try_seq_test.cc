@@ -72,26 +72,30 @@ TEST(TrySeqTest, RawSucceedAndThenValue) {
 
 TEST(TrySeqIterTest, Ok) {
   std::vector<int> v{1, 2, 3, 4, 5};
-  EXPECT_EQ(TrySeqIter(v.begin(), v.end(), absl::OkStatus(),
-                       [](int cur, absl::Status current) {
-                         EXPECT_EQ(current, absl::OkStatus());
-                         return [] { return absl::OkStatus(); };
+  EXPECT_EQ(TrySeqIter(v.begin(), v.end(), 0,
+                       [](int elem, int accum) {
+                         return [elem, accum]() -> absl::StatusOr<int> {
+                           return elem + accum;
+                         };
                        })(),
-            Poll<absl::Status>(absl::OkStatus()));
+            Poll<absl::StatusOr<int>>(15));
 }
 
 TEST(TrySeqIterTest, ErrorAt3) {
   std::vector<int> v{1, 2, 3, 4, 5};
-  EXPECT_EQ(TrySeqIter(v.begin(), v.end(), absl::OkStatus(),
-                       [](int cur, absl::Status current) {
-                         EXPECT_EQ(current, absl::OkStatus());
-                         return [cur] {
-                           if (cur < 3) return absl::OkStatus();
-                           if (cur == 3) return absl::CancelledError();
+  EXPECT_EQ(TrySeqIter(v.begin(), v.end(), 0,
+                       [](int elem, int accum) {
+                         return [elem, accum]() -> absl::StatusOr<int> {
+                           if (elem < 3) {
+                             return elem + accum;
+                           }
+                           if (elem == 3) {
+                             return absl::CancelledError();
+                           }
                            abort();  // unreachable
                          };
                        })(),
-            Poll<absl::Status>(absl::CancelledError()));
+            Poll<absl::StatusOr<int>>(absl::CancelledError()));
 }
 
 }  // namespace grpc_core
