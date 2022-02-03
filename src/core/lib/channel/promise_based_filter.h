@@ -22,12 +22,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/utility/utility.h"
-#include "context.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"

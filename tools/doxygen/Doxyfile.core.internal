@@ -2012,6 +2012,7 @@ src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
+src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
 src/core/lib/resolver/resolver_factory.h \

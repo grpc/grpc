@@ -49,7 +49,7 @@ RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext() {
   return MakeAuthContext();
 }
 
-grpc_core::ArenaPromise<absl::Status>
+ArenaPromise<absl::Status>
 InsecureChannelSecurityConnector::CheckCallHost(
     absl::string_view host, grpc_auth_context* auth_context) {
   return ImmediateOkStatus();

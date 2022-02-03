@@ -67,7 +67,7 @@ class TlsChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+  ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override;
 
   tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {

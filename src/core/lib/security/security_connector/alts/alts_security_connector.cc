@@ -117,7 +117,7 @@ class grpc_alts_channel_security_connector final
     return strcmp(target_name_, other->target_name_);
   }
 
-  virtual grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override {
     if (host.empty() || host != target_name_) {
       return grpc_core::Immediate(absl::UnauthenticatedError(

@@ -155,7 +155,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
 
   RefCountedPtr<grpc_call_credentials> creds;
   if (channel_call_creds != nullptr && call_creds_has_md) {
-    creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
+    creds = RefCountedPtr<grpc_call_credentials>(
         grpc_composite_call_credentials_create(channel_call_creds,
                                                ctx->creds.get(), nullptr));
     if (creds == nullptr) {

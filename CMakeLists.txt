@@ -13563,6 +13563,7 @@ target_link_libraries(promise_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::bind_front
+  absl::status
   absl::optional
   absl::variant
   absl::utility
@@ -13600,6 +13601,7 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::status
   absl::optional
   absl::variant
 )
@@ -13636,6 +13638,7 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::status
   absl::optional
   absl::variant
 )
