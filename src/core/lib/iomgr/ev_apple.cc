@@ -313,7 +313,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
   apple_pollset->is_shutdown = true;
-  pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
+  (void)pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 
   // If there is any worker blocked, shutdown will be done asynchronously.
   if (apple_pollset->workers.empty()) {
