@@ -68,7 +68,7 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
 
 namespace grpc_core {
 template <>
-struct ContextType<grpc_polling_entity*> {};
+struct ContextType<grpc_polling_entity> {};
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

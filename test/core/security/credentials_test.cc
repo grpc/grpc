@@ -425,11 +425,8 @@ class RequestMetadataState {
   RequestMetadataState(grpc_error_handle expected_error, std::string expected,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
-        expected_(expected),
-        pollent_(pollent) {
-    GRPC_CLOSURE_INIT(&on_request_metadata_, OnRequestMetadata, this,
-                      grpc_schedule_on_exec_ctx);
-  }
+        expected_(std::move(expected)),
+        pollent_(pollent) {}
 
  public:
   ~RequestMetadataState() {
@@ -438,7 +435,7 @@ class RequestMetadataState {
 
   void RunRequestMetadataTest(grpc_call_credentials* creds,
                               grpc_auth_metadata_context auth_md_ctx) {
-    MakeActivity(
+    activity_ = MakeActivity(
         [this, creds] {
           return Seq(
               creds->GetRequestMetadata(
@@ -455,15 +452,10 @@ class RequestMetadataState {
         [this](absl::Status status) {
           CheckRequestMetadata(absl_status_to_grpc_error(std::move(status)));
         },
-        arena_.get());
+        arena_.get(), &pollent_);
   }
 
  private:
-  static void OnRequestMetadata(void* arg, grpc_error_handle error) {
-    RequestMetadataState* state = static_cast<RequestMetadataState*>(arg);
-    state->CheckRequestMetadata(error);
-  }
-
   void CheckRequestMetadata(grpc_error_handle error) {
     gpr_log(GPR_INFO, "expected_error: %s",
             grpc_error_std_string(expected_error_).c_str());
@@ -491,8 +483,8 @@ class RequestMetadataState {
   grpc_core::ScopedArenaPtr arena_ =
       grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch md_{arena_.get()};
-  grpc_closure on_request_metadata_;
   grpc_polling_entity pollent_;
+  grpc_core::ActivityPtr activity_;
 };
 
 }  // namespace

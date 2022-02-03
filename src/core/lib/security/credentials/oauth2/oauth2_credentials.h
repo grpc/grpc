@@ -74,7 +74,6 @@ struct grpc_credentials_metadata_request {
 };
 
 struct grpc_oauth2_pending_get_request_metadata {
-  grpc_core::CredentialsMetadataArray* md_array;
   grpc_closure* on_request_metadata;
   grpc_polling_entity* pollent;
   struct grpc_oauth2_pending_get_request_metadata* next;

@@ -1112,10 +1112,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "wake_activity_closure",
-    language = "c++",
-    public_hdrs = [
+    srcs = [
+        "src/core/lib/promise/wake_activity_closure.cc",
+    ],
+    hdrs = [
         "src/core/lib/promise/wake_activity_closure.h",
     ],
+    language = "c++",
     deps = [
         "activity",
         "closure",
@@ -3649,6 +3652,7 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "arena",
+        "capture",
         "config",
         "error",
         "gpr_base",

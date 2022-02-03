@@ -48,15 +48,19 @@ class BaseCallData {
         deadline_(args->deadline),
         context_(args->context) {}
 
+  void set_pollent(grpc_polling_entity* pollent) { pollent_ = pollent; }
+
  protected:
   class ScopedContext
       : public promise_detail::Context<Arena>,
-        public promise_detail::Context<grpc_call_context_element> {
+        public promise_detail::Context<grpc_call_context_element>,
+        public promise_detail::Context<grpc_polling_entity> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
           promise_detail::Context<grpc_call_context_element>(
-              call_data->context_) {}
+              call_data->context_),
+          promise_detail::Context<grpc_polling_entity>(call_data->pollent_) {}
   };
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
@@ -79,6 +83,7 @@ class BaseCallData {
   CallCombiner* const call_combiner_;
   const grpc_millis deadline_;
   grpc_call_context_element* const context_;
+  grpc_polling_entity* pollent_ = nullptr;
 };
 
 // Specific call data per channel filter.
@@ -755,7 +760,9 @@ grpc_channel_filter MakePromiseBasedFilter() {
         return GRPC_ERROR_NONE;
       },
       // set_pollset_or_pollset_set
-      grpc_call_stack_ignore_set_pollset_or_pollset_set,
+      [](grpc_call_element* elem, grpc_polling_entity* pollent) {
+        static_cast<CallData*>(elem->call_data)->set_pollent(pollent);
+      },
       // destroy_call_elem
       [](grpc_call_element* elem, const grpc_call_final_info*, grpc_closure*) {
         static_cast<CallData*>(elem->call_data)->~CallData();
