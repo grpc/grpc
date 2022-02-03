@@ -1737,6 +1737,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_common",
+    srcs = [
+        "src/core/lib/event_engine/resolved_address.cc",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
@@ -2098,6 +2109,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "error",
         "event_engine_base",
+        "event_engine_common",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
