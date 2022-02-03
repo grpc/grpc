@@ -149,10 +149,10 @@ class ArenaPromise {
   ArenaPromise() = default;
 
   // Construct an ArenaPromise that will call the given callable when polled.
-  // NOLINTNEXTLINE(google-explicit-constructor)
   template <typename Callable,
             typename Ignored =
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   ArenaPromise(Callable&& callable)
       : impl_(arena_promise_detail::MakeImplForCallable<T>(
             std::forward<Callable>(callable))) {}

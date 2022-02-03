@@ -24,6 +24,7 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
 
 extern const grpc_channel_filter grpc_client_auth_filter;
