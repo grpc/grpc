@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+#include "absl/synchronization/barrier.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
@@ -211,6 +212,26 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRace) {
     });
     lock->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
     t1.join();
+  }
+}
+
+// Tests racy conditions when the last callback triggers work
+// serializer destruction.
+TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
+  auto lock = std::make_shared<grpc_core::WorkSerializer>();
+  absl::Barrier barrier(51);
+  std::vector<std::thread> threads;
+  threads.reserve(50);
+  for (int i = 0; i < 50; ++i) {
+    threads.emplace_back([lock, &barrier]() {
+      barrier.Block();
+      lock->Run([lock]() mutable { lock.reset(); }, DEBUG_LOCATION);
+    });
+  }
+  barrier.Block();
+  lock.reset();
+  for (auto& thread : threads) {
+    thread.join();
   }
 }
 
