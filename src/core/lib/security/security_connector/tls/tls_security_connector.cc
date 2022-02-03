@@ -409,9 +409,8 @@ int TlsChannelSecurityConnector::cmp(
   return 0;
 }
 
-ArenaPromise<absl::Status>
-TlsChannelSecurityConnector::CheckCallHost(absl::string_view host,
-                                           grpc_auth_context* auth_context) {
+ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
+    absl::string_view host, grpc_auth_context* auth_context) {
   if (options_->check_call_host()) {
     return Immediate(SslCheckCallHost(host, target_name_.c_str(),
                                       overridden_target_name_.c_str(),
