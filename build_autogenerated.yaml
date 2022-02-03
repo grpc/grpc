@@ -7914,6 +7914,18 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
+- name: test_core_gprpp_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/time.h
+  src:
+  - src/core/lib/gprpp/time.cc
+  - test/core/gprpp/time_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test
