@@ -1747,9 +1747,10 @@ grpc_cc_library(
         "uv",
     ],
     deps = [
+        "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
         "event_engine_common",
         "exec_ctx",
-        "default_event_engine_factory_hdrs",
         "gpr_base",
     ],
 )

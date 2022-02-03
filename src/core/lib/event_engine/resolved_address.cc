@@ -17,7 +17,6 @@
 #include <grpc/event_engine/port.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {

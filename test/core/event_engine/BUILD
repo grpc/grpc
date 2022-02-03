@@ -54,6 +54,7 @@ grpc_cc_test(
     name = "smoke_test",
     srcs = ["smoke_test.cc"],
     external_deps = ["gtest"],
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
