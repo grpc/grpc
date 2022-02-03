@@ -1026,6 +1026,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
+                      'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/sockaddr.cc',
                       'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.cc',
