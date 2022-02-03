@@ -43,7 +43,7 @@ module GRPC
                    debug_error_string = nil)
       exception_message = "#{code}:#{details}"
       if debug_error_string
-        exception_message += ". debug_error_string:#{debug_error_string}"
+        exception_message += ". debug_error_string:{#{debug_error_string}}"
       end
       super(exception_message)
       @code = code
