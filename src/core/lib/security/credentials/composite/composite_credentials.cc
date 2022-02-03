@@ -33,6 +33,7 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -64,16 +65,12 @@ struct grpc_composite_call_credentials_metadata_context {
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_composite_call_credentials::GetRequestMetadata(
     grpc_core::ClientInitialMetadata initial_metadata) {
-  abort();
-  /* DO NOT SUBMIT: implement TrySeqIter
-  const CallCredentialsList& inner = ctx->composite_creds->inner();
   return TrySeqIter(
-      inner.begin(), inner.end(), std::move(initial_metadata),
-      [](grpc_call_credentials* creds,
+      inner_.begin(), inner_.end(), std::move(initial_metadata),
+      [](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
          grpc_core::ClientInitialMetadata initial_metadata) {
         return creds->GetRequestMetadata(std::move(initial_metadata));
       });
-  */
 }
 
 std::string grpc_composite_call_credentials::debug_string() {
