@@ -42,6 +42,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/wake_activity_closure.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -287,8 +288,6 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
         [](absl::string_view, const grpc_core::Slice&) { abort(); });
     return Immediate(std::move(initial_metadata));
   }
-  abort();
-  /* DO NOT SUBMIT: convert this code
   grpc_millis refresh_threshold =
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
   // Couldn't get the token from the cache.
@@ -297,10 +296,10 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
       static_cast<grpc_oauth2_pending_get_request_metadata*>(
           gpr_malloc(sizeof(*pending_request)));
   pending_request->md_array = md_array;
-  pending_request->on_request_metadata = on_request_metadata;
-  pending_request->pollent = pollent;
+  pending_request->on_request_metadata = grpc_core::MakeWakeActivityClosure();
+  pending_request->pollent = *grpc_core::GetContext<grpc_polling_entity*>();
   grpc_polling_entity_add_to_pollset_set(
-      pollent, grpc_polling_entity_pollset_set(&pollent_));
+      pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
   pending_request->next = pending_requests_;
   pending_requests_ = pending_request;
   bool start_fetch = false;
@@ -316,7 +315,6 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
   return false;
-*/
 }
 
 grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
