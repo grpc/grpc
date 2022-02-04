@@ -233,6 +233,8 @@ void long_running_service_cleanup_test(void) {
 }
 
 int main(int argc, char** argv) {
+  gpr_time_init();
+
   /* Tests with default g_start_time */
   {
     grpc::testing::TestEnvironment env(argc, argv);
