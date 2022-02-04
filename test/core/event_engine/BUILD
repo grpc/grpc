@@ -67,6 +67,6 @@ grpc_cc_library(
     name = "event_engine_test_factory",
     srcs = ["factory.cc"],
     hdrs = ["factory.h"],
-    deps = ["//:event_engine_base"],
     language = "C++",
+    deps = ["//:event_engine_base"],
 )

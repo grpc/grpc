@@ -33,11 +33,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "test/core/event_engine/factory.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/surface/init.h"
+#include "test/core/event_engine/factory.h"
 #include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
 
