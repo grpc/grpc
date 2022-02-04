@@ -1296,6 +1296,7 @@ grpc_cc_library(
         "context",
         "gpr_base",
         "gpr_codegen",
+        "orphanable",
         "poll",
         "promise_factory",
         "promise_status",
