@@ -151,8 +151,8 @@ class MemoryAllocator {
   /// any relevant control structures also.
   grpc_slice MakeSlice(MemoryRequest request);
 
-  // Similar to previous function but also invokes a user supplied destroy
-  // function at destruction.
+  /// Similar to above function but also invokes a user supplied destroy
+  /// function at destruction.
   grpc_slice MakeSlice(MemoryRequest request, void* arg,
                        void (*on_destroy)(void*));
 
