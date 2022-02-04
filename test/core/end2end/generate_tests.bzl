@@ -474,7 +474,8 @@ def grpc_end2end_tests():
                 deps = [":%s" % fixture_lib_name],
                 data = [":%s" % fixture_lib_name],
                 args = [t],
-                tags = _platform_support_tags(fopt) + ["no_test_ios"],
+                tags = _platform_support_tags(fopt) +
+                       ["no_test_ios", "no_extract"],
                 flaky = t in fopt.flaky_tests,
                 exclude_pollers = topt.exclude_pollers,
             )
@@ -541,7 +542,8 @@ def grpc_end2end_nosec_tests():
                 deps = [":%s" % fixture_lib_name],
                 data = [":%s" % fixture_lib_name],
                 args = [t],
-                tags = _platform_support_tags(fopt) + ["no_test_ios"],
+                tags = _platform_support_tags(fopt) +
+                       ["no_test_ios", "no_extract"],
                 flaky = t in fopt.flaky_tests,
                 exclude_pollers = topt.exclude_pollers,
             )
