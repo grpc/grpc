@@ -39,8 +39,6 @@ namespace Grpc.Core
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
         public static TResponse BlockingUnaryCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
-            where TRequest : class
-            where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             return asyncCall.UnaryCall(req);
@@ -55,8 +53,6 @@ namespace Grpc.Core
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
         public static AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
-            where TRequest : class
-            where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var asyncResult = asyncCall.UnaryCallAsync(req);
@@ -76,8 +72,6 @@ namespace Grpc.Core
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response messages.</typeparam>
         public static AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
-            where TRequest : class
-            where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             asyncCall.StartServerStreamingCall(req);
@@ -97,8 +91,6 @@ namespace Grpc.Core
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
         public static AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
-            where TRequest : class
-            where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var resultTask = asyncCall.ClientStreamingCallAsync();
@@ -119,8 +111,6 @@ namespace Grpc.Core
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
         /// <typeparam name="TResponse">Type of responsemessages.</typeparam>
         public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
-            where TRequest : class
-            where TResponse : class
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             asyncCall.StartDuplexStreamingCall();

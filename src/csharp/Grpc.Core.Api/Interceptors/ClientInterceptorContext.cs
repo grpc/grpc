@@ -27,8 +27,6 @@ namespace Grpc.Core.Interceptors
     /// Carries along the context associated with intercepted invocations on the client side.
     /// </summary>
     public struct ClientInterceptorContext<TRequest, TResponse>
-        where TRequest : class
-        where TResponse : class
     {
         /// <summary>
         /// Creates a new instance of <see cref="Grpc.Core.Interceptors.ClientInterceptorContext{TRequest, TResponse}" />

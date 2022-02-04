@@ -51,7 +51,7 @@ namespace Grpc.Core.Internal
         protected bool started;
         protected bool cancelRequested;
 
-        protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
+        protected TaskCompletionSource<Maybe<TRead>> streamingReadTcs;  // Completion of a pending streaming read if not null.
         protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
         protected TaskCompletionSource<object> sendStatusFromServerTcs;
         protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
@@ -141,7 +141,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Initiates reading a message. Only one read operation can be active at a time.
         /// </summary>
-        protected Task<TRead> ReadMessageInternalAsync()
+        protected Task<Maybe<TRead>> ReadMessageInternalAsync()
         {
             lock (myLock)
             {
@@ -158,7 +158,7 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(!disposed);
 
                 call.StartReceiveMessage(ReceivedMessageCallback);
-                streamingReadTcs = new TaskCompletionSource<TRead>();
+                streamingReadTcs = new TaskCompletionSource<Maybe<TRead>>();
                 return streamingReadTcs.Task;
             }
         }
@@ -223,18 +223,18 @@ namespace Grpc.Core.Internal
             return context.GetPayload();
         }
 
-        protected Exception TryDeserialize(IBufferReader reader, out TRead msg)
+        protected Exception TryDeserialize(IBufferReader reader, out Maybe<TRead> msg)
         {
             DefaultDeserializationContext context = null;
             try
             {
                 context = DefaultDeserializationContext.GetInitializedThreadLocal(reader);
-                msg = deserializer(context);
+                msg = new Maybe<TRead>(deserializer(context));
                 return null;
             }
             catch (Exception e)
             {
-                msg = default(TRead);
+                msg = Maybe<TRead>.Empty;
                 return e;
             }
             finally
@@ -265,7 +265,7 @@ namespace Grpc.Core.Internal
                 else
                 {
                     origTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;    
+                    streamingWriteTcs = null;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -333,10 +333,10 @@ namespace Grpc.Core.Internal
             // treat this completion as the last read an rely on C core to handle the failed
             // read (e.g. deliver approriate statusCode on the clientside).
 
-            TRead msg = default(TRead);
+            var msg = Maybe<TRead>.Empty;
             var deserializeException = (success && receivedMessageReader.TotalLength.HasValue) ? TryDeserialize(receivedMessageReader, out msg) : null;
 
-            TaskCompletionSource<TRead> origTcs = null;
+            TaskCompletionSource<Maybe<TRead>> origTcs = null;
             bool releasedResources;
             lock (myLock)
             {

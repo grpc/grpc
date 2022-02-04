@@ -32,54 +32,90 @@ namespace Grpc.Core.Tests
     /// <summary>
     /// Allows setting up a mock service in the client-server tests easily.
     /// </summary>
-    public class MockServiceHelper
+
+    // note: historically all uses were string, but we can generalize that
+    public class MockServiceHelper : MockServiceHelper<string>
+    {
+        public MockServiceHelper(string host = null, Marshaller<string> marshaller = null, IEnumerable<ChannelOption> channelOptions = null)
+            : base(host, marshaller ?? Marshallers.StringMarshaller, channelOptions)
+        { }
+
+        public override string DefaultValue => "";
+    }
+
+    public class MockServiceHelperWrappedString : MockServiceHelper<WrappedString>
+    {
+        public MockServiceHelperWrappedString(string host = null, Marshaller<WrappedString> marshaller = null, IEnumerable<ChannelOption> channelOptions = null)
+            : base(host, marshaller ?? Marshaller, channelOptions)
+        { }
+
+        public static readonly Marshaller<WrappedString> Marshaller = new Marshaller<WrappedString>(
+            (WrappedString s) => System.Text.Encoding.UTF8.GetBytes(s.Value),
+            (byte[] a) => System.Text.Encoding.UTF8.GetString(a));
+    }
+
+    public readonly struct WrappedString // allows us to test value-typed marshellers using existing tests which expect string-like semantics
+    {
+        public string Value { get; }
+        public WrappedString(string value) => Value = value;
+        public override string ToString() => $"[{Value}]";
+        public override bool Equals(object obj) => throw new NotImplementedException("should unwrap");
+        public override int GetHashCode() => throw new NotImplementedException("should unwrap");
+
+        public static implicit operator string(WrappedString value) => value.Value;
+        public static implicit operator WrappedString(string value) => new WrappedString(value);
+    }
+
+
+    public abstract class MockServiceHelper<T>
     {
         public const string ServiceName = "tests.Test";
+
+        public virtual T DefaultValue => default(T);
 
         readonly string host;
         readonly IEnumerable<ChannelOption> channelOptions;
 
-        readonly Method<string, string> unaryMethod;
-        readonly Method<string, string> clientStreamingMethod;
-        readonly Method<string, string> serverStreamingMethod;
-        readonly Method<string, string> duplexStreamingMethod;
+        readonly Method<T, T> unaryMethod;
+        readonly Method<T, T> clientStreamingMethod;
+        readonly Method<T, T> serverStreamingMethod;
+        readonly Method<T, T> duplexStreamingMethod;
 
-        UnaryServerMethod<string, string> unaryHandler;
-        ClientStreamingServerMethod<string, string> clientStreamingHandler;
-        ServerStreamingServerMethod<string, string> serverStreamingHandler;
-        DuplexStreamingServerMethod<string, string> duplexStreamingHandler;
+        UnaryServerMethod<T, T> unaryHandler;
+        ClientStreamingServerMethod<T, T> clientStreamingHandler;
+        ServerStreamingServerMethod<T, T> serverStreamingHandler;
+        DuplexStreamingServerMethod<T, T> duplexStreamingHandler;
 
         Server server;
         Channel channel;
 
-        public MockServiceHelper(string host = null, Marshaller<string> marshaller = null, IEnumerable<ChannelOption> channelOptions = null)
+        public MockServiceHelper(string host = null, Marshaller<T> marshaller = null, IEnumerable<ChannelOption> channelOptions = null)
         {
             this.host = host ?? "localhost";
             this.channelOptions = channelOptions;
-            marshaller = marshaller ?? Marshallers.StringMarshaller;
 
-            unaryMethod = new Method<string, string>(
+            unaryMethod = new Method<T, T>(
                 MethodType.Unary,
                 ServiceName,
                 "Unary",
                 marshaller,
                 marshaller);
 
-            clientStreamingMethod = new Method<string, string>(
+            clientStreamingMethod = new Method<T, T>(
                 MethodType.ClientStreaming,
                 ServiceName,
                 "ClientStreaming",
                 marshaller,
                 marshaller);
 
-            serverStreamingMethod = new Method<string, string>(
+            serverStreamingMethod = new Method<T, T>(
                 MethodType.ServerStreaming,
                 ServiceName,
                 "ServerStreaming",
                 marshaller,
                 marshaller);
 
-            duplexStreamingMethod = new Method<string, string>(
+            duplexStreamingMethod = new Method<T, T>(
                 MethodType.DuplexStreaming,
                 ServiceName,
                 "DuplexStreaming",
@@ -95,25 +131,25 @@ namespace Grpc.Core.Tests
 
             var defaultStatus = new Status(StatusCode.Unknown, "Default mock implementation. Please provide your own.");
 
-            unaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            unaryHandler = new UnaryServerMethod<T, T>((request, context) =>
             {
                 context.Status = defaultStatus;
-                return Task.FromResult("");
+                return Task.FromResult(DefaultValue);
             });
 
-            clientStreamingHandler = new ClientStreamingServerMethod<string, string>((requestStream, context) =>
+            clientStreamingHandler = new ClientStreamingServerMethod<T, T>((requestStream, context) =>
             {
                 context.Status = defaultStatus;
-                return Task.FromResult("");
+                return Task.FromResult(DefaultValue);
             });
 
-            serverStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) =>
+            serverStreamingHandler = new ServerStreamingServerMethod<T, T>((request, responseStream, context) =>
             {
                 context.Status = defaultStatus;
                 return TaskUtils.CompletedTask;
             });
 
-            duplexStreamingHandler = new DuplexStreamingServerMethod<string, string>((requestStream, responseStream, context) =>
+            duplexStreamingHandler = new DuplexStreamingServerMethod<T, T>((requestStream, responseStream, context) =>
             {
                 context.Status = defaultStatus;
                 return TaskUtils.CompletedTask;
@@ -149,24 +185,24 @@ namespace Grpc.Core.Tests
             return channel;
         }
 
-        public CallInvocationDetails<string, string> CreateUnaryCall(CallOptions options = default(CallOptions))
+        public CallInvocationDetails<T, T> CreateUnaryCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, unaryMethod, options);
+            return new CallInvocationDetails<T, T>(channel, unaryMethod, options);
         }
 
-        public CallInvocationDetails<string, string> CreateClientStreamingCall(CallOptions options = default(CallOptions))
+        public CallInvocationDetails<T, T> CreateClientStreamingCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, clientStreamingMethod, options);
+            return new CallInvocationDetails<T, T>(channel, clientStreamingMethod, options);
         }
 
-        public CallInvocationDetails<string, string> CreateServerStreamingCall(CallOptions options = default(CallOptions))
+        public CallInvocationDetails<T, T> CreateServerStreamingCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, serverStreamingMethod, options);
+            return new CallInvocationDetails<T, T>(channel, serverStreamingMethod, options);
         }
 
-        public CallInvocationDetails<string, string> CreateDuplexStreamingCall(CallOptions options = default(CallOptions))
+        public CallInvocationDetails<T, T> CreateDuplexStreamingCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, duplexStreamingMethod, options);
+            return new CallInvocationDetails<T, T>(channel, duplexStreamingMethod, options);
         }
 
         public string Host
@@ -179,7 +215,7 @@ namespace Grpc.Core.Tests
 
         public ServerServiceDefinition ServiceDefinition { get; set; }
       
-        public UnaryServerMethod<string, string> UnaryHandler
+        public UnaryServerMethod<T, T> UnaryHandler
         {
             get
             {
@@ -192,7 +228,7 @@ namespace Grpc.Core.Tests
             }
         }
 
-        public ClientStreamingServerMethod<string, string> ClientStreamingHandler
+        public ClientStreamingServerMethod<T, T> ClientStreamingHandler
         {
             get
             {
@@ -205,7 +241,7 @@ namespace Grpc.Core.Tests
             }
         }
 
-        public ServerStreamingServerMethod<string, string> ServerStreamingHandler
+        public ServerStreamingServerMethod<T, T> ServerStreamingHandler
         {
             get
             {
@@ -218,7 +254,7 @@ namespace Grpc.Core.Tests
             }
         }
 
-        public DuplexStreamingServerMethod<string, string> DuplexStreamingHandler
+        public DuplexStreamingServerMethod<T, T> DuplexStreamingHandler
         {
             get
             {

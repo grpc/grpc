@@ -24,11 +24,9 @@ using System.Threading.Tasks;
 namespace Grpc.Core.Internal
 {
     internal class ClientResponseStream<TRequest, TResponse> : IAsyncStreamReader<TResponse>
-        where TRequest : class
-        where TResponse : class
     {
         readonly AsyncCall<TRequest, TResponse> call;
-        TResponse current;
+        Maybe<TResponse> current;
 
         public ClientResponseStream(AsyncCall<TRequest, TResponse> call)
         {
@@ -39,11 +37,11 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                if (current == null)
+                if (!current.HasValue)
                 {
                     throw new InvalidOperationException("No current element is available.");
                 }
-                return current;
+                return current.Value;
             }
         }
 
@@ -54,7 +52,7 @@ namespace Grpc.Core.Internal
                 var result = await call.ReadMessageAsync().ConfigureAwait(false);
                 this.current = result;
 
-                if (result == null)
+                if (!result.HasValue)
                 {
                     await call.StreamingResponseCallFinishedTask.ConfigureAwait(false);
                     return false;

@@ -31,7 +31,6 @@ namespace Grpc.Core.Utils
         /// Reads the entire stream and executes an async action for each element.
         /// </summary>
         public static async Task ForEachAsync<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
-            where T : class
         {
             while (await streamReader.MoveNext().ConfigureAwait(false))
             {
@@ -43,7 +42,6 @@ namespace Grpc.Core.Utils
         /// Reads the entire stream and creates a list containing all the elements read.
         /// </summary>
         public static async Task<List<T>> ToListAsync<T>(this IAsyncStreamReader<T> streamReader)
-            where T : class
         {
             var result = new List<T>();
             while (await streamReader.MoveNext().ConfigureAwait(false))
@@ -58,7 +56,6 @@ namespace Grpc.Core.Utils
         /// Completes the stream afterwards unless close = false.
         /// </summary>
         public static async Task WriteAllAsync<T>(this IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool complete = true)
-            where T : class
         {
             foreach (var element in elements)
             {
@@ -74,7 +71,6 @@ namespace Grpc.Core.Utils
         /// Writes all elements from given enumerable to the stream.
         /// </summary>
         public static async Task WriteAllAsync<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
-            where T : class
         {
             foreach (var element in elements)
             {

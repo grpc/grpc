@@ -89,8 +89,6 @@ namespace Grpc.Core
 
         /// <summary>Creates call invocation details for given method.</summary>
         protected virtual CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
-                where TRequest : class
-                where TResponse : class
         {
             return new CallInvocationDetails<TRequest, TResponse>(channel, method, host, options);
         }

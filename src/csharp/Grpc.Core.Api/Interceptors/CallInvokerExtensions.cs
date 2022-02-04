@@ -107,8 +107,6 @@ namespace Grpc.Core.Interceptors
             }
 
             private ClientInterceptorContext<TRequest, TResponse> GetNewContext<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
-                where TRequest : class
-                where TResponse : class
             {
                 var metadata = context.Options.Headers ?? new Metadata();
                 return new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, context.Options.WithHeaders(interceptor(metadata)));

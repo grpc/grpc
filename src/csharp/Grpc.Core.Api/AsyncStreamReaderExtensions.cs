@@ -37,7 +37,6 @@ namespace Grpc.Core
         /// to the next element; false if the reader has passed the end of the sequence.
         /// </returns>
         public static Task<bool> MoveNext<T>(this IAsyncStreamReader<T> streamReader)
-            where T : class
         {
             if (streamReader == null)
             {

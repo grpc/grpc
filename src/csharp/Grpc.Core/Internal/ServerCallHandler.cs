@@ -34,8 +34,6 @@ namespace Grpc.Core.Internal
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<UnaryServerCallHandler<TRequest, TResponse>>();
 
@@ -93,8 +91,6 @@ namespace Grpc.Core.Internal
     }
 
     internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ServerStreamingServerCallHandler<TRequest, TResponse>>();
 
@@ -151,8 +147,6 @@ namespace Grpc.Core.Internal
     }
 
     internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<ClientStreamingServerCallHandler<TRequest, TResponse>>();
 
@@ -209,8 +203,6 @@ namespace Grpc.Core.Internal
     }
 
     internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
-        where TRequest : class
-        where TResponse : class
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DuplexStreamingServerCallHandler<TRequest, TResponse>>();
 

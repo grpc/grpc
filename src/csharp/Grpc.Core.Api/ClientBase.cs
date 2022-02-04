@@ -162,8 +162,6 @@ namespace Grpc.Core
                 }
 
                 private ClientInterceptorContext<TRequest, TResponse> GetNewContext<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
-                    where TRequest : class
-                    where TResponse : class
                 {
                     var newHostAndCallOptions = interceptor(context.Method, context.Host, context.Options);
                     return new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHostAndCallOptions.Host, newHostAndCallOptions.CallOptions);

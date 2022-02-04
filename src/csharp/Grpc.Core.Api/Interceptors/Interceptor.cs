@@ -49,9 +49,7 @@ namespace Grpc.Core.Interceptors
         /// The interceptor can choose to return the return value of the
         /// continuation delegate or an arbitrary value as it sees fit.
         /// </returns>
-        public delegate TResponse BlockingUnaryCallContinuation<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context)
-            where TRequest : class
-            where TResponse : class;
+        public delegate TResponse BlockingUnaryCallContinuation<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context);
 
         /// <summary>
         /// Represents a continuation for intercepting simple asynchronous invocations.
@@ -75,9 +73,7 @@ namespace Grpc.Core.Interceptors
         /// The interceptor can choose to return the same object returned from
         /// the continuation delegate or an arbitrarily constructed instance as it sees fit.
         /// </returns>
-        public delegate AsyncUnaryCall<TResponse> AsyncUnaryCallContinuation<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context)
-            where TRequest : class
-            where TResponse : class;
+        public delegate AsyncUnaryCall<TResponse> AsyncUnaryCallContinuation<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context);
 
         /// <summary>
         /// Represents a continuation for intercepting asynchronous server-streaming invocations.
@@ -101,9 +97,7 @@ namespace Grpc.Core.Interceptors
         /// The interceptor can choose to return the same object returned from
         /// the continuation delegate or an arbitrarily constructed instance as it sees fit.
         /// </returns>
-        public delegate AsyncServerStreamingCall<TResponse> AsyncServerStreamingCallContinuation<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context)
-            where TRequest : class
-            where TResponse : class;
+        public delegate AsyncServerStreamingCall<TResponse> AsyncServerStreamingCallContinuation<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context);
 
         /// <summary>
         /// Represents a continuation for intercepting asynchronous client-streaming invocations.
@@ -126,9 +120,7 @@ namespace Grpc.Core.Interceptors
         /// The interceptor can choose to return the same object returned from
         /// the continuation delegate or an arbitrarily constructed instance as it sees fit.
         /// </returns>
-        public delegate AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCallContinuation<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
-            where TRequest : class
-            where TResponse : class;
+        public delegate AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCallContinuation<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context);
 
         /// <summary>
         /// Represents a continuation for intercepting asynchronous duplex invocations.
@@ -149,9 +141,7 @@ namespace Grpc.Core.Interceptors
         /// The interceptor can choose to return the same object returned from
         /// the continuation delegate or an arbitrarily constructed instance as it sees fit.
         /// </returns>
-        public delegate AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCallContinuation<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
-            where TRequest : class
-            where TResponse : class;
+        public delegate AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCallContinuation<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context);
 
         /// <summary>
         /// Intercepts a blocking invocation of a simple remote call.
@@ -174,8 +164,6 @@ namespace Grpc.Core.Interceptors
         /// value as it sees fit.
         /// </returns>
         public virtual TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(request, context);
         }
@@ -202,8 +190,6 @@ namespace Grpc.Core.Interceptors
         /// own substitute as it sees fit.
         /// </returns>
         public virtual AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(request, context);
         }
@@ -230,8 +216,6 @@ namespace Grpc.Core.Interceptors
         /// own substitute as it sees fit.
         /// </returns>
         public virtual AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(request, context);
         }
@@ -257,8 +241,6 @@ namespace Grpc.Core.Interceptors
         /// own substitute as it sees fit.
         /// </returns>
         public virtual AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(context);
         }
@@ -284,8 +266,6 @@ namespace Grpc.Core.Interceptors
         /// own substitute as it sees fit.
         /// </returns>
         public virtual AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(context);
         }
@@ -313,8 +293,6 @@ namespace Grpc.Core.Interceptors
         /// or an arbitrary response value as it sees fit.
         /// </returns>
         public virtual Task<TResponse> UnaryServerHandler<TRequest, TResponse>(TRequest request, ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(request, context);
         }
@@ -344,8 +322,6 @@ namespace Grpc.Core.Interceptors
         /// the continuation.
         /// </returns>
         public virtual Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, ServerCallContext context, ClientStreamingServerMethod<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(requestStream, context);
         }
@@ -370,8 +346,6 @@ namespace Grpc.Core.Interceptors
         /// when calling the continuation.
         /// </param>
         public virtual Task ServerStreamingServerHandler<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream, ServerCallContext context, ServerStreamingServerMethod<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(request, responseStream, context);
         }
@@ -396,8 +370,6 @@ namespace Grpc.Core.Interceptors
         /// when calling the continuation.
         /// </param>
         public virtual Task DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream, ServerCallContext context, DuplexStreamingServerMethod<TRequest, TResponse> continuation)
-            where TRequest : class
-            where TResponse : class
         {
             return continuation(requestStream, responseStream, context);
         }

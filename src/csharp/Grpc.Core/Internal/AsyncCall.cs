@@ -306,7 +306,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Receives a streaming response. Only one pending read action is allowed at any given time.
         /// </summary>
-        public Task<TResponse> ReadMessageAsync()
+        public Task<Maybe<TResponse>> ReadMessageAsync()
         {
             return ReadMessageInternalAsync();
         }
@@ -558,7 +558,7 @@ namespace Grpc.Core.Internal
             // success will be always set to true.
 
             TaskCompletionSource<object> delayedStreamingWriteTcs = null;
-            TResponse msg = default(TResponse);
+            var msg = Maybe<TResponse>.Empty;
             var deserializeException = TryDeserialize(receivedMessageReader, out msg);
 
             bool releasedResources;
@@ -600,7 +600,7 @@ namespace Grpc.Core.Internal
                 return;
             }
 
-            unaryResponseTcs.SetResult(msg);
+            unaryResponseTcs.SetResult(msg.Value);
         }
 
         /// <summary>

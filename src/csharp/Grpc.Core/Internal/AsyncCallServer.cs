@@ -86,7 +86,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Receives a streaming request. Only one pending read action is allowed at any given time.
         /// </summary>
-        public Task<TRequest> ReadMessageAsync()
+        public Task<Maybe<TRequest>> ReadMessageAsync()
         {
             return ReadMessageInternalAsync();
         }
@@ -218,8 +218,8 @@ namespace Grpc.Core.Internal
                     // if there's no pending read, readingDone=true will dispose now.
                     // if there is a pending read, we will dispose once that read finishes.
                     readingDone = true;
-                    streamingReadTcs = new TaskCompletionSource<TRequest>();
-                    streamingReadTcs.SetResult(default(TRequest));
+                    streamingReadTcs = new TaskCompletionSource<Maybe<TRequest>>();
+                    streamingReadTcs.SetResult(Maybe<TRequest>.Empty);
                 }
                 releasedResources = ReleaseResourcesIfPossible();
             }
