@@ -118,7 +118,7 @@ static void plugin_md_request_metadata_ready(void* request,
   }
   // If it has not been cancelled, process it.
   r->result = process_plugin_result(r.get(), md, num_md, status, error_details);
-  r->ready.store(true, std::memory_order_acq_rel);
+  r->ready.store(true, std::memory_order_release);
   r->waker.Wakeup();
 }
 
@@ -161,7 +161,9 @@ grpc_plugin_credentials::GetRequestMetadata(
     }
     return [request]() -> grpc_core::Poll<
                            absl::StatusOr<grpc_core::ClientInitialMetadata>> {
-      if (!request->ready) return grpc_core::Pending{};
+      if (!request->ready.load(std::memory_order_acquire)) {
+        return grpc_core::Pending{};
+      }
       return std::move(request->result);
     };
   }

@@ -22,6 +22,8 @@
 
 #include <string.h>
 
+#include <atomic>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -43,7 +45,6 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/wake_activity_closure.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -258,15 +259,25 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   gpr_mu_unlock(&mu_);
   // Invoke callbacks for all pending requests.
   while (pending_request != nullptr) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, pending_request->on_request_metadata, GRPC_ERROR_NONE);
+    if (status == GRPC_CREDENTIALS_OK) {
+      pending_request->md->Append(
+          GRPC_AUTHORIZATION_METADATA_KEY, std::move(*access_token_value),
+          [](absl::string_view, const grpc_core::Slice&) { abort(); });
+      pending_request->result = std::move(pending_request->md);
+    } else {
+      auto err = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Error occurred when fetching oauth2 token.", &error, 1);
+      pending_request->result = grpc_error_to_absl_status(err);
+      GRPC_ERROR_UNREF(err);
+    }
+    pending_request->done.store(true, std::memory_order_release);
+    pending_request->waker.Wakeup();
     grpc_polling_entity_del_from_pollset_set(
         pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
     pending_request = pending_request->next;
-    delete prev;
+    prev->Unref();
   }
-  Unref();
   delete r;
 }
 
@@ -274,61 +285,55 @@ grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
     grpc_core::ClientInitialMetadata initial_metadata,
     grpc_core::AuthMetadataContext* auth_metadata_context) {
-  return grpc_core::Capture(
-      [](grpc_core::RefCountedPtr<grpc_call_credentials>* self_creds,
-         grpc_core::ClientInitialMetadata* initial_metadata)
+  // Check if we can use the cached token.
+  absl::optional<grpc_core::Slice> cached_access_token_value;
+  gpr_mu_lock(&mu_);
+  if (access_token_value_.has_value() &&
+      gpr_time_cmp(
+          gpr_time_sub(token_expiration_, gpr_now(GPR_CLOCK_MONOTONIC)),
+          gpr_time_from_seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS,
+                                GPR_TIMESPAN)) > 0) {
+    cached_access_token_value = access_token_value_->Ref();
+  }
+  if (cached_access_token_value.has_value()) {
+    gpr_mu_unlock(&mu_);
+    initial_metadata->Append(
+        GRPC_AUTHORIZATION_METADATA_KEY, std::move(*cached_access_token_value),
+        [](absl::string_view, const grpc_core::Slice&) { abort(); });
+    return grpc_core::Immediate(std::move(initial_metadata));
+  }
+  // Couldn't get the token from the cache.
+  // Add request to pending_requests_ and start a new fetch if needed.
+  grpc_millis refresh_threshold =
+      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
+  auto pending_request =
+      grpc_core::MakeRefCounted<grpc_oauth2_pending_get_request_metadata>();
+  pending_request->pollent = grpc_core::GetContext<grpc_polling_entity>();
+  pending_request->waker = grpc_core::Activity::current()->MakeNonOwningWaker();
+  grpc_polling_entity_add_to_pollset_set(
+      pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
+  pending_request->next = pending_requests_;
+  pending_request->md = std::move(initial_metadata);
+  pending_requests_ = pending_request->Ref().release();
+  bool start_fetch = false;
+  if (!token_fetch_pending_) {
+    token_fetch_pending_ = true;
+    start_fetch = true;
+  }
+  gpr_mu_unlock(&mu_);
+  if (start_fetch) {
+    fetch_oauth2(new grpc_credentials_metadata_request(Ref()), &pollent_,
+                 on_oauth2_token_fetcher_http_response,
+                 grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
+  }
+  return
+      [pending_request]()
           -> grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>> {
-        auto* self = static_cast<grpc_oauth2_token_fetcher_credentials*>(
-            self_creds->get());
-        // Check if we can use the cached token.
-        absl::optional<grpc_core::Slice> cached_access_token_value;
-        gpr_mu_lock(&self->mu_);
-        if (self->access_token_value_.has_value() &&
-            gpr_time_cmp(
-                gpr_time_sub(self->token_expiration_,
-                             gpr_now(GPR_CLOCK_MONOTONIC)),
-                gpr_time_from_seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS,
-                                      GPR_TIMESPAN)) > 0) {
-          cached_access_token_value = self->access_token_value_->Ref();
+        if (!pending_request->done.load(std::memory_order_acquire)) {
+          return grpc_core::Pending{};
         }
-        if (cached_access_token_value.has_value()) {
-          gpr_mu_unlock(&self->mu_);
-          (*initial_metadata)
-              ->Append(
-                  GRPC_AUTHORIZATION_METADATA_KEY,
-                  std::move(*cached_access_token_value),
-                  [](absl::string_view, const grpc_core::Slice&) { abort(); });
-          return std::move(*initial_metadata);
-        }
-        grpc_millis refresh_threshold =
-            GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
-        // Couldn't get the token from the cache.
-        // Add request to pending_requests_ and start a new fetch if needed.
-        auto* pending_request = new grpc_oauth2_pending_get_request_metadata;
-        pending_request->on_request_metadata =
-            grpc_core::MakeWakeActivityClosure();
-        pending_request->pollent = grpc_core::GetContext<grpc_polling_entity>();
-        grpc_polling_entity_add_to_pollset_set(
-            pending_request->pollent,
-            grpc_polling_entity_pollset_set(&self->pollent_));
-        pending_request->next = self->pending_requests_;
-        self->pending_requests_ = pending_request;
-        bool start_fetch = false;
-        if (!self->token_fetch_pending_) {
-          self->token_fetch_pending_ = true;
-          start_fetch = true;
-        }
-        gpr_mu_unlock(&self->mu_);
-        if (start_fetch) {
-          self->Ref().release();
-          self->fetch_oauth2(
-              new grpc_credentials_metadata_request(self->Ref()),
-              &self->pollent_, on_oauth2_token_fetcher_http_response,
-              grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
-        }
-        return grpc_core::Pending{};
-      },
-      Ref(), std::move(initial_metadata));
+        return std::move(pending_request->result);
+      };
 }
 
 grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()

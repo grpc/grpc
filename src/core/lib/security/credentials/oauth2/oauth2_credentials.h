@@ -25,6 +25,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -73,10 +74,14 @@ struct grpc_credentials_metadata_request {
   grpc_http_response response;
 };
 
-struct grpc_oauth2_pending_get_request_metadata {
-  grpc_closure* on_request_metadata;
+struct grpc_oauth2_pending_get_request_metadata
+    : public grpc_core::RefCounted<grpc_oauth2_pending_get_request_metadata> {
+  std::atomic<bool> done{false};
+  grpc_core::Waker waker;
   grpc_polling_entity* pollent;
+  grpc_core::ClientInitialMetadata md;
   struct grpc_oauth2_pending_get_request_metadata* next;
+  absl::StatusOr<grpc_core::ClientInitialMetadata> result;
 };
 
 // -- Oauth2 Token Fetcher credentials --

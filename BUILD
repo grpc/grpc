@@ -1111,22 +1111,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "wake_activity_closure",
-    srcs = [
-        "src/core/lib/promise/wake_activity_closure.cc",
-    ],
-    hdrs = [
-        "src/core/lib/promise/wake_activity_closure.h",
-    ],
-    language = "c++",
-    deps = [
-        "activity",
-        "closure",
-        "gpr_platform",
-    ],
-)
-
-grpc_cc_library(
     name = "promise_like",
     language = "c++",
     public_hdrs = [
@@ -3682,7 +3666,6 @@ grpc_cc_library(
         "tsi_base",
         "uri_parser",
         "useful",
-        "wake_activity_closure",
     ],
 )
 
