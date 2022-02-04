@@ -22,7 +22,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 
@@ -90,14 +90,14 @@ absl::string_view EvaluateArgs::GetPath() const {
   return absl::string_view();
 }
 
-absl::string_view EvaluateArgs::GetHost() const {
-  absl::string_view host;
+absl::string_view EvaluateArgs::GetAuthority() const {
+  absl::string_view authority;
   if (metadata_ != nullptr) {
-    if (auto* host_md = metadata_->get_pointer(HostMetadata())) {
-      host = host_md->as_string_view();
+    if (auto* authority_md = metadata_->get_pointer(HttpAuthorityMetadata())) {
+      authority = authority_md->as_string_view();
     }
   }
-  return host;
+  return authority;
 }
 
 absl::string_view EvaluateArgs::GetMethod() const {
@@ -115,28 +115,14 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }
-  // TODO(yashykt): Remove these special cases for known metadata after
-  // https://github.com/grpc/grpc/pull/28267 is merged
-  if (key == HttpMethodMetadata::key()) {
-    auto method = metadata_->get(HttpMethodMetadata());
-    return method.has_value()
-               ? absl::optional<absl::string_view>(
-                     HttpMethodMetadata::Encode(*method).as_string_view())
-               : absl::nullopt;
+  if (absl::EqualsIgnoreCase(key, "te")) {
+    return absl::nullopt;
   }
-  if (key == HttpAuthorityMetadata().key()) {
-    auto authority = metadata_->get_pointer(HttpAuthorityMetadata());
-    return authority != nullptr
-               ? absl::optional<absl::string_view>(authority->as_string_view())
-               : absl::nullopt;
+  if (absl::EqualsIgnoreCase(key, "host")) {
+    // Maps legacy host header to :authority.
+    return GetAuthority();
   }
-  if (key == HttpPathMetadata().key()) {
-    auto path = metadata_->get_pointer(HttpPathMetadata());
-    return path != nullptr
-               ? absl::optional<absl::string_view>(path->as_string_view())
-               : absl::nullopt;
-  }
-  return metadata_->GetValue(key, concatenated_value);
+  return metadata_->GetStringValue(key, concatenated_value);
 }
 
 grpc_resolved_address EvaluateArgs::GetLocalAddress() const {

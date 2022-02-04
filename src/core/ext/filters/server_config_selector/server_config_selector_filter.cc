@@ -21,7 +21,7 @@
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
-#include "src/core/ext/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -36,7 +36,7 @@ class ChannelData {
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
     MutexLock lock(&mu_);
-    return config_selector_;
+    return config_selector_.value();
   }
 
  private:
@@ -60,8 +60,8 @@ class ChannelData {
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   Mutex mu_;
-  absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector_
-      ABSL_GUARDED_BY(mu_);
+  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
 class CallData {
@@ -103,7 +103,7 @@ class CallData {
 
 grpc_error_handle ChannelData::Init(grpc_channel_element* elem,
                                     grpc_channel_element_args* args) {
-  GPR_ASSERT(elem->filter = &kServerConfigSelectorFilter);
+  GPR_ASSERT(elem->filter == &kServerConfigSelectorFilter);
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
       ServerConfigSelectorProvider::GetFromChannelArgs(*args->channel_args);
   if (server_config_selector_provider == nullptr) {
@@ -127,8 +127,13 @@ ChannelData::ChannelData(
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       absl::make_unique<ServerConfigSelectorWatcher>(this);
-  config_selector_ = server_config_selector_provider_->Watch(
+  auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
+  MutexLock lock(&mu_);
+  // It's possible for the watcher to have already updated config_selector_
+  if (!config_selector_.has_value()) {
+    config_selector_ = std::move(config_selector);
+  }
 }
 
 ChannelData::~ChannelData() { server_config_selector_provider_->CancelWatch(); }
@@ -250,6 +255,7 @@ void CallData::MaybeResumeRecvTrailingMetadataReady() {
 
 const grpc_channel_filter kServerConfigSelectorFilter = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,

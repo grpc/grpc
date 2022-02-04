@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -85,16 +85,28 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 #=================
-# Use cmake 3.6 from jessie-backports
-# should only be used for images based on debian jessie.
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
-RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+RUN apt-get update && apt-get install -y cmake && apt-get clean
+
+#=================
+# Install ccache
+
+# Install ccache from source since ccache 3.x packaged with most linux distributions
+# does not support Redis backend for caching.
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && cd ccache-4.5.1 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.5.1 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins
+
 
 # Define the default command.
 CMD ["bash"]

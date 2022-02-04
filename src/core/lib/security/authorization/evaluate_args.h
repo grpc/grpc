@@ -57,7 +57,7 @@ class EvaluateArgs {
       : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
-  absl::string_view GetHost() const;
+  absl::string_view GetAuthority() const;
   absl::string_view GetMethod() const;
   // Returns metadata value(s) for the specified key.
   // If the key is not present in the batch, returns absl::nullopt.

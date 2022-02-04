@@ -26,24 +26,11 @@
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_WINSOCK_SOCKET
-#include <ws2tcpip.h>
-#endif
-
-#if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
-#include <sys/socket.h>
-#endif
-
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
-
-struct grpc_resolved_address {
-  char addr[GRPC_MAX_SOCKADDR_SIZE];
-  socklen_t len;
-};
 
 namespace grpc_core {
 extern const char* kDefaultSecurePort;

@@ -50,6 +50,7 @@
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/client/create_channel_internal.h"
@@ -122,6 +123,12 @@ bool InitializeBinderChannelJavaClass(void* jni_env_void) {
              static_cast<JNIEnv*>(jni_env_void)) != nullptr;
 }
 
+bool InitializeBinderChannelJavaClass(
+    void* jni_env_void, std::function<void*(std::string)> class_finder) {
+  return grpc_binder::FindNativeConnectionHelper(
+             static_cast<JNIEnv*>(jni_env_void), class_finder) != nullptr;
+}
+
 }  // namespace experimental
 }  // namespace grpc
 
@@ -154,6 +161,16 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
 }
 
 bool InitializeBinderChannelJavaClass(void* jni_env_void) {
+  gpr_log(GPR_ERROR,
+          "This APK is compiled with Android API level = %d, which is not "
+          "supported. See port_platform.h for supported versions.",
+          __ANDROID_API__);
+  GPR_ASSERT(0);
+  return {};
+}
+
+bool InitializeBinderChannelJavaClass(
+    void* jni_env_void, std::function<void*(std::string)> class_finder) {
   gpr_log(GPR_ERROR,
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",

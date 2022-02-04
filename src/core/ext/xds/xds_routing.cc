@@ -70,7 +70,7 @@ bool DomainMatch(MatchType match_type, absl::string_view domain_pattern_in,
 
 MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
   if (domain_pattern.empty()) return INVALID_MATCH;
-  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
+  if (!absl::StrContains(domain_pattern, '*')) return EXACT_MATCH;
   if (domain_pattern == "*") return UNIVERSE_MATCH;
   if (domain_pattern[0] == '*') return SUFFIX_MATCH;
   if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;
@@ -174,8 +174,7 @@ absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return grpc_metadata_batch_get_value(initial_metadata, header_name,
-                                       concatenated_value);
+  return initial_metadata->GetStringValue(header_name, concatenated_value);
 }
 
 namespace {

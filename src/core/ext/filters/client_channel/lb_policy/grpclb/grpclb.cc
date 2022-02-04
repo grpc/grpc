@@ -80,7 +80,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -96,11 +95,11 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -112,9 +111,6 @@
 namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
-
-const char kGrpcLbClientStatsMetadataKey[] = "grpclb_client_stats";
-const char kGrpcLbLbTokenMetadataKey[] = "lb-token";
 
 const char kGrpcLbAddressAttributeKey[] = "grpclb";
 
@@ -653,7 +649,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
       args.initial_metadata->Add(
-          kGrpcLbClientStatsMetadataKey,
+          GrpcLbClientStatsMetadata::key(),
           absl::string_view(reinterpret_cast<const char*>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();
@@ -666,7 +662,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       char* lb_token = static_cast<char*>(
           args.call_state->Alloc(subchannel_wrapper->lb_token().size() + 1));
       strcpy(lb_token, subchannel_wrapper->lb_token().c_str());
-      args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey, lb_token);
+      args.initial_metadata->Add(LbTokenMetadata::key(), lb_token);
     }
     // Unwrap subchannel to pass up to the channel.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
@@ -794,7 +790,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   lb_call_ = grpc_channel_create_pollset_set_call(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
-      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
+      Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad").c_slice(),
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
   upb::Arena arena;
@@ -1847,9 +1843,8 @@ namespace grpc_core {
 void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        const grpc_channel_args* args =
-            grpc_channel_stack_builder_get_channel_arguments(builder);
+      [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* args = builder->channel_args();
         const grpc_arg* channel_arg =
             grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
         if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
@@ -1859,8 +1854,7 @@ void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
           // this filter at the very top of the subchannel stack, since that
           // will minimize the number of metadata elements that the filter
           // needs to iterate through to find the ClientStats object.
-          return grpc_channel_stack_builder_prepend_filter(
-              builder, &grpc_client_load_reporting_filter, nullptr, nullptr);
+          builder->PrependFilter(&grpc_client_load_reporting_filter, nullptr);
         }
         return true;
       });

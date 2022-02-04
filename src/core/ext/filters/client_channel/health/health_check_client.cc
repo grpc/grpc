@@ -294,7 +294,7 @@ void HealthCheckClient::CallState::StartCall() {
   SubchannelCall::Args args = {
       health_check_client_->connected_subchannel_,
       &pollent_,
-      GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH,
+      Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
       gpr_get_cycle_counter(),  // start_time
       GRPC_MILLIS_INF_FUTURE,   // deadline
       arena_,
@@ -328,7 +328,7 @@ void HealthCheckClient::CallState::StartCall() {
   // Add send_initial_metadata op.
   send_initial_metadata_.Set(
       HttpPathMetadata(),
-      Slice(GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH));
+      Slice::FromStaticString("/grpc.health.v1.Health/Watch"));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;

@@ -25,15 +25,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 
@@ -57,14 +53,6 @@ grpc_channel_security_connector::grpc_channel_security_connector(
       request_metadata_creds_(std::move(request_metadata_creds)) {}
 
 grpc_channel_security_connector::~grpc_channel_security_connector() {}
-
-int grpc_security_connector_cmp(const grpc_security_connector* sc,
-                                const grpc_security_connector* other) {
-  if (sc == nullptr || other == nullptr) {
-    return grpc_core::QsortCompare(sc, other);
-  }
-  return sc->cmp(other);
-}
 
 int grpc_channel_security_connector::channel_security_connector_cmp(
     const grpc_channel_security_connector* other) const {

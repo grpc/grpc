@@ -50,9 +50,9 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_split.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
@@ -60,8 +60,6 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 /** The maximum number of concurrent batches possible.
@@ -74,9 +72,6 @@
       - message recv
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_BATCHES 6
-
-// Used to create arena for the first call.
-#define ESTIMATED_MDELEM_COUNT 16
 
 struct batch_control {
   batch_control() = default;
@@ -303,6 +298,7 @@ static void add_init_error(grpc_error_handle* composite,
 }
 
 void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
+  grpc_core::ExecCtx exec_ctx;
   return call->arena->Alloc(size);
 }
 
@@ -328,8 +324,7 @@ static parent_call* get_parent_call(grpc_call* call) {
 }
 
 size_t grpc_call_get_initial_size_estimate() {
-  return sizeof(grpc_call) + sizeof(batch_control) * MAX_CONCURRENT_BATCHES +
-         sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
+  return sizeof(grpc_call) + sizeof(batch_control) * MAX_CONCURRENT_BATCHES;
 }
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
@@ -814,7 +809,9 @@ class PublishToAppEncoder {
  public:
   explicit PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
 
-  void Encode(grpc_mdelem md) { Append(GRPC_MDKEY(md), GRPC_MDVALUE(md)); }
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    Append(key.c_slice(), value.c_slice());
+  }
 
   // Catch anything that is not explicitly handled, and do not publish it to the
   // application. If new metadata is added to a batch that needs to be
@@ -836,6 +833,10 @@ class PublishToAppEncoder {
 
   void Encode(grpc_core::GrpcRetryPushbackMsMetadata, grpc_millis count) {
     Append(grpc_core::GrpcRetryPushbackMsMetadata::key(), count);
+  }
+
+  void Encode(grpc_core::LbTokenMetadata, const grpc_core::Slice& slice) {
+    Append(grpc_core::LbTokenMetadata::key(), slice);
   }
 
  private:
@@ -1440,6 +1441,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
+        // Ignore any te metadata key value pairs specified.
+        call->send_initial_metadata.Remove(grpc_core::TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
         if (call->is_client && call->send_deadline != GRPC_MILLIS_INF_FUTURE) {
           call->send_initial_metadata.Set(grpc_core::GrpcTimeoutMetadata(),
@@ -1567,6 +1570,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             grpc_core::GrpcStatusMetadata(),
             op->data.send_status_from_server.status);
 
+        // Ignore any te metadata key value pairs specified.
+        call->send_trailing_metadata.Remove(grpc_core::TeMetadata());
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->send_trailing_metadata;
         stream_op_payload->send_trailing_metadata.sent =

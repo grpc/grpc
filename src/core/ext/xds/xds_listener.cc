@@ -37,6 +37,7 @@
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -271,6 +272,19 @@ grpc_error_handle HttpConnectionManagerParse(
     bool is_v2,
     XdsListenerResource::HttpConnectionManager* http_connection_manager) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
+  // NACK a non-zero `xff_num_trusted_hops` and a `non-empty
+  // original_ip_detection_extensions` as mentioned in
+  // https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_xff_num_trusted_hops(
+          http_connection_manager_proto) != 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "'xff_num_trusted_hops' must be zero");
+  }
+  if (envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_original_ip_detection_extensions(
+          http_connection_manager_proto)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "'original_ip_detection_extensions' must be empty");
+  }
   // Obtain max_stream_duration from Http Protocol Options.
   const envoy_config_core_v3_HttpProtocolOptions* options =
       envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
@@ -339,7 +353,7 @@ grpc_error_handle HttpConnectionManagerParse(
       if (!filter_config.ok()) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
             "filter config for type ", filter_type,
-            " failed to parse: ", filter_config.status().ToString()));
+            " failed to parse: ", StatusToString(filter_config.status())));
       }
       http_connection_manager->http_filters.emplace_back(
           XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -417,9 +431,11 @@ grpc_error_handle HttpConnectionManagerParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "HttpConnectionManager missing config_source for RDS.");
     }
-    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
+    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
+        !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS "
+          "or SELF.");
     }
     // Get the route_config_name.
     http_connection_manager->route_config_name = UpbStringToStdString(

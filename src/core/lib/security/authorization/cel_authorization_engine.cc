@@ -103,7 +103,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
                                 mock_cel::CelValue::CreateStringView(url_path));
       }
     } else if (elem == kHost) {
-      absl::string_view host(args.GetHost());
+      absl::string_view host(args.GetAuthority());
       if (!host.empty()) {
         activation->InsertValue(kHost,
                                 mock_cel::CelValue::CreateStringView(host));
