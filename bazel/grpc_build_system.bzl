@@ -334,12 +334,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     # Every platform, every engine with the default iomgr poller
     for engine_name, engine in EVENT_ENGINES.items():
         test_name = name
+        extra_tags = []
         if engine_name != "default":
             test_name = name + "@engine=" + engine_name
+        else:
+            # The default engine will be exercised on linux with the iomgr
+            # poller tests
+            extra_tags = ["no_linux"]
         native.cc_test(
             name = test_name,
             testonly = True,
-            tags = (tags + engine["tags"]),
+            tags = tags + extra_tags + engine["tags"],
             env = {"TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name},
             **args
         )
