@@ -39,7 +39,7 @@ POLLERS = ["epollex", "epoll1", "poll"]
 # The set of known EventEngines to test
 EVENT_ENGINES = {
     "default": {
-        "tags": [],  # the default must support linux
+        "tags": [],  # the default must support linux, and should not need tags
     },
 }
 
@@ -327,23 +327,22 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 
     # -- Tests that exercise the polling system --
 
-    # Non-Linux platforms
+    # TODO(hork): identify tests that use polling, but don't create a
+    #   grpc::testing::TestEnvironment or call grpc_test_init.
+    #   Example: bad_ssl_test
+
+    # Every platform, every engine with the default iomgr poller
     for engine_name, engine in EVENT_ENGINES.items():
-        if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
-            # These platforms do not support multiple polling engines,
-            # so just create a target for each EventEngine.
-            test_name = name
-            if engine_name != "default":
-                test_name = name + "@engine=" + engine_name
-            native.cc_test(
-                name = test_name,
-                testonly = True,
-                tags = (tags + engine["tags"] + [
-                    "no_linux",  # linux supports multiple pollers
-                ]),
-                env = {"TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name},
-                **args
-            )
+        test_name = name
+        if engine_name != "default":
+            test_name = name + "@engine=" + engine_name
+        native.cc_test(
+            name = test_name,
+            testonly = True,
+            tags = (tags + engine["tags"]),
+            env = {"TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name},
+            **args
+        )
 
     # On linux we run the same test multiple times, once for each poller.
     for poller in POLLERS:
@@ -355,41 +354,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             ],
             size = size,
             timeout = timeout,
-            env = {
-                "TESTONLY_GRPC_EVENTENGINE_STRATEGY": "default",
-                "GRPC_POLL_STRATEGY": poller,
-            },
+            env = {"GRPC_POLL_STRATEGY": poller},
             args = [
                 "$(location %s)" % name,
             ] + args["args"],
-            tags = (tags + EVENT_ENGINES["default"]["tags"] + ["no_windows", "no_mac"]),
-            exec_compatible_with = exec_compatible_with,
-            exec_properties = exec_properties,
-            shard_count = shard_count,
-            flaky = flaky,
-        )
-
-    # Now generate one test for each subsequent EventEngine, all using the first
-    # poller.
-    for engine_name, engine in EVENT_ENGINES.items():
-        if engine_name == "default":
-            continue
-        native.sh_test(
-            name = name + "@poller=" + POLLERS[0] + "@engine=" + engine_name,
-            data = [name] + data,
-            srcs = [
-                "//test/core/util:run_with_poller_sh",
-            ],
-            size = size,
-            timeout = timeout,
-            env = {
-                "TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name,
-                "GRPC_POLL_STRATEGY": POLLERS[0],
-            },
-            args = [
-                "$(location %s)" % name,
-            ] + args["args"],
-            tags = (tags + engine["tags"] + ["no_windows", "no_mac"]),
+            tags = (tags + ["no_windows", "no_mac"]),
             exec_compatible_with = exec_compatible_with,
             exec_properties = exec_properties,
             shard_count = shard_count,

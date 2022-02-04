@@ -115,6 +115,7 @@ static void run_test(const char* target, size_t nops) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(argc, argv);
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
   char* lunder = strrchr(me, '_');

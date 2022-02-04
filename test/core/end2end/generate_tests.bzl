@@ -18,6 +18,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
 POLLERS = ["epollex", "epoll1", "poll"]
 
+# The set of known EventEngines to test
+EVENT_ENGINES = {
+    "default": {
+        "tags": [],  # the default must support linux
+    },
+}
+
 def _fixture_options(
         fullstack = True,
         includes_proxy = False,
@@ -490,14 +497,35 @@ def grpc_end2end_tests():
                     name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
                     data = [":%s_test" % f],
                     srcs = ["end2end_test.sh"],
+                    env = {
+                      "GRPC_POLL_STRATEGY": poller,
+                    },
                     args = [
                         "$(location %s_test)" % f,
                         t,
-                        poller,
                     ],
                     tags = ["no_mac", "no_windows"],
                     flaky = t in fopt.flaky_tests,
                 )
+            for engine_name, engine in EVENT_ENGINES.items():
+                if engine_name == "default":
+                    continue
+                native.sh_test(
+                    name = "%s_test@%s@engine=%s" %
+                           (f, test_short_name, engine_name),
+                    data = [":%s_test" % f],
+                    srcs = ["end2end_test.sh"],
+                    env = {
+                      "TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name,
+                    },
+                    args = [
+                        "$(location %s_test)" % f,
+                        t,
+                    ],
+                    tags = ["no_mac", "no_windows"] + engine["tags"],
+                    flaky = t in fopt.flaky_tests,
+                )
+
 
 # buildifier: disable=unnamed-macro
 def grpc_end2end_nosec_tests():
@@ -576,11 +604,32 @@ def grpc_end2end_nosec_tests():
                            (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
+                    env = {
+                      "GRPC_POLL_STRATEGY": poller,
+                    },
                     args = [
                         "$(location %s_nosec_test)" % f,
                         t,
-                        poller,
                     ],
                     tags = ["no_mac", "no_windows"],
                     flaky = t in fopt.flaky_tests,
                 )
+            for engine_name, engine in EVENT_ENGINES.items():
+                if engine_name == "default":
+                    continue
+                native.sh_test(
+                    name = "%s_nosec_test@%s@engine=%s" %
+                           (f, test_short_name, engine_name),
+                    data = [":%s_nosec_test" % f],
+                    srcs = ["end2end_test.sh"],
+                    env = {
+                      "TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name,
+                    },
+                    args = [
+                        "$(location %s_nosec_test)" % f,
+                        t,
+                    ],
+                    tags = ["no_mac", "no_windows"] + engine["tags"],
+                    flaky = t in fopt.flaky_tests,
+                )
+
