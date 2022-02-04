@@ -3544,6 +3544,32 @@ test_external_account_credentials_create_failure_invalid_workforce_pool_audience
   GPR_ASSERT(url_creds == nullptr);
 }
 
+static void test_insecure_credentials_compare_success(void) {
+  auto* insecure_creds_1 = grpc_insecure_credentials_create();
+  auto* insecure_creds_2 = grpc_insecure_credentials_create();
+  GPR_ASSERT(grpc_core::QsortCompare(insecure_creds_1, insecure_creds_2) == 0);
+  grpc_arg arg_1 = grpc_channel_credentials_to_arg(insecure_creds_1);
+  grpc_channel_args args_1 = {1, &arg_1};
+  grpc_arg arg_2 = grpc_channel_credentials_to_arg(insecure_creds_2);
+  grpc_channel_args args_2 = {1, &arg_2};
+  GPR_ASSERT(grpc_channel_args_compare(&args_1, &args_2) == 0);
+  grpc_channel_credentials_release(insecure_creds_1);
+  grpc_channel_credentials_release(insecure_creds_2);
+}
+
+static void test_insecure_credentials_compare_failure(void) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* fake_creds = grpc_fake_transport_security_credentials_create();
+  GPR_ASSERT(grpc_core::QsortCompare(insecure_creds, fake_creds) != 0);
+  grpc_arg arg_1 = grpc_channel_credentials_to_arg(insecure_creds);
+  grpc_channel_args args_1 = {1, &arg_1};
+  grpc_arg arg_2 = grpc_channel_credentials_to_arg(fake_creds);
+  grpc_channel_args args_2 = {1, &arg_2};
+  GPR_ASSERT(grpc_channel_args_compare(&args_1, &args_2) != 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(fake_creds);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -3622,6 +3648,8 @@ int main(int argc, char** argv) {
   test_external_account_credentials_create_failure_invalid_options_credential_source();
   test_external_account_credentials_create_success_workforce_pool();
   test_external_account_credentials_create_failure_invalid_workforce_pool_audience();
+  test_insecure_credentials_compare_success();
+  test_insecure_credentials_compare_failure();
   grpc_shutdown();
   return 0;
 }
