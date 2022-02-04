@@ -66,7 +66,9 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
         value_(grpc_core::Slice::FromCopiedString(md_value)) {}
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-      GetRequestMetadata(grpc_core::ClientInitialMetadata) override;
+  GetRequestMetadata(
+      grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::AuthMetadataContext* auth_metadata_context) override;
 
   std::string debug_string() override { return "MD only Test Credentials"; };
 

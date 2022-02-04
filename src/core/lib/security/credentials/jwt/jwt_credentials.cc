@@ -50,14 +50,15 @@ grpc_service_account_jwt_access_credentials::
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_service_account_jwt_access_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata) {
+    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::AuthMetadataContext* auth_metadata_context) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
   // Remove service name from service_url to follow the audience format
   // dictated in https://google.aip.dev/auth/4111.
-  absl::StatusOr<std::string> uri =
-      grpc_core::RemoveServiceNameFromJwtUri(context.service_url);
+  absl::StatusOr<std::string> uri = grpc_core::RemoveServiceNameFromJwtUri(
+      auth_metadata_context->JwtServiceUrl(initial_metadata));
   if (!uri.ok()) {
     return grpc_core::Immediate(uri.status());
   }

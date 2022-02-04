@@ -52,7 +52,7 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
 class grpc_security_connector
     : public grpc_core::RefCounted<grpc_security_connector> {
  public:
-  explicit grpc_security_connector(const char* url_scheme)
+  explicit grpc_security_connector(absl::string_view url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
             GRPC_TRACE_FLAG_ENABLED(grpc_trace_security_connector_refcount)
                 ? "security_connector_refcount"
@@ -75,10 +75,10 @@ class grpc_security_connector
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
 
-  const char* url_scheme() const { return url_scheme_; }
+  absl::string_view url_scheme() const { return url_scheme_; }
 
  private:
-  const char* url_scheme_;
+  absl::string_view url_scheme_;
 };
 
 /* Util to encapsulate the connector in a channel arg. */

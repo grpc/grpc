@@ -30,13 +30,15 @@ extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 // -Wmismatched-tags.
 struct grpc_plugin_credentials final : public grpc_call_credentials {
  public:
-  struct pending_request {
-    bool cancelled;
+  struct pending_request : public grpc_core::RefCounted<pending_request> {
+    ~pending_request() override { grpc_auth_metadata_context_reset(&context); }
+    std::atomic<bool> ready;
+    grpc_core::Waker waker;
     struct grpc_plugin_credentials* creds;
-    grpc_core::CredentialsMetadataArray* md_array;
-    grpc_closure* on_request_metadata;
-    struct pending_request* prev;
-    struct pending_request* next;
+    grpc_core::ClientInitialMetadata md;
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
+    grpc_auth_metadata_context context;
+    absl::StatusOr<grpc_core::ClientInitialMetadata> result;
   };
 
   explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,
@@ -44,23 +46,14 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   ~grpc_plugin_credentials() override;
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-      GetRequestMetadata(grpc_core::ClientInitialMetadata) override;
-
-  // Checks if the request has been cancelled.
-  // If not, removes it from the pending list, so that it cannot be
-  // cancelled out from under us.
-  // When this returns, r->cancelled indicates whether the request was
-  // cancelled before completion.
-  void pending_request_complete(pending_request* r);
+  GetRequestMetadata(
+      grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::AuthMetadataContext* auth_metadata_context) override;
 
   std::string debug_string() override;
 
  private:
-  void pending_request_remove_locked(pending_request* pending_request);
-
   grpc_metadata_credentials_plugin plugin_;
-  gpr_mu mu_;
-  pending_request* pending_requests_ = nullptr;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H */

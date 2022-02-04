@@ -32,7 +32,7 @@ extern const grpc_channel_filter grpc_server_auth_filter;
 
 namespace grpc_core {
 
-class ClientAuthFilter {
+class ClientAuthFilter final : private AuthMetadataContext {
  public:
   static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args);
 
@@ -51,16 +51,27 @@ class ClientAuthFilter {
   ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
       ClientInitialMetadata initial_metadata);
 
+  struct PartialAuthContext {
+    absl::string_view host_and_port;
+    absl::string_view method_name;
+    absl::string_view url_scheme;
+    absl::string_view service;
+    std::string ServiceUrl() const;
+  };
+
+  PartialAuthContext GetPartialAuthContext(
+      const ClientInitialMetadata& initial_metadata) const;
+
+  std::string JwtServiceUrl(
+      const ClientInitialMetadata& metadata) const override;
+  grpc_auth_metadata_context MakeLegacyContext(
+      const ClientInitialMetadata& metadata) const override;
+
   RefCountedPtr<grpc_channel_security_connector> security_connector_;
   RefCountedPtr<grpc_auth_context> auth_context_;
 };
 
 }  // namespace grpc_core
-
-void grpc_auth_metadata_context_build(
-    const char* url_scheme, const grpc_slice& call_host,
-    const grpc_slice& call_method, grpc_auth_context* auth_context,
-    grpc_auth_metadata_context* auth_md_context);
 
 // Exposed for testing purposes only.
 // Check if the channel's security level is higher or equal to

@@ -161,6 +161,19 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 
 /* --- grpc_call_credentials. --- */
 
+namespace grpc_core {
+
+// Abstract interface to obtain contextual data for some call credentials.
+class AuthMetadataContext {
+ public:
+  virtual std::string JwtServiceUrl(
+      const ClientInitialMetadata& metadata) const = 0;
+  virtual grpc_auth_metadata_context MakeLegacyContext(
+      const ClientInitialMetadata& metadata) const = 0;
+};
+
+}  // namespace grpc_core
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -176,7 +189,8 @@ struct grpc_call_credentials
 
   virtual grpc_core::ArenaPromise<
       absl::StatusOr<grpc_core::ClientInitialMetadata>>
-      GetRequestMetadata(grpc_core::ClientInitialMetadata) = 0;
+  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+                     grpc_core::AuthMetadataContext* auth_metadata_context) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;

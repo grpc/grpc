@@ -264,7 +264,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
         pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
     pending_request = pending_request->next;
-    gpr_free(prev);
+    delete prev;
   }
   Unref();
   delete r;
@@ -272,7 +272,8 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata) {
+    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::AuthMetadataContext* auth_metadata_context) {
   return grpc_core::Capture(
       [](grpc_core::RefCountedPtr<grpc_call_credentials>* self_creds,
          grpc_core::ClientInitialMetadata* initial_metadata)
@@ -303,9 +304,7 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
             GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
         // Couldn't get the token from the cache.
         // Add request to pending_requests_ and start a new fetch if needed.
-        grpc_oauth2_pending_get_request_metadata* pending_request =
-            static_cast<grpc_oauth2_pending_get_request_metadata*>(
-                gpr_malloc(sizeof(*pending_request)));
+        auto* pending_request = new grpc_oauth2_pending_get_request_metadata;
         pending_request->on_request_metadata =
             grpc_core::MakeWakeActivityClosure();
         pending_request->pollent = grpc_core::GetContext<grpc_polling_entity>();
@@ -694,7 +693,8 @@ grpc_call_credentials* grpc_sts_credentials_create(
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_access_token_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata) {
+    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::AuthMetadataContext* auth_metadata_context) {
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, access_token_value_.Ref(),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });

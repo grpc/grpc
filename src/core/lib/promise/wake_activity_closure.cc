@@ -24,7 +24,7 @@ grpc_closure* MakeWakeActivityClosure() {
     Waker waker;
   };
   auto* cb = new Callback;
-  auto wakeable = Activity::current()->MakeNonOwningWaker();
+  cb->waker = Activity::current()->MakeNonOwningWaker();
   auto wakeup = [](void* p, grpc_error_handle) {
     auto* c = static_cast<Callback*>(p);
     c->waker.Wakeup();

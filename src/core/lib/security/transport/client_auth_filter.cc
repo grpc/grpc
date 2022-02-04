@@ -76,46 +76,6 @@ void grpc_auth_metadata_context_reset(
   }
 }
 
-void grpc_auth_metadata_context_build(
-    const char* url_scheme, const grpc_slice& call_host,
-    const grpc_slice& call_method, grpc_auth_context* auth_context,
-    grpc_auth_metadata_context* auth_md_context) {
-  char* service = grpc_slice_to_c_string(call_method);
-  char* last_slash = strrchr(service, '/');
-  char* method_name = nullptr;
-  char* service_url = nullptr;
-  grpc_auth_metadata_context_reset(auth_md_context);
-  if (last_slash == nullptr) {
-    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
-    service[0] = '\0';
-    method_name = gpr_strdup("");
-  } else if (last_slash == service) {
-    method_name = gpr_strdup("");
-  } else {
-    *last_slash = '\0';
-    method_name = gpr_strdup(last_slash + 1);
-  }
-  char* host_and_port = grpc_slice_to_c_string(call_host);
-  if (url_scheme != nullptr && strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
-    /* Remove the port if it is 443. */
-    char* port_delimiter = strrchr(host_and_port, ':');
-    if (port_delimiter != nullptr && strcmp(port_delimiter + 1, "443") == 0) {
-      *port_delimiter = '\0';
-    }
-  }
-  gpr_asprintf(&service_url, "%s://%s%s",
-               url_scheme == nullptr ? "" : url_scheme, host_and_port, service);
-  auth_md_context->service_url = service_url;
-  auth_md_context->method_name = method_name;
-  auth_md_context->channel_auth_context =
-      auth_context == nullptr
-          ? nullptr
-          : auth_context->Ref(DEBUG_LOCATION, "grpc_auth_metadata_context")
-                .release();
-  gpr_free(service);
-  gpr_free(host_and_port);
-}
-
 static grpc_security_level convert_security_level_string_to_enum(
     const char* security_level) {
   if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
@@ -132,6 +92,56 @@ bool grpc_check_security_level(grpc_security_level channel_level,
 }
 
 namespace grpc_core {
+
+ClientAuthFilter::PartialAuthContext ClientAuthFilter::GetPartialAuthContext(
+    const ClientInitialMetadata& initial_metadata) const {
+  auto service =
+      initial_metadata->get_pointer(HttpPathMetadata())->as_string_view();
+  auto last_slash = service.find_last_of('/');
+  absl::string_view method_name;
+  if (last_slash == absl::string_view::npos) {
+    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
+    service = "";
+    method_name = "";
+  } else if (last_slash == 0) {
+    method_name = "";
+  } else {
+    method_name = service.substr(last_slash + 1);
+    service = service.substr(0, last_slash);
+  }
+  auto host_and_port =
+      initial_metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
+  auto url_scheme = security_connector_->url_scheme();
+  if (url_scheme == GRPC_SSL_URL_SCHEME) {
+    /* Remove the port if it is 443. */
+    auto port_delimiter = host_and_port.find_last_of(':');
+    if (port_delimiter != absl::string_view::npos &&
+        host_and_port.substr(port_delimiter + 1) == "443") {
+      host_and_port = host_and_port.substr(0, port_delimiter);
+    }
+  }
+  return PartialAuthContext{host_and_port, method_name, url_scheme, service};
+}
+
+std::string ClientAuthFilter::PartialAuthContext::ServiceUrl() const {
+  return absl::StrCat(url_scheme, "://", host_and_port, service);
+}
+
+std::string ClientAuthFilter::JwtServiceUrl(
+    const ClientInitialMetadata& initial_metadata) const {
+  return GetPartialAuthContext(initial_metadata).ServiceUrl();
+}
+
+grpc_auth_metadata_context ClientAuthFilter::MakeLegacyContext(
+    const ClientInitialMetadata& initial_metadata) const {
+  PartialAuthContext a = GetPartialAuthContext(initial_metadata);
+  grpc_auth_metadata_context r;
+  r.channel_auth_context =
+      auth_context_ == nullptr ? auth_context_->Ref().release() : nullptr;
+  r.service_url = gpr_strdup(a.ServiceUrl().c_str());
+  r.method_name = gpr_strdup(std::string(a.method_name).c_str());
+  return r;
+}
 
 ClientAuthFilter::ClientAuthFilter(
     grpc_channel_security_connector* security_connector,
@@ -189,7 +199,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
         "transfer call credential."));
   }
 
-  return creds->GetRequestMetadata(std::move(initial_metadata));
+  return creds->GetRequestMetadata(std::move(initial_metadata), this);
 }
 
 ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(

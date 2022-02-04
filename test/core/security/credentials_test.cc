@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -434,14 +435,38 @@ class RequestMetadataState
     grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
   }
 
+  class AuthMetadata final : public grpc_core::AuthMetadataContext {
+   public:
+    explicit AuthMetadata(grpc_auth_metadata_context context)
+        : context_(context) {}
+
+    std::string JwtServiceUrl(
+        const grpc_core::ClientInitialMetadata& metadata) const override {
+      return context_.service_url;
+    }
+    grpc_auth_metadata_context MakeLegacyContext(
+        const grpc_core::ClientInitialMetadata& metadata) const override {
+      grpc_auth_metadata_context result;
+      memset(&result, 0, sizeof(result));
+      grpc_auth_metadata_context_copy(
+          const_cast<grpc_auth_metadata_context*>(&context_), &result);
+      return result;
+    }
+
+   private:
+    grpc_auth_metadata_context context_;
+  };
+
   void RunRequestMetadataTest(grpc_call_credentials* creds,
                               grpc_auth_metadata_context auth_md_ctx) {
     auto self = Ref();
+    auto* auth_metadata = new AuthMetadata(auth_md_ctx);
     activity_ = MakeActivity(
-        [this, creds] {
+        [this, creds, auth_metadata] {
           return Seq(
               creds->GetRequestMetadata(
-                  grpc_core::ClientInitialMetadata::TestOnlyWrap(&md_)),
+                  grpc_core::ClientInitialMetadata::TestOnlyWrap(&md_),
+                  auth_metadata),
               [this](
                   absl::StatusOr<grpc_core::ClientInitialMetadata> metadata) {
                 if (metadata.ok()) {
@@ -451,9 +476,11 @@ class RequestMetadataState
               });
         },
         grpc_core::ExecCtxWakeupScheduler(),
-        [self](absl::Status status) {
+        [self, auth_metadata](absl::Status status) mutable {
+          delete auth_metadata;
           self->CheckRequestMetadata(
               absl_status_to_grpc_error(std::move(status)));
+          self.reset();
         },
         arena_.get(), &pollent_);
   }
@@ -477,6 +504,7 @@ class RequestMetadataState
     }
     gpr_log(GPR_INFO, "expected metadata: %s", expected_.c_str());
     gpr_log(GPR_INFO, "actual metadata: %s", md_.DebugString().c_str());
+    GRPC_ERROR_UNREF(error);
   }
 
  private:
@@ -1727,8 +1755,8 @@ struct fake_call_creds : public grpc_call_credentials {
   fake_call_creds() : grpc_call_credentials("fake") {}
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(
-      grpc_core::ClientInitialMetadata initial_metadata) override {
+  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+                     grpc_core::AuthMetadataContext*) override {
     initial_metadata->Append(
         "foo", grpc_core::Slice::FromStaticString("oof"),
         [](absl::string_view, const grpc_core::Slice&) { abort(); });
@@ -1970,6 +1998,46 @@ typedef struct {
   const char* desired_method_name;
 } auth_metadata_context_test_case;
 
+static void auth_metadata_context_build(
+    const char* url_scheme, const grpc_slice& call_host,
+    const grpc_slice& call_method, grpc_auth_context* auth_context,
+    grpc_auth_metadata_context* auth_md_context) {
+  char* service = grpc_slice_to_c_string(call_method);
+  char* last_slash = strrchr(service, '/');
+  char* method_name = nullptr;
+  char* service_url = nullptr;
+  grpc_auth_metadata_context_reset(auth_md_context);
+  if (last_slash == nullptr) {
+    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
+    service[0] = '\0';
+    method_name = gpr_strdup("");
+  } else if (last_slash == service) {
+    method_name = gpr_strdup("");
+  } else {
+    *last_slash = '\0';
+    method_name = gpr_strdup(last_slash + 1);
+  }
+  char* host_and_port = grpc_slice_to_c_string(call_host);
+  if (url_scheme != nullptr && strcmp(url_scheme, GRPC_SSL_URL_SCHEME) == 0) {
+    /* Remove the port if it is 443. */
+    char* port_delimiter = strrchr(host_and_port, ':');
+    if (port_delimiter != nullptr && strcmp(port_delimiter + 1, "443") == 0) {
+      *port_delimiter = '\0';
+    }
+  }
+  gpr_asprintf(&service_url, "%s://%s%s",
+               url_scheme == nullptr ? "" : url_scheme, host_and_port, service);
+  auth_md_context->service_url = service_url;
+  auth_md_context->method_name = method_name;
+  auth_md_context->channel_auth_context =
+      auth_context == nullptr
+          ? nullptr
+          : auth_context->Ref(DEBUG_LOCATION, "grpc_auth_metadata_context")
+                .release();
+  gpr_free(service);
+  gpr_free(host_and_port);
+}
+
 static void test_auth_metadata_context(void) {
   auth_metadata_context_test_case test_cases[] = {
       // No service nor method.
@@ -2012,8 +2080,8 @@ static void test_auth_metadata_context(void) {
         grpc_slice_from_copied_string(test_cases[i].call_method);
     grpc_auth_metadata_context auth_md_context;
     memset(&auth_md_context, 0, sizeof(auth_md_context));
-    grpc_auth_metadata_context_build(url_scheme, call_host, call_method,
-                                     nullptr, &auth_md_context);
+    auth_metadata_context_build(url_scheme, call_host, call_method, nullptr,
+                                &auth_md_context);
     if (strcmp(auth_md_context.service_url,
                test_cases[i].desired_service_url) != 0) {
       gpr_log(GPR_ERROR, "Invalid service url, want: %s, got %s.",

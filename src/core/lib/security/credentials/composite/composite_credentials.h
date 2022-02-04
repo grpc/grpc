@@ -80,7 +80,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   ~grpc_composite_call_credentials() override = default;
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-      GetRequestMetadata(grpc_core::ClientInitialMetadata) override;
+  GetRequestMetadata(
+      grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::AuthMetadataContext* auth_metadata_context) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;

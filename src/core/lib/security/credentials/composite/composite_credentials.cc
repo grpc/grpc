@@ -41,13 +41,16 @@
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_composite_call_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata) {
+    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::AuthMetadataContext* auth_metadata_context) {
   auto self = Ref();
   return TrySeqIter(
       inner_.begin(), inner_.end(), std::move(initial_metadata),
-      [self](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
-             grpc_core::ClientInitialMetadata initial_metadata) {
-        return creds->GetRequestMetadata(std::move(initial_metadata));
+      [self, auth_metadata_context](
+          const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
+          grpc_core::ClientInitialMetadata initial_metadata) {
+        return creds->GetRequestMetadata(std::move(initial_metadata),
+                                         auth_metadata_context);
       });
 }
 
