@@ -14,4 +14,5 @@
 # limitations under the License.
 
 set -ex
+echo "DO NOT SUBMIT - '$@'"
 "$@"

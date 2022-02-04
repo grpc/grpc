@@ -241,11 +241,11 @@ def ios_cc_test(
     test_lib_ios = name + "_test_lib_ios"
     ios_tags = tags + ["manual", "ios_cc_test"]
     test_runner = "ios_x86_64_sim_runner_" + name
-    ios_test_runner(
-        name = test_runner,
-        device_type = "iPhone X",
-    )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
+        ios_test_runner(
+            name = test_runner,
+            device_type = "iPhone X",
+        )
         native.objc_library(
             name = test_lib_ios,
             srcs = kwargs.get("srcs"),
@@ -267,7 +267,25 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
+def grpc_cc_test(
+        name,
+        srcs = [],
+        deps = [],
+        external_deps = [],
+        args = [],
+        data = [],
+        uses_polling = True,
+        language = "C++",
+        size = "medium",
+        timeout = None,
+        tags = [],
+        exec_compatible_with = [],
+        exec_properties = {},
+        shard_count = None,
+        flaky = None,
+        copts = [],
+        linkstatic = None,
+        exclude_pollers = []):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -290,6 +308,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         flaky: Whether this test is flaky.
         copts: Add these to the compiler invocation.
         linkstatic: link the binary in static mode
+        exclude_pollers: list of pollers to exclude
     """
     copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
@@ -351,6 +370,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 
     # On linux we run the same test multiple times, once for each poller.
     for poller in POLLERS:
+        if poller in exclude_pollers:
+            continue
         native.sh_test(
             name = name + "@poller=" + poller,
             data = [name] + data,

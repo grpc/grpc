@@ -14,16 +14,7 @@
 # limitations under the License.
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
-
-POLLERS = ["epollex", "epoll1", "poll"]
-
-# The set of known EventEngines to test
-EVENT_ENGINES = {
-    "default": {
-        "tags": [],  # the default must support linux
-    },
-}
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 def _fixture_options(
         fullstack = True,
@@ -452,8 +443,9 @@ def grpc_end2end_tests():
     )
 
     for f, fopt in END2END_FIXTURES.items():
-        grpc_cc_binary(
-            name = "%s_test" % f,
+        fixture_lib_name = "%s_test_lib" % f
+        grpc_cc_library(
+            name = fixture_lib_name,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
             testonly = 1,
@@ -476,56 +468,16 @@ def grpc_end2end_tests():
             #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
-
             test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
+            grpc_cc_test(
                 name = "%s_test@%s" % (f, test_short_name),
-                data = [":%s_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
+                deps = [":%s" % fixture_lib_name],
+                data = [":%s" % fixture_lib_name],
+                args = [t],
+                tags = _platform_support_tags(fopt) + ["no_test_ios"],
                 flaky = t in fopt.flaky_tests,
+                exclude_pollers = topt.exclude_pollers,
             )
-
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
-                    data = [":%s_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                      "GRPC_POLL_STRATEGY": poller,
-                    },
-                    args = [
-                        "$(location %s_test)" % f,
-                        t,
-                    ],
-                    tags = ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
-            for engine_name, engine in EVENT_ENGINES.items():
-                if engine_name == "default":
-                    continue
-                native.sh_test(
-                    name = "%s_test@%s@engine=%s" %
-                           (f, test_short_name, engine_name),
-                    data = [":%s_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                      "TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name,
-                    },
-                    args = [
-                        "$(location %s_test)" % f,
-                        t,
-                    ],
-                    tags = ["no_mac", "no_windows"] + engine["tags"],
-                    flaky = t in fopt.flaky_tests,
-                )
-
 
 # buildifier: disable=unnamed-macro
 def grpc_end2end_nosec_tests():
@@ -557,8 +509,9 @@ def grpc_end2end_nosec_tests():
     for f, fopt in END2END_NOSEC_FIXTURES.items():
         if fopt.secure:
             continue
-        grpc_cc_binary(
-            name = "%s_nosec_test" % f,
+        fixture_lib_name = "%s_nosec_test_lib" % f
+        grpc_cc_library(
+            name = fixture_lib_name,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
             testonly = 1,
@@ -582,54 +535,13 @@ def grpc_end2end_nosec_tests():
                 continue
             if topt.secure:
                 continue
-
             test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
+            grpc_cc_test(
                 name = "%s_nosec_test@%s" % (f, test_short_name),
-                data = [":%s_nosec_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_nosec_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
+                deps = [":%s" % fixture_lib_name],
+                data = [":%s" % fixture_lib_name],
+                args = [t],
+                tags = _platform_support_tags(fopt) + ["no_test_ios"],
                 flaky = t in fopt.flaky_tests,
+                exclude_pollers = topt.exclude_pollers,
             )
-
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" %
-                           (f, test_short_name, poller),
-                    data = [":%s_nosec_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                      "GRPC_POLL_STRATEGY": poller,
-                    },
-                    args = [
-                        "$(location %s_nosec_test)" % f,
-                        t,
-                    ],
-                    tags = ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
-            for engine_name, engine in EVENT_ENGINES.items():
-                if engine_name == "default":
-                    continue
-                native.sh_test(
-                    name = "%s_nosec_test@%s@engine=%s" %
-                           (f, test_short_name, engine_name),
-                    data = [":%s_nosec_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    env = {
-                      "TESTONLY_GRPC_EVENTENGINE_STRATEGY": engine_name,
-                    },
-                    args = [
-                        "$(location %s_nosec_test)" % f,
-                        t,
-                    ],
-                    tags = ["no_mac", "no_windows"] + engine["tags"],
-                    flaky = t in fopt.flaky_tests,
-                )
-
