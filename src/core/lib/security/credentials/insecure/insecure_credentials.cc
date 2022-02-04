@@ -56,10 +56,7 @@ class InsecureServerCredentials final : public grpc_server_credentials {
 }  // namespace grpc_core
 
 grpc_channel_credentials* grpc_insecure_credentials_create() {
-  // Create a singleton object for InsecureCredentials so that channels to the
-  // same target with InsecureCredentials can reuse the subchannels.
-  static auto* creds = new grpc_core::InsecureCredentials();
-  return creds->Ref().release();
+  return new grpc_core::InsecureCredentials();
 }
 
 grpc_server_credentials* grpc_insecure_server_credentials_create() {
