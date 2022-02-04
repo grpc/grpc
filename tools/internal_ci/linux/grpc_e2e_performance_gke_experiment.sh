@@ -65,7 +65,7 @@ go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 
 # Note: Submodules are not required for tools build.
 pushd ..
-git clone --depth 1 https://github.com/grpc/test-infra.git
+git clone https://github.com/grpc/test-infra.git
 cd test-infra
 # Freeze test-infra repo to account for incompatible change.
 # See https://github.com/grpc/test-infra/pull/267.
