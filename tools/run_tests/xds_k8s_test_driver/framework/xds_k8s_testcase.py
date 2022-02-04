@@ -38,10 +38,6 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
-_FORCE_CLEANUP = flags.DEFINE_bool(
-    "force_cleanup",
-    default=False,
-    help="Force resource cleanup, even if not created by this test run")
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
 # from channelz
 _CHECK_LOCAL_CERTS = flags.DEFINE_bool(
@@ -115,7 +111,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.client_port = xds_flags.CLIENT_PORT.value
 
         # Test suite settings
-        cls.force_cleanup = _FORCE_CLEANUP.value
+        cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         cls.enable_workload_identity = xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
