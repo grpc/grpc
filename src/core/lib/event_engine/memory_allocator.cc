@@ -29,13 +29,21 @@ namespace {
 class SliceRefCount : public grpc_slice_refcount {
  public:
   SliceRefCount(std::shared_ptr<internal::MemoryAllocatorImpl> allocator,
-                size_t size)
+                size_t size, void (*user_destroy)(void*), void* user_data)
       : grpc_slice_refcount(Destroy),
         allocator_(std::move(allocator)),
-        size_(size) {
+        size_(size),
+        user_destroy_(user_destroy),
+        user_data_(user_data) {
     // Nothing to do here.
   }
-  ~SliceRefCount() { allocator_->Release(size_); }
+
+  ~SliceRefCount() {
+    allocator_->Release(size_);
+    if (user_destroy_ != nullptr) {
+      user_destroy_(user_data_);
+    }
+  }
 
  private:
   static void Destroy(grpc_slice_refcount* p) {
@@ -46,14 +54,23 @@ class SliceRefCount : public grpc_slice_refcount {
 
   std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
   size_t size_;
+  void (*user_destroy_)(void*);
+  void* user_data_;
 };
 
 }  // namespace
 
 grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
+  return MakeSlice(request, nullptr, nullptr);
+}
+
+// Similar to previous function but also invokes a user supplied memory
+// releaser at destruction.
+grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request, void* arg,
+                                      void (*on_destroy)(void*)) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
   void* p = gpr_malloc(size);
-  new (p) SliceRefCount(allocator_, size);
+  new (p) SliceRefCount(allocator_, size, on_destroy, arg);
   grpc_slice slice;
   slice.refcount = static_cast<SliceRefCount*>(p);
   slice.data.refcounted.bytes =
