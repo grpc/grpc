@@ -52,6 +52,8 @@ namespace Grpc.Core.Tests
         public static readonly Marshaller<WrappedString> Marshaller = new Marshaller<WrappedString>(
             (WrappedString s) => System.Text.Encoding.UTF8.GetBytes(s.Value),
             (byte[] a) => System.Text.Encoding.UTF8.GetString(a));
+
+        public override WrappedString DefaultValue => "";
     }
 
     public readonly struct WrappedString // allows us to test value-typed marshellers using existing tests which expect string-like semantics
