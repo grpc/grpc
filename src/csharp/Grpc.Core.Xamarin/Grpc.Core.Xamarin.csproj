@@ -41,6 +41,10 @@ See https://grpc.io/blog/grpc-csharp-future/ for details.</Description>
       <PackagePath>native/android/x86/libgrpc_csharp_ext.so</PackagePath>
       <Pack>true</Pack>
     </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_android_x86_64\libgrpc_csharp_ext.so">
+      <PackagePath>native/android/x86_64/libgrpc_csharp_ext.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
     <Content Include="..\nativelibs\csharp_ext_macos_ios\libgrpc_csharp_ext.a">
       <PackagePath>native/ios/universal/libgrpc_csharp_ext.a</PackagePath>
       <Pack>true</Pack>
