@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/promise_based_filter.h"
 
 #include "src/core/lib/channel/channel_stack.h"
