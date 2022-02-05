@@ -1004,6 +1004,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker_factory.h',
                       'src/core/lib/channel/handshaker_registry.cc',
                       'src/core/lib/channel/handshaker_registry.h',
+                      'src/core/lib/channel/promise_based_filter.cc',
                       'src/core/lib/channel/promise_based_filter.h',
                       'src/core/lib/channel/status_util.cc',
                       'src/core/lib/channel/status_util.h',
