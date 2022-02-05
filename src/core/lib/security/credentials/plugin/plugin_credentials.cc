@@ -135,9 +135,9 @@ grpc_plugin_credentials::GetRequestMetadata(
   request->ready = false;
   request->waker = grpc_core::Activity::current()->MakeNonOwningWaker();
   request->creds = this;
-  request->md = std::move(initial_metadata);
   request->call_creds = Ref();
   request->context = auth_metadata_context->MakeLegacyContext(initial_metadata);
+  request->md = std::move(initial_metadata);
   // Invoke the plugin.  The callback holds a ref to us.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",

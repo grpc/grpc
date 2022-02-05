@@ -113,12 +113,6 @@ class Waker {
 // called with absl::CancelledError().
 class Activity : public Orphanable {
  public:
-  // Cancel execution of the underlying promise.
-  virtual void Cancel() = 0;
-
-  // Fetch the size of the implementation of this activity.
-  virtual size_t Size() = 0;
-
   // Force wakeup from the outside.
   // This should be rarely needed, and usages should be accompanied with a note
   // on why it's not possible to wakeup with a Waker object.
@@ -293,6 +287,9 @@ class FreestandingActivity : public Activity, private Wakeable {
  private:
   class Handle;
 
+  // Cancel execution of the underlying promise.
+  virtual void Cancel() = 0;
+
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
     if (1 == refs_.fetch_sub(1, std::memory_order_acq_rel)) {
@@ -365,7 +362,14 @@ class PromiseActivity final : public FreestandingActivity,
     GPR_ASSERT(done_);
   }
 
-  size_t Size() override { return sizeof(*this); }
+  void RunScheduledWakeup() {
+    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
+    Step();
+    WakeupComplete();
+  }
+
+ private:
+  using typename ActivityContexts<Contexts...>::ScopedContext;
 
   void Cancel() final {
     if (Activity::is_current()) {
@@ -385,15 +389,6 @@ class PromiseActivity final : public FreestandingActivity,
       on_done_(absl::CancelledError());
     }
   }
-
-  void RunScheduledWakeup() {
-    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
-    Step();
-    WakeupComplete();
-  }
-
- private:
-  using typename ActivityContexts<Contexts...>::ScopedContext;
 
   // Wakeup this activity. Arrange to poll the activity again at a convenient
   // time: this could be inline if it's deemed safe, or it could be by passing

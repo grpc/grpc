@@ -137,7 +137,7 @@ grpc_auth_metadata_context ClientAuthFilter::MakeLegacyContext(
   PartialAuthContext a = GetPartialAuthContext(initial_metadata);
   grpc_auth_metadata_context r;
   r.channel_auth_context =
-      auth_context_ == nullptr ? auth_context_->Ref().release() : nullptr;
+      auth_context_ != nullptr ? auth_context_->Ref().release() : nullptr;
   r.service_url = gpr_strdup(a.ServiceUrl().c_str());
   r.method_name = gpr_strdup(std::string(a.method_name).c_str());
   return r;
