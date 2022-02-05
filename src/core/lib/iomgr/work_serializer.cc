@@ -121,7 +121,7 @@ void WorkSerializer::WorkSerializerImpl::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
     gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
-  uint64_t prev_ref_pair =
+  const uint64_t prev_ref_pair =
       refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0 && GetSize(prev_ref_pair) == 1) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {

@@ -223,7 +223,7 @@ TEST(WorkSerializerTest, WorkSerializerDestructionRaceMultipleThreads) {
   std::vector<std::thread> threads;
   threads.reserve(50);
   for (int i = 0; i < 50; ++i) {
-    threads.emplace_back([lock, &barrier]() {
+    threads.emplace_back([lock, &barrier]() mutable {
       barrier.Block();
       lock->Run([lock]() mutable { lock.reset(); }, DEBUG_LOCATION);
     });
