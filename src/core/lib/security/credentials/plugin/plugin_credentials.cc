@@ -63,7 +63,7 @@ static absl::StatusOr<grpc_core::ClientInitialMetadata> process_plugin_result(
     grpc_plugin_credentials::pending_request* r, const grpc_metadata* md,
     size_t num_md, grpc_status_code status, const char* error_details) {
   if (status != GRPC_STATUS_OK) {
-    return absl::UnauthenticatedError(absl::StrCat(
+    return absl::UnavailableError(absl::StrCat(
         "Getting metadata from plugin failed with error: ", error_details));
   } else {
     bool seen_illegal_header = false;
@@ -82,7 +82,7 @@ static absl::StatusOr<grpc_core::ClientInitialMetadata> process_plugin_result(
       }
     }
     if (seen_illegal_header) {
-      return absl::UnauthenticatedError("Illegal metadata");
+      return absl::UnavailableError("Illegal metadata");
     } else {
       absl::Status error;
       for (size_t i = 0; i < num_md; ++i) {
@@ -90,7 +90,7 @@ static absl::StatusOr<grpc_core::ClientInitialMetadata> process_plugin_result(
             grpc_core::StringViewFromSlice(md[i].key),
             grpc_core::Slice(grpc_slice_ref_internal(md[i].value)),
             [&error](absl::string_view message, const grpc_core::Slice&) {
-              error = absl::UnauthenticatedError(message);
+              error = absl::UnavailableError(message);
             });
       }
       if (!error.ok()) return std::move(error);

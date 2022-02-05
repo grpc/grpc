@@ -228,9 +228,23 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       if (recv_trailing_state_ == RecvTrailingState::kQueued) {
         recv_trailing_state_ = RecvTrailingState::kCancelled;
       }
-      grpc_transport_stream_op_batch_finish_with_failure(
-          absl::exchange(send_initial_metadata_batch_, nullptr),
-          GRPC_ERROR_REF(cancelled_error_), call_combiner());
+      struct FailBatch : public grpc_closure {
+        grpc_transport_stream_op_batch* batch;
+        CallCombiner* call_combiner;
+      };
+      auto fail = [](void* p, grpc_error_handle error) {
+        auto* f = static_cast<FailBatch*>(p);
+        grpc_transport_stream_op_batch_finish_with_failure(
+            f->batch, GRPC_ERROR_REF(error), f->call_combiner);
+        delete f;
+      };
+      auto* b = new FailBatch();
+      GRPC_CLOSURE_INIT(b, fail, b, nullptr);
+      b->batch = absl::exchange(send_initial_metadata_batch_, nullptr);
+      b->call_combiner = call_combiner();
+      GRPC_CALL_COMBINER_START(call_combiner(), b,
+                               GRPC_ERROR_REF(cancelled_error_),
+                               "cancel pending batch");
     } else {
       send_initial_state_ = SendInitialState::kCancelled;
     }
@@ -372,6 +386,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
           poll = promise_();
         }
         if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
+          promise_ = ArenaPromise<TrailingMetadata>();
           auto* md = UnwrapMetadata(std::move(*r));
           bool destroy_md = true;
           switch (recv_trailing_state_) {
@@ -443,17 +458,21 @@ class CallData<ChannelFilter, true> : public BaseCallData {
       grpc_call_next_op(elem(), forward_batch);
     }
     if (cancel_send_initial_metadata_error != GRPC_ERROR_NONE) {
+      GPR_ASSERT(in_combiner);
       forward_send_initial_metadata_ = false;
+      in_combiner = false;
       grpc_transport_stream_op_batch_finish_with_failure(
           absl::exchange(send_initial_metadata_batch_, nullptr),
           cancel_send_initial_metadata_error, call_combiner());
     }
     if (absl::exchange(forward_send_initial_metadata_, false)) {
+      GPR_ASSERT(in_combiner);
       in_combiner = false;
       grpc_call_next_op(elem(),
                         absl::exchange(send_initial_metadata_batch_, nullptr));
     }
     if (call_closure != nullptr) {
+      GPR_ASSERT(in_combiner);
       in_combiner = false;
       Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_NONE);
     }
@@ -627,9 +646,23 @@ class CallData<ChannelFilter, false> : public BaseCallData {
     promise_ = ArenaPromise<TrailingMetadata>();
     if (send_trailing_state_ == SendTrailingState::kQueued) {
       send_trailing_state_ = SendTrailingState::kCancelled;
-      grpc_transport_stream_op_batch_finish_with_failure(
-          absl::exchange(send_trailing_metadata_batch_, nullptr),
-          GRPC_ERROR_REF(cancelled_error_), call_combiner());
+      struct FailBatch : public grpc_closure {
+        grpc_transport_stream_op_batch* batch;
+        CallCombiner* call_combiner;
+      };
+      auto fail = [](void* p, grpc_error_handle error) {
+        auto* f = static_cast<FailBatch*>(p);
+        grpc_transport_stream_op_batch_finish_with_failure(
+            f->batch, GRPC_ERROR_REF(error), f->call_combiner);
+        delete f;
+      };
+      auto* b = new FailBatch();
+      GRPC_CLOSURE_INIT(b, fail, b, nullptr);
+      b->batch = absl::exchange(send_trailing_metadata_batch_, nullptr);
+      b->call_combiner = call_combiner();
+      GRPC_CALL_COMBINER_START(call_combiner(), b,
+                               GRPC_ERROR_REF(cancelled_error_),
+                               "cancel pending batch");
     } else {
       send_trailing_state_ = SendTrailingState::kCancelled;
     }
