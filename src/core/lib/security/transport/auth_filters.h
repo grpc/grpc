@@ -62,10 +62,9 @@ class ClientAuthFilter final : private AuthMetadataContext {
   PartialAuthContext GetPartialAuthContext(
       const ClientInitialMetadata& initial_metadata) const;
 
-  std::string JwtServiceUrl(
-      const ClientInitialMetadata& metadata) const override;
+  std::string JwtServiceUrl(const ClientInitialMetadata& metadata) const;
   grpc_auth_metadata_context MakeLegacyContext(
-      const ClientInitialMetadata& metadata) const override;
+      const ClientInitialMetadata& metadata) const;
 
   RefCountedPtr<grpc_channel_security_connector> security_connector_;
   RefCountedPtr<grpc_auth_context> auth_context_;

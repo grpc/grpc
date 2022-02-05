@@ -431,7 +431,7 @@ class RequestMetadataState
         pollent_(pollent) {}
 
  public:
-  ~RequestMetadataState() {
+  ~RequestMetadataState() override {
     grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
   }
 
