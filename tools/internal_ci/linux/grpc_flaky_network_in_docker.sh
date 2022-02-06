@@ -26,6 +26,6 @@ ${name}')
 cd /var/local/git/grpc/test/cpp/end2end
 
 # iptables is used to drop traffic between client and server
-apt-get install -y iptables
+apt-get install -y iptables iproute2
 
 bazel test --test_output=all --test_timeout=1200 :flaky_network_test --test_env=GRPC_TRACE=http --test_env=GRPC_VERBOSITY=DEBUG

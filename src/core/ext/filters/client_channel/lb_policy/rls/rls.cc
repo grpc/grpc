@@ -1375,7 +1375,7 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
@@ -1711,7 +1711,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
       [request, error]() {
         request->OnRlsCallCompleteLocked(error);

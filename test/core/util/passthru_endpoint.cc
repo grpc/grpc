@@ -477,7 +477,7 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    auto* err =
+    grpc_error_handle err =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
     shutdown_locked(m, err);
     GRPC_ERROR_UNREF(err);
