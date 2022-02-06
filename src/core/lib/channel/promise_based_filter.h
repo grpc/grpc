@@ -484,7 +484,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
           grpc_call_stack* call_stack;
           CallData* call_data;
         };
-        auto run = [](void* p, grpc_error_handle error) {
+        auto run = [](void* p, grpc_error_handle) {
           auto* next_poll = static_cast<NextPoll*>(p);
           next_poll->call_data->WakeInsideCombiner();
           GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");

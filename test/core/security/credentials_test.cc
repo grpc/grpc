@@ -441,11 +441,11 @@ class RequestMetadataState
         : context_(context) {}
 
     std::string JwtServiceUrl(
-        const grpc_core::ClientInitialMetadata& metadata) const override {
+        const grpc_core::ClientInitialMetadata&) const override {
       return context_.service_url;
     }
     grpc_auth_metadata_context MakeLegacyContext(
-        const grpc_core::ClientInitialMetadata& metadata) const override {
+        const grpc_core::ClientInitialMetadata&) const override {
       grpc_auth_metadata_context result;
       memset(&result, 0, sizeof(result));
       grpc_auth_metadata_context_copy(

@@ -117,8 +117,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     return strcmp(secure_peer_name_, other->secure_peer_name_);
   }
 
-  ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context* auth_context) override {
+  ArenaPromise<absl::Status> CheckCallHost(absl::string_view,
+                                           grpc_auth_context*) override {
     return ImmediateOkStatus();
   }
 

@@ -170,6 +170,9 @@ class AuthMetadataContext {
       const ClientInitialMetadata& metadata) const = 0;
   virtual grpc_auth_metadata_context MakeLegacyContext(
       const ClientInitialMetadata& metadata) const = 0;
+
+ protected:
+  ~AuthMetadataContext() = default;
 };
 
 }  // namespace grpc_core

@@ -35,7 +35,7 @@ Waker BaseCallData::MakeOwningWaker() {
 }
 
 void BaseCallData::Wakeup() {
-  auto wakeup = [](void* p, grpc_error_handle error) {
+  auto wakeup = [](void* p, grpc_error_handle) {
     auto* self = static_cast<BaseCallData*>(p);
     self->OnWakeup();
     self->Drop();

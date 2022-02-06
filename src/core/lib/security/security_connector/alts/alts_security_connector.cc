@@ -118,7 +118,7 @@ class grpc_alts_channel_security_connector final
   }
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context* auth_context) override {
+      absl::string_view host, grpc_auth_context*) override {
     if (host.empty() || host != target_name_) {
       return grpc_core::Immediate(absl::UnauthenticatedError(
           "ALTS call host does not match target name"));

@@ -24,6 +24,7 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -62,9 +63,10 @@ class ClientAuthFilter final : private AuthMetadataContext {
   PartialAuthContext GetPartialAuthContext(
       const ClientInitialMetadata& initial_metadata) const;
 
-  std::string JwtServiceUrl(const ClientInitialMetadata& metadata) const;
+  std::string JwtServiceUrl(
+      const ClientInitialMetadata& metadata) const override;
   grpc_auth_metadata_context MakeLegacyContext(
-      const ClientInitialMetadata& metadata) const;
+      const ClientInitialMetadata& metadata) const override;
 
   RefCountedPtr<grpc_channel_security_connector> security_connector_;
   RefCountedPtr<grpc_auth_context> auth_context_;

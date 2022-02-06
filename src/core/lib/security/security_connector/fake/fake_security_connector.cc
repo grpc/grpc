@@ -109,7 +109,7 @@ class grpc_fake_channel_security_connector final
   }
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context* auth_context) override {
+      absl::string_view host, grpc_auth_context*) override {
     absl::string_view authority_hostname;
     absl::string_view authority_ignored_port;
     absl::string_view target_hostname;
