@@ -923,6 +923,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/handshaker_factory.h )
   s.files += %w( src/core/lib/channel/handshaker_registry.cc )
   s.files += %w( src/core/lib/channel/handshaker_registry.h )
+  s.files += %w( src/core/lib/channel/promise_based_filter.cc )
   s.files += %w( src/core/lib/channel/promise_based_filter.h )
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/channel/status_util.h )
