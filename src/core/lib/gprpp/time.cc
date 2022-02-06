@@ -42,7 +42,7 @@ GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
     cycles_start = gpr_get_cycle_counter();
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     cycles_end = gpr_get_cycle_counter();
-    process_epoch_seconds = now.tv_sec;
+    process_epoch_seconds = now.tv_sec - 1;
     if (process_epoch_seconds != 0) {
       break;
     }
