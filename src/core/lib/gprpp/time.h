@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <ostream>
 #include <string>
 
 #include <grpc/support/time.h>
@@ -30,6 +31,30 @@
 
 namespace grpc_core {
 
+namespace time_detail {
+
+inline int64_t MillisAdd(int64_t a, int64_t b) {
+  if (a == std::numeric_limits<int64_t>::max() ||
+      b == std::numeric_limits<int64_t>::max()) {
+    return std::numeric_limits<int64_t>::max();
+  }
+  if (a == std::numeric_limits<int64_t>::min() ||
+      b == std::numeric_limits<int64_t>::min()) {
+    return std::numeric_limits<int64_t>::min();
+  }
+  return SaturatingAdd(a, b);
+}
+
+constexpr inline int64_t MillisMul(int64_t millis, int64_t mul) {
+  return millis >= std::numeric_limits<int64_t>::max() / mul
+             ? std::numeric_limits<int64_t>::max()
+         : millis <= std::numeric_limits<int64_t>::min() / mul
+             ? std::numeric_limits<int64_t>::min()
+             : millis * mul;
+}
+
+}  // namespace time_detail
+
 class Duration;
 
 // Timestamp represents a discrete point in time.
@@ -37,7 +62,8 @@ class Timestamp {
  public:
   constexpr Timestamp() = default;
   // Constructs a Timestamp from a gpr_timespec.
-  explicit Timestamp(gpr_timespec t);
+  static Timestamp FromTimespecRoundDown(gpr_timespec t);
+  static Timestamp FromTimespecRoundUp(gpr_timespec t);
 
   // Construct a Timestamp from a gpr_cycle_counter.
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
@@ -76,11 +102,13 @@ class Timestamp {
   }
   Timestamp& operator+=(Duration duration);
 
-  bool is_zero() const { return millis_ == 0; }
+  bool is_process_epoch() const { return millis_ == 0; }
 
   uint64_t milliseconds_after_process_epoch() const { return millis_; }
 
   gpr_timespec as_timespec(gpr_clock_type type) const;
+
+  std::string ToString() const;
 
  private:
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
@@ -110,14 +138,16 @@ class Duration {
     return Duration(std::numeric_limits<int64_t>::max());
   }
 
-  static constexpr Duration Hours(int64_t hours) { return Minutes(hours * 60); }
+  static constexpr Duration Hours(int64_t hours) {
+    return Minutes(time_detail::MillisMul(hours, 60));
+  }
 
   static constexpr Duration Minutes(int64_t minutes) {
-    return Seconds(minutes * 60);
+    return Seconds(time_detail::MillisMul(minutes, 60));
   }
 
   static constexpr Duration Seconds(int64_t seconds) {
-    return Milliseconds(seconds * GPR_MS_PER_SEC);
+    return Milliseconds(time_detail::MillisMul(seconds, GPR_MS_PER_SEC));
   }
 
   static constexpr Duration Milliseconds(int64_t millis) {
@@ -159,7 +189,13 @@ class Duration {
     return millis_ >= other.millis_;
   }
   Duration& operator/=(int64_t divisor) {
-    millis_ /= divisor;
+    if (millis_ == std::numeric_limits<int64_t>::max()) {
+      *this = divisor < 0 ? NegativeInfinity() : Infinity();
+    } else if (millis_ == std::numeric_limits<int64_t>::min()) {
+      *this = divisor < 0 ? Infinity() : NegativeInfinity();
+    } else {
+      millis_ /= divisor;
+    }
     return *this;
   }
   Duration& operator+=(Duration other) {
@@ -180,40 +216,50 @@ class Duration {
   int64_t millis_;
 };
 
-static_assert(std::is_trivially_copyable<Duration>::value,
-              "Duration is not trivially copyable");
-
 inline Duration operator+(Duration lhs, Duration rhs) {
-  return Duration::Milliseconds(SaturatingAdd(lhs.millis(), rhs.millis()));
+  return Duration::Milliseconds(
+      time_detail::MillisAdd(lhs.millis(), rhs.millis()));
 }
 
 inline Duration operator-(Duration lhs, Duration rhs) {
-  return Duration::Milliseconds(SaturatingAdd(lhs.millis(), -rhs.millis()));
+  return Duration::Milliseconds(
+      time_detail::MillisAdd(lhs.millis(), -rhs.millis()));
 }
 
 inline Timestamp operator+(Timestamp lhs, Duration rhs) {
-  return Timestamp::FromMillisecondsAfterProcessEpoch(
-      SaturatingAdd(lhs.milliseconds_after_process_epoch(), rhs.millis()));
+  return Timestamp::FromMillisecondsAfterProcessEpoch(time_detail::MillisAdd(
+      lhs.milliseconds_after_process_epoch(), rhs.millis()));
 }
 
 inline Timestamp operator-(Timestamp lhs, Duration rhs) {
-  return Timestamp::FromMillisecondsAfterProcessEpoch(
-      SaturatingAdd(lhs.milliseconds_after_process_epoch(), -rhs.millis()));
+  return Timestamp::FromMillisecondsAfterProcessEpoch(time_detail::MillisAdd(
+      lhs.milliseconds_after_process_epoch(), -rhs.millis()));
 }
 
 inline Timestamp operator+(Duration lhs, Timestamp rhs) { return rhs + lhs; }
 
 inline Duration operator-(Timestamp lhs, Timestamp rhs) {
   return Duration::Milliseconds(
-      SaturatingAdd(lhs.milliseconds_after_process_epoch(),
-                    -rhs.milliseconds_after_process_epoch()));
+      time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
+                             -rhs.milliseconds_after_process_epoch()));
 }
 
 inline Duration operator*(Duration lhs, double rhs) {
-  return Duration::Milliseconds(static_cast<int64_t>(lhs.millis() * rhs));
+  if (lhs == Duration::Infinity()) {
+    return rhs < 0 ? Duration::NegativeInfinity() : Duration::Infinity();
+  }
+  if (lhs == Duration::NegativeInfinity()) {
+    return rhs < 0 ? Duration::Infinity() : Duration::NegativeInfinity();
+  }
+  return Duration::FromSecondsAsDouble(lhs.millis() * rhs / 1000.0);
 }
 
 inline Duration operator*(double lhs, Duration rhs) { return rhs * lhs; }
+
+inline Duration operator/(Duration lhs, int64_t rhs) {
+  lhs /= rhs;
+  return lhs;
+}
 
 inline Duration Duration::FromSecondsAndNanoseconds(int64_t seconds,
                                                     int32_t nanos) {
@@ -221,7 +267,14 @@ inline Duration Duration::FromSecondsAndNanoseconds(int64_t seconds,
 }
 
 inline Duration Duration::FromSecondsAsDouble(double seconds) {
-  return Milliseconds(static_cast<int64_t>(seconds * 1000.0));
+  double millis = seconds * 1000.0;
+  if (millis >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
+    return Infinity();
+  }
+  if (millis <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
+    return NegativeInfinity();
+  }
+  return Milliseconds(static_cast<int64_t>(millis));
 }
 
 inline Timestamp& Timestamp::operator+=(Duration duration) {
@@ -229,6 +282,9 @@ inline Timestamp& Timestamp::operator+=(Duration duration) {
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch);
+
+std::ostream& operator<<(std::ostream& out, Timestamp timestamp);
+std::ostream& operator<<(std::ostream& out, Duration duration);
 
 }  // namespace grpc_core
 

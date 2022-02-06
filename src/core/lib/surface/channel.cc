@@ -58,21 +58,20 @@
 static void destroy_channel(void* arg, grpc_error_handle error);
 
 grpc_channel* grpc_channel_create_with_builder(
-    grpc_channel_stack_builder* builder,
+    grpc_core::ChannelStackBuilder* builder,
     grpc_channel_stack_type channel_stack_type, grpc_error_handle* error) {
-  std::string target = grpc_channel_stack_builder_get_target(builder);
-  grpc_channel_args* args = grpc_channel_args_copy(
-      grpc_channel_stack_builder_get_channel_arguments(builder));
+  std::string target(builder->target());
+  grpc_channel_args* args = grpc_channel_args_copy(builder->channel_args());
   grpc_channel* channel;
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
   } else {
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
   }
-  std::string name = grpc_channel_stack_builder_get_target(builder);
-  grpc_error_handle builder_error = grpc_channel_stack_builder_finish(
-      builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
-      reinterpret_cast<void**>(&channel));
+  std::string name(builder->target());
+  grpc_error_handle builder_error =
+      builder->Build(sizeof(grpc_channel), 1, destroy_channel, nullptr,
+                     reinterpret_cast<void**>(&channel));
   if (builder_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             grpc_error_std_string(builder_error).c_str());
@@ -187,9 +186,8 @@ int channelz_node_cmp(void* p1, void* p2) {
 const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
     channelz_node_copy, channelz_node_destroy, channelz_node_cmp};
 
-void CreateChannelzNode(grpc_channel_stack_builder* builder) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+void CreateChannelzNode(grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* args = builder->channel_args();
   // Check whether channelz is enabled.
   const bool channelz_enabled = grpc_channel_args_find_bool(
       args, GRPC_ARG_ENABLE_CHANNELZ, GRPC_ENABLE_CHANNELZ_DEFAULT);
@@ -201,7 +199,7 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   const bool is_internal_channel = grpc_channel_args_find_bool(
       args, GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL, false);
   // Create the channelz node.
-  std::string target = grpc_channel_stack_builder_get_target(builder);
+  std::string target(builder->target());
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
           target.c_str(), channel_tracer_max_memory, is_internal_channel);
@@ -216,7 +214,7 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   const char* args_to_remove[] = {GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL};
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), &new_arg, 1);
-  grpc_channel_stack_builder_set_channel_arguments(builder, new_args);
+  builder->SetChannelArgs(new_args);
   grpc_channel_args_destroy(new_args);
 }
 
@@ -244,7 +242,7 @@ grpc_channel* grpc_channel_create(const char* target,
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create(
+  grpc_core::ChannelStackBuilder builder(
       grpc_channel_stack_type_string(channel_stack_type));
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
@@ -257,23 +255,21 @@ grpc_channel* grpc_channel_create(const char* target,
       args = channel_args_mutator(target, args, channel_stack_type);
     }
   }
-  grpc_channel_stack_builder_set_channel_arguments(builder, args);
+  builder.SetChannelArgs(args).SetTarget(target).SetTransport(
+      optional_transport);
   grpc_channel_args_destroy(args);
-  grpc_channel_stack_builder_set_target(builder, target);
-  grpc_channel_stack_builder_set_transport(builder, optional_transport);
   if (!grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-          builder, channel_stack_type)) {
-    grpc_channel_stack_builder_destroy(builder);
+          &builder, channel_stack_type)) {
     grpc_shutdown();  // Since we won't call destroy_channel().
     return nullptr;
   }
   // We only need to do this for clients here. For servers, this will be
   // done in src/core/lib/surface/server.cc.
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
-    CreateChannelzNode(builder);
+    CreateChannelzNode(&builder);
   }
   grpc_channel* channel =
-      grpc_channel_create_with_builder(builder, channel_stack_type, error);
+      grpc_channel_create_with_builder(&builder, channel_stack_type, error);
   if (channel == nullptr) {
     grpc_shutdown();  // Since we won't call destroy_channel().
   }
@@ -381,7 +377,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       host != nullptr
           ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
           : absl::nullopt,
-      grpc_core::Timestamp(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }
@@ -468,7 +464,7 @@ grpc_call* grpc_channel_create_registered_call(
       rc->authority.has_value()
           ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
           : absl::nullopt,
-      grpc_core::Timestamp(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }

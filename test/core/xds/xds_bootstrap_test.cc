@@ -738,6 +738,32 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
             0);
 }
 
+TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  const char* json_str =
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": ["
+      "        {"
+      "          \"type\": \"fake\","
+      "          \"ignore\": 0"
+      "        }"
+      "      ],"
+      "      \"ignore\": 0"
+      "    }";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  Json json = Json::Parse(json_str, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  XdsBootstrap::XdsServer xds_server =
+      XdsBootstrap::XdsServer::Parse(json, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  Json::Object output = xds_server.ToJson();
+  XdsBootstrap::XdsServer output_xds_server =
+      XdsBootstrap::XdsServer::Parse(output, &error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

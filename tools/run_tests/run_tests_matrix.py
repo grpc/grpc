@@ -201,20 +201,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # C# tests on .NET desktop/mono
+    # C# tests (both on .NET desktop/mono and .NET core)
     test_jobs += _generate_jobs(languages=['csharp'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                labels=['basictests', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
-    # C# tests on .NET core
-    test_jobs += _generate_jobs(languages=['csharp'],
-                                configs=['dbg', 'opt'],
-                                platforms=['linux', 'macos', 'windows'],
-                                arch='default',
-                                compiler='coreclr',
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
@@ -276,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11', 'gcc_musl',
-            'clang4', 'clang12'
+            'gcc4.9', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang4',
+            'clang13'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],

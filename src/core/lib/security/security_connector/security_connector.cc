@@ -54,14 +54,6 @@ grpc_channel_security_connector::grpc_channel_security_connector(
 
 grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
-int grpc_security_connector_cmp(const grpc_security_connector* sc,
-                                const grpc_security_connector* other) {
-  if (sc == nullptr || other == nullptr) {
-    return grpc_core::QsortCompare(sc, other);
-  }
-  return sc->cmp(other);
-}
-
 int grpc_channel_security_connector::channel_security_connector_cmp(
     const grpc_channel_security_connector* other) const {
   const grpc_channel_security_connector* other_sc =

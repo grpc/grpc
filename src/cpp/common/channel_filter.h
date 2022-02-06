@@ -328,6 +328,7 @@ void RegisterChannelFilter(
   using FilterType = internal::ChannelFilter<ChannelDataType, CallDataType>;
   static const grpc_channel_filter filter = {
       FilterType::StartTransportStreamOpBatch,
+      nullptr,
       FilterType::StartTransportOp,
       FilterType::call_data_size,
       FilterType::InitCallElement,

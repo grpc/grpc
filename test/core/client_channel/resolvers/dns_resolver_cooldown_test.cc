@@ -76,9 +76,11 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     static grpc_core::Timestamp last_resolution_time =
         grpc_core::Timestamp::ProcessEpoch();
     if (last_resolution_time == grpc_core::Timestamp::ProcessEpoch()) {
-      last_resolution_time = grpc_core::Timestamp(gpr_now(GPR_CLOCK_MONOTONIC));
+      last_resolution_time = grpc_core::Timestamp::FromTimespecRoundUp(
+          gpr_now(GPR_CLOCK_MONOTONIC));
     } else {
-      auto now = grpc_core::Timestamp(gpr_now(GPR_CLOCK_MONOTONIC));
+      auto now = grpc_core::Timestamp::FromTimespecRoundUp(
+          gpr_now(GPR_CLOCK_MONOTONIC));
       GPR_ASSERT(now - last_resolution_time >=
                  grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
       last_resolution_time = now;
@@ -112,7 +114,8 @@ static grpc_ares_request* test_dns_lookup_ares(
       addresses, balancer_addresses, service_config_json, query_timeout_ms);
   ++g_resolution_count;
   static auto last_resolution_time = grpc_core::Timestamp::ProcessEpoch();
-  auto now = grpc_core::Timestamp(gpr_now(GPR_CLOCK_MONOTONIC));
+  auto now =
+      grpc_core::Timestamp::FromTimespecRoundUp(gpr_now(GPR_CLOCK_MONOTONIC));
   gpr_log(GPR_DEBUG,
           "last_resolution_time:%" PRId64 " now:%" PRId64
           " min_time_between:%d",
@@ -165,7 +168,8 @@ static void iomgr_args_finish(iomgr_args* args) {
 }
 
 static grpc_core::Timestamp n_sec_deadline(int seconds) {
-  return grpc_core::Timestamp(grpc_timeout_seconds_to_deadline(seconds));
+  return grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void poll_pollset_until_request_done(iomgr_args* args) {

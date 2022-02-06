@@ -207,7 +207,7 @@ void long_running_service_cleanup_test(void) {
   /* grpc_timespec_to_millis_round_up is how users usually compute a millisecond
     input value into grpc_timer_init, so we mimic that behavior here */
   grpc_timer_init(
-      &timers[3], grpc_core::Timestamp(deadline_spec),
+      &timers[3], grpc_core::Timestamp::FromTimespecRoundUp(deadline_spec),
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
@@ -233,6 +233,8 @@ void long_running_service_cleanup_test(void) {
 }
 
 int main(int argc, char** argv) {
+  gpr_time_init();
+
   /* Tests with default g_start_time */
   {
     grpc::testing::TestEnvironment env(argc, argv);
@@ -251,10 +253,10 @@ int main(int argc, char** argv) {
     /* Set g_start_time back 25 days. */
     /* We set g_start_time here in case there are any initialization
         dependencies that use g_start_time. */
-    grpc_core::TestOnlySetProcessEpoch(
-        gpr_time_sub(gpr_now(gpr_clock_type::GPR_CLOCK_MONOTONIC),
-                     gpr_time_from_hours(kHoursIn25Days,
-                                         gpr_clock_type::GPR_CLOCK_MONOTONIC)));
+    grpc_core::TestOnlySetProcessEpoch(gpr_time_sub(
+        gpr_now(gpr_clock_type::GPR_CLOCK_MONOTONIC),
+        gpr_time_add(gpr_time_from_hours(kHoursIn25Days, GPR_TIMESPAN),
+                     gpr_time_from_seconds(10, GPR_TIMESPAN))));
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();

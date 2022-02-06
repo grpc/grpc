@@ -70,7 +70,9 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
           GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
         },
         this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_, grpc_core::Timestamp(deadline), &on_alarm_);
+    grpc_timer_init(&timer_,
+                    grpc_core::Timestamp::FromTimespecRoundUp(deadline),
+                    &on_alarm_);
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -92,7 +94,9 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
               error);
         },
         this, grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&timer_, grpc_core::Timestamp(deadline), &on_alarm_);
+    grpc_timer_init(&timer_,
+                    grpc_core::Timestamp::FromTimespecRoundUp(deadline),
+                    &on_alarm_);
   }
   void Cancel() {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;

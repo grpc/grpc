@@ -472,6 +472,7 @@ void CallData::HijackedRecvTrailingMetadataReady(void* arg,
 
 extern const grpc_channel_filter FaultInjectionFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,

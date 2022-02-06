@@ -33,11 +33,9 @@
 namespace grpc_core {
 
 inline Duration ParseDuration(const google_protobuf_Duration* proto_duration) {
-  gpr_timespec duration;
-  duration.clock_type = GPR_TIMESPAN;
-  duration.tv_sec = google_protobuf_Duration_seconds(proto_duration);
-  duration.tv_nsec = google_protobuf_Duration_nanos(proto_duration);
-  return Duration::FromTimespec(duration);
+  return Duration::FromSecondsAndNanoseconds(
+      google_protobuf_Duration_seconds(proto_duration),
+      google_protobuf_Duration_nanos(proto_duration));
 }
 
 struct CommonTlsContext {

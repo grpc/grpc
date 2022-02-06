@@ -291,10 +291,7 @@ static void start_max_age_grace_timer_after_goaway_op(
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_grace_timer");
     grpc_timer_init(
         &chand->max_age_grace_timer,
-        chand->max_connection_age_grace == grpc_core::Duration::Infinity()
-            ? grpc_core::Timestamp::InfFuture()
-            : grpc_core::ExecCtx::Get()->Now() +
-                  chand->max_connection_age_grace,
+        grpc_core::ExecCtx::Get()->Now() + chand->max_connection_age_grace,
         &chand->force_close_max_age_channel);
   }
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack,
@@ -469,7 +466,7 @@ static grpc_error_handle max_age_init_channel_elem(
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
           {DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0, INT_MAX});
-      chand->max_connection_idle =
+      chand->max_connection_age_grace =
           value == INT_MAX ? grpc_core::Duration::Infinity()
                            : grpc_core::Duration::Milliseconds(value);
     } else if (0 == strcmp(args->channel_args->args[i].key,
@@ -534,6 +531,7 @@ static void max_age_destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_max_age_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0, /* sizeof_call_data */
     max_age_init_call_elem,
@@ -549,9 +547,8 @@ namespace grpc_core {
 void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        const grpc_channel_args* channel_args =
-            grpc_channel_stack_builder_get_channel_arguments(builder);
+      [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* channel_args = builder->channel_args();
         bool enable = grpc_channel_arg_get_integer(
                           grpc_channel_args_find(
                               channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
@@ -561,11 +558,9 @@ void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
                               channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
                           MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
         if (enable) {
-          return grpc_channel_stack_builder_prepend_filter(
-              builder, &grpc_max_age_filter, nullptr, nullptr);
-        } else {
-          return true;
+          builder->PrependFilter(&grpc_max_age_filter, nullptr);
         }
+        return true;
       });
 }
 }  // namespace grpc_core

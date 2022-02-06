@@ -306,7 +306,8 @@ static Validator* ValidateConnectivityWatch(gpr_timespec deadline,
                                             int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
-      GPR_ASSERT(gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0);
+      auto now = gpr_now(deadline.clock_type);
+      GPR_ASSERT(gpr_time_cmp(now, deadline) >= 0);
     }
     --*counter;
   });
@@ -383,11 +384,6 @@ class Call : public std::enable_shared_from_this<Call> {
   template <typename T>
   grpc_slice ReadSlice(const T& s) {
     grpc_slice slice = grpc_slice_from_cpp_string(s.value());
-    if (s.intern()) {
-      auto interned_slice = grpc_slice_intern(slice);
-      grpc_slice_unref(slice);
-      slice = interned_slice;
-    }
     unref_slices_.push_back(slice);
     return slice;
   }
@@ -762,6 +758,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
+  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+  grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);

@@ -97,7 +97,7 @@ namespace Grpc.Core
         /// For streaming response calls, this property is also exposed as on IServerStreamWriter for convenience.
         /// Both properties are backed by the same underlying value.
         /// </summary>
-        public WriteOptions WriteOptions
+        public WriteOptions? WriteOptions
         {
             get
             {
@@ -143,7 +143,7 @@ namespace Grpc.Core
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract Status StatusCore { get; set; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
-        protected abstract WriteOptions WriteOptionsCore { get; set; }
+        protected abstract WriteOptions? WriteOptionsCore { get; set; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>
         protected abstract AuthContext AuthContextCore { get; }
         /// <summary>Provides implementation of a non-virtual public member.</summary>

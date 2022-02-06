@@ -25,18 +25,21 @@ struct envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider;
 struct envoy_extensions_transport_sockets_tls_v3_TlsCertificate;
 struct envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys;
 struct envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance;
+struct envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher;
 struct envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext;
 typedef struct envoy_extensions_transport_sockets_tls_v3_TlsParameters envoy_extensions_transport_sockets_tls_v3_TlsParameters;
 typedef struct envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider;
 typedef struct envoy_extensions_transport_sockets_tls_v3_TlsCertificate envoy_extensions_transport_sockets_tls_v3_TlsCertificate;
 typedef struct envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys;
 typedef struct envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance;
+typedef struct envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher;
 typedef struct envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsParameters_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit;
+extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_TypedExtensionConfig;
@@ -55,6 +58,14 @@ typedef enum {
   envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_VERIFY_TRUST_CHAIN = 0,
   envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ACCEPT_UNTRUSTED = 1
 } envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_TrustChainVerification;
+
+typedef enum {
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_SAN_TYPE_UNSPECIFIED = 0,
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_EMAIL = 1,
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_DNS = 2,
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_URI = 3,
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_IP_ADDRESS = 4
+} envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_SanType;
 
 typedef enum {
   envoy_extensions_transport_sockets_tls_v3_TlsParameters_TLS_AUTO = 0,
@@ -209,12 +220,14 @@ UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_pas
 UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_password(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_DataSource*); }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_ocsp_staple(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return _upb_hasbit(msg, 4); }
 UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_ocsp_staple(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct envoy_config_core_v3_DataSource*); }
-UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_signed_certificate_timestamp(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(28, 56)); }
-UPB_INLINE const struct envoy_config_core_v3_DataSource* const* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_signed_certificate_timestamp(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, size_t *len) { return (const struct envoy_config_core_v3_DataSource* const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_signed_certificate_timestamp(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 64)); }
+UPB_INLINE const struct envoy_config_core_v3_DataSource* const* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_signed_certificate_timestamp(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, size_t *len) { return (const struct envoy_config_core_v3_DataSource* const*)_upb_array_accessor(msg, UPB_SIZE(32, 64), len); }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_private_key_provider(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return _upb_hasbit(msg, 5); }
 UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_private_key_provider(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider*); }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_watched_directory(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return _upb_hasbit(msg, 6); }
 UPB_INLINE const struct envoy_config_core_v3_WatchedDirectory* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_watched_directory(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct envoy_config_core_v3_WatchedDirectory*); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsCertificate_has_pkcs12(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return _upb_hasbit(msg, 7); }
+UPB_INLINE const struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_pkcs12(const envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct envoy_config_core_v3_DataSource*); }
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsCertificate_set_certificate_chain(envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, struct envoy_config_core_v3_DataSource* value) {
   _upb_sethas(msg, 1);
@@ -269,15 +282,15 @@ UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_so
   return sub;
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource** envoy_extensions_transport_sockets_tls_v3_TlsCertificate_mutable_signed_certificate_timestamp(envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, size_t *len) {
-  return (struct envoy_config_core_v3_DataSource**)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 56), len);
+  return (struct envoy_config_core_v3_DataSource**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 64), len);
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource** envoy_extensions_transport_sockets_tls_v3_TlsCertificate_resize_signed_certificate_timestamp(envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, size_t len, upb_arena *arena) {
-  return (struct envoy_config_core_v3_DataSource**)_upb_array_resize_accessor2(msg, UPB_SIZE(28, 56), len, UPB_SIZE(2, 3), arena);
+  return (struct envoy_config_core_v3_DataSource**)_upb_array_resize_accessor2(msg, UPB_SIZE(32, 64), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_add_signed_certificate_timestamp(envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, upb_arena *arena) {
   struct envoy_config_core_v3_DataSource* sub = (struct envoy_config_core_v3_DataSource*)_upb_msg_new(&envoy_config_core_v3_DataSource_msginit, arena);
   bool ok = _upb_array_append_accessor2(
-      msg, UPB_SIZE(28, 56), UPB_SIZE(2, 3), &sub, arena);
+      msg, UPB_SIZE(32, 64), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -304,6 +317,19 @@ UPB_INLINE struct envoy_config_core_v3_WatchedDirectory* envoy_extensions_transp
     sub = (struct envoy_config_core_v3_WatchedDirectory*)_upb_msg_new(&envoy_config_core_v3_WatchedDirectory_msginit, arena);
     if (!sub) return NULL;
     envoy_extensions_transport_sockets_tls_v3_TlsCertificate_set_watched_directory(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsCertificate_set_pkcs12(envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, struct envoy_config_core_v3_DataSource* value) {
+  _upb_sethas(msg, 7);
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), struct envoy_config_core_v3_DataSource*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_DataSource* envoy_extensions_transport_sockets_tls_v3_TlsCertificate_mutable_pkcs12(envoy_extensions_transport_sockets_tls_v3_TlsCertificate *msg, upb_arena *arena) {
+  struct envoy_config_core_v3_DataSource* sub = (struct envoy_config_core_v3_DataSource*)envoy_extensions_transport_sockets_tls_v3_TlsCertificate_pkcs12(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_DataSource*)_upb_msg_new(&envoy_config_core_v3_DataSource_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_transport_sockets_tls_v3_TlsCertificate_set_pkcs12(msg, sub);
   }
   return sub;
 }
@@ -387,6 +413,53 @@ UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CertificateProviderPlu
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 
+/* envoy.extensions.transport_sockets.tls.v3.SubjectAltNameMatcher */
+
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_new(upb_arena *arena) {
+  return (envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *)_upb_msg_new(&envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit, arena);
+}
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *ret = envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_new(arena);
+  if (!ret) return NULL;
+  if (!upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit, arena)) return NULL;
+  return ret;
+}
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_parse_ex(const char *buf, size_t size,
+                           const upb_extreg *extreg, int options,
+                           upb_arena *arena) {
+  envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *ret = envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_new(arena);
+  if (!ret) return NULL;
+  if (!_upb_decode(buf, size, ret, &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit, extreg, options, arena)) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_serialize(const envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit, arena, len);
+}
+
+UPB_INLINE int32_t envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_san_type(const envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_has_matcher(const envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_type_matcher_v3_StringMatcher* envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_matcher(const envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct envoy_type_matcher_v3_StringMatcher*); }
+
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_set_san_type(envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_set_matcher(envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), struct envoy_type_matcher_v3_StringMatcher*) = value;
+}
+UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_mutable_matcher(envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher *msg, upb_arena *arena) {
+  struct envoy_type_matcher_v3_StringMatcher* sub = (struct envoy_type_matcher_v3_StringMatcher*)envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_matcher(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_matcher_v3_StringMatcher*)_upb_msg_new(&envoy_type_matcher_v3_StringMatcher_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_set_matcher(msg, sub);
+  }
+  return sub;
+}
+
 /* envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext */
 
 UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_new(upb_arena *arena) {
@@ -431,6 +504,9 @@ UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_CertificateValidationC
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_custom_validator_config(const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct envoy_config_core_v3_TypedExtensionConfig*); }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_ca_certificate_provider_instance(const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg) { return _upb_hasbit(msg, 6); }
 UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance* envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 56), const envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance*); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_only_verify_leaf_cert_crl(const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(9, 9), bool); }
+UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_has_match_typed_subject_alt_names(const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(48, 88)); }
+UPB_INLINE const envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher* const* envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_match_typed_subject_alt_names(const envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg, size_t *len) { return (const envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher* const*)_upb_array_accessor(msg, UPB_SIZE(48, 88), len); }
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_set_trusted_ca(envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg, struct envoy_config_core_v3_DataSource* value) {
   _upb_sethas(msg, 1);
@@ -547,6 +623,22 @@ UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_CertificateProviderP
     if (!sub) return NULL;
     envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_set_ca_certificate_provider_instance(msg, sub);
   }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_set_only_verify_leaf_cert_crl(envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(9, 9), bool) = value;
+}
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher** envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_mutable_match_typed_subject_alt_names(envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg, size_t *len) {
+  return (envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher**)_upb_array_mutable_accessor(msg, UPB_SIZE(48, 88), len);
+}
+UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher** envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_resize_match_typed_subject_alt_names(envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg, size_t len, upb_arena *arena) {
+  return (envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher**)_upb_array_resize_accessor2(msg, UPB_SIZE(48, 88), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher* envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_add_match_typed_subject_alt_names(envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext *msg, upb_arena *arena) {
+  struct envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher* sub = (struct envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher*)_upb_msg_new(&envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(48, 88), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
   return sub;
 }
 

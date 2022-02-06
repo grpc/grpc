@@ -167,6 +167,12 @@ class WriteOptions {
     return *this;
   }
 
+  /// Get value for the flag indicating that this is the last message, and
+  /// should be coalesced with trailing metadata.
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  bool is_last_message() const { return last_message_; }
+
   /// Guarantee that all bytes have been written to the socket before completing
   /// this write (usually writes are completed when they pass flow control).
   inline WriteOptions& set_write_through() {
@@ -174,13 +180,12 @@ class WriteOptions {
     return *this;
   }
 
-  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
+  inline WriteOptions& clear_write_through() {
+    ClearBit(GRPC_WRITE_THROUGH);
+    return *this;
+  }
 
-  /// Get value for the flag indicating that this is the last message, and
-  /// should be coalesced with trailing metadata.
-  ///
-  /// \sa GRPC_WRITE_LAST_MESSAGE
-  bool is_last_message() const { return last_message_; }
+  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
 
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }

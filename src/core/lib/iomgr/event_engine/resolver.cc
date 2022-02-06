@@ -67,7 +67,7 @@ class EventEngineDNSRequest : DNSRequest {
         default_port_, absl::InfiniteFuture());
   }
 
-  // TOOD(hork): implement cancellation; currently it's a no-op
+  // TODO(hork): implement cancellation; currently it's a no-op
   void Orphan() override { Unref(); }
 
  private:

@@ -524,7 +524,9 @@ class AresDNSResolver : public DNSResolver {
         absl::MutexLock lock(&mu_);
         GRPC_CARES_TRACE_LOG("AresRequest:%p Orphan ares_request_:%p", this,
                              ares_request_.get());
-        grpc_cancel_ares_request(ares_request_.get());
+        if (ares_request_ != nullptr) {
+          grpc_cancel_ares_request(ares_request_.get());
+        }
       }
       Unref();
     }

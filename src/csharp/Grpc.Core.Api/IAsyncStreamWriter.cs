@@ -42,6 +42,6 @@ namespace Grpc.Core
         /// Once set, this property maintains its value across subsequent
         /// writes.
         /// </summary>
-        WriteOptions WriteOptions { get; set; }
+        WriteOptions? WriteOptions { get; set; }
     }
 }

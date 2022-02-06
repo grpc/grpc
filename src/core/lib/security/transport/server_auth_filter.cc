@@ -324,6 +324,7 @@ static void server_auth_destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_server_auth_filter = {
     server_auth_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     server_auth_init_call_elem,

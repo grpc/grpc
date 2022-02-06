@@ -432,9 +432,11 @@ grpc_error_handle HttpConnectionManagerParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "HttpConnectionManager missing config_source for RDS.");
     }
-    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source)) {
+    if (!envoy_config_core_v3_ConfigSource_has_ads(config_source) &&
+        !envoy_config_core_v3_ConfigSource_has_self(config_source)) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS.");
+          "HttpConnectionManager ConfigSource for RDS does not specify ADS "
+          "or SELF.");
     }
     // Get the route_config_name.
     http_connection_manager->route_config_name = UpbStringToStdString(

@@ -19,6 +19,7 @@
 #include <atomic>
 #include <cstdint>
 #include <limits>
+#include <string>
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -31,9 +32,24 @@ std::atomic<int64_t> g_process_epoch_seconds;
 std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
 
 GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
-  const gpr_cycle_counter cycles_start = gpr_get_cycle_counter();
-  int64_t process_epoch_seconds = gpr_now(GPR_CLOCK_MONOTONIC).tv_sec;
-  const gpr_cycle_counter cycles_end = gpr_get_cycle_counter();
+  gpr_cycle_counter cycles_start;
+  gpr_cycle_counter cycles_end;
+  int64_t process_epoch_seconds;
+
+  // Check the current time... if we end up with zero, try again after 100ms.
+  // If it doesn't advance after sleeping for 1100ms, crash the process.
+  for (int i = 0; i < 11; i++) {
+    cycles_start = gpr_get_cycle_counter();
+    gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    cycles_end = gpr_get_cycle_counter();
+    process_epoch_seconds = now.tv_sec;
+    if (process_epoch_seconds != 0) {
+      break;
+    }
+    gpr_sleep_until(gpr_time_add(now, gpr_time_from_millis(100, GPR_TIMESPAN)));
+  }
+
+  // Time does not seem to be increasing from zero...
   GPR_ASSERT(process_epoch_seconds != 0);
   int64_t expected = 0;
   gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
@@ -89,7 +105,22 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
                  static_cast<double>(GPR_NS_PER_SEC);
-  if (x < 0) return 0;
+  if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
+    return std::numeric_limits<int64_t>::min();
+  }
+  if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
+    return std::numeric_limits<int64_t>::max();
+  }
+  return static_cast<int64_t>(x);
+}
+
+int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
+  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
+  if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {
+    return std::numeric_limits<int64_t>::min();
+  }
   if (x >= static_cast<double>(std::numeric_limits<int64_t>::max())) {
     return std::numeric_limits<int64_t>::max();
   }
@@ -98,16 +129,28 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
 
 }  // namespace
 
-Timestamp::Timestamp(gpr_timespec ts)
-    : millis_(TimespanToMillisRoundUp(gpr_time_sub(
-          gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime()))) {}
+Timestamp Timestamp::FromTimespecRoundUp(gpr_timespec ts) {
+  return FromMillisecondsAfterProcessEpoch(TimespanToMillisRoundUp(gpr_time_sub(
+      gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
+}
+
+Timestamp Timestamp::FromTimespecRoundDown(gpr_timespec ts) {
+  return FromMillisecondsAfterProcessEpoch(
+      TimespanToMillisRoundDown(gpr_time_sub(
+          gpr_convert_clock_type(ts, GPR_CLOCK_MONOTONIC), StartTime())));
+}
 
 Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
-  return Timestamp(gpr_cycle_counter_sub(c, StartCycleCounter()));
+  return Timestamp::FromMillisecondsAfterProcessEpoch(
+      TimespanToMillisRoundUp(gpr_cycle_counter_sub(c, StartCycleCounter())));
 }
 
 gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
   return MillisecondsAsTimespec(millis_, clock_type);
+}
+
+std::string Timestamp::ToString() const {
+  return "@" + std::to_string(millis_) + "ms";
 }
 
 gpr_timespec Duration::as_timespec() const {
@@ -125,6 +168,14 @@ std::string Duration::ToString() const {
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {
   g_process_epoch_seconds.store(
       gpr_convert_clock_type(epoch, GPR_CLOCK_MONOTONIC).tv_sec);
+}
+
+std::ostream& operator<<(std::ostream& out, Timestamp timestamp) {
+  return out << timestamp.ToString();
+}
+
+std::ostream& operator<<(std::ostream& out, Duration duration) {
+  return out << duration.ToString();
 }
 
 }  // namespace grpc_core
