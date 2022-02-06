@@ -165,6 +165,7 @@ class ArenaPromise {
     other.impl_ = arena_promise_detail::NullImpl<T>::Get();
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
+    impl_->Destroy();
     impl_ = other.impl_;
     other.impl_ = arena_promise_detail::NullImpl<T>::Get();
     return *this;
