@@ -21,3 +21,5 @@ RUN yum groupinstall -y "Development Tools"
 RUN yum install -y redhat-rpm-config
 RUN yum install -y gcc-c++
 RUN yum install -y python3-devel
+
+RUN yum install -y findutils

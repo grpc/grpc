@@ -4732,7 +4732,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 
-TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
+TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
   const int64_t kTimeoutMillis = 500;
   const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;

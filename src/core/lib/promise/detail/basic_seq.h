@@ -162,9 +162,9 @@ absl::enable_if_t<I <= J, SeqState<Traits, I, Fs...>*> GetSeqState(
 }
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
-auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg) -> decltype(
-    SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
-        &state->next_factory, std::forward<T>(arg))) {
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
+    -> decltype(SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::
+                    CallFactory(&state->next_factory, std::forward<T>(arg))) {
   return SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
       &state->next_factory, std::forward<T>(arg));
 }

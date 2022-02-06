@@ -106,6 +106,13 @@ class TlsCredentialsOptions {
   // verifiers other than the host name verifier is used.
   void set_check_call_host(bool check_call_host);
 
+  // TODO(zhenlian): This is an experimental API is likely to change in the
+  // future. Before de-experiementalizing, verify the API is up to date.
+  // If set, gRPC will read all hashed x.509 CRL files in the directory and
+  // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
+  // version > 1.1.
+  void set_crl_directory(const std::string& path);
+
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {

@@ -26,36 +26,22 @@ class SdkServerAuthzFilter {
  public:
   static const grpc_channel_filter kFilterVtable;
 
+  static absl::StatusOr<SdkServerAuthzFilter> Create(
+      const grpc_channel_args* args);
+
+  static constexpr bool is_client() { return false; }
+  static constexpr const char* name() { return "sdk-server-authz"; }
+
+  ArenaPromise<TrailingMetadata> MakeCallPromise(
+      ClientInitialMetadata initial_metadata,
+      NextPromiseFactory next_promise_factory);
+
  private:
-  class CallData {
-   public:
-    static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args*);
-    static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* /*final_info*/,
-                        grpc_closure* /*ignored*/);
-
-   private:
-    explicit CallData(grpc_call_element* elem);
-
-    bool IsAuthorized(SdkServerAuthzFilter* chand);
-
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-
-    grpc_metadata_batch* recv_initial_metadata_batch_;
-    grpc_closure* original_recv_initial_metadata_ready_;
-    grpc_closure recv_initial_metadata_ready_;
-  };
-
   SdkServerAuthzFilter(
       RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
 
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* args);
-  static void Destroy(grpc_channel_element* elem);
+  bool IsAuthorized(const ClientInitialMetadata& initial_metadata);
 
   RefCountedPtr<grpc_auth_context> auth_context_;
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;

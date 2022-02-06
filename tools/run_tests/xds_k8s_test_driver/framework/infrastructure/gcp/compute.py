@@ -80,6 +80,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 health_check_field: health_check_settings,
             })
 
+    def list_health_check(self):
+        return self._list_resource(self.api.healthChecks())
+
     def delete_health_check(self, name):
         self._delete_resource(self.api.healthChecks(), 'healthCheck', name)
 
@@ -392,6 +395,10 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                     self.resource_pretty_format(body))
         self._execute(
             collection.patch(project=self.project, body=body, **kwargs))
+
+    def _list_resource(self, collection: discovery.Resource):
+        return collection.list(project=self.project).execute(
+            num_retries=self._GCP_API_RETRIES)
 
     def _delete_resource(self, collection: discovery.Resource,
                          resource_type: str, resource_name: str) -> bool:
