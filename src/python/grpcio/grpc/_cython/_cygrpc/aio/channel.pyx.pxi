@@ -66,6 +66,9 @@ cdef class AioChannel:
                 try_to_connect,
             )
 
+    def target(self):
+        return self._target
+
     async def watch_connectivity_state(self,
                                        grpc_connectivity_state last_observed_state,
                                        object deadline):

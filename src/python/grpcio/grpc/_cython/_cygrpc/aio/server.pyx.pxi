@@ -64,6 +64,9 @@ cdef class RPCState:
     cdef bytes method(self):
         return _slice_bytes(self.details.method)
 
+    cdef bytes host(self):
+        return _slice_bytes(self.details.host)
+
     cdef tuple invocation_metadata(self):
         return _metadata(&self.request_metadata)
 
@@ -223,6 +226,12 @@ cdef class _ServicerContext:
     def details(self):
         return self._rpc_state.status_details
 
+    def host(self):
+        return self._rpc_state.host()
+
+    def method(self):
+        return self._rpc_state.method()
+
     def set_compression(self, object compression):
         if self._rpc_state.metadata_sent:
             raise RuntimeError('Compression setting must be specified before sending initial metadata')
@@ -346,6 +355,18 @@ cdef class _SyncServicerContext:
 
     def time_remaining(self):
         return self._context.time_remaining()
+
+    def trailing_metadata(self):
+        return self._context.trailing_metadata()
+
+    def code(self):
+        return self._context.code()
+
+    def host(self):
+        return self._context.host()
+
+    def method(self):
+        return self._context.method()
 
 
 async def _run_interceptor(object interceptors, object query_handler,

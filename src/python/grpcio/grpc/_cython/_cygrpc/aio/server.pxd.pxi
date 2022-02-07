@@ -36,6 +36,7 @@ cdef class RPCState(GrpcCallWrapper):
     cdef object callbacks
 
     cdef bytes method(self)
+    cdef bytes host(self)
     cdef tuple invocation_metadata(self)
     cdef void raise_for_termination(self) except *
     cdef int get_write_flag(self)
