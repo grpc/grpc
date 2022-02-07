@@ -2291,7 +2291,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
-        "absl/container:flat_hash_map",
     ],
     language = "c++",
     deps = [
