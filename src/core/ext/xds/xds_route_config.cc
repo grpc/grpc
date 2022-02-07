@@ -61,6 +61,15 @@ bool XdsRbacEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+// TODO(donnadionne): Remove once RLS is no longer experimental
+bool XdsRlsEnabled() {
+  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_RLS_LB");
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
+  gpr_free(value);
+  return parse_succeeded && parsed_value;
+}
+
 //
 // XdsRouteConfigResource::RetryPolicy
 //
@@ -713,7 +722,8 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
-  } else if (envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
+  } else if (XdsRlsEnabled() &&
+             envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {
     route->cluster_specifier_plugin_name = UpbStringToStdString(
         envoy_config_route_v3_RouteAction_cluster_specifier_plugin(
@@ -953,6 +963,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
     }
   }
+  if (!XdsRlsEnabled()) return GRPC_ERROR_NONE;
   size_t num_cluster_specifier_plugins;
   const envoy_config_route_v3_ClusterSpecifierPlugin* const*
       cluster_specifier_plugin =

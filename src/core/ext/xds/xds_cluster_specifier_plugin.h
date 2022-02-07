@@ -67,4 +67,4 @@ class XdsClusterSpecifierPluginRegistry {
 
 }  // namespace grpc_core
 
-#endif // GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
+#endif  // GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H
