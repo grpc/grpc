@@ -249,7 +249,6 @@ class CLanguage(object):
         self.config = config
         self.args = args
         self._make_options = []
-        self._use_cmake = True
         if self.platform == 'windows':
             _check_compiler(self.args.compiler, [
                 'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
@@ -286,7 +285,7 @@ class CLanguage(object):
         out = []
         binaries = get_c_tests(self.args.travis, self.test_lang)
         for target in binaries:
-            if self._use_cmake and target.get('boringssl', False):
+            if target.get('boringssl', False):
                 # cmake doesn't build boringssl tests
                 continue
             auto_timeout_scaling = target.get('auto_timeout_scaling', True)
@@ -327,11 +326,8 @@ class CLanguage(object):
                     binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
                         self.config.build_config], target['name'])
                 else:
-                    if self._use_cmake:
-                        binary = 'cmake/build/%s' % target['name']
-                    else:
-                        binary = 'bins/%s/%s' % (self.config.build_config,
-                                                 target['name'])
+                    binary = 'cmake/build/%s' % target['name']
+
                 cpu_cost = target['cpu_cost']
                 if cpu_cost == 'capacity':
                     cpu_cost = multiprocessing.cpu_count()
@@ -437,11 +433,9 @@ class CLanguage(object):
                 'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
                 '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
             ] + self._cmake_configure_extra_args]
-        elif self._use_cmake:
+        else:
             return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
                     self._cmake_configure_extra_args]
-        else:
-            return []
 
     def build_steps(self):
         return []
@@ -453,10 +447,7 @@ class CLanguage(object):
             return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
 
     def makefile_name(self):
-        if self._use_cmake:
-            return 'cmake/build/Makefile'
-        else:
-            return 'Makefile'
+        return 'cmake/build/Makefile'
 
     def _clang_cmake_configure_extra_args(self, version_suffix=''):
         return [
