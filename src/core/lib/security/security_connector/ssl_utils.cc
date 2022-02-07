@@ -233,7 +233,7 @@ static bool IsSpiffeId(absl::string_view uri) {
     return false;
   }
   std::vector<absl::string_view> splits = absl::StrSplit(uri, '/');
-  if (splits.size() < 4 || splits[3] == "") {
+  if (splits.size() < 4 || splits[3].empty()) {
     gpr_log(GPR_INFO, "Invalid SPIFFE ID: workload id is empty.");
     return false;
   }

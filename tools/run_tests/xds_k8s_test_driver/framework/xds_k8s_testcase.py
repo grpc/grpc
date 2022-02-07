@@ -27,6 +27,7 @@ import grpc
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework import xds_url_map_testcase
 from framework.helpers import retryers
 import framework.helpers.rand
 from framework.infrastructure import gcp
@@ -38,10 +39,6 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
-_FORCE_CLEANUP = flags.DEFINE_bool(
-    "force_cleanup",
-    default=False,
-    help="Force resource cleanup, even if not created by this test run")
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
 # from channelz
 _CHECK_LOCAL_CERTS = flags.DEFINE_bool(
@@ -62,6 +59,7 @@ KubernetesClientRunner = client_app.KubernetesClientRunner
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
+ClientConfig = framework.rpc.grpc_csds.ClientConfig
 
 _TD_CONFIG_MAX_WAIT_SEC = 600
 
@@ -115,7 +113,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.client_port = xds_flags.CLIENT_PORT.value
 
         # Test suite settings
-        cls.force_cleanup = _FORCE_CLEANUP.value
+        cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         cls.enable_workload_identity = xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value
@@ -350,6 +348,42 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                      json_format.MessageToJson(config, indent=2))
         self.assertSameElements(want, seen)
 
+    def assertRouteConfigUpdateTrafficHandoff(
+            self, test_client: XdsTestClient,
+            previous_route_config_version: str, retry_wait_second: int,
+            timeout_second: int):
+        retryer = retryers.constant_retryer(
+            wait_fixed=datetime.timedelta(seconds=retry_wait_second),
+            timeout=datetime.timedelta(seconds=timeout_second),
+            retry_on_exceptions=(TdPropagationRetryableError,),
+            logger=logger,
+            log_level=logging.INFO)
+        try:
+            for attempt in retryer:
+                with attempt:
+                    self.assertSuccessfulRpcs(test_client)
+                    raw_config = test_client.csds.fetch_client_status(
+                        log_level=logging.INFO)
+                    dumped_config = xds_url_map_testcase.DumpedXdsConfig(
+                        json_format.MessageToDict(raw_config))
+                    route_config_version = dumped_config.rds_version
+                    if previous_route_config_version == route_config_version:
+                        logger.info(
+                            'Routing config not propagated yet. Retrying.')
+                        raise TdPropagationRetryableError(
+                            "CSDS not get updated routing config corresponding"
+                            " to the second set of url maps")
+                    else:
+                        self.assertSuccessfulRpcs(test_client)
+                        logger.info(
+                            '[SUCCESS] Confirmed successful RPC with the updated routing config, version=%s',
+                            route_config_version)
+        except retryers.RetryError as retry_error:
+            logger.info(
+                'Retry exhausted. TD routing config propagation failed after timeout %ds. Last seen client config dump: %s',
+                timeout_second, dumped_config)
+            raise retry_error
+
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
@@ -376,6 +410,10 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                 int(rpcs_count),
                 0,
                 msg=f'Backend {backend} did not receive a single RPC')
+
+
+class TdPropagationRetryableError(Exception):
+    pass
 
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
