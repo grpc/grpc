@@ -375,11 +375,9 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
       grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
+  grpc_channel* channel_dup =
+      grpc_channel_create(server_address.c_str(), creds, &client_channel_args);
   grpc_channel_credentials_release(creds);
-  grpc_channel_credentials* another_creds = grpc_insecure_credentials_create();
-  grpc_channel* channel_dup = grpc_channel_create(
-      server_address.c_str(), another_creds, &client_channel_args);
-  grpc_channel_credentials_release(another_creds);
   int expected_keepalive_time_sec = 1;
   // We need 3 GOAWAY frames to throttle the keepalive time from 1 second to 8
   // seconds (> 5sec).
@@ -395,11 +393,11 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
       expected_keepalive_time_sec);
   EXPECT_EQ(PerformWaitingCall(channel, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
-  // Since the subchannel is not shared any more, the second channel should not
-  // have keepalive settings in sync with the server.
+  // Since the subchannel is shared, the second channel should also have
+  // keepalive settings in sync with the server.
   gpr_log(GPR_INFO, "Now testing second channel sharing the same subchannel");
   EXPECT_EQ(PerformWaitingCall(channel_dup, server, cq),
-            GRPC_STATUS_UNAVAILABLE);
+            GRPC_STATUS_DEADLINE_EXCEEDED);
   // shutdown and destroy the client and server
   grpc_channel_destroy(channel);
   grpc_channel_destroy(channel_dup);
