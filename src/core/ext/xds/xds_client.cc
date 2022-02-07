@@ -1218,9 +1218,9 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
           result.type_url.c_str(), result.version.c_str(), state.nonce.c_str(),
           error.c_str());
       GRPC_ERROR_UNREF(state.error);
-      state.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error)),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      state.error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
+                                       GRPC_ERROR_INT_GRPC_STATUS,
+                                       GRPC_STATUS_UNAVAILABLE);
     }
     // Delete resources not seen in update if needed.
     if (result.type->AllResourcesRequiredInSotW()) {
