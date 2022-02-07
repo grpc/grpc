@@ -37,7 +37,7 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 1;
+int g_clock = 123;
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
   gpr_timespec ts;
