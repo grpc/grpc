@@ -472,7 +472,6 @@ def grpc_end2end_tests():
             grpc_cc_test(
                 name = "%s_test@%s" % (f, test_short_name),
                 deps = [":%s" % fixture_lib_name],
-                data = [":%s" % fixture_lib_name],
                 args = [t],
                 tags = _platform_support_tags(fopt) +
                        ["no_test_ios", "no_extract"],
@@ -540,7 +539,6 @@ def grpc_end2end_nosec_tests():
             grpc_cc_test(
                 name = "%s_nosec_test@%s" % (f, test_short_name),
                 deps = [":%s" % fixture_lib_name],
-                data = [":%s" % fixture_lib_name],
                 args = [t],
                 tags = _platform_support_tags(fopt) +
                        ["no_test_ios", "no_extract"],
