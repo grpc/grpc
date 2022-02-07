@@ -51,6 +51,13 @@ class XdsClusterSpecifierPluginImpl {
 
 class XdsClusterSpecifierPluginRegistry {
  public:
+  static void RegisterPlugin(
+      std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
+      const std::set<absl::string_view>& config_proto_type_names);
+
+  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
+      absl::string_view proto_type_name);
+
   static void PopulateSymtab(upb_symtab* symtab);
 
   // Global init and shutdown.
@@ -60,4 +67,4 @@ class XdsClusterSpecifierPluginRegistry {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H */
+#endif // GRPC_CORE_EXT_XDS_XDS_CLUSTER_SPECIFIER_PLUGIN_H

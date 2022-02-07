@@ -147,6 +147,8 @@ struct XdsRouteConfigResource {
                retry_policy == other.retry_policy &&
                cluster_name == other.cluster_name &&
                weighted_clusters == other.weighted_clusters &&
+               cluster_specifier_plugin_name ==
+                   other.cluster_specifier_plugin_name &&
                max_stream_duration == other.max_stream_duration;
       }
       std::string ToString() const;
@@ -185,7 +187,8 @@ struct XdsRouteConfigResource {
       cluster_specifier_plugin_map;
 
   bool operator==(const XdsRouteConfigResource& other) const {
-    return virtual_hosts == other.virtual_hosts;
+    return virtual_hosts == other.virtual_hosts &&
+           cluster_specifier_plugin_map == other.cluster_specifier_plugin_map;
   }
   std::string ToString() const;
 

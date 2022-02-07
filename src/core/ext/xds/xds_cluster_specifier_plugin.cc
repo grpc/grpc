@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-const char* kXdRouteLookupClusterSpecifierPluginConfigName =
+const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
     "type.googleapis.com/grpc.lookup.v1.RouteLookupClusterSpecifier";
 
 namespace {
@@ -41,12 +41,9 @@ class XdsRouteLookupClusterSpecifierPlugin
   //}
 };
 
-using PluginOwnerList =
-    std::vector<std::unique_ptr<XdsClusterSpecifierPluginImpl>>;
 using PluginRegistryMap =
     std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
 
-PluginOwnerList* g_plugins = nullptr;
 PluginRegistryMap* g_plugin_registry = nullptr;
 
 }  // namespace
@@ -185,14 +182,28 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
 //  }
 //}
 
-void XdsClusterSpecifierPluginRegistry::Init() {
-  g_plugins = new PluginOwnerList;
-  g_plugin_registry = new PluginRegistryMap;
+void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
+    std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
+    const std::set<absl::string_view>& config_proto_type_names) {
+  for (auto config_proto_type_name : config_proto_type_names) {
+    (*g_plugin_registry)[config_proto_type_name] = plugin.get();
+  }
 }
 
-void XdsClusterSpecifierPluginRegistry::Shutdown() {
-  delete g_plugin_registry;
-  delete g_plugins;
+const XdsClusterSpecifierPluginImpl*
+XdsClusterSpecifierPluginRegistry::GetPluginForType(
+    absl::string_view proto_type_name) {
+  auto it = g_plugin_registry->find(proto_type_name);
+  if (it == g_plugin_registry->end()) return nullptr;
+  return it->second;
 }
+
+void XdsClusterSpecifierPluginRegistry::Init() {
+  g_plugin_registry = new PluginRegistryMap;
+  RegisterPlugin(absl::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
+                 {kXdsRouteLookupClusterSpecifierPluginConfigName});
+}
+
+void XdsClusterSpecifierPluginRegistry::Shutdown() { delete g_plugin_registry; }
 
 }  // namespace grpc_core

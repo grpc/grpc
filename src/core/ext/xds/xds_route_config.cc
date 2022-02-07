@@ -222,6 +222,10 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   for (const ClusterWeight& cluster_weight : weighted_clusters) {
     contents.push_back(cluster_weight.ToString());
   }
+  if (!cluster_specifier_plugin_name.empty()) {
+    contents.push_back(absl::StrFormat("Cluster specifier plugin name: %s",
+                                       cluster_specifier_plugin_name));
+  }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
   }
@@ -262,31 +266,36 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 //
 
 std::string XdsRouteConfigResource::ToString() const {
-  std::vector<std::string> vhosts;
+  std::vector<std::string> parts;
   for (const VirtualHost& vhost : virtual_hosts) {
-    vhosts.push_back(
+    parts.push_back(
         absl::StrCat("vhost={\n"
                      "  domains=[",
                      absl::StrJoin(vhost.domains, ", "),
                      "]\n"
                      "  routes=[\n"));
     for (const XdsRouteConfigResource::Route& route : vhost.routes) {
-      vhosts.push_back("    {\n");
-      vhosts.push_back(route.ToString());
-      vhosts.push_back("\n    }\n");
+      parts.push_back("    {\n");
+      parts.push_back(route.ToString());
+      parts.push_back("\n    }\n");
     }
-    vhosts.push_back("  ]\n");
-    vhosts.push_back("  typed_per_filter_config={\n");
+    parts.push_back("  ]\n");
+    parts.push_back("  typed_per_filter_config={\n");
     for (const auto& p : vhost.typed_per_filter_config) {
       const std::string& name = p.first;
       const auto& config = p.second;
-      vhosts.push_back(
-          absl::StrCat("    ", name, "=", config.ToString(), "\n"));
+      parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
     }
-    vhosts.push_back("  }\n");
-    vhosts.push_back("]\n");
+    parts.push_back("  }\n");
+    parts.push_back("]\n");
   }
-  return absl::StrJoin(vhosts, "");
+  parts.push_back("cluster_specifier_plugins={\n");
+  for (const auto& it : cluster_specifier_plugin_map) {
+    parts.push_back(absl::StrFormat("%s={\n", it.first));
+    parts.push_back(absl::StrFormat("%s},\n", it.second));
+  }
+  parts.push_back("}");
+  return absl::StrJoin(parts, "");
 }
 
 namespace {
