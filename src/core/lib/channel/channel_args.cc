@@ -25,6 +25,7 @@
 
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -381,6 +382,20 @@ const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
     dst->args[dst->num_args++] = copy_arg(&src->args[i]);
   }
   return dst;
+}
+
+const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
+  if (src == nullptr) return nullptr;
+  absl::flat_hash_map<absl::string_view, const grpc_arg*> values;
+  for (size_t i = 0; i < src->num_args; i++) {
+    values[src->args[i].key] = &src->args[i];
+  }
+  std::vector<grpc_arg> argv;
+  for (const auto& a : values) {
+    argv.push_back(*a.second);
+  }
+  grpc_channel_args args = {argv.size(), argv.data()};
+  return grpc_channel_args_copy(&args);
 }
 }  // namespace grpc_core
 
