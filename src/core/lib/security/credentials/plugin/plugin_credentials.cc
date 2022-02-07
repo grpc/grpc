@@ -171,7 +171,7 @@ grpc_plugin_credentials::GetRequestMetadata(
       auto result = process_plugin_result(
           request.get(), request->metadata.data(), request->metadata.size(),
           request->status, request->error_details.c_str());
-      return result;
+      return std::move(result);
     };
   }
   // Synchronous return.
