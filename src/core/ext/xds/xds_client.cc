@@ -58,6 +58,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -586,7 +587,22 @@ void XdsClient::ChannelState::StopLrsCallLocked() {
   lrs_calld_.reset();
 }
 
+namespace {
+
+bool IsLameChannel(grpc_channel* channel) {
+  grpc_channel_element* elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  return elem->filter == &grpc_lame_filter;
+}
+
+}  // namespace
+
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
+  if (IsLameChannel(channel_)) {
+    xds_client()->NotifyOnErrorLocked(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("xds client has a lame channel"));
+    return;
+  }
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
@@ -596,6 +612,9 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
 }
 
 void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
+  if (IsLameChannel(channel_)) {
+    return;
+  }
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
@@ -1199,9 +1218,9 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
           result.type_url.c_str(), result.version.c_str(), state.nonce.c_str(),
           error.c_str());
       GRPC_ERROR_UNREF(state.error);
-      state.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error)),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      state.error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
+                                       GRPC_ERROR_INT_GRPC_STATUS,
+                                       GRPC_STATUS_UNAVAILABLE);
     }
     // Delete resources not seen in update if needed.
     if (result.type->AllResourcesRequiredInSotW()) {
