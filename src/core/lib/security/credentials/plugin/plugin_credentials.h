@@ -31,14 +31,23 @@ extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 struct grpc_plugin_credentials final : public grpc_call_credentials {
  public:
   struct pending_request : public grpc_core::RefCounted<pending_request> {
-    ~pending_request() override { grpc_auth_metadata_context_reset(&context); }
+    ~pending_request() override {
+      grpc_auth_metadata_context_reset(&context);
+      for (size_t i = 0; i < metadata.size(); i++) {
+        grpc_slice_unref_internal(metadata[i].key);
+        grpc_slice_unref_internal(metadata[i].value);
+      }
+    }
     std::atomic<bool> ready;
     grpc_core::Waker waker;
     struct grpc_plugin_credentials* creds;
     grpc_core::ClientInitialMetadata md;
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
     grpc_auth_metadata_context context;
-    absl::StatusOr<grpc_core::ClientInitialMetadata> result;
+    // final status
+    absl::InlinedVector<grpc_metadata, 2> metadata;
+    std::string error_details;
+    grpc_status_code status;
   };
 
   explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,

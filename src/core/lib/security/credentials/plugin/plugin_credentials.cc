@@ -116,8 +116,12 @@ static void plugin_md_request_metadata_ready(void* request,
             "asynchronously",
             r->creds, r.get());
   }
-  // If it has not been cancelled, process it.
-  r->result = process_plugin_result(r.get(), md, num_md, status, error_details);
+  for (size_t i = 0; i < num_md; i++) {
+    r->metadata.push_back(grpc_metadata{grpc_slice_ref_internal(md[i].key),
+                                        grpc_slice_ref_internal(md[i].value)});
+  }
+  r->error_details = error_details == nullptr ? "" : error_details;
+  r->status = status;
   r->ready.store(true, std::memory_order_release);
   r->waker.Wakeup();
 }
@@ -164,7 +168,10 @@ grpc_plugin_credentials::GetRequestMetadata(
       if (!request->ready.load(std::memory_order_acquire)) {
         return grpc_core::Pending{};
       }
-      return std::move(request->result);
+      auto result = process_plugin_result(
+          request.get(), request->metadata.data(), request->metadata.size(),
+          request->status, request->error_details.c_str());
+      return result;
     };
   }
   // Synchronous return.
