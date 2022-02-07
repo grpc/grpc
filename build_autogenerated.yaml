@@ -7782,6 +7782,7 @@ targets:
   - test/core/event_engine/smoke_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: sockaddr_utils_test
   gtest: true
   build: test
