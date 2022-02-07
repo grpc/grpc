@@ -420,7 +420,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
               } else {
                 forward_batch =
                     grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                        [](void*, grpc_error*) {}, nullptr, nullptr));
+                        [](void*, grpc_error_handle) {}, nullptr, nullptr));
                 forward_batch->cancel_stream = true;
                 forward_batch->payload->cancel_stream.cancel_error = error;
               }
