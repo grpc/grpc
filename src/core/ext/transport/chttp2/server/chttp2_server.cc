@@ -947,7 +947,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     }
     return GRPC_ERROR_NONE;
   }();  // lambda end
-  for (grpc_error_handle error : error_list) {
+  for (const grpc_error_handle& error : error_list) {
     GRPC_ERROR_UNREF(error);
   }
   grpc_channel_args_destroy(args);
