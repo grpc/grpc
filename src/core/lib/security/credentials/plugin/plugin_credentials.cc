@@ -117,8 +117,10 @@ static void plugin_md_request_metadata_ready(void* request,
             r->creds, r.get());
   }
   for (size_t i = 0; i < num_md; i++) {
-    r->metadata.push_back(grpc_metadata{grpc_slice_ref_internal(md[i].key),
-                                        grpc_slice_ref_internal(md[i].value)});
+    grpc_metadata p;
+    p.key = grpc_slice_ref_internal(md[i].key);
+    p.value = grpc_slice_ref_internal(md[i].value);
+    r->metadata.push_back(p);
   }
   r->error_details = error_details == nullptr ? "" : error_details;
   r->status = status;
