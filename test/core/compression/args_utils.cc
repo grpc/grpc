@@ -26,7 +26,7 @@ grpc_channel_args_set_channel_default_compression_algorithm(
     const grpc_channel_args* a, grpc_compression_algorithm algorithm) {
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   if (a != nullptr) {
-    for (int i = 0; i < a->num_args; i++) {
+    for (size_t i = 0; i < a->num_args; i++) {
       if (0 ==
           strcmp(a->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM)) {
         // Already set, just return.
