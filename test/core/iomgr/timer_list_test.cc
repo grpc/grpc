@@ -18,9 +18,6 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test only works with the generic timer implementation
-#ifndef GRPC_CUSTOM_SOCKET
-
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -257,9 +254,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
-#else /* GRPC_CUSTOM_SOCKET */
-
-int main(int argc, char** argv) { return 1; }
-
-#endif /* GRPC_CUSTOM_SOCKET */

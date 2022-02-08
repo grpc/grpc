@@ -25,9 +25,7 @@
 #ifdef GPR_WINDOWS
 #define GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY 1
 #endif
-#if defined(GRPC_CUSTOM_SOCKET)
-// Do Nothing
-#elif defined(GRPC_USE_EVENT_ENGINE)
+#if defined(GRPC_USE_EVENT_ENGINE)
 // Do Nothing
 #elif defined(GPR_WINDOWS)
 #define GRPC_WINSOCK_SOCKET 1
@@ -185,11 +183,10 @@
 #endif
 
 #if defined(GRPC_POSIX_SOCKET) + defined(GRPC_WINSOCK_SOCKET) + \
-        defined(GRPC_CUSTOM_SOCKET) + defined(GRPC_CFSTREAM) +  \
-        defined(GRPC_USE_EVENT_ENGINE) !=                       \
+        defined(GRPC_CFSTREAM) + defined(GRPC_USE_EVENT_ENGINE) !=                       \
     1
 #error \
-    "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CUSTOM_SOCKET, GRPC_CFSTREAM, GRPC_USE_EVENT_ENGINE"
+    "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CFSTREAM, GRPC_USE_EVENT_ENGINE"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET
