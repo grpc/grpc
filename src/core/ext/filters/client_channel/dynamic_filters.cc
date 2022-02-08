@@ -140,7 +140,8 @@ std::pair<grpc_channel_stack*, grpc_error_handle> CreateChannelStack(
   // Initialize stack.
   grpc_error_handle error = grpc_channel_stack_init(
       /*initial_refs=*/1, DestroyChannelStack, channel_stack, filters.data(),
-      filters.size(), args, "DynamicFilters", channel_stack);
+      filters.size(), args, /*optional_transport=*/nullptr, "DynamicFilters",
+      channel_stack);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error initializing client internal stack: %s",
             grpc_error_std_string(error).c_str());

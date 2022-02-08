@@ -104,8 +104,8 @@ grpc_call_element* grpc_call_stack_element(grpc_call_stack* call_stack,
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* channel_args, const char* name,
-    grpc_channel_stack* stack) {
+    const grpc_channel_args* channel_args, grpc_transport* optional_transport,
+    const char* name, grpc_channel_stack* stack) {
   if (grpc_trace_channel_stack.enabled()) {
     gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
     for (size_t i = 0; i < filter_count; i++) {
@@ -134,6 +134,7 @@ grpc_error_handle grpc_channel_stack_init(
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = channel_args;
+    args.optional_transport = optional_transport;
     args.is_first = i == 0;
     args.is_last = i == (filter_count - 1);
     elems[i].filter = filters[i];
