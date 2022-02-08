@@ -45,6 +45,14 @@ namespace Grpc.Core
         /// <param name="cancellationToken">Cancellation token that can be used to cancel the operation.</param>
         Task WriteAsync(T message, CancellationToken cancellationToken)
         {
+            if (cancellationToken.CanBeCanceled)
+            {
+                // Note to implementors:
+                // Add a netstandard2.1 or greater target to your library and override
+                // WriteAsync(T, CancellationToken) on stream writer to use the cancellation token.
+                throw new NotSupportedException("Cancellation of stream writes is not supported by this gRPC implementation.");
+            }
+
             return WriteAsync(message);
         }
 #endif

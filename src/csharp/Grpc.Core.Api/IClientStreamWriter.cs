@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core
@@ -35,16 +34,5 @@ namespace Grpc.Core
         /// Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
         /// </summary>
         Task CompleteAsync();
-
-#if NETSTANDARD2_1_OR_GREATER
-        /// <summary>
-        /// Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token that can be used to cancel the operation.</param>
-        Task CompleteAsync(CancellationToken cancellationToken)
-        {
-            return CompleteAsync();
-        }
-#endif
     }
 }
