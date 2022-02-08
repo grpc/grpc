@@ -1300,7 +1300,7 @@ def _calculate_num_runs_failures(list_of_results):
 
 
 def _has_epollexclusive():
-    binary = 'bins/%s/check_epollexclusive' % args.config
+    binary = 'cmake/build/check_epollexclusive'
     if not os.path.exists(binary):
         return False
     try:
