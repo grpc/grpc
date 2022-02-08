@@ -15,7 +15,7 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../../src/csharp"
+cd "$(dirname "$0")/../../.."
 
 mkdir -p cmake/build
 pushd cmake/build
@@ -24,6 +24,7 @@ cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DgRPC_XDS_U
 make -j"${GRPC_RUN_TESTS_JOBS}" grpc_csharp_ext
 
 popd
+pushd src/csharp
 
 if [ "$CONFIG" == "gcov" ]
 then
