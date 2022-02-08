@@ -1483,6 +1483,7 @@ if need_to_regenerate_projects:
 run_config = _CONFIGS[args.config]
 build_config = run_config.build_config
 
+# TODO(jtattermusch): is this setting applied/being used?
 if args.travis:
     _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
