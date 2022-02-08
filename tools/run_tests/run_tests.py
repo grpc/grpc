@@ -948,15 +948,12 @@ class CSharpLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_csharp.bat',
-                self._cmake_arch_option
-            ]]
+            return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
         else:
             return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
     def make_targets(self):
-        return ['grpc_csharp_ext']
+        return []
 
     def make_options(self):
         return []
@@ -969,7 +966,7 @@ class CSharpLanguage(object):
 
     def build_steps_environ(self):
         """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {}
+        return {'ARCHITECTURE': self._cmake_arch_option}
 
     def post_tests_steps(self):
         if self.platform == 'windows':
@@ -978,12 +975,8 @@ class CSharpLanguage(object):
             return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
 
     def makefile_name(self):
-        if self.platform == 'windows':
-            return 'cmake/build/%s/Makefile' % self._cmake_arch_option
-        else:
-            # no need to set x86 specific flags as run_tests.py
-            # currently forbids x86 C# builds on both Linux and MacOS.
-            return 'cmake/build/Makefile'
+        # value does not matter as build_csharp script takes care of the build.
+        return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (

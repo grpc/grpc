@@ -17,6 +17,14 @@ set -ex
 
 cd "$(dirname "$0")/../../../src/csharp"
 
+mkdir -p cmake/build
+pushd cmake/build
+
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON ../..
+make -j"${GRPC_RUN_TESTS_JOBS}" grpc_csharp_ext
+
+popd
+
 if [ "$CONFIG" == "gcov" ]
 then
   # overriding NativeDependenciesConfigurationUnix makes C# project pick up the gcov flavor of grpc_csharp_ext
