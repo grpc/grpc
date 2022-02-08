@@ -1267,6 +1267,194 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
+def _shut_down_legacy_server(legacy_server_port):
+    """Shut down legacy version of port server."""
+    try:
+        version = int(
+            urllib.request.urlopen('http://localhost:%d/version_number' %
+                                   legacy_server_port,
+                                   timeout=10).read())
+    except:
+        pass
+    else:
+        urllib.request.urlopen('http://localhost:%d/quitquitquit' %
+                               legacy_server_port).read()
+
+
+def _calculate_num_runs_failures(list_of_results):
+    """Calculate number of runs and failures for a particular test.
+
+  Args:
+    list_of_results: (List) of JobResult object.
+  Returns:
+    A tuple of total number of runs and failures.
+  """
+    num_runs = len(list_of_results)  # By default, there is 1 run per JobResult.
+    num_failures = 0
+    for jobresult in list_of_results:
+        if jobresult.retries > 0:
+            num_runs += jobresult.retries
+        if jobresult.num_failures > 0:
+            num_failures += jobresult.num_failures
+    return num_runs, num_failures
+
+
+def _has_epollexclusive():
+    binary = 'bins/%s/check_epollexclusive' % args.config
+    if not os.path.exists(binary):
+        return False
+    try:
+        subprocess.check_call(binary)
+        return True
+    except subprocess.CalledProcessError as e:
+        return False
+    except OSError as e:
+        # For languages other than C and Windows the binary won't exist
+        return False
+
+
+class BuildAndRunError(object):
+    """Represents error type in _build_and_run."""
+
+    BUILD = object()
+    TEST = object()
+    POST_TEST = object()
+
+
+# returns a list of things that failed (or an empty list on success)
+def _build_and_run(check_cancelled,
+                   newline_on_success,
+                   xml_report=None,
+                   build_only=False):
+    """Do one pass of building & running tests."""
+    # build latest sequentially
+    num_failures, resultset = jobset.run(build_steps,
+                                         maxjobs=1,
+                                         stop_on_failure=True,
+                                         newline_on_success=newline_on_success,
+                                         travis=args.travis)
+    if num_failures:
+        return [BuildAndRunError.BUILD]
+
+    if build_only:
+        if xml_report:
+            report_utils.render_junit_xml_report(
+                resultset, xml_report, suite_name=args.report_suite_name)
+        return []
+
+    if not args.travis and not _has_epollexclusive() and platform_string(
+    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
+            platform_string()]:
+        print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
+        _POLLING_STRATEGIES[platform_string()].remove('epollex')
+
+    # start antagonists
+    antagonists = [
+        subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
+        for _ in range(0, args.antagonists)
+    ]
+    start_port_server.start_port_server()
+    resultset = None
+    num_test_failures = 0
+    try:
+        infinite_runs = runs_per_test == 0
+        one_run = set(spec for language in languages
+                      for spec in language.test_specs()
+                      if (re.search(args.regex, spec.shortname) and
+                          (args.regex_exclude == '' or
+                           not re.search(args.regex_exclude, spec.shortname))))
+        # When running on travis, we want out test runs to be as similar as possible
+        # for reproducibility purposes.
+        if args.travis and args.max_time <= 0:
+            massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
+        else:
+            # whereas otherwise, we want to shuffle things up to give all tests a
+            # chance to run.
+            massaged_one_run = list(
+                one_run)  # random.sample needs an indexable seq.
+            num_jobs = len(massaged_one_run)
+            # for a random sample, get as many as indicated by the 'sample_percent'
+            # argument. By default this arg is 100, resulting in a shuffle of all
+            # jobs.
+            sample_size = int(num_jobs * args.sample_percent / 100.0)
+            massaged_one_run = random.sample(massaged_one_run, sample_size)
+            if not isclose(args.sample_percent, 100.0):
+                assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
+                print("Running %d tests out of %d (~%d%%)" %
+                      (sample_size, num_jobs, args.sample_percent))
+        if infinite_runs:
+            assert len(massaged_one_run
+                      ) > 0, 'Must have at least one test for a -n inf run'
+        runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
+                         else itertools.repeat(massaged_one_run, runs_per_test))
+        all_runs = itertools.chain.from_iterable(runs_sequence)
+
+        if args.quiet_success:
+            jobset.message(
+                'START',
+                'Running tests quietly, only failing tests will be reported',
+                do_newline=True)
+        num_test_failures, resultset = jobset.run(
+            all_runs,
+            check_cancelled,
+            newline_on_success=newline_on_success,
+            travis=args.travis,
+            maxjobs=args.jobs,
+            maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
+            stop_on_failure=args.stop_on_failure,
+            quiet_success=args.quiet_success,
+            max_time=args.max_time)
+        if resultset:
+            for k, v in sorted(resultset.items()):
+                num_runs, num_failures = _calculate_num_runs_failures(v)
+                if num_failures > 0:
+                    if num_failures == num_runs:  # what about infinite_runs???
+                        jobset.message('FAILED', k, do_newline=True)
+                    else:
+                        jobset.message('FLAKE',
+                                       '%s [%d/%d runs flaked]' %
+                                       (k, num_failures, num_runs),
+                                       do_newline=True)
+    finally:
+        for antagonist in antagonists:
+            antagonist.kill()
+        if args.bq_result_table and resultset:
+            upload_extra_fields = {
+                'compiler': args.compiler,
+                'config': args.config,
+                'iomgr_platform': args.iomgr_platform,
+                'language': args.language[
+                    0
+                ],  # args.language is a list but will always have one element when uploading to BQ is enabled.
+                'platform': platform_string()
+            }
+            try:
+                upload_results_to_bq(resultset, args.bq_result_table,
+                                     upload_extra_fields)
+            except NameError as e:
+                logging.warning(
+                    e)  # It's fine to ignore since this is not critical
+        if xml_report and resultset:
+            report_utils.render_junit_xml_report(
+                resultset,
+                xml_report,
+                suite_name=args.report_suite_name,
+                multi_target=args.report_multi_target)
+
+    number_failures, _ = jobset.run(post_tests_steps,
+                                    maxjobs=1,
+                                    stop_on_failure=False,
+                                    newline_on_success=newline_on_success,
+                                    travis=args.travis)
+
+    out = []
+    if number_failures:
+        out.append(BuildAndRunError.POST_TEST)
+    if num_test_failures:
+        out.append(BuildAndRunError.TEST)
+
+    return out
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c',
@@ -1497,6 +1685,8 @@ if len(languages) != 1:
     )
     sys.exit(1)
 
+# If --use_docker was used, respawn the run_tests.py script under a docker container
+# instead of continuing.
 if args.use_docker:
     if not args.travis:
         print('Seen --use_docker flag, will run tests under docker.')
@@ -1566,195 +1756,6 @@ post_tests_steps = list(
         for l in languages
         for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
-
-
-def _shut_down_legacy_server(legacy_server_port):
-    try:
-        version = int(
-            urllib.request.urlopen('http://localhost:%d/version_number' %
-                                   legacy_server_port,
-                                   timeout=10).read())
-    except:
-        pass
-    else:
-        urllib.request.urlopen('http://localhost:%d/quitquitquit' %
-                               legacy_server_port).read()
-
-
-def _calculate_num_runs_failures(list_of_results):
-    """Calculate number of runs and failures for a particular test.
-
-  Args:
-    list_of_results: (List) of JobResult object.
-  Returns:
-    A tuple of total number of runs and failures.
-  """
-    num_runs = len(list_of_results)  # By default, there is 1 run per JobResult.
-    num_failures = 0
-    for jobresult in list_of_results:
-        if jobresult.retries > 0:
-            num_runs += jobresult.retries
-        if jobresult.num_failures > 0:
-            num_failures += jobresult.num_failures
-    return num_runs, num_failures
-
-
-# _build_and_run results
-class BuildAndRunError(object):
-
-    BUILD = object()
-    TEST = object()
-    POST_TEST = object()
-
-
-def _has_epollexclusive():
-    binary = 'bins/%s/check_epollexclusive' % args.config
-    if not os.path.exists(binary):
-        return False
-    try:
-        subprocess.check_call(binary)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
-    except OSError as e:
-        # For languages other than C and Windows the binary won't exist
-        return False
-
-
-# returns a list of things that failed (or an empty list on success)
-def _build_and_run(check_cancelled,
-                   newline_on_success,
-                   xml_report=None,
-                   build_only=False):
-    """Do one pass of building & running tests."""
-    # build latest sequentially
-    num_failures, resultset = jobset.run(build_steps,
-                                         maxjobs=1,
-                                         stop_on_failure=True,
-                                         newline_on_success=newline_on_success,
-                                         travis=args.travis)
-    if num_failures:
-        return [BuildAndRunError.BUILD]
-
-    if build_only:
-        if xml_report:
-            report_utils.render_junit_xml_report(
-                resultset, xml_report, suite_name=args.report_suite_name)
-        return []
-
-    if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
-            platform_string()]:
-        print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
-        _POLLING_STRATEGIES[platform_string()].remove('epollex')
-
-    # start antagonists
-    antagonists = [
-        subprocess.Popen(['tools/run_tests/python_utils/antagonist.py'])
-        for _ in range(0, args.antagonists)
-    ]
-    start_port_server.start_port_server()
-    resultset = None
-    num_test_failures = 0
-    try:
-        infinite_runs = runs_per_test == 0
-        one_run = set(spec for language in languages
-                      for spec in language.test_specs()
-                      if (re.search(args.regex, spec.shortname) and
-                          (args.regex_exclude == '' or
-                           not re.search(args.regex_exclude, spec.shortname))))
-        # When running on travis, we want out test runs to be as similar as possible
-        # for reproducibility purposes.
-        if args.travis and args.max_time <= 0:
-            massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
-        else:
-            # whereas otherwise, we want to shuffle things up to give all tests a
-            # chance to run.
-            massaged_one_run = list(
-                one_run)  # random.sample needs an indexable seq.
-            num_jobs = len(massaged_one_run)
-            # for a random sample, get as many as indicated by the 'sample_percent'
-            # argument. By default this arg is 100, resulting in a shuffle of all
-            # jobs.
-            sample_size = int(num_jobs * args.sample_percent / 100.0)
-            massaged_one_run = random.sample(massaged_one_run, sample_size)
-            if not isclose(args.sample_percent, 100.0):
-                assert args.runs_per_test == 1, "Can't do sampling (-p) over multiple runs (-n)."
-                print("Running %d tests out of %d (~%d%%)" %
-                      (sample_size, num_jobs, args.sample_percent))
-        if infinite_runs:
-            assert len(massaged_one_run
-                      ) > 0, 'Must have at least one test for a -n inf run'
-        runs_sequence = (itertools.repeat(massaged_one_run) if infinite_runs
-                         else itertools.repeat(massaged_one_run, runs_per_test))
-        all_runs = itertools.chain.from_iterable(runs_sequence)
-
-        if args.quiet_success:
-            jobset.message(
-                'START',
-                'Running tests quietly, only failing tests will be reported',
-                do_newline=True)
-        num_test_failures, resultset = jobset.run(
-            all_runs,
-            check_cancelled,
-            newline_on_success=newline_on_success,
-            travis=args.travis,
-            maxjobs=args.jobs,
-            maxjobs_cpu_agnostic=max_parallel_tests_for_current_platform(),
-            stop_on_failure=args.stop_on_failure,
-            quiet_success=args.quiet_success,
-            max_time=args.max_time)
-        if resultset:
-            for k, v in sorted(resultset.items()):
-                num_runs, num_failures = _calculate_num_runs_failures(v)
-                if num_failures > 0:
-                    if num_failures == num_runs:  # what about infinite_runs???
-                        jobset.message('FAILED', k, do_newline=True)
-                    else:
-                        jobset.message('FLAKE',
-                                       '%s [%d/%d runs flaked]' %
-                                       (k, num_failures, num_runs),
-                                       do_newline=True)
-    finally:
-        for antagonist in antagonists:
-            antagonist.kill()
-        if args.bq_result_table and resultset:
-            upload_extra_fields = {
-                'compiler': args.compiler,
-                'config': args.config,
-                'iomgr_platform': args.iomgr_platform,
-                'language': args.language[
-                    0
-                ],  # args.language is a list but will always have one element when uploading to BQ is enabled.
-                'platform': platform_string()
-            }
-            try:
-                upload_results_to_bq(resultset, args.bq_result_table,
-                                     upload_extra_fields)
-            except NameError as e:
-                logging.warning(
-                    e)  # It's fine to ignore since this is not critical
-        if xml_report and resultset:
-            report_utils.render_junit_xml_report(
-                resultset,
-                xml_report,
-                suite_name=args.report_suite_name,
-                multi_target=args.report_multi_target)
-
-    number_failures, _ = jobset.run(post_tests_steps,
-                                    maxjobs=1,
-                                    stop_on_failure=False,
-                                    newline_on_success=newline_on_success,
-                                    travis=args.travis)
-
-    out = []
-    if number_failures:
-        out.append(BuildAndRunError.POST_TEST)
-    if num_test_failures:
-        out.append(BuildAndRunError.TEST)
-
-    return out
-
 
 errors = _build_and_run(check_cancelled=lambda: False,
                         newline_on_success=args.newline_on_success,
