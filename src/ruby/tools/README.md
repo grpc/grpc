@@ -10,3 +10,4 @@ Before this package is published, the following directories should be filled wit
  - `bin/x86_64-macos`
  - `bin/x86-windows`
  - `bin/x86_64-windows`
+ - `bin/arm64-macos`

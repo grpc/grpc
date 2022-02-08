@@ -33,7 +33,7 @@ cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/ruby_native_gem_*/* artifacts/ || t
 # that have been built by the the artifact build phase previously.
 well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
 
-for arch in {x86,x64}; do
+for arch in {x86,x64,arm64}; do
   case $arch in
     x64)
       ruby_arch=x86_64
@@ -45,6 +45,16 @@ for arch in {x86,x64}; do
   for plat in {windows,linux,macos}; do
     # skip non-existent macos x86 protoc artifact
     if [[ "${plat}_${arch}" == "macos_x86" ]]
+    then
+      continue
+    fi
+    # skip non-existent windows arm64 protoc artifact
+    if [[ "${plat}_${arch}" == "windows_arm64" ]]
+    then
+      continue
+    fi
+    # skip non-existent linux arm64 protoc artifact
+    if [[ "${plat}_${arch}" == "linux_arm64" ]]
     then
       continue
     fi

@@ -52,12 +52,6 @@ tools/run_tests/helper_scripts/bundle_install_wrapper.sh
 export DOCKERHUB_ORGANIZATION=grpctesting
 bundle exec rake "gem:native[${GEM_PLATFORM}]"
 
-if [ "$SYSTEM" == "Darwin" ] ; then
-  # TODO: consider rewriting this to pass shellcheck
-  # shellcheck disable=SC2046,SC2010
-  rm $(ls pkg/*.gem | grep -v darwin)
-fi
-
 mkdir -p "${ARTIFACTS_OUT}"
 
 cp pkg/*.gem "${ARTIFACTS_OUT}"/
