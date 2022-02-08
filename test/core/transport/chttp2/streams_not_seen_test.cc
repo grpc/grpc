@@ -56,7 +56,7 @@ class TrailingMetadataRecordingFilter {
   static grpc_channel_filter kFilterVtable;
 
   static absl::StatusOr<TrailingMetadataRecordingFilter> Create(
-      const grpc_channel_args* args) {
+      const grpc_channel_args*) {
     return TrailingMetadataRecordingFilter();
   }
 
