@@ -248,7 +248,6 @@ class CLanguage(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
-        self._make_options = []
         if self.platform == 'windows':
             _check_compiler(self.args.compiler, [
                 'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
@@ -416,33 +415,27 @@ class CLanguage(object):
         return sorted(out)
 
     def make_targets(self):
-        if self.platform == 'windows':
-            # don't build tools on windows just yet
-            return ['buildtests_%s' % self.make_target]
-        return [
-            'buildtests_%s' % self.make_target,
-            'tools_%s' % self.make_target, 'check_epollexclusive'
-        ]
+        return []
 
     def make_options(self):
-        return self._make_options
+        return []
 
     def pre_build_steps(self):
+        return []
+
+    def build_steps(self):
         if self.platform == 'windows':
             return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
+                'tools\\run_tests\\helper_scripts\\build_cxx.bat',
                 '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
             ] + self._cmake_configure_extra_args]
         else:
-            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
+            return [['tools/run_tests/helper_scripts/build_cxx.sh'] +
                     self._cmake_configure_extra_args]
-
-    def build_steps(self):
-        return []
 
     def build_steps_environ(self):
         """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {}
+        return {'GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX': self.make_target}
 
     def post_tests_steps(self):
         if self.platform == 'windows':
@@ -1262,7 +1255,7 @@ _MSBUILD_CONFIG = {
 
 def _build_step_environ(cfg, extra_env={}):
     """Environment variables set for each build step."""
-    environ = {'CONFIG': cfg}
+    environ = {'CONFIG': cfg, 'GRPC_RUN_TESTS_JOBS': str(args.jobs)}
     msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
     if msbuild_cfg:
         environ['MSBUILD_CONFIG'] = msbuild_cfg
