@@ -1570,15 +1570,6 @@ argp.add_argument('--measure_cpu_costs',
                   action='store_const',
                   const=True,
                   help='Measure the cpu costs of tests')
-argp.add_argument(
-    '--update_submodules',
-    default=[],
-    nargs='*',
-    help=
-    'Update some submodules before building. If any are updated, also run generate_projects. '
-    +
-    'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.'
-)
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x',
                   '--xml_report',
@@ -1637,36 +1628,6 @@ elif args.force_use_pollers:
     _POLLING_STRATEGIES[platform_string()] = args.force_use_pollers.split(',')
 
 jobset.measure_cpu_costs = args.measure_cpu_costs
-
-# update submodules if necessary
-need_to_regenerate_projects = False
-for spec in args.update_submodules:
-    spec = spec.split(':', 1)
-    if len(spec) == 1:
-        submodule = spec[0]
-        branch = 'master'
-    elif len(spec) == 2:
-        submodule = spec[0]
-        branch = spec[1]
-    cwd = 'third_party/%s' % submodule
-
-    def git(cmd, cwd=cwd):
-        print('in %s: git %s' % (cwd, cmd))
-        run_shell_command('git %s' % cmd, cwd=cwd)
-
-    git('fetch')
-    git('checkout %s' % branch)
-    git('pull origin %s' % branch)
-    if os.path.exists('src/%s/gen_build_yaml.py' % submodule):
-        need_to_regenerate_projects = True
-if need_to_regenerate_projects:
-    if jobset.platform_string() == 'linux':
-        run_shell_command('tools/buildgen/generate_projects.sh')
-    else:
-        print(
-            'WARNING: may need to regenerate projects, but since we are not on')
-        print(
-            '         Linux this step is being skipped. Compilation MAY fail.')
 
 # grab config
 run_config = _CONFIGS[args.config]
