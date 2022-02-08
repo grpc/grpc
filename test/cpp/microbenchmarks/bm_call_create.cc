@@ -456,7 +456,7 @@ grpc_arg Arg() {
       // copy
       [](void* p) { return p; },
       // destroy
-      [](void* p) {},
+      [](void*) {},
       // cmp
       [](void* a, void* b) { return grpc_core::QsortCompare(a, b); },
   };
