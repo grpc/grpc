@@ -1524,9 +1524,6 @@ if args.use_docker:
     env['DOCKERFILE_DIR'] = dockerfile_dir
     env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run.sh'
     env['DOCKER_RUN_SCRIPT_COMMAND'] = run_tests_cmd
-    # TODO(jtattermusch): is the XML_REPORT env variable any useful?
-    if args.xml_report:
-        env['XML_REPORT'] = args.xml_report
 
     retcode = subprocess.call(
         'tools/run_tests/dockerize/build_and_run_docker.sh',
