@@ -88,7 +88,7 @@ grpc_error_handle ChannelStackBuilder::Build(size_t prefix_bytes,
         // copy
         [](void* p) { return p; },
         // destroy
-        [](void* p) {},
+        [](void*) {},
         // cmp
         [](void* a, void* b) { return QsortCompare(a, b); },
     };
