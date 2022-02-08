@@ -223,7 +223,8 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker,
                                       grpc_core::Timestamp deadline) {
   GRPC_POLLING_TRACE("pollset work: %p, worker: %p, deadline: %" PRIu64,
-                     pollset, worker, deadline);
+                     pollset, worker,
+                     deadline.milliseconds_after_process_epoch());
   GrpcApplePollset* apple_pollset =
       reinterpret_cast<GrpcApplePollset*>(pollset);
   GrpcAppleWorker actual_worker;
