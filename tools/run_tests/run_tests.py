@@ -1199,7 +1199,7 @@ class Sanity(object):
         return []
 
     def make_targets(self):
-        return ['run_dep_checks']
+        return []
 
     def make_options(self):
         return []
