@@ -1455,6 +1455,7 @@ def _build_and_run(check_cancelled,
 
     return out
 
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c',
@@ -1680,9 +1681,7 @@ for l in languages:
     l.configure(run_config, args)
 
 if len(languages) != 1:
-    print(
-        'Building multiple languages simultaneously is not supported!'
-    )
+    print('Building multiple languages simultaneously is not supported!')
     sys.exit(1)
 
 # If --use_docker was used, respawn the run_tests.py script under a docker container
