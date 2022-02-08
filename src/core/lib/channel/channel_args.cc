@@ -390,12 +390,22 @@ const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
   for (size_t i = 0; i < src->num_args; i++) {
     values[src->args[i].key] = &src->args[i];
   }
+  if (values.size() == src->num_args) return grpc_channel_args_copy(src);
+  // Create the result
   std::vector<grpc_arg> argv;
   argv.reserve(values.size());
   for (const auto& a : values) {
     argv.push_back(*a.second);
   }
   grpc_channel_args args = {argv.size(), argv.data()};
+  // Log that we're mutating things
+  gpr_log(GPR_INFO,
+          "Uniquification pass on channel args is mutating them: {%s} is being "
+          "changed to {%s}",
+          grpc_channel_args_string(src).c_str(),
+          grpc_channel_args_string(&args).c_str());
+  // Return the result (note we need to copy because we're borrowing the args
+  // from src still!)
   return grpc_channel_args_copy(&args);
 }
 }  // namespace grpc_core
