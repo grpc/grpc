@@ -736,9 +736,16 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster specifier plugin name.");
     }
+    if (cluster_specifier_plugin_map.find(
+            route->cluster_specifier_plugin_name) ==
+        cluster_specifier_plugin_map.end()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "RouteAction cluster contains cluster specifier plugin name not "
+          "configured.");
+    }
     gpr_log(GPR_INFO,
-            "donna found plugin in RouteAction, validate that it exists in "
-            "RouteConfigSource via a stored map");
+            "donna found plugin in RouteAction, don't forget to double check "
+            "unused plugins");
   } else {
     // No cluster or weighted_clusters or plugin found in RouteAction, ignore
     // this route.
