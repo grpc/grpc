@@ -154,7 +154,7 @@ void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
   auto* self = static_cast<MetadataQuery*>(arg);
   // Hop back into WorkSerializer to call OnDone().
   // Note: We implicitly pass our ref to the callback here.
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   self->resolver_->work_serializer_->Run(
       [self, error]() {
         self->OnDone(self->resolver_.get(), &self->response_, error);
