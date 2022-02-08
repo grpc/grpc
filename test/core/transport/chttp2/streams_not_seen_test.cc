@@ -61,7 +61,9 @@ class TrailingMetadataRecordingFilter {
   }
 
   static constexpr bool is_client() { return true; }
-  static constexpr const char* name() { return "sdk-server-authz"; }
+  static constexpr const char* name() {
+    return "trailing-metadata-recording-filter";
+  }
 
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
