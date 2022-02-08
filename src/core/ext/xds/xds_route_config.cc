@@ -608,7 +608,7 @@ grpc_error_handle RetryPolicyParse(
     }
     retry_to_return.retry_back_off.max_interval = max;
   } else {
-    retry_to_return.retry_back_off.base_interval = Duration::Milliseconds(250);
+    retry_to_return.retry_back_off.base_interval = Duration::Milliseconds(25);
     retry_to_return.retry_back_off.max_interval = Duration::Milliseconds(250);
   }
   if (errors.empty()) {
