@@ -182,8 +182,8 @@
 #error "Platform not recognized"
 #endif
 
-#if defined(GRPC_POSIX_SOCKET) + defined(GRPC_WINSOCK_SOCKET) + \
-        defined(GRPC_CFSTREAM) + defined(GRPC_USE_EVENT_ENGINE) !=                       \
+#if defined(GRPC_POSIX_SOCKET) + defined(GRPC_WINSOCK_SOCKET) +    \
+        defined(GRPC_CFSTREAM) + defined(GRPC_USE_EVENT_ENGINE) != \
     1
 #error \
     "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CFSTREAM, GRPC_USE_EVENT_ENGINE"
