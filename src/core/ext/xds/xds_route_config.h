@@ -68,8 +68,6 @@ struct XdsRouteConfigResource {
     std::string ToString() const;
   };
 
-  // TODO(donnadionne): When we can use absl::variant<>, consider using that
-  // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
     // Matchers for this route.
     struct Matchers {
