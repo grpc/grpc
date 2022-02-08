@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -25,6 +23,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
