@@ -414,12 +414,6 @@ class CLanguage(object):
                     print('\nWARNING: binary not found, skipping', binary)
         return sorted(out)
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def pre_build_steps(self):
         return []
 
@@ -442,9 +436,6 @@ class CLanguage(object):
             return []
         else:
             return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
-
-    def makefile_name(self):
-        return 'cmake/build/Makefile'
 
     def _clang_cmake_configure_extra_args(self, version_suffix=''):
         return [
@@ -533,12 +524,6 @@ class RemoteNodeLanguage(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return []
 
@@ -548,9 +533,6 @@ class RemoteNodeLanguage(object):
 
     def post_tests_steps(self):
         return []
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(
@@ -576,12 +558,6 @@ class Php7Language(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return [['tools/run_tests/helper_scripts/build_php.sh']]
 
@@ -591,9 +567,6 @@ class Php7Language(object):
 
     def post_tests_steps(self):
         return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/php7_debian11_%s' % _docker_arch_suffix(
@@ -666,12 +639,6 @@ class PythonLanguage(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return [config.build for config in self.pythons]
 
@@ -684,9 +651,6 @@ class PythonLanguage(object):
             return []
         else:
             return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
@@ -857,12 +821,6 @@ class RubyLanguage(object):
     def pre_build_steps(self):
         return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
@@ -872,9 +830,6 @@ class RubyLanguage(object):
 
     def post_tests_steps(self):
         return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/ruby_debian11_%s' % _docker_arch_suffix(
@@ -951,12 +906,6 @@ class CSharpLanguage(object):
         else:
             return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         if self.platform == 'windows':
             return [['tools\\run_tests\\helper_scripts\\build_csharp.bat']]
@@ -975,10 +924,6 @@ class CSharpLanguage(object):
             return [['tools\\run_tests\\helper_scripts\\post_tests_csharp.bat']]
         else:
             return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
-
-    def makefile_name(self):
-        # value does not matter as build_csharp script takes care of the build.
-        return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (
@@ -1142,12 +1087,6 @@ class ObjCLanguage(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return []
 
@@ -1157,9 +1096,6 @@ class ObjCLanguage(object):
 
     def post_tests_steps(self):
         return []
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return None
@@ -1198,12 +1134,6 @@ class Sanity(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return []
 
@@ -1213,9 +1143,6 @@ class Sanity(object):
 
     def post_tests_steps(self):
         return []
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/sanity'
@@ -1563,21 +1490,11 @@ languages = set(_LANGUAGES[l] for l in args.language)
 for l in languages:
     l.configure(run_config, args)
 
-language_make_options = []
-if any(language.make_options() for language in languages):
-    if not 'gcov' in args.config and len(languages) != 1:
-        print(
-            'languages with custom make options cannot be built simultaneously with other languages'
-        )
-        sys.exit(1)
-    else:
-        # Combining make options is not clean and just happens to work. It allows C & C++ to build
-        # together, and is only used under gcov. All other configs should build languages individually.
-        language_make_options = list(
-            set([
-                make_option for lang in languages
-                for make_option in lang.make_options()
-            ]))
+if len(languages) != 1:
+    print(
+        'Building multiple languages simultaneously is not supported!'
+    )
+    sys.exit(1)
 
 if args.use_docker:
     if not args.travis:
@@ -1620,50 +1537,8 @@ if args.use_docker:
 
 _check_arch_option(args.arch)
 
-
-def make_jobspec(cfg, targets, makefile='Makefile'):
-    if platform_string() == 'windows':
-        return [
-            jobset.JobSpec([
-                'cmake', '--build', '.', '--target',
-                '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
-            ],
-                           cwd=os.path.dirname(makefile),
-                           timeout_seconds=None) for target in targets
-        ]
-    else:
-        if targets and makefile.startswith('cmake/build/'):
-            # With cmake, we've passed all the build configuration in the pre-build step already
-            return [
-                jobset.JobSpec(
-                    [os.getenv('MAKE', 'make'), '-j',
-                     '%d' % args.jobs] + targets,
-                    cwd='cmake/build',
-                    timeout_seconds=None)
-            ]
-        if targets:
-            return [
-                jobset.JobSpec(
-                    [
-                        os.getenv('MAKE', 'make'), '-f', makefile, '-j',
-                        '%d' % args.jobs,
-                        'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                        args.slowdown,
-                        'CONFIG=%s' % cfg, 'Q='
-                    ] + language_make_options +
-                    ([] if not args.travis else ['JENKINS_BUILD=1']) + targets,
-                    timeout_seconds=None)
-            ]
-        else:
-            return []
-
-
-make_targets = {}
-for l in languages:
-    makefile = l.makefile_name()
-    make_targets[makefile] = make_targets.get(makefile, set()).union(
-        set(l.make_targets()))
-
+# collect pre-build steps (which get retried if they fail, e.g. to avoid
+# flakes on downloading dependencies etc.)
 build_steps = list(
     set(
         jobset.JobSpec(cmdline,
@@ -1673,11 +1548,8 @@ build_steps = list(
                        flake_retries=2)
         for l in languages
         for cmdline in l.pre_build_steps()))
-if make_targets:
-    make_commands = itertools.chain.from_iterable(
-        make_jobspec(build_config, list(targets), makefile)
-        for (makefile, targets) in make_targets.items())
-    build_steps.extend(set(make_commands))
+
+# collect build steps
 build_steps.extend(
     set(
         jobset.JobSpec(cmdline,
@@ -1687,6 +1559,7 @@ build_steps.extend(
         for l in languages
         for cmdline in l.build_steps()))
 
+# collect post test steps
 post_tests_steps = list(
     set(
         jobset.JobSpec(cmdline,
