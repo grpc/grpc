@@ -729,20 +729,20 @@ grpc_error_handle RouteActionParse(
   } else if (XdsRlsEnabled() &&
              envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {
-    route->cluster_specifier_plugin_name = UpbStringToStdString(
+    std::string plugin_name = UpbStringToStdString(
         envoy_config_route_v3_RouteAction_cluster_specifier_plugin(
             route_action));
-    if (route->cluster_specifier_plugin_name.empty()) {
+    if (plugin_name.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster specifier plugin name.");
     }
-    if (cluster_specifier_plugin_map.find(
-            route->cluster_specifier_plugin_name) ==
+    if (cluster_specifier_plugin_map.find(plugin_name) ==
         cluster_specifier_plugin_map.end()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains cluster specifier plugin name not "
           "configured.");
     }
+    route->cluster_specifier_plugin_name = std::move(plugin_name);
     gpr_log(GPR_INFO,
             "donna found plugin in RouteAction, don't forget to double check "
             "unused plugins");
@@ -884,6 +884,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       GPR_ASSERT(any != nullptr);
       absl::string_view plugin_type =
           UpbStringToAbsl(google_protobuf_Any_type_url(any));
+      // Look inside for type TypeStruct.
       if (plugin_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
           plugin_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
         upb_strview any_value = google_protobuf_Any_value(any);
@@ -899,20 +900,24 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
               "no plugin config specified for plugin name ", name));
         }
-        plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
-        if (plugin_type == "grpc.lookup.v1.RouteLookupClusterSpecifier") {
-          gpr_log(GPR_INFO, "donna parsed out the correct type");
-        } else {
-          gpr_log(GPR_INFO, "donna did not get the correct type");
-        }
-        const XdsClusterSpecifierPluginImpl* plugin_impl =
-            XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
-        auto lb_policy_config = plugin_impl->GenerateLoadBalancingPolicyConfig(
-            any_value, context.arena);
-        if (lb_policy_config.ok()) {
-          rds_update->cluster_specifier_plugin_map[std::string(name)] =
-              std::move(lb_policy_config.value());
-        }
+      }
+      // Always stripe off "type.googleapis.com".
+      plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
+      if (plugin_type == "grpc.lookup.v1.RouteLookupClusterSpecifier") {
+        gpr_log(GPR_INFO,
+                "donna parsed out the correct type as this is our only type "
+                "right now");
+      } else {
+        gpr_log(GPR_INFO, "donna did not get the correct type");
+      }
+      // Find the plugin and generate the policy.
+      const XdsClusterSpecifierPluginImpl* plugin_impl =
+          XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+      auto lb_policy_config = plugin_impl->GenerateLoadBalancingPolicyConfig(
+          google_protobuf_Any_type_url(any), context.arena);
+      if (lb_policy_config.ok()) {
+        rds_update->cluster_specifier_plugin_map[std::string(name)] =
+            std::move(lb_policy_config.value());
       }
     }
   }

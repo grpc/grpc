@@ -30,7 +30,6 @@
 #include "re2/re2.h"
 
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
