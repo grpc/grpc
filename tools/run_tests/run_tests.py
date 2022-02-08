@@ -440,6 +440,10 @@ class CLanguage(object):
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         if self.platform == 'windows':
             return []
@@ -545,6 +549,10 @@ class RemoteNodeLanguage(object):
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return []
 
@@ -584,6 +592,10 @@ class Php7Language(object):
 
     def build_steps(self):
         return [['tools/run_tests/helper_scripts/build_php.sh']]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
 
     def post_tests_steps(self):
         return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
@@ -670,6 +682,10 @@ class PythonLanguage(object):
 
     def build_steps(self):
         return [config.build for config in self.pythons]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
 
     def post_tests_steps(self):
         if self.config.build_config != 'gcov':
@@ -858,6 +874,10 @@ class RubyLanguage(object):
     def build_steps(self):
         return [['tools/run_tests/helper_scripts/build_ruby.sh']]
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
@@ -953,6 +973,10 @@ class CSharpLanguage(object):
             return [['tools\\run_tests\\helper_scripts\\build_csharp.bat']]
         else:
             return [['tools/run_tests/helper_scripts/build_csharp.sh']]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
 
     def post_tests_steps(self):
         if self.platform == 'windows':
@@ -1139,6 +1163,10 @@ class ObjCLanguage(object):
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return []
 
@@ -1191,6 +1219,10 @@ class Sanity(object):
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return []
 
@@ -1226,6 +1258,16 @@ _MSBUILD_CONFIG = {
     'opt': 'Release',
     'gcov': 'Debug',
 }
+
+
+def _build_step_environ(cfg, extra_env={}):
+    """Environment variables set for each build step."""
+    environ = {'CONFIG': cfg}
+    msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
+    if msbuild_cfg:
+        environ['MSBUILD_CONFIG'] = msbuild_cfg
+    environ.update(extra_env)
+    return environ
 
 
 def _windows_arch_option(arch):
@@ -1634,19 +1676,11 @@ for l in languages:
     make_targets[makefile] = make_targets.get(makefile, set()).union(
         set(l.make_targets()))
 
-
-def build_step_environ(cfg):
-    environ = {'CONFIG': cfg}
-    msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
-    if msbuild_cfg:
-        environ['MSBUILD_CONFIG'] = msbuild_cfg
-    return environ
-
-
 build_steps = list(
     set(
         jobset.JobSpec(cmdline,
-                       environ=build_step_environ(build_config),
+                       environ=_build_step_environ(
+                           build_config, extra_env=l.build_steps_environ()),
                        timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
                        flake_retries=2)
         for l in languages
@@ -1659,14 +1693,17 @@ if make_targets:
 build_steps.extend(
     set(
         jobset.JobSpec(cmdline,
-                       environ=build_step_environ(build_config),
+                       environ=_build_step_environ(
+                           build_config, extra_env=l.build_steps_environ()),
                        timeout_seconds=None)
         for l in languages
         for cmdline in l.build_steps()))
 
 post_tests_steps = list(
     set(
-        jobset.JobSpec(cmdline, environ=build_step_environ(build_config))
+        jobset.JobSpec(cmdline,
+                       environ=_build_step_environ(
+                           build_config, extra_env=l.build_steps_environ()))
         for l in languages
         for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
