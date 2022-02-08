@@ -240,8 +240,8 @@ def _pypy_pattern_function(major):
 
 class CLanguage(object):
 
-    def __init__(self, make_target, test_lang):
-        self.make_target = make_target
+    def __init__(self, lang_suffix, test_lang):
+        self.lang_suffix = lang_suffix
         self.platform = platform_string()
         self.test_lang = test_lang
 
@@ -435,7 +435,7 @@ class CLanguage(object):
 
     def build_steps_environ(self):
         """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {'GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX': self.make_target}
+        return {'GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX': self.lang_suffix}
 
     def post_tests_steps(self):
         if self.platform == 'windows':
@@ -485,7 +485,7 @@ class CLanguage(object):
             self._docker_distro, _docker_arch_suffix(self.args.arch))
 
     def __str__(self):
-        return self.make_target
+        return self.lang_suffix
 
 
 # This tests Node on grpc/grpc-node and will become the standard for Node testing
