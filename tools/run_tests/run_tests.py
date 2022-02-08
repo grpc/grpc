@@ -965,7 +965,10 @@ class CSharpLanguage(object):
 
     def build_steps_environ(self):
         """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {'ARCHITECTURE': self._cmake_arch_option}
+        if self.platform == 'windows':
+            return {'ARCHITECTURE': self._cmake_arch_option}
+        else:
+            return {}
 
     def post_tests_steps(self):
         if self.platform == 'windows':
