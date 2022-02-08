@@ -451,19 +451,6 @@ static const grpc_transport_vtable phony_transport_vtable = {0,
 
 static grpc_transport phony_transport = {&phony_transport_vtable};
 
-grpc_arg Arg() {
-  static const grpc_arg_pointer_vtable vtable = {
-      // copy
-      [](void* p) { return p; },
-      // destroy
-      [](void*) {},
-      // cmp
-      [](void* a, void* b) { return grpc_core::QsortCompare(a, b); },
-  };
-  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_TRANSPORT),
-                                         &phony_transport, &vtable);
-}
-
 }  // namespace phony_transport
 
 class NoOp {
@@ -521,10 +508,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
           &fake_client_channel_factory),
       StringArg(GRPC_ARG_SERVER_URI, "localhost"),
   };
-  if (fixture.flags & REQUIRES_TRANSPORT) {
-    args.push_back(phony_transport::Arg());
-  }
-  grpc_channel_args channel_args = {args.size(), args.data()};
+  grpc_channel_args channel_args = {args.size(), &args[0]};
 
   std::vector<const grpc_channel_filter*> filters;
   if (fixture.filter != nullptr) {
@@ -544,8 +528,11 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       "channel_stack_init",
       grpc_channel_stack_init(1, FilterDestroy, channel_stack,
                               filters.empty() ? nullptr : &filters[0],
-                              filters.size(), &channel_args, "CHANNEL",
-                              channel_stack)));
+                              filters.size(), &channel_args,
+                              fixture.flags & REQUIRES_TRANSPORT
+                                  ? &phony_transport::phony_transport
+                                  : nullptr,
+                              "CHANNEL", channel_stack)));
   grpc_core::ExecCtx::Get()->Flush();
   grpc_call_stack* call_stack =
       static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
