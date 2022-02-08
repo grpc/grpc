@@ -908,7 +908,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         const XdsClusterSpecifierPluginImpl* plugin_impl =
             XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
         auto lb_policy_config = plugin_impl->GenerateLoadBalancingPolicyConfig(
-            plugin_type, any_value, context.arena);
+            any_value, context.arena);
         if (lb_policy_config.ok()) {
           rds_update->cluster_specifier_plugin_map[std::string(name)] =
               std::move(lb_policy_config.value());

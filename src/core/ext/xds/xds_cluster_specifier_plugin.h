@@ -42,8 +42,7 @@ class XdsClusterSpecifierPluginImpl {
 
   // Returns the LB policy config in JSON form.
   virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      absl::string_view proto_type_name, upb_strview serialized_plugin_config,
-      upb_arena* arena) const = 0;
+      upb_strview serialized_plugin_config, upb_arena* arena) const = 0;
 
   // Loads the proto message into the upb symtab.
   virtual void PopulateSymtab(upb_symtab* symtab) const = 0;
@@ -55,8 +54,7 @@ class XdsRouteLookupClusterSpecifierPlugin
   void PopulateSymtab(upb_symtab* symtab) const override;
 
   absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      absl::string_view proto_type_name, upb_strview serialized_plugin_config,
-      upb_arena* arena) const override;
+      upb_strview serialized_plugin_config, upb_arena* arena) const override;
 };
 
 class XdsClusterSpecifierPluginRegistry {

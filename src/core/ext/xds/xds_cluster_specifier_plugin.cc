@@ -48,8 +48,7 @@ void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
 
 absl::StatusOr<std::string>
 XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
-    absl::string_view proto_type_name, upb_strview serialized_plugin_config,
-    upb_arena* arena) const {
+    upb_strview serialized_plugin_config, upb_arena* arena) const {
   const auto* plugin_config = grpc_lookup_v1_RouteLookupConfig_parse(
       serialized_plugin_config.data, serialized_plugin_config.size, arena);
   if (plugin_config == nullptr) {
