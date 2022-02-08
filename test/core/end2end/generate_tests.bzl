@@ -530,7 +530,6 @@ def grpc_end2end_nosec_tests():
             tags = _platform_support_tags(fopt),
         )
         for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
             if topt.secure:
@@ -544,4 +543,5 @@ def grpc_end2end_nosec_tests():
                        ["no_test_ios", "no_extract"],
                 flaky = t in fopt.flaky_tests,
                 exclude_pollers = topt.exclude_pollers,
+                linkstatic = True,  # Avoids an ODR problem with :grpc_unsecure
             )
