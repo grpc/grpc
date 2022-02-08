@@ -421,7 +421,7 @@ class CLanguage(object):
         if self.platform == 'windows':
             return [[
                 'tools\\run_tests\\helper_scripts\\build_cxx.bat',
-                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
+                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % self.args.jobs
             ] + self._cmake_configure_extra_args]
         else:
             return [['tools/run_tests/helper_scripts/build_cxx.sh'] +
