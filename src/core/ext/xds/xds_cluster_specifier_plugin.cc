@@ -25,21 +25,14 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
+#include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
 namespace grpc_core {
 
 const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
-    "type.googleapis.com/grpc.lookup.v1.RouteLookupClusterSpecifier";
+    "grpc.lookup.v1.RouteLookupClusterSpecifier";
 
 namespace {
-
-class XdsRouteLookupClusterSpecifierPlugin
-    : public XdsClusterSpecifierPluginImpl {
- public:
-  // void PopulateSymtab(upb_symtab* symtab) const override {
-  //  envoy_extensions_plugins_http_router_v3_Router_getmsgdef(symtab);
-  //}
-};
 
 using PluginRegistryMap =
     std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
@@ -48,10 +41,15 @@ PluginRegistryMap* g_plugin_registry = nullptr;
 
 }  // namespace
 
+void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
+    upb_symtab* symtab) const {
+  grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
+}
+
 absl::StatusOr<std::string>
-XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
+XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     absl::string_view proto_type_name, upb_strview serialized_plugin_config,
-    upb_arena* arena) {
+    upb_arena* arena) const {
   const auto* plugin_config = grpc_lookup_v1_RouteLookupConfig_parse(
       serialized_plugin_config.data, serialized_plugin_config.size, arena);
   if (plugin_config == nullptr) {
@@ -176,11 +174,11 @@ XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
   return Json(result).Dump();
 }
 
-// void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {
-//  for (const auto& plugin : *g_plugins) {
-//    plugin->PopulateSymtab(symtab);
-//  }
-//}
+void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {
+  for (const auto& it : *g_plugin_registry) {
+    it.second->PopulateSymtab(symtab);
+  }
+}
 
 void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
     std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,

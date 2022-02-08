@@ -367,6 +367,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-generated\\google\\protobuf\\wrappers.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\google\\rpc\\status.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\opencensus\\proto\\trace\\v1\\trace_config.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\src\\proto\\grpc\\lookup\\v1\\rls_config.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\migrate.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\security.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\udpa\\annotations\\sensitive.upbdefs.c " +
@@ -1399,6 +1400,11 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\opencensus\\proto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\opencensus\\proto\\trace");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\opencensus\\proto\\trace\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\src");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\src\\proto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\src\\proto\\grpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\src\\proto\\grpc\\lookup");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\src\\proto\\grpc\\lookup\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\udpa\\annotations");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\validate");

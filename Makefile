@@ -1383,6 +1383,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c \
     src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c \
+    src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c \
@@ -3083,6 +3084,7 @@ src/core/ext/upbdefs-generated/google/protobuf/timestamp.upbdefs.c: $(OPENSSL_DE
 src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c: $(OPENSSL_DEP)

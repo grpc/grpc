@@ -37,6 +37,7 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
+#include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
@@ -653,6 +654,9 @@ grpc_error_handle RetryPolicyParse(
 grpc_error_handle RouteActionParse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_Route* route_msg,
+    const std::map<std::string /*cluster_specifier_plugin_name*/,
+                   std::string /*LB policy config*/>&
+        cluster_specifier_plugin_map,
     XdsRouteConfigResource::Route::RouteAction* route, bool* ignore_route) {
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
@@ -852,6 +856,59 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsRouteConfigResource* rds_update) {
+  // Get the cluster spcifier plugins
+  if (XdsRlsEnabled()) {
+    // donna maybe put it in spearate method
+    size_t num_cluster_specifier_plugins;
+    const envoy_config_route_v3_ClusterSpecifierPlugin* const*
+        cluster_specifier_plugin =
+            envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
+                route_config, &num_cluster_specifier_plugins);
+    for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
+      const envoy_config_core_v3_TypedExtensionConfig* extension =
+          envoy_config_route_v3_ClusterSpecifierPlugin_extension(
+              cluster_specifier_plugin[i]);
+      std::string name = UpbStringToStdString(
+          envoy_config_core_v3_TypedExtensionConfig_name(extension));
+      gpr_log(GPR_INFO, "donna here is the loop with name identifier %s",
+              name.c_str());
+      const google_protobuf_Any* any =
+          envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
+      GPR_ASSERT(any != nullptr);
+      absl::string_view plugin_type =
+          UpbStringToAbsl(google_protobuf_Any_type_url(any));
+      if (plugin_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+          plugin_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+        upb_strview any_value = google_protobuf_Any_value(any);
+        const auto* typed_struct = xds_type_v3_TypedStruct_parse(
+            any_value.data, any_value.size, context.arena);
+        if (typed_struct == nullptr) {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "could not parse TypedStruct from plugin config");
+        }
+        plugin_type =
+            UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
+        if (plugin_type.empty()) {
+          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+              "no plugin config specified for plugin name ", name));
+        }
+        plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
+        if (plugin_type == "grpc.lookup.v1.RouteLookupClusterSpecifier") {
+          gpr_log(GPR_INFO, "donna parsed out the correct type");
+        } else {
+          gpr_log(GPR_INFO, "donna did not get the correct type");
+        }
+        const XdsClusterSpecifierPluginImpl* plugin_impl =
+            XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+        auto lb_policy_config = plugin_impl->GenerateLoadBalancingPolicyConfig(
+            plugin_type, any_value, context.arena);
+        if (lb_policy_config.ok()) {
+          rds_update->cluster_specifier_plugin_map[std::string(name)] =
+              std::move(lb_policy_config.value());
+        }
+      }
+    }
+  }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
@@ -933,8 +990,9 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
         auto& route_action =
             absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
-        error =
-            RouteActionParse(context, routes[j], &route_action, &ignore_route);
+        error = RouteActionParse(context, routes[j],
+                                 rds_update->cluster_specifier_plugin_map,
+                                 &route_action, &ignore_route);
         if (error != GRPC_ERROR_NONE) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&
@@ -961,44 +1019,6 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     }
     if (vhost.routes.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
-    }
-  }
-  if (!XdsRlsEnabled()) return GRPC_ERROR_NONE;
-  size_t num_cluster_specifier_plugins;
-  const envoy_config_route_v3_ClusterSpecifierPlugin* const*
-      cluster_specifier_plugin =
-          envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
-              route_config, &num_cluster_specifier_plugins);
-  gpr_log(GPR_INFO, "donna size is currently %d",
-          num_cluster_specifier_plugins);
-  for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
-    const envoy_config_core_v3_TypedExtensionConfig* extension =
-        envoy_config_route_v3_ClusterSpecifierPlugin_extension(
-            cluster_specifier_plugin[i]);
-    std::string name = UpbStringToStdString(
-        envoy_config_core_v3_TypedExtensionConfig_name(extension));
-    gpr_log(GPR_INFO, "donna here is the loop with name identifier %s",
-            name.c_str());
-    const google_protobuf_Any* any =
-        envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
-    GPR_ASSERT(any != nullptr);
-    absl::string_view plugin_type =
-        UpbStringToAbsl(google_protobuf_Any_type_url(any));
-    if (plugin_type.empty()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("no plugin config specified for plugin name ", name));
-    }
-    if (plugin_type ==
-        "type.googleapis.com/grpc.lookup.v1.RouteLookupClusterSpecifier") {
-      gpr_log(GPR_INFO, "donna parse it out");
-      upb_strview any_value = google_protobuf_Any_value(any);
-      auto lb_policy_config =
-          XdsClusterSpecifierPluginImpl::GenerateLoadBalancingPolicyConfig(
-              plugin_type, any_value, context.arena);
-      if (lb_policy_config.ok()) {
-        rds_update->cluster_specifier_plugin_map[std::string(name)] =
-            std::move(lb_policy_config.value());
-      }
     }
   }
   return GRPC_ERROR_NONE;

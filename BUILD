@@ -2896,6 +2896,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "rls_upb",
         "rls_config_upb",
+        "rls_config_upbdefs",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -5085,6 +5086,11 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "rls_config_upb",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "rls_config_upbdefs",
     deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
 )
 

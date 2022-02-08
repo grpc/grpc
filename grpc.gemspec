@@ -806,6 +806,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c )
