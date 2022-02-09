@@ -445,6 +445,8 @@ static void internal_set_time(grpc_error_handle* err, grpc_error_times which,
   memcpy((*err)->arena + slot, &value, sizeof(value));
 }
 
+const char* grpc_error_string(grpc_error_handle err);
+
 static void internal_add_error(grpc_error_handle* err,
                                grpc_error_handle new_err) {
   grpc_linked_error new_last = {new_err, UINT8_MAX};
