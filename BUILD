@@ -1470,10 +1470,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "channel_creds_registry",
-    language = "c++",
     hdrs = [
         "src/core/lib/security/credentials/channel_creds_registry.h",
     ],
+    language = "c++",
     deps = [
         "gpr_base",
         "json",
