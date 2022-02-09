@@ -1718,7 +1718,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   if (!is_lb_drop) {  // Never retry on LB drops.
     enum { kNoRetry, kTransparentRetry, kConfigurableRetry } retry = kNoRetry;
     // Handle transparent retries.
-    if (stream_network_state.has_value()) {
+    if (stream_network_state.has_value() && !calld->retry_committed_) {
       // If not sent on wire, then always retry.
       // If sent on wire but not seen by server, retry exactly once.
       if (*stream_network_state == GrpcStreamNetworkState::kNotSentOnWire) {
