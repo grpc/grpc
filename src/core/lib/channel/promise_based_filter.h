@@ -319,7 +319,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
     metadata->Set(GrpcMessageMetadata(),
                   Slice::FromCopiedString(status_details));
     metadata->GetOrCreatePointer(GrpcStatusContext())
-        ->emplace_back(grpc_error_string(error));
+        ->emplace_back(grpc_error_std_string(error));
   }
 
   // Wakeup and poll the promise if appropriate.
