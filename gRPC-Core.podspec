@@ -2508,6 +2508,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_throttled.cc',
                       'test/core/end2end/tests/retry_too_many_attempts.cc',
                       'test/core/end2end/tests/retry_transparent_goaway.cc',
+                      'test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc',
                       'test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc',
                       'test/core/end2end/tests/sdk_authz.cc',
                       'test/core/end2end/tests/server_finishes_request.cc',
