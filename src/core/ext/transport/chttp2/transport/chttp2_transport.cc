@@ -1057,7 +1057,6 @@ static void cancel_unstarted_streams(grpc_chttp2_transport* t,
     s->trailing_metadata_buffer.Set(
         grpc_core::GrpcStreamNetworkState(),
         grpc_core::GrpcStreamNetworkState::kNotSentOnWire);
-    gpr_log(GPR_ERROR, "stream network metadata added");
     grpc_chttp2_cancel_stream(t, s, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
