@@ -16,6 +16,8 @@
 //
 //
 
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
