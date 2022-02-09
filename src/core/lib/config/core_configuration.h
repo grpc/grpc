@@ -21,7 +21,7 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/security/credentials/xds/xds_channel_creds.h"
+#include "src/core/lib/security/credentials/channel_creds.h"
 #include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
@@ -47,8 +47,8 @@ class CoreConfiguration {
       return &handshaker_registry_;
     }
 
-    XdsChannelCredsRegistry<>::Builder* xds_channel_creds_registry() {
-      return &xds_channel_creds_registry_;
+    ChannelCredsRegistry<>::Builder* channel_creds_registry() {
+      return &channel_creds_registry_;
     }
 
    private:
@@ -57,7 +57,7 @@ class CoreConfiguration {
     ChannelArgsPreconditioning::Builder channel_args_preconditioning_;
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
-    XdsChannelCredsRegistry<>::Builder xds_channel_creds_registry_;
+    ChannelCredsRegistry<>::Builder channel_creds_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -133,8 +133,8 @@ class CoreConfiguration {
     return handshaker_registry_;
   }
 
-  const XdsChannelCredsRegistry<>& xds_channel_creds_registry() const {
-    return xds_channel_creds_registry_;
+  const ChannelCredsRegistry<>& channel_creds_registry() const {
+    return channel_creds_registry_;
   }
 
  private:
@@ -158,7 +158,7 @@ class CoreConfiguration {
   ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
-  XdsChannelCredsRegistry<> xds_channel_creds_registry_;
+  ChannelCredsRegistry<> channel_creds_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CHANNEL_CREDS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CHANNEL_CREDS_H
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_CHANNEL_CREDS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_CHANNEL_CREDS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,45 +28,45 @@ struct grpc_channel_credentials;
 namespace grpc_core {
 
 template <typename T = grpc_channel_credentials>
-class XdsChannelCredsFactory final {
+class ChannelCredsFactory final {
  public:
-  virtual ~XdsChannelCredsFactory() {}
+  virtual ~ChannelCredsFactory() {}
   virtual absl::string_view creds_type() const = delete;
   virtual bool IsValidConfig(const Json& config) const = delete;
-  virtual RefCountedPtr<T> CreateXdsChannelCreds(const Json& config) const =
+  virtual RefCountedPtr<T> CreateChannelCreds(const Json& config) const =
       delete;
 };
 
 template <>
-class XdsChannelCredsFactory<grpc_channel_credentials> {
+class ChannelCredsFactory<grpc_channel_credentials> {
  public:
-  virtual ~XdsChannelCredsFactory() {}
+  virtual ~ChannelCredsFactory() {}
   virtual absl::string_view creds_type() const = 0;
   virtual bool IsValidConfig(const Json& config) const = 0;
-  virtual RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
+  virtual RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       const Json& config) const = 0;
 };
 
 template <typename T = grpc_channel_credentials>
-class XdsChannelCredsRegistry {
+class ChannelCredsRegistry {
  public:
   static_assert(std::is_base_of<grpc_channel_credentials, T>::value,
-                "XdsChannelCredsRegistry must be instantiated with "
+                "ChannelCredsRegistry must be instantiated with "
                 "grpc_channel_credentials.");
   class Builder {
    public:
-    void RegisterXdsChannelCredsFactory(
-        std::unique_ptr<XdsChannelCredsFactory<T>> factory) {
+    void RegisterChannelCredsFactory(
+        std::unique_ptr<ChannelCredsFactory<T>> factory) {
       factories_[factory->creds_type()] = std::move(factory);
     }
-    XdsChannelCredsRegistry Build() {
-      XdsChannelCredsRegistry<T> registry;
+    ChannelCredsRegistry Build() {
+      ChannelCredsRegistry<T> registry;
       registry.factories_.swap(factories_);
       return registry;
     }
 
    private:
-    std::map<absl::string_view, std::unique_ptr<XdsChannelCredsFactory<T>>>
+    std::map<absl::string_view, std::unique_ptr<ChannelCredsFactory<T>>>
         factories_;
   };
 
@@ -79,19 +79,19 @@ class XdsChannelCredsRegistry {
     return iter != factories_.cend() && iter->second->IsValidConfig(config);
   }
 
-  RefCountedPtr<T> CreateXdsChannelCreds(const std::string& creds_type,
-                                         const Json& config) const {
+  RefCountedPtr<T> CreateChannelCreds(const std::string& creds_type,
+                                      const Json& config) const {
     const auto iter = factories_.find(creds_type);
     if (iter == factories_.cend()) return nullptr;
-    return iter->second->CreateXdsChannelCreds(config);
+    return iter->second->CreateChannelCreds(config);
   }
 
  private:
-  XdsChannelCredsRegistry() = default;
-  std::map<absl::string_view, std::unique_ptr<XdsChannelCredsFactory<T>>>
+  ChannelCredsRegistry() = default;
+  std::map<absl::string_view, std::unique_ptr<ChannelCredsFactory<T>>>
       factories_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_XDS_XDS_CHANNEL_CREDS_H
+#endif  // GRPC_CORE_LIB_SECURITY_CREDENTIALS_CHANNEL_CREDS_H

@@ -948,6 +948,7 @@ libs:
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/lib/security/credentials/channel_creds.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/external/aws_external_account_credentials.h
@@ -971,7 +972,6 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
   - src/core/lib/security/credentials/tls/tls_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
-  - src/core/lib/security/credentials/xds/xds_channel_creds.h
   - src/core/lib/security/credentials/xds/xds_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
@@ -1613,6 +1613,7 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/lib/security/credentials/channel_default_creds.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
@@ -1638,7 +1639,6 @@ libs:
   - src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
   - src/core/lib/security/credentials/tls/tls_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
-  - src/core/lib/security/credentials/xds/xds_channel_default_creds.cc
   - src/core/lib/security/credentials/xds/xds_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
@@ -2121,10 +2121,10 @@ libs:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/channel_creds.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
-  - src/core/lib/security/credentials/xds/xds_channel_creds.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -5033,6 +5033,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_creds_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/channel_creds_registry_test.cc
+  deps:
+  - grpc_test_util
 - name: channel_filter_test
   gtest: true
   build: test
@@ -5395,7 +5404,7 @@ targets:
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/json/json.h
-  - src/core/lib/security/credentials/xds/xds_channel_creds.h
+  - src/core/lib/security/credentials/channel_creds.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
@@ -8528,15 +8537,6 @@ targets:
   headers: []
   src:
   - test/core/xds/xds_certificate_provider_test.cc
-  deps:
-  - grpc_test_util
-- name: xds_channel_creds_registry_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/xds/xds_channel_creds_registry_test.cc
   deps:
   - grpc_test_util
 - name: xds_credentials_end2end_test

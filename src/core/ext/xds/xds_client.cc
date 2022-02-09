@@ -54,7 +54,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/security/credentials/xds/xds_channel_creds.h"
+#include "src/core/lib/security/credentials/channel_creds.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -514,10 +514,8 @@ namespace {
 grpc_channel* CreateXdsChannel(grpc_channel_args* args,
                                const XdsBootstrap::XdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
-      CoreConfiguration::Get()
-          .xds_channel_creds_registry()
-          .CreateXdsChannelCreds(server.channel_creds_type,
-                                 server.channel_creds_config);
+      CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
+          server.channel_creds_type, server.channel_creds_config);
   return grpc_secure_channel_create(channel_creds.get(),
                                     server.server_uri.c_str(), args, nullptr);
 }

@@ -174,7 +174,7 @@ extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_XDS
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
-extern void RegisterXdsChannelDefaultCreds(CoreConfiguration::Builder* builder);
+extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
 #endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
@@ -191,7 +191,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterResourceQuota(builder);
 #ifndef GRPC_NO_XDS
   RegisterXdsChannelStackModifier(builder);
-  RegisterXdsChannelDefaultCreds(builder);
+  RegisterChannelDefaultCreds(builder);
 #endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?

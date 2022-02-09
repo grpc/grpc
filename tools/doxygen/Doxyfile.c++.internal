@@ -2256,6 +2256,8 @@ src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+src/core/lib/security/credentials/channel_creds.h \
+src/core/lib/security/credentials/channel_default_creds.cc \
 src/core/lib/security/credentials/composite/composite_credentials.cc \
 src/core/lib/security/credentials/composite/composite_credentials.h \
 src/core/lib/security/credentials/credentials.cc \
@@ -2304,8 +2306,6 @@ src/core/lib/security/credentials/tls/tls_credentials.cc \
 src/core/lib/security/credentials/tls/tls_credentials.h \
 src/core/lib/security/credentials/tls/tls_utils.cc \
 src/core/lib/security/credentials/tls/tls_utils.h \
-src/core/lib/security/credentials/xds/xds_channel_creds.h \
-src/core/lib/security/credentials/xds/xds_channel_default_creds.cc \
 src/core/lib/security/credentials/xds/xds_credentials.cc \
 src/core/lib/security/credentials/xds/xds_credentials.h \
 src/core/lib/security/security_connector/alts/alts_security_connector.cc \

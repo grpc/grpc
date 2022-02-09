@@ -37,9 +37,9 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/security/credentials/channel_creds.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/credentials/xds/xds_channel_creds.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -66,10 +66,10 @@ grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                        /*required=*/false);
   // Select the first channel creds type that we support.
   if (server->channel_creds_type.empty() &&
-      CoreConfiguration::Get().xds_channel_creds_registry().IsSupported(type)) {
+      CoreConfiguration::Get().channel_creds_registry().IsSupported(type)) {
     Json config;
     if (config_ptr != nullptr) config = *config_ptr;
-    if (!CoreConfiguration::Get().xds_channel_creds_registry().IsValidConfig(
+    if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
             type, config)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "invalid config for channel creds type \"", type, "\"")));

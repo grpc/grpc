@@ -25,46 +25,46 @@
 
 namespace grpc_core {
 
-class GoogleDefaultXdsChannelCredsFactory : public XdsChannelCredsFactory<> {
+class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
  public:
   absl::string_view creds_type() const override { return "google_default"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_google_default_credentials_create(nullptr));
   }
 };
 
-class InsecureXdsChannelCredsFactory : public XdsChannelCredsFactory<> {
+class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
  public:
   absl::string_view creds_type() const override { return "insecure"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
   }
 };
 
-class FakeXdsChannelCredsFactory : public XdsChannelCredsFactory<> {
+class FakeChannelCredsFactory : public ChannelCredsFactory<> {
  public:
   absl::string_view creds_type() const override { return "fake"; }
   bool IsValidConfig(const Json& /*config*/) const override { return true; }
-  RefCountedPtr<grpc_channel_credentials> CreateXdsChannelCreds(
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       const Json& /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }
 };
 
-void RegisterXdsChannelDefaultCreds(CoreConfiguration::Builder* builder) {
-  builder->xds_channel_creds_registry()->RegisterXdsChannelCredsFactory(
-      absl::make_unique<GoogleDefaultXdsChannelCredsFactory>());
-  builder->xds_channel_creds_registry()->RegisterXdsChannelCredsFactory(
-      absl::make_unique<InsecureXdsChannelCredsFactory>());
-  builder->xds_channel_creds_registry()->RegisterXdsChannelCredsFactory(
-      absl::make_unique<FakeXdsChannelCredsFactory>());
+void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<GoogleDefaultChannelCredsFactory>());
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<InsecureChannelCredsFactory>());
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<FakeChannelCredsFactory>());
 }
 
 }  // namespace grpc_core
