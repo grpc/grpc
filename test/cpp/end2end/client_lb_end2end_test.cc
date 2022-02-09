@@ -808,7 +808,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateToUnconnected) {
 
   std::vector<int> ports;
 
-  // Perform try to send rpc against a list where the server is available.
+  // Try to send rpcs against a list where the server is available.
   ports.emplace_back(servers_[0]->port_);
   response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [0] *******");
@@ -825,7 +825,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateToUnconnected) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
 
   // Ensure that the last resolution was installed correctly by verifying that
-  // the channel becomes ready once one of if it's endpoints becomes available.
+  // the channel becomes ready once one of if its endpoints becomes available.
   gpr_log(GPR_INFO, "****** StartServer(1) *******");
   StartServer(1);
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
