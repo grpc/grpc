@@ -21,7 +21,7 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/security/credentials/channel_creds.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {

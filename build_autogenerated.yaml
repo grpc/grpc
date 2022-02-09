@@ -948,7 +948,7 @@ libs:
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
-  - src/core/lib/security/credentials/channel_creds.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/external/aws_external_account_credentials.h
@@ -1613,7 +1613,7 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  - src/core/lib/security/credentials/channel_default_creds.cc
+  - src/core/lib/security/credentials/channel_creds_registry_init.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
@@ -2121,7 +2121,7 @@ libs:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/context/security_context.h
-  - src/core/lib/security/credentials/channel_creds.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
@@ -5404,7 +5404,7 @@ targets:
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/json/json.h
-  - src/core/lib/security/credentials/channel_creds.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h

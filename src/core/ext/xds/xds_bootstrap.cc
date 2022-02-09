@@ -37,7 +37,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/security/credentials/channel_creds.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"

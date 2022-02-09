@@ -1578,7 +1578,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
-    src/core/lib/security/credentials/channel_default_creds.cc \
+    src/core/lib/security/credentials/channel_creds_registry_init.cc \
     src/core/lib/security/credentials/composite/composite_credentials.cc \
     src/core/lib/security/credentials/credentials.cc \
     src/core/lib/security/credentials/external/aws_external_account_credentials.cc \
@@ -3138,7 +3138,7 @@ src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc: $(OPENS
 src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: $(OPENSSL_DEP)
-src/core/lib/security/credentials/channel_default_creds.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/channel_creds_registry_init.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_external_account_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/aws_request_signer.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/external/external_account_credentials.cc: $(OPENSSL_DEP)

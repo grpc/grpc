@@ -413,8 +413,10 @@ GRPC_XDS_TARGETS = [
     "grpc_lb_policy_xds_cluster_resolver",
     "grpc_resolver_xds",
     "grpc_resolver_c2p",
-    "grpc_channel_default_creds",
     "grpc_xds_server_config_fetcher",
+
+    # Not xDS-specific but currently only used by xDS.
+    "channel_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -980,7 +982,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args_preconditioning",
-        "channel_creds",
+        "channel_creds_registry",
         "channel_init",
         "gpr_base",
         "handshaker_registry",
@@ -1467,10 +1469,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "channel_creds",
+    name = "channel_creds_registry",
     language = "c++",
-    public_hdrs = [
-        "src/core/lib/security/credentials/channel_creds.h",
+    hdrs = [
+        "src/core/lib/security/credentials/channel_creds_registry.h",
     ],
     deps = [
         "gpr_base",
@@ -2846,7 +2848,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "channel_creds",
+        "channel_creds_registry",
         "config",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
@@ -2957,9 +2959,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_channel_default_creds",
+    name = "channel_creds_registry_init",
     srcs = [
-        "src/core/lib/security/credentials/channel_default_creds.cc",
+        "src/core/lib/security/credentials/channel_creds_registry_init.cc",
     ],
     language = "c++",
     deps = [

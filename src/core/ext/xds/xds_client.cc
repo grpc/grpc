@@ -54,7 +54,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/security/credentials/channel_creds.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
