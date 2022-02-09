@@ -14,37 +14,26 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-const std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory =
-    nullptr;
-grpc_core::Mutex* g_mu = new grpc_core::Mutex();
-}  // namespace
-
-EventEngine* GetDefaultEventEngine() {
-  static EventEngine* default_event_engine = CreateEventEngine().release();
-  return default_event_engine;
+EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
+                                              socklen_t size)
+    : size_(size) {
+  GPR_ASSERT(size <= sizeof(address_));
+  memcpy(&address_, address, size);
 }
 
-void SetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory) {
-  grpc_core::MutexLock lock(g_mu);
-  g_event_engine_factory = factory;
+const struct sockaddr* EventEngine::ResolvedAddress::address() const {
+  return reinterpret_cast<const struct sockaddr*>(address_);
 }
 
-std::unique_ptr<EventEngine> CreateEventEngine() {
-  grpc_core::MutexLock lock(g_mu);
-  if (g_event_engine_factory == nullptr) {
-    // TODO(hork): call LibuvEventEngineFactory
-    abort();
-  }
-  return (*g_event_engine_factory)();
-}
+socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

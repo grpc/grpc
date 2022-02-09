@@ -940,7 +940,10 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       ++num_callbacks;
     }
     if (batch->recv_message) {
-      if (completed_recv_message_count_ < started_recv_message_count_) {
+      // Skip if the op is already in flight, or if it has already completed
+      // but the completion has not yet been sent to the surface.
+      if (completed_recv_message_count_ < started_recv_message_count_ ||
+          recv_message_ready_deferred_batch_ != nullptr) {
         continue;
       }
       ++num_callbacks;
