@@ -2045,8 +2045,8 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
     // If we haven't yet completed the recv_initial_metadata op, let upper
     // layers know that trailing metadata is immediately available.
-    if (s->trailing_metadata_available == nullptr) {
-      s->trailing_metadata_available = true;
+    if (s->trailing_metadata_available != nullptr) {
+      *s->trailing_metadata_available = true;
     }
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
