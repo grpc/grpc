@@ -1860,7 +1860,15 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(
       }
     }
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
-    s->trailing_metadata_available = nullptr;
+    // If we didn't receive initial metadata from the wire and instead faked a
+    // status (due to stream cancellations for example), let upper layers know
+    // that trailing metadata is immediately available.
+    if (s->trailing_metadata_available != nullptr &&
+        s->published_metadata[0] != GRPC_METADATA_PUBLISHED_FROM_WIRE &&
+        s->published_metadata[1] == GRPC_METADATA_SYNTHESIZED_FROM_FAKE) {
+      *s->trailing_metadata_available = true;
+      s->trailing_metadata_available = nullptr;
+    }
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
 }
@@ -2043,11 +2051,6 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           grpc_core::Slice::FromCopiedBuffer(message));
     }
     s->published_metadata[1] = GRPC_METADATA_SYNTHESIZED_FROM_FAKE;
-    // If we haven't yet completed the recv_initial_metadata op, let upper
-    // layers know that trailing metadata is immediately available.
-    if (s->trailing_metadata_available != nullptr) {
-      *s->trailing_metadata_available = true;
-    }
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
