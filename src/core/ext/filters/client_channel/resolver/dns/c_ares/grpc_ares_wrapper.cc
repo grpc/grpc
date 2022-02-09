@@ -692,8 +692,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(error_msg);
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
@@ -740,8 +739,7 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
         ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
+    grpc_error_handle error = GRPC_ERROR_CREATE_FROM_CPP_STRING(error_msg);
     r->error = grpc_error_add_child(error, r->error);
   }
   delete q;
@@ -803,7 +801,7 @@ fail:
                       q->name(), ares_strerror(status));
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r,
                        error_msg.c_str());
-  error = GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error_msg));
+  error = GRPC_ERROR_CREATE_FROM_CPP_STRING(error_msg);
   r->error = grpc_error_add_child(error, r->error);
 }
 

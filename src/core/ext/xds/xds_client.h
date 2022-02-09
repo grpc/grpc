@@ -194,7 +194,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
-    void StartConnectivityWatchLocked();
+    void StartConnectivityWatchLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void CancelConnectivityWatchLocked();
 
     void SubscribeLocked(const XdsResourceType* type,
