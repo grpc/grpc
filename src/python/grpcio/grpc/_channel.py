@@ -1439,12 +1439,23 @@ def _unsubscribe(state, callback):
                 break
 
 
+def _primary_user_agent_prefix_from_options(options):
+  """Emulate legacy core behavior of concatenating user agent strings."""
+  out = ""
+  for key, value in options:
+    print("%r %r %r %r" % (key, cygrpc.ChannelArgKey.primary_user_agent_string, key.encode()==cygrpc.ChannelArgKey.primary_user_agent_string, value))
+    if key.encode() == cygrpc.ChannelArgKey.primary_user_agent_string:
+      out += value
+      out += " "
+  return out
+
+
 def _augment_options(base_options, compression):
-    compression_option = _compression.create_channel_option(compression)
-    return tuple(base_options) + compression_option + ((
-        cygrpc.ChannelArgKey.primary_user_agent_string,
-        _USER_AGENT,
-    ),)
+  compression_option = _compression.create_channel_option(compression)
+  return tuple(base_options) + compression_option + ((
+      cygrpc.ChannelArgKey.primary_user_agent_string,
+      _primary_user_agent_prefix_from_options(base_options) + _USER_AGENT,
+  ),)
 
 
 def _separate_channel_options(options):
