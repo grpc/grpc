@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/authorization/sdk_server_authz_filter.h"
+#include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
@@ -22,16 +22,16 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_sdk_authz_trace(false, "sdk_authz");
+TraceFlag grpc_authz_trace(false, "grpc_authz_api");
 
-SdkServerAuthzFilter::SdkServerAuthzFilter(
+GrpcServerAuthzFilter::GrpcServerAuthzFilter(
     RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
     RefCountedPtr<grpc_authorization_policy_provider> provider)
     : auth_context_(std::move(auth_context)),
       per_channel_evaluate_args_(auth_context_.get(), endpoint),
       provider_(std::move(provider)) {}
 
-absl::StatusOr<SdkServerAuthzFilter> SdkServerAuthzFilter::Create(
+absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
     const grpc_channel_args* args) {
   grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
   grpc_authorization_policy_provider* provider =
@@ -40,18 +40,18 @@ absl::StatusOr<SdkServerAuthzFilter> SdkServerAuthzFilter::Create(
   if (provider == nullptr) {
     return absl::InvalidArgumentError("Failed to get authorization provider.");
   }
-  // grpc_endpoint isn't needed because the current SDK authorization policy
+  // grpc_endpoint isn't needed because the current gRPC authorization policy
   // does not support any rules that requires looking for source or destination
   // addresses.
-  return SdkServerAuthzFilter(
+  return GrpcServerAuthzFilter(
       auth_context != nullptr ? auth_context->Ref() : nullptr,
       /*endpoint=*/nullptr, provider->Ref());
 }
 
-bool SdkServerAuthzFilter::IsAuthorized(
+bool GrpcServerAuthzFilter::IsAuthorized(
     const ClientInitialMetadata& initial_metadata) {
   EvaluateArgs args(initial_metadata.get(), &per_channel_evaluate_args_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(
         GPR_DEBUG,
         "checking request: url_path=%s, transport_security_type=%s, "
@@ -71,7 +71,7 @@ bool SdkServerAuthzFilter::IsAuthorized(
     AuthorizationEngine::Decision decision =
         engines.deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
         gpr_log(GPR_INFO, "chand=%p: request denied by policy %s.", this,
                 decision.matching_policy_name.c_str());
       }
@@ -82,21 +82,21 @@ bool SdkServerAuthzFilter::IsAuthorized(
     AuthorizationEngine::Decision decision =
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
         gpr_log(GPR_INFO, "chand=%p: request allowed by policy %s.", this,
                 decision.matching_policy_name.c_str());
       }
       return true;
     }
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_INFO, "chand=%p: request denied, no matching policy found.",
             this);
   }
   return false;
 }
 
-ArenaPromise<TrailingMetadata> SdkServerAuthzFilter::MakeCallPromise(
+ArenaPromise<TrailingMetadata> GrpcServerAuthzFilter::MakeCallPromise(
     ClientInitialMetadata initial_metadata,
     NextPromiseFactory next_promise_factory) {
   if (!IsAuthorized(initial_metadata)) {
@@ -106,7 +106,7 @@ ArenaPromise<TrailingMetadata> SdkServerAuthzFilter::MakeCallPromise(
   return next_promise_factory(std::move(initial_metadata));
 }
 
-const grpc_channel_filter SdkServerAuthzFilter::kFilterVtable =
-    MakePromiseBasedFilter<SdkServerAuthzFilter>();
+const grpc_channel_filter GrpcServerAuthzFilter::kFilterVtable =
+    MakePromiseBasedFilter<GrpcServerAuthzFilter>();
 
 }  // namespace grpc_core

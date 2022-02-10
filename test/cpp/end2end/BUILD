@@ -853,8 +853,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "sdk_authz_end2end_test",
-    srcs = ["sdk_authz_end2end_test.cc"],
+    name = "grpc_authz_end2end_test",
+    srcs = ["grpc_authz_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
