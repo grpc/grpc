@@ -58,7 +58,8 @@ grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
 
 class ClientIdleFilter {
  public:
-  static absl::StatusOr<ClientIdleFilter> Create(const grpc_channel_args* args);
+  static absl::StatusOr<ClientIdleFilter> Create(
+      const grpc_channel_args* args, grpc_channel_stack* channel_stack);
 
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
@@ -66,7 +67,10 @@ class ClientIdleFilter {
       NextPromiseFactory next_promise_factory);
 
  private:
-  ClientIdleFilter();
+  ClientIdleFilter(grpc_channel_stack* channel_stack,
+                   grpc_millis client_idle_timeout)
+      : channel_stack_(channel_stack),
+        client_idle_timeout_(client_idle_timeout) {}
   ~ClientIdleFilter() = default;
 
   static void IdleTimerCallback(void* arg, grpc_error_handle error);
@@ -81,15 +85,16 @@ class ClientIdleFilter {
   void DecreaseCallCount();
 
   struct CallCountDecreaser {
-    ClientIdleFilter* filter;
-    void operator()() const { filter->DecreaseCallCount(); }
+    void operator()(ClientIdleFilter* filter) const {
+      filter->DecreaseCallCount();
+    }
   };
 
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
   // Timeout after the last RPC finishes on the client channel at which the
   // channel goes back into IDLE state.
-  const grpc_millis client_idle_timeout_;
+  grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
   IdleFilterState idle_filter_state_{false};
@@ -104,8 +109,8 @@ class ClientIdleFilter {
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
-    const grpc_channel_args* args) {
-  return ClientIdleFilter();
+    const grpc_channel_args* args, grpc_channel_stack* channel_stack) {
+  return ClientIdleFilter(channel_stack, GetClientIdleTimeout(args));
 }
 
 // Construct a promise for one call.
