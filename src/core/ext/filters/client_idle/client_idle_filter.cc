@@ -77,12 +77,12 @@ class ClientIdleFilter {
 
   void EnterIdle();
 
-  void IncrementCallCount();
-  void DecrementCallCount();
+  void IncreaseCallCount();
+  void DecreaseCallCount();
 
-  struct CallCountDecrementer {
+  struct CallCountDecreaser {
     ClientIdleFilter* filter;
-    void operator()() const { filter->DecrementCallCount(); }
+    void operator()() const { filter->DecreaseCallCount(); }
   };
 
   // The channel stack to which we take refs for pending callbacks.
@@ -112,8 +112,8 @@ absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
 ArenaPromise<TrailingMetadata> ClientIdleFilter::MakeCallPromise(
     ClientInitialMetadata initial_metadata,
     NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ClientIdleFilter, CallCountDecrementer>;
-  IncrementCallCount();
+  using Decrementer = std::unique_ptr<ClientIdleFilter, CallCountDecreaser>;
+  IncreaseCallCount();
   return Capture(
       [](Decrementer*, ArenaPromise<TrailingMetadata*>* next) {
         return (*next)();
@@ -138,11 +138,11 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   grpc_channel_next_op(elem, op);
 }
 
-void ClientIdleFilter::IncrementRefCount() {
+void ClientIdleFilter::IncreaseCallCount() {
   idle_filter_state_.IncreaseCallCount();
 }
 
-void ClientIdleFilter::Unref() {
+void ClientIdleFilter::DecreaseCallCount() {
   if (idle_filter_state_.DecreaseCallCount()) {
     // If there are no more calls in progress, start the idle timer.
     StartIdleTimer();
