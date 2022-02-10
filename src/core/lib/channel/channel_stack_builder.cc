@@ -25,6 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/memory.h"
 
@@ -80,10 +81,32 @@ grpc_error_handle ChannelStackBuilder::Build(size_t prefix_bytes,
   // fetch a pointer to the channel stack
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       static_cast<char*>(*result) + prefix_bytes);
+
+  const grpc_channel_args* final_args;
+  if (transport_ != nullptr) {
+    static const grpc_arg_pointer_vtable vtable = {
+        // copy
+        [](void* p) { return p; },
+        // destroy
+        [](void*) {},
+        // cmp
+        [](void* a, void* b) { return QsortCompare(a, b); },
+    };
+    grpc_arg arg = grpc_channel_arg_pointer_create(
+        const_cast<char*>(GRPC_ARG_TRANSPORT), transport_, &vtable);
+    final_args = grpc_channel_args_copy_and_add(args_, &arg, 1);
+  } else {
+    final_args = args_;
+  }
+
   // and initialize it
   grpc_error_handle error = grpc_channel_stack_init(
       initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
-      filters.data(), filters.size(), args_, transport_, name_, channel_stack);
+      filters.data(), filters.size(), final_args, name_, channel_stack);
+
+  if (final_args != args_) {
+    grpc_channel_args_destroy(final_args);
+  }
 
   if (error != GRPC_ERROR_NONE) {
     grpc_channel_stack_destroy(channel_stack);

@@ -14,7 +14,19 @@
 
 setlocal
 
-cd /d %~dp0\..\..\..\src\csharp
+cd /d %~dp0\..\..\..
+
+mkdir cmake
+cd cmake
+mkdir build
+cd build
+mkdir %ARCHITECTURE%
+cd %ARCHITECTURE%
+
+cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON  -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% ../../.. || goto :error
+cmake --build . --target grpc_csharp_ext --config %MSBUILD_CONFIG% || goto :error
+
+cd ..\..\..\src\csharp
 
 dotnet build --configuration %MSBUILD_CONFIG% Grpc.sln || goto :error
 
