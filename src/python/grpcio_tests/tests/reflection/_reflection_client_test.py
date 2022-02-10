@@ -36,7 +36,7 @@ _INVALID_SYMBOL_NAME = "IDoNotExist"
 _EMPTY_EXTENSIONS_SYMBOL_NAME = "grpc.testing.proto2.EmptyWithExtensions"
 
 
-class ReflectionServicerTest(unittest.TestCase):
+class ReflectionClientTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
         self._SERVICE_NAMES = (
