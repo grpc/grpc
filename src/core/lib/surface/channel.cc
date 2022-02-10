@@ -220,11 +220,10 @@ void CreateChannelzNode(grpc_core::ChannelStackBuilder* builder) {
 
 }  // namespace
 
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* input_args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_error_handle* error) {
+grpc_channel* grpc_channel_create_internal(
+    const char* target, const grpc_channel_args* input_args,
+    grpc_channel_stack_type channel_stack_type,
+    grpc_transport* optional_transport, grpc_error_handle* error) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -482,7 +481,7 @@ static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   channel->allocator.Destroy();
   channel->target.Destroy();
   gpr_free(channel);
-  // See comment in grpc_channel_create() for why we do this.
+  // See comment in grpc_channel_create_internal() for why we do this.
   grpc_shutdown();
 }
 
