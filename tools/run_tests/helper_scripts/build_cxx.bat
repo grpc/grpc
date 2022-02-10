@@ -36,7 +36,7 @@ set "VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Communit
 If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2017" (
   @rem set cl.exe build environment to build with VS2017 tooling
   @rem this is required for Ninja build to work
-  call "%VS150COMNTOOLS%..\..\VC\vcvarsall.bat" %GRPC_BUILD_VS_TOOLS_ARCHITECTURE%
+  call "%VS150COMNTOOLS%..\..\VC\Auxiliary\Build\vcvarsall.bat" %GRPC_BUILD_VS_TOOLS_ARCHITECTURE%
   @rem restore command echo
   echo on
 )
