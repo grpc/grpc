@@ -77,8 +77,13 @@ class ClientIdleFilter {
 
   void EnterIdle();
 
-  void IncrementRefCount();
-  void Unref();
+  void IncrementCallCount();
+  void DecrementCallCount();
+
+  struct CallCountDecrementer {
+    ClientIdleFilter* filter;
+    void operator()() const { filter->DecrementCallCount(); }
+  };
 
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
@@ -107,12 +112,13 @@ absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
 ArenaPromise<TrailingMetadata> ClientIdleFilter::MakeCallPromise(
     ClientInitialMetadata initial_metadata,
     NextPromiseFactory next_promise_factory) {
-  IncrementRefCount();
+  using Decrementer = std::unique_ptr<ClientIdleFilter, CallCountDecrementer>;
+  IncrementCallCount();
   return Capture(
-      [](RefCountedPtr<ClientIdleFilter>* filter,
-         ArenaPromise<TrailingMetadata*>* next) { return (*next)(); },
-      RefCountedPtr<ClientIdleFilter>(this),
-      next_promise_factory(std::move(initial_metadata)));
+      [](Decrementer*, ArenaPromise<TrailingMetadata*>* next) {
+        return (*next)();
+      },
+      Decrementer(this), next_promise_factory(std::move(initial_metadata)));
 }
 
 void ChannelData::StartTransportOp(grpc_channel_element* elem,
