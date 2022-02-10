@@ -410,6 +410,9 @@ GRPC_XDS_TARGETS = [
     "grpc_resolver_xds",
     "grpc_resolver_c2p",
     "grpc_xds_server_config_fetcher",
+
+    # Not xDS-specific but currently only used by xDS.
+    "channel_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -969,6 +972,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args_preconditioning",
+        "channel_creds_registry",
         "channel_init",
         "gpr_base",
         "handshaker_registry",
@@ -1451,6 +1455,18 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_creds_registry",
+    hdrs = [
+        "src/core/lib/security/credentials/channel_creds_registry.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "json",
     ],
 )
 
@@ -2731,7 +2747,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_api.cc",
         "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
-        "src/core/ext/xds/xds_channel_creds.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
@@ -2756,7 +2771,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_bootstrap.h",
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
-        "src/core/ext/xds/xds_channel_creds.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
@@ -2787,6 +2801,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_creds_registry",
+        "config",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
@@ -2893,6 +2909,21 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_creds_registry_init",
+    srcs = [
+        "src/core/lib/security/credentials/channel_creds_registry_init.cc",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_secure",
+        "grpc_security_base",
+        "json",
     ],
 )
 

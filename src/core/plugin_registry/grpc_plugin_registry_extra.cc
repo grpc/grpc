@@ -77,12 +77,14 @@ namespace grpc_core {
 #ifndef GRPC_NO_XDS
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
+extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
   (void)builder;
 #ifndef GRPC_NO_XDS
   RegisterXdsChannelStackModifier(builder);
+  RegisterChannelDefaultCreds(builder);
 #endif
 }
 }  // namespace grpc_core
