@@ -424,7 +424,6 @@ endif
 # Also set PROTOBUF_CONFIG_OPTS to indicate cross-compilation to protobuf (e.g.,
 #  PROTOBUF_CONFIG_OPTS="--host=arm-linux --with-protoc=/usr/local/bin/protoc" )
 # Set HAS_PKG_CONFIG=false
-# To build tests, go to third_party/gflags and follow its ccmake instructions
 # Make sure that you enable building shared libraries and set your prefix to
 # something useful like /usr/local/cross
 # You will also need to set GRPC_CROSS_LDOPTS and GRPC_CROSS_AROPTS to hold
