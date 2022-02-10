@@ -29,6 +29,7 @@
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -209,9 +210,10 @@ class StreamsNotSeenTest : public ::testing::Test {
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
-    channel_ =
-        grpc_insecure_channel_create(JoinHostPort("127.0.0.1", port_).c_str(),
-                                     &client_channel_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(JoinHostPort("127.0.0.1", port_).c_str(),
+                                   creds, &client_channel_args);
+    grpc_channel_credentials_release(creds);
     // Wait for the channel to connect
     grpc_connectivity_state state = grpc_channel_check_connectivity_state(
         channel_, /*try_to_connect=*/true);

@@ -452,14 +452,12 @@ cdef class Channel:
         grpc_completion_queue_create_for_next(NULL))
     self._arguments = arguments
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
-    if channel_credentials is None:
-      self._state.c_channel = grpc_insecure_channel_create(
-          <char *>target, channel_args.c_args(), NULL)
-    else:
-      c_channel_credentials = channel_credentials.c()
-      self._state.c_channel = grpc_secure_channel_create(
-          c_channel_credentials, <char *>target, channel_args.c_args(), NULL)
-      grpc_channel_credentials_release(c_channel_credentials)
+    c_channel_credentials = (
+        channel_credentials.c() if channel_credentials is not None
+        else grpc_insecure_credentials_create())
+    self._state.c_channel = grpc_channel_create(
+        <char *>target, c_channel_credentials, channel_args.c_args())
+    grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):
     cdef char *c_target

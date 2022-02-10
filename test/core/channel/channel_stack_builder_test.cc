@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -56,8 +57,10 @@ bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
 
 TEST(ChannelStackBuilderTest, ReplaceFilter) {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_insecure_channel_create("target name isn't used", nullptr, nullptr);
+      grpc_channel_create("target name isn't used", creds, nullptr);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);

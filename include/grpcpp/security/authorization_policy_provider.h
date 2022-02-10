@@ -17,13 +17,9 @@
 
 #include <memory>
 
+#include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
-
-// TODO(yihuazhang): remove the forward declarations here and include
-// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
-typedef struct grpc_authorization_policy_provider
-    grpc_authorization_policy_provider;
 
 namespace grpc {
 namespace experimental {
