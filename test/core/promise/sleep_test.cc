@@ -31,7 +31,6 @@ namespace grpc_core {
 namespace {
 
 TEST(Sleep, Zzzz) {
-  grpc_init();
   ExecCtx exec_ctx;
   absl::Notification done;
   grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
@@ -44,28 +43,22 @@ TEST(Sleep, Zzzz) {
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_GE(ExecCtx::Get()->Now(), done_time);
-  grpc_shutdown();
 }
 
 TEST(Sleep, AlreadyDone) {
-  grpc_init();
   ExecCtx exec_ctx;
   absl::Notification done;
   grpc_millis done_time = ExecCtx::Get()->Now() - 1000;
-  // Sleep for one second then set done to true.
+  // Sleep for no time at all then set done to true.
   auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
                                [&done](absl::Status r) {
                                  EXPECT_EQ(r, absl::OkStatus());
                                  done.Notify();
                                });
   done.WaitForNotification();
-  exec_ctx.InvalidateNow();
-  EXPECT_GE(ExecCtx::Get()->Now(), done_time);
-  grpc_shutdown();
 }
 
 TEST(Sleep, Cancel) {
-  grpc_init();
   ExecCtx exec_ctx;
   absl::Notification done;
   grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
@@ -79,7 +72,6 @@ TEST(Sleep, Cancel) {
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_LT(ExecCtx::Get()->Now(), done_time);
-  grpc_shutdown();
 }
 
 }  // namespace
@@ -87,5 +79,8 @@ TEST(Sleep, Cancel) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int r = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return r;
 }
