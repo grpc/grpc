@@ -75,8 +75,7 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -91,8 +90,8 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(
-      f->server, ffd->localaddr.c_str(), server_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }

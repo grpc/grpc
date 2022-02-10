@@ -58,7 +58,7 @@ static grpc_server* create_proxy_server(const char* port,
       nullptr, &pem_key_cert_pair, 1, 0, nullptr);
   grpc_slice_unref(cert_slice);
   grpc_slice_unref(key_slice);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(s, port, ssl_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(s, port, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
   return s;
 }
@@ -74,8 +74,7 @@ static grpc_channel* create_proxy_client(const char* target,
       {const_cast<char*>("foo.test.google.fr")}};
   const grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
-  channel =
-      grpc_secure_channel_create(ssl_creds, target, new_client_args, nullptr);
+  channel = grpc_channel_create(target, ssl_creds, new_client_args);
   grpc_channel_credentials_release(ssl_creds);
   {
     grpc_core::ExecCtx exec_ctx;
@@ -119,9 +118,8 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(
-      creds, grpc_end2end_proxy_get_client_target(ffd->proxy), client_args,
-      nullptr);
+  f->client = grpc_channel_create(
+      grpc_end2end_proxy_get_client_target(ffd->proxy), creds, client_args);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -136,7 +134,7 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(
+  GPR_ASSERT(grpc_server_add_http2_port(
       f->server, grpc_end2end_proxy_get_server_port(ffd->proxy), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);

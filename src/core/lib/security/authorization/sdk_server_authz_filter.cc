@@ -107,6 +107,7 @@ ArenaPromise<TrailingMetadata> SdkServerAuthzFilter::MakeCallPromise(
 }
 
 const grpc_channel_filter SdkServerAuthzFilter::kFilterVtable =
-    MakePromiseBasedFilter<SdkServerAuthzFilter>();
+    MakePromiseBasedFilter<SdkServerAuthzFilter, FilterEndpoint::kServer>(
+        "sdk-server-authz");
 
 }  // namespace grpc_core

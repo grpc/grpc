@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2016 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,31 +18,24 @@
 
 set -e
 
-# TODO(jtattermusch): added in https://github.com/grpc/grpc/pull/17303, should be removed.
-export CONFIG=${config:-opt}
-
-if [ "$RELATIVE_COPY_PATH" == "" ]
+if [ "${RELATIVE_COPY_PATH}" == "" ]
 then
   mkdir -p /var/local/git
-  git clone "$EXTERNAL_GIT_ROOT" /var/local/git/grpc
+  git clone "${EXTERNAL_GIT_ROOT}" /var/local/git/grpc
   # clone gRPC submodules, use data from locally cloned submodules where possible
   # TODO: figure out a way to eliminate this following shellcheck suppressions
   # shellcheck disable=SC2016,SC1004
   (cd "${EXTERNAL_GIT_ROOT}" && git submodule foreach 'git clone ${EXTERNAL_GIT_ROOT}/${name} /var/local/git/grpc/${name}')
   (cd /var/local/git/grpc && git submodule init)
 else
-  mkdir -p "/var/local/git/grpc/$RELATIVE_COPY_PATH"
-  cp -r "$EXTERNAL_GIT_ROOT/$RELATIVE_COPY_PATH"/* "/var/local/git/grpc/$RELATIVE_COPY_PATH"
+  mkdir -p "/var/local/git/grpc/${RELATIVE_COPY_PATH}"
+  cp -r "${EXTERNAL_GIT_ROOT}/${RELATIVE_COPY_PATH}"/* "/var/local/git/grpc/${RELATIVE_COPY_PATH}"
 fi
+
+cd /var/local/git/grpc
 
 # ensure the "reports" directory exists
 mkdir -p reports
-
-# TODO(jtattermusch): this is garbage, remove it.
-$POST_GIT_STEP
-
-# TODO(jtattermusch): is this necessary?
-cd /var/local/git/grpc
 
 exit_code=0
 ${DOCKER_RUN_SCRIPT_COMMAND} || exit_code=$?
