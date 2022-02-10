@@ -267,7 +267,7 @@ class Chttp2IncomingByteStream final : public ByteStream {
   struct {
     grpc_closure closure;
     size_t max_size_hint;
-    grpc_core::Waker waker;
+    Waker waker;
   } next_action_;
   grpc_closure destroy_action_;
 };
