@@ -1382,6 +1382,27 @@ target_link_libraries(end2end_tests
   grpc_test_util
 )
 
+foreach(_hdr
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/fork.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
+  include/grpc/status.h
+  include/grpc/support/workaround_list.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
 
 endif()
 
@@ -1567,7 +1588,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1624,13 +1644,7 @@ add_library(grpc
   src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
-  src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
-  src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2172,7 +2186,6 @@ add_library(grpc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/init.cc
-  src/core/lib/surface/init_secure.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
@@ -2190,6 +2203,7 @@ add_library(grpc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
+  src/core/plugin_registry/grpc_plugin_registry_extra.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2512,12 +2526,12 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
+  src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
@@ -2558,11 +2572,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2600,6 +2610,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   src/core/lib/address_utils/parse_address.cc
@@ -2739,17 +2750,25 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
-  src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
+  src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/sdk_server_authz_filter.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
+  src/core/lib/security/credentials/fake/fake_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  src/core/lib/security/credentials/tls/tls_utils.cc
+  src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/json_util.cc
   src/core/lib/service_config/service_config.cc
   src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
@@ -2775,7 +2794,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
   src/core/lib/surface/init.cc
-  src/core/lib/surface/init_unsecure.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
@@ -2792,7 +2810,9 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
-  src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
+  src/core/plugin_registry/grpc_plugin_registry.cc
+  src/core/plugin_registry/grpc_plugin_registry_noextra.cc
+  src/core/tsi/fake_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
@@ -2837,6 +2857,7 @@ target_link_libraries(grpc_unsecure
   absl::flat_hash_map
   absl::inlined_vector
   absl::bind_front
+  absl::hash
   absl::statusor
   absl::variant
   absl::utility
@@ -3639,6 +3660,9 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
+  src/core/lib/security/credentials/insecure/insecure_credentials.cc
+  src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
+  src/core/tsi/local_transport_security.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
@@ -17503,7 +17527,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "gpr absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
   "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
@@ -17523,7 +17547,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "grpc_unsecure absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")
