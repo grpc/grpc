@@ -29,6 +29,7 @@ set PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
+@rem TODO(jtattermusch): set --inner_jobs args
 python tools/run_tests/task_runner.py -f artifact windows %TASK_RUNNER_EXTRA_FILTERS% -j 4
 set RUNTESTS_EXITCODE=%errorlevel%
 
