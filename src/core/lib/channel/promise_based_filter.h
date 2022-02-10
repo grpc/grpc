@@ -670,7 +670,7 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
 // class SomeChannelFilter {
 //  public:
 //   static absl::StatusOr<SomeChannelFilter> Create(
-//       const grpc_channel_args* args);
+//       const grpc_channel_args* args, grpc_channel_stack* stack);
 //   ArenaPromise<TrailingMetadata> MakeCallPromise(
 //       InitialMetadata* initial_metadata, NextPromiseFactory next_promise);
 // };
@@ -712,7 +712,8 @@ grpc_channel_filter MakePromiseBasedFilter(const char* name) {
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
         GPR_ASSERT(!args->is_last);
-        auto status = ChannelFilter::Create(args->channel_args);
+        auto status =
+            ChannelFilter::Create(args->channel_args, args->channel_stack);
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
         new (elem->channel_data) ChannelFilter(std::move(*status));
         return GRPC_ERROR_NONE;
