@@ -9695,6 +9695,7 @@ add_executable(core_configuration_test
   src/core/lib/channel/handshaker_registry.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
