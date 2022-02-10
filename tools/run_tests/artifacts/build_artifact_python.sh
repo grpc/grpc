@@ -90,7 +90,7 @@ ${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
 GRPCIO_TAR_GZ=${GRPCIO_TAR_GZ_LIST[0]}
-GRPCIO_STRIPPED_TAR_GZ=$(mktemp -t "XXXXXXXXXX.tar.gz")
+GRPCIO_STRIPPED_TAR_GZ=$(mktemp -t "TAR_GZ_XXXXXXXXXX")
 
 clean_non_source_files() {
 ( cd "$1"
