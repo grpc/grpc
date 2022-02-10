@@ -144,7 +144,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool = 'strip -x' if apple_toolchain?
+strip_tool += ' -x' if apple_toolchain?
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
