@@ -62,8 +62,8 @@ case $(uname -sm) in
   "Darwin x86_64")
     suffix=darwin-x86_64
     ;;
-  "MINGW"*)
-    suffix=windows-x86_64
+  "MINGW"* | "MSYS_NT"*)
+    suffix=windows-x86_64.exe
     ;;
   *)
     echo "Unsupported architecture: $(uname -sm)" >&2
