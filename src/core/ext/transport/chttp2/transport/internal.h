@@ -208,7 +208,7 @@ typedef struct grpc_chttp2_write_cb {
 
 namespace grpc_core {
 
-class Chttp2IncomingByteStream : public ByteStream {
+class Chttp2IncomingByteStream final : public ByteStream {
  public:
   Chttp2IncomingByteStream(grpc_chttp2_transport* transport,
                            grpc_chttp2_stream* stream, uint32_t frame_size,
@@ -216,9 +216,7 @@ class Chttp2IncomingByteStream : public ByteStream {
 
   void Orphan() override;
 
-  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-  grpc_error_handle Pull(grpc_slice* slice) override;
-  void Shutdown(grpc_error_handle error) override;
+  Poll<absl::StatusOr<Slice>> PollNext(size_t max_size_hint) override;
 
   // TODO(roth): When I converted this class to C++, I wanted to make it
   // inherit from RefCounted or InternallyRefCounted instead of continuing
@@ -269,7 +267,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   struct {
     grpc_closure closure;
     size_t max_size_hint;
-    grpc_closure* on_complete;
+    grpc_core::Waker waker;
   } next_action_;
   grpc_closure destroy_action_;
 };
@@ -544,7 +542,6 @@ struct grpc_chttp2_stream {
 
   grpc_core::OrphanablePtr<grpc_core::ByteStream> fetching_send_message;
   uint32_t fetched_send_message_length = 0;
-  grpc_slice fetching_slice = grpc_empty_slice();
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written = 0;
   int64_t flow_controlled_bytes_flowed = 0;
@@ -593,7 +590,7 @@ struct grpc_chttp2_stream {
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
-  grpc_closure* on_next = nullptr;  /* protected by t combiner */
+  grpc_core::Waker on_next;         /* protected by t combiner */
   bool pending_byte_stream = false; /* protected by t combiner */
   // cached length of buffer to be used by the transport thread in cases where
   // stream->pending_byte_stream == true. The value is saved before
@@ -604,6 +601,10 @@ struct grpc_chttp2_stream {
    * Accessed only by application thread when stream->pending_byte_stream ==
    * true */
   grpc_slice_buffer unprocessed_incoming_frames_buffer;
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
+  grpc_error_handle published_byte_stream_error = GRPC_ERROR_NONE;
   grpc_closure reset_byte_stream;
   grpc_error_handle byte_stream_error =
       GRPC_ERROR_NONE;              /* protected by t combiner */

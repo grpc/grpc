@@ -1285,10 +1285,10 @@ static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,
 }
 
 static void add_fetched_slice_locked(grpc_chttp2_transport* t,
-                                     grpc_chttp2_stream* s) {
-  s->fetched_send_message_length +=
-      static_cast<uint32_t> GRPC_SLICE_LENGTH(s->fetching_slice);
-  grpc_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
+                                     grpc_chttp2_stream* s,
+                                     grpc_core::Slice slice) {
+  s->fetched_send_message_length += slice.length();
+  grpc_slice_buffer_add(&s->flow_controlled_buffer, slice.TakeCSlice());
   maybe_become_writable_due_to_send_msg(t, s);
 }
 
@@ -1324,17 +1324,19 @@ static void continue_fetching_send_locked(grpc_chttp2_transport* t,
       }
       s->fetching_send_message.reset();
       return; /* early out */
-    } else if (s->fetching_send_message->Next(
-                   UINT32_MAX, GRPC_CLOSURE_INIT(&s->complete_fetch_locked,
-                                                 ::complete_fetch, s,
-                                                 grpc_schedule_on_exec_ctx))) {
-      grpc_error_handle error =
-          s->fetching_send_message->Pull(&s->fetching_slice);
-      if (error != GRPC_ERROR_NONE) {
-        s->fetching_send_message.reset();
-        grpc_chttp2_cancel_stream(t, s, error);
+    } else {
+      auto next = s->fetching_send_message->PollNext(UINT32_MAX);
+      if (auto* slice = absl::get_if<absl::StatusOr<grpc_core::Slice>>(&next)) {
+        if (!slice->ok()) {
+          s->fetching_send_message.reset();
+          grpc_chttp2_cancel_stream(t, s,
+                                    absl_status_to_grpc_error(slice->status()));
+          return;  // all done
+        } else {
+          add_fetched_slice_locked(t, s, std::move(**slice));
+        }
       } else {
-        add_fetched_slice_locked(t, s);
+        return;  // pending, will be resumed later
       }
     }
   }
@@ -1351,13 +1353,8 @@ static void complete_fetch_locked(void* gs, grpc_error_handle error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(gs);
   grpc_chttp2_transport* t = s->t;
   if (error == GRPC_ERROR_NONE) {
-    error = s->fetching_send_message->Pull(&s->fetching_slice);
-    if (error == GRPC_ERROR_NONE) {
-      add_fetched_slice_locked(t, s);
-      continue_fetching_send_locked(t, s);
-    }
-  }
-  if (error != GRPC_ERROR_NONE) {
+    continue_fetching_send_locked(t, s);
+  } else {
     s->fetching_send_message.reset();
     grpc_chttp2_cancel_stream(t, s, error);
   }
@@ -2953,8 +2950,8 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
   bs->Unref();
 }
 
-bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
-                                    grpc_closure* on_complete) {
+Poll<absl::StatusOr<Slice>> Chttp2IncomingByteStream::PollNext(
+    size_t max_size_hint) {
   GPR_TIMER_SCOPE("incoming_byte_stream_next", 0);
   if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
     return true;
