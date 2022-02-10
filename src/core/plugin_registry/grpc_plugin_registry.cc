@@ -23,6 +23,8 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/builtins.h"
 
+extern void grpc_register_extra_plugins(void);
+
 void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
@@ -59,35 +61,6 @@ void RlsLbPluginShutdown();
 void ServiceConfigParserInit(void);
 void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
-
-#ifndef GRPC_NO_XDS
-namespace grpc_core {
-void RbacFilterInit(void);
-void RbacFilterShutdown(void);
-void XdsClientGlobalInit();
-void XdsClientGlobalShutdown();
-}  // namespace grpc_core
-void grpc_certificate_provider_registry_init(void);
-void grpc_certificate_provider_registry_shutdown(void);
-namespace grpc_core {
-void FileWatcherCertificateProviderInit();
-void FileWatcherCertificateProviderShutdown();
-}  // namespace grpc_core
-void grpc_lb_policy_cds_init(void);
-void grpc_lb_policy_cds_shutdown(void);
-void grpc_lb_policy_xds_cluster_impl_init(void);
-void grpc_lb_policy_xds_cluster_impl_shutdown(void);
-void grpc_lb_policy_xds_cluster_resolver_init(void);
-void grpc_lb_policy_xds_cluster_resolver_shutdown(void);
-void grpc_lb_policy_xds_cluster_manager_init(void);
-void grpc_lb_policy_xds_cluster_manager_shutdown(void);
-void grpc_resolver_xds_init(void);
-void grpc_resolver_xds_shutdown(void);
-namespace grpc_core {
-void GoogleCloud2ProdResolverInit();
-void GoogleCloud2ProdResolverShutdown();
-}  // namespace grpc_core
-#endif
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 void grpc_resolver_binder_init(void);
@@ -126,31 +99,11 @@ void grpc_register_built_in_plugins(void) {
                        grpc_message_size_filter_shutdown);
   grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
                        grpc_core::FaultInjectionFilterShutdown);
-#ifndef GRPC_NO_XDS
-  // rbac_filter is being guarded with GRPC_NO_XDS to avoid a dependency on the re2 library by default
-  grpc_register_plugin(grpc_core::RbacFilterInit, grpc_core::RbacFilterShutdown);
-  grpc_register_plugin(grpc_core::XdsClientGlobalInit,
-                       grpc_core::XdsClientGlobalShutdown);
-  grpc_register_plugin(grpc_certificate_provider_registry_init,
-                       grpc_certificate_provider_registry_shutdown);
-  grpc_register_plugin(grpc_core::FileWatcherCertificateProviderInit,
-                       grpc_core::FileWatcherCertificateProviderShutdown);
-  grpc_register_plugin(grpc_lb_policy_cds_init, grpc_lb_policy_cds_shutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_impl_init,
-                       grpc_lb_policy_xds_cluster_impl_shutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_resolver_init,
-                       grpc_lb_policy_xds_cluster_resolver_shutdown);
-  grpc_register_plugin(grpc_lb_policy_xds_cluster_manager_init,
-                       grpc_lb_policy_xds_cluster_manager_shutdown);
-  grpc_register_plugin(grpc_resolver_xds_init, grpc_resolver_xds_shutdown);
-  grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
-                       grpc_core::GoogleCloud2ProdResolverShutdown);
-#endif
-
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   grpc_register_plugin(grpc_resolver_binder_init,
                        grpc_resolver_binder_shutdown);
 #endif
+  grpc_register_extra_plugins();
 }
 
 namespace grpc_core {
@@ -170,11 +123,8 @@ extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
+extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
-#ifndef GRPC_NO_XDS
-extern void RegisterXdsChannelStackModifier(
-    CoreConfiguration::Builder* builder);
-#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -188,12 +138,10 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
-#ifndef GRPC_NO_XDS
-  RegisterXdsChannelStackModifier(builder);
-#endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);
+  RegisterExtraFilters(builder);
   RegisterBuiltins(builder);
 }
 

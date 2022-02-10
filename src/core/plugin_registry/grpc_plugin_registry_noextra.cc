@@ -1,3 +1,4 @@
+//
 // Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,14 +12,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
 
-// Wrapper API declared in grpc.h
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/surface/builtins.h"
 
-// Required only for insecure build targets.
-const grpc_arg_pointer_vtable* grpc_authorization_policy_provider_arg_vtable() {
-  return nullptr;
-}
+void grpc_register_extra_plugins(void) {}
+
+namespace grpc_core {
+void RegisterExtraFilters(CoreConfiguration::Builder* /* builder */){}
+}  // namespace grpc_core

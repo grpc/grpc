@@ -888,16 +888,13 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         } else {
           grpc_channel_args* args =
               ReadArgs(action.create_channel().channel_args());
-          if (action.create_channel().has_channel_creds()) {
-            grpc_channel_credentials* creds =
-                ReadChannelCreds(action.create_channel().channel_creds());
-            g_channel = grpc_secure_channel_create(
-                creds, action.create_channel().target().c_str(), args, nullptr);
-            grpc_channel_credentials_release(creds);
-          } else {
-            g_channel = grpc_insecure_channel_create(
-                action.create_channel().target().c_str(), args, nullptr);
-          }
+          grpc_channel_credentials* creds =
+              action.create_channel().has_channel_creds()
+                  ? ReadChannelCreds(action.create_channel().channel_creds())
+                  : grpc_insecure_credentials_create();
+          g_channel = grpc_channel_create(
+              action.create_channel().target().c_str(), creds, args);
+          grpc_channel_credentials_release(creds);
           g_channel_actions.clear();
           for (int i = 0; i < action.create_channel().channel_actions_size();
                i++) {

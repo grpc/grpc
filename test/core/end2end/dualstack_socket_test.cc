@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -112,8 +113,11 @@ void test_connect(const char* server_host, const char* client_host, int port,
   cq = grpc_completion_queue_create_for_next(nullptr);
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
-  GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
-                  server, server_hostport.c_str())) > 0);
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  GPR_ASSERT((got_port = grpc_server_add_http2_port(
+                  server, server_hostport.c_str(), server_creds)) > 0);
+  grpc_server_credentials_release(server_creds);
   if (port == 0) {
     port = got_port;
   } else {
@@ -137,8 +141,9 @@ void test_connect(const char* server_host, const char* client_host, int port,
   } else {
     client_hostport = grpc_core::JoinHostPort(client_host, port);
   }
-  client =
-      grpc_insecure_channel_create(client_hostport.c_str(), nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  client = grpc_channel_create(client_hostport.c_str(), creds, nullptr);
+  grpc_channel_credentials_release(creds);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport.c_str(), client_hostport.c_str(),
