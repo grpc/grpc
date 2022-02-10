@@ -1842,8 +1842,6 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
-src/core/ext/xds/xds_channel_creds.cc \
-src/core/ext/xds/xds_channel_creds.h \
 src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
@@ -1924,6 +1922,7 @@ src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_factory.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/alloc.cc \
@@ -2257,6 +2256,8 @@ src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+src/core/lib/security/credentials/channel_creds_registry.h \
+src/core/lib/security/credentials/channel_creds_registry_init.cc \
 src/core/lib/security/credentials/composite/composite_credentials.cc \
 src/core/lib/security/credentials/composite/composite_credentials.h \
 src/core/lib/security/credentials/credentials.cc \
