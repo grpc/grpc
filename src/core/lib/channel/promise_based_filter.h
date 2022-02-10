@@ -77,7 +77,7 @@ class BaseCallData {
 // Specific call data per channel filter.
 // Note that we further specialize for clients and servers since their
 // implementations are very different.
-template <class ChannelFilter, bool kIsClient = ChannelFilter::is_client()>
+template <class ChannelFilter, bool kIsClient>
 class CallData;
 
 // Client implementation of call data.
@@ -661,8 +661,6 @@ class CallData<ChannelFilter, false> : public BaseCallData {
 // ChannelFilter contains the following:
 // class SomeChannelFilter {
 //  public:
-//   static constexpr bool is_client();
-//   static constexpr const char* name();
 //   static absl::StatusOr<SomeChannelFilter> Create(
 //       const grpc_channel_args* args);
 //   ArenaPromise<TrailingMetadata> MakeCallPromise(
@@ -670,9 +668,9 @@ class CallData<ChannelFilter, false> : public BaseCallData {
 // };
 // TODO(ctiller): allow implementing get_channel_info, start_transport_op in
 // some way on ChannelFilter.
-template <typename ChannelFilter>
-grpc_channel_filter MakePromiseBasedFilter() {
-  using CallData = promise_filter_detail::CallData<ChannelFilter>;
+template <typename ChannelFilter, bool kIsClient>
+grpc_channel_filter MakePromiseBasedFilter(const char* name) {
+  using CallData = promise_filter_detail::CallData<ChannelFilter, kIsClient>;
 
   return grpc_channel_filter{
       // start_transport_stream_op_batch
@@ -718,7 +716,7 @@ grpc_channel_filter MakePromiseBasedFilter() {
       // get_channel_info
       grpc_channel_next_get_info,
       // name
-      ChannelFilter::name(),
+      name,
   };
 }
 

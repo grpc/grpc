@@ -71,7 +71,7 @@ ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
 
 namespace {
 const grpc_channel_filter grpc_client_authority_filter =
-    MakePromiseBasedFilter<ClientAuthorityFilter>();
+    MakePromiseBasedFilter<ClientAuthorityFilter, true>("authority");
 
 bool add_client_authority_filter(ChannelStackBuilder* builder) {
   const grpc_channel_args* channel_args = builder->channel_args();

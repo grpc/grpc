@@ -60,11 +60,6 @@ class TrailingMetadataRecordingFilter {
     return TrailingMetadataRecordingFilter();
   }
 
-  static constexpr bool is_client() { return true; }
-  static constexpr const char* name() {
-    return "trailing-metadata-recording-filter";
-  }
-
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
       NextPromiseFactory next_promise_factory) {
@@ -92,7 +87,8 @@ class TrailingMetadataRecordingFilter {
 };
 
 grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable =
-    MakePromiseBasedFilter<TrailingMetadataRecordingFilter>();
+    MakePromiseBasedFilter<TrailingMetadataRecordingFilter, false>(
+        "trailing-metadata-recording-filter");
 absl::optional<GrpcStreamNetworkState::ValueType>
     TrailingMetadataRecordingFilter::stream_network_state_;
 
