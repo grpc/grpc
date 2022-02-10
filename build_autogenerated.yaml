@@ -5434,6 +5434,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/time.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -5456,6 +5457,7 @@ targets:
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
