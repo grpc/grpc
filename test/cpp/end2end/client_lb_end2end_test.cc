@@ -798,6 +798,39 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstUpdateToUnconnected) {
+  const int kNumServers = 2;
+  CreateServers(kNumServers);
+  StartServer(0);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+
+  std::vector<int> ports;
+
+  // Try to send rpcs against a list where the server is available.
+  ports.emplace_back(servers_[0]->port_);
+  response_generator.SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [0] *******");
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+
+  // Send resolution for which all servers are currently unavailable. Eventually
+  // this triggers replacing the existing working subchannel_list with the new
+  // currently unresponsive list.
+  ports.clear();
+  ports.emplace_back(grpc_pick_unused_port_or_die());
+  ports.emplace_back(servers_[1]->port_);
+  response_generator.SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [unavailable] *******");
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+
+  // Ensure that the last resolution was installed correctly by verifying that
+  // the channel becomes ready once one of if its endpoints becomes available.
+  gpr_log(GPR_INFO, "****** StartServer(1) *******");
+  StartServer(1);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstGlobalSubchannelPool) {
   // Start one server.
   const int kNumServers = 1;

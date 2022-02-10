@@ -909,8 +909,6 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
@@ -1014,18 +1012,8 @@ src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
-src/core/ext/transport/chttp2/client/insecure/README.md \
-src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
-src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
-src/core/ext/transport/chttp2/client/secure/README.md \
-src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
 src/core/ext/transport/chttp2/server/chttp2_server.cc \
 src/core/ext/transport/chttp2/server/chttp2_server.h \
-src/core/ext/transport/chttp2/server/insecure/README.md \
-src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
-src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
-src/core/ext/transport/chttp2/server/secure/README.md \
-src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc \
 src/core/ext/transport/chttp2/transport/README.md \
 src/core/ext/transport/chttp2/transport/bin_decoder.cc \
 src/core/ext/transport/chttp2/transport/bin_decoder.h \
@@ -1636,8 +1624,6 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
-src/core/ext/xds/xds_channel_creds.cc \
-src/core/ext/xds/xds_channel_creds.h \
 src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
@@ -1716,10 +1702,11 @@ src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
+src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/event_engine.cc \
-src/core/lib/event_engine/event_engine_factory.cc \
 src/core/lib/event_engine/event_engine_factory.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/event_engine/sockaddr.h \
 src/core/lib/gpr/README.md \
@@ -2056,6 +2043,8 @@ src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+src/core/lib/security/credentials/channel_creds_registry.h \
+src/core/lib/security/credentials/channel_creds_registry_init.cc \
 src/core/lib/security/credentials/composite/composite_credentials.cc \
 src/core/lib/security/credentials/composite/composite_credentials.h \
 src/core/lib/security/credentials/credentials.cc \
@@ -2187,7 +2176,6 @@ src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.cc \
 src/core/lib/surface/init.h \
-src/core/lib/surface/init_secure.cc \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/metadata_array.cc \
@@ -2222,6 +2210,7 @@ src/core/lib/transport/transport_op_string.cc \
 src/core/lib/uri/uri_parser.cc \
 src/core/lib/uri/uri_parser.h \
 src/core/plugin_registry/grpc_plugin_registry.cc \
+src/core/plugin_registry/grpc_plugin_registry_extra.cc \
 src/core/tsi/README.md \
 src/core/tsi/alts/crypt/aes_gcm.cc \
 src/core/tsi/alts/crypt/gsec.cc \

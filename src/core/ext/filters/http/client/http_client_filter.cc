@@ -32,6 +32,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
@@ -489,12 +490,14 @@ static grpc_error_handle http_client_init_channel_elem(
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (chand) channel_data();
   GPR_ASSERT(!args->is_last);
-  GPR_ASSERT(args->optional_transport != nullptr);
+  auto* transport = grpc_channel_args_find_pointer<grpc_transport>(
+      args->channel_args, GRPC_ARG_TRANSPORT);
+  GPR_ASSERT(transport != nullptr);
   chand->static_scheme = scheme_from_args(args->channel_args);
   chand->max_payload_size_for_get =
       max_payload_size_from_args(args->channel_args);
-  chand->user_agent = grpc_core::Slice(user_agent_from_args(
-      args->channel_args, args->optional_transport->vtable->name));
+  chand->user_agent = grpc_core::Slice(
+      user_agent_from_args(args->channel_args, transport->vtable->name));
   return GRPC_ERROR_NONE;
 }
 

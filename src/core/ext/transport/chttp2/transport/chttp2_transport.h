@@ -60,6 +60,14 @@ void TestOnlySetGlobalHttp2TransportInitCallback(
 
 void TestOnlySetGlobalHttp2TransportDestructCallback(
     TestOnlyGlobalHttp2TransportDestructCallback callback);
+
+// If \a disable is true, the HTTP2 transport will not update the connectivity
+// state tracker to TRANSIENT_FAILURE when a goaway is received. This prevents
+// the watchers (eg. client_channel) from noticing the GOAWAY, thereby allowing
+// us to test the racy behavior when a call is sent down the stack around the
+// same time that a GOAWAY is received.
+void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
+    bool disable);
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */

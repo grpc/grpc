@@ -1,4 +1,4 @@
-@rem Copyright 2017 gRPC authors.
+@rem Copyright 2022 The gRPC Authors
 @rem
 @rem Licensed under the Apache License, Version 2.0 (the "License");
 @rem you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ mkdir build
 cd build
 
 cmake -DgRPC_BUILD_TESTS=ON %* ../.. || goto :error
+
+@rem GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
+cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error
 
 endlocal
 

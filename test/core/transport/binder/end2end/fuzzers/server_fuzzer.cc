@@ -54,8 +54,8 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
         grpc_core::CoreConfiguration::Get()
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr);
-    grpc_core::Server::FromC(server)->SetupTransport(server_transport, nullptr,
-                                                     channel_args, nullptr);
+    (void)grpc_core::Server::FromC(server)->SetupTransport(
+        server_transport, nullptr, channel_args, nullptr);
     grpc_channel_args_destroy(channel_args);
     grpc_call* call1 = nullptr;
     grpc_call_details call_details1;

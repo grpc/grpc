@@ -55,6 +55,16 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/client/create_channel_internal.h"
 
+namespace {
+// grpc.io.action.BIND is the standard action name for binding to binder
+// transport server.
+const char* kStandardActionName = "grpc.io.action.BIND";
+
+// grpc::ChannelArguments key for specifying custom action name.
+const char* kCustomIntentActionNameArgKey =
+    "grpc.binder.custom_android_intent_action_name";
+}  // namespace
+
 namespace grpc {
 namespace experimental {
 
@@ -79,8 +89,35 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   GPR_ASSERT(jni_env_void != nullptr);
   GPR_ASSERT(security_policy != nullptr);
 
+  // Generate an unique connection ID that identifies this connection (Useful
+  // for mapping connection between Java and C++ code).
   std::string connection_id = grpc_binder::GetConnectionIdGenerator()->Generate(
       std::string(package_name), std::string(class_name));
+
+  grpc_channel_args channel_args_with_custom_action;
+  args.SetChannelArgs(&channel_args_with_custom_action);
+
+  // Check if user set an option to use non-standard action name to bind to
+  // server. At this moment this option is not intend for general production use
+  // and is mainly for stress testing purpose.
+  std::string action_name = kStandardActionName;
+  const grpc_arg* action_name_arg = grpc_channel_args_find(
+      &channel_args_with_custom_action, kCustomIntentActionNameArgKey);
+  if (action_name_arg != nullptr) {
+    // The option is set. Now check if it is a string.
+    char* action_name_arg_string = grpc_channel_arg_get_string(action_name_arg);
+    if (action_name_arg_string != nullptr) {
+      action_name = action_name_arg_string;
+    }
+  }
+  grpc_channel_args* channel_args;
+  {
+    // Passing the key down will cause gRPC internal error for unclear reason.
+    // Remove it here.
+    const char* to_remove[] = {kCustomIntentActionNameArgKey};
+    channel_args = grpc_channel_args_copy_and_remove(
+        &channel_args_with_custom_action, to_remove, 1);
+  }
 
   // After invoking this Java method, Java code will put endpoint binder into
   // `EndpointBinderPool` after the connection succeeds
@@ -89,13 +126,11 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   // see any benifits doing that.
   grpc_binder::TryEstablishConnection(static_cast<JNIEnv*>(jni_env_void),
                                       application, package_name, class_name,
-                                      connection_id);
+                                      action_name, connection_id);
 
   // Set server URI to a URI that contains connection id. The URI will be used
   // by subchannel connector to obtain correct endpoint binder from
   // `EndpointBinderPool`.
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
   grpc_channel_args* new_args;
   {
     grpc_arg server_uri_arg = grpc_channel_arg_string_create(
@@ -103,7 +138,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
         const_cast<char*>(("binder:" + connection_id).c_str()));
     const char* to_remove[] = {GRPC_ARG_SERVER_URI};
     new_args = grpc_channel_args_copy_and_add_and_remove(
-        &channel_args, to_remove, 1, &server_uri_arg, 1);
+        channel_args, to_remove, 1, &server_uri_arg, 1);
   }
 
   grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
@@ -114,6 +149,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 
   grpc_channel_args_destroy(new_args);
+  grpc_channel_args_destroy(channel_args);
 
   return channel;
 }
