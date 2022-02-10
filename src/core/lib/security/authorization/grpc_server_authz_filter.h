@@ -29,9 +29,6 @@ class GrpcServerAuthzFilter {
   static absl::StatusOr<GrpcServerAuthzFilter> Create(
       const grpc_channel_args* args);
 
-  static constexpr bool is_client() { return false; }
-  static constexpr const char* name() { return "grpc-server-authz"; }
-
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
       NextPromiseFactory next_promise_factory);
