@@ -108,10 +108,6 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_op* op;
   grpc_slice request_payload_slice = grpc_slice_from_static_string("foo");
   grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
-  grpc_byte_buffer* request_payload =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_byte_buffer* response_payload =
-      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   grpc_call_error error;
 
@@ -132,6 +128,8 @@ static void test_retry_transparent_max_concurrent_streams(
       grpc_slice_from_static_string("/service/method"),
       nullptr, deadline, nullptr);
   GPR_ASSERT(c);
+  grpc_byte_buffer* request_payload =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_byte_buffer* response_payload_recv = nullptr;
@@ -189,6 +187,8 @@ static void test_retry_transparent_max_concurrent_streams(
       grpc_slice_from_static_string("/service/method"),
       nullptr, deadline, nullptr);
   GPR_ASSERT(c2);
+  grpc_byte_buffer* request_payload2 =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_metadata_array initial_metadata_recv2;
   grpc_metadata_array_init(&initial_metadata_recv2);
   grpc_byte_buffer* response_payload_recv2 = nullptr;
@@ -203,7 +203,7 @@ static void test_retry_transparent_max_concurrent_streams(
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = request_payload;
+  op->data.send_message.send_message = request_payload2;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op++;
@@ -229,6 +229,8 @@ static void test_retry_transparent_max_concurrent_streams(
   // Server handles the first call.
   grpc_byte_buffer* request_payload_recv = nullptr;
   int was_cancelled = 2;
+  grpc_byte_buffer* response_payload =
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -263,7 +265,9 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   grpc_byte_buffer_destroy(request_payload_recv);
   GPR_ASSERT(was_cancelled == 0);
+  grpc_byte_buffer_destroy(response_payload);
   grpc_call_unref(s);
+  grpc_byte_buffer_destroy(request_payload);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   GPR_ASSERT(
       byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
@@ -301,6 +305,10 @@ static void test_retry_transparent_max_concurrent_streams(
   grpc_metadata_array_destroy(&request_metadata_recv);
 
   // Server handles the second call.
+  request_payload_recv = nullptr;
+  was_cancelled = 2;
+  grpc_byte_buffer* response_payload2 =
+      grpc_raw_byte_buffer_create(&response_payload_slice, 1);
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_MESSAGE;
@@ -313,7 +321,7 @@ static void test_retry_transparent_max_concurrent_streams(
   op->data.send_initial_metadata.count = 0;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = response_payload;
+  op->data.send_message.send_message = response_payload2;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
@@ -333,7 +341,9 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(byte_buffer_eq_slice(request_payload_recv, request_payload_slice));
   grpc_byte_buffer_destroy(request_payload_recv);
   GPR_ASSERT(was_cancelled == 0);
+  grpc_byte_buffer_destroy(response_payload2);
   grpc_call_unref(s);
+  grpc_byte_buffer_destroy(request_payload2);
   grpc_metadata_array_destroy(&initial_metadata_recv2);
   GPR_ASSERT(
       byte_buffer_eq_slice(response_payload_recv2, response_payload_slice));
@@ -343,9 +353,6 @@ static void test_retry_transparent_max_concurrent_streams(
   GPR_ASSERT(0 == grpc_slice_str_cmp(details2, "xyz"));
   grpc_slice_unref(details2);
   grpc_call_unref(c2);
-
-  grpc_byte_buffer_destroy(request_payload);
-  grpc_byte_buffer_destroy(response_payload);
 
   cq_verifier_destroy(cqv);
 
