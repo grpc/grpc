@@ -2921,6 +2921,7 @@ grpc_cc_library(
     deps = [
         "config",
         "gpr_base",
+        "grpc_fake_credentials",
         "grpc_secure",
         "grpc_security_base",
         "json",
