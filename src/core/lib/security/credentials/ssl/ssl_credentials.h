@@ -38,6 +38,7 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
       grpc_channel_args** new_args) override;
 
   int cmp(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
     return grpc_core::QsortCompare(
         static_cast<const grpc_channel_credentials*>(this), other);
   }
