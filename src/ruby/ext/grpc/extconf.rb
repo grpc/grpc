@@ -20,6 +20,8 @@ bsd = RUBY_PLATFORM =~ /bsd/
 darwin = RUBY_PLATFORM =~ /darwin/
 linux = RUBY_PLATFORM =~ /linux/
 cross_compiling = ENV['RCD_HOST_RUBY_VERSION'] # set by rake-compiler-dock in build containers
+# TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
+apple_toolchain = darwin && RUBY_ENGINE != 'truffleruby'
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -60,12 +62,7 @@ if RUBY_ENGINE == 'truffleruby'
   env_append 'CPPFLAGS', RbConfig::CONFIG['cppflags']
 end
 
-def apple_toolchain?
-  # TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
-  RUBY_PLATFORM =~ /darwin/ && RUBY_ENGINE != 'truffleruby'
-end
-
-if apple_toolchain? && !cross_compiling
+if apple_toolchain && !cross_compiling
   ENV['AR'] = 'libtool'
   ENV['ARFLAGS'] = '-o'
 end
@@ -77,7 +74,7 @@ ENV['EMBED_ZLIB'] = (RUBY_ENGINE != 'truffleruby').to_s
 ENV['EMBED_CARES'] = 'true'
 
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-if apple_toolchain? && !cross_compiling
+if apple_toolchain && !cross_compiling
   if RUBY_PLATFORM =~ /arm64/
     ENV['ARCH_FLAGS'] = '-arch arm64'
   else
@@ -116,7 +113,7 @@ $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', 'ext-export')
 ext_export_file += '-truffleruby' if RUBY_ENGINE == 'truffleruby'
 $LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
-$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain?
+$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
@@ -144,7 +141,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool += ' -x' if apple_toolchain?
+strip_tool += ' -x' if apple_toolchain
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
