@@ -215,6 +215,12 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 
 ChannelArguments ServerBuilder::BuildChannelArgs() {
   ChannelArguments args;
+  if (max_receive_message_size_ >= -1) {
+    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
+  }
+  if (max_send_message_size_ >= -1) {
+    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
+  }
   for (const auto& option : options_) {
     option->UpdateArguments(&args);
     option->UpdatePlugins(&plugins_);
@@ -241,12 +247,6 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
     args.SetPointerWithVtable(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
                               authorization_provider_->c_provider(),
                               grpc_authorization_policy_provider_arg_vtable());
-  }
-  if (max_receive_message_size_ >= -1) {
-    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
-  }
-  if (max_send_message_size_ >= -1) {
-    args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
   }
   return args;
 }
