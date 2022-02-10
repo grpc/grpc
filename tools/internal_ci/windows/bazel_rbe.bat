@@ -37,7 +37,6 @@ bazel --version
 powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 
-@rem TODO(jtattermusch): windows RBE should be able to use the same credentials as Linux RBE.
 bazel --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test --invocation_id="%BAZEL_INVOCATION_ID%" %BAZEL_FLAGS% --workspace_status_command=tools/remote_build/workspace_status_kokoro.bat //test/...
 set BAZEL_EXITCODE=%errorlevel%
 
