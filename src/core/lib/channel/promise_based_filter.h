@@ -35,6 +35,9 @@
 
 namespace grpc_core {
 
+// Designator for whether a filter is client side or server side.
+// Please don't use this outside calls to MakePromiseBasedFilter - it's intended
+// to be deleted once the promise conversion is complete.
 enum class FilterEndpoint {
   kClient,
   kServer,
