@@ -23,8 +23,17 @@ cd build
 mkdir %ARCHITECTURE%
 cd %ARCHITECTURE%
 
-cmake -G "Visual Studio 14 2015" -A %ARCHITECTURE% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON  -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% ../../.. || goto :error
-cmake --build . --target grpc_csharp_ext --config %MSBUILD_CONFIG% || goto :error
+@rem set cl.exe build environment to build with VS2015 tooling
+@rem this is required for Ninja build to work
+call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" %ARCHITECTURE%
+@rem restore command echo
+echo on
+
+@rem Select MSVC compiler (cl.exe) explicitly to make sure we don't end up gcc from mingw or cygwin
+@rem (both are on path in kokoro win workers)
+cmake -G Ninja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_BUILD_TYPE=%MSBUILD_CONFIG% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON ../../.. || goto :error
+
+ninja -j%GRPC_RUN_TESTS_JOBS% grpc_csharp_ext || goto :error
 
 cd ..\..\..\src\csharp
 
