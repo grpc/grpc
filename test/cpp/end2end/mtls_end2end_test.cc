@@ -220,11 +220,12 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     }
     auto server_credentials =
         ::grpc::experimental::TlsServerCredentials(server_creds_options);
+    ports_.resize(GetParam().num_listening_ports(), 0);
     endpoint_info_.resize(GetParam().num_listening_ports());
     for (int i = 0; i < GetParam().num_listening_ports(); ++i) {
       endpoint_info_.push_back(EndPointInfo());
       builder.AddListeningPort("0.0.0.0:0", server_credentials,
-                               &endpoint_info_[i].port);
+                               &ports_[i]);
     }
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
@@ -301,9 +302,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_credentials =
         ::grpc::experimental::TlsCredentials(channel_creds_options);
     for (int i = 0; i < GetParam().num_listening_ports(); ++i) {
-      ASSERT_NE(0, endpoint_info_[i].port);
+      ASSERT_NE(0, ports_[i]);
       endpoint_info_[i].server_address =
-          absl::StrCat("localhost:", endpoint_info_[i].port);
+          absl::StrCat("localhost:", ports_[i]);
       endpoint_info_[i].stub =
           EchoTestService::NewStub(::grpc::CreateCustomChannel(
               endpoint_info_[i].server_address, channel_credentials, args));
@@ -318,10 +319,10 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   void RunServerLoop() { server_->Wait(); }
 
   struct EndPointInfo {
-    int port = 0;
     std::string server_address;
     std::unique_ptr<EchoTestService::Stub> stub;
   };
+  std::vector<int> ports_;
   std::vector<EndPointInfo> endpoint_info_;
   EchoServer service_;
   std::unique_ptr<::grpc::Server> server_;
@@ -342,7 +343,7 @@ TEST_P(AdvancedTlsEnd2EndTest, mTLSTests) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    TlsKeyLogging, AdvancedTlsEnd2EndTest,
+    MutualTls, AdvancedTlsEnd2EndTest,
     // We only choose a small subset of all the possible combination of these
     // security primitives for testing, because as we add more primitives, the
     // combination set would grow exponentially.
