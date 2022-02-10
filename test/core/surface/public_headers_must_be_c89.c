@@ -114,7 +114,9 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_channel_get_target);
   printf("%lx", (unsigned long) grpc_channel_get_info);
   printf("%lx", (unsigned long) grpc_channel_reset_connect_backoff);
-  printf("%lx", (unsigned long) grpc_insecure_channel_create);
+  printf("%lx", (unsigned long) grpc_channel_credentials_release);
+  printf("%lx", (unsigned long) grpc_server_credentials_release);
+  printf("%lx", (unsigned long) grpc_channel_create);
   printf("%lx", (unsigned long) grpc_lame_client_channel_create);
   printf("%lx", (unsigned long) grpc_channel_destroy);
   printf("%lx", (unsigned long) grpc_call_cancel);
@@ -130,7 +132,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_server_config_fetcher_xds_create);
   printf("%lx", (unsigned long) grpc_server_config_fetcher_destroy);
   printf("%lx", (unsigned long) grpc_server_set_config_fetcher);
-  printf("%lx", (unsigned long) grpc_server_add_insecure_http2_port);
+  printf("%lx", (unsigned long) grpc_server_add_http2_port);
   printf("%lx", (unsigned long) grpc_server_start);
   printf("%lx", (unsigned long) grpc_server_shutdown_and_notify);
   printf("%lx", (unsigned long) grpc_server_cancel_all_calls);
@@ -170,7 +172,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_ssl_session_cache_destroy);
   printf("%lx", (unsigned long) grpc_ssl_session_cache_create_channel_arg);
   printf("%lx", (unsigned long) grpc_call_credentials_release);
-  printf("%lx", (unsigned long) grpc_channel_credentials_release);
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_set_ssl_roots_override_callback);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create);
@@ -188,8 +189,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_auth_metadata_context_copy);
   printf("%lx", (unsigned long) grpc_auth_metadata_context_reset);
   printf("%lx", (unsigned long) grpc_metadata_credentials_create_from_plugin);
-  printf("%lx", (unsigned long) grpc_secure_channel_create);
-  printf("%lx", (unsigned long) grpc_server_credentials_release);
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_create);
   printf("%lx", (unsigned long) grpc_ssl_server_certificate_config_destroy);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create);
@@ -198,7 +197,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_options_using_config_fetcher);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_options_destroy);
   printf("%lx", (unsigned long) grpc_ssl_server_credentials_create_with_options);
-  printf("%lx", (unsigned long) grpc_server_add_secure_http2_port);
   printf("%lx", (unsigned long) grpc_call_set_credentials);
   printf("%lx", (unsigned long) grpc_server_credentials_set_auth_metadata_processor);
   printf("%lx", (unsigned long) grpc_alts_credentials_client_options_create);
@@ -225,6 +223,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_crl_directory);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_verify_server_cert);
   printf("%lx", (unsigned long) grpc_tls_credentials_options_set_check_call_host);
+  printf("%lx", (unsigned long) grpc_insecure_credentials_create);
+  printf("%lx", (unsigned long) grpc_insecure_server_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_credentials_create);
   printf("%lx", (unsigned long) grpc_xds_server_credentials_create);
   printf("%lx", (unsigned long) grpc_authorization_policy_provider_static_data_create);

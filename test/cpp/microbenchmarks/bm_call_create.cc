@@ -26,6 +26,7 @@
 #include <benchmark/benchmark.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/channel.h>
@@ -93,11 +94,16 @@ class BaseChannelFixture {
   grpc_channel* const channel_;
 };
 
+static grpc_channel* CreateChannel() {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel = grpc_channel_create("localhost:1234", creds, nullptr);
+  grpc_channel_credentials_release(creds);
+  return channel;
+}
+
 class InsecureChannel : public BaseChannelFixture {
  public:
-  InsecureChannel()
-      : BaseChannelFixture(
-            grpc_insecure_channel_create("localhost:1234", nullptr, nullptr)) {}
+  InsecureChannel() : BaseChannelFixture(CreateChannel()) {}
 };
 
 class LameChannel : public BaseChannelFixture {

@@ -66,7 +66,7 @@ static void run_test(const char* target, size_t nops) {
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
-  channel = grpc_secure_channel_create(ssl_creds, target, &args, nullptr);
+  channel = grpc_channel_create(target, ssl_creds, &args);
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
