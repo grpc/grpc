@@ -387,15 +387,49 @@ const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
 const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
   if (src == nullptr) return nullptr;
   std::map<absl::string_view, const grpc_arg*> values;
+  std::map<absl::string_view, std::vector<std::string>> concatenated_values;
   for (size_t i = 0; i < src->num_args; i++) {
-    values[src->args[i].key] = &src->args[i];
+    absl::string_view key = src->args[i].key;
+    // User-agent strings were traditionally multi-valued and concatenated.
+    // We preserve this behavior for backwards compatibility.
+    if (key == GRPC_ARG_PRIMARY_USER_AGENT_STRING ||
+        key == GRPC_ARG_SECONDARY_USER_AGENT_STRING) {
+      if (src->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                std::string(key).c_str());
+      } else {
+        concatenated_values[key].push_back(src->args[i].value.string);
+      }
+      continue;
+    }
+    auto it = values.find(key);
+    if (it == values.end()) {
+      values[key] = &src->args[i];
+    } else {
+      // Traditional grpc_channel_args_find behavior was to pick the first
+      // value.
+      // For compatibility with existing users, we will do the same here.
+    }
   }
-  if (values.size() == src->num_args) return grpc_channel_args_copy(src);
+  if (values.size() + concatenated_values.size() == src->num_args) {
+    return grpc_channel_args_copy(src);
+  }
+  // Concatenate the concatenated values.
+  std::map<absl::string_view, std::string> concatenated_values_str;
+  for (const auto& concatenated_value : concatenated_values) {
+    concatenated_values_str[concatenated_value.first] =
+        absl::StrJoin(concatenated_value.second, " ");
+  }
   // Create the result
   std::vector<grpc_arg> argv;
   argv.reserve(values.size());
   for (const auto& a : values) {
     argv.push_back(*a.second);
+  }
+  for (const auto& a : concatenated_values_str) {
+    argv.push_back(
+        grpc_channel_arg_string_create(const_cast<char*>(a.first.data()),
+                                       const_cast<char*>(a.second.c_str())));
   }
   grpc_channel_args args = {argv.size(), argv.data()};
   // Log that we're mutating things
