@@ -60,6 +60,11 @@ class grpc_google_default_channel_credentials
 
   grpc_channel_args* update_arguments(grpc_channel_args* args) override;
 
+  int cmp(const grpc_channel_credentials* other) const override {
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
+
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();
   }

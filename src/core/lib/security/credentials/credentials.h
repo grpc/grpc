@@ -130,6 +130,8 @@ struct grpc_channel_credentials
     return args;
   }
 
+  virtual int cmp(const grpc_channel_credentials* other) const = 0;
+
   const char* type() const { return type_; }
 
  private:

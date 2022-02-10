@@ -37,6 +37,11 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
+  int cmp(const grpc_channel_credentials* other) const override {
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
+
   // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
   // version should be done for testing purposes only.
   void set_min_tls_version(grpc_tls_version min_tls_version);

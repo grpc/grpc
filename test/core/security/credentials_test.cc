@@ -555,6 +555,11 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
                0);
     return nullptr;
   }
+
+  int cmp(const grpc_channel_credentials* other) const override {
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
 };
 }  // namespace
 
@@ -641,6 +646,11 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
     GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
                0);
     return nullptr;
+  }
+
+  int cmp(const grpc_channel_credentials* other) const override {
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
   }
 };
 }  // namespace

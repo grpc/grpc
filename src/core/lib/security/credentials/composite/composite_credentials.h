@@ -56,6 +56,11 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
     return inner_creds_->update_arguments(args);
   }
 
+  int cmp(const grpc_channel_credentials* other) const override {
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
+
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
   }

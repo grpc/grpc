@@ -41,6 +41,11 @@ class XdsCredentials final : public grpc_channel_credentials {
       RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
       const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
+  int cmp(const grpc_channel_credentials* other) const override {
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
+
  private:
   RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
 };
