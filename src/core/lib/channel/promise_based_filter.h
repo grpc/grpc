@@ -35,6 +35,11 @@
 
 namespace grpc_core {
 
+enum class FilterEndpoint {
+  kClient,
+  kServer,
+};
+
 namespace promise_filter_detail {
 
 // Call data shared between all implementations of promise-based filters.
@@ -77,12 +82,12 @@ class BaseCallData {
 // Specific call data per channel filter.
 // Note that we further specialize for clients and servers since their
 // implementations are very different.
-template <class ChannelFilter, bool kIsClient>
+template <class ChannelFilter, FilterEndpoint endpoint>
 class CallData;
 
 // Client implementation of call data.
 template <class ChannelFilter>
-class CallData<ChannelFilter, true> : public BaseCallData {
+class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
  public:
   CallData(grpc_call_element* elem, const grpc_call_element_args* args)
       : BaseCallData(elem, args) {
@@ -386,7 +391,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
 // Server implementation of call data.
 template <class ChannelFilter>
-class CallData<ChannelFilter, false> : public BaseCallData {
+class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
  public:
   CallData(grpc_call_element* elem, const grpc_call_element_args* args)
       : BaseCallData(elem, args) {
@@ -668,9 +673,9 @@ class CallData<ChannelFilter, false> : public BaseCallData {
 // };
 // TODO(ctiller): allow implementing get_channel_info, start_transport_op in
 // some way on ChannelFilter.
-template <typename ChannelFilter, bool kIsClient>
+template <typename ChannelFilter, FilterEndpoint kEndpoint>
 grpc_channel_filter MakePromiseBasedFilter(const char* name) {
-  using CallData = promise_filter_detail::CallData<ChannelFilter, kIsClient>;
+  using CallData = promise_filter_detail::CallData<ChannelFilter, kEndpoint>;
 
   return grpc_channel_filter{
       // start_transport_stream_op_batch

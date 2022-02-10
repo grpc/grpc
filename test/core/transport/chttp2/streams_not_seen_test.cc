@@ -87,7 +87,8 @@ class TrailingMetadataRecordingFilter {
 };
 
 grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable =
-    MakePromiseBasedFilter<TrailingMetadataRecordingFilter, false>(
+    MakePromiseBasedFilter<TrailingMetadataRecordingFilter,
+                           FilterEndpoint::kServer>(
         "trailing-metadata-recording-filter");
 absl::optional<GrpcStreamNetworkState::ValueType>
     TrailingMetadataRecordingFilter::stream_network_state_;
