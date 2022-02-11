@@ -20,8 +20,6 @@ mkdir cmake
 cd cmake
 mkdir build
 cd build
-mkdir %ARCHITECTURE%
-cd %ARCHITECTURE%
 
 @rem use setlocal/endlocal to prevent the C++ build env variables from polluting the environment for "dotnet build"
 setlocal
@@ -34,13 +32,13 @@ echo on
 
 @rem Select MSVC compiler (cl.exe) explicitly to make sure we don't end up gcc from mingw or cygwin
 @rem (both are on path in kokoro win workers)
-cmake -G Ninja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_BUILD_TYPE=%MSBUILD_CONFIG% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON ../../.. || goto :error
+cmake -G Ninja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_BUILD_TYPE=%MSBUILD_CONFIG% -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON ../.. || goto :error
 
 ninja -j%GRPC_RUN_TESTS_JOBS% grpc_csharp_ext || goto :error
 
 endlocal
 
-cd ..\..\..\src\csharp
+cd ..\..\src\csharp
 
 dotnet build --configuration %MSBUILD_CONFIG% Grpc.sln || goto :error
 
