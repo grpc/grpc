@@ -712,7 +712,7 @@ static grpc_timer_check_result timer_check(grpc_core::Timestamp* next) {
             .milliseconds_after_process_epoch());
 #else
     gpr_log(GPR_INFO, "TIMER CHECK BEGIN: now=%" PRId64 " next=%s min=%" PRId64,
-            now, next_str.c_str(),
+            now.milliseconds_after_process_epoch(), next_str.c_str(),
             min_timer.milliseconds_after_process_epoch());
 #endif
   }
