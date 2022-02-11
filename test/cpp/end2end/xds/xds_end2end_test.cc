@@ -6355,6 +6355,8 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
+  const char* kNewCluster3Name = "new_cluster_3";
+  const char* kNewEdsService3Name = "new_eds_service_name_3";
   // Populate new EDS resources.
   EdsResourceArgs args1({
       {"locality0", {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()}},
@@ -6362,10 +6364,15 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   EdsResourceArgs args2({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
+  EdsResourceArgs args3({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args2, kNewEdsService2Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args3, kNewEdsService3Name));
   // Populate new CDS resources.
   Cluster new_cluster1 = default_cluster_;
   new_cluster1.set_name(kNewCluster1Name);
@@ -6378,17 +6385,27 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   new_cluster2.mutable_eds_cluster_config()->set_service_name(
       kNewEdsService2Name);
   balancer_->ads_service()->SetCdsResource(new_cluster2);
+  Cluster new_cluster3 = default_cluster_;
+  new_cluster3.set_name(kNewCluster3Name);
+  new_cluster3.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService3Name);
+  new_cluster3.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(new_cluster3);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
   cluster_config.add_clusters(kNewCluster2Name);
+  cluster_config.add_clusters(kNewCluster3Name);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Wait for traffic to go backend 0, meaning we failed over to the second
-  // priority.
+  // priority which is up (it does not matter that this cluster does not have
+  // ring hash configured because the aggreate already has ring hash
+  // configured).
   WaitForBackend(0);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");

@@ -405,7 +405,14 @@ void CdsLb::OnClusterChanged(const std::string& name,
           config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
     // Construct config for child policy.
     Json::Object xds_lb_policy;
-    if (cluster_data.lb_policy == "RING_HASH") {
+    bool ring_hash = (cluster_data.lb_policy == "RING_HASH");
+    if (config_->cluster() != name) {
+      // Aggregate case, we look up the ring hash policy on the aggregate.
+      auto it = watchers_.find(config_->cluster());
+      GPR_ASSERT(it != watchers_.end());
+      ring_hash = (it->second.update->lb_policy == "RING_HASH");
+    }
+    if (ring_hash) {
       xds_lb_policy["RING_HASH"] = Json::Object{
           {"min_ring_size", cluster_data.min_ring_size},
           {"max_ring_size", cluster_data.max_ring_size},
