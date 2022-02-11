@@ -150,7 +150,7 @@ g_stands_for = "great"  # @unused
 
 core_version = "22.0.0"  # @unused
 
-version = "1.44.0-pre2"  # @unused
+version = "1.44.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
