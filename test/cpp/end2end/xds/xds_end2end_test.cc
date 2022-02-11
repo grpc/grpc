@@ -6394,7 +6394,7 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  // Verifying that we are using ring has as only 1 endpoint is receiving all
+  // Verifying that we are using ring hash as only 1 endpoint is receiving all
   // the traffic.
   CheckRpcSendOk(100);
   bool found = false;
