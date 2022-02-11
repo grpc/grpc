@@ -1481,8 +1481,6 @@ class Channel(grpc.Channel):
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
         cygrpc.fork_register_channel(self)
-        if cygrpc.g_gevent_activated:
-            cygrpc.gevent_increment_channel_count()
 
     def _process_python_options(self, python_options):
         """Sets channel attributes according to python-only channel options."""
@@ -1549,8 +1547,6 @@ class Channel(grpc.Channel):
         self._unsubscribe_all()
         self._channel.close(cygrpc.StatusCode.cancelled, 'Channel closed!')
         cygrpc.fork_unregister_channel(self)
-        if cygrpc.g_gevent_activated:
-            cygrpc.gevent_decrement_channel_count()
 
     def _close_on_fork(self):
         self._unsubscribe_all()

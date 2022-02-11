@@ -34,6 +34,7 @@ include "_cygrpc/time.pxd.pxi"
 include "_cygrpc/vtable.pxd.pxi"
 include "_cygrpc/_hooks.pxd.pxi"
 
+include "_cygrpc/iomgr.pxd.pxi"
 
 include "_cygrpc/grpc_gevent.pxd.pxi"
 

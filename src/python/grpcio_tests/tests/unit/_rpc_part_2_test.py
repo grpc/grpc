@@ -22,6 +22,7 @@ import unittest
 import grpc
 from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit._rpc_test_helpers import BaseRPCTest
 from tests.unit._rpc_test_helpers import Callback
 from tests.unit._rpc_test_helpers import TIMEOUT_SHORT
@@ -36,6 +37,8 @@ from tests.unit._rpc_test_helpers import unary_unary_multi_callable
 from tests.unit.framework.common import test_constants
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "Causes deadlock under gevent.")
 class RPCPart2Test(BaseRPCTest, unittest.TestCase):
 
     def testDefaultThreadPoolIsUsed(self):

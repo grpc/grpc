@@ -25,6 +25,7 @@ import grpc
 from grpc import _grpcio_metadata
 
 from tests.unit import _tcp_proxy
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
 _UNARY_UNARY = '/test/UnaryUnary'
@@ -258,6 +259,8 @@ def _stream_stream_client(channel, multicallable_kwargs, message):
                 i, response))
 
 
+@unittest.skipIf(test_common.running_under_gevent(),
+                 "This test is nondeterministic under gevent.")
 class CompressionTest(unittest.TestCase):
 
     def assertCompressed(self, compression_ratio):
