@@ -22,10 +22,13 @@
 
 #include <atomic>
 
+#include "idle_filter_state.h"
+
 #include "src/core/ext/filters/client_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/http2_errors.h"
 
@@ -61,6 +64,11 @@ class ClientIdleFilter {
   static absl::StatusOr<ClientIdleFilter> Create(
       const grpc_channel_args* args, grpc_channel_stack* channel_stack);
 
+  ClientIdleFilter(const ClientIdleFilter&) = delete;
+  ClientIdleFilter& operator=(const ClientIdleFilter&) = delete;
+  ClientIdleFilter(ClientIdleFilter&&) = default;
+  ClientIdleFilter& operator=(ClientIdleFilter&&) = default;
+
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
@@ -73,9 +81,7 @@ class ClientIdleFilter {
         client_idle_timeout_(client_idle_timeout) {}
   ~ClientIdleFilter() = default;
 
-  static void IdleTimerCallback(void* arg, grpc_error_handle error);
-  static void IdleTransportOpCompleteCallback(void* arg,
-                                              grpc_error_handle error);
+  void StartTransportOp(grpc_channel_element* elem, grpc_transport_op* op);
 
   void StartIdleTimer();
 
@@ -92,25 +98,17 @@ class ClientIdleFilter {
 
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
-  // Timeout after the last RPC finishes on the client channel at which the
-  // channel goes back into IDLE state.
   grpc_millis client_idle_timeout_;
+  std::shared_ptr<IdleFilterState> idle_filter_state_{
+      std::make_shared<IdleFilterState>(false)};
 
-  // Member data used to track the state of channel.
-  IdleFilterState idle_filter_state_{false};
-
-  // Idle timer and its callback closure.
-  grpc_timer idle_timer_;
-  grpc_closure idle_timer_callback_;
-
-  // The transport op telling the client channel to enter IDLE.
-  grpc_transport_op idle_transport_op_;
-  grpc_closure idle_transport_op_complete_callback_;
+  ActivityPtr activity_;
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
     const grpc_channel_args* args, grpc_channel_stack* channel_stack) {
-  return ClientIdleFilter(channel_stack, GetClientIdleTimeout(args));
+  ClientIdleFilter filter(channel_stack, GetClientIdleTimeout(args));
+  return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 // Construct a promise for one call.
@@ -119,116 +117,73 @@ ArenaPromise<TrailingMetadata> ClientIdleFilter::MakeCallPromise(
     NextPromiseFactory next_promise_factory) {
   using Decrementer = std::unique_ptr<ClientIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
-  return Capture(
+  return ArenaPromise<TrailingMetadata>(Capture(
       [](Decrementer*, ArenaPromise<TrailingMetadata*>* next) {
         return (*next)();
       },
-      Decrementer(this), next_promise_factory(std::move(initial_metadata)));
+      Decrementer(this), next_promise_factory(std::move(initial_metadata))));
 }
 
-void ChannelData::StartTransportOp(grpc_channel_element* elem,
-                                   grpc_transport_op* op) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+void ClientIdleFilter::StartTransportOp(grpc_channel_element* elem,
+                                        grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     // IncreaseCallCount() introduces a phony call and prevent the timer from
     // being reset by other threads.
-    chand->IncreaseCallCount();
-    // If the timer has been set, cancel the timer.
-    // No synchronization issues here. grpc_timer_cancel() is valid as long as
-    // the timer has been init()ed before.
-    grpc_timer_cancel(&chand->idle_timer_);
+    IncreaseCallCount();
+    activity_.reset();
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
 }
 
 void ClientIdleFilter::IncreaseCallCount() {
-  idle_filter_state_.IncreaseCallCount();
+  idle_filter_state_->IncreaseCallCount();
 }
 
 void ClientIdleFilter::DecreaseCallCount() {
-  if (idle_filter_state_.DecreaseCallCount()) {
+  if (idle_filter_state_->DecreaseCallCount()) {
     // If there are no more calls in progress, start the idle timer.
     StartIdleTimer();
   }
 }
 
-ClientIdleFilter::ClientIdleFilter() {
-  // If the idle filter is explicitly disabled in channel args, this ctor should
-  // not get called.
-  GPR_ASSERT(client_idle_timeout_ != GRPC_MILLIS_INF_FUTURE);
-  GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %" PRId64 " ms",
-                       client_idle_timeout_);
-  // Initialize the idle timer without setting it.
-  grpc_timer_init_unset(&idle_timer_);
-  // Initialize the idle timer callback closure.
-  GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
-                    grpc_schedule_on_exec_ctx);
-  // Initialize the idle transport op complete callback.
-  GRPC_CLOSURE_INIT(&idle_transport_op_complete_callback_,
-                    IdleTransportOpCompleteCallback, this,
-                    grpc_schedule_on_exec_ctx);
-}
-
-void ChannelData::IdleTimerCallback(void* arg, grpc_error_handle error) {
-  GRPC_IDLE_FILTER_LOG("timer alarms");
-  ChannelData* chand = static_cast<ChannelData*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    GRPC_IDLE_FILTER_LOG("timer canceled");
-    GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
-    return;
-  }
-  if (chand->idle_filter_state_.CheckTimer()) {
-    chand->StartIdleTimer();
-  } else {
-    chand->EnterIdle();
-  }
-  GRPC_IDLE_FILTER_LOG("timer finishes");
-  GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
-}
-
-void ChannelData::IdleTransportOpCompleteCallback(void* arg,
-                                                  grpc_error_handle /*error*/) {
-  ChannelData* chand = static_cast<ChannelData*>(arg);
-  GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
-}
-
 void ChannelData::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
+  auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
-                  &idle_timer_callback_);
+  // DO NOT SUBMIT: activity should hold channel stack..
+  activity_ = MakeActivity(Loop(TrySeq(
+      Sleep(client_idle_timeout_),
+      [idle_filter_state]() -> LoopCtl<absl::Status> {
+        if (idle_filter_state->CheckTimer()) {
+          return Continue{};
+        } else {
+          return []() {
+            auto* op = grpc_transport_op_create();
+            op->disconnect_with_error = grpc_error_set_int(
+                GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
+                GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+            // Pass the transport op down to the channel stack.
+            grpc_channel_next_op(elem_, op);
+            return absl::OkStatus();
+          };
+        }
+      })));
 }
 
 void ChannelData::EnterIdle() {
   GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
   // Hold a ref to the channel stack for the transport op.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
-  // Initialize the transport op.
-  idle_transport_op_ = {};
-  idle_transport_op_.disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
-  idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
   // Pass the transport op down to the channel stack.
   grpc_channel_next_op(elem_, &idle_transport_op_);
 }
 
-const grpc_channel_filter grpc_client_idle_filter = {
-    grpc_call_next_op,
-    nullptr,
-    ChannelData::StartTransportOp,
-    sizeof(CallData),
-    CallData::Init,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    CallData::Destroy,
-    sizeof(ChannelData),
-    ChannelData::Init,
-    ChannelData::Destroy,
-    grpc_channel_next_get_info,
-    "client_idle"};
+const grpc_channel_filter grpc_client_idle_filter =
+    MakePromiseBasedFilter<ClientIdleFilter, FilterEndpoint::kClient>(
+        "client_idle");
 
 }  // namespace
 

@@ -27,7 +27,7 @@ class SdkServerAuthzFilter {
   static const grpc_channel_filter kFilterVtable;
 
   static absl::StatusOr<SdkServerAuthzFilter> Create(
-      const grpc_channel_args* args);
+      const grpc_channel_args* args, grpc_channel_stack* stack);
 
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,

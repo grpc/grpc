@@ -2491,6 +2491,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     deps = [
+        "capture",
         "config",
         "gpr_base",
         "grpc_base",
