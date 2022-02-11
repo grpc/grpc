@@ -266,7 +266,7 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang4',
+            'gcc5', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang4',
             'clang13'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
@@ -289,6 +289,17 @@ def _create_portability_test_jobs(extra_args=[],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
 
+    # portability C on Windows with the "Visual Studio" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
+    test_jobs += _generate_jobs(languages=['c'],
+                                configs=['dbg'],
+                                platforms=['windows'],
+                                arch='default',
+                                compiler='cmake_vs2015',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
+
     # portability C++ on Windows
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
     test_jobs += _generate_jobs(languages=['c++'],
@@ -307,7 +318,7 @@ def _create_portability_test_jobs(extra_args=[],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='x64',
-                                compiler='cmake_vs2017',
+                                compiler='cmake_ninja_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args + ['--build_only'],
                                 inner_jobs=inner_jobs,

@@ -63,7 +63,6 @@ TEST_INFRA_GOVERSION=go1.17.1
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
-# Fetch test-infra repository and build all tools.
 # Note: Submodules are not required for tools build.
 pushd ..
 git clone --depth 1 https://github.com/grpc/test-infra.git

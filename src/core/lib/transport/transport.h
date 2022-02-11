@@ -69,8 +69,18 @@ class MetadataHandle {
     return *this;
   }
 
+  explicit MetadataHandle(const absl::Status& status) {
+    handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
+    handle_->Set(GrpcStatusMetadata(),
+                 static_cast<grpc_status_code>(status.code()));
+    if (status.ok()) return;
+    handle_->Set(GrpcMessageMetadata(),
+                 Slice::FromCopiedString(status.message()));
+  }
+
   T* operator->() const { return handle_; }
   bool has_value() const { return handle_ != nullptr; }
+  T* get() const { return handle_; }
 
   static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
 
@@ -335,8 +345,11 @@ struct grpc_transport_stream_op_batch_payload {
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure* recv_initial_metadata_ready = nullptr;
     // If not NULL, will be set to true if trailing metadata is
-    // immediately available.  This may be a signal that we received a
-    // Trailers-Only response.
+    // immediately available. This may be a signal that we received a
+    // Trailers-Only response. The retry filter checks this to know whether to
+    // defer the decision to commit the call or not. The C++ callback API also
+    // uses this to set the success flag of OnReadInitialMetadataDone()
+    // callback.
     bool* trailing_metadata_available = nullptr;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.

@@ -66,6 +66,7 @@
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -74,7 +75,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -96,6 +96,7 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -1313,9 +1314,21 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // Don't want to pass down channelz node from parent; the balancer
       // channel will get its own.
       GRPC_ARG_CHANNELZ_CHANNEL_NODE,
+      // Remove the channel args for channel credentials and replace it
+      // with a version that does not contain call credentials. The loadbalancer
+      // is not necessarily trusted to handle bearer token credentials.
+      GRPC_ARG_CHANNEL_CREDENTIALS,
   };
+  // Create channel args for channel credentials that does not contain bearer
+  // token credentials.
+  grpc_channel_credentials* channel_credentials =
+      grpc_channel_credentials_find_in_args(args);
+  GPR_ASSERT(channel_credentials != nullptr);
+  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds =
+      channel_credentials->duplicate_without_call_credentials();
+  GPR_ASSERT(creds_sans_call_creds != nullptr);
   // Channel args to add.
-  absl::InlinedVector<grpc_arg, 3> args_to_add = {
+  absl::InlinedVector<grpc_arg, 4> args_to_add = {
       // The fake resolver response generator, which we use to inject
       // address updates into the LB channel.
       FakeResolverResponseGenerator::MakeChannelArg(response_generator),
@@ -1325,13 +1338,13 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // Tells channelz that this is an internal channel.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+      // A channel args for new channel credentials that does not contain bearer
+      // tokens.
+      grpc_channel_credentials_to_arg(creds_sans_call_creds.get()),
   };
-  // Construct channel args.
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+  return grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
-  // Make any necessary modifications for security.
-  return ModifyGrpclbBalancerChannelArgs(new_args);
 }
 
 //
@@ -1495,9 +1508,15 @@ void GrpcLb::UpdateBalancerChannelLocked(const grpc_channel_args& args) {
   // Create balancer channel if needed.
   if (lb_channel_ == nullptr) {
     std::string uri_str = absl::StrCat("fake:///", server_name_);
-    lb_channel_ =
-        CreateGrpclbBalancerChannel(uri_str.c_str(), *lb_channel_args);
+    grpc_channel_credentials* creds =
+        grpc_channel_credentials_find_in_args(lb_channel_args);
+    GPR_ASSERT(creds != nullptr);
+    const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
+    grpc_channel_args* new_args =
+        grpc_channel_args_copy_and_remove(lb_channel_args, &arg_to_remove, 1);
+    lb_channel_ = grpc_channel_create(uri_str.c_str(), creds, new_args);
     GPR_ASSERT(lb_channel_ != nullptr);
+    grpc_channel_args_destroy(new_args);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node =
         grpc_channel_get_channelz_node(lb_channel_);

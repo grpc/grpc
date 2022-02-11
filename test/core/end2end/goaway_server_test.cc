@@ -23,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -222,8 +223,9 @@ int main(int argc, char** argv) {
   client_args.num_args = 2;
 
   /* create a channel that picks first amongst the servers */
-  grpc_channel* chan =
-      grpc_insecure_channel_create("test", &client_args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* chan = grpc_channel_create("test", creds, &client_args);
+  grpc_channel_credentials_release(creds);
   /* and an initial call to them */
   grpc_slice host = grpc_slice_from_static_string("127.0.0.1");
   grpc_call* call1 =
@@ -258,7 +260,10 @@ int main(int argc, char** argv) {
   /* bring a server up on the first port */
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
   addr = absl::StrCat("127.0.0.1:", port1);
-  grpc_server_add_insecure_http2_port(server1, addr.c_str());
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server1, addr.c_str(), server_creds);
+  grpc_server_credentials_release(server_creds);
   grpc_server_register_completion_queue(server1, cq, nullptr);
   grpc_server_start(server1);
 
@@ -334,7 +339,10 @@ int main(int argc, char** argv) {
   set_resolve_port(port2);
   grpc_server* server2 = grpc_server_create(nullptr, nullptr);
   addr = absl::StrCat("127.0.0.1:", port2);
-  grpc_server_add_insecure_http2_port(server2, addr.c_str());
+  grpc_server_credentials* another_server_creds =
+      grpc_insecure_server_credentials_create();
+  grpc_server_add_http2_port(server2, addr.c_str(), another_server_creds);
+  grpc_server_credentials_release(another_server_creds);
   grpc_server_register_completion_queue(server2, cq, nullptr);
   grpc_server_start(server2);
 
