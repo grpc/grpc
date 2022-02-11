@@ -54,9 +54,11 @@ http_archive(
 )
 
 load("//third_party/android:android_configure.bzl", "android_configure")
+
 android_configure(name = "local_config_android")
 
 load("@local_config_android//:android_configure.bzl", "android_workspace")
+
 android_workspace()
 
 # Prevents bazel's '...' expansion from including the following folder.
