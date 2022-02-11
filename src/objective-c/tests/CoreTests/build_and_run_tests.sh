@@ -25,7 +25,7 @@ time ./build_tests.sh
 
 XCODEBUILD_FILTER_OUTPUT_SCRIPT="../xcodebuild_filter_output.sh"
 
-xcodebuild \
+time xcodebuild \
     -workspace CoreTests.xcworkspace \
     -scheme CoreTests \
     -destination name="iPhone 8" \

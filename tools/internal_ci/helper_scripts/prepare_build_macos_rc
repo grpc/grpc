@@ -24,7 +24,7 @@ echo "Memory: $(sysctl -n hw.memsize)"
 
 # Info on disk usage and mounted volumes
 mount
-df -h /tmpfs /
+df -h /tmp /
 
 # show original open file limit values
 launchctl limit maxfiles
@@ -105,16 +105,16 @@ then
   # Needed for ios-binary-size
   time pip install --user -r $DIR/requirements.macos.txt
 
-  # Store intermediate build files of ObjC tests into /tmpfs
+  # Store intermediate build files of ObjC tests into /tmp
   # TODO(jtattermusch): this has likely been done to avoid running
   # out of disk space when running ios-binary-size tests, but
   # it would be good to revisit.
-  mkdir /tmpfs/Build-ios-binary-size
-  ln -s /tmpfs/Build-ios-binary-size src/objective-c/examples/Sample/Build
-  mkdir -p /tmpfs/DerivedData
+  mkdir /tmp/Build-ios-binary-size
+  ln -s /tmp/Build-ios-binary-size src/objective-c/examples/Sample/Build
+  mkdir -p /tmp/DerivedData
   rm -rf ~/Library/Developer/Xcode/DerivedData
   mkdir -p ~/Library/Developer/Xcode
-  ln -s /tmpfs/DerivedData ~/Library/Developer/Xcode/DerivedData
+  ln -s /tmp/DerivedData ~/Library/Developer/Xcode/DerivedData
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
@@ -162,7 +162,7 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
-  
+
   # Installed versions should be kept in sync with
   # templates/tools/dockerfile/csharp_dotnetcli_deps.include
   time curl -O https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg

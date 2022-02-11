@@ -284,6 +284,8 @@ class Job(object):
             # error during the creation of temporary file. By using
             # NamedTemporaryFile, we defer the removal of file and directory.
             self._logfile = tempfile.NamedTemporaryFile()
+
+        print('DENNYCD: using logfile %s' % self._logfile.name)
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)

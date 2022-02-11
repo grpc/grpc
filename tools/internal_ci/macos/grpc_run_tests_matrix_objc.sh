@@ -16,4 +16,6 @@
 set -ex
 
 export PREPARE_BUILD_INSTALL_DEPS_OBJC=true
+export RUN_TESTS_FLAGS="-f basictests macos objc opt --internal_ci -j 1 --inner_jobs 4 --bq_result_table aggregate_results --extra_args -r ios-test-.*"
+
 $(dirname $0)/grpc_run_tests_matrix.sh

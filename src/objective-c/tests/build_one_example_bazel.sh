@@ -32,4 +32,4 @@ cd $EXAMPLE_PATH/..
 if [ "$SCHEME" == "watchOS-sample-WatchKit-App" ]; then
   SCHEME="watchOS-sample watchOS-sample-watchApp"
 fi
-../../../tools/bazel build $SCHEME
+time ../../../tools/bazel build $SCHEME

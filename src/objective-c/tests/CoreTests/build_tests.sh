@@ -47,7 +47,7 @@ time pod install
 if [ -d "./Pods/Headers/Public/Protobuf-C++/google/protobuf" ]
 then
     echo "Protobuf-C++/google/protobuf/ has been imported."
-    number_of_files=$(find Pods/Headers/Public/Protobuf-C++/google/protobuf -name "*.h" | wc -l)
+    time number_of_files=$(find Pods/Headers/Public/Protobuf-C++/google/protobuf -name "*.h" | wc -l)
     echo "The number of header files in Pods/Headers/Public/Protobuf-C++/google/protobuf/ is $number_of_files"
 else
     echo "Error: Protobuf-C++/google/protobuf/ hasn't been imported."

@@ -25,11 +25,11 @@ BAZEL=../../../tools/bazel
 INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
 
 [ -d Tests.xcworkspace ] || {
-    ./build_tests.sh
+    time ./build_tests.sh
 }
 
 [ -f $INTEROP ] || {
-    $BAZEL build //test/cpp/interop:interop_server
+    time $BAZEL build //test/cpp/interop:interop_server
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
