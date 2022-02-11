@@ -38,15 +38,15 @@ class TlsCredentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  int cmp(const grpc_channel_credentials* other) const override {
+  grpc_tls_credentials_options* options() const { return options_.get(); }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
     return grpc_core::QsortCompare(
         static_cast<const grpc_channel_credentials*>(this), other);
   }
 
-  grpc_tls_credentials_options* options() const { return options_.get(); }
-
- private:
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 

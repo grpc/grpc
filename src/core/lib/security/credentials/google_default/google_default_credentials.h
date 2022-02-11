@@ -60,18 +60,18 @@ class grpc_google_default_channel_credentials
 
   grpc_channel_args* update_arguments(grpc_channel_args* args) override;
 
-  int cmp(const grpc_channel_credentials* other) const override {
-    // TODO(yashykt): Check if we can do something better here
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_channel_credentials*>(this), other);
-  }
-
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();
   }
   const grpc_channel_credentials* ssl_creds() const { return ssl_creds_.get(); }
 
  private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
+
   grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds_;
   grpc_core::RefCountedPtr<grpc_channel_credentials> ssl_creds_;
 };

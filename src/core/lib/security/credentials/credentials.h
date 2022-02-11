@@ -130,11 +130,27 @@ struct grpc_channel_credentials
     return args;
   }
 
-  virtual int cmp(const grpc_channel_credentials* other) const = 0;
+  // Compares this grpc_channel_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two channel
+  // credentials as effectively the same. This method is used to compare
+  // `grpc_channel_credentials` objects when they are present in channel_args.
+  // One important usage of this is when channel args are used in SubchannelKey,
+  // which leads to a useful property that allows subchannels to be reused when
+  // two different `grpc_channel_credentials` objects are used but they compare
+  // as equal (assuming request_metadata_creds and other properties on the
+  // subchannel_connector also match).
+  int cmp(const grpc_channel_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = strcmp(type(), other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
+  }
 
   const char* type() const { return type_; }
 
  private:
+  virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
+
   const char* type_;
 };
 
