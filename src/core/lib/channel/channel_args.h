@@ -108,7 +108,7 @@ class ChannelArgs {
           // copy
           [](void* p) { return p; },
           // destroy
-          [](void* p) {},
+          [](void*) {},
           // cmp
           [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
       };
