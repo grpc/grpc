@@ -381,11 +381,6 @@ class Call : public std::enable_shared_from_this<Call> {
   template <typename T>
   grpc_slice ReadSlice(const T& s) {
     grpc_slice slice = grpc_slice_from_cpp_string(s.value());
-    if (s.intern()) {
-      auto interned_slice = grpc_slice_intern(slice);
-      grpc_slice_unref(slice);
-      slice = interned_slice;
-    }
     unref_slices_.push_back(slice);
     return slice;
   }
@@ -873,16 +868,13 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         } else {
           grpc_channel_args* args =
               ReadArgs(action.create_channel().channel_args());
-          if (action.create_channel().has_channel_creds()) {
-            grpc_channel_credentials* creds =
-                ReadChannelCreds(action.create_channel().channel_creds());
-            g_channel = grpc_secure_channel_create(
-                creds, action.create_channel().target().c_str(), args, nullptr);
-            grpc_channel_credentials_release(creds);
-          } else {
-            g_channel = grpc_insecure_channel_create(
-                action.create_channel().target().c_str(), args, nullptr);
-          }
+          grpc_channel_credentials* creds =
+              action.create_channel().has_channel_creds()
+                  ? ReadChannelCreds(action.create_channel().channel_creds())
+                  : grpc_insecure_credentials_create();
+          g_channel = grpc_channel_create(
+              action.create_channel().target().c_str(), creds, args);
+          grpc_channel_credentials_release(creds);
           g_channel_actions.clear();
           for (int i = 0; i < action.create_channel().channel_actions_size();
                i++) {

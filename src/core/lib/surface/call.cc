@@ -50,9 +50,9 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_split.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
@@ -298,6 +298,7 @@ static void add_init_error(grpc_error_handle* composite,
 }
 
 void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
+  grpc_core::ExecCtx exec_ctx;
   return call->arena->Alloc(size);
 }
 
@@ -1440,6 +1441,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
+        // Ignore any te metadata key value pairs specified.
+        call->send_initial_metadata.Remove(grpc_core::TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
         if (call->is_client && call->send_deadline != GRPC_MILLIS_INF_FUTURE) {
           call->send_initial_metadata.Set(grpc_core::GrpcTimeoutMetadata(),
@@ -1567,6 +1570,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             grpc_core::GrpcStatusMetadata(),
             op->data.send_status_from_server.status);
 
+        // Ignore any te metadata key value pairs specified.
+        call->send_trailing_metadata.Remove(grpc_core::TeMetadata());
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &call->send_trailing_metadata;
         stream_op_payload->send_trailing_metadata.sent =

@@ -19,6 +19,7 @@
   RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
   <%include file="../../run_tests_python_deps.include"/>
   <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>
   <%include file="../../run_tests_addons.include"/>
   
   # Define the default command.

@@ -48,6 +48,8 @@
 
 #include <stddef.h>
 
+#include <functional>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -57,6 +59,7 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct grpc_channel_element grpc_channel_element;
@@ -65,11 +68,11 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_call_stack grpc_call_stack;
 
+#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;
-  /** Transport, iff it is known */
-  grpc_transport* optional_transport;
   int is_first;
   int is_last;
 };
@@ -109,6 +112,19 @@ struct grpc_channel_filter {
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
+  /* Create a promise to execute one call.
+     If this is non-null, it may be used in preference to
+     start_transport_stream_op_batch.
+     If this is used in preference to start_transport_stream_op_batch, the
+     following can be omitted also:
+       - calling init_call_elem, destroy_call_elem, set_pollset_or_pollset_set
+       - allocation of memory for call data
+     There is an on-going migration to move all filters to providing this, and
+     then to drop start_transport_stream_op_batch. */
+  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
+      grpc_channel_element* elem,
+      grpc_core::ClientInitialMetadata initial_metadata,
+      grpc_core::NextPromiseFactory next_promise_factory);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -221,8 +237,7 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* args, grpc_transport* optional_transport,
-    const char* name, grpc_channel_stack* stack);
+    const grpc_channel_args* args, const char* name, grpc_channel_stack* stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

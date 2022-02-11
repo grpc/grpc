@@ -31,11 +31,10 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 
 /// Creates a grpc_channel.
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_error_handle* error);
+grpc_channel* grpc_channel_create_internal(
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_stack_type channel_stack_type,
+    grpc_transport* optional_transport, grpc_error_handle* error);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */
@@ -44,7 +43,7 @@ void grpc_channel_destroy_internal(grpc_channel* channel);
 /// Creates a grpc_channel with a builder. See the description of
 /// \a grpc_channel_create for variable definitions.
 grpc_channel* grpc_channel_create_with_builder(
-    grpc_channel_stack_builder* builder,
+    grpc_core::ChannelStackBuilder* builder,
     grpc_channel_stack_type channel_stack_type,
     grpc_error_handle* error = nullptr);
 

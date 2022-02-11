@@ -25,6 +25,7 @@
 
 #include <limits>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -500,14 +501,57 @@ struct LbCostBinMetadata {
   }
 };
 
+// Annotation added by a transport to note whether a failed request was never
+// placed on the wire, or never seen by a server.
+struct GrpcStreamNetworkState {
+  static absl::string_view DebugKey() { return "GrpcStreamNetworkState"; }
+  static constexpr bool kRepeatable = false;
+  enum ValueType : uint8_t {
+    kNotSentOnWire,
+    kNotSeenByServer,
+  };
+  static std::string DisplayValue(ValueType x) {
+    switch (x) {
+      case kNotSentOnWire:
+        return "not sent on wire";
+      case kNotSeenByServer:
+        return "not seen by server";
+    }
+  }
+};
+
+// Annotation added by various systems to describe the reason for a failure.
+struct GrpcStatusContext {
+  static absl::string_view DebugKey() { return "GrpcStatusContext"; }
+  static constexpr bool kRepeatable = true;
+  using ValueType = std::string;
+  static const std::string& DisplayValue(const std::string& x) { return x; }
+};
+
 namespace metadata_detail {
 
+// IsEncodable: Given a trait, determine if that trait is encodable, or is just
+// a value attached to a MetadataMap.
+// We use the presence of the key() static method to determine if a trait is
+// encodable or not - encodable traits have string names, and non-encodable
+// traits do not.
+template <typename Trait, typename Ignored = void>
+struct IsEncodableTrait {
+  static const bool value = false;
+};
+
+template <typename Trait>
+struct IsEncodableTrait<Trait, absl::void_t<decltype(Trait::key())>> {
+  static const bool value = true;
+};
+
 // Helper type - maps a string name to a trait.
-template <typename... Traits>
+template <typename MustBeVoid, typename... Traits>
 struct NameLookup;
 
 template <typename Trait, typename... Traits>
-struct NameLookup<Trait, Traits...> {
+struct NameLookup<absl::enable_if_t<IsEncodableTrait<Trait>::value, void>,
+                  Trait, Traits...> {
   // Call op->Found(Trait()) if op->name == Trait::key() for some Trait in
   // Traits. If not found, call op->NotFound().
   template <typename Op>
@@ -516,12 +560,22 @@ struct NameLookup<Trait, Traits...> {
     if (key == Trait::key()) {
       return op->Found(Trait());
     }
-    return NameLookup<Traits...>::Lookup(key, op);
+    return NameLookup<void, Traits...>::Lookup(key, op);
+  }
+};
+
+template <typename Trait, typename... Traits>
+struct NameLookup<absl::enable_if_t<!IsEncodableTrait<Trait>::value, void>,
+                  Trait, Traits...> {
+  template <typename Op>
+  static auto Lookup(absl::string_view key, Op* op)
+      -> decltype(NameLookup<void, Traits...>::Lookup(key, op)) {
+    return NameLookup<void, Traits...>::Lookup(key, op);
   }
 };
 
 template <>
-struct NameLookup<> {
+struct NameLookup<void> {
   template <typename Op>
   static auto Lookup(absl::string_view key, Op* op)
       -> decltype(op->NotFound(key)) {
@@ -688,12 +742,23 @@ class GetStringValueHelper {
   std::string* backing_;
 };
 
+// Sink for key value logs
+using LogFn = absl::FunctionRef<void(absl::string_view, absl::string_view)>;
+
+template <typename T, typename U, typename V>
+GPR_ATTRIBUTE_NOINLINE void LogKeyValueTo(absl::string_view key, const T& value,
+                                          V (*display_value)(U), LogFn log_fn) {
+  log_fn(key, absl::StrCat(display_value(value)));
+}
+
 // Generate a strong type for metadata values per trait.
 template <typename Which, typename Ignored = void>
 struct Value;
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
+                                          IsEncodableTrait<Which>::value,
+                                      void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) : value(value) {}
   explicit Value(typename Which::ValueType&& value)
@@ -709,12 +774,41 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false, void>> {
   void EncodeTo(Encoder* encoder) const {
     encoder->Encode(Which(), value);
   }
+  void LogTo(LogFn log_fn) const {
+    LogKeyValueTo(Which::key(), value, Which::DisplayValue, log_fn);
+  }
   using StorageType = typename Which::ValueType;
   GPR_NO_UNIQUE_ADDRESS StorageType value;
 };
 
 template <typename Which>
-struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
+                                          !IsEncodableTrait<Which>::value,
+                                      void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) : value(value) {}
+  explicit Value(typename Which::ValueType&& value)
+      : value(std::forward<typename Which::ValueType>(value)) {}
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&&) noexcept = default;
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder*) const {}
+  void LogTo(LogFn log_fn) const {
+    LogKeyValueTo(Which::DebugKey(), value, Which::DisplayValue, log_fn);
+  }
+  using StorageType = typename Which::ValueType;
+  GPR_NO_UNIQUE_ADDRESS StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
+                                          IsEncodableTrait<Which>::value,
+                                      void>> {
   Value() = default;
   explicit Value(const typename Which::ValueType& value) {
     this->value.push_back(value);
@@ -735,8 +829,115 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true, void>> {
       encoder->Encode(Which(), v);
     }
   }
+  void LogTo(LogFn log_fn) const {
+    for (const auto& v : value) {
+      LogKeyValueTo(Which::key(), v, Which::DisplayValue, log_fn);
+    }
+  }
   using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
   StorageType value;
+};
+
+template <typename Which>
+struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
+                                          !IsEncodableTrait<Which>::value,
+                                      void>> {
+  Value() = default;
+  explicit Value(const typename Which::ValueType& value) {
+    this->value.push_back(value);
+  }
+  explicit Value(typename Which::ValueType&& value) {
+    this->value.emplace_back(std::forward<typename Which::ValueType>(value));
+  }
+  Value(const Value&) = delete;
+  Value& operator=(const Value&) = delete;
+  Value(Value&& other) noexcept : value(std::move(other.value)) {}
+  Value& operator=(Value&& other) noexcept {
+    value = std::move(other.value);
+    return *this;
+  }
+  template <typename Encoder>
+  void EncodeTo(Encoder*) const {}
+  void LogTo(LogFn log_fn) const {
+    for (const auto& v : value) {
+      LogKeyValueTo(Which::DebugKey(), v, Which::DisplayValue, log_fn);
+    }
+  }
+  using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
+  StorageType value;
+};
+
+// Encoder to copy some metadata
+template <typename Output>
+class CopySink {
+ public:
+  explicit CopySink(Output* dst) : dst_(dst) {}
+
+  template <class T, class V>
+  void Encode(T trait, V value) {
+    dst_->Set(trait, value);
+  }
+
+  template <class T>
+  void Encode(T trait, const Slice& value) {
+    dst_->Set(trait, std::move(value.AsOwned()));
+  }
+
+  void Encode(const Slice& key, const Slice& value) {
+    dst_->AppendUnknown(key.as_string_view(), value.Ref());
+  }
+
+ private:
+  Output* dst_;
+};
+
+// Callable for the ForEach in Encode() -- for each value, call the
+// appropriate encoder method.
+template <typename Encoder>
+struct EncodeWrapper {
+  Encoder* encoder;
+  template <typename Which>
+  void operator()(const Value<Which>& which) {
+    which.EncodeTo(encoder);
+  }
+};
+
+// Callable for the ForEach in Log()
+struct LogWrapper {
+  LogFn log_fn;
+  template <typename Which>
+  void operator()(const Value<Which>& which) {
+    which.LogTo(log_fn);
+  }
+};
+
+// Encoder to compute TransportSize
+class TransportSizeEncoder {
+ public:
+  void Encode(const Slice& key, const Slice& value) {
+    size_ += key.length() + value.length() + 32;
+  }
+
+  template <typename Which>
+  void Encode(Which, const typename Which::ValueType& value) {
+    Add(Which(), value);
+  }
+
+  void Encode(ContentTypeMetadata,
+              const typename ContentTypeMetadata::ValueType& value) {
+    if (value == ContentTypeMetadata::kInvalid) return;
+    Add(ContentTypeMetadata(), value);
+  }
+
+  size_t size() const { return size_; }
+
+ private:
+  template <typename Which>
+  void Add(Which, const typename Which::ValueType& value) {
+    size_ += Which::key().length() + Which::Encode(value).length() + 32;
+  }
+
+  uint32_t size_ = 0;
 };
 
 }  // namespace metadata_detail
@@ -757,26 +958,41 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 }
 
 // MetadataMap encodes the mapping of metadata keys to metadata values.
-// Right now the API presented is the minimal one that will allow us to
-// substitute this type for grpc_metadata_batch in a relatively easy fashion. At
-// that point we'll start iterating this API into something that's ergonomic
-// again, whilst minimally holding the performance bar already set (and
-// hopefully improving some things).
-// In the meantime, we're not going to invest much time in ephemeral API
-// documentation, so if you must use one of these APIs and it's not obvious
-// how, reach out to ctiller.
 //
-// MetadataMap takes a list of traits. Each of these trait objects defines
-// one metadata field that is used by core, and so should have more specialized
-// handling than just using the generic APIs.
+// MetadataMap takes a derived class and list of traits. Each of these trait
+// objects defines one metadata field that is used by core, and so should have
+// more specialized handling than just using the generic APIs.
 //
-// Each trait object has the following signature:
-// // Traits for the grpc-xyz metadata field:
+// MetadataMap is the backing type for some derived type via the curiously
+// recursive template pattern. This is because many types consumed by
+// MetadataMap require the container type to operate on, and many of those
+// types are instantiated one per trait. A naive implementation without the
+// Derived type would, for traits A,B,C, then instantiate for some
+// T<Container, Trait>:
+//  - T<MetadataMap<A,B,C>, A>,
+//  - T<MetadataMap<A,B,C>, B>,
+//  - T<MetadataMap<A,B,C>, C>.
+// Since these types ultimately need to be recorded in the .dynstr segment
+// for dynamic linkers (if gRPC is linked as a static library) this would
+// create O(N^2) bytes of symbols even in stripped libraries. To avoid this
+// we use the derived type (e.g. grpc_metadata_batch right now) to capture
+// the container type, and we would write T<grpc_metadata_batch, A>, etc...
+// Note that now the container type uses a number of bytes that is independent
+// of the number of traits, and so we return to a linear symbol table growth
+// function.
+//
+// Each trait object has one of two possible signatures, depending on whether
+// that traits field is encodable or not.
+// Non-encodable traits are carried in a MetadataMap, but are never passed to
+// the application nor serialized to wire.
+//
+// Encodable traits have the following signature:
+// // Traits for the "grpc-xyz" metadata field:
 // struct GrpcXyzMetadata {
-//   // The type that's stored on MetadataBatch
-//   using ValueType = ...;
 //   // Can this metadata field be repeated?
 //   static constexpr bool kRepeatable = ...;
+//   // The type that's stored on MetadataBatch
+//   using ValueType = ...;
 //   // The type that's stored in compression/decompression tables
 //   using MementoType = ...;
 //   // The string key for this metadata type (for transports that require it)
@@ -794,6 +1010,23 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 //   // Convert a value to something that can be passed to StrCat and displayed
 //   // for debugging
 //   static SomeStrCatableType DisplayValue(MementoType value) { ... }
+// };
+//
+// Non-encodable traits are determined by missing the key() method, and have the
+// following signature (and by convention omit the Metadata part of the type
+// name):
+// // Traits for the GrpcXyz field:
+// struct GrpcXyz {
+//   // The string key that should be used for debug dumps - should not be a
+//   // valid http2 key (ie all lower case)
+//   static absl::string_view DebugKey() { return "GRPC_XYZ"; }
+//   // Can this metadata field be repeated?
+//   static constexpr bool kRepeatable = ...;
+//   // The type that's stored on MetadataBatch
+//   using ValueType = ...;
+//   // Convert a value to something that can be passed to StrCat and displayed
+//   // for debugging
+//   static SomeStrCatableType DisplayValue(ValueType value) { ... }
 // };
 //
 // About parsing and mementos:
@@ -815,7 +1048,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // for grpc-timeout we make the memento the timeout expressed on the wire, but
 // we make the value the timestamp of when the timeout will expire (i.e. the
 // deadline).
-template <typename... Traits>
+template <class Derived, typename... Traits>
 class MetadataMap {
  public:
   explicit MetadataMap(Arena* arena);
@@ -824,7 +1057,10 @@ class MetadataMap {
   MetadataMap(const MetadataMap&) = delete;
   MetadataMap& operator=(const MetadataMap&) = delete;
   MetadataMap(MetadataMap&&) noexcept;
-  MetadataMap& operator=(MetadataMap&&) noexcept;
+  // We never create MetadataMap directly, instead we create Derived, but we
+  // want to be able to move it without redeclaring this.
+  // NOLINTNEXTLINE(misc-unconventional-assign-operator)
+  Derived& operator=(MetadataMap&&) noexcept;
 
   // Encode this metadata map into some encoder.
   // For each field that is set in the MetadataMap, call
@@ -841,7 +1077,7 @@ class MetadataMap {
   // transitions.
   template <typename Encoder>
   void Encode(Encoder* encoder) const {
-    table_.ForEach(EncodeWrapper<Encoder>{encoder});
+    table_.ForEach(metadata_detail::EncodeWrapper<Encoder>{encoder});
     for (const auto& unk : unknown_) {
       encoder->Encode(unk.first, unk.second);
     }
@@ -849,8 +1085,21 @@ class MetadataMap {
 
   // Similar to Encode, but targeted at logging: for each metadatum,
   // call f(key, value) as absl::string_views.
-  void Log(absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-      const;
+  void Log(metadata_detail::LogFn log_fn) const {
+    table_.ForEach(metadata_detail::LogWrapper{log_fn});
+    for (const auto& unk : unknown_) {
+      log_fn(unk.first.as_string_view(), unk.second.as_string_view());
+    }
+  }
+
+  std::string DebugString() const {
+    std::string out;
+    Log([&out](absl::string_view key, absl::string_view value) {
+      if (!out.empty()) out.append(", ");
+      absl::StrAppend(&out, absl::CEscape(key), ": ", absl::CEscape(value));
+    });
+    return out;
+  }
 
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
@@ -910,8 +1159,8 @@ class MetadataMap {
 
   // Remove some metadata by name
   void Remove(absl::string_view key) {
-    metadata_detail::RemoveHelper<MetadataMap> helper(this);
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::RemoveHelper<Derived> helper(static_cast<Derived*>(this));
+    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   void Remove(const char* key) { Remove(absl::string_view(key)); }
@@ -919,8 +1168,9 @@ class MetadataMap {
   // Retrieve some metadata by name
   absl::optional<absl::string_view> GetStringValue(absl::string_view name,
                                                    std::string* buffer) const {
-    metadata_detail::GetStringValueHelper<MetadataMap> helper(this, buffer);
-    return metadata_detail::NameLookup<Traits...>::Lookup(name, &helper);
+    metadata_detail::GetStringValueHelper<Derived> helper(
+        static_cast<const Derived*>(this), buffer);
+    return metadata_detail::NameLookup<void, Traits...>::Lookup(name, &helper);
   }
 
   // Extract a piece of known metadata.
@@ -958,122 +1208,42 @@ class MetadataMap {
   // that result.
   // TODO(ctiller): key should probably be an absl::string_view.
   // Once we don't care about interning anymore, make that change!
-  static ParsedMetadata<MetadataMap> Parse(absl::string_view key, Slice value,
-                                           uint32_t transport_size,
-                                           MetadataParseErrorFn on_error) {
-    metadata_detail::ParseHelper<MetadataMap> helper(value.TakeOwned(),
-                                                     on_error, transport_size);
-    return metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+  static ParsedMetadata<Derived> Parse(absl::string_view key, Slice value,
+                                       uint32_t transport_size,
+                                       MetadataParseErrorFn on_error) {
+    metadata_detail::ParseHelper<Derived> helper(value.TakeOwned(), on_error,
+                                                 transport_size);
+    return metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   // Set a value from a parsed metadata object.
-  void Set(const ParsedMetadata<MetadataMap>& m) { m.SetOnContainer(this); }
+  void Set(const ParsedMetadata<Derived>& m) {
+    m.SetOnContainer(static_cast<Derived*>(this));
+  }
 
   // Append a key/value pair - takes ownership of value
   void Append(absl::string_view key, Slice value,
               MetadataParseErrorFn on_error) {
-    metadata_detail::AppendHelper<MetadataMap> helper(this, value.TakeOwned(),
-                                                      on_error);
-    metadata_detail::NameLookup<Traits...>::Lookup(key, &helper);
+    metadata_detail::AppendHelper<Derived> helper(static_cast<Derived*>(this),
+                                                  value.TakeOwned(), on_error);
+    metadata_detail::NameLookup<void, Traits...>::Lookup(key, &helper);
   }
 
   void Clear();
   size_t TransportSize() const;
-  MetadataMap Copy() const;
+  Derived Copy() const;
   bool empty() const { return table_.empty() && unknown_.empty(); }
   size_t count() const { return table_.count() + unknown_.size(); }
 
  private:
-  friend class metadata_detail::AppendHelper<MetadataMap>;
-  friend class metadata_detail::GetStringValueHelper<MetadataMap>;
-  friend class metadata_detail::RemoveHelper<MetadataMap>;
-  friend class ParsedMetadata<MetadataMap>;
+  friend class metadata_detail::AppendHelper<Derived>;
+  friend class metadata_detail::GetStringValueHelper<Derived>;
+  friend class metadata_detail::RemoveHelper<Derived>;
+  friend class metadata_detail::CopySink<Derived>;
+  friend class ParsedMetadata<Derived>;
 
   template <typename Which>
   using Value = metadata_detail::Value<Which>;
-
-  // Callable for the ForEach in Encode() -- for each value, call the
-  // appropriate encoder method.
-  template <typename Encoder>
-  struct EncodeWrapper {
-    Encoder* encoder;
-    template <typename Which>
-    void operator()(const Value<Which>& which) {
-      which.EncodeTo(encoder);
-    }
-  };
-
-  // Encoder to compute TransportSize
-  class TransportSizeEncoder {
-   public:
-    void Encode(const Slice& key, const Slice& value) {
-      size_ += key.length() + value.length() + 32;
-    }
-
-    template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      Add(Which(), value);
-    }
-
-    void Encode(ContentTypeMetadata,
-                const typename ContentTypeMetadata::ValueType& value) {
-      if (value == ContentTypeMetadata::kInvalid) return;
-      Add(ContentTypeMetadata(), value);
-    }
-
-    size_t size() const { return size_; }
-
-   private:
-    template <typename Which>
-    void Add(Which, const typename Which::ValueType& value) {
-      size_ += Which::key().length() + Which::Encode(value).length() + 32;
-    }
-
-    uint32_t size_ = 0;
-  };
-
-  // Encoder to copy some metadata
-  class CopySink {
-   public:
-    explicit CopySink(MetadataMap* dst) : dst_(dst) {}
-
-    template <class T, class V>
-    void Encode(T trait, V value) {
-      dst_->Set(trait, value);
-    }
-
-    template <class T>
-    void Encode(T trait, const Slice& value) {
-      dst_->Set(trait, std::move(value.AsOwned()));
-    }
-
-    void Encode(const Slice& key, const Slice& value) {
-      dst_->AppendUnknown(key.as_string_view(), value.Ref());
-    }
-
-   private:
-    MetadataMap* dst_;
-  };
-
-  // Encoder to log some metadata
-  class LogEncoder {
-   public:
-    explicit LogEncoder(
-        absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-        : log_fn_(log_fn) {}
-
-    template <typename Which>
-    void Encode(Which, const typename Which::ValueType& value) {
-      log_fn_(Which::key(), absl::StrCat(Which::DisplayValue(value)));
-    }
-
-    void Encode(const Slice& key, const Slice& value) {
-      log_fn_(key.as_string_view(), value.as_string_view());
-    }
-
-   private:
-    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn_;
-  };
 
   void AppendUnknown(absl::string_view key, Slice value) {
     unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
@@ -1109,62 +1279,60 @@ class MetadataMap {
 
 // Ok/not-ok check for metadata maps that contain GrpcStatusMetadata, so that
 // they can be used as result types for TrySeq.
-template <typename... Args>
-inline bool IsStatusOk(const MetadataMap<Args...>& m) {
+template <typename Derived, typename... Args>
+inline bool IsStatusOk(const MetadataMap<Derived, Args...>& m) {
   return m.get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
          GRPC_STATUS_OK;
 }
 
-template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
 
-template <typename... Traits>
-MetadataMap<Traits...>::MetadataMap(MetadataMap&& other) noexcept
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::MetadataMap(MetadataMap&& other) noexcept
     : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {}
 
-template <typename... Traits>
-MetadataMap<Traits...>& MetadataMap<Traits...>::operator=(
+// We never create MetadataMap directly, instead we create Derived, but we want
+// to be able to move it without redeclaring this.
+// NOLINTNEXTLINE(misc-unconventional-assign-operator)
+template <typename Derived, typename... Traits>
+Derived& MetadataMap<Derived, Traits...>::operator=(
     MetadataMap&& other) noexcept {
   table_ = std::move(other.table_);
   unknown_ = std::move(other.unknown_);
-  return *this;
+  return static_cast<Derived&>(*this);
 }
 
-template <typename... Traits>
-MetadataMap<Traits...>::~MetadataMap() = default;
+template <typename Derived, typename... Traits>
+MetadataMap<Derived, Traits...>::~MetadataMap() = default;
 
-template <typename... Traits>
-void MetadataMap<Traits...>::Clear() {
+template <typename Derived, typename... Traits>
+void MetadataMap<Derived, Traits...>::Clear() {
   table_.ClearAll();
   unknown_.Clear();
 }
 
-template <typename... Traits>
-size_t MetadataMap<Traits...>::TransportSize() const {
-  TransportSizeEncoder enc;
+template <typename Derived, typename... Traits>
+size_t MetadataMap<Derived, Traits...>::TransportSize() const {
+  metadata_detail::TransportSizeEncoder enc;
   Encode(&enc);
   return enc.size();
 }
 
-template <typename... Traits>
-MetadataMap<Traits...> MetadataMap<Traits...>::Copy() const {
-  MetadataMap out(unknown_.arena());
-  CopySink sink(&out);
+template <typename Derived, typename... Traits>
+Derived MetadataMap<Derived, Traits...>::Copy() const {
+  Derived out(unknown_.arena());
+  metadata_detail::CopySink<Derived> sink(&out);
   Encode(&sink);
   return out;
 }
 
-template <typename... Traits>
-void MetadataMap<Traits...>::Log(
-    absl::FunctionRef<void(absl::string_view, absl::string_view)> log_fn)
-    const {
-  LogEncoder enc(log_fn);
-  Encode(&enc);
-}
-
 }  // namespace grpc_core
 
-using grpc_metadata_batch = grpc_core::MetadataMap<
+struct grpc_metadata_batch;
+
+using grpc_metadata_batch_base = grpc_core::MetadataMap<
+    grpc_metadata_batch,
     // Colon prefixed headers first
     grpc_core::HttpPathMetadata, grpc_core::HttpAuthorityMetadata,
     grpc_core::HttpMethodMetadata, grpc_core::HttpStatusMetadata,
@@ -1179,6 +1347,12 @@ using grpc_metadata_batch = grpc_core::MetadataMap<
     grpc_core::XEndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
-    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata>;
+    grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
+    // Non-encodable things
+    grpc_core::GrpcStreamNetworkState, grpc_core::GrpcStatusContext>;
+
+struct grpc_metadata_batch : public grpc_metadata_batch_base {
+  using grpc_metadata_batch_base::grpc_metadata_batch_base;
+};
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

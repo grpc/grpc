@@ -27,6 +27,7 @@ void ChannelArgsPreconditioning::Builder::RegisterStage(Stage stage) {
 ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
   // TODO(ctiller): should probably make this registered too.
   stages_.emplace_back(RemoveGrpcInternalArgs);
+  stages_.emplace_back(UniquifyChannelArgKeys);
 
   ChannelArgsPreconditioning preconditioning;
   preconditioning.stages_ = std::move(stages_);

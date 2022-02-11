@@ -1,20 +1,16 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <algorithm>
 #include <memory>
@@ -802,6 +798,39 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, PickFirstUpdateToUnconnected) {
+  const int kNumServers = 2;
+  CreateServers(kNumServers);
+  StartServer(0);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+
+  std::vector<int> ports;
+
+  // Try to send rpcs against a list where the server is available.
+  ports.emplace_back(servers_[0]->port_);
+  response_generator.SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [0] *******");
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+
+  // Send resolution for which all servers are currently unavailable. Eventually
+  // this triggers replacing the existing working subchannel_list with the new
+  // currently unresponsive list.
+  ports.clear();
+  ports.emplace_back(grpc_pick_unused_port_or_die());
+  ports.emplace_back(servers_[1]->port_);
+  response_generator.SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [unavailable] *******");
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+
+  // Ensure that the last resolution was installed correctly by verifying that
+  // the channel becomes ready once one of if its endpoints becomes available.
+  gpr_log(GPR_INFO, "****** StartServer(1) *******");
+  StartServer(1);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+}
+
 TEST_F(ClientLbEnd2endTest, PickFirstGlobalSubchannelPool) {
   // Start one server.
   const int kNumServers = 1;
@@ -1077,6 +1106,34 @@ TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest,
+       PickFirstStaysTransientFailureOnFailedConnectionAttemptUntilReady) {
+  // Allocate 3 ports, with no servers running.
+  std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die()};
+  // Create channel with a 1-second backoff.
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              1000 * grpc_test_slowdown_factor());
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(ports);
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(false));
+  // Send an RPC, which should fail.
+  CheckRpcSendFailure(stub);
+  // Channel should be in TRANSIENT_FAILURE.
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
+  // Now start a server on the last port.
+  StartServers(1, {ports.back()});
+  // Channel should remain in TRANSIENT_FAILURE until it transitions to READY.
+  EXPECT_TRUE(channel->WaitForStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                          grpc_timeout_seconds_to_deadline(4)));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {

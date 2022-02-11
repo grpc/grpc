@@ -23,7 +23,9 @@ namespace grpc_core {
 static auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
-using TestMap = MetadataMap<GrpcStatusMetadata>;
+struct TestMap : public MetadataMap<TestMap, GrpcStatusMetadata> {
+  using MetadataMap<TestMap, GrpcStatusMetadata>::MetadataMap;
+};
 
 TEST(PromiseTest, SucceedAndThenFail) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);

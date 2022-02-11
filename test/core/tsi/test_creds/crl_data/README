@@ -38,7 +38,7 @@ $ openssl ca -revoke revoked.pem -keyfile ca.key -cert ca.pem -days 3650
 
 Generate the CRL file:
 ----------------------------------------------------------------------------
-$ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem
+$ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem -crldays 3650
 $ openssl rehash ./
 
 Clean up:

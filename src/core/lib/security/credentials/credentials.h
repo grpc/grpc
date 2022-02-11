@@ -30,8 +30,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -51,6 +49,7 @@ typedef enum {
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
   "FakeTransportSecurity"
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
+#define GRPC_CREDENTIALS_TYPE_INSECURE "insecure"
 
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
@@ -252,30 +251,5 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
-
-/* -- Credentials Metadata Request. -- */
-
-struct grpc_credentials_metadata_request {
-  explicit grpc_credentials_metadata_request(
-      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
-      : creds(std::move(creds)) {}
-  ~grpc_credentials_metadata_request() {
-    grpc_http_response_destroy(&response);
-  }
-
-  grpc_core::RefCountedPtr<grpc_call_credentials> creds;
-  grpc_http_response response;
-};
-
-inline grpc_credentials_metadata_request*
-grpc_credentials_metadata_request_create(
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds) {
-  return new grpc_credentials_metadata_request(std::move(creds));
-}
-
-inline void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request* r) {
-  delete r;
-}
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

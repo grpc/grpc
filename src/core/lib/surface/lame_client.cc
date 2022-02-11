@@ -156,6 +156,7 @@ grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
 
 const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
+    nullptr,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),
     grpc_core::lame_init_call_elem,
@@ -190,7 +191,7 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(args0);
   grpc_channel_args_destroy(args0);
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel* channel = grpc_channel_create_internal(
       target, args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr);
   grpc_channel_args_destroy(args);
   GRPC_ERROR_UNREF(error);

@@ -422,10 +422,14 @@ typedef struct {
 /** If set, inhibits health checking (which may be enabled via the
  *  service config.) */
 #define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
-/** If set, the channel's resolver is allowed to query for SRV records.
- * For example, this is useful as a way to enable the "grpclb"
- * load balancing policy. Note that this only works with the "ares"
- * DNS resolver, and isn't supported by the "native" DNS resolver. */
+/** If enabled, the channel's DNS resolver queries for SRV records.
+ *  This is useful only when using the "grpclb" load balancing policy,
+ *  as described in the following documents:
+ *   https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md
+ *   https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md
+ *   https://github.com/grpc/proposal/blob/master/A26-grpclb-selection.md
+ *  Note that this works only with the "ares" DNS resolver; it isn't supported
+ *  by the "native" DNS resolver. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
 /** If set, determines an upper bound on the number of milliseconds that the
  * c-ares based DNS resolver will wait on queries before cancelling them.

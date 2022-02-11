@@ -167,7 +167,8 @@ typedef enum {
   envoy_config_cluster_v3_Cluster_AUTO = 0,
   envoy_config_cluster_v3_Cluster_V4_ONLY = 1,
   envoy_config_cluster_v3_Cluster_V6_ONLY = 2,
-  envoy_config_cluster_v3_Cluster_V4_PREFERRED = 3
+  envoy_config_cluster_v3_Cluster_V4_PREFERRED = 3,
+  envoy_config_cluster_v3_Cluster_ALL = 4
 } envoy_config_cluster_v3_Cluster_DnsLookupFamily;
 
 typedef enum {

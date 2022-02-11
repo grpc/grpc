@@ -262,10 +262,10 @@ HealthCheckClient::CallState::CallState(
                                ->GetInitialCallSizeEstimate(),
                            &health_check_client_->call_allocator_)),
       payload_(context_),
-      send_initial_metadata_(arena_),
-      send_trailing_metadata_(arena_),
-      recv_initial_metadata_(arena_),
-      recv_trailing_metadata_(arena_) {}
+      send_initial_metadata_(arena_.get()),
+      send_trailing_metadata_(arena_.get()),
+      recv_initial_metadata_(arena_.get()),
+      recv_trailing_metadata_(arena_.get()) {}
 
 HealthCheckClient::CallState::~CallState() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
@@ -282,7 +282,6 @@ HealthCheckClient::CallState::~CallState() {
   // any, so that it can release any internal references it may be
   // holding to the call stack.
   call_combiner_.SetNotifyOnCancel(nullptr);
-  arena_->Destroy();
 }
 
 void HealthCheckClient::CallState::Orphan() {
@@ -297,7 +296,7 @@ void HealthCheckClient::CallState::StartCall() {
       Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
       gpr_get_cycle_counter(),  // start_time
       GRPC_MILLIS_INF_FUTURE,   // deadline
-      arena_,
+      arena_.get(),
       context_,
       &call_combiner_,
   };

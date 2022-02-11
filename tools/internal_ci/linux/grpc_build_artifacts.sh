@@ -23,14 +23,13 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-set +ex
-[[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
-set -e  # rvm commands are very verbose
-rvm install ruby-2.5.7
-rvm --default use ruby-2.5.7
-set -ex
+# prerequisites for ruby artifact build on linux
+source tools/internal_ci/helper_scripts/prepare_build_linux_ruby_artifact_rc
 
-tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 12 || FAILED="true"
+# configure ccache
+source tools/internal_ci/helper_scripts/prepare_ccache_rc
+
+tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 6 --inner_jobs 6 || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 

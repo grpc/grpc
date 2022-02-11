@@ -20,7 +20,10 @@ CONFIG=${CONFIG:-opt}
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-root=$(pwd)
+# build C core first
+make -j"${GRPC_RUN_TESTS_JOBS}" EMBED_OPENSSL=true EMBED_ZLIB=true static_c shared_c
+
+repo_root="$(pwd)"
 export GRPC_LIB_SUBDIR=libs/$CONFIG
 export CFLAGS="-Wno-parentheses-equality"
 
@@ -30,8 +33,8 @@ cd src/php
 cd ext/grpc
 phpize
 if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc="$root" --enable-tests
+  ./configure --enable-grpc="${repo_root}" --enable-tests
 else
-  ./configure --enable-grpc="$root" --enable-coverage --enable-tests
+  ./configure --enable-grpc="${repo_root}" --enable-coverage --enable-tests
 fi
-make
+make -j"${GRPC_RUN_TESTS_JOBS}"
