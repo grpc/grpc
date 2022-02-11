@@ -44,7 +44,7 @@ TEST(ChannelArgsTest, SetGetRemove) {
       // copy
       [](void* p) { return p; },
       // destroy
-      [](void* p) {},
+      [](void*) {},
       // equal
       [](void* p1, void* p2) { return QsortCompare(p1, p2); },
   };
@@ -104,7 +104,7 @@ TEST(ChannelArgsTest, ToAndFromC) {
       // copy
       [](void* p) { return p; },
       // destroy
-      [](void* p) {},
+      [](void*) {},
       // equal
       [](void* p1, void* p2) { return QsortCompare(p1, p2); },
   };
