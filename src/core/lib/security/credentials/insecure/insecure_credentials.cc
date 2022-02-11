@@ -40,8 +40,8 @@ class InsecureCredentials final : public grpc_channel_credentials {
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
-    return QsortCompare(
-        static_cast<const grpc_channel_credentials*>(this), other);
+    return QsortCompare(static_cast<const grpc_channel_credentials*>(this),
+                        other);
   }
 };
 
