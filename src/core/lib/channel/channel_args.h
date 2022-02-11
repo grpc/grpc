@@ -127,6 +127,8 @@ namespace grpc_core {
  *  Does not take ownership of \a src.
  *  Should be called by any public API that receives channel args. */
 const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src);
+/** Ensure no duplicate channel args, in preparation for moving to a map<> */
+const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src);
 }  // namespace grpc_core
 
 // Takes ownership of the old_args
