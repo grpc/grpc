@@ -75,7 +75,8 @@ if contextvars_supported():
     class TestCallCredentials(grpc.AuthMetadataPlugin):
 
         def __call__(self, context, callback):
-            if test_var.get() != _EXPECTED_VALUE and not test_common.running_under_gevent():
+            if test_var.get(
+            ) != _EXPECTED_VALUE and not test_common.running_under_gevent():
                 # contextvars do not work under gevent, but the rest of this
                 # test is still valuable as a test of concurrent runs of the
                 # metadata credentials code path.
@@ -96,6 +97,7 @@ else:
 
         def __call__(self, context, callback):
             callback((), None)
+
 
 # TODO(https://github.com/grpc/grpc/issues/22257)
 @unittest.skipIf(os.name == "nt", "LocalCredentials not supported on Windows.")
@@ -157,7 +159,6 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 thread.join()
                 if not q.empty():
                     raise q.get()
-
 
 
 if __name__ == '__main__':
