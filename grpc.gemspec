@@ -981,6 +981,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/wrap_memcpy.cc )
   s.files += %w( src/core/lib/gprpp/atomic_utils.h )
   s.files += %w( src/core/lib/gprpp/bitset.h )
+  s.files += %w( src/core/lib/gprpp/capture.h )
   s.files += %w( src/core/lib/gprpp/chunked_vector.h )
   s.files += %w( src/core/lib/gprpp/construct_destruct.h )
   s.files += %w( src/core/lib/gprpp/cpp_impl_of.h )
