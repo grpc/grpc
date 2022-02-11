@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test")
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -65,9 +64,6 @@ py_library(
 py_library(
     name = "_signal_client",
     srcs = ["_signal_client.py"],
-    deps = [
-        requirement("gevent"),
-    ],
 )
 
 py_library(

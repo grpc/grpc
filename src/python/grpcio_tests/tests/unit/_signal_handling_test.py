@@ -41,10 +41,6 @@ else:
 
 _HOST = 'localhost'
 
-# The gevent test harness cannot run the monkeypatch code for the child process,
-# so we need to instrument it manually.
-_GEVENT_ARG = ("--gevent",) if test_common.running_under_gevent() else ()
-
 
 class _GenericHandler(grpc.GenericRpcHandler):
 
@@ -146,8 +142,8 @@ class SignalHandlingTest(unittest.TestCase):
         server_target = '{}:{}'.format(_HOST, self._port)
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
-                client = _start_client((server_target, 'unary') + _GEVENT_ARG,
-                                       client_stdout, client_stderr)
+                client = _start_client((server_target, 'unary'), client_stdout,
+                                       client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 self.assertFalse(client.wait(), msg=_read_stream(client_stderr))
@@ -161,9 +157,8 @@ class SignalHandlingTest(unittest.TestCase):
         server_target = '{}:{}'.format(_HOST, self._port)
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
-                client = _start_client(
-                    (server_target, 'streaming') + _GEVENT_ARG, client_stdout,
-                    client_stderr)
+                client = _start_client((server_target, 'streaming'),
+                                       client_stdout, client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 self.assertFalse(client.wait(), msg=_read_stream(client_stderr))
@@ -176,9 +171,8 @@ class SignalHandlingTest(unittest.TestCase):
         server_target = '{}:{}'.format(_HOST, self._port)
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
-                client = _start_client(
-                    ('--exception', server_target, 'unary') + _GEVENT_ARG,
-                    client_stdout, client_stderr)
+                client = _start_client(('--exception', server_target, 'unary'),
+                                       client_stdout, client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 client.wait()
@@ -190,8 +184,8 @@ class SignalHandlingTest(unittest.TestCase):
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
                 client = _start_client(
-                    ('--exception', server_target, 'streaming') + _GEVENT_ARG,
-                    client_stdout, client_stderr)
+                    ('--exception', server_target, 'streaming'), client_stdout,
+                    client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 client.wait()
