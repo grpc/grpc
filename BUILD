@@ -1714,6 +1714,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     deps = [
         "gpr_platform",
     ],
@@ -2308,12 +2311,18 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
+        "avl",
         "channel_stack_type",
         "gpr_base",
         "grpc_codegen",
+        "match",
+        "ref_counted",
+        "ref_counted_ptr",
         "useful",
     ],
 )

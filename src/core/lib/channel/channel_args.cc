@@ -37,6 +37,98 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/match.h"
+
+static int cmp_ptr(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
+                   void* b_ptr, const grpc_arg_pointer_vtable* b_vtable) {
+  int c = grpc_core::QsortCompare(a_ptr, b_ptr);
+  if (c == 0) return 0;
+  c = grpc_core::QsortCompare(a_vtable, b_vtable);
+  if (c != 0) return c;
+  return a_vtable->cmp(a_ptr, b_ptr);
+}
+
+namespace grpc_core {
+
+bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
+  return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
+}
+
+ChannelArgs::ChannelArgs() = default;
+
+ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
+  ChannelArgs result;
+  if (args != nullptr) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      Value value;
+      switch (args->args[i].type) {
+        case GRPC_ARG_INTEGER:
+          value = Value(args->args[i].value.integer);
+          break;
+        case GRPC_ARG_STRING:
+          value = Value(args->args[i].value.string);
+          break;
+        case GRPC_ARG_POINTER:
+          value = Value(Pointer(args->args[i].value.pointer.p,
+                                args->args[i].value.pointer.vtable));
+          break;
+      }
+      result.args_.Add(args->args[i].key, std::move(value));
+    }
+  }
+  return result;
+}
+
+const grpc_channel_args* ChannelArgs::ToC() const {
+  std::vector<grpc_arg> c_args;
+  args_.ForEach([&c_args](const std::string& key, const Value& value) {
+    char* name = const_cast<char*>(key.c_str());
+    c_args.push_back(Match(
+        value,
+        [name](int i) { return grpc_channel_arg_integer_create(name, i); },
+        [name](const std::string& s) {
+          return grpc_channel_arg_string_create(name,
+                                                const_cast<char*>(s.c_str()));
+        },
+        [name](const Pointer& p) {
+          return grpc_channel_arg_pointer_create(name, p.c_pointer(),
+                                                 p.c_vtable());
+        }));
+  });
+  return grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size());
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
+  return ChannelArgs(args_.Add(std::string(key), std::move(value)));
+}
+
+ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
+  return ChannelArgs(args_.Remove(key));
+}
+
+absl::optional<int> ChannelArgs::GetInt(absl::string_view key) const {
+  auto* v = Get(key);
+  if (v == nullptr) return absl::nullopt;
+  if (!absl::holds_alternative<int>(*v)) return absl::nullopt;
+  return absl::get<int>(*v);
+}
+
+absl::optional<absl::string_view> ChannelArgs::GetString(
+    absl::string_view key) const {
+  auto* v = Get(key);
+  if (v == nullptr) return absl::nullopt;
+  if (!absl::holds_alternative<std::string>(*v)) return absl::nullopt;
+  return absl::get<std::string>(*v);
+}
+
+void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return nullptr;
+  if (!absl::holds_alternative<Pointer>(*v)) return nullptr;
+  return absl::get<Pointer>(*v).c_pointer();
+}
+
+}  // namespace grpc_core
 
 static grpc_arg copy_arg(const grpc_arg* src) {
   grpc_arg dst;
@@ -156,16 +248,8 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
     case GRPC_ARG_INTEGER:
       return grpc_core::QsortCompare(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
-      c = grpc_core::QsortCompare(a->value.pointer.p, b->value.pointer.p);
-      if (c != 0) {
-        c = grpc_core::QsortCompare(a->value.pointer.vtable,
-                                    b->value.pointer.vtable);
-        if (c == 0) {
-          c = a->value.pointer.vtable->cmp(a->value.pointer.p,
-                                           b->value.pointer.p);
-        }
-      }
-      return c;
+      return cmp_ptr(a->value.pointer.p, a->value.pointer.vtable,
+                     b->value.pointer.p, b->value.pointer.vtable);
   }
   GPR_UNREACHABLE_CODE(return 0);
 }

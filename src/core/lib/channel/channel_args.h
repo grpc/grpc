@@ -23,9 +23,167 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/avl/avl.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+
+namespace grpc_core {
+
+// Define a traits object for vtable lookup - allows us to integrate with
+// existing code easily (just define the trait!) and allows some magic in
+// ChannelArgs to automatically derive a vtable from a T*.
+// To participate as a pointer, instances should expose the function:
+//   // Gets the vtable for this type
+//   static const grpc_channel_arg_vtable* vtable();
+//   // Performs any mutations required for channel args to own a pointer
+//   static void* take_unowned_pointer(T* p);
+template <typename T, typename Ignored = void /* for SFINAE */>
+struct ChannelArgTypeTraits;
+
+template <typename T>
+struct ChannelArgTypeTraits<
+    T, absl::enable_if_t<std::is_base_of<RefCounted<T>, T>::value, void>> {
+  static const grpc_arg_pointer_vtable* vtable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return static_cast<T*>(p)->Ref().release(); },
+        // destroy
+        [](void* p) { static_cast<T*>(p)->Unref(); },
+        // compare
+        [](void* p1, void* p2) {
+          return QsortCompare(*static_cast<const T*>(p1),
+                              *static_cast<const T*>(p2));
+        },
+    };
+    return &tbl;
+  };
+};
+
+class ChannelArgs {
+ public:
+  class Pointer {
+   public:
+    Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
+        : p_(p), vtable_(vtable == nullptr ? empty_vtable() : vtable) {}
+    ~Pointer() { vtable_->destroy(p_); }
+
+    Pointer(const Pointer& other)
+        : p_(other.vtable_->copy(other.p_)), vtable_(other.vtable_) {}
+    Pointer& operator=(Pointer other) {
+      std::swap(p_, other.p_);
+      std::swap(vtable_, other.vtable_);
+      return *this;
+    }
+    Pointer(Pointer&& other) noexcept : p_(other.p_), vtable_(other.vtable_) {
+      other.p_ = nullptr;
+      other.vtable_ = empty_vtable();
+    }
+    Pointer& operator=(Pointer&& other) noexcept {
+      std::swap(p_, other.p_);
+      std::swap(vtable_, other.vtable_);
+      return *this;
+    }
+
+    bool operator==(const Pointer& rhs) const;
+    bool operator!=(const Pointer& rhs) const { return !(*this == rhs); }
+
+    void* c_pointer() const { return p_; }
+
+    const grpc_arg_pointer_vtable* c_vtable() const { return vtable_; }
+
+   private:
+    void* p_;
+    const grpc_arg_pointer_vtable* vtable_;
+    static const grpc_arg_pointer_vtable* empty_vtable() {
+      static const grpc_arg_pointer_vtable vtable = {
+          // copy
+          [](void* p) { return p; },
+          // destroy
+          [](void* p) {},
+          // cmp
+          [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
+      };
+      return &vtable;
+    }
+  };
+  using Value = absl::variant<int, std::string, Pointer>;
+
+  ChannelArgs();
+
+  static ChannelArgs FromC(const grpc_channel_args* args);
+  const grpc_channel_args* ToC() const;
+
+  const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+                                       Value value) const;
+  template <typename T>
+  GRPC_MUST_USE_RESULT absl::enable_if_t<
+      std::is_same<const grpc_arg_pointer_vtable*,
+                   decltype(ChannelArgTypeTraits<T>::vtable())>::value,
+      ChannelArgs>
+  Set(absl::string_view name, T* value) const {
+    return Set(name,
+               Pointer(ChannelArgTypeTraits<T>::take_unowned_pointer(value),
+                       ChannelArgTypeTraits<T>::vtable()));
+  }
+  template <typename T>
+  GRPC_MUST_USE_RESULT absl::enable_if_t<
+      std::is_same<const grpc_arg_pointer_vtable*,
+                   decltype(ChannelArgTypeTraits<T>::vtable())>::value,
+      ChannelArgs>
+  Set(absl::string_view name, RefCountedPtr<T> value) const {
+    return Set(name,
+               Pointer(value.release(), ChannelArgTypeTraits<T>::vtable()));
+  }
+  GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
+  bool Contains(absl::string_view name) const { return Get(name) != nullptr; }
+
+  absl::optional<int> GetInt(absl::string_view name) const;
+  absl::optional<absl::string_view> GetString(absl::string_view name) const;
+  void* GetVoidPointer(absl::string_view name) const;
+  template <typename T>
+  T* GetPointer(absl::string_view name) const {
+    return static_cast<T*>(GetVoidPointer(name));
+  }
+
+  // Object based get/set.
+  // Deal with the common case that we set a pointer to an object under
+  // the same name in every usage.
+  // Expects ChannelArgTypeTraits to exist for T, and T to expose:
+  //   static string_view channel_arg_name();
+  template <typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(T* p) const {
+    return Set(T::channel_arg_name(), p);
+  }
+  template <typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(RefCountedPtr<T> p) const {
+    return Set(T::channel_arg_name(), std::move(p));
+  }
+  template <typename T>
+  T* GetObject() {
+    return GetPointer<T>(T::channel_arg_name());
+  }
+
+  bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
+  bool operator==(const ChannelArgs& other) const {
+    return args_ == other.args_;
+  }
+
+ private:
+  explicit ChannelArgs(AVL<std::string, Value> args) : args_(args) {}
+
+  AVL<std::string, Value> args_;
+};
+
+}  // namespace grpc_core
 
 // Channel args are intentionally immutable, to avoid the need for locking.
 
