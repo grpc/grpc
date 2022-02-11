@@ -36,7 +36,6 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_channel_creds.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
@@ -46,6 +45,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -54,10 +54,12 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -512,10 +514,10 @@ namespace {
 grpc_channel* CreateXdsChannel(grpc_channel_args* args,
                                const XdsBootstrap::XdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
-      XdsChannelCredsRegistry::CreateXdsChannelCreds(
+      CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_type, server.channel_creds_config);
-  return grpc_secure_channel_create(channel_creds.get(),
-                                    server.server_uri.c_str(), args, nullptr);
+  return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
+                             args);
 }
 
 }  // namespace
@@ -586,7 +588,22 @@ void XdsClient::ChannelState::StopLrsCallLocked() {
   lrs_calld_.reset();
 }
 
+namespace {
+
+bool IsLameChannel(grpc_channel* channel) {
+  grpc_channel_element* elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  return elem->filter == &grpc_lame_filter;
+}
+
+}  // namespace
+
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
+  if (IsLameChannel(channel_)) {
+    xds_client()->NotifyOnErrorLocked(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("xds client has a lame channel"));
+    return;
+  }
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
@@ -596,6 +613,9 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
 }
 
 void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
+  if (IsLameChannel(channel_)) {
+    return;
+  }
   ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
@@ -1199,9 +1219,9 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
           result.type_url.c_str(), result.version.c_str(), state.nonce.c_str(),
           error.c_str());
       GRPC_ERROR_UNREF(state.error);
-      state.error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CPP_STRING(std::move(error)),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      state.error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
+                                       GRPC_ERROR_INT_GRPC_STATUS,
+                                       GRPC_STATUS_UNAVAILABLE);
     }
     // Delete resources not seen in update if needed.
     if (result.type->AllResourcesRequiredInSotW()) {
@@ -2312,7 +2332,6 @@ std::string XdsClient::DumpClientConfigBinary() {
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
-  XdsChannelCredsRegistry::Init();
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does
@@ -2322,7 +2341,6 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   g_fallback_bootstrap_config = nullptr;
   delete g_mu;
   g_mu = nullptr;
-  XdsChannelCredsRegistry::Shutdown();
   XdsHttpFilterRegistry::Shutdown();
 }
 

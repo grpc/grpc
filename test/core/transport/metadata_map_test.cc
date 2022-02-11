@@ -117,6 +117,7 @@ TEST(MetadataMapTest, NonEncodableTrait) {
             GrpcStreamNetworkState::kNotSentOnWire);
   EncoderWithNoTraitEncodeFunctions encoder;
   map.Encode(&encoder);
+  EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
 }
 
 }  // namespace testing

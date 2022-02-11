@@ -415,7 +415,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     if (subchannel_cache_delay_ms > 0) {
       args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
-                  subchannel_cache_delay_ms);
+                  subchannel_cache_delay_ms * grpc_test_slowdown_factor());
     }
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;

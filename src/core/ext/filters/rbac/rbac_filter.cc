@@ -134,15 +134,17 @@ grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No auth context found");
   }
-  if (args->optional_transport == nullptr) {
+  auto* transport = grpc_channel_args_find_pointer<grpc_transport>(
+      args->channel_args, GRPC_ARG_TRANSPORT);
+  if (transport == nullptr) {
     // This should never happen since the transport is always set on the server
     // side.
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No transport configured");
   }
   new (elem->channel_data) RbacFilter(
       grpc_channel_stack_filter_instance_number(args->channel_stack, elem),
-      EvaluateArgs::PerChannelArgs(
-          auth_context, grpc_transport_get_endpoint(args->optional_transport)));
+      EvaluateArgs::PerChannelArgs(auth_context,
+                                   grpc_transport_get_endpoint(transport)));
   return GRPC_ERROR_NONE;
 }
 

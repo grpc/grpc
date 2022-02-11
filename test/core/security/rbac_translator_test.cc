@@ -24,10 +24,12 @@ namespace {
 MATCHER_P3(EqualsPrincipalName, expected_matcher_type, expected_matcher_value,
            is_regex, "") {
   return arg->type == Rbac::Principal::RuleType::kPrincipalName &&
-                 arg->string_matcher.type() == expected_matcher_type && is_regex
-             ? arg->string_matcher.regex_matcher()->pattern() ==
+                 arg->string_matcher.value().type() == expected_matcher_type &&
+                 is_regex
+             ? arg->string_matcher.value().regex_matcher()->pattern() ==
                    expected_matcher_value
-             : arg->string_matcher.string_matcher() == expected_matcher_value;
+             : arg->string_matcher.value().string_matcher() ==
+                   expected_matcher_value;
 }
 
 MATCHER_P3(EqualsPath, expected_matcher_type, expected_matcher_value, is_regex,

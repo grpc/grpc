@@ -603,7 +603,7 @@ grpc_error_handle Server::SetupTransport(
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel* channel = grpc_channel_create_internal(
       nullptr, args, GRPC_SERVER_CHANNEL, transport, &error);
   if (channel == nullptr) {
     return error;

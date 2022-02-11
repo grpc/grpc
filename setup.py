@@ -161,7 +161,7 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 # without statically linking libstdc++ (which leads to a slight increase in the wheel size).
 # This option is useful when crosscompiling wheels for aarch64 where
 # it's difficult to ensure that the crosscompilation toolchain has a high-enough version
-# of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
+# of GCC (we require >=5.1) but still uses old-enough libstdc++ symbols.
 # TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
 BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', 'False')
