@@ -105,7 +105,7 @@ class AVL {
 
   class Iterator {
    public:
-    Iterator(const NodePtr& root) {
+    explicit Iterator(const NodePtr& root) {
       auto* n = root.get();
       while (n != nullptr) {
         stack_.push_back(n);
