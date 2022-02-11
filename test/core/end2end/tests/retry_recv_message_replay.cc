@@ -230,7 +230,7 @@ static void test_retry_recv_message_replay(grpc_end2end_test_config config) {
   // batches, but in the proxy fixtures, there are multiple threads
   // involved, so the completion order tends to be a little racy.
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), false);  // trailers-only
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   CQ_EXPECT_COMPLETION(cqv, tag(3), true);
   cq_verify(cqv);

@@ -218,7 +218,7 @@ static void test_retry_recv_trailing_metadata_error(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), false);  // trailers-only
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));

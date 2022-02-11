@@ -1030,10 +1030,10 @@ static void post_batch_completion(batch_control* bctl) {
   if (bctl->op.send_trailing_metadata) {
     call->send_trailing_metadata.Clear();
   }
-  if (bctl->op.recv_initial_metadata) {
+  if (bctl->op.recv_initial_metadata && !bctl->op.recv_trailing_metadata) {
     if (call->is_client && call->is_trailers_only) {
       error = grpc_error_add_child(error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "Only received trailers."));
+                                              "Received trailers only"));
     }
   }
   if (bctl->op.recv_trailing_metadata) {
