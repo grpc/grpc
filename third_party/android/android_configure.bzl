@@ -9,6 +9,14 @@ This rule is a no-op unless the required android environment variables are set.
 _ANDROID_NDK_HOME = "ANDROID_NDK_HOME"
 _ANDROID_SDK_HOME = "ANDROID_HOME"
 
+def _escape_for_windows(path):
+    """Properly escape backslashes for Windows.
+
+    Ideally, we would do this conditionally, but there is seemingly no way to
+    determine whether or not this is being called from Windows.
+    """
+    return path.replace("\\", "\\\\")
+
 def _android_autoconf_impl(repository_ctx):
     sdk_home = repository_ctx.os.environ.get(_ANDROID_SDK_HOME)
     ndk_home = repository_ctx.os.environ.get(_ANDROID_NDK_HOME)
@@ -22,7 +30,7 @@ def _android_autoconf_impl(repository_ctx):
         path="{}",
         build_tools_version="30.0.3",
     )
-""".format(sdk_home)
+""".format(_escape_for_windows(sdk_home))
 
     # Note that Bazel does not support NDK 22 yet, and Bazel 3.7.1 only
     # supports up to API level 29 for NDK 21
@@ -33,7 +41,7 @@ def _android_autoconf_impl(repository_ctx):
         name="androidndk",
         path="{}",
     )
-""".format(ndk_home)
+""".format(_escape_for_windows(ndk_home))
 
     if ndk_rule == "" and sdk_rule == "":
         sdk_rule = "pass"
