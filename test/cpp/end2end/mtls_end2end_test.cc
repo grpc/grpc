@@ -301,7 +301,7 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         channel_creds_options.set_certificate_verifier(
             client_certificate_verifier);
         // When using a customized external verifier, we need to disable the
-        // per-host check.
+        // per-host checks.
         if (GetParam().client_verifier_type() !=
             SecurityPrimitives::HOSTNAME_VERIFIER) {
           channel_creds_options.set_check_call_host(false);
