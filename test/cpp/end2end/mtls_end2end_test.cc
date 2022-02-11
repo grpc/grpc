@@ -223,7 +223,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     }
     auto server_credentials =
         ::grpc::experimental::TlsServerCredentials(server_creds_options);
-    for (int i = 0; i < GetParam().num_listening_ports(); i++) {
+    endpoint_info_.resize(GetParam().num_listening_ports());
+    for (int i = 0; i < GetParam().num_listening_ports(); ++i) {
+      endpoint_info_.push_back(EndPointInfo());
       builder.AddListeningPort("0.0.0.0:0", server_credentials, &ports_[i]);
     }
     builder.RegisterService(&service_);
@@ -302,9 +304,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
         ::grpc::experimental::TlsCredentials(channel_creds_options);
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
       ASSERT_NE(0, ports_[i]);
-      server_addresses_.push_back(absl::StrCat("localhost:", ports_[i]));
+      endpoint_info_[i].server_address = absl::StrCat("localhost:", ports_[i]);
       stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(
-          server_addresses_[i], channel_credentials, args)));
+          endpoint_info_[i].server_address, channel_credentials, args)));
     }
   }
 
@@ -315,13 +317,11 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
   void RunServerLoop() { server_->Wait(); }
 
-  const std::string client_method_name_ = "grpc.testing.EchoTestService/Echo";
-  const std::string server_method_name_ = "grpc.testing.EchoTestService/Echo";
-
+  struct EndPointInfo {
+    std::string server_address;
+  };
   std::vector<int> ports_;
-  std::vector<std::string> tmp_server_tls_key_log_file_by_port_;
-  std::vector<std::string> tmp_stub_tls_key_log_file_;
-  std::vector<std::string> server_addresses_;
+  std::vector<EndPointInfo> endpoint_info_;
   std::vector<std::unique_ptr<EchoTestService::Stub>> stubs_;
   EchoServer service_;
   std::unique_ptr<::grpc::Server> server_;
