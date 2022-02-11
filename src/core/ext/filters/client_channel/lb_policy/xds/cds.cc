@@ -138,7 +138,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   bool GenerateDiscoveryMechanismForCluster(
       const std::string& name, Json::Array* discovery_mechanisms,
-      std::set<std::string>* clusters_needed);
+      std::set<std::string>* clusters_needed, bool* ring_hash_child);
   void OnClusterChanged(const std::string& name,
                         XdsClusterResource cluster_data);
   void OnError(const std::string& name, grpc_error_handle error);
@@ -317,7 +317,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 // recursively call the method for each child cluster.
 bool CdsLb::GenerateDiscoveryMechanismForCluster(
     const std::string& name, Json::Array* discovery_mechanisms,
-    std::set<std::string>* clusters_needed) {
+    std::set<std::string>* clusters_needed, bool* ring_hash_child) {
   clusters_needed->insert(name);
   auto& state = watchers_[name];
   // Create a new watcher if needed.
@@ -338,11 +338,19 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
   if (state.update->cluster_type ==
       XdsClusterResource::ClusterType::AGGREGATE) {
     bool missing_cluster = false;
+    bool ring_hash_child_recursive = false;
+    bool ring_hash_child_set = false;
     for (const std::string& child_name :
          state.update->prioritized_cluster_names) {
       if (!GenerateDiscoveryMechanismForCluster(
-              child_name, discovery_mechanisms, clusters_needed)) {
+              child_name, discovery_mechanisms, clusters_needed,
+              &ring_hash_child_recursive)) {
         missing_cluster = true;
+      }
+      // Only care about the first prioritized cluster.
+      if (!ring_hash_child_set) {
+        *ring_hash_child = ring_hash_child_recursive;
+        ring_hash_child_set = true;
       }
     }
     return !missing_cluster;
@@ -351,6 +359,7 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
       {"clusterName", name},
       {"max_concurrent_requests", state.update->max_concurrent_requests},
   };
+  *ring_hash_child = (state.update->lb_policy == "RING_HASH");
   switch (state.update->cluster_type) {
     case XdsClusterResource::ClusterType::EDS:
       mechanism["type"] = "EDS";
@@ -401,11 +410,13 @@ void CdsLb::OnClusterChanged(const std::string& name,
   // update the child policy at all.
   Json::Array discovery_mechanisms;
   std::set<std::string> clusters_needed;
+  bool ring_hash_child = false;
   if (GenerateDiscoveryMechanismForCluster(
-          config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
+          config_->cluster(), &discovery_mechanisms, &clusters_needed,
+          &ring_hash_child)) {
     // Construct config for child policy.
     Json::Object xds_lb_policy;
-    if (cluster_data.lb_policy == "RING_HASH") {
+    if (ring_hash_child) {
       xds_lb_policy["RING_HASH"] = Json::Object{
           {"min_ring_size", cluster_data.min_ring_size},
           {"max_ring_size", cluster_data.max_ring_size},
