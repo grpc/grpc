@@ -48,10 +48,11 @@ _GRPC_DEP_NAMES = [
     _TWISTED_TWISTED_DEP_NAME, _YAML_PYYAML_DEP_NAME,
     _TWISTED_INCREMENTAL_DEP_NAME, _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME, 'io_bazel_rules_go',
-    'build_bazel_rules_apple', 'build_bazel_apple_support', 'com_github_libuv_libuv',
-    'com_googlesource_code_re2', 'bazel_gazelle', 'opencensus_proto',
-    'com_envoyproxy_protoc_gen_validate', 'com_google_googleapis',
-    'com_google_libprotobuf_mutator', 'com_github_cncf_udpa'
+    'build_bazel_rules_apple', 'build_bazel_apple_support',
+    'com_github_libuv_libuv', 'com_googlesource_code_re2', 'bazel_gazelle',
+    'opencensus_proto', 'com_envoyproxy_protoc_gen_validate',
+    'com_google_googleapis', 'com_google_libprotobuf_mutator',
+    'com_github_cncf_udpa'
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
