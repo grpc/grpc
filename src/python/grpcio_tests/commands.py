@@ -245,6 +245,7 @@ class TestGevent(setuptools.Command):
         pass
 
     def run(self):
+        import gevent
         from gevent import monkey
         monkey.patch_all()
 
