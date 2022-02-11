@@ -73,7 +73,7 @@ TEST(ChannelArgsTest, SetGetRemove) {
 
 TEST(ChannelArgsTest, StoreRefCountedPtr) {
   struct Test : public RefCounted<Test> {
-    Test(int n) : n(n) {}
+    explicit Test(int n) : n(n) {}
     int n;
     bool operator<(const Test& rhs) const { return n < rhs.n; }
   };
@@ -86,7 +86,7 @@ TEST(ChannelArgsTest, StoreRefCountedPtr) {
 
 TEST(ChannelArgsTest, ObjectApi) {
   struct MyFancyObject : public RefCounted<MyFancyObject> {
-    MyFancyObject(int n) : n(n) {}
+    explicit MyFancyObject(int n) : n(n) {}
     static absl::string_view channel_arg_name() {
       return "grpc.internal.my-fancy-object";
     }
