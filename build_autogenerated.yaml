@@ -7745,6 +7745,19 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: sleep_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/sleep.h
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - src/core/lib/promise/sleep.cc
+  - test/core/promise/sleep_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: smoke_test
   gtest: true
   build: test
