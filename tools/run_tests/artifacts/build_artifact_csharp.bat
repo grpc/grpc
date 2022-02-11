@@ -26,6 +26,11 @@ cd build
 mkdir %ARCHITECTURE%
 cd %ARCHITECTURE%
 
+@rem Use externally provided env to determine build parallelism, otherwise use default.
+if "%GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS%"=="" (
+  set GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS=2
+)
+
 @rem set cl.exe build environment to build with VS2015 tooling
 @rem this is required for Ninja build to work
 call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" %ARCHITECTURE%
