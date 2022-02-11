@@ -1077,6 +1077,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "sleep",
+    srcs = [
+        "src/core/lib/promise/sleep.cc",
+    ],
+    hdrs = [
+        "src/core/lib/promise/sleep.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "grpc_base",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
     name = "promise",
     external_deps = [
         "absl/types:optional",

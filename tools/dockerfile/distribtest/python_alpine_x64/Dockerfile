@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
+FROM python:3.10-alpine3.14
 
-VERSION = '1.45.0.dev0'
-PROTOBUF_VERSION = '3.19.4'
+# Our test infrastructure demands bash
+RUN apk update && apk add bash
+
+RUN pip3 install virtualenv

@@ -52,18 +52,14 @@ bool SdkServerAuthzFilter::IsAuthorized(
     const ClientInitialMetadata& initial_metadata) {
   EvaluateArgs args(initial_metadata.get(), &per_channel_evaluate_args_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-    gpr_log(
-        GPR_DEBUG,
-        "checking request: url_path=%s, transport_security_type=%s, "
-        "uri_sans=[%s], dns_sans=[%s], subject=%s, local_address=%s:%d, "
-        "peer_address=%s:%d",
-        std::string(args.GetPath()).c_str(),
-        std::string(args.GetTransportSecurityType()).c_str(),
-        absl::StrJoin(args.GetUriSans(), ",").c_str(),
-        absl::StrJoin(args.GetDnsSans(), ",").c_str(),
-        std::string(args.GetSubject()).c_str(),
-        std::string(args.GetLocalAddressString()).c_str(), args.GetLocalPort(),
-        std::string(args.GetPeerAddressString()).c_str(), args.GetPeerPort());
+    gpr_log(GPR_DEBUG,
+            "checking request: url_path=%s, transport_security_type=%s, "
+            "uri_sans=[%s], dns_sans=[%s], subject=%s",
+            std::string(args.GetPath()).c_str(),
+            std::string(args.GetTransportSecurityType()).c_str(),
+            absl::StrJoin(args.GetUriSans(), ",").c_str(),
+            absl::StrJoin(args.GetDnsSans(), ",").c_str(),
+            std::string(args.GetSubject()).c_str());
   }
   grpc_authorization_policy_provider::AuthorizationEngines engines =
       provider_->engines();
@@ -83,7 +79,7 @@ bool SdkServerAuthzFilter::IsAuthorized(
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
-        gpr_log(GPR_INFO, "chand=%p: request allowed by policy %s.", this,
+        gpr_log(GPR_DEBUG, "chand=%p: request allowed by policy %s.", this,
                 decision.matching_policy_name.c_str());
       }
       return true;
