@@ -65,6 +65,7 @@ class AVL {
       Node* p = a.current();
       Node* q = b.current();
       if (p == nullptr) return q == nullptr;
+      if (q == nullptr) return false;
       if (p->kv != q->kv) return false;
       a.MoveNext();
       b.MoveNext();
@@ -80,7 +81,7 @@ class AVL {
       if (p == nullptr) return q != nullptr;
       if (q == nullptr) return false;
       if (p->kv < q->kv) return true;
-      if (p->kv > q->kv) return false;
+      if (p->kv != q->kv) return false;
       a.MoveNext();
       b.MoveNext();
     }

@@ -93,6 +93,7 @@ class ChannelArgs {
     }
 
     bool operator==(const Pointer& rhs) const;
+    bool operator<(const Pointer& rhs) const;
     bool operator!=(const Pointer& rhs) const { return !(*this == rhs); }
 
     void* c_pointer() const { return p_; }

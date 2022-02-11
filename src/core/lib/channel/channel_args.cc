@@ -54,26 +54,29 @@ bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
   return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
 }
 
+bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
+  return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
+}
+
 ChannelArgs::ChannelArgs() = default;
 
 ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
   ChannelArgs result;
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; i++) {
-      Value value;
       switch (args->args[i].type) {
         case GRPC_ARG_INTEGER:
-          value = Value(args->args[i].value.integer);
+          result = result.Set(args->args[i].key, args->args[i].value.integer);
           break;
         case GRPC_ARG_STRING:
-          value = Value(args->args[i].value.string);
+          result = result.Set(args->args[i].key, args->args[i].value.string);
           break;
         case GRPC_ARG_POINTER:
-          value = Value(Pointer(args->args[i].value.pointer.p,
-                                args->args[i].value.pointer.vtable));
+          result = result.Set(args->args[i].key,
+                              Pointer(args->args[i].value.pointer.p,
+                                      args->args[i].value.pointer.vtable));
           break;
       }
-      result.args_.Add(args->args[i].key, std::move(value));
     }
   }
   return result;
