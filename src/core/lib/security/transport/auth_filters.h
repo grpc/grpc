@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc_security.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_client_auth_filter;
@@ -31,5 +32,12 @@ void grpc_auth_metadata_context_build(
     const char* url_scheme, const grpc_slice& call_host,
     const grpc_slice& call_method, grpc_auth_context* auth_context,
     grpc_auth_metadata_context* auth_md_context);
+
+// Exposed for testing purposes only.
+// Check if the channel's security level is higher or equal to
+// that of call credentials to make a decision whether the transfer
+// of call credentials should be allowed or not.
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level);
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H */

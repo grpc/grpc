@@ -16,25 +16,33 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -e
+set -ex
 
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
+# Check that required tools are available.
 hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
 hash xcodebuild 2>/dev/null || {
     echo >&2 "XCode command-line tools need to be installed."
     exit 1
 }
 
-# clean the directory
-rm -rf Pods
-rm -rf Tests.xcworkspace
-rm -f Podfile.lock
+# clean pod cache and prior pods
+rm -Rf Pods Podfile.lock Tests.xcworkspace
 rm -f RemoteTestClient/*.{h,m}
+pod cache clean --all
 
-echo "TIME:  $(date)"
-pod install | ./verbose_time.sh
+time pod install --verbose
 
+# verify pod header installation
+if [ -d "./Pods/Headers/Public/gRPC-Core/grpc/impl/codegen" ]
+then
+    echo "grpc/impl/codegen/ has been imported."
+    number_of_files=$(find Pods/Headers/Public/gRPC-Core/grpc/impl/codegen -name "*.h" | wc -l)
+    echo "The number of files in Pods/Headers/Public/gRPC-Core/grpc/impl/codegen/ is $number_of_files"
+else
+    echo "Error: grpc/impl/codegen/ hasn't been imported."
+fi

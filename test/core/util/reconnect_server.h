@@ -21,6 +21,7 @@
 
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
 #include "test/core/util/test_tcp_server.h"
 
 typedef struct timestamp_list {

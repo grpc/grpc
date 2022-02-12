@@ -20,8 +20,6 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -31,6 +29,10 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -48,8 +50,8 @@ using ::opencensus::stats::testing::TestUtils;
 using ::opencensus::tags::TagKey;
 using ::opencensus::tags::WithTagMap;
 
-static const auto TEST_TAG_KEY = TagKey::Register("my_key");
-static const auto TEST_TAG_VALUE = "my_value";
+const auto TEST_TAG_KEY = TagKey::Register("my_key");
+const auto TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
 class EchoServer final : public EchoTestService::Service {

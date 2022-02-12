@@ -15,12 +15,12 @@
  *
  */
 
-#include <grpcpp/server.h>
-
 #include <cstdlib>
 #include <sstream>
 #include <type_traits>
 #include <utility>
+
+#include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -39,10 +39,9 @@
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
-
-#include "absl/memory/memory.h"
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -793,8 +792,8 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   }
 
   void AddSyncMethod(grpc::internal::RpcServiceMethod* method, void* tag) {
-    server_->server()->core_server->SetRegisteredMethodAllocator(
-        server_cq_->cq(), tag, [this, method] {
+    grpc_core::Server::FromC(server_->server())
+        ->SetRegisteredMethodAllocator(server_cq_->cq(), tag, [this, method] {
           grpc_core::Server::RegisteredCallAllocation result;
           new SyncRequest(server_, method, &result);
           return result;
@@ -807,8 +806,8 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
       unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
           new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
-      server_->server()->core_server->SetBatchMethodAllocator(
-          server_cq_->cq(), [this] {
+      grpc_core::Server::FromC(server_->server())
+          ->SetBatchMethodAllocator(server_cq_->cq(), [this] {
             grpc_core::Server::BatchCallAllocation result;
             new SyncRequest(server_, unknown_method_.get(), &result);
             return result;
@@ -1032,7 +1031,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
-      server_->core_server->SetRegisteredMethodAllocator(
+      grpc_core::Server::FromC(server_)->SetRegisteredMethodAllocator(
           cq->cq(), method_registration_tag, [this, cq, method_value] {
             grpc_core::Server::RegisteredCallAllocation result;
             new CallbackRequest<grpc::CallbackServerContext>(this, method_value,
@@ -1073,7 +1072,8 @@ void Server::RegisterCallbackGenericService(
   generic_handler_.reset(service->Handler());
 
   grpc::CompletionQueue* cq = CallbackCQ();
-  server_->core_server->SetBatchMethodAllocator(cq->cq(), [this, cq] {
+  grpc_core::Server::FromC(server_)->SetBatchMethodAllocator(cq->cq(), [this,
+                                                                        cq] {
     grpc_core::Server::BatchCallAllocation result;
     new CallbackRequest<grpc::GenericCallbackServerContext>(this, cq, &result);
     return result;

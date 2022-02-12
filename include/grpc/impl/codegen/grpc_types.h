@@ -19,14 +19,16 @@
 #ifndef GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 #define GRPC_IMPL_CODEGEN_GRPC_TYPES_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
+
+#include <stddef.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/impl/codegen/status.h>
-
-#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -420,10 +422,14 @@ typedef struct {
 /** If set, inhibits health checking (which may be enabled via the
  *  service config.) */
 #define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
-/** If set, the channel's resolver is allowed to query for SRV records.
- * For example, this is useful as a way to enable the "grpclb"
- * load balancing policy. Note that this only works with the "ares"
- * DNS resolver, and isn't supported by the "native" DNS resolver. */
+/** If enabled, the channel's DNS resolver queries for SRV records.
+ *  This is useful only when using the "grpclb" load balancing policy,
+ *  as described in the following documents:
+ *   https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md
+ *   https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md
+ *   https://github.com/grpc/proposal/blob/master/A26-grpclb-selection.md
+ *  Note that this works only with the "ares" DNS resolver; it isn't supported
+ *  by the "native" DNS resolver. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
 /** If set, determines an upper bound on the number of milliseconds that the
  * c-ares based DNS resolver will wait on queries before cancelling them.
@@ -443,6 +449,12 @@ typedef struct {
     gRPC authorization check. */
 #define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
   "grpc.authorization_policy_provider"
+/** EXPERIMENTAL. Updates to a server's configuration from a config fetcher (for
+ * example, listener updates from xDS) cause all older connections to be
+ * gracefully shut down (i.e., "drained") with a grace period configured by this
+ * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
+#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
+  "grpc.experimental.server_config_change_drain_grace_time_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

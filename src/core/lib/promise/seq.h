@@ -15,9 +15,12 @@
 #ifndef GRPC_CORE_LIB_PROMISE_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #include "absl/types/variant.h"
+
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/poll.h"
 

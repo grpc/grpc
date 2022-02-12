@@ -27,23 +27,14 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata.h"
 
 /// Creates a grpc_channel.
-///
-/// If the \a resource_user is not null, \a preallocated_bytes may have been
-/// allocated on that resource_user for use by the channel. These bytes will be
-/// freed from the resource_user upon channel destruction.
-///
-/// Takes ownership of a \a resource_user ref.
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_resource_user* resource_user,
-                                  size_t preallocated_bytes,
-                                  grpc_error_handle* error);
+grpc_channel* grpc_channel_create_internal(
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_stack_type channel_stack_type,
+    grpc_transport* optional_transport, grpc_error_handle* error);
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */
@@ -52,9 +43,8 @@ void grpc_channel_destroy_internal(grpc_channel* channel);
 /// Creates a grpc_channel with a builder. See the description of
 /// \a grpc_channel_create for variable definitions.
 grpc_channel* grpc_channel_create_with_builder(
-    grpc_channel_stack_builder* builder,
+    grpc_core::ChannelStackBuilder* builder,
     grpc_channel_stack_type channel_stack_type,
-    grpc_resource_user* resource_user, size_t preallocated_bytes,
     grpc_error_handle* error = nullptr);
 
 /** Create a call given a grpc_channel, in order to call \a method.
@@ -82,27 +72,18 @@ void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 namespace grpc_core {
 
 struct RegisteredCall {
-  // The method and host are kept as part of this struct just to manage their
-  // lifetime since they must outlive the mdelem contents.
-  std::string method;
-  std::string host;
-
-  grpc_mdelem path;
-  grpc_mdelem authority;
+  Slice path;
+  absl::optional<Slice> authority;
 
   explicit RegisteredCall(const char* method_arg, const char* host_arg);
-  // TODO(vjpai): delete copy constructor once all supported compilers allow
-  //              std::map value_type to be MoveConstructible.
   RegisteredCall(const RegisteredCall& other);
-  RegisteredCall(RegisteredCall&& other) noexcept;
   RegisteredCall& operator=(const RegisteredCall&) = delete;
-  RegisteredCall& operator=(RegisteredCall&&) = delete;
 
   ~RegisteredCall();
 };
 
 struct CallRegistrationTable {
-  grpc_core::Mutex mu;
+  Mutex mu;
   // The map key should be owned strings rather than unowned char*'s to
   // guarantee that it outlives calls on the core channel (which may outlast the
   // C++ or other wrapped language Channel that registered these calls).
@@ -118,8 +99,6 @@ struct grpc_channel {
   grpc_compression_options compression_options;
 
   gpr_atm call_size_estimate;
-  grpc_resource_user* resource_user;
-  size_t preallocated_bytes;
 
   // TODO(vjpai): Once the grpc_channel is allocated via new rather than malloc,
   //              expand the members of the CallRegistrationTable directly into
@@ -129,8 +108,9 @@ struct grpc_channel {
   grpc_core::ManualConstructor<grpc_core::CallRegistrationTable>
       registration_table;
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
+  grpc_core::ManualConstructor<grpc_core::MemoryAllocator> allocator;
 
-  char* target;
+  grpc_core::ManualConstructor<std::string> target;
 };
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 

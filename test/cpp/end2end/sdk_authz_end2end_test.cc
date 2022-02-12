@@ -22,31 +22,66 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
 namespace testing {
 namespace {
 
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
+
 constexpr char kMessage[] = "Hello";
+
+std::string ReadFile(const char* file_path) {
+  grpc_slice slice;
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
+  std::string file_contents(grpc_core::StringViewFromSlice(slice));
+  grpc_slice_unref(slice);
+  return file_contents;
+}
 
 class SdkAuthzEnd2EndTest : public ::testing::Test {
  protected:
   SdkAuthzEnd2EndTest()
       : server_address_(
-            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())),
-        server_creds_(
-            std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
-                grpc_fake_transport_security_server_credentials_create()))),
-        channel_creds_(
-            std::shared_ptr<ChannelCredentials>(new SecureChannelCredentials(
-                grpc_fake_transport_security_credentials_create()))) {}
+            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())) {
+    std::string root_cert = ReadFile(kCaCertPath);
+    std::string identity_cert = ReadFile(kServerCertPath);
+    std::string private_key = ReadFile(kServerKeyPath);
+    std::vector<experimental::IdentityKeyCertPair>
+        server_identity_key_cert_pairs = {{private_key, identity_cert}};
+    grpc::experimental::TlsServerCredentialsOptions server_options(
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            root_cert, server_identity_key_cert_pairs));
+    server_options.watch_root_certs();
+    server_options.watch_identity_key_cert_pairs();
+    server_options.set_cert_request_type(
+        GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+    server_creds_ = grpc::experimental::TlsServerCredentials(server_options);
+    std::vector<experimental::IdentityKeyCertPair>
+        channel_identity_key_cert_pairs = {
+            {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
+    grpc::experimental::TlsChannelCredentialsOptions channel_options;
+    channel_options.set_certificate_provider(
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            ReadFile(kCaCertPath), channel_identity_key_cert_pairs));
+    channel_options.watch_identity_key_cert_pairs();
+    channel_options.watch_root_certs();
+    channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
+  }
 
   ~SdkAuthzEnd2EndTest() override { server_->Shutdown(); }
 
@@ -76,8 +111,21 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     return provider;
   }
 
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+  CreateFileWatcherAuthzPolicyProvider(const std::string& policy_path,
+                                       unsigned int refresh_interval_sec) {
+    grpc::Status status;
+    auto provider =
+        experimental::FileWatcherAuthorizationPolicyProvider::Create(
+            policy_path, refresh_interval_sec, &status);
+    EXPECT_TRUE(status.ok());
+    return provider;
+  }
+
   std::shared_ptr<Channel> BuildChannel() {
     ChannelArguments args;
+    // Override target name for host name check
+    args.SetSslTargetNameOverride("foo.test.google.fr");
     return ::grpc::CreateCustomChannel(server_address_, channel_creds_, args);
   }
 
@@ -255,7 +303,7 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
       "      \"name\": \"allow_echo\","
       "      \"request\": {"
       "        \"paths\": ["
-      "          \"*/Echo\""
+      "          \"*\""
       "        ],"
       "        \"headers\": ["
       "          {"
@@ -323,16 +371,9 @@ TEST_F(
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
-      "      \"name\": \"allow_echo\","
+      "      \"name\": \"allow_mtls\","
       "      \"source\": {"
-      "        \"principals\": ["
-      "          \"foo\""
-      "        ]"
-      "      },"
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/Echo\""
-      "        ]"
+      "        \"principals\": [\"*\"]"
       "      }"
       "    }"
       "  ]"
@@ -346,6 +387,420 @@ TEST_F(
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       StaticInitAllowsRpcRequestWithPrincipalsFieldOnAuthenticatedConnection) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_mtls\","
+      "      \"source\": {"
+      "        \"principals\": [\"*\"]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp.message(), kMessage);
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       FileWatcherInitAllowsRpcRequestNoMatchInDenyMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ],"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo1\", \"foo2\"]"
+      "          },"
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar1\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_clientstreamingecho\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/ClientStreamingEcho\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
+  auto channel = BuildChannel();
+  ClientContext context;
+  context.AddMetadata("key-foo", "foo2");
+  context.AddMetadata("key-bar", "bar1");
+  context.AddMetadata("key-baz", "baz1");
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp.message(), kMessage);
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       FileWatcherInitDeniesRpcRequestNoMatchInAllowAndDeny) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/foo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_bar\","
+      "      \"source\": {"
+      "        \"principals\": ["
+      "          \"bar\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       FileWatcherInitDeniesRpcRequestMatchInDenyMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_all\""
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       FileWatcherInitDeniesRpcRequestMatchInDenyNoMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_clientstreamingecho\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/ClientStreamingEcho\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       FileWatcherInitAllowsRpcRequestEmptyDenyMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ],"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo1\", \"foo2\"]"
+      "          },"
+      "          {"
+      "            \"key\": \"key-bar\","
+      "            \"values\": [\"bar1\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
+  auto channel = BuildChannel();
+  ClientContext context;
+  context.AddMetadata("key-foo", "foo2");
+  context.AddMetadata("key-bar", "bar1");
+  context.AddMetadata("key-baz", "baz1");
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp.message(), kMessage);
+}
+
+TEST_F(SdkAuthzEnd2EndTest,
+       FileWatcherInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ],"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"key-foo\","
+      "            \"values\": [\"foo1\"]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
+  auto channel = BuildChannel();
+  ClientContext context;
+  context.AddMetadata("key-bar", "bar1");
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  auto channel = BuildChannel();
+  ClientContext context1;
+  grpc::testing::EchoResponse resp1;
+  grpc::Status status = SendRpc(channel, &context1, &resp1);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp1.message(), kMessage);
+  // Replace the existing policy with a new authorization policy.
+  policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/foo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  tmp_policy.RewriteFile(policy);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  ClientContext context2;
+  grpc::testing::EchoResponse resp2;
+  status = SendRpc(channel, &context2, &resp2);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp2.message().empty());
+}
+
+TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  auto channel = BuildChannel();
+  ClientContext context1;
+  grpc::testing::EchoResponse resp1;
+  grpc::Status status = SendRpc(channel, &context1, &resp1);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp1.message(), kMessage);
+  // Replaces existing policy with an invalid authorization policy.
+  policy = "{}";
+  tmp_policy.RewriteFile(policy);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  ClientContext context2;
+  grpc::testing::EchoResponse resp2;
+  status = SendRpc(channel, &context2, &resp2);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp2.message(), kMessage);
+}
+
+TEST_F(SdkAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  grpc_core::testing::TmpFile tmp_policy(policy);
+  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  auto channel = BuildChannel();
+  ClientContext context1;
+  grpc::testing::EchoResponse resp1;
+  grpc::Status status = SendRpc(channel, &context1, &resp1);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp1.message(), kMessage);
+  // Replaces existing policy with an invalid authorization policy.
+  policy = "{}";
+  tmp_policy.RewriteFile(policy);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  ClientContext context2;
+  grpc::testing::EchoResponse resp2;
+  status = SendRpc(channel, &context2, &resp2);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp2.message(), kMessage);
+  // Replace the existing invalid policy with a valid authorization policy.
+  policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_foo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/foo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ],"
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"deny_echo\","
+      "      \"request\": {"
+      "        \"paths\": ["
+      "          \"*/Echo\""
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  tmp_policy.RewriteFile(policy);
+  // Wait 2 seconds for the provider's refresh thread to read the updated files.
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  ClientContext context3;
+  grpc::testing::EchoResponse resp3;
+  status = SendRpc(channel, &context3, &resp3);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
+  EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
+  EXPECT_TRUE(resp3.message().empty());
 }
 
 }  // namespace

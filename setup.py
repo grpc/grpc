@@ -13,8 +13,8 @@
 # limitations under the License.
 """A setup module for the GRPC Python package."""
 
-# setuptools need to be imported before distutils. Otherwise it might lead to
-# undesirable behaviors or errors.
+# NOTE(https://github.com/grpc/grpc/issues/24028): allow setuptools to monkey
+# patch distutils
 import setuptools  # isort:skip
 
 # Monkey Patch the unix compiler to accept ASM
@@ -55,6 +55,7 @@ ABSL_INCLUDE = (os.path.join('third_party', 'abseil-cpp'),)
 ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting',
                                         'include'),)
 CARES_INCLUDE = (
+    os.path.join('third_party', 'cares', 'cares', 'include'),
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),
 )
@@ -160,7 +161,7 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 # without statically linking libstdc++ (which leads to a slight increase in the wheel size).
 # This option is useful when crosscompiling wheels for aarch64 where
 # it's difficult to ensure that the crosscompilation toolchain has a high-enough version
-# of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
+# of GCC (we require >=5.1) but still uses old-enough libstdc++ symbols.
 # TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
 BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', 'False')
@@ -210,7 +211,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-', '-latomic'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
@@ -261,7 +262,7 @@ if EXTRA_ENV_LINK_ARGS is None:
             ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
             ' -static -lshlwapi'.format(msvcr=msvcr))
     if "linux" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += ' -Wl,-wrap,memcpy -static-libgcc'
+        EXTRA_ENV_LINK_ARGS += ' -static-libgcc'
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -312,8 +313,9 @@ if not "win32" in sys.platform:
 if "win32" in sys.platform:
     EXTENSION_LIBRARIES += (
         'advapi32',
-        'ws2_32',
+        'bcrypt',
         'dbghelp',
+        'ws2_32',
     )
 if BUILD_WITH_SYSTEM_OPENSSL:
     EXTENSION_LIBRARIES += (
@@ -536,6 +538,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
+    python_requires='>=3.6',
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

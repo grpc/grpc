@@ -21,6 +21,8 @@
 #include <thread>
 #include <vector>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -39,8 +41,6 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gtest/gtest.h>
 
 using grpc::health::v1::Health;
 using grpc::health::v1::HealthCheckRequest;

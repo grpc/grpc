@@ -27,15 +27,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/ext/filters/client_channel/service_config_call_data.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 
 static void recv_message_ready(void* user_data, grpc_error_handle error);
 static void recv_trailing_metadata_ready(void* user_data,
@@ -203,17 +202,15 @@ static void recv_message_ready(void* user_data, grpc_error_handle error) {
       (*calld->recv_message)->length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("Received message larger than max (%u vs. %d)",
-                            (*calld->recv_message)->length(),
-                            calld->limits.max_recv_size)
-                .c_str()),
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+            "Received message larger than max (%u vs. %d)",
+            (*calld->recv_message)->length(), calld->limits.max_recv_size)),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
     calld->error = GRPC_ERROR_REF(error);
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   // Invoke the next callback.
   grpc_closure* closure = calld->next_recv_message_ready;
@@ -264,14 +261,12 @@ static void message_size_start_transport_stream_op_batch(
           static_cast<size_t>(calld->limits.max_send_size)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat(
-                    "Sent message larger than max (%u vs. %d)",
-                    op->payload->send_message.send_message->length(),
-                    calld->limits.max_send_size)
-                    .c_str()),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED),
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                               "Sent message larger than max (%u vs. %d)",
+                               op->payload->send_message.send_message->length(),
+                               calld->limits.max_send_size)),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_RESOURCE_EXHAUSTED),
         calld->call_combiner);
     return;
   }
@@ -335,6 +330,7 @@ static void message_size_destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_message_size_filter = {
     message_size_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     message_size_init_call_elem,
@@ -348,22 +344,20 @@ const grpc_channel_filter grpc_message_size_filter = {
 
 // Used for GRPC_CLIENT_SUBCHANNEL
 static bool maybe_add_message_size_filter_subchannel(
-    grpc_channel_stack_builder* builder, void* /*arg*/) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+    grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* channel_args = builder->channel_args();
   if (grpc_channel_args_want_minimal_stack(channel_args)) {
     return true;
   }
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &grpc_message_size_filter, nullptr, nullptr);
+  builder->PrependFilter(&grpc_message_size_filter, nullptr);
+  return true;
 }
 
 // Used for GRPC_CLIENT_DIRECT_CHANNEL and GRPC_SERVER_CHANNEL. Adds the filter
 // only if message size limits or service config is specified.
-static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
-                                          void* /*arg*/) {
-  const grpc_channel_args* channel_args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+static bool maybe_add_message_size_filter(
+    grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* channel_args = builder->channel_args();
   if (grpc_channel_args_want_minimal_stack(channel_args)) {
     return true;
   }
@@ -376,28 +370,27 @@ static bool maybe_add_message_size_filter(grpc_channel_stack_builder* builder,
   const grpc_arg* a =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   const char* svc_cfg_str = grpc_channel_arg_get_string(a);
-  if (svc_cfg_str != nullptr) {
-    enable = true;
-  }
-  if (enable) {
-    return grpc_channel_stack_builder_prepend_filter(
-        builder, &grpc_message_size_filter, nullptr, nullptr);
-  } else {
-    return true;
-  }
+  if (svc_cfg_str != nullptr) enable = true;
+  if (enable) builder->PrependFilter(&grpc_message_size_filter, nullptr);
+  return true;
 }
 
 void grpc_message_size_filter_init(void) {
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_message_size_filter_subchannel, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_message_size_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_message_size_filter, nullptr);
   grpc_core::MessageSizeParser::Register();
 }
 
 void grpc_message_size_filter_shutdown(void) {}
+
+namespace grpc_core {
+void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
+  builder->channel_init()->RegisterStage(
+      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      maybe_add_message_size_filter_subchannel);
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                         maybe_add_message_size_filter);
+  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL,
+                                         GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                         maybe_add_message_size_filter);
+}
+}  // namespace grpc_core

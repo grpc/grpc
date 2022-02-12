@@ -18,9 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/port.h"
 
 static grpc_pollset_set* pollset_set_create(void) {
   return reinterpret_cast<grpc_pollset_set*>(static_cast<intptr_t>(0xdeafbeef));

@@ -16,6 +16,8 @@
  *
  */
 
+#include "test/cpp/interop/interop_client.h"
+
 #include <cinttypes>
 #include <fstream>
 #include <memory>
@@ -40,7 +42,6 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/histogram.h"
 #include "test/cpp/interop/client_helper.h"
-#include "test/cpp/interop/interop_client.h"
 
 namespace grpc {
 namespace testing {

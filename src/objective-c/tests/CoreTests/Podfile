@@ -1,0 +1,16 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+GRPC_LOCAL_SRC = '../../../..'
+
+def grpc_deps
+  pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
+end
+
+target 'CoreTests' do
+  platform :ios, '9.0'
+  grpc_deps
+end

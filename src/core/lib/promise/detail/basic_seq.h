@@ -15,10 +15,18 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
+#include <array>
+#include <cassert>
+#include <new>
+#include <tuple>
+#include <utility>
+
+#include "absl/meta/type_traits.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
+
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/switch.h"
@@ -26,6 +34,8 @@
 
 namespace grpc_core {
 namespace promise_detail {
+template <typename F>
+class PromiseLike;
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -67,12 +77,14 @@ struct SeqState {
   // Move constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
   SeqState(SeqState&& other) noexcept
-      : prior(std::move(other.prior)),
-        next_factory(std::move(other.next_factory)) {}
+      : next_factory(std::move(other.next_factory)) {
+    new (&prior) PriorState(std::move(other.prior));
+  }
   // Copy constructor - assumes we're in the initial state (move prior) as it's
   // illegal to move a promise after polling it.
-  SeqState(const SeqState& other)
-      : prior(other.prior), next_factory(other.next_factory) {}
+  SeqState(const SeqState& other) : next_factory(other.next_factory) {
+    new (&prior) PriorState(std::move(other.prior));
+  }
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
   ~SeqState() {}
@@ -114,7 +126,7 @@ struct SeqState<Traits, 0, Fs...> {
         next_factory(other.next_factory) {}
   // Empty destructor - we instead destruct the innards in BasicSeq manually
   // depending on state.
-  ~SeqState(){};
+  ~SeqState() {}
   // Evaluate the current promise, next promise factory types for this state.
   // Our callable is the first element of Fs, wrapped in PromiseLike to handle
   // some common edge cases. The next factory is the second element.
@@ -150,9 +162,9 @@ absl::enable_if_t<I <= J, SeqState<Traits, I, Fs...>*> GetSeqState(
 }
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
-auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg) -> decltype(
-    SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
-        &state->next_factory, std::forward<T>(arg))) {
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
+    -> decltype(SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::
+                    CallFactory(&state->next_factory, std::forward<T>(arg))) {
   return SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
       &state->next_factory, std::forward<T>(arg));
 }

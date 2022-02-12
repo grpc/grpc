@@ -18,6 +18,8 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
+#include "absl/strings/str_join.h"
+
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
-
-#include "absl/strings/str_join.h"
 
 // TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
@@ -68,8 +68,7 @@ SecureChannelCredentials::CreateChannelWithInterceptors(
   args.SetChannelArgs(&channel_args);
   return ::grpc::CreateChannelInternal(
       args.GetSslTargetNameOverride(),
-      grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args,
-                                 nullptr),
+      grpc_channel_create(target.c_str(), c_creds_, &channel_args),
       std::move(interceptor_creators));
 }
 
@@ -217,6 +216,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc::Status status;
+  // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
   auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
     grpc_slice_unref_internal(json_string);
     gpr_free(sts_creds_path);
@@ -523,6 +523,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
     std::unique_ptr<MetadataCredentialsPlugin> plugin)
-    : thread_pool_(CreateDefaultThreadPool()), plugin_(std::move(plugin)) {}
+    : plugin_(std::move(plugin)) {
+  if (plugin_->IsBlocking()) {
+    thread_pool_.reset(CreateDefaultThreadPool());
+  }
+}
 
 }  // namespace grpc

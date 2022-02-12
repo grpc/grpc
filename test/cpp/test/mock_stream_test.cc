@@ -16,10 +16,11 @@
  *
  */
 
-#include <grpcpp/test/mock_stream.h>
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+
+#include <grpcpp/test/mock_stream.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 

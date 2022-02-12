@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/resolve_address.h"
-
 #include <net/if.h>
 #include <string.h>
 #include <sys/un.h>
@@ -39,6 +37,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
@@ -49,7 +48,6 @@ static gpr_timespec test_deadline(void) {
 typedef struct args_struct {
   grpc_core::Thread thd;
   gpr_event ev;
-  grpc_resolved_addresses* addrs;
   gpr_mu* mu;
   bool done;              // guarded by mu
   grpc_pollset* pollset;  // guarded by mu
@@ -64,7 +62,6 @@ void args_init(args_struct* args) {
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
-  args->addrs = nullptr;
   args->done = false;
 }
 
@@ -73,7 +70,6 @@ void args_finish(args_struct* args) {
   args->thd.Join();
   // Don't need to explicitly destruct args->thd since
   // args is actually going to be destructed, not just freed
-  grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure do_nothing_cb;
@@ -118,33 +114,30 @@ static void poll_pollset_until_request_done(args_struct* args) {
   args->thd.Start();
 }
 
-static void must_succeed(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err == GRPC_ERROR_NONE);
-  GPR_ASSERT(args->addrs != nullptr);
-  GPR_ASSERT(args->addrs->naddrs > 0);
+namespace {
+
+void MustSucceed(args_struct* args,
+                 absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+  GPR_ASSERT(result.ok());
+  GPR_ASSERT(!result->empty());
   grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void must_fail(void* argsp, grpc_error_handle err) {
-  args_struct* args = static_cast<args_struct*>(argsp);
-  GPR_ASSERT(err != GRPC_ERROR_NONE);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-}
+}  // namespace
 
 static void resolve_address_must_succeed(const char* target) {
   grpc_core::ExecCtx exec_ctx;
   args_struct args;
   args_init(&args);
   poll_pollset_until_request_done(&args);
-  grpc_resolve_address(
+  auto r = grpc_core::GetDNSResolver()->ResolveName(
       target, "1" /* port number */, args.pollset_set,
-      GRPC_CLOSURE_CREATE(must_succeed, &args, grpc_schedule_on_exec_ctx),
-      &args.addrs);
+      [&args](absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+        MustSucceed(&args, std::move(result));
+      });
+  r->Start();
   grpc_core::ExecCtx::Get()->Flush();
   args_finish(&args);
 }

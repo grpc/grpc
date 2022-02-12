@@ -16,12 +16,13 @@
 //
 //
 
+#include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

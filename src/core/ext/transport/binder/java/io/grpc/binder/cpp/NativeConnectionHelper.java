@@ -15,26 +15,41 @@
 package io.grpc.binder.cpp;
 
 import android.content.Context;
-import android.os.IBinder;
+import android.content.pm.PackageManager;
 import android.os.Parcel;
+import android.util.Log;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * This class will be invoked by gRPC binder transport internal implementation to perform operations
- * that are only possible in Java
+ * This class will be invoked by gRPC binder transport internal implementation (from
+ * src/core/ext/transport/binder/client/jni_utils.cc) to perform operations that are only possible
+ * in Java
  */
 final class NativeConnectionHelper {
-  static SyncServiceConnection s;
+  // Maps connection id to GrpcBinderConnection instances
+  static Map<String, GrpcBinderConnection> s = new HashMap<>();
 
-  static void tryEstablishConnection(Context context, String pkg, String cls) {
-    s = new SyncServiceConnection(context);
-    s.tryConnect(pkg, cls);
+  static void tryEstablishConnection(Context context, String pkg, String cls, String action_name, String connId) {
+    // TODO(mingcl): Assert that connId is unique
+    s.put(connId, new GrpcBinderConnection(context, connId));
+    s.get(connId).tryConnect(pkg, cls, action_name);
   }
 
-  // TODO(mingcl): We should notify C++ once we got the service binder so they don't need to call
-  // this function to check. For now we assume that this function will only be called after
-  // successful connection
-  static IBinder getServiceBinder() {
-    return s.getIBinder();
+  // Returns true if the packages signature of the 2 UIDs match.
+  // `context` is used to get PackageManager.
+  // Suppress unnecessary internal warnings related to checkSignatures compatibility issue.
+  // BinderTransport code is only used on newer Android platform versions so this is fine.
+  @SuppressWarnings("CheckSignatures")
+  static boolean isSignatureMatch(Context context, int uid1, int uid2) {
+    int result = context.getPackageManager().checkSignatures(uid1, uid2);
+    if (result == PackageManager.SIGNATURE_MATCH) {
+      return true;
+    }
+    Log.e(
+        "NativeConnectionHelper",
+        "Signatures does not match. checkSignature return value = " + result);
+    return false;
   }
 
   static Parcel getEmptyParcel() {

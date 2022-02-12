@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -32,9 +30,11 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -43,7 +43,6 @@
 
 struct custom_fixture_data {
   grpc_endpoint_pair ep;
-  grpc_resource_quota* resource_quota;
 };
 
 static void server_setup_transport(void* ts, grpc_transport* transport) {
@@ -52,8 +51,9 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   custom_fixture_data* fixture_data =
       static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_endpoint_add_to_pollset(fixture_data->ep.server, grpc_cq_pollset(f->cq));
-  grpc_error_handle error = f->server->core_server->SetupTransport(
-      transport, nullptr, f->server->core_server->channel_args(), nullptr);
+  grpc_core::Server* core_server = grpc_core::Server::FromC(f->server);
+  grpc_error_handle error = core_server->SetupTransport(
+      transport, nullptr, core_server->channel_args(), nullptr);
   if (error == GRPC_ERROR_NONE) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
@@ -64,7 +64,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 
 typedef struct {
   grpc_end2end_test_fixture* f;
-  grpc_channel_args* client_args;
+  const grpc_channel_args* client_args;
 } sp_client_setup;
 
 static void client_setup_transport(void* ts, grpc_transport* transport) {
@@ -73,12 +73,11 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   grpc_arg authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("test-authority"));
-  grpc_channel_args* args =
+  const grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  cs->f->client =
-      grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          transport, nullptr, 0, &error);
+  cs->f->client = grpc_channel_create_internal(
+      "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -96,7 +95,8 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   custom_fixture_data* fixture_data = static_cast<custom_fixture_data*>(
       gpr_malloc(sizeof(custom_fixture_data)));
   grpc_end2end_test_fixture f;
@@ -115,30 +115,30 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   a[2].type = GRPC_ARG_INTEGER;
   a[2].value.integer = 1;
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
-  fixture_data->resource_quota =
-      grpc_resource_quota_from_channel_args(&args, true);
   fixture_data->ep = grpc_iomgr_create_endpoint_pair("fixture", &args);
   return f;
 }
 
-static void chttp2_init_client_socketpair(grpc_end2end_test_fixture* f,
-                                          grpc_channel_args* client_args) {
+static void chttp2_init_client_socketpair(
+    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args) {
   grpc_core::ExecCtx exec_ctx;
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
   sp_client_setup cs;
+  client_args = grpc_core::CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(client_args);
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(
-      client_args, fixture_data->ep.client, true,
-      grpc_resource_user_create(fixture_data->resource_quota,
-                                "client_transport"));
+  transport =
+      grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
   client_setup_transport(&cs, transport);
+  grpc_channel_args_destroy(client_args);
   GPR_ASSERT(f->client);
 }
 
-static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
-                                          grpc_channel_args* server_args) {
+static void chttp2_init_server_socketpair(
+    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args) {
   grpc_core::ExecCtx exec_ctx;
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
@@ -146,17 +146,17 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture* f,
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(
-      server_args, fixture_data->ep.server, false,
-      grpc_resource_user_create(fixture_data->resource_quota,
-                                "server_transport"));
+  server_args = grpc_core::CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(server_args);
+  transport =
+      grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
+  grpc_channel_args_destroy(server_args);
   server_setup_transport(f, transport);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
   grpc_core::ExecCtx exec_ctx;
-  auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
-  grpc_resource_quota_unref(fixture_data->resource_quota);
   gpr_free(f->fixture_data);
 }
 

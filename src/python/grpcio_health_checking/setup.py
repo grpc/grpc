@@ -62,7 +62,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'protobuf>=3.6.0',
+    'protobuf>=3.12.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
 
@@ -96,6 +96,7 @@ setuptools.setup(name='grpcio-health-checking',
                  classifiers=CLASSIFIERS,
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  setup_requires=SETUP_REQUIRES,
                  cmdclass=COMMAND_CLASS)

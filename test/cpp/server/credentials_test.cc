@@ -14,22 +14,25 @@
 // limitations under the License.
 //
 
+#include <memory>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
-#include <gtest/gtest.h>
-
-#include <memory>
 
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/tls_test_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data"
 
 namespace {
 
@@ -39,6 +42,7 @@ constexpr const char* kIdentityCertName = "identity_cert_name";
 constexpr const char* kIdentityCertPrivateKey = "identity_private_key";
 constexpr const char* kIdentityCertContents = "identity_cert_contents";
 
+using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::FileWatcherCertificateProvider;
 using ::grpc::experimental::StaticDataCertificateProvider;
 
@@ -107,6 +111,21 @@ TEST(
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
+TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_crl_directory(CRL_DIR_PATH);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
 // ServerCredentials should always have identity credential presented.
 // Otherwise gRPC stack will fail.
 TEST(
@@ -119,6 +138,40 @@ TEST(
   options.set_identity_cert_name(kIdentityCertName);
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithSyncExternalVerifier) {
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_certificate_verifier(verifier);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
+  auto verifier =
+      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(true);
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
 }

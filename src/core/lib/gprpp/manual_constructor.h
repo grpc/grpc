@@ -25,6 +25,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+
 #include <new>
 #include <type_traits>
 #include <utility>
@@ -162,9 +163,8 @@ class PolymorphicManualConstructor {
   }
 
   typename std::aligned_storage<
-      grpc_core::manual_ctor_impl::max_size_of<DerivedTypes...>::value,
-      grpc_core::manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type
-      space_;
+      manual_ctor_impl::max_size_of<DerivedTypes...>::value,
+      manual_ctor_impl::max_align_of<DerivedTypes...>::value>::type space_;
 };
 
 template <typename Type>

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -29,13 +27,13 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
-
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
@@ -327,6 +325,7 @@ class InjectStatusFilter {
 
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -339,38 +338,28 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool g_enable_filter = false;
-
-bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* /*arg*/) {
-  // Skip if filter is not enabled.
-  if (!g_enable_filter) return true;
+bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_channel_args* args = builder->channel_args();
   if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;
   }
   // Install filter.
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &InjectStatusFilter::kFilterVtable, nullptr, nullptr);
+  builder->PrependFilter(&InjectStatusFilter::kFilterVtable, nullptr);
+  return true;
 }
-
-void InitPlugin(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, 0, MaybeAddFilter,
-                                   nullptr);
-}
-
-void DestroyPlugin(void) {}
 
 }  // namespace
 
 void retry_recv_trailing_metadata_error(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
-  g_enable_filter = true;
-  test_retry_recv_trailing_metadata_error(config);
-  g_enable_filter = false;
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
+        builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
+                                               AddFilter);
+      },
+      [config] { test_retry_recv_trailing_metadata_error(config); });
 }
 
-void retry_recv_trailing_metadata_error_pre_init() {
-  grpc_register_plugin(InitPlugin, DestroyPlugin);
-}
+void retry_recv_trailing_metadata_error_pre_init() {}

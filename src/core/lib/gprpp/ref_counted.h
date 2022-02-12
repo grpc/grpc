@@ -21,13 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
+
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -208,7 +208,7 @@ class PolymorphicRefCount {
 };
 
 // NonPolymorphicRefCount does not enforce polymorphic destruction of
-// RefCounted. Please refer to grpc_core::RefCounted for more details, and
+// RefCounted. Please refer to RefCounted for more details, and
 // when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
  public:

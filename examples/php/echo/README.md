@@ -12,7 +12,7 @@ For all the following examples, we use a simple gRPC server, written in Node.
 ```sh
 $ git clone https://github.com/grpc/grpc-web
 $ cd grpc-web
-$ docker-compose build common node-server
+$ docker-compose build prereqs node-server
 $ docker run -d -p 9090:9090 --name node-server grpcweb/node-server
 ```
 

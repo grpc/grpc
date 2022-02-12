@@ -39,14 +39,6 @@ namespace grpc_core {
 
 class XdsClient;
 
-class XdsChannelCredsRegistry {
- public:
-  static bool IsSupported(const std::string& creds_type);
-  static bool IsValidConfig(const std::string& creds_type, const Json& config);
-  static RefCountedPtr<grpc_channel_credentials> MakeChannelCreds(
-      const std::string& creds_type, const Json& config);
-};
-
 class XdsBootstrap {
  public:
   struct Node {
@@ -64,7 +56,33 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
+    static XdsServer Parse(const Json& json, grpc_error_handle* error);
+
+    bool operator==(const XdsServer& other) const {
+      return (server_uri == other.server_uri &&
+              channel_creds_type == other.channel_creds_type &&
+              channel_creds_config == other.channel_creds_config &&
+              server_features == other.server_features);
+    }
+
+    bool operator<(const XdsServer& other) const {
+      if (server_uri < other.server_uri) return true;
+      if (channel_creds_type < other.channel_creds_type) return true;
+      if (channel_creds_config.Dump() < other.channel_creds_config.Dump()) {
+        return true;
+      }
+      if (server_features < other.server_features) return true;
+      return false;
+    }
+
+    Json::Object ToJson() const;
+
     bool ShouldUseV3() const;
+  };
+
+  struct Authority {
+    std::string client_listener_resource_name_template;
+    absl::InlinedVector<XdsServer, 1> xds_servers;
   };
 
   // Creates bootstrap object from json_string.
@@ -82,22 +100,28 @@ class XdsBootstrap {
   // add support for fallback for the xds channel.
   const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
+  const std::string& client_default_listener_resource_name_template() const {
+    return client_default_listener_resource_name_template_;
+  }
   const std::string& server_listener_resource_name_template() const {
     return server_listener_resource_name_template_;
   }
-
+  const std::map<std::string, Authority>& authorities() const {
+    return authorities_;
+  }
+  const Authority* LookupAuthority(const std::string& name) const;
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
     return certificate_providers_;
   }
+  // A util method to check that an xds server exists in this bootstrap file.
+  bool XdsServerExists(const XdsServer& server) const;
 
  private:
-  grpc_error_handle ParseXdsServerList(Json* json);
-  grpc_error_handle ParseXdsServer(Json* json, size_t idx);
-  grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
-                                      XdsServer* server);
-  grpc_error_handle ParseServerFeaturesArray(Json* json, XdsServer* server);
+  grpc_error_handle ParseXdsServerList(
+      Json* json, absl::InlinedVector<XdsServer, 1>* servers);
+  grpc_error_handle ParseAuthorities(Json* json);
+  grpc_error_handle ParseAuthority(Json* json, const std::string& name);
   grpc_error_handle ParseNode(Json* json);
   grpc_error_handle ParseLocality(Json* json);
   grpc_error_handle ParseCertificateProviders(Json* json);
@@ -106,7 +130,9 @@ class XdsBootstrap {
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
+  std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
+  std::map<std::string, Authority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
 };
 

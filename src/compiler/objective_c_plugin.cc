@@ -20,15 +20,18 @@
 
 #include <memory>
 
+#include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
+
 #include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator.h"
 #include "src/compiler/objective_c_generator_helpers.h"
 
-#include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
-
 using ::google::protobuf::compiler::objectivec::
     IsProtobufLibraryBundledProtoFile;
 using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
+#ifdef SUPPORT_OBJC_PREFIX_VALIDATION
+using ::google::protobuf::compiler::objectivec::ValidateObjCClassPrefixes;
+#endif
 using ::grpc_objective_c_generator::FrameworkImport;
 using ::grpc_objective_c_generator::LocalImport;
 using ::grpc_objective_c_generator::PreprocIfElse;
@@ -89,6 +92,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       // No services.  Do nothing.
       return true;
     }
+
+#ifdef SUPPORT_OBJC_PREFIX_VALIDATION
+    // Default options will use env variables for controls.
+    if (!ValidateObjCClassPrefixes({file}, {}, error)) {
+      return false;
+    }
+#endif
 
     bool grpc_local_import = false;
     ::std::string framework;

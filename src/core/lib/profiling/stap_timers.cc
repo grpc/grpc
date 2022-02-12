@@ -20,9 +20,9 @@
 
 #ifdef GRPC_STAP_PROFILER
 
-#include "src/core/lib/profiling/timers.h"
-
 #include <sys/sdt.h>
+
+#include "src/core/lib/profiling/timers.h"
 /* Generated from src/core/profiling/stap_probes.d */
 #include "src/core/lib/profiling/stap_probes.h"
 

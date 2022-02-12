@@ -13,9 +13,7 @@
 # limitations under the License.
 
 import asyncio
-import gc
 import logging
-import socket
 import time
 import unittest
 
@@ -40,8 +38,10 @@ _STREAM_STREAM_READER_WRITER = '/test/StreamStreamReaderWriter'
 _STREAM_STREAM_EVILLY_MIXED = '/test/StreamStreamEvillyMixed'
 _UNIMPLEMENTED_METHOD = '/test/UnimplementedMethod'
 _ERROR_IN_STREAM_STREAM = '/test/ErrorInStreamStream'
+_ERROR_IN_STREAM_UNARY = '/test/ErrorInStreamUnary'
 _ERROR_WITHOUT_RAISE_IN_UNARY_UNARY = '/test/ErrorWithoutRaiseInUnaryUnary'
 _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM = '/test/ErrorWithoutRaiseInStreamStream'
+_INVALID_TRAILING_METADATA = '/test/InvalidTrailingMetadata'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -91,12 +91,18 @@ class _GenericHandler(grpc.GenericRpcHandler):
             _ERROR_IN_STREAM_STREAM:
                 grpc.stream_stream_rpc_method_handler(
                     self._error_in_stream_stream),
+            _ERROR_IN_STREAM_UNARY:
+                grpc.stream_unary_rpc_method_handler(
+                    self._value_error_in_stream_unary),
             _ERROR_WITHOUT_RAISE_IN_UNARY_UNARY:
                 grpc.unary_unary_rpc_method_handler(
                     self._error_without_raise_in_unary_unary),
             _ERROR_WITHOUT_RAISE_IN_STREAM_STREAM:
                 grpc.stream_stream_rpc_method_handler(
                     self._error_without_raise_in_stream_stream),
+            _INVALID_TRAILING_METADATA:
+                grpc.unary_unary_rpc_method_handler(
+                    self._invalid_trailing_metadata),
         }
 
     @staticmethod
@@ -179,6 +185,14 @@ class _GenericHandler(grpc.GenericRpcHandler):
             raise RuntimeError('A testing RuntimeError!')
         yield _RESPONSE
 
+    async def _value_error_in_stream_unary(self, request_iterator, context):
+        request_count = 0
+        async for request in request_iterator:
+            assert _REQUEST == request
+            request_count += 1
+            if request_count >= 1:
+                raise ValueError('A testing RuntimeError!')
+
     async def _error_without_raise_in_unary_unary(self, request, context):
         assert _REQUEST == request
         context.set_code(grpc.StatusCode.INTERNAL)
@@ -188,6 +202,30 @@ class _GenericHandler(grpc.GenericRpcHandler):
         async for request in request_iterator:
             assert _REQUEST == request
         context.set_code(grpc.StatusCode.INTERNAL)
+
+    async def _invalid_trailing_metadata(self, request, context):
+        assert _REQUEST == request
+        for invalid_metadata in [
+                42, {}, {
+                    'error': 'error'
+                }, [{
+                    'error': "error"
+                }]
+        ]:
+            try:
+                context.set_trailing_metadata(invalid_metadata)
+            except TypeError:
+                pass
+            else:
+                raise ValueError(
+                    f'No TypeError raised for invalid metadata: {invalid_metadata}'
+                )
+
+        await context.abort(grpc.StatusCode.DATA_LOSS,
+                            details="invalid abort",
+                            trailing_metadata=({
+                                'error': ('error1', 'error2')
+                            }))
 
     def service(self, handler_details):
         if not self._called.done():
@@ -269,6 +307,24 @@ class TestServer(AioTestBase):
         response = await call
         self.assertEqual(_RESPONSE, response)
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
+
+    async def test_stream_unary_async_generator_with_request_iter(self):
+        stream_unary_call = self._channel.stream_unary(_STREAM_UNARY_ASYNC_GEN)
+
+        finished = False
+
+        def request_gen():
+            for _ in range(_NUM_STREAM_REQUESTS):
+                yield _REQUEST
+            nonlocal finished
+            finished = True
+
+        call = stream_unary_call(request_gen())
+
+        response = await call
+        self.assertEqual(_RESPONSE, response)
+        self.assertEqual(await call.code(), grpc.StatusCode.OK)
+        self.assertEqual(finished, True)
 
     async def test_stream_unary_reader_writer(self):
         stream_unary_call = self._channel.stream_unary(
@@ -468,6 +524,20 @@ class TestServer(AioTestBase):
 
         self.assertEqual(grpc.StatusCode.INTERNAL, await call.code())
 
+    async def test_error_in_stream_unary(self):
+        stream_unary_call = self._channel.stream_unary(_ERROR_IN_STREAM_UNARY)
+
+        async def request_gen():
+            for _ in range(_NUM_STREAM_REQUESTS):
+                yield _REQUEST
+
+        call = stream_unary_call(request_gen())
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.UNKNOWN, rpc_error.code())
+
     async def test_port_binding_exception(self):
         server = aio.server(options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('localhost:0')
@@ -505,6 +575,16 @@ class TestServer(AioTestBase):
         # Clean-up
         await channel.close()
         await server.stop(0)
+
+    async def test_invalid_trailing_metadata(self):
+        call = self._channel.unary_unary(_INVALID_TRAILING_METADATA)(_REQUEST)
+
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.UNKNOWN, rpc_error.code())
+        self.assertIn('trailing', rpc_error.details())
 
 
 if __name__ == '__main__':

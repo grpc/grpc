@@ -26,13 +26,14 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/surface/api_trace.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/surface/api_trace.h"
 
 /* -- Composite call credentials. -- */
 
@@ -43,7 +44,7 @@ struct grpc_composite_call_credentials_metadata_context {
   grpc_composite_call_credentials_metadata_context(
       grpc_composite_call_credentials* composite_creds,
       grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
-      grpc_credentials_mdelem_array* md_array,
+      grpc_core::CredentialsMetadataArray* md_array,
       grpc_closure* on_request_metadata)
       : composite_creds(composite_creds),
         pollent(pollent),
@@ -58,7 +59,7 @@ struct grpc_composite_call_credentials_metadata_context {
   size_t creds_index = 0;
   grpc_polling_entity* pollent;
   grpc_auth_metadata_context auth_md_context;
-  grpc_credentials_mdelem_array* md_array;
+  grpc_core::CredentialsMetadataArray* md_array;
   grpc_closure* on_request_metadata;
   grpc_closure internal_on_request_metadata;
 };
@@ -90,8 +91,8 @@ static void composite_call_metadata_cb(void* arg, grpc_error_handle error) {
 
 bool grpc_composite_call_credentials::get_request_metadata(
     grpc_polling_entity* pollent, grpc_auth_metadata_context auth_md_context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* error) {
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* error) {
   grpc_composite_call_credentials_metadata_context* ctx;
   ctx = new grpc_composite_call_credentials_metadata_context(
       this, pollent, auth_md_context, md_array, on_request_metadata);
@@ -112,7 +113,7 @@ bool grpc_composite_call_credentials::get_request_metadata(
 }
 
 void grpc_composite_call_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* md_array, grpc_error_handle error) {
   for (size_t i = 0; i < inner_.size(); ++i) {
     inner_[i]->cancel_get_request_metadata(md_array, GRPC_ERROR_REF(error));
   }
@@ -146,7 +147,7 @@ void grpc_composite_call_credentials::push_to_inner(
   auto composite_creds =
       static_cast<grpc_composite_call_credentials*>(creds.get());
   for (size_t i = 0; i < composite_creds->inner().size(); ++i) {
-    inner_.push_back(std::move(composite_creds->inner_[i]));
+    inner_.push_back(composite_creds->inner_[i]);
   }
 }
 

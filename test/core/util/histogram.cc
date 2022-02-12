@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "test/core/util/histogram.h"
 
 #include <math.h>
@@ -24,7 +26,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 
@@ -62,7 +63,8 @@ static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
 
 /* bounds checked version of the above */
 static size_t bucket_for(grpc_histogram* h, double x) {
-  size_t bucket = bucket_for_unchecked(h, GPR_CLAMP(x, 1.0, h->max_possible));
+  size_t bucket =
+      bucket_for_unchecked(h, grpc_core::Clamp(x, 1.0, h->max_possible));
   GPR_ASSERT(bucket < h->num_buckets);
   return bucket;
 }
@@ -186,10 +188,10 @@ static double threshold_for_count_below(grpc_histogram* h, double count_below) {
        should lie */
     lower_bound = bucket_start(h, static_cast<double>(lower_idx));
     upper_bound = bucket_start(h, static_cast<double>(lower_idx + 1));
-    return GPR_CLAMP(upper_bound - (upper_bound - lower_bound) *
-                                       (count_so_far - count_below) /
-                                       h->buckets[lower_idx],
-                     h->min_seen, h->max_seen);
+    return grpc_core::Clamp(upper_bound - (upper_bound - lower_bound) *
+                                              (count_so_far - count_below) /
+                                              h->buckets[lower_idx],
+                            h->min_seen, h->max_seen);
   }
 }
 

@@ -67,7 +67,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 
 InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
   num_nodes_ = num_nodes_ + num;
-  Node* new_chunk = static_cast<Node*>(gpr_zalloc(sizeof(Node) * num));
+  Node* new_chunk = new Node[num];
   new_chunk[0].next = &new_chunk[1];
   new_chunk[num - 1].prev = &new_chunk[num - 2];
   for (int i = 1; i < num - 1; ++i) {
@@ -79,8 +79,7 @@ InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
 
 InfLenFIFOQueue::InfLenFIFOQueue() {
   delete_list_size_ = kDeleteListInitSize;
-  delete_list_ =
-      static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
+  delete_list_ = new Node*[delete_list_size_];
 
   Node* new_chunk = AllocateNodes(kQueueInitNumNodes);
   delete_list_[delete_list_count_++] = new_chunk;
@@ -95,9 +94,9 @@ InfLenFIFOQueue::InfLenFIFOQueue() {
 InfLenFIFOQueue::~InfLenFIFOQueue() {
   GPR_ASSERT(count_.load(std::memory_order_relaxed) == 0);
   for (size_t i = 0; i < delete_list_count_; ++i) {
-    gpr_free(delete_list_[i]);
+    delete[] delete_list_[i];
   }
-  gpr_free(delete_list_);
+  delete[] delete_list_;
 }
 
 void InfLenFIFOQueue::Put(void* elem) {
@@ -112,8 +111,7 @@ void InfLenFIFOQueue::Put(void* elem) {
     // Expands delete list on full.
     if (delete_list_count_ == delete_list_size_) {
       delete_list_size_ = delete_list_size_ * 2;
-      delete_list_ = static_cast<Node**>(
-          gpr_realloc(delete_list_, sizeof(Node*) * delete_list_size_));
+      delete_list_ = new Node*[delete_list_size_];
     }
     new_chunk[0].prev = queue_tail_->prev;
     new_chunk[curr_count - 1].next = queue_head_;

@@ -25,8 +25,10 @@ extern "C" {
 
 #define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
 #define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
+#define GRPC_TLS_TRANSPORT_SECURITY_TYPE "tls"
 
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
+#define GRPC_X509_SUBJECT_PROPERTY_NAME "x509_subject"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
 // Please note that internally, we just faithfully pass whatever value we got by
@@ -133,20 +135,6 @@ typedef enum {
   GRPC_PRIVACY_AND_INTEGRITY,
   GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY,
 } grpc_security_level;
-
-typedef enum {
-  /** Default option: performs server certificate verification and hostname
-     verification. */
-  GRPC_TLS_SERVER_VERIFICATION,
-  /** Performs server certificate verification, but skips hostname verification
-     Client is responsible for verifying server's identity via
-     server authorization check callback. */
-  GRPC_TLS_SKIP_HOSTNAME_VERIFICATION,
-  /** Skips both server certificate and hostname verification.
-     Client is responsible for verifying server's identity and
-     server's certificate via server authorization check callback. */
-  GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION
-} grpc_tls_server_verification_option;
 
 /**
  * Type of local connections for which local channel/server credentials will be

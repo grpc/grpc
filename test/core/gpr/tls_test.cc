@@ -20,8 +20,9 @@
 
 #include "src/core/lib/gpr/tls.h"
 
-#include <gtest/gtest.h>
 #include <array>
+
+#include <gtest/gtest.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"

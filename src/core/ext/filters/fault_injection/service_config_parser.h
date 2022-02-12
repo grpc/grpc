@@ -21,8 +21,8 @@
 
 #include <vector>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
 

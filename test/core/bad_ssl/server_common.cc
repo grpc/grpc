@@ -16,10 +16,12 @@
  *
  */
 
-#include <grpc/support/log.h>
+#include "test/core/bad_ssl/server_common.h"
+
 #include <signal.h>
 
-#include "test/core/bad_ssl/server_common.h"
+#include <grpc/support/log.h>
+
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 

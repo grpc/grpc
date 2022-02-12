@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_SERVER_INTERCEPTOR_H
 #define GRPCPP_SUPPORT_SERVER_INTERCEPTOR_H
 
-#include <grpcpp/impl/codegen/server_interceptor.h>
+#include <grpcpp/impl/codegen/server_interceptor.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_SERVER_INTERCEPTOR_H

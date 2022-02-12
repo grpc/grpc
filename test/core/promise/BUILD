@@ -12,11 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
+
+grpc_cc_library(
+    name = "test_wakeup_schedulers",
+    testonly = True,
+    hdrs = ["test_wakeup_schedulers.h"],
+    external_deps = ["gtest"],
+    visibility = ["//test/core:__subpackages__"],
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
 
 grpc_cc_test(
     name = "poll_test",
@@ -50,6 +63,19 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "arena_promise_test",
+    srcs = ["arena_promise_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:arena_promise",
+        "//:resource_quota",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -121,6 +147,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:loop",
+        "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -174,12 +201,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "try_seq_metadata_test",
+    srcs = ["try_seq_metadata_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//:try_seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:activity",
         "//:join",
         "//:promise",
@@ -196,6 +238,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:join",
         "//:latch",
         "//:seq",
@@ -210,8 +253,28 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:observable",
         "//:promise",
+        "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "for_each_test",
+    srcs = ["for_each_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:for_each",
+        "//:join",
+        "//:map",
+        "//:observable",
+        "//:pipe",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
@@ -224,10 +287,62 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        "test_wakeup_schedulers",
         "//:join",
         "//:pipe",
         "//:promise",
+        "//:resource_quota",
         "//:seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "promise_fuzzer",
+    srcs = ["promise_fuzzer.cc"],
+    corpus = "promise_fuzzer_corpus",
+    language = "C++",
+    proto = "promise_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:activity",
+        "//:join",
+        "//:map",
+        "//:promise",
+        "//:race",
+        "//:seq",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "exec_ctx_wakeup_scheduler_test",
+    srcs = ["exec_ctx_wakeup_scheduler_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:activity",
+        "//:exec_ctx_wakeup_scheduler",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "sleep_test",
+    srcs = ["sleep_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/synchronization",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:activity",
+        "//:grpc",
+        "//:sleep",
         "//test/core/util:grpc_suppressions",
     ],
 )

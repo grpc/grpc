@@ -12,18 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/promise/activity.h"
+
+#include "absl/base/attributes.h"
 
 #include "src/core/lib/gprpp/atomic_utils.h"
-#include "src/core/lib/promise/activity.h"
 
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-ABSL_CONST_INIT GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_ =
-    nullptr;
+GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
 Waker::Unwakeable Waker::unwakeable_;
 
 ///////////////////////////////////////////////////////////////////////////////

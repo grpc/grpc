@@ -1,0 +1,193 @@
+// Copyright 2021 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package api_fuzzer;
+
+message Empty {}
+
+message ByteSlice {
+    reserved 2;
+    reserved "intern";
+    bytes value = 1;
+}
+
+message StringSlice {
+    reserved 2;
+    reserved "intern";
+    string value = 1;
+}
+
+message ResourceQuota {}
+
+message ChannelArg {
+    string key = 1;
+    oneof value {
+        string str = 2;
+        int64 i = 3;
+        ResourceQuota resource_quota = 4;
+    }
+}
+
+message CredArtifact {
+    oneof type {
+        string custom = 1;
+        int32 builtin = 2;
+    }
+}
+
+message SslChannelCreds {
+    CredArtifact root_certs = 1;
+    CredArtifact private_key = 2;
+    CredArtifact certs = 3;
+}
+
+message CompositeCallCreds {
+    repeated CallCreds call_creds = 1;
+}
+
+message IAM {
+    string auth_token = 1;
+    string auth_selector = 2;
+}
+
+message CallCreds {
+    oneof type {
+        CompositeCallCreds composite_call_creds = 1;
+        string access_token = 2;
+        IAM iam = 3;
+        Empty null = 4;
+    }
+}
+
+message CompositeChannelCreds {
+    ChannelCreds channel_creds = 1;
+    CallCreds call_creds = 2;
+}
+
+message ChannelCreds {
+    oneof type {
+        SslChannelCreds ssl_channel_creds = 1;
+        CompositeChannelCreds composite_channel_creds = 2;
+        Empty null = 3;
+    }
+}
+
+message Metadatum {
+    StringSlice key = 1;
+    ByteSlice value = 2;
+}
+
+message ChannelAction {
+  uint64 add_n_bytes_writable = 1;
+  uint64 add_n_bytes_readable = 2;
+  uint64 wait_ms = 3;
+}
+
+message CreateChannel {
+    string target = 1;
+    repeated ChannelArg channel_args = 2;
+    ChannelCreds channel_creds = 3;
+    repeated ChannelAction channel_actions = 4;
+}
+
+message CreateServer {
+    repeated ChannelArg channel_args = 1;
+}
+
+message CreateCall {
+    uint32 propagation_mask = 1;
+    StringSlice method = 2;
+    StringSlice host = 3;
+    int32 timeout = 4;
+}
+
+message SendInitialMetadata {
+    repeated Metadatum metadata = 1;
+}
+
+message SendMessage {
+    repeated ByteSlice message = 1;
+}
+
+message SendCloseFromClient {
+}
+
+message SendStatusFromServer {
+    repeated Metadatum metadata = 1;
+    uint32 status_code = 2;
+    ByteSlice status_details = 3;
+}
+
+message ReceiveInitialMetadata {
+}
+
+message ReceiveMessage {
+}
+
+message ReceiveStatusOnClient {
+}
+
+message ReceiveCloseOnServer {
+}
+
+message BatchOp {
+    oneof op {
+        SendInitialMetadata send_initial_metadata = 1;
+        SendMessage send_message = 2;
+        SendCloseFromClient send_close_from_client = 3;
+        SendStatusFromServer send_status_from_server = 4;
+        ReceiveInitialMetadata receive_initial_metadata = 5;
+        ReceiveMessage receive_message = 6;
+        ReceiveStatusOnClient receive_status_on_client = 7;
+        ReceiveCloseOnServer receive_close_on_server = 8;
+    }
+    uint32 flags = 100;
+}
+
+message Batch {
+    repeated BatchOp operations = 1;
+}
+
+message Action {
+    oneof type {
+        Empty poll_cq = 1;
+        uint32 advance_time = 2;
+        CreateChannel create_channel = 3;
+        Empty close_channel = 4;
+        CreateServer create_server = 5;
+        Empty shutdown_server = 6;
+        Empty cancel_all_calls_if_shutdown = 7;
+        Empty destroy_server_if_ready = 8;
+        bool check_connectivity = 9;
+        uint32 watch_connectivity = 10;
+        CreateCall create_call = 11;
+        Empty change_active_call = 12;
+        Batch queue_batch = 13;
+        Empty cancel_call = 14;
+        Empty get_peer = 15;
+        Empty get_target = 16;
+        Empty ping = 17;
+        string enable_tracer = 18;
+        string disable_tracer = 19;
+        Empty request_call = 20;
+        Empty destroy_call = 21;
+        uint32 resize_resource_quota = 22;
+    }
+}
+
+message Msg {
+    repeated Action actions = 1;
+}

@@ -16,32 +16,33 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <errno.h>
 #include <fcntl.h>
-#include <gmock/gmock.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <string.h>
 
 #include <string>
 #include <thread>
 #include <vector>
 
+#include <gmock/gmock.h>
+
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -53,9 +54,12 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/naming/dns_test_util.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
@@ -260,19 +264,18 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
 }
 
 void CheckServiceConfigResultLocked(const char* service_config_json,
-                                    grpc_error_handle service_config_error,
+                                    absl::Status service_config_error,
                                     ArgsStruct* args) {
   if (!args->expected_service_config_string.empty()) {
-    GPR_ASSERT(service_config_json != nullptr);
+    ASSERT_NE(service_config_json, nullptr);
     EXPECT_EQ(service_config_json, args->expected_service_config_string);
   }
   if (args->expected_service_config_error.empty()) {
-    EXPECT_EQ(service_config_error, GRPC_ERROR_NONE);
+    EXPECT_TRUE(service_config_error.ok());
   } else {
-    EXPECT_THAT(grpc_error_std_string(service_config_error),
+    EXPECT_THAT(service_config_error.ToString(),
                 testing::HasSubstr(args->expected_service_config_error));
   }
-  GRPC_ERROR_UNREF(service_config_error);
 }
 
 void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
@@ -426,19 +429,13 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
   explicit ResultHandler(ArgsStruct* args) : args_(args) {}
 
-  void ReturnResult(grpc_core::Resolver::Result result) override {
+  void ReportResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
     gpr_atm_rel_store(&args_->done_atm, 1);
     gpr_mu_lock(args_->mu);
     GRPC_LOG_IF_ERROR("pollset_kick",
                       grpc_pollset_kick(args_->pollset, nullptr));
     gpr_mu_unlock(args_->mu);
-  }
-
-  void ReturnError(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s",
-            grpc_error_std_string(error).c_str());
-    GPR_ASSERT(false);
   }
 
   virtual void CheckResult(const grpc_core::Resolver::Result& /*result*/) {}
@@ -461,9 +458,10 @@ class CheckingResultHandler : public ResultHandler {
   explicit CheckingResultHandler(ArgsStruct* args) : ResultHandler(args) {}
 
   void CheckResult(const grpc_core::Resolver::Result& result) override {
+    ASSERT_TRUE(result.addresses.ok()) << result.addresses.status().ToString();
     ArgsStruct* args = args_struct();
     std::vector<GrpcLBAddress> found_lb_addrs;
-    AddActualAddresses(result.addresses, /*is_balancer=*/false,
+    AddActualAddresses(*result.addresses, /*is_balancer=*/false,
                        &found_lb_addrs);
     const grpc_core::ServerAddressList* balancer_addresses =
         grpc_core::FindGrpclbBalancerAddressesInChannelArgs(*result.args);
@@ -474,7 +472,7 @@ class CheckingResultHandler : public ResultHandler {
     gpr_log(GPR_INFO,
             "found %" PRIdPTR " backend addresses and %" PRIdPTR
             " balancer addresses",
-            result.addresses.size(),
+            result.addresses->size(),
             balancer_addresses == nullptr ? 0L : balancer_addresses->size());
     if (args->expected_addrs.size() != found_lb_addrs.size()) {
       gpr_log(GPR_DEBUG,
@@ -495,12 +493,17 @@ class CheckingResultHandler : public ResultHandler {
               absl::GetFlag(FLAGS_do_ordered_address_comparison).c_str());
       GPR_ASSERT(0);
     }
-    const char* service_config_json =
-        result.service_config == nullptr
-            ? nullptr
-            : result.service_config->json_string().c_str();
-    CheckServiceConfigResultLocked(
-        service_config_json, GRPC_ERROR_REF(result.service_config_error), args);
+    if (!result.service_config.ok()) {
+      CheckServiceConfigResultLocked(nullptr, result.service_config.status(),
+                                     args);
+    } else {
+      const char* service_config_json =
+          *result.service_config == nullptr
+              ? nullptr
+              : (*result.service_config)->json_string().c_str();
+      CheckServiceConfigResultLocked(service_config_json, absl::OkStatus(),
+                                     args);
+    }
     if (args->expected_service_config_string.empty()) {
       CheckLBPolicyResultLocked(result.args, args);
     }
@@ -577,14 +580,16 @@ void RunResolvesRelevantRecordsTest(
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           absl::GetFlag(FLAGS_inject_broken_nameserver_list).c_str());
-  std::unique_ptr<grpc::testing::FakeNonResponsiveDNSServer>
+  std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
-    g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
-    fake_non_responsive_dns_server =
-        absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
-
-            g_fake_non_responsive_dns_server_port);
+    fake_non_responsive_dns_server = absl::make_unique<
+        grpc_core::testing::FakeUdpAndTcpServer>(
+        grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+            kWaitForClientToSendFirstBytes,
+        grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+    g_fake_non_responsive_dns_server_port =
+        fake_non_responsive_dns_server->port();
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {

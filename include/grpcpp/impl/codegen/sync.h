@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SYNC_H
 #define GRPCPP_IMPL_CODEGEN_SYNC_H
 
+// IWYU pragma: private
+
 #include <grpc/impl/codegen/port_platform.h>
 
 #ifdef GPR_HAS_PTHREAD_H
@@ -27,12 +29,11 @@
 
 #include <mutex>
 
+#include "absl/synchronization/mutex.h"
+
 #include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/sync.h>
-
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
-
-#include "absl/synchronization/mutex.h"
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.

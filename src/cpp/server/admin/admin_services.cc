@@ -22,7 +22,6 @@
 
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/impl/server_builder_plugin.h>
-
 #include <grpcpp/server_builder.h>
 
 // TODO(lidiz) build a real registration system that can pull in services
@@ -35,9 +34,9 @@ namespace grpc {
 
 namespace {
 
-static auto* g_channelz_service = new ChannelzService();
+auto* g_channelz_service = new ChannelzService();
 #if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
-static auto* g_csds = new xds::experimental::ClientStatusDiscoveryService();
+auto* g_csds = new xds::experimental::ClientStatusDiscoveryService();
 #endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
 
 }  // namespace

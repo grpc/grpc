@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_LATCH_H
 #define GRPC_CORE_LIB_PROMISE_LATCH_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/intra_activity_waiter.h"
@@ -34,8 +36,8 @@ class Latch {
   class WaitPromise {
    public:
     Poll<T*> operator()() const {
-      if (latch_->value_.has_value()) {
-        return &*latch_->value_;
+      if (latch_->has_value_) {
+        return &latch_->value_;
       } else {
         return latch_->waiter_.pending();
       }
@@ -50,34 +52,50 @@ class Latch {
   Latch() = default;
   Latch(const Latch&) = delete;
   Latch& operator=(const Latch&) = delete;
-  Latch(Latch&& other) noexcept : value_(std::move(other.value_)) {
-    assert(!other.has_had_waiters_);
+  Latch(Latch&& other) noexcept
+      : value_(std::move(other.value_)), has_value_(other.has_value_) {
+#ifndef NDEBUG
+    GPR_DEBUG_ASSERT(!other.has_had_waiters_);
+#endif
   }
   Latch& operator=(Latch&& other) noexcept {
-    assert(!other.has_had_waiters_);
+#ifndef NDEBUG
+    GPR_DEBUG_ASSERT(!other.has_had_waiters_);
+#endif
     value_ = std::move(other.value_);
+    has_value_ = other.has_value_;
     return *this;
   }
 
   // Produce a promise to wait for a value from this latch.
   WaitPromise Wait() {
+#ifndef NDEBUG
     has_had_waiters_ = true;
+#endif
     return WaitPromise(this);
   }
 
   // Set the value of the latch. Can only be called once.
   void Set(T value) {
-    assert(!value_.has_value());
+    GPR_DEBUG_ASSERT(!has_value_);
     value_ = std::move(value);
+    has_value_ = true;
     waiter_.Wake();
   }
 
  private:
-  // TODO(ctiller): consider ditching optional here and open coding the bool
-  // and optionally constructed value - because in doing so we likely save a
-  // few bytes per latch, and it's likely we'll have many of these.
-  absl::optional<T> value_;
+  // The value stored (if has_value_ is true), otherwise some random value, we
+  // don't care.
+  // Why not absl::optional<>? Writing things this way lets us compress
+  // has_value_ with waiter_ and leads to some significant memory savings for
+  // some scenarios.
+  GPR_NO_UNIQUE_ADDRESS T value_;
+  // True if we have a value set, false otherwise.
+  bool has_value_ = false;
+#ifndef NDEBUG
+  // Has this latch ever had waiters.
   bool has_had_waiters_ = false;
+#endif
   IntraActivityWaiter waiter_;
 };
 

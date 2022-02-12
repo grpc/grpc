@@ -123,6 +123,7 @@
     # present in this pod's directory. We use that knowledge to check for the existence of the file
     # and, if absent, compile the plugin from the local sources.
     s.prepare_command = <<-CMD
+      set -e
       if [ ! -f #{plugin} ]; then
         #{bazel} build //src/compiler:grpc_objective_c_plugin
       fi

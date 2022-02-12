@@ -24,8 +24,6 @@
  * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -37,11 +35,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
-static bool g_enable_filter = false;
 static gpr_mu g_mu;
 static grpc_call_stack* g_client_call_stack;
 static grpc_call_stack* g_server_call_stack;
@@ -110,6 +109,9 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Simple request via a server filter that saves the reported status code.
 static void test_request(grpc_end2end_test_config config) {
+  g_client_code_recv = false;
+  g_server_code_recv = false;
+
   grpc_call* c;
   grpc_call* s;
   grpc_end2end_test_fixture f =
@@ -264,10 +266,10 @@ static void server_start_transport_stream_op_batch(
   if (data->call == g_server_call_stack) {
     if (op->send_initial_metadata) {
       auto* batch = op->payload->send_initial_metadata.send_initial_metadata;
-      if (batch->idx.named.status != nullptr) {
+      auto* status = batch->get_pointer(grpc_core::HttpStatusMetadata());
+      if (status != nullptr) {
         /* Replace the HTTP status with 404 */
-        grpc_metadata_batch_substitute(batch, batch->idx.named.status,
-                                       GRPC_MDELEM_STATUS_404);
+        *status = 404;
       }
     }
   }
@@ -321,6 +323,7 @@ static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_client_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     sizeof(final_status_data),
     init_call_elem,
@@ -334,6 +337,7 @@ static const grpc_channel_filter test_client_filter = {
 
 static const grpc_channel_filter test_server_filter = {
     server_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(final_status_data),
     init_call_elem,
@@ -349,56 +353,34 @@ static const grpc_channel_filter test_server_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder, void* arg) {
-  grpc_channel_filter* filter = static_cast<grpc_channel_filter*>(arg);
-  if (g_enable_filter) {
-    // Want to add the filter as close to the end as possible, to make
-    // sure that all of the filters work well together.  However, we
-    // can't add it at the very end, because the
-    // connected_channel/client_channel filter must be the last one.
-    // So we add it right before the last one.
-    grpc_channel_stack_builder_iterator* it =
-        grpc_channel_stack_builder_create_iterator_at_last(builder);
-    GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-    const bool retval = grpc_channel_stack_builder_add_filter_before(
-        it, filter, nullptr, nullptr);
-    grpc_channel_stack_builder_iterator_destroy(it);
-    return retval;
-  } else {
-    return true;
-  }
-}
-
-static void init_plugin(void) {
-  gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_client_code_cv);
-  gpr_cv_init(&g_server_code_cv);
-  g_client_code_recv = false;
-  g_server_code_recv = false;
-
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_client_filter));
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_client_filter));
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, INT_MAX, maybe_add_filter,
-      const_cast<grpc_channel_filter*>(&test_server_filter));
-}
-
-static void destroy_plugin(void) {
-  gpr_cv_destroy(&g_client_code_cv);
-  gpr_cv_destroy(&g_server_code_cv);
-  gpr_mu_destroy(&g_mu);
-}
-
 void filter_status_code(grpc_end2end_test_config config) {
-  g_enable_filter = true;
-  test_request(config);
-  g_enable_filter = false;
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
+        auto register_stage = [builder](grpc_channel_stack_type type,
+                                        const grpc_channel_filter* filter) {
+          builder->channel_init()->RegisterStage(
+              type, INT_MAX, [filter](grpc_core::ChannelStackBuilder* builder) {
+                // Want to add the filter as close to the end as possible, to
+                // make sure that all of the filters work well together.
+                // However, we can't add it at the very end, because the
+                // connected_channel/client_channel filter must be the last one.
+                // So we add it right before the last one.
+                auto it = builder->mutable_stack()->end();
+                --it;
+                builder->mutable_stack()->insert(it, {filter, nullptr});
+                return true;
+              });
+        };
+        register_stage(GRPC_CLIENT_CHANNEL, &test_client_filter);
+        register_stage(GRPC_CLIENT_DIRECT_CHANNEL, &test_client_filter);
+        register_stage(GRPC_SERVER_CHANNEL, &test_server_filter);
+      },
+      [config] { test_request(config); });
 }
 
 void filter_status_code_pre_init(void) {
-  grpc_register_plugin(init_plugin, destroy_plugin);
+  gpr_mu_init(&g_mu);
+  gpr_cv_init(&g_client_code_cv);
+  gpr_cv_init(&g_server_code_cv);
 }

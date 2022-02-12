@@ -19,10 +19,12 @@
 /* This benchmark exists to ensure that immediately-firing alarms are fast */
 
 #include <benchmark/benchmark.h>
+
 #include <grpc/grpc.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
+
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

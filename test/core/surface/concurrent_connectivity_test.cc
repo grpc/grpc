@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <memory.h>
 #include <stdio.h>
 
@@ -27,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -35,8 +34,9 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -67,8 +67,10 @@ static void* tag(int n) { return reinterpret_cast<void*>(n); }
 void create_loop_destroy(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create(static_cast<char*>(addr),
-                                                      nullptr, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    grpc_channel* chan =
+        grpc_channel_create(static_cast<char*>(addr), creds, nullptr);
+    grpc_channel_credentials_release(creds);
 
     for (int j = 0; j < NUM_INNER_LOOPS; ++j) {
       gpr_timespec later_time =
@@ -133,10 +135,11 @@ void bad_server_thread(void* vargs) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_error_handle error = grpc_tcp_server_create(
-      nullptr, nullptr,
-      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
-      &s);
+  const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(nullptr);
+  grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
+  grpc_channel_args_destroy(channel_args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
@@ -198,7 +201,10 @@ int run_concurrent_connectivity_test() {
     int port = grpc_pick_unused_port_or_die();
     args.addr = absl::StrCat("localhost:", port);
     args.server = grpc_server_create(nullptr, nullptr);
-    grpc_server_add_insecure_http2_port(args.server, args.addr.c_str());
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    grpc_server_add_http2_port(args.server, args.addr.c_str(), server_creds);
+    grpc_server_credentials_release(server_creds);
     args.cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_server_register_completion_queue(args.server, args.cq, nullptr);
     grpc_server_start(args.server);
@@ -260,8 +266,10 @@ int run_concurrent_connectivity_test() {
 void watches_with_short_timeouts(void* addr) {
   for (int i = 0; i < NUM_OUTER_LOOPS_SHORT_TIMEOUTS; ++i) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel* chan = grpc_insecure_channel_create(static_cast<char*>(addr),
-                                                      nullptr, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    grpc_channel* chan =
+        grpc_channel_create(static_cast<char*>(addr), creds, nullptr);
+    grpc_channel_credentials_release(creds);
 
     for (int j = 0; j < NUM_INNER_LOOPS_SHORT_TIMEOUTS; ++j) {
       gpr_timespec later_time =

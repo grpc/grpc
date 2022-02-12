@@ -21,10 +21,11 @@
 #include <mutex>
 #include <thread>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
 
 #include "test/core/util/test_config.h"
 

@@ -16,12 +16,13 @@
 //
 //
 
+#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
@@ -46,8 +47,7 @@ TEST(InsecureSecurityConnector, MakeAuthContextTest) {
       auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   prop = grpc_auth_property_iterator_next(&it);
   ASSERT_NE(prop, nullptr);
-  EXPECT_EQ(grpc_tsi_security_level_string_to_enum(prop->value),
-            GRPC_SECURITY_NONE);
+  EXPECT_STREQ(prop->value, tsi_security_level_to_string(TSI_SECURITY_NONE));
 }
 
 }  // namespace

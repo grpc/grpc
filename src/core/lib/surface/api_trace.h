@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/support/log.h>
+
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_api_trace;

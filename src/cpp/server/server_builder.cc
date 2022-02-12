@@ -16,15 +16,14 @@
  *
  */
 
-#include <grpcpp/server_builder.h>
+#include <utility>
 
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
-
-#include <utility>
+#include <grpcpp/server_builder.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -168,9 +167,9 @@ ServerBuilder& ServerBuilder::SetSyncServerOption(
 ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
     grpc_compression_algorithm algorithm, bool enabled) {
   if (enabled) {
-    GPR_BITSET(&enabled_compression_algorithms_bitset_, algorithm);
+    grpc_core::SetBit(&enabled_compression_algorithms_bitset_, algorithm);
   } else {
-    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, algorithm);
+    grpc_core::ClearBit(&enabled_compression_algorithms_bitset_, algorithm);
   }
   return *this;
 }

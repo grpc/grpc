@@ -77,7 +77,7 @@ BUILD_WITH_CYTHON = _env_bool_value('GRPC_PYTHON_BUILD_WITH_CYTHON', 'False')
 # without statically linking libstdc++ (which leads to a slight increase in the wheel size).
 # This option is useful when crosscompiling wheels for aarch64 where
 # it's difficult to ensure that the crosscompilation toolchain has a high-enough version
-# of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
+# of GCC (we require >=5.1) but still uses old-enough libstdc++ symbols.
 # TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
 BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', 'False')
@@ -98,7 +98,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        [cxx, '-x', 'c++', '-std=c++11', '-latomic', '-'],
+        [cxx, '-x', 'c++', '-std=c++11', '-', '-latomic'],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE)
@@ -288,6 +288,7 @@ setuptools.setup(name='grpcio-tools',
                  classifiers=CLASSIFIERS,
                  ext_modules=extension_modules(),
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=[
                      'protobuf>=3.5.0.post1, < 4.0dev',
                      'grpcio>={version}'.format(version=grpc_version.VERSION),

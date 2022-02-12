@@ -21,7 +21,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
+
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/channel.h"
@@ -32,8 +33,7 @@ void test_unknown_scheme_target(void) {
   grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
-  grpc_channel* chan =
-      grpc_secure_channel_create(creds, "blah://blah", nullptr, nullptr);
+  grpc_channel* chan = grpc_channel_create("blah://blah", creds, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
@@ -43,15 +43,11 @@ void test_unknown_scheme_target(void) {
 }
 
 void test_security_connector_already_in_arg(void) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.value.pointer.p = nullptr;
-  arg.key = const_cast<char*>(GRPC_ARG_SECURITY_CONNECTOR);
+  grpc_arg arg = grpc_security_connector_to_arg(nullptr);
   grpc_channel_args args;
   args.num_args = 1;
   args.args = &arg;
-  grpc_channel* chan =
-      grpc_secure_channel_create(nullptr, nullptr, &args, nullptr);
+  grpc_channel* chan = grpc_channel_create(nullptr, nullptr, &args);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
@@ -60,8 +56,7 @@ void test_security_connector_already_in_arg(void) {
 }
 
 void test_null_creds(void) {
-  grpc_channel* chan =
-      grpc_secure_channel_create(nullptr, nullptr, nullptr, nullptr);
+  grpc_channel* chan = grpc_channel_create(nullptr, nullptr, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));

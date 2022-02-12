@@ -19,6 +19,6 @@
 #ifndef GRPCPP_IMPL_SERVICE_TYPE_H
 #define GRPCPP_IMPL_SERVICE_TYPE_H
 
-#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/codegen/service_type.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_IMPL_SERVICE_TYPE_H

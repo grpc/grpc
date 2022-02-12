@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#ifndef GRPC_NO_BINDER
 
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
 
@@ -28,3 +30,4 @@ const int kFlagMessageDataIsParcelable = 0x40;
 const int kFlagMessageDataIsPartial = 0x80;
 
 }  // namespace grpc_binder
+#endif

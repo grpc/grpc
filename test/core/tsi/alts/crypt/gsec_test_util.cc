@@ -49,7 +49,9 @@ uint32_t gsec_test_bias_random_uint32(uint32_t max_length) {
 void gsec_test_copy(const uint8_t* src, uint8_t** des, size_t source_len) {
   if (src != nullptr && des != nullptr) {
     *des = static_cast<uint8_t*>(gpr_malloc(source_len));
-    memcpy(*des, src, source_len);
+    if (*des != nullptr) {
+      memcpy(*des, src, source_len);
+    }
   } else {
     fprintf(stderr, "Either src or des buffer is nullptr in gsec_test_copy().");
     abort();

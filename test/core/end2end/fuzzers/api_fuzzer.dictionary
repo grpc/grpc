@@ -1,0 +1,27 @@
+# tracers
+"api\x00"
+"channel\x00"
+"channel_stack_builder\x00"
+"connectivity_state\x00"
+"flowctl\x00"
+"http\x00"
+"http1\x00"
+"round_robin\x00"
+"secure_endpoint\x00"
+"tcp\x00"
+"transport_security\x00"
+
+# channel args
+"\x00grpc.census\x00"
+"\x00grpc.max_concurrent_streams\x00"
+"\x00grpc.max_message_length\x00"
+"\x00grpc.http2.initial_sequence_number\x00"
+"\x00grpc.http2.lookahead_bytes\x00"
+"\x00grpc.http2.hpack_table_size.decoder\x00"
+"\x00grpc.http2.hpack_table_size.encoder\x00"
+"\x01grpc.default_authority\x00"
+"\x01grpc.primary_user_agent\x00"
+"\x01grpc.secondary_user_agent\x00"
+"\x00grpc.max_reconnect_backoff_ms\x00"
+"\x01grpc.ssl_target_name_override\x00"
+

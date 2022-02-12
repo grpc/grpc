@@ -18,15 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <inttypes.h>
 
 #include <string>
 
 #include "absl/strings/str_cat.h"
-
-#include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -38,14 +34,16 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
 #define ADD_DEADLINE_SCALE 0.33
 #define MIN_QUEUE_WINDOW_DURATION 0.01
-#define MAX_QUEUE_WINDOW_DURATION 1
+#define MAX_QUEUE_WINDOW_DURATION 1.0
 
 grpc_core::TraceFlag grpc_timer_trace(false, "timer");
 grpc_core::TraceFlag grpc_timer_check_trace(false, "timer_check");
@@ -107,7 +105,7 @@ static void destroy_timer_ht() {
 }
 
 static bool is_in_ht(grpc_timer* t) {
-  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);
   grpc_timer* p = g_timer_ht[i];
@@ -121,7 +119,7 @@ static bool is_in_ht(grpc_timer* t) {
 
 static void add_to_ht(grpc_timer* t) {
   GPR_ASSERT(!t->hash_table_next);
-  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);
   grpc_timer* p = g_timer_ht[i];
@@ -146,7 +144,7 @@ static void add_to_ht(grpc_timer* t) {
 }
 
 static void remove_from_ht(grpc_timer* t) {
-  size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
+  size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
   bool removed = false;
 
   gpr_mu_lock(&g_hash_mu[i]);
@@ -250,7 +248,7 @@ static grpc_millis compute_min_deadline(timer_shard* shard) {
 static void timer_list_init() {
   uint32_t i;
 
-  g_num_shards = GPR_CLAMP(2 * gpr_cpu_num_cores(), 1, 32);
+  g_num_shards = grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u);
   g_shards =
       static_cast<timer_shard*>(gpr_zalloc(g_num_shards * sizeof(*g_shards)));
   g_shard_queue = static_cast<timer_shard**>(
@@ -339,7 +337,7 @@ void grpc_timer_init_unset(grpc_timer* timer) { timer->pending = false; }
 static void timer_init(grpc_timer* timer, grpc_millis deadline,
                        grpc_closure* closure) {
   int is_first_timer = 0;
-  timer_shard* shard = &g_shards[GPR_HASH_POINTER(timer, g_num_shards)];
+  timer_shard* shard = &g_shards[grpc_core::HashPointer(timer, g_num_shards)];
   timer->closure = closure;
   timer->deadline = deadline;
 
@@ -446,7 +444,7 @@ static void timer_cancel(grpc_timer* timer) {
     return;
   }
 
-  timer_shard* shard = &g_shards[GPR_HASH_POINTER(timer, g_num_shards)];
+  timer_shard* shard = &g_shards[grpc_core::HashPointer(timer, g_num_shards)];
   gpr_mu_lock(&shard->mu);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
     gpr_log(GPR_INFO, "TIMER %p: CANCEL pending=%s", timer,
@@ -481,13 +479,13 @@ static bool refill_heap(timer_shard* shard, grpc_millis now) {
       grpc_time_averaged_stats_update_average(&shard->stats) *
       ADD_DEADLINE_SCALE;
   double deadline_delta =
-      GPR_CLAMP(computed_deadline_delta, MIN_QUEUE_WINDOW_DURATION,
-                MAX_QUEUE_WINDOW_DURATION);
+      grpc_core::Clamp(computed_deadline_delta, MIN_QUEUE_WINDOW_DURATION,
+                       MAX_QUEUE_WINDOW_DURATION);
   grpc_timer *timer, *next;
 
   /* Compute the new cap and put all timers under it into the queue: */
   shard->queue_deadline_cap =
-      saturating_add(GPR_MAX(now, shard->queue_deadline_cap),
+      saturating_add(std::max(now, shard->queue_deadline_cap),
                      static_cast<grpc_millis>(deadline_delta * 1000.0));
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
@@ -585,7 +583,7 @@ static grpc_timer_check_result run_some_expired_timers(
   g_last_seen_min_timer = min_timer;
 
   if (now < min_timer) {
-    if (next != nullptr) *next = GPR_MIN(*next, min_timer);
+    if (next != nullptr) *next = std::min(*next, min_timer);
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
@@ -630,7 +628,7 @@ static grpc_timer_check_result run_some_expired_timers(
     }
 
     if (next) {
-      *next = GPR_MIN(*next, g_shard_queue[0]->min_deadline);
+      *next = std::min(*next, g_shard_queue[0]->min_deadline);
     }
 
 #if GPR_ARCH_64
@@ -665,7 +663,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
 
   if (now < min_timer) {
     if (next != nullptr) {
-      *next = GPR_MIN(*next, min_timer);
+      *next = std::min(*next, min_timer);
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
       gpr_log(GPR_INFO, "TIMER CHECK SKIP: now=%" PRId64 " min_timer=%" PRId64,

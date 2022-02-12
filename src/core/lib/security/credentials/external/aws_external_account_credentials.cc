@@ -22,6 +22,7 @@
 #include "absl/strings/str_replace.h"
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 
 namespace grpc_core {
 
@@ -155,26 +156,29 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   }
   absl::StatusOr<URI> uri = URI::Parse(region_url_);
   if (!uri.ok()) {
-    FinishRetrieveSubjectToken("", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                                       absl::StrFormat("Invalid region url. %s",
-                                                       uri.status().ToString())
-                                           .c_str()));
+    FinishRetrieveSubjectToken(
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Invalid region url. %s", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
-  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                   &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_http_request_destroy(&request.http);
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (uri->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRegion(void* arg,
@@ -205,25 +209,29 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   absl::StatusOr<URI> uri = URI::Parse(url_);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Invalid url: %s.", uri.status().ToString())
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(
+                absl::StrFormat("Invalid url: %s.", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
-  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                   &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_http_request_destroy(&request.http);
+  // TODO(ctiller): use the caller's resource quota.
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (uri->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveRoleName(
@@ -266,26 +274,29 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   absl::StatusOr<URI> uri = URI::Parse(url_with_role_name);
   if (!uri.ok()) {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Invalid url with role name: %s.",
-                                uri.status().ToString())
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Invalid url with role name: %s.", uri.status().ToString())));
     return;
   }
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(uri->authority().c_str());
-  request.http.path = gpr_strdup(uri->path().c_str());
-  request.handshaker =
-      uri->scheme() == "https" ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("external_account_credentials");
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
-  grpc_httpcli_get(ctx_->httpcli_context, ctx_->pollent, resource_quota,
-                   &request, ctx_->deadline, &ctx_->closure, &ctx_->response);
-  grpc_http_request_destroy(&request.http);
+  // TODO(ctiller): use the caller's resource quota.
+  RefCountedPtr<grpc_channel_credentials> http_request_creds;
+  if (uri->scheme() == "http") {
+    http_request_creds = RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  } else {
+    http_request_creds = CreateHttpRequestSSLCredentials();
+  }
+  http_request_ =
+      HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
+                       ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
+                       &ctx_->response, std::move(http_request_creds));
+  http_request_->Start();
+  grpc_http_request_destroy(&request);
 }
 
 void AwsExternalAccountCredentials::OnRetrieveSigningKeys(
@@ -317,10 +328,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     access_key_id_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Missing or invalid AccessKeyId in %s.",
-                                response_body)
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Missing or invalid AccessKeyId in %s.", response_body)));
     return;
   }
   it = json.object_value().find("SecretAccessKey");
@@ -329,10 +338,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     secret_access_key_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "", GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                absl::StrFormat("Missing or invalid SecretAccessKey in %s.",
-                                response_body)
-                    .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Missing or invalid SecretAccessKey in %s.", response_body)));
     return;
   }
   it = json.object_value().find("Token");
@@ -341,10 +348,8 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
     token_ = it->second.string_value();
   } else {
     FinishRetrieveSubjectToken(
-        "",
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("Missing or invalid Token in %s.", response_body)
-                .c_str()));
+        "", GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+                "Missing or invalid Token in %s.", response_body)));
     return;
   }
   BuildSubjectToken();

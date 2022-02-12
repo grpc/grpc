@@ -19,6 +19,6 @@
 #ifndef GRPCPP_IMPL_CLIENT_UNARY_CALL_H
 #define GRPCPP_IMPL_CLIENT_UNARY_CALL_H
 
-#include <grpcpp/impl/codegen/client_unary_call.h>
+#include <grpcpp/impl/codegen/client_unary_call.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_IMPL_CLIENT_UNARY_CALL_H

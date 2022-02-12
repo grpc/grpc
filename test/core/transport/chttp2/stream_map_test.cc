@@ -17,7 +17,9 @@
  */
 
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+
 #include <grpc/support/log.h>
+
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)

@@ -37,8 +37,7 @@
 
 #import "InteropTestsBlockCallbacks.h"
 
-#define TEST_TIMEOUT 32
-#define STREAMING_CALL_TEST_TIMEOUT 64
+#define TEST_TIMEOUT 64
 
 #define SMALL_PAYLOAD_SIZE 10
 #define LARGE_REQUEST_PAYLOAD_SIZE 271828
@@ -756,7 +755,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call start];
   }
 
-  [self waitForExpectations:completeExpectations timeout:STREAMING_CALL_TEST_TIMEOUT];
+  [self waitForExpectations:completeExpectations timeout:TEST_TIMEOUT];
 }
 
 - (void)concurrentRPCsWithErrors {
@@ -942,7 +941,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                            [expectation fulfill];
                                          }];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testServerStreamingRPC {
@@ -981,7 +980,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                           }
                         }];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPC {
@@ -1028,7 +1027,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                     [expectation fulfill];
                                   }
                                 }];
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPCWithV2API {
@@ -1082,7 +1081,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call start];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPCWithFlowControl {
@@ -1143,7 +1142,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(writeMessageCount, 4);
 }
 
@@ -1344,7 +1343,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                       }];
                    }];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testCompressedUnaryRPC {
@@ -1407,10 +1406,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
                               messageCallback:nil
                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
                                   XCTAssertNotNil(error);
-                                  XCTAssertEqual(
-                                      error.code, GRPC_STATUS_UNAVAILABLE,
-                                      @"Received status %ld instead of UNAVAILABLE (14).",
-                                      error.code);
+                                  XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
+                                                 @"Received status %@ instead of UNAVAILABLE (14).",
+                                                 @(error.code));
                                   [expectation fulfill];
                                 }]
                             callOptions:options];
@@ -1474,7 +1472,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call start];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
 - (void)testLoggingInterceptor {
@@ -1681,41 +1679,37 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init], factory ];
 
   __block GRPCStreamingProtoCall *call = [_service
-      fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
-                                            initWithInitialMetadataCallback:nil
-                                            messageCallback:^(id message) {
-                                              XCTAssertLessThan(index, 4,
-                                                                @"More than 4 responses received.");
-                                              id expected = [RMTStreamingOutputCallResponse
-                                                  messageWithPayloadSize:responses[index]];
-                                              XCTAssertEqualObjects(message, expected);
-                                              index += 1;
-                                              if (index < 4) {
-                                                id request = [RMTStreamingOutputCallRequest
-                                                    messageWithPayloadSize:requests[index]
-                                                     requestedResponseSize:responses[index]];
-                                                [call writeMessage:request];
-                                                [call receiveNextMessage];
-                                              } else {
-                                                [call finish];
-                                              }
-                                            }
-                                            closeCallback:^(NSDictionary *trailingMetadata,
-                                                            NSError *error) {
-                                              XCTAssertNil(error,
-                                                           @"Finished with unexpected error: %@",
-                                                           error);
-                                              XCTAssertEqual(index, 4,
-                                                             @"Received %i responses instead of 4.",
-                                                             index);
-                                              [expectUserCallComplete fulfill];
-                                            }]
+      fullDuplexCallWithResponseHandler:
+          [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+              messageCallback:^(id message) {
+                XCTAssertLessThan(index, 4, @"More than 4 responses received.");
+                id expected =
+                    [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
+                XCTAssertEqualObjects(message, expected);
+                index += 1;
+                if (index < 4) {
+                  id request =
+                      [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                                      requestedResponseSize:responses[index]];
+                  [call writeMessage:request];
+                  [call receiveNextMessage];
+                } else {
+                  [self waitForExpectations:@[ expectResponseCallbackComplete ]
+                                    timeout:TEST_TIMEOUT];
+                  [call finish];
+                }
+              }
+              closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
+                XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+                XCTAssertEqual(index, 4, @"Received %i responses instead of 4.", index);
+                [expectUserCallComplete fulfill];
+              }]
                             callOptions:options];
   [call start];
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectations:@[ expectUserCallComplete ] timeout:TEST_TIMEOUT];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
@@ -1826,7 +1820,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
@@ -2007,7 +2001,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);

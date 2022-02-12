@@ -14,60 +14,52 @@
 
 #include "test/core/transport/binder/end2end/fake_binder.h"
 
-#include <grpc/support/log.h>
-
 #include <string>
 #include <utility>
+
+#include <grpc/support/log.h>
 
 namespace grpc_binder {
 namespace end2end_testing {
 
 TransactionProcessor* g_transaction_processor = nullptr;
 
-FakeWritableParcel::FakeWritableParcel() : data_(1) {}
-
-int32_t FakeWritableParcel::GetDataPosition() const { return data_position_; }
-
-absl::Status FakeWritableParcel::SetDataPosition(int32_t pos) {
-  if (data_.size() < static_cast<size_t>(pos) + 1) {
-    data_.resize(pos + 1);
-  }
-  data_position_ = pos;
-  return absl::OkStatus();
-}
+int32_t FakeWritableParcel::GetDataSize() const { return data_size_; }
 
 absl::Status FakeWritableParcel::WriteInt32(int32_t data) {
-  data_[data_position_] = data;
-  SetDataPosition(data_position_ + 1).IgnoreError();
+  data_.push_back(data);
+  data_size_ += sizeof(int32_t);
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteInt64(int64_t data) {
-  data_[data_position_] = data;
-  SetDataPosition(data_position_ + 1).IgnoreError();
+  data_.push_back(data);
+  data_size_ += sizeof(int64_t);
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteBinder(HasRawBinder* binder) {
-  data_[data_position_] = binder->GetRawBinder();
-  SetDataPosition(data_position_ + 1).IgnoreError();
+  data_.push_back(binder->GetRawBinder());
+  data_size_ += sizeof(void*);
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteString(absl::string_view s) {
-  data_[data_position_] = std::string(s);
-  SetDataPosition(data_position_ + 1).IgnoreError();
+  data_.push_back(std::string(s));
+  data_size_ += s.size();
   return absl::OkStatus();
 }
 
 absl::Status FakeWritableParcel::WriteByteArray(const int8_t* buffer,
                                                 int32_t length) {
-  data_[data_position_] = std::vector<int8_t>(buffer, buffer + length);
-  SetDataPosition(data_position_ + 1).IgnoreError();
+  data_.push_back(std::vector<int8_t>(buffer, buffer + length));
+  data_size_ += length;
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadInt32(int32_t* data) const {
+int32_t FakeReadableParcel::GetDataSize() const { return data_size_; }
+
+absl::Status FakeReadableParcel::ReadInt32(int32_t* data) {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<int32_t>(data_[data_position_])) {
     return absl::InternalError("ReadInt32 failed");
@@ -76,7 +68,7 @@ absl::Status FakeReadableParcel::ReadInt32(int32_t* data) const {
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadInt64(int64_t* data) const {
+absl::Status FakeReadableParcel::ReadInt64(int64_t* data) {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<int64_t>(data_[data_position_])) {
     return absl::InternalError("ReadInt64 failed");
@@ -85,8 +77,7 @@ absl::Status FakeReadableParcel::ReadInt64(int64_t* data) const {
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadBinder(
-    std::unique_ptr<Binder>* data) const {
+absl::Status FakeReadableParcel::ReadBinder(std::unique_ptr<Binder>* data) {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<void*>(data_[data_position_])) {
     return absl::InternalError("ReadBinder failed");
@@ -97,18 +88,16 @@ absl::Status FakeReadableParcel::ReadBinder(
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadString(char data[111]) const {
+absl::Status FakeReadableParcel::ReadString(std::string* str) {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<std::string>(data_[data_position_])) {
     return absl::InternalError("ReadString failed");
   }
-  const std::string& s = absl::get<std::string>(data_[data_position_++]);
-  if (s.size() >= 100) return absl::InternalError("ReadString failed");
-  std::memcpy(data, s.data(), s.size());
+  *str = absl::get<std::string>(data_[data_position_++]);
   return absl::OkStatus();
 }
 
-absl::Status FakeReadableParcel::ReadByteArray(std::string* data) const {
+absl::Status FakeReadableParcel::ReadByteArray(std::string* data) {
   if (data_position_ >= data_.size() ||
       !absl::holds_alternative<std::vector<int8_t>>(data_[data_position_])) {
     return absl::InternalError("ReadByteArray failed");

@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
-
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/support/atm.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -34,10 +34,10 @@ namespace grpc_core {
 class GrpcLbClientStats : public RefCounted<GrpcLbClientStats> {
  public:
   struct DropTokenCount {
-    grpc_core::UniquePtr<char> token;
+    UniquePtr<char> token;
     int64_t count;
 
-    DropTokenCount(grpc_core::UniquePtr<char> token, int64_t count)
+    DropTokenCount(UniquePtr<char> token, int64_t count)
         : token(std::move(token)), count(count) {}
   };
 

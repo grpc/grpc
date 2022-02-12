@@ -28,6 +28,7 @@
 #include <gmock/gmock.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -39,7 +40,6 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
-
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -146,7 +146,11 @@ class TestServer {
     server_ = grpc_server_create(nullptr, nullptr);
     address_ = grpc_core::JoinHostPort("[::1]", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server_, address_.c_str()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     accept_thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
   }
@@ -297,8 +301,10 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
           const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
-      grpc_channel* channel = grpc_insecure_channel_create(
-          std::string("ipv6:" + server_address).c_str(), channel_args, nullptr);
+      grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+      grpc_channel* channel = grpc_channel_create(
+          std::string("ipv6:" + server_address).c_str(), creds, channel_args);
+      grpc_channel_credentials_release(creds);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);

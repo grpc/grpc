@@ -20,6 +20,7 @@ import json
 import logging
 import os
 import random
+import re
 import shlex
 import socket
 import subprocess
@@ -128,10 +129,10 @@ def parse_test_cases(arg):
 def parse_port_range(port_arg):
     try:
         port = int(port_arg)
-        return range(port, port + 1)
+        return list(range(port, port + 1))
     except:
         port_min, port_max = port_arg.split(':')
-        return range(int(port_min), int(port_max) + 1)
+        return list(range(int(port_min), int(port_max) + 1))
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
@@ -613,7 +614,7 @@ def compare_expected_instances(stats, expected_instances):
     Returns:
       Returns true if the instances are expected. False if not.
     """
-    for rpc_type, expected_peers in expected_instances.items():
+    for rpc_type, expected_peers in list(expected_instances.items()):
         rpcs_by_peer_for_type = stats.rpcs_by_method[rpc_type]
         rpcs_by_peer = rpcs_by_peer_for_type.rpcs_by_peer if rpcs_by_peer_for_type else None
         logger.debug('rpc: %s, by_peer: %s', rpc_type, rpcs_by_peer)
@@ -1030,7 +1031,7 @@ def test_metadata_filter(gcp, original_backend_service, instance_group,
         with open(bootstrap_path) as f:
             md = json.load(f)['node']['metadata']
             match_labels = []
-            for k, v in md.items():
+            for k, v in list(md.items()):
                 match_labels.append({'name': k, 'value': v})
 
         not_match_labels = [{'name': 'fake', 'value': 'fail'}]
@@ -2026,7 +2027,7 @@ def test_timeout(gcp, original_backend_service, instance_group):
                 after_stats = get_client_accumulated_stats()
 
                 success = True
-                for rpc, status in expected_results.items():
+                for rpc, status in list(expected_results.items()):
                     qty = (after_stats.stats_per_method[rpc].result[status] -
                            before_stats.stats_per_method[rpc].result[status])
                     want = test_runtime_secs * args.qps
@@ -2121,20 +2122,6 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
     # to the appropriate config for the case, defined above.
     test_cases = [
         (
-            'zero_percent_fault_injection',
-            {},
-            {
-                0: 1
-            },  # OK
-        ),
-        (
-            'non_matching_fault_injection',  # Not in route_rules, above.
-            {},
-            {
-                0: 1
-            },  # OK
-        ),
-        (
             'always_delay',
             {
                 'timeout_sec': 2
@@ -2167,7 +2154,21 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                 16: .5,
                 0: .5
             },  # UNAUTHENTICATED / OK: 50% / 50%
-        )
+        ),
+        (
+            'zero_percent_fault_injection',
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'non_matching_fault_injection',  # Not in route_rules, above.
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
     ]
 
     passed = True
@@ -2189,12 +2190,15 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
             # but this improves confidence that the test is valid if the
             # previous client_config would lead to the same results.
             time.sleep(1)
-            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
-            # second timeout.
-            attempt_count = 20
+            # Each attempt takes 10 seconds
             if first_case:
-                attempt_count = 120
+                # Give the first test case 600s for xDS config propagation.
+                attempt_count = 60
                 first_case = False
+            else:
+                # The accumulated stats might include previous sub-test, running
+                # the test multiple times to deflake
+                attempt_count = 10
             before_stats = get_client_accumulated_stats()
             if not before_stats.stats_per_method:
                 raise ValueError(
@@ -2208,7 +2212,7 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                 after_stats = get_client_accumulated_stats()
 
                 success = True
-                for status, pct in expected_results.items():
+                for status, pct in list(expected_results.items()):
                     rpc = 'UNARY_CALL'
                     qty = (after_stats.stats_per_method[rpc].result[status] -
                            before_stats.stats_per_method[rpc].result[status])
@@ -2264,7 +2268,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                                 args.zone)
                     ok = False
                 seen = set()
-                for xds_config in client_config['xds_config']:
+                for xds_config in client_config.get('xds_config', []):
                     if 'listener_config' in xds_config:
                         listener_name = xds_config['listener_config'][
                             'dynamic_listeners'][0]['active_state']['listener'][
@@ -2304,6 +2308,41 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                             ok = False
                         else:
                             seen.add('eds')
+                for generic_xds_config in client_config.get(
+                        'generic_xds_configs', []):
+                    if re.search(r'\.Listener$',
+                                 generic_xds_config['type_url']):
+                        seen.add('lds')
+                        listener = generic_xds_config["xds_config"]
+                        if listener['name'] != server_uri:
+                            logger.info('Invalid Listener name %s != %s',
+                                        listener_name, server_uri)
+                            ok = False
+                    elif re.search(r'\.RouteConfiguration$',
+                                   generic_xds_config['type_url']):
+                        seen.add('rds')
+                        route_config = generic_xds_config["xds_config"]
+                        if not len(route_config['virtual_hosts']):
+                            logger.info('Invalid number of VirtualHosts %s',
+                                        num_vh)
+                            ok = False
+                    elif re.search(r'\.Cluster$',
+                                   generic_xds_config['type_url']):
+                        seen.add('cds')
+                        cluster = generic_xds_config["xds_config"]
+                        if cluster['type'] != 'EDS':
+                            logger.info('Invalid cluster type %s != EDS',
+                                        cluster_type)
+                            ok = False
+                    elif re.search(r'\.ClusterLoadAssignment$',
+                                   generic_xds_config['type_url']):
+                        seen.add('eds')
+                        endpoint = generic_xds_config["xds_config"]
+                        if args.zone not in endpoint["endpoints"][0][
+                                "locality"]["sub_zone"]:
+                            logger.info('Invalid endpoint sub_zone %s',
+                                        sub_zone)
+                            ok = False
                 want = {'lds', 'rds', 'cds', 'eds'}
                 if seen != want:
                     logger.info('Incomplete xDS config dump, seen=%s', seen)
@@ -2380,7 +2419,8 @@ def is_primary_instance_group(gcp, instance_group):
     # the client's actual locality.
     instance_names = get_instance_names(gcp, instance_group)
     stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
-    return all(peer in instance_names for peer in stats.rpcs_by_peer.keys())
+    return all(
+        peer in instance_names for peer in list(stats.rpcs_by_peer.keys()))
 
 
 def get_startup_script(path_to_server_binary, service_port):
@@ -2685,11 +2725,10 @@ def get_url_map(gcp, url_map_name, record_error=True):
         result = gcp.compute.urlMaps().get(project=gcp.project,
                                            urlMap=url_map_name).execute()
         url_map = GcpResource(url_map_name, result['selfLink'])
+        gcp.url_maps.append(url_map)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        url_map = GcpResource(url_map_name, None)
-    gcp.url_maps.append(url_map)
 
 
 def get_target_proxy(gcp, target_proxy_name, record_error=True):
@@ -2703,11 +2742,10 @@ def get_target_proxy(gcp, target_proxy_name, record_error=True):
                 project=gcp.project,
                 targetHttpProxy=target_proxy_name).execute()
         target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+        gcp.target_proxies.append(target_proxy)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        target_proxy = GcpResource(target_proxy_name, None)
-    gcp.target_proxies.append(target_proxy)
 
 
 def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
@@ -2716,11 +2754,10 @@ def get_global_forwarding_rule(gcp, forwarding_rule_name, record_error=True):
             project=gcp.project, forwardingRule=forwarding_rule_name).execute()
         global_forwarding_rule = GcpResource(forwarding_rule_name,
                                              result['selfLink'])
+        gcp.global_forwarding_rules.append(global_forwarding_rule)
     except Exception as e:
         if record_error:
             gcp.errors.append(e)
-        global_forwarding_rule = GcpResource(forwarding_rule_name, None)
-    gcp.global_forwarding_rules.append(global_forwarding_rule)
 
 
 def get_instance_template(gcp, template_name):
@@ -2770,7 +2807,8 @@ def delete_global_forwarding_rule(gcp, forwarding_rule_to_delete=None):
 
 
 def delete_global_forwarding_rules(gcp):
-    for forwarding_rule in gcp.global_forwarding_rules:
+    forwarding_rules_to_delete = gcp.global_forwarding_rules.copy()
+    for forwarding_rule in forwarding_rules_to_delete:
         delete_global_forwarding_rule(gcp, forwarding_rule)
 
 
@@ -2801,7 +2839,8 @@ def delete_target_proxy(gcp, proxy_to_delete=None):
 
 
 def delete_target_proxies(gcp):
-    for target_proxy in gcp.target_proxies:
+    target_proxies_to_delete = gcp.target_proxies.copy()
+    for target_proxy in target_proxies_to_delete:
         delete_target_proxy(gcp, target_proxy)
 
 
@@ -2824,7 +2863,8 @@ def delete_url_map(gcp, url_map_to_delete=None):
 
 
 def delete_url_maps(gcp):
-    for url_map in gcp.url_maps:
+    url_maps_to_delete = gcp.url_maps.copy()
+    for url_map in url_maps_to_delete:
         delete_url_map(gcp, url_map)
 
 
@@ -2970,7 +3010,7 @@ def patch_url_map_backend_service(gcp,
         'weightedBackendServices': [{
             'backendService': service.url,
             'weight': w,
-        } for service, w in services_with_weights.items()]
+        } for service, w in list(services_with_weights.items())]
     } if services_with_weights else None
 
     config = {

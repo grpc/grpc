@@ -70,8 +70,7 @@ void InsecureChannelSecurityConnector::add_handshakers(
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
-  GPR_ASSERT(tsi_local_handshaker_create(true /* is_client */, &handshaker) ==
-             TSI_OK);
+  GPR_ASSERT(tsi_local_handshaker_create(&handshaker) == TSI_OK);
   handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
 }
 
@@ -95,17 +94,16 @@ int InsecureChannelSecurityConnector::cmp(
 // created with the security level of TSI_SECURITY_NONE.
 void InsecureServerSecurityConnector::add_handshakers(
     const grpc_channel_args* args, grpc_pollset_set* /* interested_parties */,
-    grpc_core::HandshakeManager* handshake_manager) {
+    HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
-  GPR_ASSERT(tsi_local_handshaker_create(false /* is_client */, &handshaker) ==
-             TSI_OK);
+  GPR_ASSERT(tsi_local_handshaker_create(&handshaker) == TSI_OK);
   handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
 }
 
 void InsecureServerSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
-    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+    RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   *auth_context = MakeAuthContext();
   tsi_peer_destruct(&peer);

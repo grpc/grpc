@@ -28,6 +28,7 @@
 #ifdef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
 
 #include <stddef.h>
+
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 static int check_availability_invalid(void) { return 0; }

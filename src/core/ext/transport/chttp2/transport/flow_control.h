@@ -50,7 +50,7 @@ static constexpr uint32_t kFrameSize = 1024 * 1024;
 static constexpr const uint32_t kMinInitialWindowSize = 128;
 static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
-static constexpr const uint32_t kMaxWindowDelta = (1u << 10);
+static constexpr const uint32_t kMaxWindowDelta = (1u << 20);
 
 class TransportFlowControl;
 class StreamFlowControl;
@@ -274,10 +274,10 @@ class TransportFlowControl final : public TransportFlowControlBase {
   // See comment above announced_stream_total_over_incoming_window_ for the
   // logic behind this decision.
   int64_t target_window() const override {
-    return static_cast<uint32_t> GPR_MIN(
-        (int64_t)((1u << 31) - 1),
-        announced_stream_total_over_incoming_window_ +
-            target_initial_window_size_);
+    return static_cast<uint32_t>(
+        std::min(static_cast<int64_t>((1u << 31) - 1),
+                 announced_stream_total_over_incoming_window_ +
+                     target_initial_window_size_));
   }
 
   const grpc_chttp2_transport* transport() const { return t_; }
@@ -331,10 +331,10 @@ class TransportFlowControl final : public TransportFlowControlBase {
   const bool enable_bdp_probe_;
 
   /* bdp estimation */
-  grpc_core::BdpEstimator bdp_estimator_;
+  BdpEstimator bdp_estimator_;
 
   /* pid controller */
-  grpc_core::PidController pid_controller_;
+  PidController pid_controller_;
   grpc_millis last_pid_update_ = 0;
 };
 

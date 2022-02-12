@@ -43,9 +43,6 @@ UrlMapType = Any
 HostRule = Any
 PathMatcher = Any
 
-_BackendHTTP2 = gcp.compute.ComputeV1.BackendServiceProtocol.HTTP2
-_COMPUTE_V1_URL_PREFIX = 'https://www.googleapis.com/compute/v1'
-
 
 class _UrlMapChangeAggregator:
     """Where all the urlMap change happens."""
@@ -159,6 +156,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             resource_prefix=self.resource_prefix,
             resource_suffix=(self.resource_suffix or ""),
             network=self.network,
+            compute_api_version=self.compute_api_version,
         )
         # Kubernetes namespace
         self.k8s_namespace = k8s.KubernetesNamespace(self.k8s_api_manager,

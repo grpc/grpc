@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <list>
-
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+
+#include <list>
 
 #include "upb/upb.hpp"
 
@@ -178,8 +178,7 @@ static void handle_response_done(alts_grpc_handshaker_client* client,
                                  const unsigned char* bytes_to_send,
                                  size_t bytes_to_send_size,
                                  tsi_handshaker_result* result) {
-  recv_message_result* p =
-      static_cast<recv_message_result*>(gpr_zalloc(sizeof(*p)));
+  recv_message_result* p = grpc_core::Zalloc<recv_message_result>();
   p->status = status;
   p->bytes_to_send = bytes_to_send;
   p->bytes_to_send_size = bytes_to_send_size;
@@ -718,11 +717,11 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
                 GRPC_MILLIS_INF_FUTURE, nullptr);
+  grpc_slice_unref_internal(slice);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
                     grpc_schedule_on_exec_ctx);
-  grpc_slice_unref_internal(slice);
   return &client->base;
 }
 
@@ -850,7 +849,7 @@ void alts_handshaker_client_on_status_received_for_testing(
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->handshake_status_code = status;
   client->handshake_status_details = grpc_empty_slice();
-  grpc_core::Closure::Run(DEBUG_LOCATION, &client->on_status_received, error);
+  Closure::Run(DEBUG_LOCATION, &client->on_status_received, error);
 }
 
 }  // namespace internal

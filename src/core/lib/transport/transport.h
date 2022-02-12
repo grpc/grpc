@@ -24,13 +24,14 @@
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -41,6 +42,72 @@
 #define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
+namespace grpc_core {
+// TODO(ctiller): eliminate once MetadataHandle is constructable directly.
+namespace promise_filter_detail {
+class BaseCallData;
+}
+
+// Small unowned "handle" type to ensure one accessor at a time to metadata.
+// The focus here is to get promises to use the syntax we'd like - we'll
+// probably substitute some other smart pointer later.
+template <typename T>
+class MetadataHandle {
+ public:
+  MetadataHandle() = default;
+
+  MetadataHandle(const MetadataHandle&) = delete;
+  MetadataHandle& operator=(const MetadataHandle&) = delete;
+
+  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
+    other.handle_ = nullptr;
+  }
+  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
+    handle_ = other.handle_;
+    other.handle_ = nullptr;
+    return *this;
+  }
+
+  explicit MetadataHandle(const absl::Status& status) {
+    handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
+    handle_->Set(GrpcStatusMetadata(),
+                 static_cast<grpc_status_code>(status.code()));
+    if (status.ok()) return;
+    handle_->Set(GrpcMessageMetadata(),
+                 Slice::FromCopiedString(status.message()));
+  }
+
+  T* operator->() const { return handle_; }
+  bool has_value() const { return handle_ != nullptr; }
+  T* get() const { return handle_; }
+
+  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
+
+ private:
+  friend class promise_filter_detail::BaseCallData;
+
+  explicit MetadataHandle(T* handle) : handle_(handle) {}
+  T* Unwrap() {
+    T* result = handle_;
+    handle_ = nullptr;
+    return result;
+  }
+
+  T* handle_ = nullptr;
+};
+
+// Trailing metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+
+// Client initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+
+using NextPromiseFactory =
+    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+}  // namespace grpc_core
 
 /* forward declarations */
 
@@ -59,7 +126,6 @@ typedef struct grpc_stream_refcount {
 #ifndef NDEBUG
   const char* object_type;
 #endif
-  grpc_slice_refcount slice_refcount;
 } grpc_stream_refcount;
 
 #ifndef NDEBUG
@@ -279,8 +345,11 @@ struct grpc_transport_stream_op_batch_payload {
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure* recv_initial_metadata_ready = nullptr;
     // If not NULL, will be set to true if trailing metadata is
-    // immediately available.  This may be a signal that we received a
-    // Trailers-Only response.
+    // immediately available. This may be a signal that we received a
+    // Trailers-Only response. The retry filter checks this to know whether to
+    // defer the decision to commit the call or not. The C++ callback API also
+    // uses this to set the success flag of OnReadInitialMetadataDone()
+    // callback.
     bool* trailing_metadata_available = nullptr;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
@@ -354,6 +423,14 @@ typedef struct grpc_transport_op {
   void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
                                const void* server_data) = nullptr;
   void* set_accept_stream_user_data = nullptr;
+  /** set the callback for accepting new streams based upon promises;
+      this is a permanent callback, unlike the other one-shot closures.
+      If true, the callback is set to set_make_promise_fn, with its
+      user_data argument set to set_make_promise_data */
+  bool set_make_promise = false;
+  void (*set_make_promise_fn)(void* user_data, grpc_transport* transport,
+                              const void* server_data) = nullptr;
+  void* set_make_promise_user_data = nullptr;
   /** add this transport to a pollset */
   grpc_pollset* bind_pollset = nullptr;
   /** add this transport to a pollset_set */

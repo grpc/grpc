@@ -15,29 +15,38 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 
-#include <grpc/impl/codegen/port_platform.h>
-
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+
+#include <grpc/support/log.h>
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+
+struct grpc_binder_stream;
 
 // TODO(mingcl): Consider putting the struct in a namespace (Eventually this
 // depends on what style we want to follow)
 // TODO(mingcl): Decide casing for this class name. Should we use C-style class
 // name here or just go with C++ style?
 struct grpc_binder_transport {
-  explicit grpc_binder_transport(std::unique_ptr<grpc_binder::Binder> binder,
-                                 bool is_client);
+  explicit grpc_binder_transport(
+      std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
+      std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+          security_policy);
+  ~grpc_binder_transport();
 
   int NewStreamTxCode() {
     // TODO(mingcl): Wrap around when all tx codes are used. "If we do detect a
@@ -45,14 +54,6 @@ struct grpc_binder_transport {
     // down the transport gracefully."
     GPR_ASSERT(next_free_tx_code <= LAST_CALL_TRANSACTION);
     return next_free_tx_code++;
-  }
-
-  void Ref() { refs.Ref(); }
-
-  void Unref() {
-    if (refs.Unref()) {
-      delete this;
-    }
   }
 
   grpc_transport base; /* must be first */
@@ -63,7 +64,11 @@ struct grpc_binder_transport {
   std::shared_ptr<grpc_binder::WireWriter> wire_writer;
 
   bool is_client;
-  grpc_core::Mutex mu;
+  // A set of currently registered streams (the key is the stream ID).
+  absl::flat_hash_map<int, grpc_binder_stream*> registered_stream;
+  grpc_core::Combiner* combiner;
+
+  grpc_closure accept_stream_closure;
 
   // The callback and the data for the callback when the stream is connected
   // between client and server.
@@ -72,15 +77,19 @@ struct grpc_binder_transport {
   void* accept_stream_user_data = nullptr;
 
   grpc_core::ConnectivityStateTracker state_tracker;
+  grpc_core::RefCount refs;
 
  private:
   int next_free_tx_code = grpc_binder::kFirstCallId;
-  grpc_core::RefCount refs;
 };
 
 grpc_transport* grpc_create_binder_transport_client(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder);
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
 grpc_transport* grpc_create_binder_transport_server(
-    std::unique_ptr<grpc_binder::Binder> client_binder);
+    std::unique_ptr<grpc_binder::Binder> client_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
 
 #endif  // GRPC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H

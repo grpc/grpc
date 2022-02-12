@@ -17,15 +17,18 @@
  */
 
 #include <dirent.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <gtest/gtest.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 
+#include <gtest/gtest.h>
+
 #include "absl/flags/flag.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
@@ -46,7 +49,7 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // implementations of that function will initialize and shutdown gRPC
   // internally.
   grpc_init();
-  gpr_log(GPR_DEBUG, "Example file: %s", GetParam().c_str());
+  gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
   leak_check = false;
@@ -54,7 +57,9 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
                                grpc_load_file(GetParam().c_str(), 0, &buffer)));
   size_t length = GRPC_SLICE_LENGTH(buffer);
   void* data = gpr_malloc(length);
-  memcpy(data, GPR_SLICE_START_PTR(buffer), length);
+  if (length > 0) {
+    memcpy(data, GPR_SLICE_START_PTR(buffer), length);
+  }
   grpc_slice_unref(buffer);
   grpc_shutdown();
   LLVMFuzzerTestOneInput(static_cast<uint8_t*>(data), length);

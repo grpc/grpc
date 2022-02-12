@@ -18,10 +18,11 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
+#include <openssl/ssl.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <openssl/ssl.h>
 
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -30,17 +31,16 @@
 namespace grpc_core {
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
-    std::string root_certificate,
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs)
+    std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
-    absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
+    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
@@ -122,15 +122,15 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       provider->ForceUpdate();
     }
   };
-  refresh_thread_ = grpc_core::Thread(
-      "FileWatcherCertificateProvider_refreshing_thread", thread_lambda, this);
+  refresh_thread_ = Thread("FileWatcherCertificateProvider_refreshing_thread",
+                           thread_lambda, this);
   refresh_thread_.Start();
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     absl::optional<std::string> root_certificate;
-    absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
+    absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
@@ -179,7 +179,7 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
 
 void FileWatcherCertificateProvider::ForceUpdate() {
   absl::optional<std::string> root_certificate;
-  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
+  absl::optional<PemKeyCertPairList> pem_key_cert_pairs;
   if (!root_cert_path_.empty()) {
     root_certificate = ReadRootCertificatesFromFile(root_cert_path_);
   }
@@ -187,7 +187,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     pem_key_cert_pairs = ReadIdentityKeyCertPairFromFiles(
         private_key_path_, identity_certificate_path_);
   }
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   const bool root_cert_changed =
       (!root_certificate.has_value() && !root_certificate_.empty()) ||
       (root_certificate.has_value() && root_certificate_ != *root_certificate);
@@ -220,7 +220,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
       absl::optional<std::string> root_to_report;
-      absl::optional<grpc_core::PemKeyCertPairList> identity_to_report;
+      absl::optional<PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
       if (info.root_being_watched && !root_certificate_.empty() &&
           root_cert_changed) {
@@ -278,7 +278,7 @@ namespace {
 // it logs the error and returns 0.
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
-  absl::Status status = grpc_core::GetFileModificationTime(filename, &ts);
+  absl::Status status = GetFileModificationTime(filename, &ts);
   return ts;
 }
 

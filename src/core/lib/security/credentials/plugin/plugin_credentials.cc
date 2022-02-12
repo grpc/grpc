@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -87,10 +88,8 @@ static grpc_error_handle process_plugin_result(
     size_t num_md, grpc_status_code status, const char* error_details) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (status != GRPC_STATUS_OK) {
-    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Getting metadata from plugin failed with error: ",
-                     error_details)
-            .c_str());
+    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Getting metadata from plugin failed with error: ", error_details));
   } else {
     bool seen_illegal_header = false;
     for (size_t i = 0; i < num_md; ++i) {
@@ -111,10 +110,9 @@ static grpc_error_handle process_plugin_result(
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal metadata");
     } else {
       for (size_t i = 0; i < num_md; ++i) {
-        grpc_mdelem mdelem =
-            grpc_mdelem_create(md[i].key, md[i].value, nullptr);
-        grpc_credentials_mdelem_array_add(r->md_array, mdelem);
-        GRPC_MDELEM_UNREF(mdelem);
+        r->md_array->emplace_back(
+            grpc_core::Slice(grpc_slice_ref_internal(md[i].key)),
+            grpc_core::Slice(grpc_slice_ref_internal(md[i].value)));
       }
     }
   }
@@ -156,13 +154,12 @@ static void plugin_md_request_metadata_ready(void* request,
 
 bool grpc_plugin_credentials::get_request_metadata(
     grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* error) {
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* error) {
   bool retval = true;  // Synchronous return.
   if (plugin_.get_metadata != nullptr) {
     // Create pending_request object.
-    pending_request* request =
-        static_cast<pending_request*>(gpr_zalloc(sizeof(*request)));
+    pending_request* request = grpc_core::Zalloc<pending_request>();
     request->creds = this;
     request->md_array = md_array;
     request->on_request_metadata = on_request_metadata;
@@ -231,7 +228,7 @@ bool grpc_plugin_credentials::get_request_metadata(
 }
 
 void grpc_plugin_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* md_array, grpc_error_handle error) {
+    grpc_core::CredentialsMetadataArray* md_array, grpc_error_handle error) {
   gpr_mu_lock(&mu_);
   for (pending_request* pending_request = pending_requests_;
        pending_request != nullptr; pending_request = pending_request->next) {

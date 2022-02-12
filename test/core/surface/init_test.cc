@@ -18,10 +18,11 @@
 
 #include "src/core/lib/surface/init.h"
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"

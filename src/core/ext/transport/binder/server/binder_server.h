@@ -15,12 +15,15 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_SERVER_BINDER_SERVER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
+
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -55,7 +58,9 @@ using BinderTxReceiverFactory =
         grpc_binder::TransactionReceiver::OnTransactCb)>;
 
 bool AddBinderPort(const std::string& addr, grpc_server* server,
-                   BinderTxReceiverFactory factory);
+                   BinderTxReceiverFactory factory,
+                   std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+                       security_policy);
 
 }  // namespace grpc_core
 

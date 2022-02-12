@@ -19,11 +19,12 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SLICE_H
 #define GRPCPP_IMPL_CODEGEN_SLICE_H
 
+// IWYU pragma: private, include <grpcpp/support/slice.h>
+
+#include <grpc/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/string_ref.h>
-
-#include <grpc/impl/codegen/slice.h>
 
 namespace grpc {
 

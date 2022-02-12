@@ -79,7 +79,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref() {
 }
 
 RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref(
-    const grpc_core::DebugLocation& location, const char* reason) {
+    const DebugLocation& location, const char* reason) {
   IncrementRefCount(location, reason);
   return RefCountedPtr<DynamicFilters::Call>(this);
 }
@@ -112,8 +112,8 @@ void DynamicFilters::Call::IncrementRefCount() {
   GRPC_CALL_STACK_REF(CALL_TO_CALL_STACK(this), "");
 }
 
-void DynamicFilters::Call::IncrementRefCount(
-    const grpc_core::DebugLocation& /*location*/, const char* reason) {
+void DynamicFilters::Call::IncrementRefCount(const DebugLocation& /*location*/,
+                                             const char* reason) {
   GRPC_CALL_STACK_REF(CALL_TO_CALL_STACK(this), reason);
 }
 
@@ -140,8 +140,7 @@ std::pair<grpc_channel_stack*, grpc_error_handle> CreateChannelStack(
   // Initialize stack.
   grpc_error_handle error = grpc_channel_stack_init(
       /*initial_refs=*/1, DestroyChannelStack, channel_stack, filters.data(),
-      filters.size(), args, /*optional_transport=*/nullptr, "DynamicFilters",
-      channel_stack);
+      filters.size(), args, "DynamicFilters", channel_stack);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error initializing client internal stack: %s",
             grpc_error_std_string(error).c_str());
@@ -163,7 +162,7 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
     // Channel stack creation failed with requested filters.
     // Create with lame filter instead.
     grpc_error_handle error = p.second;
-    grpc_arg error_arg = MakeLameClientErrorArg(error);
+    grpc_arg error_arg = MakeLameClientErrorArg(&error);
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(args, &error_arg, 1);
     GRPC_ERROR_UNREF(error);
@@ -184,7 +183,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::CreateCall(
                            channel_stack_->call_stack_size;
   Call* call = static_cast<Call*>(args.arena->Alloc(allocation_size));
   new (call) Call(std::move(args), error);
-  return call;
+  return RefCountedPtr<DynamicFilters::Call>(call);
 }
 
 }  // namespace grpc_core

@@ -19,14 +19,16 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/server_context.h>
+
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <atomic>
 #include <cassert>
 #include <map>
 #include <memory>
 #include <type_traits>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpcpp/impl/codegen/call.h>
@@ -62,6 +64,8 @@ template <class R>
 class ServerReader;
 template <class W>
 class ServerWriter;
+
+extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 template <class ServiceType, class RequestType, class ResponseType>
@@ -418,7 +422,12 @@ class ServerContextBase {
     message_allocator_state_ = allocator_state;
   }
 
-  void MaybeMarkCancelledOnRead();
+  void MaybeMarkCancelledOnRead() {
+    if (g_core_codegen_interface->grpc_call_failed_before_recv_message(
+            call_.call)) {
+      marked_cancelled_.store(true, std::memory_order_release);
+    }
+  }
 
   struct CallWrapper {
     ~CallWrapper();

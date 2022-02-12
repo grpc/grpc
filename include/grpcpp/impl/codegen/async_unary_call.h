@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
 #define GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
 
+// IWYU pragma: private, include <grpcpp/support/async_unary_call.h>
+
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -332,6 +334,10 @@ class ServerAsyncResponseWriter final
   /// Note: if \a status has a non-OK code, then \a msg will not be sent,
   /// and the client will receive only the status with possible trailing
   /// metadata.
+  ///
+  /// gRPC doesn't take ownership or a reference to msg and status, so it is
+  /// safe to deallocate them once the Finish operation is complete (i.e. a
+  /// result arrives in the completion queue).
   void Finish(const W& msg, const ::grpc::Status& status, void* tag) {
     finish_buf_.set_output_tag(tag);
     finish_buf_.set_core_cq_tag(&finish_buf_);
@@ -365,6 +371,10 @@ class ServerAsyncResponseWriter final
   /// Side effect:
   ///   - also sends initial metadata if not already sent (using the
   ///     \a ServerContext associated with this call).
+  ///
+  /// gRPC doesn't take ownership or a reference to status, so it is safe to
+  /// deallocate them once the Finish operation is complete (i.e. a result
+  /// arrives in the completion queue).
   void FinishWithError(const ::grpc::Status& status, void* tag) {
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);

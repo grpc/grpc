@@ -51,6 +51,8 @@ some configuration as environment variables that can be set.
     resolver's resolved address sorter
   - cds_lb - traces cds LB policy
   - channel - traces operations on the C core channel stack
+  - channel_stack - traces the set of filters in a channel stack upon
+    construction
   - client_channel_call - traces client channel call batch activity
   - client_channel_routing - traces client channel call routing, including
     resolver and load balancing policy interaction
@@ -76,6 +78,7 @@ some configuration as environment variables that can be set.
   - priority_lb - traces priority LB policy
   - resource_quota - trace resource quota objects internals
   - ring_hash_lb - traces the ring hash load balancing policy
+  - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
   - sdk_authz - traces sdk authorization

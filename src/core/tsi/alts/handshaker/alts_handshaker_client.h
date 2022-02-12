@@ -25,11 +25,10 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
-#include "src/core/tsi/transport_security_interface.h"
-
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define ALTS_SERVICE_METHOD "/grpc.gcp.HandshakerService/DoHandshake"
 #define ALTS_APPLICATION_PROTOCOL "grpc"

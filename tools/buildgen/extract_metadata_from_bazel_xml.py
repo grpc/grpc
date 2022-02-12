@@ -94,8 +94,13 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_clazz = rule_dict['class']
             rule_name = rule_dict['name']
             if rule_clazz in [
-                    'cc_library', 'cc_binary', 'cc_test', 'cc_proto_library',
-                    'proto_library'
+                    'cc_library',
+                    'cc_binary',
+                    'cc_test',
+                    'cc_proto_library',
+                    'proto_library',
+                    'upb_proto_library',
+                    'upb_proto_reflection_library',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -286,12 +291,11 @@ def _compute_transitive_metadata(
 
     # Calculate transitive public deps (needed for collapsing sources)
     transitive_public_deps = set(
-        filter(lambda x: x in bazel_label_to_dep_name, transitive_deps))
+        [x for x in transitive_deps if x in bazel_label_to_dep_name])
 
     # Remove intermediate targets that our public dependencies already depend
     # on. This is the step that further shorten the deps list.
-    collapsed_deps = set(filter(lambda x: x not in exclude_deps,
-                                collapsed_deps))
+    collapsed_deps = set([x for x in collapsed_deps if x not in exclude_deps])
 
     # Compute the final source files and headers for this build target whose
     # name is `rule_name` (input argument of this function).
@@ -320,7 +324,6 @@ def _compute_transitive_metadata(
                     _extract_public_headers(bazel_rules[dep]))
                 collapsed_headers.update(
                     _extract_nonpublic_headers(bazel_rules[dep]))
-
     # This item is a "visited" flag
     bazel_rule['_PROCESSING_DONE'] = True
     # Following items are described in the docstinrg.
@@ -361,7 +364,7 @@ def _populate_transitive_metadata(bazel_rules: Any,
 def update_test_metadata_with_transitive_metadata(
         all_extra_metadata: BuildDict, bazel_rules: BuildDict) -> None:
     """Patches test build metadata with transitive metadata."""
-    for lib_name, lib_dict in all_extra_metadata.items():
+    for lib_name, lib_dict in list(all_extra_metadata.items()):
         # Skip if it isn't not an test
         if lib_dict.get('build') != 'test' or lib_dict.get('_TYPE') != 'target':
             continue
@@ -375,6 +378,78 @@ def update_test_metadata_with_transitive_metadata(
         if '//external:gtest' in bazel_rule['_TRANSITIVE_DEPS']:
             lib_dict['gtest'] = True
             lib_dict['language'] = 'c++'
+
+
+def _get_transitive_protos(bazel_rules, t):
+    que = [
+        t,
+    ]
+    visited = set()
+    ret = []
+    while que:
+        name = que.pop(0)
+        rule = bazel_rules.get(name, None)
+        if rule:
+            for dep in rule['deps']:
+                if dep not in visited:
+                    visited.add(dep)
+                    que.append(dep)
+            for src in rule['srcs']:
+                if src.endswith('.proto'):
+                    ret.append(src)
+    return list(set(ret))
+
+
+def _expand_upb_proto_library_rules(bazel_rules):
+    # Expand the .proto files from UPB proto library rules into the pre-generated
+    # upb.h and upb.c files.
+    GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
+    GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
+    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+                      ('@com_google_googleapis//', ''),
+                      ('@com_github_cncf_udpa//', ''),
+                      ('@com_envoyproxy_protoc_gen_validate//', ''),
+                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
+    for name, bazel_rule in bazel_rules.items():
+        gen_func = bazel_rule.get('generator_function', None)
+        if gen_func in ('grpc_upb_proto_library',
+                        'grpc_upb_proto_reflection_library'):
+            # get proto dependency
+            deps = bazel_rule['deps']
+            if len(deps) != 1:
+                raise Exception(
+                    'upb rule "{0}" should have 1 proto dependency but has "{1}"'
+                    .format(name, deps))
+            # deps is not properly fetched from bazel query for upb_proto_library target
+            # so add the upb dependency manually
+            bazel_rule['deps'] = [
+                '//external:upb_lib', '//external:upb_lib_descriptor',
+                '//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me'
+            ]
+            # populate the upb_proto_library rule with pre-generated upb headers
+            # and sources using proto_rule
+            protos = _get_transitive_protos(bazel_rules, deps[0])
+            if len(protos) == 0:
+                raise Exception(
+                    'upb rule "{0}" should have at least one proto file.'.
+                    format(name))
+            srcs = []
+            hdrs = []
+            for proto_src in protos:
+                for external_link in EXTERNAL_LINKS:
+                    if proto_src.startswith(external_link[0]):
+                        proto_src = proto_src[len(external_link[0]) +
+                                              len(external_link[1]):]
+                        break
+                if proto_src.startswith('@'):
+                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                proto_src = _extract_source_file_path(proto_src)
+                ext = '.upb' if gen_func == 'grpc_upb_proto_library' else '.upbdefs'
+                root = GEN_UPB_ROOT if gen_func == 'grpc_upb_proto_library' else GEN_UPBDEFS_ROOT
+                srcs.append(root + proto_src.replace('.proto', ext + '.c'))
+                hdrs.append(root + proto_src.replace('.proto', ext + '.h'))
+            bazel_rule['srcs'] = srcs
+            bazel_rule['hdrs'] = hdrs
 
 
 def _generate_build_metadata(build_extra_metadata: BuildDict,
@@ -409,7 +484,7 @@ def _generate_build_metadata(build_extra_metadata: BuildDict,
             result[to_name] = lib_dict
 
             # dep names need to be updated as well
-            for lib_dict_to_update in result.values():
+            for lib_dict_to_update in list(result.values()):
                 lib_dict_to_update['deps'] = list([
                     to_name if dep == lib_name else dep
                     for dep in lib_dict_to_update['deps']
@@ -439,15 +514,21 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
 
     # get rid of temporary private fields prefixed with "_" and some other useless fields
     for lib in lib_list:
-        for field_to_remove in [k for k in lib.keys() if k.startswith('_')]:
+        for field_to_remove in [
+                k for k in list(lib.keys()) if k.startswith('_')
+        ]:
             lib.pop(field_to_remove, None)
     for target in target_list:
-        for field_to_remove in [k for k in target.keys() if k.startswith('_')]:
+        for field_to_remove in [
+                k for k in list(target.keys()) if k.startswith('_')
+        ]:
             target.pop(field_to_remove, None)
         target.pop('public_headers',
                    None)  # public headers make no sense for targets
     for test in test_list:
-        for field_to_remove in [k for k in test.keys() if k.startswith('_')]:
+        for field_to_remove in [
+                k for k in list(test.keys()) if k.startswith('_')
+        ]:
             test.pop(field_to_remove, None)
         test.pop('public_headers',
                  None)  # public headers make no sense for tests
@@ -464,7 +545,7 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
 def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
     """Gets list of cc_test tests from bazel rules"""
     result = []
-    for bazel_rule in bazel_rules.values():
+    for bazel_rule in list(bazel_rules.values()):
         if bazel_rule['class'] == 'cc_test':
             test_name = bazel_rule['name']
             if test_name.startswith('//'):
@@ -478,15 +559,21 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
 
     # most qps tests are autogenerated, we are fine without them
     tests = [test for test in tests if not test.startswith('test/cpp/qps:')]
+    # microbenchmarks aren't needed for checking correctness
+    tests = [
+        test for test in tests
+        if not test.startswith('test/cpp/microbenchmarks:')
+    ]
+    tests = [
+        test for test in tests
+        if not test.startswith('test/core/promise/benchmark:')
+    ]
 
     # we have trouble with census dependency outside of bazel
     tests = [
         test for test in tests
-        if not test.startswith('test/cpp/ext/filters/census:')
-    ]
-    tests = [
-        test for test in tests
-        if not test.startswith('test/cpp/microbenchmarks:bm_opencensus_plugin')
+        if not test.startswith('test/cpp/ext/filters/census:') and
+        not test.startswith('test/core/xds:xds_channel_stack_modifier_test')
     ]
 
     # missing opencensus/stats/stats.h
@@ -536,6 +623,9 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith('test/cpp/util:channelz_sampler_test')
     ]
 
+    # we don't need to generate fuzzers outside of bazel
+    tests = [test for test in tests if not test.endswith('_fuzzer')]
+
     return tests
 
 
@@ -566,7 +656,7 @@ def _generate_build_extra_metadata_for_tests(
         if 'grpc_fuzzer' == bazel_rule['generator_function']:
             # currently we hand-list fuzzers instead of generating them automatically
             # because there's no way to obtain maxlen property from bazel BUILD file.
-            print('skipping fuzzer ' + test)
+            print(('skipping fuzzer ' + test))
             continue
 
         # if any tags that restrict platform compatibility are present,
@@ -610,20 +700,20 @@ def _generate_build_extra_metadata_for_tests(
 
     # detect duplicate test names
     tests_by_simple_name = {}
-    for test_name, test_dict in test_metadata.items():
+    for test_name, test_dict in list(test_metadata.items()):
         simple_test_name = test_dict['_RENAME']
         if not simple_test_name in tests_by_simple_name:
             tests_by_simple_name[simple_test_name] = []
         tests_by_simple_name[simple_test_name].append(test_name)
 
     # choose alternative names for tests with a name collision
-    for collision_list in tests_by_simple_name.values():
+    for collision_list in list(tests_by_simple_name.values()):
         if len(collision_list) > 1:
             for test_name in collision_list:
                 long_name = test_name.replace('/', '_').replace(':', '_')
-                print(
+                print((
                     'short name of "%s" collides with another test, renaming to %s'
-                    % (test_name, long_name))
+                    % (test_name, long_name)))
                 test_metadata[test_name]['_RENAME'] = long_name
 
     return test_metadata
@@ -635,8 +725,8 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
         if tgt['build'] == 'test':
             for src in tgt['src']:
                 if src.startswith('src/') and not src.endswith('.proto'):
-                    print('source file from under "src/" tree used in test ' +
-                          tgt['name'] + ': ' + src)
+                    print(('source file from under "src/" tree used in test ' +
+                           tgt['name'] + ': ' + src))
 
 
 # extra metadata that will be used to construct build.yaml
@@ -857,115 +947,6 @@ _BUILD_EXTRA_METADATA = {
 
     # TODO(jtattermusch): add remaining tools such as grpc_print_google_default_creds_token (they are not used by bazel build)
 
-    # Fuzzers
-    'test/core/security:alts_credentials_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/security/corpus/alts_credentials_corpus'],
-        'maxlen': 2048,
-        '_TYPE': 'target',
-        '_RENAME': 'alts_credentials_fuzzer'
-    },
-    'test/core/end2end/fuzzers:client_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/end2end/fuzzers/client_fuzzer_corpus'],
-        'maxlen': 2048,
-        'dict': 'test/core/end2end/fuzzers/hpack.dictionary',
-        '_TYPE': 'target',
-        '_RENAME': 'client_fuzzer'
-    },
-    'test/core/transport/chttp2:hpack_parser_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/transport/chttp2/hpack_parser_corpus'],
-        'maxlen': 512,
-        'dict': 'test/core/end2end/fuzzers/hpack.dictionary',
-        '_TYPE': 'target',
-        '_RENAME': 'hpack_parser_fuzzer_test'
-    },
-    'test/core/http:request_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/http/request_corpus'],
-        'maxlen': 2048,
-        '_TYPE': 'target',
-        '_RENAME': 'http_request_fuzzer_test'
-    },
-    'test/core/http:response_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/http/response_corpus'],
-        'maxlen': 2048,
-        '_TYPE': 'target',
-        '_RENAME': 'http_response_fuzzer_test'
-    },
-    'test/core/json:json_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/json/corpus'],
-        'maxlen': 512,
-        '_TYPE': 'target',
-        '_RENAME': 'json_fuzzer_test'
-    },
-    'test/core/nanopb:fuzzer_response': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/nanopb/corpus_response'],
-        'maxlen': 128,
-        '_TYPE': 'target',
-        '_RENAME': 'nanopb_fuzzer_response_test'
-    },
-    'test/core/nanopb:fuzzer_serverlist': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/nanopb/corpus_serverlist'],
-        'maxlen': 128,
-        '_TYPE': 'target',
-        '_RENAME': 'nanopb_fuzzer_serverlist_test'
-    },
-    'test/core/slice:percent_decode_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/slice/percent_decode_corpus'],
-        'maxlen': 32,
-        '_TYPE': 'target',
-        '_RENAME': 'percent_decode_fuzzer'
-    },
-    'test/core/slice:percent_encode_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/slice/percent_encode_corpus'],
-        'maxlen': 32,
-        '_TYPE': 'target',
-        '_RENAME': 'percent_encode_fuzzer'
-    },
-    'test/core/end2end/fuzzers:server_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/end2end/fuzzers/server_fuzzer_corpus'],
-        'maxlen': 2048,
-        'dict': 'test/core/end2end/fuzzers/hpack.dictionary',
-        '_TYPE': 'target',
-        '_RENAME': 'server_fuzzer'
-    },
-    'test/core/security:ssl_server_fuzzer': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/security/corpus/ssl_server_corpus'],
-        'maxlen': 2048,
-        '_TYPE': 'target',
-        '_RENAME': 'ssl_server_fuzzer'
-    },
-    'test/core/uri:uri_fuzzer_test': {
-        'language': 'c++',
-        'build': 'fuzzer',
-        'corpus_dirs': ['test/core/uri/uri_corpus'],
-        'maxlen': 128,
-        '_TYPE': 'target',
-        '_RENAME': 'uri_fuzzer_test'
-    },
-
     # TODO(jtattermusch): these fuzzers had no build.yaml equivalent
     # test/core/compression:message_compress_fuzzer
     # test/core/compression:message_decompress_fuzzer
@@ -1002,6 +983,11 @@ bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
         _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query)))
+
+# Step 1.5: The sources for UPB protos are pre-generated, so we want
+# to expand the UPB proto library bazel rules into the generated
+# .upb.h and .upb.c files.
+_expand_upb_proto_library_rules(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
@@ -1068,7 +1054,7 @@ all_extra_metadata.update(
 #               '_COLLAPSED_PUBLIC_HEADERS': [...],
 #               '_COLLAPSED_HEADERS': [...]
 #             }
-_populate_transitive_metadata(bazel_rules, all_extra_metadata.keys())
+_populate_transitive_metadata(bazel_rules, list(all_extra_metadata.keys()))
 
 # Step 4a: Update the existing test metadata with the updated build metadata.
 # Certain build metadata of certain test targets depend on the transitive

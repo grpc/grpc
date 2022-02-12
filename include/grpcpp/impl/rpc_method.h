@@ -19,6 +19,6 @@
 #ifndef GRPCPP_IMPL_RPC_METHOD_H
 #define GRPCPP_IMPL_RPC_METHOD_H
 
-#include <grpcpp/impl/codegen/rpc_method.h>
+#include <grpcpp/impl/codegen/rpc_method.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_IMPL_RPC_METHOD_H

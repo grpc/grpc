@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -55,7 +56,7 @@ typedef enum {
 typedef struct grpc_http_request {
   /* Method of the request (e.g. GET, POST) */
   char* method;
-  /* The path of the resource to fetch */
+  /* The path of the resource to fetch (only used for parsed requests) */
   char* path;
   /* HTTP version to use */
   grpc_http_version version;

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_STUB_OPTIONS_H
 #define GRPCPP_IMPL_CODEGEN_STUB_OPTIONS_H
 
+// IWYU pragma: private, include <grpcpp/support/stub_options.h>
+
 namespace grpc {
 
 /// Useful interface for generated stubs

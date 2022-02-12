@@ -235,4 +235,4 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
 
 if __name__ == '__main__':
     logging.basicConfig()
-    unittest.main(verbosity=2)
+    unittest.main(verbosity=3)

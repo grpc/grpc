@@ -21,13 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/error.h"
-
 #include <stddef.h>
+
+#include "src/core/lib/iomgr/error.h"
 
 typedef struct grpc_custom_poller_vtable {
   void (*init)();
-  grpc_error* (*poll)(size_t timeout_ms);
+  grpc_error_handle (*poll)(size_t timeout_ms);
   void (*kick)();
   void (*shutdown)();
 } grpc_custom_poller_vtable;

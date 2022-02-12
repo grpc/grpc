@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <functional>
@@ -24,6 +24,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+
 #include "src/core/ext/transport/binder/wire_format/binder_constants.h"
 #include "src/core/lib/gprpp/orphanable.h"
 
@@ -43,8 +44,7 @@ class Binder;
 class WritableParcel {
  public:
   virtual ~WritableParcel() = default;
-  virtual int32_t GetDataPosition() const = 0;
-  virtual absl::Status SetDataPosition(int32_t pos) = 0;
+  virtual int32_t GetDataSize() const = 0;
   virtual absl::Status WriteInt32(int32_t data) = 0;
   virtual absl::Status WriteInt64(int64_t data) = 0;
   virtual absl::Status WriteBinder(HasRawBinder* binder) = 0;
@@ -66,19 +66,18 @@ class WritableParcel {
 class ReadableParcel {
  public:
   virtual ~ReadableParcel() = default;
-  virtual absl::Status ReadInt32(int32_t* data) const = 0;
-  virtual absl::Status ReadInt64(int64_t* data) const = 0;
-  virtual absl::Status ReadBinder(std::unique_ptr<Binder>* data) const = 0;
-  // TODO(waynetu): Provide better interfaces.
-  virtual absl::Status ReadByteArray(std::string* data) const = 0;
-  // FIXME(waynetu): This is just a temporary interface.
-  virtual absl::Status ReadString(char data[111]) const = 0;
+  virtual int32_t GetDataSize() const = 0;
+  virtual absl::Status ReadInt32(int32_t* data) = 0;
+  virtual absl::Status ReadInt64(int64_t* data) = 0;
+  virtual absl::Status ReadBinder(std::unique_ptr<Binder>* data) = 0;
+  virtual absl::Status ReadByteArray(std::string* data) = 0;
+  virtual absl::Status ReadString(std::string* str) = 0;
 };
 
 class TransactionReceiver : public HasRawBinder {
  public:
   using OnTransactCb =
-      std::function<absl::Status(transaction_code_t, const ReadableParcel*)>;
+      std::function<absl::Status(transaction_code_t, ReadableParcel*, int uid)>;
 
   ~TransactionReceiver() override = default;
 };
@@ -94,7 +93,6 @@ class Binder : public HasRawBinder {
   virtual absl::Status Transact(BinderTransportTxCode tx_code) = 0;
 
   virtual WritableParcel* GetWritableParcel() const = 0;
-  virtual ReadableParcel* GetReadableParcel() const = 0;
 
   // TODO(waynetu): Can we decouple the receiver from the binder?
   virtual std::unique_ptr<TransactionReceiver> ConstructTxReceiver(

@@ -18,6 +18,8 @@
 
 #include "src/core/lib/transport/byte_stream.h"
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -25,10 +27,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-
 #include "test/core/util/test_config.h"
-
-#include <gtest/gtest.h>
 
 namespace grpc_core {
 namespace {
@@ -42,7 +41,7 @@ void NotCalledClosure(void* /*arg*/, grpc_error_handle /*error*/) {
 }
 
 TEST(SliceBufferByteStream, Basic) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -74,7 +73,7 @@ TEST(SliceBufferByteStream, Basic) {
 }
 
 TEST(SliceBufferByteStream, Shutdown) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -118,7 +117,7 @@ TEST(SliceBufferByteStream, Shutdown) {
 //
 
 TEST(CachingByteStream, Basic) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -153,7 +152,7 @@ TEST(CachingByteStream, Basic) {
 }
 
 TEST(CachingByteStream, Reset) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);
@@ -195,7 +194,7 @@ TEST(CachingByteStream, Reset) {
 }
 
 TEST(CachingByteStream, SharedCache) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
   grpc_slice_buffer_init(&buffer);

@@ -28,13 +28,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -73,7 +73,7 @@ void SockaddrResolver::StartLocked() {
   // TODO(roth): Use std::move() once channel args is converted to C++.
   result.args = channel_args_;
   channel_args_ = nullptr;
-  result_handler_->ReturnResult(std::move(result));
+  result_handler_->ReportResult(std::move(result));
 }
 
 //
@@ -91,9 +91,13 @@ bool ParseUri(const URI& uri,
   // Construct addresses.
   bool errors_found = false;
   for (absl::string_view ith_path : absl::StrSplit(uri.path(), ',')) {
-    URI ith_uri(uri.scheme(), "", std::string(ith_path), {}, "");
+    if (ith_path.empty()) {
+      // Skip targets which are empty.
+      continue;
+    }
+    auto ith_uri = URI::Create(uri.scheme(), "", std::string(ith_path), {}, "");
     grpc_resolved_address addr;
-    if (!parse(ith_uri, &addr)) {
+    if (!ith_uri.ok() || !parse(*ith_uri, &addr)) {
       errors_found = true;
       break;
     }

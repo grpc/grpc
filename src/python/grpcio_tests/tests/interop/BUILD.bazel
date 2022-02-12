@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py2and3_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -113,7 +112,7 @@ py_binary(
     ],
 )
 
-py2and3_test(
+py_test(
     name = "_insecure_intraop_test",
     size = "small",
     srcs = ["_insecure_intraop_test.py"],
@@ -122,6 +121,7 @@ py2and3_test(
     ],
     imports = ["../../"],
     main = "_insecure_intraop_test.py",
+    python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",
@@ -132,12 +132,13 @@ py2and3_test(
     ],
 )
 
-py2and3_test(
+py_test(
     name = "_secure_intraop_test",
     size = "small",
     srcs = ["_secure_intraop_test.py"],
     imports = ["../../"],
     main = "_secure_intraop_test.py",
+    python_version = "PY3",
     deps = [
         ":_intraop_test_case",
         ":server",

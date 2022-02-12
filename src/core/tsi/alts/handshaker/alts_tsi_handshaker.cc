@@ -26,12 +26,14 @@
 
 #include "upb/upb.hpp"
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -151,6 +153,13 @@ static tsi_result handshaker_result_extract_peer(
   return ok;
 }
 
+static tsi_result handshaker_result_get_frame_protector_type(
+    const tsi_handshaker_result* /*self*/,
+    tsi_frame_protector_type* frame_protector_type) {
+  *frame_protector_type = TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY;
+  return TSI_OK;
+}
+
 static tsi_result handshaker_result_create_zero_copy_grpc_protector(
     const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
@@ -247,9 +256,11 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
+    handshaker_result_get_frame_protector_type,
     handshaker_result_create_zero_copy_grpc_protector,
     handshaker_result_create_frame_protector,
-    handshaker_result_get_unused_bytes, handshaker_result_destroy};
+    handshaker_result_get_unused_bytes,
+    handshaker_result_destroy};
 
 tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
@@ -306,7 +317,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
   alts_tsi_handshaker_result* sresult =
-      static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*sresult)));
+      grpc_core::Zalloc<alts_tsi_handshaker_result>();
   sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
   memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
@@ -487,8 +498,10 @@ static void alts_tsi_handshaker_create_channel(
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
   GPR_ASSERT(handshaker->channel == nullptr);
-  handshaker->channel = grpc_insecure_channel_create(
-      next_args->handshaker->handshaker_service_url, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  handshaker->channel = grpc_channel_create(
+      next_args->handshaker->handshaker_service_url, creds, nullptr);
+  grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(
           handshaker, next_args->received_bytes.get(),

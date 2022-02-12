@@ -17,18 +17,15 @@
 #ifndef GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 
+#include <memory>
+#include <vector>
+
+#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/support/config.h>
-
-#include <memory>
-#include <vector>
-
-// TODO(yihuazhang): remove the forward declaration here and include
-// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
-typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 namespace grpc {
 namespace experimental {

@@ -19,9 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/external/external_account_credentials.h"
-
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
+#include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
 namespace grpc_core {
 
@@ -57,6 +56,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
                                   grpc_error_handle error);
 
   std::string audience_;
+  OrphanablePtr<HttpRequest> http_request_;
 
   // Fields of credential source
   std::string region_url_;

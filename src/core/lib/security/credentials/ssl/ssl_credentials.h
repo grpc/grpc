@@ -21,7 +21,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
-
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
@@ -102,8 +101,5 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
-
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_SSL_SSL_CREDENTIALS_H */

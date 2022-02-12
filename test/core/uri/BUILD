@@ -13,12 +13,11 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(name = "test/core/uri")
 
 licenses(["notice"])
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "uri_fuzzer_test",

@@ -34,6 +34,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 #define GRPCPP_IMPL_CODEGEN_CLIENT_CONTEXT_H
 
+// IWYU pragma: private, include <grpcpp/client_context.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -286,7 +288,7 @@ class ClientContext {
   /// with the possibility of receiving a cached response.
   void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
 
-  /// EXPERIMENTAL: Trigger wait-for-ready or not on this request.
+  /// Trigger wait-for-ready or not on this request.
   /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
   /// If set, if an RPC is made when a channel's connectivity state is
   /// TRANSIENT_FAILURE or CONNECTING, the call will not "fail fast",

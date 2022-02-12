@@ -16,11 +16,13 @@
  *
  */
 
+#include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
+
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
-#include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
@@ -307,8 +309,10 @@ static alts_handshaker_client_test_config* create_config() {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
-  config->channel = grpc_insecure_channel_create(
-      ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  config->channel = grpc_channel_create(ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
+                                        creds, nullptr);
+  grpc_channel_credentials_release(creds);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_alts_credentials_options* client_options =
       create_credentials_options(true /* is_client */);

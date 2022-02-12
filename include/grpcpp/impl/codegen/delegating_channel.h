@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 #define GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 
+// IWYU pragma: private
+
 #include <memory>
 
 #include <grpcpp/impl/codegen/channel_interface.h>

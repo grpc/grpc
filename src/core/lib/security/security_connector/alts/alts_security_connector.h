@@ -23,9 +23,9 @@
 
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 
 #define GRPC_ALTS_TRANSPORT_SECURITY_TYPE "alts"
-#define GRPC_ALTS_URL_SCHEME "https"
 
 /**
  * This method creates an ALTS channel security connector.
@@ -66,8 +66,8 @@ namespace grpc_core {
 namespace internal {
 
 /* Exposed only for testing. */
-grpc_core::RefCountedPtr<grpc_auth_context>
-grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer);
+RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
+    const tsi_peer* peer);
 
 }  // namespace internal
 }  // namespace grpc_core

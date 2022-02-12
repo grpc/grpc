@@ -13,13 +13,18 @@
 // limitations under the License.
 
 #include "src/core/lib/gprpp/table.h"
-#include <gtest/gtest.h>
+
 #include <string>
 #include <tuple>
+
+#include <gtest/gtest.h>
+
 #include "absl/types/optional.h"
 
 namespace grpc_core {
 namespace testing {
+
+TEST(Table, InstantiateEmpty) { Table<>(); }
 
 TEST(Table, NoOp) {
   Table<int, double, std::string> t;
@@ -107,6 +112,18 @@ TEST(Table, SameTypes) {
   EXPECT_EQ(t.get<0>(), nullptr);
   EXPECT_EQ(*t.get<1>(), "Hello!");
   EXPECT_EQ(t.get<2>(), nullptr);
+}
+
+TEST(Table, ForEach) {
+  Table<int, int, int> t;
+  t.set<0>(1);
+  t.set<1>(2);
+  t.set<2>(3);
+  int i = 1;
+  t.ForEach([&i](int x) {
+    EXPECT_EQ(x, i);
+    i++;
+  });
 }
 
 #if !defined(_MSC_VER)

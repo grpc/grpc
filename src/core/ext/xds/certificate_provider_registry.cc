@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/container/inlined_vector.h"
-
 #include "src/core/ext/xds/certificate_provider_registry.h"
+
+#include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 
@@ -58,7 +58,7 @@ class RegistryState {
       factories_;
 };
 
-static RegistryState* g_state = nullptr;
+RegistryState* g_state = nullptr;
 
 }  // namespace
 

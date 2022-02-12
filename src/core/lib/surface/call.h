@@ -21,14 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/server.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
+
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/server.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
@@ -46,8 +46,8 @@ typedef struct grpc_call_create_args {
 
   const void* server_transport_data;
 
-  grpc_mdelem* add_initial_metadata;
-  size_t add_initial_metadata_count;
+  absl::optional<grpc_core::Slice> path;
+  absl::optional<grpc_core::Slice> authority;
 
   grpc_millis send_deadline;
 } grpc_call_create_args;
@@ -55,7 +55,7 @@ typedef struct grpc_call_create_args {
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
    */
-grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
+grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** call);
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
@@ -124,12 +124,6 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 /* TODO(markdroth): This is currently available only to the C++ API.
                     Move to surface API if requested by other languages. */
 bool grpc_call_is_trailers_only(const grpc_call* call);
-
-/* Returns whether or not the call's receive message operation failed because of
- * an error (as opposed to a graceful end-of-stream) */
-/* TODO(markdroth): This is currently available only to the C++ API.
-                    Move to surface API if requested by other languages. */
-bool grpc_call_failed_before_recv_message(const grpc_call* c);
 
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;

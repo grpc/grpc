@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,6 +30,7 @@
 #include <gmock/gmock.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -36,11 +39,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/channel.h"
-
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -55,6 +56,9 @@ class TransportTargetWindowSizeMocker
 
   double ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
       double /* current_target */) override {
+    // Protecting access to variable window_size_ shared between client and
+    // server.
+    absl::MutexLock lock(&mu_);
     if (alternating_initial_window_sizes_) {
       window_size_ = (window_size_ == kLargeInitialWindowSize)
                          ? kSmallInitialWindowSize
@@ -66,17 +70,22 @@ class TransportTargetWindowSizeMocker
   // Alternates the initial window size targets. Computes a low values if it was
   // previously high, or a high value if it was previously low.
   void AlternateTargetInitialWindowSizes() {
+    absl::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = true;
   }
 
   void Reset() {
+    // Protecting access to variable window_size_ shared between client and
+    // server.
+    absl::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = false;
     window_size_ = kLargeInitialWindowSize;
   }
 
  private:
-  bool alternating_initial_window_sizes_ = false;
-  double window_size_ = kLargeInitialWindowSize;
+  absl::Mutex mu_;
+  bool alternating_initial_window_sizes_ ABSL_GUARDED_BY(mu_) = false;
+  double window_size_ ABSL_GUARDED_BY(mu_) = kLargeInitialWindowSize;
 };
 
 TransportTargetWindowSizeMocker* g_target_initial_window_size_mocker;
@@ -292,8 +301,11 @@ class FlowControlTest : public ::testing::Test {
                                              server_args};
     server_ = grpc_server_create(&server_channel_args, nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(
-        grpc_server_add_insecure_http2_port(server_, server_address.c_str()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(grpc_server_add_http2_port(server_, server_address.c_str(),
+                                          server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     // create the channel (bdp pings are enabled by default)
     grpc_arg client_args[] = {
@@ -307,8 +319,10 @@ class FlowControlTest : public ::testing::Test {
             const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH), -1)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
-    channel_ = grpc_insecure_channel_create(server_address.c_str(),
-                                            &client_channel_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(server_address.c_str(), creds,
+                                   &client_channel_args);
+    grpc_channel_credentials_release(creds);
     VerifyChannelReady(channel_, cq_);
     g_target_initial_window_size_mocker->Reset();
   }

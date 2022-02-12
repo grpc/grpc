@@ -665,6 +665,8 @@ UPB_INLINE struct envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_Cer
   return sub;
 }
 
+extern const upb_msglayout_file envoy_extensions_transport_sockets_tls_v3_tls_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

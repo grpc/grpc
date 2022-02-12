@@ -16,28 +16,26 @@
  *
  */
 
+#include "src/core/lib/channel/channel_trace.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 namespace grpc_core {
 namespace channelz {
@@ -107,8 +105,9 @@ class ChannelFixture {
         const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE),
         max_tracer_event_memory);
     grpc_channel_args client_args = {1, &client_a};
-    channel_ =
-        grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create("fake_target", creds, &client_args);
+    grpc_channel_credentials_release(creds);
   }
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }
@@ -126,7 +125,7 @@ const int kEventListMemoryLimit = 1024 * 1024;
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
 TEST(ChannelTracerTest, BasicTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -149,7 +148,7 @@ TEST(ChannelTracerTest, BasicTest) {
 // subchannles. This exercises the ref/unref patterns since the parent tracer
 // and this function will both hold refs to the subchannel.
 TEST(ChannelTracerTest, ComplexTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -196,7 +195,7 @@ TEST(ChannelTracerTest, ComplexTest) {
 // have connections. Ensures that everything lives as long as it should then
 // gets deleted.
 TEST(ChannelTracerTest, TestNesting) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   AddSimpleTrace(&tracer);
   AddSimpleTrace(&tracer);
@@ -243,7 +242,7 @@ TEST(ChannelTracerTest, TestNesting) {
 }
 
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // doesn't make sense, but serves a testing purpose for the channel tracing
   // bookkeeping. All tracing events added should will get immediately garbage
   // collected.
@@ -267,7 +266,7 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
 }
 
 TEST(ChannelTracerTest, TestEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -284,7 +283,7 @@ TEST(ChannelTracerTest, TestEviction) {
 }
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
@@ -303,7 +302,7 @@ TEST(ChannelTracerTest, TestMultipleEviction) {
 }
 
 TEST(ChannelTracerTest, TestTotalEviction) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   const int kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);

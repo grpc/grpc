@@ -15,15 +15,11 @@
 #ifndef GRPCPP_SECURITY_AUTHORIZATION_POLICY_PROVIDER_H
 #define GRPCPP_SECURITY_AUTHORIZATION_POLICY_PROVIDER_H
 
-#include <grpc/status.h>
-#include <grpcpp/impl/codegen/grpc_library.h>
-
 #include <memory>
 
-// TODO(yihuazhang): remove the forward declaration here and include
-// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
-typedef struct grpc_authorization_policy_provider
-    grpc_authorization_policy_provider;
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpcpp/impl/codegen/grpc_library.h>
 
 namespace grpc {
 namespace experimental {
@@ -52,6 +48,31 @@ class StaticDataAuthorizationPolicyProvider
       : c_provider_(provider) {}
 
   ~StaticDataAuthorizationPolicyProvider() override;
+
+  grpc_authorization_policy_provider* c_provider() override {
+    return c_provider_;
+  }
+
+ private:
+  grpc_authorization_policy_provider* c_provider_ = nullptr;
+};
+
+// Implementation obtains authorization policy by watching for changes in
+// filesystem.
+class FileWatcherAuthorizationPolicyProvider
+    : public AuthorizationPolicyProviderInterface {
+ public:
+  static std::shared_ptr<FileWatcherAuthorizationPolicyProvider> Create(
+      const std::string& authz_policy_path, unsigned int refresh_interval_sec,
+      grpc::Status* status);
+
+  // Use factory method "Create" to create an instance of
+  // FileWatcherAuthorizationPolicyProvider.
+  explicit FileWatcherAuthorizationPolicyProvider(
+      grpc_authorization_policy_provider* provider)
+      : c_provider_(provider) {}
+
+  ~FileWatcherAuthorizationPolicyProvider() override;
 
   grpc_authorization_policy_provider* c_provider() override {
     return c_provider_;

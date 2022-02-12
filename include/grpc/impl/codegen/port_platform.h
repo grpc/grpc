@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
+// IWYU pragma: private, include <grpc/support/port_platform.h>
+
 /*
  * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
  * compatible with older platforms (currently only on Linux)
@@ -26,6 +28,13 @@
  *  - some libc calls to be gotten via dlsym
  *  - some syscalls to be made directly
  */
+
+// [[deprecated]] attribute is only available since C++14
+#if __cplusplus >= 201402L
+#define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
+#else
+#define GRPC_DEPRECATED(reason)
+#endif  // __cplusplus >= 201402L
 
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
@@ -42,7 +51,9 @@
 /*
  * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
  */
+#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
 // #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+#endif
 
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
@@ -117,10 +128,14 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
-#ifdef __ANDROID_API__
-#if (__ANDROID_API__) >= 29
-#define GPR_SUPPORT_BINDER_TRANSPORT 1
+#ifndef __ANDROID_API__
+#error "__ANDROID_API__ must be defined for Android builds."
 #endif
+#if __ANDROID_API__ < 21
+#error "Requires Android API v21 and above"
+#endif
+#if (__ANDROID_API__) >= 23
+#define GPR_SUPPORT_BINDER_TRANSPORT 1
 #endif
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
@@ -177,7 +192,14 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#ifdef __GLIBC_PREREQ
+#if __GLIBC_PREREQ(2, 12)
 #define GPR_LINUX_PTHREAD_NAME 1
+#endif
+#else
+// musl libc & others
+#define GPR_LINUX_PTHREAD_NAME 1
+#endif
 #include <linux/version.h>
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1

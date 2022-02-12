@@ -18,8 +18,6 @@
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 
-#include <grpc/grpc.h>
-
 #include <string>
 
 #include "absl/status/statusor.h"
@@ -33,6 +31,10 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/def.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -40,7 +42,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/status_conversion.h"
-#include "upb/def.h"
 
 namespace grpc_core {
 

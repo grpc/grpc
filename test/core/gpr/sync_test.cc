@@ -18,13 +18,12 @@
 
 /* Test of gpr synchronization support. */
 
-#include <grpc/support/sync.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"
@@ -241,7 +240,7 @@ static void mark_thread_done(struct test* m) {
    */
 static void test(const char* name, void (*body)(void* m),
                  void (*extra)(void* m), int timeout_s, int incr_step) {
-  int64_t iterations = 256;
+  int64_t iterations = 8;
   struct test* m;
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec time_taken;

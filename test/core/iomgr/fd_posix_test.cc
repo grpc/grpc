@@ -21,8 +21,6 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include "src/core/lib/iomgr/ev_posix.h"
-
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>

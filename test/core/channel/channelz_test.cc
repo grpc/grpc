@@ -16,29 +16,27 @@
  *
  */
 
+#include "src/core/lib/channel/channelz.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
-
-#include <grpc/support/string_util.h>
-#include <stdlib.h>
-#include <string.h>
 
 namespace grpc_core {
 namespace channelz {
@@ -151,8 +149,9 @@ class ChannelFixture {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true)};
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-    channel_ =
-        grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create("fake_target", creds, &client_args);
+    grpc_channel_credentials_release(creds);
   }
 
   ~ChannelFixture() { grpc_channel_destroy(channel_); }
@@ -251,7 +250,7 @@ gpr_timespec GetLastCallStartedTime(CallCountingHelper* channel) {
 void ChannelzSleep(int64_t sleep_us) {
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_micros(sleep_us, GPR_TIMESPAN)));
-  grpc_core::ExecCtx::Get()->InvalidateNow();
+  ExecCtx::Get()->InvalidateNow();
 }
 
 }  // anonymous namespace
@@ -259,7 +258,7 @@ void ChannelzSleep(int64_t sleep_us) {
 class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {};
 
 TEST_P(ChannelzChannelTest, BasicChannel) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
@@ -267,7 +266,7 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
 }
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // explicitly disable channelz
   grpc_arg arg[] = {
       grpc_channel_arg_integer_create(
@@ -276,15 +275,16 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), false)};
   grpc_channel_args args = {GPR_ARRAY_SIZE(arg), arg};
-  grpc_channel* channel =
-      grpc_insecure_channel_create("fake_target", &args, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel = grpc_channel_create("fake_target", creds, &args);
+  grpc_channel_credentials_release(creds);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
 }
 
 TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
@@ -302,7 +302,7 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
 }
 
 TEST_P(ChannelzChannelTest, LastCallStartedTime) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   CallCountingHelper counter;
   // start a call to set the last call started timestamp
   counter.RecordCallStarted();
@@ -340,25 +340,25 @@ class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
 };
 
 TEST_F(ChannelzRegistryBasedTest, BasicGetTopChannelsTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channel;
   ValidateGetTopChannels(1);
 }
 
 TEST_F(ChannelzRegistryBasedTest, NoChannelsTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ValidateGetTopChannels(0);
 }
 
 TEST_F(ChannelzRegistryBasedTest, ManyChannelsTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channels[10];
   (void)channels;  // suppress unused variable error
   ValidateGetTopChannels(10);
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   // This is over the pagination limit.
   ChannelFixture channels[150];
   (void)channels;  // suppress unused variable error
@@ -386,7 +386,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   const intptr_t kNumChannels = 50;
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channels[kNumChannels];
   (void)channels;  // suppress unused variable error
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
@@ -405,7 +405,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   const intptr_t kNumChannels = 50;
   const intptr_t kMidQuery = 40;
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channels[kNumChannels];
   (void)channels;  // suppress unused variable error
   // Only query for the end of the channels.
@@ -423,7 +423,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture pre_channels[40];  // will take uuid[1, 40]
   (void)pre_channels;               // suppress unused variable error
   ServerFixture servers[10];        // will take uuid[41, 50]
@@ -445,7 +445,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
   { ServerFixture channel_with_uuid2; }
   ChannelFixture channel_with_uuid3;
@@ -475,7 +475,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   const intptr_t kLoopIterations = 50;
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   std::vector<std::unique_ptr<ChannelFixture>> even_channels;
   {
     // these will delete and unregister themselves after this block.
@@ -500,7 +500,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ChannelFixture channels[10];
   (void)channels;  // suppress unused variable error
   // create an internal channel
@@ -511,17 +511,19 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
           const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* internal_channel =
-      grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+      grpc_channel_create("fake_target", creds, &client_args);
+  grpc_channel_credentials_release(creds);
   // The internal channel should not be returned from the request
   ValidateGetTopChannels(10);
   grpc_channel_destroy(internal_channel);
 }
 
 TEST(ChannelzServerTest, BasicServerAPIFunctionality) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ServerFixture server(10);
-  ServerNode* channelz_server = server.server()->core_server->channelz_node();
+  ServerNode* channelz_server = Server::FromC(server.server())->channelz_node();
   channelz_server->RecordCallStarted();
   channelz_server->RecordCallFailed();
   channelz_server->RecordCallSucceeded();
@@ -536,18 +538,18 @@ TEST(ChannelzServerTest, BasicServerAPIFunctionality) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, BasicGetServersTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ServerFixture server;
   ValidateGetServers(1);
 }
 
 TEST_F(ChannelzRegistryBasedTest, NoServersTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ValidateGetServers(0);
 }
 
 TEST_F(ChannelzRegistryBasedTest, ManyServersTest) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   ServerFixture servers[10];
   (void)servers;  // suppress unused variable error
   ValidateGetServers(10);

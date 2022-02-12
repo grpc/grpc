@@ -22,12 +22,11 @@
 
 #ifdef GRPC_HAVE_IFADDRS
 
-#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
-
 #include <errno.h>
 #include <ifaddrs.h>
 #include <stddef.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #include <string>
 
@@ -39,6 +38,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
 /* Return the listener in s with address addr or NULL. */
 static grpc_tcp_listener* find_listener_with_addr(grpc_tcp_server* s,
@@ -146,8 +146,8 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
                                         &new_sp)) != GRPC_ERROR_NONE) {
-      grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Failed to add listener: ", addr_str).c_str());
+      grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("Failed to add listener: ", addr_str));
       err = grpc_error_add_child(root_err, err);
       break;
     } else {

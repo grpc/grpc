@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_SYNC_STREAM_H
 #define GRPCPP_SUPPORT_SYNC_STREAM_H
 
-#include <grpcpp/impl/codegen/sync_stream.h>
+#include <grpcpp/impl/codegen/sync_stream.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_SYNC_STREAM_H

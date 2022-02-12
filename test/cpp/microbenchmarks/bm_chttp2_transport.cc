@@ -18,25 +18,31 @@
 
 /* Microbenchmarks around CHTTP2 transport operations */
 
+#include <string.h>
+
+#include <memory>
+#include <queue>
+#include <sstream>
+
 #include <benchmark/benchmark.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <string.h>
-#include <memory>
-#include <queue>
-#include <sstream>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/static_metadata.h"
-#include "test/core/util/resource_user_util.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper classes
@@ -130,8 +136,11 @@ class Fixture {
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
-    t_ = grpc_create_chttp2_transport(&c_args, ep_, client,
-                                      grpc_resource_user_create_unlimited());
+    const grpc_channel_args* final_args = grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(&c_args);
+    t_ = grpc_create_chttp2_transport(final_args, ep_, client);
+    grpc_channel_args_destroy(final_args);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
@@ -190,7 +199,7 @@ class Stream {
   explicit Stream(Fixture* f) : f_(f) {
     stream_size_ = grpc_transport_stream_size(f->transport());
     stream_ = gpr_malloc(stream_size_);
-    arena_ = grpc_core::Arena::Create(4096);
+    arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
   }
 
   ~Stream() {
@@ -206,7 +215,7 @@ class Stream {
     memset(stream_, 0, stream_size_);
     if ((state.iterations() & 0xffff) == 0) {
       arena_->Destroy();
-      arena_ = grpc_core::Arena::Create(4096);
+      arena_ = grpc_core::Arena::Create(4096, g_memory_allocator);
     }
     grpc_transport_init_stream(f_->transport(),
                                static_cast<grpc_stream*>(stream_), &refcount_,
@@ -283,23 +292,27 @@ BENCHMARK(BM_StreamCreateDestroy);
 
 class RepresentativeClientInitialMetadata {
  public:
-  static std::vector<grpc_mdelem> GetElems() {
-    return {
-        GRPC_MDELEM_SCHEME_HTTP,
-        GRPC_MDELEM_METHOD_POST,
-        grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "/foo/bar/bm_chttp2_transport"))),
-        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                grpc_slice_intern(grpc_slice_from_static_string(
-                                    "foo.test.google.fr:1234"))),
-        GRPC_MDELEM_GRPC_ACCEPT_ENCODING_IDENTITY_COMMA_DEFLATE_COMMA_GZIP,
-        GRPC_MDELEM_TE_TRAILERS,
-        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-        grpc_mdelem_from_slices(
-            GRPC_MDSTR_USER_AGENT,
-            grpc_slice_intern(grpc_slice_from_static_string(
-                "grpc-c/3.0.0-dev (linux; chttp2; green)")))};
+  static void Prepare(grpc_metadata_batch* b) {
+    b->Set(grpc_core::HttpSchemeMetadata(),
+           grpc_core::HttpSchemeMetadata::kHttp);
+    b->Set(grpc_core::HttpMethodMetadata(),
+           grpc_core::HttpMethodMetadata::kPost);
+    b->Set(grpc_core::HttpPathMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "/foo/bar/bm_chttp2_transport")));
+    b->Set(grpc_core::HttpAuthorityMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "foo.test.google.fr:1234")));
+    b->Set(
+        grpc_core::GrpcAcceptEncodingMetadata(),
+        grpc_core::CompressionAlgorithmSet(
+            {GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP}));
+    b->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
+    b->Set(grpc_core::ContentTypeMetadata(),
+           grpc_core::ContentTypeMetadata::kApplicationGrpc);
+    b->Set(grpc_core::UserAgentMetadata(),
+           grpc_core::Slice(grpc_core::StaticSlice::FromStaticString(
+               "grpc-c/3.0.0-dev (linux; chttp2; green)")));
   }
 };
 
@@ -319,15 +332,9 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
-  std::vector<grpc_mdelem> elems = Metadata::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_metadata_batch b(arena.get());
+  Metadata::Prepare(&b);
 
   f.FlushExecCtx();
   gpr_event bm_done;
@@ -355,7 +362,6 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  grpc_metadata_batch_destroy(&b);
   track_counters.Finish(state);
 }
 BENCHMARK_TEMPLATE(BM_StreamCreateSendInitialMetadataDestroy,
@@ -423,16 +429,9 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
-  std::vector<grpc_mdelem> elems =
-      RepresentativeClientInitialMetadata::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_metadata_batch b(arena.get());
+  RepresentativeClientInitialMetadata::Prepare(&b);
 
   gpr_event* bm_done = new gpr_event;
   gpr_event_init(bm_done);
@@ -487,7 +486,6 @@ static void BM_TransportStreamSend(benchmark::State& state) {
       MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
   f.FlushExecCtx();
   track_counters.Finish(state);
-  grpc_metadata_batch_destroy(&b);
   grpc_slice_unref(send_slice);
 }
 BENCHMARK(BM_TransportStreamSend)->Range(0, 128 * 1024 * 1024);
@@ -565,18 +563,9 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     op.payload = &op_payload;
   };
 
-  grpc_metadata_batch b;
-  grpc_metadata_batch_init(&b);
-  grpc_metadata_batch b_recv;
-  grpc_metadata_batch_init(&b_recv);
-  b.deadline = GRPC_MILLIS_INF_FUTURE;
-  std::vector<grpc_mdelem> elems =
-      RepresentativeClientInitialMetadata::GetElems();
-  std::vector<grpc_linked_mdelem> storage(elems.size());
-  for (size_t i = 0; i < elems.size(); i++) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "addmd", grpc_metadata_batch_add_tail(&b, &storage[i], elems[i])));
-  }
+  auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
+  grpc_metadata_batch b(arena.get());
+  RepresentativeClientInitialMetadata::Prepare(&b);
 
   std::unique_ptr<TestClosure> do_nothing =
       MakeTestClosure([](grpc_error_handle /*error*/) {});
@@ -628,17 +617,18 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   });
 
   drain_continue = MakeTestClosure([&](grpc_error_handle /*error*/) {
-    recv_stream->Pull(&recv_slice);
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("Pull", recv_stream->Pull(&recv_slice)));
     received += GRPC_SLICE_LENGTH(recv_slice);
     grpc_slice_unref_internal(recv_slice);
     grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
   });
 
   reset_op();
+  auto b_recv = absl::make_unique<grpc_metadata_batch>(arena.get());
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.recv_initial_metadata = true;
-  op.payload->recv_initial_metadata.recv_initial_metadata = &b_recv;
+  op.payload->recv_initial_metadata.recv_initial_metadata = b_recv.get();
   op.payload->recv_initial_metadata.recv_initial_metadata_ready =
       do_nothing.get();
   op.on_complete = c.get();
@@ -672,10 +662,10 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   f.FlushExecCtx();
   gpr_event_wait(stream_cancel_done, gpr_inf_future(GPR_CLOCK_REALTIME));
   done_events.emplace_back(stream_cancel_done);
-  s->DestroyThen(
-      MakeOnceClosure([s](grpc_error_handle /*error*/) { delete s; }));
-  grpc_metadata_batch_destroy(&b);
-  grpc_metadata_batch_destroy(&b_recv);
+  s->DestroyThen(MakeOnceClosure([s, &b_recv](grpc_error_handle /*error*/) {
+    b_recv.reset();
+    delete s;
+  }));
   f.FlushExecCtx();
   track_counters.Finish(state);
   grpc_slice_unref(incoming_data);

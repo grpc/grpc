@@ -1,0 +1,21 @@
+# Pinned version of the base image is used to avoid regressions caused
+# by rebuilding of this docker image. To see available versions, you can run
+# "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
+# Image(5eceb81f5759) is built on Jan 31, 2022
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:5eceb81f57599d63ca7c9a70c8968b23b128119699626ca749017019eb0b523f
+
+# -------------------------- WARNING --------------------------------------
+# If you are making changes to this file, consider changing
+# https://github.com/google/oss-fuzz/blob/master/projects/grpc/Dockerfile
+# accordingly.
+# -------------------------------------------------------------------------
+
+# Install basic packages
+RUN apt-get update && apt-get -y install ${'\\'}
+  autoconf ${'\\'}
+  build-essential ${'\\'}
+  curl ${'\\'}
+  libtool ${'\\'}
+  make ${'\\'}
+  vim ${'\\'}
+  wget

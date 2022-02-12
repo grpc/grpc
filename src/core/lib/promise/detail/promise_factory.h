@@ -15,12 +15,15 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_PROMISE_FACTORY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <type_traits>
+#include <utility>
+
+#include "absl/meta/type_traits.h"
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-
-#include "absl/meta/type_traits.h"
 
 // PromiseFactory is an adaptor class.
 //
@@ -65,6 +68,7 @@ struct IsVoidCallable<F, absl::void_t<decltype(std::declval<F>()())>> {
 // Given F(A,B,C,...), what's the return type?
 template <typename T, typename Ignored = void>
 struct ResultOfT;
+
 template <typename F, typename... Args>
 struct ResultOfT<F(Args...),
                  absl::void_t<decltype(std::declval<RemoveCVRef<F>>()(

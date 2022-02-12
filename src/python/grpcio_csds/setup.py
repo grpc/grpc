@@ -39,7 +39,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'protobuf>=3.6.0',
+    'protobuf>=3.12.0',
     'xds-protos>=0.0.7',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
@@ -56,5 +56,6 @@ setuptools.setup(name='grpcio-csds',
                  url='https://grpc.io',
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  setup_requires=SETUP_REQUIRES)

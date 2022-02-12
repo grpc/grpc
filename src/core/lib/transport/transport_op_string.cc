@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
-
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -27,12 +25,15 @@
 
 #include <vector>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -40,37 +41,14 @@
 /* These routines are here to facilitate debugging - they produce string
    representations of various transport data structures */
 
-static void put_metadata(grpc_mdelem md, std::vector<std::string>* out) {
-  out->push_back("key=");
-  char* dump = grpc_dump_slice(GRPC_MDKEY(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  out->push_back(dump);
-  gpr_free(dump);
-  out->push_back(" value=");
-  dump = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  out->push_back(dump);
-  gpr_free(dump);
-}
-
-static void put_metadata_list(grpc_metadata_batch md,
-                              std::vector<std::string>* out) {
-  grpc_linked_mdelem* m;
-  for (m = md.list.head; m != nullptr; m = m->next) {
-    if (m != md.list.head) out->push_back(", ");
-    put_metadata(m->md, out);
-  }
-  if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
-    out->push_back(absl::StrFormat(" deadline=%" PRId64, md.deadline));
-  }
-}
-
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op) {
   std::vector<std::string> out;
 
   if (op->send_initial_metadata) {
     out.push_back(" SEND_INITIAL_METADATA{");
-    put_metadata_list(*op->payload->send_initial_metadata.send_initial_metadata,
-                      &out);
+    out.push_back(op->payload->send_initial_metadata.send_initial_metadata
+                      ->DebugString());
     out.push_back("}");
   }
 
@@ -89,8 +67,8 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_trailing_metadata) {
     out.push_back(" SEND_TRAILING_METADATA{");
-    put_metadata_list(
-        *op->payload->send_trailing_metadata.send_trailing_metadata, &out);
+    out.push_back(op->payload->send_trailing_metadata.send_trailing_metadata
+                      ->DebugString());
     out.push_back("}");
   }
 

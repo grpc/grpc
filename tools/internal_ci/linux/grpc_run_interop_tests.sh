@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 export LANG=en_US.UTF-8
 
 # Enter the gRPC repo root
@@ -22,5 +25,8 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_build_interop_rc
+
+# configure ccache
+source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
 tools/run_tests/run_interop_tests.py $RUN_TESTS_FLAGS

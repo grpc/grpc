@@ -79,11 +79,11 @@ namespace Grpc.Core
         /// Gets the last metadata entry with the specified key.
         /// If there are no matching entries then <c>null</c> is returned.
         /// </summary>
-        public Entry Get(string key)
+        public Entry? Get(string key)
         {
             for (int i = entries.Count - 1; i >= 0; i--)
             {
-                if (entries[i].Key == key)
+                if (entries[i].KeyEqualsIgnoreCase(key))
                 {
                     return entries[i];
                 }
@@ -97,7 +97,7 @@ namespace Grpc.Core
         /// If the metadata entry is binary then an exception is thrown.
         /// If there are no matching entries then <c>null</c> is returned.
         /// </summary>
-        public string GetValue(string key)
+        public string? GetValue(string key)
         {
             return Get(key)?.Value;
         }
@@ -107,7 +107,7 @@ namespace Grpc.Core
         /// If the metadata entry is not binary the string value will be returned as ASCII encoded bytes.
         /// If there are no matching entries then <c>null</c> is returned.
         /// </summary>
-        public byte[] GetValueBytes(string key)
+        public byte[]? GetValueBytes(string key)
         {
             return Get(key)?.ValueBytes;
         }
@@ -119,7 +119,7 @@ namespace Grpc.Core
         {
             for (int i = 0; i < entries.Count; i++)
             {
-                if (entries[i].Key == key)
+                if (entries[i].KeyEqualsIgnoreCase(key))
                 {
                     yield return entries[i];
                 }
@@ -276,10 +276,10 @@ namespace Grpc.Core
         public class Entry
         {
             readonly string key;
-            readonly string value;
-            readonly byte[] valueBytes;
+            readonly string? value;
+            readonly byte[]? valueBytes;
 
-            private Entry(string key, string value, byte[] valueBytes)
+            private Entry(string key, string? value, byte[]? valueBytes)
             {
                 this.key = key;
                 this.value = value;
@@ -356,7 +356,7 @@ namespace Grpc.Core
                 get
                 {
                     GrpcPreconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
-                    return value;
+                    return value!;
                 }
             }
 
@@ -391,6 +391,16 @@ namespace Grpc.Core
             internal byte[] GetSerializedValueUnsafe()
             {
                 return valueBytes ?? EncodingASCII.GetBytes(value);
+            }
+
+            internal bool KeyEqualsIgnoreCase(string key)
+            {
+                // NormalizeKey() uses ToLowerInvariant() to lowercase keys, so we'd like to use the same invariant culture
+                // for comparisons to get valid results. StringComparison.InvariantCultureIgnoreCase isn't available
+                // on all the frameworks we're targeting, but since we know that the Entry's key has already
+                // been checked by IsValidKey and it only contains a subset of ASCII, using StringComparison.OrdinalIgnoreCase
+                // is also fine.
+                return string.Equals(this.key, key, StringComparison.OrdinalIgnoreCase);
             }
 
             /// <summary>

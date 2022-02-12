@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #ifndef _WIN32
 /* This is for _exit() below, which is temporary. */
 #include <unistd.h>
@@ -205,18 +205,18 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
   cq = grpc_completion_queue_create_for_next(nullptr);
+  grpc_server_credentials* creds;
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
-    grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-        nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
-    grpc_server_credentials_release(ssl_creds);
+    creds = grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1,
+                                               0, nullptr);
   } else {
-    server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
+    creds = grpc_insecure_server_credentials_create();
   }
+  server = grpc_server_create(nullptr, nullptr);
+  GPR_ASSERT(grpc_server_add_http2_port(server, addr, creds));
+  grpc_server_credentials_release(creds);
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 

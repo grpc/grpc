@@ -19,11 +19,11 @@
 #ifndef GRPCPP_SERVER_H
 #define GRPCPP_SERVER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <list>
 #include <memory>
 #include <vector>
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>

@@ -21,7 +21,6 @@
 
 // Use the C histogram rather than C++ to avoid depending on proto
 #include "test/core/util/histogram.h"
-
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/util/test_config.h"

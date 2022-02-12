@@ -19,9 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time_util.h"
-
-#include <grpc/support/log.h>
 
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
@@ -29,10 +26,13 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
-
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/time_util.h"
 
 namespace grpc_core {
 
@@ -131,8 +131,9 @@ void EncodeUInt32ToBytes(uint32_t v, char* buf) {
 }
 
 uint32_t DecodeUInt32FromBytes(const char* buf) {
-  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) |
-         (uint32_t(buf[3]) << 24);
+  const unsigned char* ubuf = reinterpret_cast<const unsigned char*>(buf);
+  return ubuf[0] | (uint32_t(ubuf[1]) << 8) | (uint32_t(ubuf[2]) << 16) |
+         (uint32_t(ubuf[3]) << 24);
 }
 
 std::vector<absl::Status> ParseChildren(absl::Cord children) {
@@ -158,7 +159,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
-                          std::initializer_list<absl::Status> children) {
+                          std::vector<absl::Status> children) {
   absl::Status s(code, msg);
   if (location.file() != nullptr) {
     StatusSetStr(&s, StatusStrProperty::kFile, location.file());
@@ -229,7 +230,10 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
     if (sv.has_value()) {
-      return *reinterpret_cast<const absl::Time*>(sv->data());
+      // copy the content before casting to avoid misaligned address access
+      alignas(absl::Time) char buf[sizeof(const absl::Time)];
+      memcpy(buf, sv->data(), sizeof(const absl::Time));
+      return *reinterpret_cast<const absl::Time*>(buf);
     } else {
       std::string s = std::string(*p);
       return *reinterpret_cast<const absl::Time*>(s.c_str());
@@ -330,7 +334,7 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
-google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
+google_rpc_Status* StatusToProto(const absl::Status& status, upb_arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
   google_rpc_Status_set_message(
@@ -378,28 +382,34 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
   return status;
 }
 
-uintptr_t StatusAllocPtr(absl::Status s) {
-  // This relies the fact that absl::Status has only one member, StatusRep*
-  // so the sizeof(absl::Status) has the same size of intptr_t and StatusRep*
-  // can be stolen using placement allocation.
-  static_assert(sizeof(intptr_t) == sizeof(absl::Status),
-                "absl::Status should be as big as intptr_t");
-  // This does two things;
-  // 1. Copies StatusRep* of absl::Status to ptr
-  // 2. Increases the counter of StatusRep if it's not inlined
-  uintptr_t ptr;
-  new (&ptr) absl::Status(s);
-  return ptr;
+uintptr_t StatusAllocHeapPtr(absl::Status s) {
+  if (s.ok()) return 0;
+  absl::Status* ptr = new absl::Status(s);
+  return reinterpret_cast<uintptr_t>(ptr);
 }
 
-void StatusFreePtr(uintptr_t ptr) {
-  // Decreases the counter of StatusRep if it's not inlined.
-  reinterpret_cast<absl::Status*>(&ptr)->~Status();
+void StatusFreeHeapPtr(uintptr_t ptr) {
+  absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+  delete s;
 }
 
-absl::Status StatusGetFromPtr(uintptr_t ptr) {
-  // Constructs Status from ptr having the address of StatusRep.
-  return *reinterpret_cast<absl::Status*>(&ptr);
+absl::Status StatusGetFromHeapPtr(uintptr_t ptr) {
+  if (ptr == 0) {
+    return absl::OkStatus();
+  } else {
+    return *reinterpret_cast<absl::Status*>(ptr);
+  }
+}
+
+absl::Status StatusMoveFromHeapPtr(uintptr_t ptr) {
+  if (ptr == 0) {
+    return absl::OkStatus();
+  } else {
+    absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+    absl::Status ret = std::move(*s);
+    delete s;
+    return ret;
+  }
 }
 
 }  // namespace internal

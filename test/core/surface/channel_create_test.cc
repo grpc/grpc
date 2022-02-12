@@ -19,10 +19,11 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
@@ -32,7 +33,9 @@ void test_unknown_scheme_target(void) {
   grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
 
-  chan = grpc_insecure_channel_create("blah://blah", nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  chan = grpc_channel_create("blah://blah", creds, nullptr);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(chan != nullptr);
 
   grpc_core::ExecCtx exec_ctx;

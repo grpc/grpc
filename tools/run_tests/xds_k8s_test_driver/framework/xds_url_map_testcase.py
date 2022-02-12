@@ -29,6 +29,7 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
+import packaging.version
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
@@ -62,10 +63,6 @@ JsonType = Any
 RpcTypeUnaryCall = 'UNARY_CALL'
 RpcTypeEmptyCall = 'EMPTY_CALL'
 
-# All client languages
-_CLIENT_LANGUAGES = ('cpp', 'java', 'go', 'python')
-_SERVER_LANGUAGES = _CLIENT_LANGUAGES
-
 
 def _split_camel(s: str, delimiter: str = '-') -> str:
     """Turn camel case name to snake-case-like name."""
@@ -88,10 +85,11 @@ class DumpedXdsConfig(dict):
         self.json_config = xds_json
         self.lds = None
         self.rds = None
+        self.rds_version = None
         self.cds = []
         self.eds = []
         self.endpoints = []
-        for xds_config in self['xdsConfig']:
+        for xds_config in self.get('xdsConfig', []):
             try:
                 if 'listenerConfig' in xds_config:
                     self.lds = xds_config['listenerConfig']['dynamicListeners'][
@@ -99,6 +97,8 @@ class DumpedXdsConfig(dict):
                 elif 'routeConfig' in xds_config:
                     self.rds = xds_config['routeConfig']['dynamicRouteConfigs'][
                         0]['routeConfig']
+                    self.rds_version = xds_config['routeConfig'][
+                        'dynamicRouteConfigs'][0]['versionInfo']
                 elif 'clusterConfig' in xds_config:
                     for cluster in xds_config['clusterConfig'][
                             'dynamicActiveClusters']:
@@ -108,7 +108,23 @@ class DumpedXdsConfig(dict):
                             'dynamicEndpointConfigs']:
                         self.eds.append(endpoint['endpointConfig'])
             except Exception as e:
-                logging.debug('Parse dumped xDS config failed with %s: %s',
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
+                              type(e), e)
+        for generic_xds_config in self.get('genericXdsConfigs', []):
+            try:
+                if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
+                    self.lds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.RouteConfiguration$',
+                               generic_xds_config['typeUrl']):
+                    self.rds = generic_xds_config["xdsConfig"]
+                    self.rds_version = generic_xds_config["versionInfo"]
+                elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
+                    self.cds.append(generic_xds_config["xdsConfig"])
+                elif re.search(r'\.ClusterLoadAssignment$',
+                               generic_xds_config['typeUrl']):
+                    self.eds.append(generic_xds_config["xdsConfig"])
+            except Exception as e:
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for endpoint_config in self.eds:
             for endpoint in endpoint_config.get('endpoints', {}):
@@ -188,6 +204,27 @@ class ExpectedResult:
     ratio: float = 1
 
 
+@dataclass
+class TestConfig:
+    """Describes the config for the test suite."""
+    client_lang: str
+    server_lang: str
+    version: str
+
+    def version_ge(self, another: str) -> bool:
+        """Returns a bool for whether the version is >= another one.
+
+        A version is greater than or equal to another version means its version
+        number is greater than or equal to another version's number. Version
+        "master" is always considered latest. E.g., master >= v1.41.x >= v1.40.x
+        >= v1.9.x.
+        """
+        if self.version == 'master':
+            return True
+        return packaging.version.parse(
+            self.version) >= packaging.version.parse(another)
+
+
 class _MetaXdsUrlMapTestCase(type):
     """Tracking test case subclasses."""
 
@@ -233,22 +270,13 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
     """
 
     @staticmethod
-    def supported_clients() -> Tuple[str]:
-        """Declare supported languages of clients.
+    def is_supported(config: TestConfig) -> bool:
+        """Allow the test case to decide whether it supports the given config.
 
         Returns:
-          A tuple of strings contains the supported languages for this test.
+          A bool indicates if the given config is supported.
         """
-        return _CLIENT_LANGUAGES
-
-    @staticmethod
-    def supported_servers() -> Tuple[str]:
-        """Declare supported languages of servers.
-
-        Returns:
-          A tuple of strings contains the supported languages for this test.
-        """
-        return _SERVER_LANGUAGES
+        return True
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str) -> Tuple[str, str]:
@@ -336,15 +364,12 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         # cannot be used in the built-in test-skipping decorators. See the
         # official FAQs:
         # https://abseil.io/docs/python/guides/flags#faqs
-        client_lang = _get_lang(GcpResourceManager().client_image)
-        server_lang = _get_lang(GcpResourceManager().server_image)
-        if client_lang not in cls.supported_clients():
-            cls.skip_reason = (f'Unsupported client language {client_lang} '
-                               f'not in {cls.supported_clients()}')
-            return
-        elif server_lang not in cls.supported_servers():
-            cls.skip_reason = (f'Unsupported server language {server_lang} '
-                               f'not in {cls.supported_servers()}')
+        test_config = TestConfig(
+            client_lang=_get_lang(GcpResourceManager().client_image),
+            server_lang=_get_lang(GcpResourceManager().server_image),
+            version=GcpResourceManager().testing_version)
+        if not cls.is_supported(test_config):
+            cls.skip_reason = f'Unsupported test config: {test_config}'
             return
         else:
             cls.skip_reason = None
@@ -466,10 +491,11 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             rpc = expected_result.rpc_type
             status = expected_result.status_code.value[0]
             # Compute observation
-            seen_after = after_stats.stats_per_method.get(rpc, {}).result.get(
-                status, 0)
-            seen_before = before_stats.stats_per_method.get(rpc, {}).result.get(
-                status, 0)
+            # ProtoBuf messages has special magic dictionary that we don't need
+            # to catch exceptions:
+            # https://developers.google.com/protocol-buffers/docs/reference/python-generated#undefined
+            seen_after = after_stats.stats_per_method[rpc].result[status]
+            seen_before = before_stats.stats_per_method[rpc].result[status]
             seen = seen_after - seen_before
             # Compute total number of RPC started
             stats_per_method_after = after_stats.stats_per_method.get(

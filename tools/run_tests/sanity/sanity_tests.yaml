@@ -18,10 +18,12 @@
 - script: tools/run_tests/sanity/core_banned_functions.py
 - script: tools/run_tests/sanity/core_untyped_structs.sh
 - script: tools/run_tests/sanity/cpp_banned_constructs.sh
+- script: tools/run_tests/sanity/check_package_name.py
 - script: tools/buildgen/generate_projects.sh -j 3
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
 - script: tools/distrib/check_include_guards.py
+- script: tools/distrib/check_naked_includes.py
 - script: tools/distrib/check_trailing_newlines.sh
 - script: tools/distrib/check_upb_output.sh
 - script: tools/distrib/check_pytype.sh
@@ -38,3 +40,6 @@
   cpu_cost: 1000
 - script: tools/distrib/check_protobuf_pod_version.sh
 - script: tools/distrib/check_boringssl_prefix_symbol.sh
+- script: tools/run_tests/sanity/build_banned_constructs.sh
+- script: tools/distrib/check_redundant_namespace_qualifiers.py
+

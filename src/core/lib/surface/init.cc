@@ -22,6 +22,7 @@
 
 #include <limits.h>
 #include <memory.h>
+#include <string.h>
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
@@ -30,26 +31,33 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/security/authorization/sdk_server_authz_filter.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/builtins.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
@@ -68,6 +76,67 @@ static int g_initializations ABSL_GUARDED_BY(g_init_mu) = 0;
 static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
+static bool maybe_prepend_client_auth_filter(
+    grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* args = builder->channel_args();
+  if (args) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
+        builder->PrependFilter(&grpc_client_auth_filter, nullptr);
+        break;
+      }
+    }
+  }
+  return true;
+}
+
+static bool maybe_prepend_server_auth_filter(
+    grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* args = builder->channel_args();
+  if (args) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      if (0 == strcmp(GRPC_SERVER_CREDENTIALS_ARG, args->args[i].key)) {
+        builder->PrependFilter(&grpc_server_auth_filter, nullptr);
+        break;
+      }
+    }
+  }
+  return true;
+}
+
+static bool maybe_prepend_sdk_server_authz_filter(
+    grpc_core::ChannelStackBuilder* builder) {
+  const grpc_channel_args* args = builder->channel_args();
+  const auto* provider =
+      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
+          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
+  if (provider != nullptr) {
+    builder->PrependFilter(&grpc_core::SdkServerAuthzFilter::kFilterVtable,
+                           nullptr);
+  }
+  return true;
+}
+
+namespace grpc_core {
+void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
+  // Register the auth client with a priority < INT_MAX to allow the authority
+  // filter -on which the auth filter depends- to be higher on the channel
+  // stack.
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, INT_MAX - 1,
+                                         maybe_prepend_client_auth_filter);
+  builder->channel_init()->RegisterStage(GRPC_CLIENT_DIRECT_CHANNEL,
+                                         INT_MAX - 1,
+                                         maybe_prepend_client_auth_filter);
+  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
+                                         maybe_prepend_server_auth_filter);
+  // Register the SdkServerAuthzFilter with a priority less than
+  // server_auth_filter to allow server_auth_filter on which the sdk filter
+  // depends on to be higher on the channel stack.
+  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 2,
+                                         maybe_prepend_sdk_server_authz_filter);
+}
+}  // namespace grpc_core
+
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
   g_init_mu = new grpc_core::Mutex();
@@ -76,34 +145,6 @@ static void do_basic_init(void) {
   grpc_cq_global_init();
   grpc_core::grpc_executor_global_init();
   gpr_time_init();
-}
-
-static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_append_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
-}
-
-static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
-}
-
-static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   grpc_add_connected_filter, nullptr);
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      append_filter, const_cast<grpc_channel_filter*>(&grpc_lame_filter));
-  grpc_channel_init_register_stage(
-      GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
-      const_cast<grpc_channel_filter*>(&grpc_core::Server::kServerTopFilter));
 }
 
 typedef struct grpc_plugin {
@@ -135,30 +176,17 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
-    grpc_init_static_metadata_ctx();
-    grpc_slice_intern_init();
-    grpc_mdctx_global_init();
-    grpc_channel_init_init();
     grpc_core::channelz::ChannelzRegistry::Init();
-    grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
-    grpc_core::HandshakerRegistry::Init();
-    grpc_security_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
       }
     }
-    /* register channel finalization AFTER all plugins, to ensure that it's run
-     * at the appropriate time */
-    grpc_register_security_filters();
-    register_builtin_channel_init();
     grpc_tracer_init();
-    /* no more changes to channel init pipelines */
-    grpc_channel_init_finalize();
     grpc_iomgr_start();
   }
 
@@ -182,9 +210,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_mdctx_global_shutdown();
-    grpc_core::HandshakerRegistry::Shutdown();
-    grpc_slice_intern_shutdown();
     grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();
@@ -193,8 +218,6 @@ void grpc_shutdown_internal_locked(void)
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   g_shutting_down_cv->SignalAll();
-  // Absolute last action will be to delete static metadata context.
-  grpc_destroy_static_metadata_ctx();
 }
 
 void grpc_shutdown_internal(void* /*ignored*/) {

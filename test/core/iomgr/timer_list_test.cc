@@ -21,14 +21,14 @@
 // This test only works with the generic timer implementation
 #ifndef GRPC_CUSTOM_SOCKET
 
-#include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/timer.h"
-
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
 
@@ -224,7 +224,7 @@ int main(int argc, char** argv) {
     grpc::testing::TestEnvironment env(argc, argv);
     grpc_core::ExecCtx::GlobalInit();
     grpc_core::ExecCtx exec_ctx;
-    grpc_determine_iomgr_platform();
+    grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
     gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
     add_test();
@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
                                          gpr_clock_type::GPR_CLOCK_MONOTONIC));
     grpc_core::ExecCtx::TestOnlyGlobalInit(new_start);
     grpc_core::ExecCtx exec_ctx;
-    grpc_determine_iomgr_platform();
+    grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
     gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
     long_running_service_cleanup_test();

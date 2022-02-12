@@ -32,6 +32,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 #define GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 
+// IWYU pragma: private, include <grpcpp/completion_queue.h>
+
 #include <list>
 
 #include <grpc/impl/codegen/atm.h>

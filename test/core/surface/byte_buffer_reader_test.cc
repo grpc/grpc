@@ -16,11 +16,12 @@
  *
  */
 
+#include <string.h>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -28,8 +29,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
-
-#include <string.h>
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
 

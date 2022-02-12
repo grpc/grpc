@@ -23,23 +23,21 @@
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
-
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/support/alloc.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-// TODO(roth): Should not need the include of subchannel.h here, since
-// that implementation should be hidden from the LB policy API.
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // Code for maintaining a list of subchannels within an LB policy.
@@ -175,13 +173,18 @@ class SubchannelData {
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  public:
-  typedef absl::InlinedVector<SubchannelDataType, 10> SubchannelVector;
+  // We use ManualConstructor here to support SubchannelDataType classes
+  // that are not copyable.
+  typedef absl::InlinedVector<ManualConstructor<SubchannelDataType>, 10>
+      SubchannelVector;
 
   // The number of subchannels in the list.
   size_t num_subchannels() const { return subchannels_.size(); }
 
   // The data for the subchannel at a particular index.
-  SubchannelDataType* subchannel(size_t index) { return &subchannels_[index]; }
+  SubchannelDataType* subchannel(size_t index) {
+    return subchannels_[index].get();
+  }
 
   // Returns true if the subchannel list is shutting down.
   bool shutting_down() const { return shutting_down_; }
@@ -386,7 +389,8 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
               tracer_->name(), policy_, this, subchannels_.size(),
               subchannel.get(), address.ToString().c_str());
     }
-    subchannels_.emplace_back(this, std::move(address), std::move(subchannel));
+    subchannels_.emplace_back();
+    subchannels_.back().Init(this, std::move(address), std::move(subchannel));
   }
 }
 
@@ -395,6 +399,9 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "[%s %p] Destroying subchannel_list %p", tracer_->name(),
             policy_, this);
+  }
+  for (auto& sd : subchannels_) {
+    sd.Destroy();
   }
 }
 
@@ -406,8 +413,7 @@ void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   }
   GPR_ASSERT(!shutting_down_);
   shutting_down_ = true;
-  for (size_t i = 0; i < subchannels_.size(); i++) {
-    SubchannelDataType* sd = &subchannels_[i];
+  for (auto& sd : subchannels_) {
     sd->ShutdownLocked();
   }
 }
@@ -415,8 +421,7 @@ void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelList<SubchannelListType,
                     SubchannelDataType>::ResetBackoffLocked() {
-  for (size_t i = 0; i < subchannels_.size(); i++) {
-    SubchannelDataType* sd = &subchannels_[i];
+  for (auto& sd : subchannels_) {
     sd->ResetBackoffLocked();
   }
 }

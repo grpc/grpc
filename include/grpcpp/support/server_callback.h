@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_SERVER_CALLBACK_H
 #define GRPCPP_SUPPORT_SERVER_CALLBACK_H
 
-#include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_SERVER_CALLBACK_H

@@ -36,6 +36,14 @@ RESOURCE_SUFFIX = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
+CONFIG_SCOPE = flags.DEFINE_string(
+    "config_scope",
+    default=None,
+    help="Scope specified in mesh if using AppNet APIs")
+COMPUTE_API_VERSION = flags.DEFINE_string(
+    "compute_api_version",
+    default='v1',
+    help="The version of the GCP Compute API, e.g., v1, v1alpha")
 # Mirrors --xds-server-uri argument of Traffic Director gRPC Bootstrap
 XDS_SERVER_URI = flags.DEFINE_string(
     "xds_server_uri",
@@ -108,6 +116,17 @@ CLIENT_PORT = flags.DEFINE_integer(
         "The port test client uses to run gRPC services: Channelz, CSDS, "
         "XdsStats, XdsUpdateClientConfigure, and ProtoReflection (optional).\n"
         "Doesn't have to be within --firewall_allowed_ports."))
+
+# Testing metadata
+TESTING_VERSION = flags.DEFINE_string(
+    "testing_version",
+    default="master",
+    help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
+
+FORCE_CLEANUP = flags.DEFINE_bool(
+    "force_cleanup",
+    default=False,
+    help="Force resource cleanup, even if not created by this test run")
 
 flags.adopt_module_key_flags(highlighter)
 

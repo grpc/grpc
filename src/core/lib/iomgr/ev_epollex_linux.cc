@@ -18,14 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/port.h"
 
 /* This polling engine is only relevant on linux kernels supporting epoll() */
 #ifdef GRPC_LINUX_EPOLL_CREATE1
-
-#include "src/core/lib/iomgr/ev_epollex_linux.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -54,6 +52,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/is_epollexclusive_available.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
@@ -1072,7 +1071,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     case WRR_EMPTIED:
       if (pollset->active_pollable != worker->pollable_obj) {
         // pollable no longer being polled: flush events
-        pollable_process_events(pollset, worker->pollable_obj, true);
+        (void)pollable_process_events(pollset, worker->pollable_obj, true);
       }
       break;
     case WRR_REMOVED:
@@ -1358,7 +1357,7 @@ static void pollset_set_add_fd(grpc_pollset_set* pss, grpc_fd* fd) {
                  err_desc);
   }
   if (pss->fd_count == pss->fd_capacity) {
-    pss->fd_capacity = GPR_MAX(pss->fd_capacity * 2, 8);
+    pss->fd_capacity = std::max(pss->fd_capacity * 2, size_t(8));
     pss->fds = static_cast<grpc_fd**>(
         gpr_realloc(pss->fds, pss->fd_capacity * sizeof(*pss->fds)));
   }
@@ -1468,7 +1467,7 @@ static void pollset_set_add_pollset(grpc_pollset_set* pss, grpc_pollset* ps) {
                                    pss->fds, &pss->fd_count),
                err_desc);
   if (pss->pollset_count == pss->pollset_capacity) {
-    pss->pollset_capacity = GPR_MAX(pss->pollset_capacity * 2, 8);
+    pss->pollset_capacity = std::max(pss->pollset_capacity * 2, size_t(8));
     pss->pollsets = static_cast<grpc_pollset**>(gpr_realloc(
         pss->pollsets, pss->pollset_capacity * sizeof(*pss->pollsets)));
   }
@@ -1493,7 +1492,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
       return;
     }
     if (a > b) {
-      GPR_SWAP(grpc_pollset_set*, a, b);
+      std::swap(a, b);
     }
     gpr_mu* a_mu = &a->mu;
     gpr_mu* b_mu = &b->mu;
@@ -1514,7 +1513,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   const size_t a_size = a->fd_count + a->pollset_count;
   const size_t b_size = b->fd_count + b->pollset_count;
   if (b_size > a_size) {
-    GPR_SWAP(grpc_pollset_set*, a, b);
+    std::swap(a, b);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_INFO, "PSS: parent %p to %p", b, a);
@@ -1522,7 +1521,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   a->refs.Ref();
   b->parent = a;
   if (a->fd_capacity < a->fd_count + b->fd_count) {
-    a->fd_capacity = GPR_MAX(2 * a->fd_capacity, a->fd_count + b->fd_count);
+    a->fd_capacity = std::max(2 * a->fd_capacity, a->fd_count + b->fd_count);
     a->fds = static_cast<grpc_fd**>(
         gpr_realloc(a->fds, a->fd_capacity * sizeof(*a->fds)));
   }
@@ -1540,7 +1539,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
       err_desc);
   if (a->pollset_capacity < a->pollset_count + b->pollset_count) {
     a->pollset_capacity =
-        GPR_MAX(2 * a->pollset_capacity, a->pollset_count + b->pollset_count);
+        std::max(2 * a->pollset_capacity, a->pollset_count + b->pollset_count);
     a->pollsets = static_cast<grpc_pollset**>(
         gpr_realloc(a->pollsets, a->pollset_capacity * sizeof(*a->pollsets)));
   }

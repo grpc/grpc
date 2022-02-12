@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_READER_H
 
-#include <grpcpp/impl/codegen/proto_buffer_reader.h>
+#include <grpcpp/impl/codegen/proto_buffer_reader.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SUPPORT_PROTO_BUFFER_READER_H

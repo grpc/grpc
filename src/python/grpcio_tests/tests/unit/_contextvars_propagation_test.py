@@ -75,7 +75,11 @@ if contextvars_supported():
     class TestCallCredentials(grpc.AuthMetadataPlugin):
 
         def __call__(self, context, callback):
-            if test_var.get() != _EXPECTED_VALUE:
+            if test_var.get(
+            ) != _EXPECTED_VALUE and not test_common.running_under_gevent():
+                # contextvars do not work under gevent, but the rest of this
+                # test is still valuable as a test of concurrent runs of the
+                # metadata credentials code path.
                 raise AssertionError("{} != {}".format(test_var.get(),
                                                        _EXPECTED_VALUE))
             callback((), None)
@@ -143,7 +147,8 @@ class ContextVarsPropagationTest(unittest.TestCase):
                     exception_queue.put(e)
 
             threads = []
-            for _ in range(_RPC_COUNT):
+
+            for _ in range(_THREAD_COUNT):
                 q = queue.Queue()
                 thread = threading.Thread(target=_run_on_thread, args=(q,))
                 thread.setDaemon(True)

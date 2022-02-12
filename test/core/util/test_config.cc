@@ -18,7 +18,6 @@
 
 #include "test/core/util/test_config.h"
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <inttypes.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -26,7 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/debugging/failure_signal_handler.h"
+#include "absl/debugging/symbolize.h"
+
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -34,10 +37,8 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/surface/init.h"
+#include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
-
-#include "absl/debugging/failure_signal_handler.h"
-#include "absl/debugging/symbolize.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -51,70 +52,6 @@ static unsigned seed(void) { return static_cast<unsigned>(getpid()); }
 #include <process.h>
 static unsigned seed(void) { return (unsigned)_getpid(); }
 #endif
-
-bool BuiltUnderValgrind() {
-#ifdef RUNNING_ON_VALGRIND
-  return true;
-#else
-  return false;
-#endif
-}
-
-bool BuiltUnderTsan() {
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
-  return true;
-#else
-  return false;
-#endif
-#else
-#ifdef THREAD_SANITIZER
-  return true;
-#else
-  return false;
-#endif
-#endif
-}
-
-bool BuiltUnderAsan() {
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-  return true;
-#else
-  return false;
-#endif
-#else
-#ifdef ADDRESS_SANITIZER
-  return true;
-#else
-  return false;
-#endif
-#endif
-}
-
-bool BuiltUnderMsan() {
-#if defined(__has_feature)
-#if __has_feature(memory_sanitizer)
-  return true;
-#else
-  return false;
-#endif
-#else
-#ifdef MEMORY_SANITIZER
-  return true;
-#else
-  return false;
-#endif
-#endif
-}
-
-bool BuiltUnderUbsan() {
-#ifdef GRPC_UBSAN
-  return true;
-#else
-  return false;
-#endif
-}
 
 int64_t grpc_test_sanitizer_slowdown_factor() {
   int64_t sanitizer_multiplier = 1;

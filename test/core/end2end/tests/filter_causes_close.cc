@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,11 +24,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "test/core/end2end/cq_verifier.h"
-
-static bool g_enable_filter = false;
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -236,6 +235,7 @@ static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
@@ -251,29 +251,18 @@ static const grpc_channel_filter test_filter = {
  * Registration
  */
 
-static bool maybe_add_filter(grpc_channel_stack_builder* builder,
-                             void* /*arg*/) {
-  if (g_enable_filter) {
-    return grpc_channel_stack_builder_prepend_filter(builder, &test_filter,
-                                                     nullptr, nullptr);
-  } else {
-    return true;
-  }
-}
-
-static void init_plugin(void) {
-  grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, 0, maybe_add_filter,
-                                   nullptr);
-}
-
-static void destroy_plugin(void) {}
-
 void filter_causes_close(grpc_end2end_test_config config) {
-  g_enable_filter = true;
-  test_request(config);
-  g_enable_filter = false;
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        grpc_core::BuildCoreConfiguration(builder);
+        builder->channel_init()->RegisterStage(
+            GRPC_SERVER_CHANNEL, 0,
+            [](grpc_core::ChannelStackBuilder* builder) {
+              builder->PrependFilter(&test_filter, nullptr);
+              return true;
+            });
+      },
+      [config] { test_request(config); });
 }
 
-void filter_causes_close_pre_init(void) {
-  grpc_register_plugin(init_plugin, destroy_plugin);
-}
+void filter_causes_close_pre_init(void) {}

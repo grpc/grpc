@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_H
 #define GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_H
 
+// IWYU pragma: private
+
 // This file should be compiled as part of grpcpp.
 
 #include <grpc/byte_buffer.h>
@@ -70,6 +72,7 @@ class CoreCodegen final : public CoreCodegenInterface {
                                                grpc_status_code status,
                                                const char* description,
                                                void* reserved) override;
+  int grpc_call_failed_before_recv_message(const grpc_call* c) override;
   void grpc_call_ref(grpc_call* call) override;
   void grpc_call_unref(grpc_call* call) override;
   void* grpc_call_arena_alloc(grpc_call* call, size_t length) override;

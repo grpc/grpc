@@ -19,15 +19,17 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_COUNTERS_H
 #define TEST_CPP_MICROBENCHMARKS_COUNTERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <sstream>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
+#include <benchmark/benchmark.h>
+
+#include <grpcpp/impl/grpc_library.h>
+
 #include "src/core/lib/debug/stats.h"
 #include "test/core/util/memory_counters.h"
-
-#include <benchmark/benchmark.h>
-#include <grpcpp/impl/grpc_library.h>
 
 class LibraryInitializer {
  public:

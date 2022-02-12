@@ -18,12 +18,12 @@
 
 #include <string.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "test/core/util/test_config.h"
-
-#include <grpc/support/log.h>
 
 static void test_empty_context(void) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =

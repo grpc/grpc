@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # Source this rc script to prepare the environment for macos builds
+
+# Print basic info about the mac worker
+echo "kokoro pool: \"$KOKORO_JOB_POOL\""
+echo "OS: $(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
+echo "CPU type: $(sysctl -n machdep.cpu.brand_string)"
+echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
+echo "CPU Cores: $(sysctl -n hw.ncpu)"
+echo "Memory: $(sysctl -n hw.memsize)"
+
+# Info on disk usage and mounted volumes
+mount
+df -h /tmpfs /
 
 # show original open file limit values
 launchctl limit maxfiles
@@ -46,6 +58,9 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
+  # Workaround for https://github.com/rvm/rvm/issues/5133
+  export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
+
   # Fetch keys per https://rvm.io/rvm/install
   gpg_recv_keys_success=0
   for ((i=0;i<5;i++)); do
@@ -58,16 +73,24 @@ then
   done
   [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
+  # stop echoing bash commands temporarily to prevent rvm from polluting the logs
+  set +x
   source $HOME/.rvm/scripts/rvm
+
   for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
+    echo "Installing ruby-${RUBY_VERSION}"
     time rvm install "ruby-${RUBY_VERSION}"
-    time gem install bundler -v 1.17.3 --no-document
-    time gem install rake-compiler --no-document
   done;
+  echo "Setting default ruby version."
   rvm use 2.5.0 --default
+  echo "Installing cocoapods."
   time gem install cocoapods --version 1.3.1 --no-document
+  echo "Updating osx-ssl-certs."
   rvm osx-ssl-certs status all
   rvm osx-ssl-certs update all
+
+  # restore echo
+  set -x
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_OBJC}" == "true" ]
@@ -139,22 +162,36 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
+  
+  # Installed versions should be kept in sync with
+  # templates/tools/dockerfile/csharp_dotnetcli_deps.include
+  time curl -O https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg
+  time sudo installer -pkg ./dotnet-sdk-3.1.415-osx-x64.pkg -target /
+
+  time curl -O https://download.visualstudio.microsoft.com/download/pr/14a45451-4cc9-48e1-af69-0aff75891d09/ff6e83986a2a9a535015fb3104a90a1b/dotnet-sdk-6.0.100-osx-x64.pkg
+  time sudo installer -pkg ./dotnet-sdk-6.0.100-osx-x64.pkg -target /
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
-  # It's required to update the brew because it won't work with the default version Kokoro has.
-  # This can be fragile, though because the future version of brew can break. In that case,
-  # please consider to fix the certain version like https://github.com/grpc/grpc/pull/24837.
+  # It's required to update homebrew because it won't work with the default version Kokoro has.
+  # This can be fragile though because the future version of brew can break - consider pinning
+  # the formulas if that happens (see https://github.com/grpc/grpc/pull/24837).
   brew update || true
+  # macos mojave support for php7.3 brew formula removed MacOS Mojave support here: https://github.com/Homebrew/homebrew-core/commit/d8496609d310a233bfb46272ec7948845f32d7c5#diff-df64282b6e4230b6f35468dfbbd500fcd62b0f93b01b2b161e92f512b7feb1a3
+  # so we need earlier version of the formulata than that. See https://github.com/grpc/grpc/pull/24837 for an example of pinning homebrew formulas to a specific commit.
+  (cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core; git checkout 10b1944581fbbdc216057fd70e89dbbe3d04161e)
   brew config
 
-  # Install PHP 7.3 explictly to address missing php header files and
-  # to work well with the pre-installed phpunit 8.4
   brew install php@7.3 || true
-  export LDFLAGS="-L/usr/local/opt/php@7.3/lib $(LDFLAGS)"
-  export CPPFLAGS="-I/usr/local/opt/php@7.3/include $(CPPFLAGS)"
-  export PATH="/usr/local/opt/php@7.3/bin:/usr/local/opt/php@7.3/sbin:$PATH"
+  export LDFLAGS="-L/usr/local/opt/php@7.3/lib ${LDFLAGS}"
+  export CPPFLAGS="-I/usr/local/opt/php@7.3/include ${CPPFLAGS}"
+  export PATH="/usr/local/opt/php@7.3/bin:/usr/local/opt/php@7.3/sbin:${PATH}"
+
+  # the exit code from "brew install php@7.3" is useless
+  # so instead we check if PHP was indeed installed successfully.
+  # Failing early is better than cryptic errors later in the build process.
+  /usr/local/opt/php@7.3/bin/php --version
 
   # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
   mkdir -p /usr/local/lib/php/pecl

@@ -31,6 +31,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 XdsTestClient = client_app.XdsTestClient
 ExpectedResult = xds_url_map_testcase.ExpectedResult
+TestConfig = xds_url_map_testcase.TestConfig
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -66,8 +67,12 @@ def _build_retry_route_rule(retryConditions, num_retries):
 class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+    def is_supported(config: TestConfig) -> bool:
+        if config.client_lang in ['cpp', 'java', 'python']:
+            return config.version_ge('v1.40.x')
+        elif config.client_lang == 'go':
+            return config.version_ge('v1.41.x')
+        return False
 
     @staticmethod
     def url_map_change(
@@ -105,8 +110,12 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def supported_clients() -> Tuple[str]:
-        return 'cpp', 'java'
+    def is_supported(config: TestConfig) -> bool:
+        if config.client_lang in ['cpp', 'java', 'python']:
+            return config.version_ge('v1.40.x')
+        elif config.client_lang == 'go':
+            return config.version_ge('v1.41.x')
+        return False
 
     @staticmethod
     def url_map_change(

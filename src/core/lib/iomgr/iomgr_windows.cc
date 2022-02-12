@@ -22,14 +22,14 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "src/core/lib/iomgr/sockaddr_windows.h"
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolve_address_windows.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -40,7 +40,6 @@ extern grpc_tcp_client_vtable grpc_windows_tcp_client_vtable;
 extern grpc_timer_vtable grpc_generic_timer_vtable;
 extern grpc_pollset_vtable grpc_windows_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_windows_pollset_set_vtable;
-extern grpc_address_resolver_vtable grpc_windows_resolver_vtable;
 
 /* Windows' io manager is going to be fully designed using IO completion
    ports. All of what we're doing here is basically make sure that
@@ -97,7 +96,7 @@ void grpc_set_default_iomgr_platform() {
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
   grpc_set_pollset_vtable(&grpc_windows_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_windows_pollset_set_vtable);
-  grpc_set_resolver_impl(&grpc_windows_resolver_vtable);
+  grpc_core::SetDNSResolver(grpc_core::NativeDNSResolver::GetOrCreate());
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 

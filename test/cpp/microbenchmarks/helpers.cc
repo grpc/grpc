@@ -16,9 +16,9 @@
  *
  */
 
-#include <string.h>
-
 #include "test/cpp/microbenchmarks/helpers.h"
+
+#include <string.h>
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 static LibraryInitializer* g_libraryInitializer;

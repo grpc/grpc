@@ -21,11 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
 #include <cinttypes>
 #include <memory>
+
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -117,7 +117,7 @@ class InternallyRefCounted : public Orphanable {
     refs_.Ref(location, reason);
   }
 
-  grpc_core::RefCount refs_;
+  RefCount refs_;
 };
 
 }  // namespace grpc_core

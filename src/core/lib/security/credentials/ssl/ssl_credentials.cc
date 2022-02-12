@@ -22,27 +22,18 @@
 
 #include <string.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/tsi/ssl_transport_security.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl_transport_security.h"
+
 //
 // SSL Channel Credentials.
 //
-
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs) {
-  if (kp == nullptr) return;
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].private_key));
-    gpr_free(const_cast<char*>(kp[i].cert_chain));
-  }
-  gpr_free(kp);
-}
 
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,

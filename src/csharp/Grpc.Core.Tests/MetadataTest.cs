@@ -262,6 +262,10 @@ namespace Grpc.Core.Tests
             var xyzEntries = metadata.GetAll("xyz").ToList();
             Assert.AreEqual(1, xyzEntries.Count);
             Assert.AreEqual("xyz-value1", xyzEntries[0].Value);
+
+            var xyzUppercaseEntries = metadata.GetAll("XYZ").ToList();
+            Assert.AreEqual(1, xyzUppercaseEntries.Count);
+            Assert.AreEqual("xyz-value1", xyzUppercaseEntries[0].Value);
         }
 
         [Test]
@@ -280,8 +284,12 @@ namespace Grpc.Core.Tests
             var xyzEntry = metadata.Get("xyz");
             Assert.AreEqual("xyz-value1", xyzEntry.Value);
 
+            var abcUppercaseEntry = metadata.Get("AbC");
+            Assert.AreEqual("abc-value2", abcUppercaseEntry.Value);
+
             var notFound = metadata.Get("not-found");
             Assert.AreEqual(null, notFound);
+
         }
 
         [Test]
@@ -300,6 +308,9 @@ namespace Grpc.Core.Tests
 
             var xyzValue = metadata.GetValue("xyz");
             Assert.AreEqual("xyz-value1", xyzValue);
+
+            var abcUppercaseValue = metadata.GetValue("ABC");
+            Assert.AreEqual("abc-value2", abcUppercaseValue);
 
             var notFound = metadata.GetValue("not-found");
             Assert.AreEqual(null, notFound);
@@ -331,6 +342,9 @@ namespace Grpc.Core.Tests
 
             var xyzValue = metadata.GetValueBytes("xyz-bin");
             Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzValue);
+
+            var xyzUppercaseValue = metadata.GetValueBytes("XYZ-BIN");
+            Assert.AreEqual(Encoding.ASCII.GetBytes("xyz-value1"), xyzUppercaseValue);
 
             var notFound = metadata.GetValueBytes("not-found");
             Assert.AreEqual(null, notFound);

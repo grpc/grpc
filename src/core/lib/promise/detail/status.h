@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_STATUS_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_STATUS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -38,5 +40,10 @@ inline absl::Status IntoStatus(absl::Status* status) {
 
 }  // namespace promise_detail
 }  // namespace grpc_core
+
+// Return true if the status represented by the argument is ok, false if not.
+// By implementing this function for other, non-absl::Status types, those types
+// can participate in TrySeq as result types that affect control flow.
+inline bool IsStatusOk(const absl::Status& status) { return status.ok(); }
 
 #endif  // GRPC_CORE_LIB_PROMISE_DETAIL_STATUS_H

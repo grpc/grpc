@@ -16,6 +16,13 @@
  *
  */
 
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include "absl/flags/flag.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -24,12 +31,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"

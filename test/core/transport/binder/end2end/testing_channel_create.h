@@ -15,8 +15,9 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_TESTING_CHANNEL_CREATE_H
 #define GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_TESTING_CHANNEL_CREATE_H
 
-#include <grpcpp/grpcpp.h>
 #include <utility>
+
+#include <grpcpp/grpcpp.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/lib/surface/server.h"
@@ -34,8 +35,7 @@ std::shared_ptr<grpc::Channel> BinderChannelForTesting(
 }  // namespace end2end_testing
 }  // namespace grpc_binder
 
-grpc_channel* grpc_binder_channel_create_for_testing(grpc_server* server,
-                                                     grpc_channel_args* args,
-                                                     void* /*reserved*/);
+grpc_channel* grpc_binder_channel_create_for_testing(
+    grpc_server* server, const grpc_channel_args* args, void* /*reserved*/);
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_TESTING_CHANNEL_CREATE_H

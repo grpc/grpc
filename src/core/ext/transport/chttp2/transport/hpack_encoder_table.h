@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/container/inlined_vector.h"
+
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 
 namespace grpc_core {
@@ -27,6 +28,8 @@ namespace grpc_core {
 class HPackEncoderTable {
  public:
   HPackEncoderTable() : elem_size_(hpack_constants::kInitialTableEntries) {}
+
+  static constexpr size_t MaxEntrySize() { return 65535; }
 
   // Reserve space in table for the new element, evict entries if needed.
   // Return the new index of the element. Return 0 to indicate not adding to

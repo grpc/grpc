@@ -14,21 +14,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-#include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
 namespace grpc_core {
 
 TEST(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
-  Rbac::Policy policy2((Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-                       (Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission::MakeNotPermission(
+          Rbac::Permission::MakeAnyPermission()),
+      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+  Rbac::Policy policy2(Rbac::Permission::MakeAnyPermission(),
+                       Rbac::Principal::MakeAnyPrincipal());
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
@@ -42,10 +41,9 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
 
 TEST(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission::MakeNotPermission(
+          Rbac::Permission::MakeAnyPermission()),
+      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(Rbac::Action::kAllow, std::move(policies));
@@ -66,12 +64,11 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithEmptyPolicies) {
 
 TEST(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
-  Rbac::Policy policy2((Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-                       (Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission::MakeNotPermission(
+          Rbac::Permission::MakeAnyPermission()),
+      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
+  Rbac::Policy policy2(Rbac::Permission::MakeAnyPermission(),
+                       Rbac::Principal::MakeAnyPrincipal());
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   policies["policy2"] = std::move(policy2);
@@ -85,10 +82,9 @@ TEST(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
 
 TEST(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
   Rbac::Policy policy1(
-      Rbac::Permission(Rbac::Permission::RuleType::kNot,
-                       Rbac::Permission(Rbac::Permission::RuleType::kAny)),
-      Rbac::Principal(Rbac::Principal::RuleType::kNot,
-                      Rbac::Principal(Rbac::Principal::RuleType::kAny)));
+      Rbac::Permission::MakeNotPermission(
+          Rbac::Permission::MakeAnyPermission()),
+      Rbac::Principal::MakeNotPrincipal(Rbac::Principal::MakeAnyPrincipal()));
   std::map<std::string, Rbac::Policy> policies;
   policies["policy1"] = std::move(policy1);
   Rbac rbac(Rbac::Action::kDeny, std::move(policies));

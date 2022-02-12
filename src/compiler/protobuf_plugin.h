@@ -19,13 +19,13 @@
 #ifndef GRPC_INTERNAL_COMPILER_PROTOBUF_PLUGIN_H
 #define GRPC_INTERNAL_COMPILER_PROTOBUF_PLUGIN_H
 
+#include <vector>
+
 #include "src/compiler/config.h"
 #include "src/compiler/cpp_generator_helpers.h"
 #include "src/compiler/python_generator_helpers.h"
 #include "src/compiler/python_private_generator.h"
 #include "src/compiler/schema_interface.h"
-
-#include <vector>
 
 // Get leading or trailing comments in a string.
 template <typename DescriptorType>

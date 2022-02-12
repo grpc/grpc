@@ -16,14 +16,12 @@
  *
  */
 
-#include <grpcpp/client_context.h>
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
+#include <grpcpp/client_context.h>
 #include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>

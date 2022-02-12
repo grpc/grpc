@@ -16,8 +16,6 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -25,7 +23,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
+#include "src/core/lib/config/core_configuration.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/end2end/end2end_tests.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -35,9 +36,19 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
                                             grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
+  client_args =
+      const_cast<grpc_channel_args*>(grpc_core::CoreConfiguration::Get()
+                                         .channel_args_preconditioning()
+                                         .PreconditionChannelArgs(client_args));
+  server_args =
+      const_cast<grpc_channel_args*>(grpc_core::CoreConfiguration::Get()
+                                         .channel_args_preconditioning()
+                                         .PreconditionChannelArgs(server_args));
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);
+  grpc_channel_args_destroy(client_args);
+  grpc_channel_args_destroy(server_args);
   return f;
 }
 

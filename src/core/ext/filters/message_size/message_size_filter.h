@@ -19,8 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 extern const grpc_channel_filter grpc_message_size_filter;
 

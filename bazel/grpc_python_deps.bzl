@@ -16,7 +16,10 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
+# buildifier: disable=unnamed-macro
 def grpc_python_deps():
+    """Loads dependencies for gRPC Python."""
+
     # protobuf binds to the name "six", so we can't use it here.
     # See https://github.com/bazelbuild/bazel/issues/1952 for why bind is
     # horrible.
@@ -49,8 +52,10 @@ def grpc_python_deps():
     if "io_bazel_rules_python" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_python",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
-            sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.4.0/rules_python-0.4.0.tar.gz",
+            sha256 = "954aa89b491be4a083304a2cb838019c8b8c3720a7abb9c4cb81ac7a24230cea",
+            patches = ["//third_party:rules_python.patch"],
+            patch_args = ["-p1"],
         )
 
     python_configure(name = "local_config_python")
@@ -64,9 +69,9 @@ def grpc_python_deps():
         http_archive(
             name = "cython",
             build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-            sha256 = "e2e38e1f0572ca54d6085df3dec8b607d20e81515fb80215aed19c81e8fe2079",
-            strip_prefix = "cython-0.29.21",
+            sha256 = "bb72b2f0ef029472759c711f0a4bded6e15e3f9bda3797550cef3c1d87d02283",
+            strip_prefix = "cython-0.29.26",
             urls = [
-                "https://github.com/cython/cython/archive/0.29.21.tar.gz",
+                "https://github.com/cython/cython/archive/0.29.26.tar.gz",
             ],
         )

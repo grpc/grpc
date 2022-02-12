@@ -934,6 +934,8 @@ UPB_INLINE void google_api_expr_v1alpha1_SourcePosition_set_column(google_api_ex
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int32_t) = value;
 }
 
+extern const upb_msglayout_file google_api_expr_v1alpha1_syntax_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

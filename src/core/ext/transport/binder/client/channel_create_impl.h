@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
 #define GRPC_CORE_EXT_TRANSPORT_BINDER_CLIENT_CHANNEL_CREATE_IMPL_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -23,9 +25,16 @@
 namespace grpc {
 namespace internal {
 
-grpc_channel* CreateChannelFromBinderImpl(
+// Creates a GRPC_CLIENT_DIRECT_CHANNEL channel from endpoint binder
+// At this moment this is only used for testing.
+grpc_channel* CreateDirectBinderChannelImplForTesting(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
-    const grpc_channel_args* args);
+    const grpc_channel_args* args,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy);
+
+// Creates a GRPC_CLIENT_CHANNEL channel
+grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args);
 
 }  // namespace internal
 }  // namespace grpc

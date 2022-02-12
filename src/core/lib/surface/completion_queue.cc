@@ -58,8 +58,8 @@ namespace {
 // with a cq cache will go into that cache, and
 // will only be returned on the thread that initialized the cache.
 // NOTE: Only one event will ever be cached.
-static GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
-static GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
+GPR_THREAD_LOCAL(grpc_cq_completion*) g_cached_event;
+GPR_THREAD_LOCAL(grpc_completion_queue*) g_cached_cq;
 
 struct plucker {
   grpc_pollset_worker** worker;
@@ -628,8 +628,8 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   for (int i = 0; i < static_cast<int>(cq->outstanding_tag_count); i++) {
     if (cq->outstanding_tags[i] == tag) {
       cq->outstanding_tag_count--;
-      GPR_SWAP(void*, cq->outstanding_tags[i],
-               cq->outstanding_tags[cq->outstanding_tag_count]);
+      std::swap(cq->outstanding_tags[i],
+                cq->outstanding_tags[cq->outstanding_tag_count]);
       found = 1;
       break;
     }
@@ -665,7 +665,8 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
 #ifndef NDEBUG
   gpr_mu_lock(cq->mu);
   if (cq->outstanding_tag_count == cq->outstanding_tag_capacity) {
-    cq->outstanding_tag_capacity = GPR_MAX(4, 2 * cq->outstanding_tag_capacity);
+    cq->outstanding_tag_capacity =
+        std::max(size_t(4), 2 * cq->outstanding_tag_capacity);
     cq->outstanding_tags = static_cast<void**>(gpr_realloc(
         cq->outstanding_tags,
         sizeof(*cq->outstanding_tags) * cq->outstanding_tag_capacity));
@@ -1066,7 +1067,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   if (cqd->queue.num_items() > 0 &&
       cqd->pending_events.load(std::memory_order_acquire) > 0) {
     gpr_mu_lock(cq->mu);
-    cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
+    (void)cq->poller_vtable->kick(POLLSET_FROM_CQ(cq), nullptr);
     gpr_mu_unlock(cq->mu);
   }
 
@@ -1143,7 +1144,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
   for (int i = 0; i < cqd->num_pluckers; i++) {
     if (cqd->pluckers[i].tag == tag && cqd->pluckers[i].worker == worker) {
       cqd->num_pluckers--;
-      GPR_SWAP(plucker, cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
+      std::swap(cqd->pluckers[i], cqd->pluckers[cqd->num_pluckers]);
       return;
     }
   }

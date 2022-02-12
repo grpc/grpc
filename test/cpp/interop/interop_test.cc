@@ -17,8 +17,6 @@
  */
 
 #include <assert.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,12 +30,19 @@
 
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/test_config.h"
 
-ABSL_FLAG(std::string, extra_server_flags, "",
+ABSL_FLAG(std::vector<std::string>, extra_client_flags, {},
+          "Extra flags to pass to clients.");
+
+ABSL_FLAG(std::vector<std::string>, extra_server_flags, {},
           "Extra flags to pass to server.");
 
 int test_client(const char* root, const char* host, int port) {
@@ -45,9 +50,17 @@ int test_client(const char* root, const char* host, int port) {
   pid_t cli;
   cli = fork();
   if (cli == 0) {
-    std::string binary_path = absl::StrCat(root, "/interop_client");
+    std::vector<char*> args;
+    std::string command = absl::StrCat(root, "/interop_client");
+    args.push_back(const_cast<char*>(command.c_str()));
     std::string port_arg = absl::StrCat("--server_port=", port);
-    execl(binary_path.c_str(), binary_path.c_str(), port_arg.c_str(), NULL);
+    args.push_back(const_cast<char*>(port_arg.c_str()));
+    auto extra_client_flags = absl::GetFlag(FLAGS_extra_client_flags);
+    for (size_t i = 0; i < extra_client_flags.size(); i++) {
+      args.push_back(const_cast<char*>(extra_client_flags[i].c_str()));
+    }
+    args.push_back(nullptr);
+    execv(args[0], args.data());
     return 1;
   }
   /* wait for client */
@@ -90,9 +103,9 @@ int main(int argc, char** argv) {
     args.push_back(const_cast<char*>(command.c_str()));
     std::string port_arg = absl::StrCat("--port=", port);
     args.push_back(const_cast<char*>(port_arg.c_str()));
-    if (!absl::GetFlag(FLAGS_extra_server_flags).empty()) {
-      args.push_back(
-          const_cast<char*>(absl::GetFlag(FLAGS_extra_server_flags).c_str()));
+    auto extra_server_flags = absl::GetFlag(FLAGS_extra_server_flags);
+    for (size_t i = 0; i < extra_server_flags.size(); i++) {
+      args.push_back(const_cast<char*>(extra_server_flags[i].c_str()));
     }
     args.push_back(nullptr);
     execv(args[0], args.data());

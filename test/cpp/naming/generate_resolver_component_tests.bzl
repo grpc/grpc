@@ -13,8 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Houses generate_resolver_component_tests.
+"""
+
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test")
 
+# buildifier: disable=unnamed-macro
 def generate_resolver_component_tests():
     for unsecure_build_config_suffix in ["_unsecure", ""]:
         grpc_cc_test(
@@ -47,9 +52,9 @@ def generate_resolver_component_tests():
                 "gtest",
             ],
             deps = [
-                ":dns_test_util",
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
                 "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/util:fake_udp_and_tcp_server",
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",

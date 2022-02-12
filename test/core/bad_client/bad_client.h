@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 #define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
-#include <grpc/grpc.h>
-
 #include <stdbool.h>
+
+#include <grpc/grpc.h>
 
 #include "test/core/util/test_config.h"
 

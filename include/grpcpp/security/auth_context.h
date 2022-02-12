@@ -19,6 +19,6 @@
 #ifndef GRPCPP_SECURITY_AUTH_CONTEXT_H
 #define GRPCPP_SECURITY_AUTH_CONTEXT_H
 
-#include <grpcpp/impl/codegen/security/auth_context.h>
+#include <grpcpp/impl/codegen/security/auth_context.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_SECURITY_AUTH_CONTEXT_H

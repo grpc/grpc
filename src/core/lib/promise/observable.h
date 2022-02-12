@@ -15,11 +15,22 @@
 #ifndef GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 #define GRPC_CORE_LIB_PROMISE_OBSERVABLE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <stdint.h>
 
 #include <limits>
+#include <memory>
+#include <type_traits>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
+
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
 
 namespace grpc_core {
@@ -161,8 +172,8 @@ class ObservableNext {
 template <typename T, typename F>
 class ObservableWatch final : private WatchCommitter {
  private:
-  using Promise = PromiseLike<decltype(
-      std::declval<F>()(std::declval<T>(), std::declval<WatchCommitter*>()))>;
+  using Promise = PromiseLike<decltype(std::declval<F>()(
+      std::declval<T>(), std::declval<WatchCommitter*>()))>;
   using Result = typename Promise::Result;
 
  public:

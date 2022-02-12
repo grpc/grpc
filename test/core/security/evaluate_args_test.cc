@@ -14,11 +14,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/evaluate_args.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/security/authorization/evaluate_args.h"
 #include "test/core/util/evaluate_args_test_util.h"
 #include "test/core/util/test_config.h"
 
@@ -33,8 +34,7 @@ TEST_F(EvaluateArgsTest, EmptyMetadata) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetPath(), nullptr);
   EXPECT_EQ(args.GetMethod(), nullptr);
-  EXPECT_EQ(args.GetHost(), nullptr);
-  EXPECT_THAT(args.GetHeaders(), ::testing::ElementsAre());
+  EXPECT_EQ(args.GetAuthority(), nullptr);
   EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
@@ -44,26 +44,16 @@ TEST_F(EvaluateArgsTest, GetPathSuccess) {
   EXPECT_EQ(args.GetPath(), "/expected/path");
 }
 
-TEST_F(EvaluateArgsTest, GetHostSuccess) {
-  util_.AddPairToMetadata("host", "host123");
+TEST_F(EvaluateArgsTest, GetAuthoritySuccess) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
   EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_EQ(args.GetHost(), "host123");
+  EXPECT_EQ(args.GetAuthority(), "test.google.com");
 }
 
 TEST_F(EvaluateArgsTest, GetMethodSuccess) {
   util_.AddPairToMetadata(":method", "GET");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_EQ(args.GetMethod(), "GET");
-}
-
-TEST_F(EvaluateArgsTest, GetHeadersSuccess) {
-  util_.AddPairToMetadata("host", "host123");
-  util_.AddPairToMetadata(":path", "/expected/path");
-  EvaluateArgs args = util_.MakeEvaluateArgs();
-  EXPECT_THAT(args.GetHeaders(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("host", "host123"),
-                  ::testing::Pair(":path", "/expected/path")));
 }
 
 TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
@@ -74,6 +64,16 @@ TEST_F(EvaluateArgsTest, GetHeaderValueSuccess) {
       args.GetHeaderValue("key123", &concatenated_value);
   ASSERT_TRUE(value.has_value());
   EXPECT_EQ(value.value(), "value123");
+}
+
+TEST_F(EvaluateArgsTest, GetHeaderValueAliasesHost) {
+  util_.AddPairToMetadata(":authority", "test.google.com");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      args.GetHeaderValue("host", &concatenated_value);
+  ASSERT_TRUE(value.has_value());
+  EXPECT_EQ(value.value(), "test.google.com");
 }
 
 TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
@@ -102,6 +102,7 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EXPECT_TRUE(args.GetSpiffeId().empty());
   EXPECT_TRUE(args.GetUriSans().empty());
   EXPECT_TRUE(args.GetDnsSans().empty());
+  EXPECT_TRUE(args.GetSubject().empty());
   EXPECT_TRUE(args.GetCommonName().empty());
 }
 
@@ -159,6 +160,22 @@ TEST_F(EvaluateArgsTest, GetCommonNameFailDuplicateProperty) {
   util_.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetCommonName().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetSubjectSuccessOneProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=abc,OU=Google");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_EQ(args.GetSubject(), "CN=abc,OU=Google");
+}
+
+TEST_F(EvaluateArgsTest, GetSubjectFailDuplicateProperty) {
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=abc,OU=Google");
+  util_.AddPropertyToAuthContext(GRPC_X509_SUBJECT_PROPERTY_NAME,
+                                 "CN=def,OU=Google");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_TRUE(args.GetSubject().empty());
 }
 
 }  // namespace grpc_core

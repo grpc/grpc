@@ -19,6 +19,6 @@
 #ifndef GRPCPP_COMPLETION_QUEUE_H
 #define GRPCPP_COMPLETION_QUEUE_H
 
-#include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/completion_queue.h>  // IWYU pragma: export
 
 #endif  // GRPCPP_COMPLETION_QUEUE_H

@@ -19,10 +19,10 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
-#include <thread>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

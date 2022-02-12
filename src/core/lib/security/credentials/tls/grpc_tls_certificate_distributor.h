@@ -19,12 +19,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc_security.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 

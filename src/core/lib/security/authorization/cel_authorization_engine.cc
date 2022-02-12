@@ -14,10 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/security/authorization/cel_authorization_engine.h"
+
 #include "absl/memory/memory.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
 namespace grpc_core {
 
@@ -102,7 +103,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
                                 mock_cel::CelValue::CreateStringView(url_path));
       }
     } else if (elem == kHost) {
-      absl::string_view host(args.GetHost());
+      absl::string_view host(args.GetAuthority());
       if (!host.empty()) {
         activation->InsertValue(kHost,
                                 mock_cel::CelValue::CreateStringView(host));
@@ -114,17 +115,17 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
                                 mock_cel::CelValue::CreateStringView(method));
       }
     } else if (elem == kHeaders) {
-      std::multimap<absl::string_view, absl::string_view> headers =
-          args.GetHeaders();
       std::vector<std::pair<mock_cel::CelValue, mock_cel::CelValue>>
           header_items;
       for (const auto& header_key : header_keys_) {
-        auto header_item = headers.find(header_key);
-        if (header_item != headers.end()) {
+        std::string temp_value;
+        absl::optional<absl::string_view> header_value =
+            args.GetHeaderValue(header_key, &temp_value);
+        if (header_value.has_value()) {
           header_items.push_back(
               std::pair<mock_cel::CelValue, mock_cel::CelValue>(
                   mock_cel::CelValue::CreateStringView(header_key),
-                  mock_cel::CelValue::CreateStringView(header_item->second)));
+                  mock_cel::CelValue::CreateStringView(*header_value)));
         }
       }
       headers_ = mock_cel::ContainerBackedMapImpl::Create(

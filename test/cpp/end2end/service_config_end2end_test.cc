@@ -24,6 +24,9 @@
 #include <string>
 #include <thread>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
@@ -44,25 +47,22 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -174,6 +174,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       std::string lb_uri_str =
           absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
@@ -181,8 +182,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */);
+      result.addresses->emplace_back(address.addr, address.len,
+                                     nullptr /* args */);
     }
     return result;
   }
@@ -196,16 +197,18 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{}", &result.service_config_error);
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, "{}", &error);
+    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
     response_generator_->SetResponse(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, "{", &result.service_config_error);
+    result.service_config =
+        absl::InvalidArgumentError("error parsing service config");
     response_generator_->SetResponse(result);
   }
 
@@ -213,8 +216,13 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    result.service_config = grpc_core::ServiceConfig::Create(
-        nullptr, svc_cfg, &result.service_config_error);
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    result.service_config =
+        grpc_core::ServiceConfig::Create(nullptr, svc_cfg, &error);
+    if (error != GRPC_ERROR_NONE) {
+      result.service_config = grpc_error_to_absl_status(error);
+      GRPC_ERROR_UNREF(error);
+    }
     response_generator_->SetResponse(result);
   }
 

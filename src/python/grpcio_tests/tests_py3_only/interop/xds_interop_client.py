@@ -123,6 +123,7 @@ _global_rpc_statuses: Mapping[str, Mapping[int, int]] = collections.defaultdict(
 
 
 def _handle_sigint(sig, frame) -> None:
+    logger.warning("Received SIGINT")
     _stop_event.set()
     _global_server.stop(None)
 

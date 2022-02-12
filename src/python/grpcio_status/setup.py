@@ -62,7 +62,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'protobuf>=3.6.0',
+    'protobuf>=3.12.0',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
     'googleapis-common-protos>=1.5.5',
 )
@@ -94,5 +94,6 @@ setuptools.setup(name='grpcio-status',
                  classifiers=CLASSIFIERS,
                  package_dir=PACKAGE_DIRECTORIES,
                  packages=setuptools.find_packages('.'),
+                 python_requires='>=3.6',
                  install_requires=INSTALL_REQUIRES,
                  cmdclass=COMMAND_CLASS)

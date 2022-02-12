@@ -13,8 +13,11 @@
 // limitations under the License.
 
 #include "src/core/lib/promise/detail/promise_factory.h"
+
 #include <gtest/gtest.h>
+
 #include "absl/functional/bind_front.h"
+
 #include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/promise/promise.h"
 
@@ -52,8 +55,7 @@ TEST(AdaptorTest, FactoryFromBindFrontPromise) {
 }
 
 TEST(AdaptorTest, FactoryFromCapturePromise) {
-  EXPECT_EQ(MakeFactory<void>(
-                grpc_core::Capture([](int* i) { return Poll<int>(*i); }, 42))
+  EXPECT_EQ(MakeFactory<void>(Capture([](int* i) { return Poll<int>(*i); }, 42))
                 .Once()(),
             Poll<int>(42));
 }

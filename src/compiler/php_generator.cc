@@ -19,6 +19,7 @@
 #include <map>
 
 #include <google/protobuf/compiler/php/php_generator.h>
+
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/php_generator_helpers.h"

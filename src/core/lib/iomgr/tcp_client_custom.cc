@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -28,6 +26,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -43,16 +42,11 @@ struct grpc_custom_tcp_connect {
   grpc_endpoint** endpoint;
   int refs;
   std::string addr_name;
-  grpc_slice_allocator* slice_allocator;
 };
 
 static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
-  if (connect->slice_allocator != nullptr) {
-    grpc_slice_allocator_destroy(connect->slice_allocator);
-  }
   grpc_custom_socket* socket = connect->socket;
   delete connect;
-  socket->refs--;
   if (socket->refs == 0) {
     grpc_custom_socket_vtable->destroy(socket);
     gpr_free(socket);
@@ -76,6 +70,7 @@ static void on_alarm(void* acp, grpc_error_handle error) {
     grpc_custom_socket_vtable->close(socket, custom_close_callback);
   }
   done = (--connect->refs == 0);
+  socket->refs--;
   if (done) {
     custom_tcp_connect_cleanup(connect);
   }
@@ -88,11 +83,11 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
   grpc_closure* closure = connect->closure;
   grpc_timer_cancel(&connect->alarm);
   if (error == GRPC_ERROR_NONE) {
-    *connect->endpoint = custom_tcp_endpoint_create(
-        socket, connect->slice_allocator, connect->addr_name.c_str());
-    connect->slice_allocator = nullptr;
+    *connect->endpoint =
+        custom_tcp_endpoint_create(socket, connect->addr_name.c_str());
   }
   done = (--connect->refs == 0);
+  socket->refs--;
   if (done) {
     grpc_core::ExecCtx::Get()->Flush();
     custom_tcp_connect_cleanup(connect);
@@ -114,7 +109,6 @@ static void custom_connect_callback(grpc_custom_socket* socket,
 }
 
 static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_slice_allocator* slice_allocator,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* resolved_addr,
@@ -125,12 +119,11 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   grpc_custom_socket* socket =
       static_cast<grpc_custom_socket*>(gpr_malloc(sizeof(grpc_custom_socket)));
   socket->refs = 2;
-  grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
+  (void)grpc_custom_socket_vtable->init(socket, GRPC_AF_UNSPEC);
   grpc_custom_tcp_connect* connect = new grpc_custom_tcp_connect();
   connect->closure = closure;
   connect->endpoint = ep;
   connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
-  connect->slice_allocator = slice_allocator;
   connect->socket = socket;
   socket->connector = connect;
   socket->endpoint = nullptr;

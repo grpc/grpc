@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -36,8 +36,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr_base",
-        "//src/core/ext/transport/binder/wire_format:binder",
-        "//src/core/ext/transport/binder/wire_format:wire_reader",
+        "//:grpc++_binder",
     ],
 )
 
@@ -66,29 +65,8 @@ grpc_cc_library(
     deps = [
         ":fake_binder",
         "//:grpc++_base",
-        "//:grpc_base_c",
-        "//src/core/ext/transport/binder/transport:binder_transport",
-        "//src/core/ext/transport/binder/wire_format:wire_reader",
-    ],
-)
-
-grpc_proto_library(
-    name = "echo_grpc_proto",
-    srcs = ["echo.proto"],
-)
-
-grpc_cc_library(
-    name = "echo_service",
-    testonly = 1,
-    srcs = ["echo_service.cc"],
-    hdrs = ["echo_service.h"],
-    external_deps = [
-        "absl/strings",
-        "absl/strings:str_format",
-        "absl/time",
-    ],
-    deps = [
-        ":echo_grpc_proto",
+        "//:grpc++_binder",
+        "//:grpc_base",
     ],
 )
 
@@ -102,12 +80,11 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        ":echo_service",
         ":end2end_binder_channel",
         ":fake_binder",
-        "//src/core/ext/transport/binder/transport:binder_transport",
-        "//src/core/ext/transport/binder/wire_format:wire_reader",
+        "//:grpc++_binder",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
     ],
 )
 
@@ -119,9 +96,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//src/core/ext/transport/binder/client:grpc_transport_binder_client_impl",
-        "//src/core/ext/transport/binder/server:grpc_transport_binder_server",
-        "//test/core/transport/binder/end2end:echo_service",
+        "//:grpc++_binder",
         "//test/core/transport/binder/end2end:fake_binder",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",

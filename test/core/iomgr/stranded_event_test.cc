@@ -27,6 +27,10 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -35,10 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -51,12 +51,10 @@
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/uri/uri_parser.h"
-
+#include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/end2end/cq_verifier.h"
 
 namespace {
 
@@ -218,7 +216,11 @@ class TestServer {
     address_ =
         grpc_core::JoinHostPort("127.0.0.1", grpc_pick_unused_port_or_die());
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server_, address_.c_str()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));
   }
@@ -295,6 +297,7 @@ class TestServer {
 grpc_core::Resolver::Result BuildResolverResponse(
     const std::vector<std::string>& addresses) {
   grpc_core::Resolver::Result result;
+  result.addresses = grpc_core::ServerAddressList();
   for (const auto& address_str : addresses) {
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
@@ -304,7 +307,7 @@ grpc_core::Resolver::Result BuildResolverResponse(
     }
     grpc_resolved_address address;
     GPR_ASSERT(grpc_parse_uri(*uri, &address));
-    result.addresses.emplace_back(address.addr, address.len, nullptr);
+    result.addresses->emplace_back(address.addr, address.len, nullptr);
   }
   return result;
 }
@@ -363,8 +366,10 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
           fake_resolver_response_generator.get()));
       grpc_channel_args* channel_args =
           grpc_channel_args_copy_and_add(nullptr, args.data(), args.size());
-      grpc_channel* channel = grpc_insecure_channel_create(
-          "fake:///test.server.com", channel_args, nullptr);
+      grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+      grpc_channel* channel =
+          grpc_channel_create("fake:///test.server.com", creds, channel_args);
+      grpc_channel_credentials_release(creds);
       grpc_channel_args_destroy(channel_args);
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);

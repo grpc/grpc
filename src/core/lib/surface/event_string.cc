@@ -29,6 +29,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/string.h"
 
 static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {

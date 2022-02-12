@@ -30,11 +30,15 @@ import six
 def _filter_msg(msg, output_format):
     """Filters out nonprintable and illegal characters from the message."""
     if output_format in ['XML', 'HTML']:
+        if isinstance(msg, bytes):
+            decoded_msg = msg.decode('UTF-8', 'ignore')
+        else:
+            decoded_msg = msg
         # keep whitespaces but remove formfeed and vertical tab characters
         # that make XML report unparsable.
         filtered_msg = ''.join(
             filter(lambda x: x in string.printable and x != '\f' and x != '\v',
-                   msg.decode('UTF-8', 'ignore')))
+                   decoded_msg))
         if output_format == 'HTML':
             filtered_msg = filtered_msg.replace('"', '&quot;')
         return filtered_msg
@@ -76,6 +80,10 @@ def render_junit_xml_report(resultset,
 
 def create_xml_report_file(tree, report_file):
     """Generate JUnit-like report file from xml tree ."""
+    # env variable can be used to override the base location for the reports
+    base_dir = os.getenv('GRPC_TEST_REPORT_BASE_DIR', None)
+    if base_dir:
+        report_file = os.path.join(base_dir, report_file)
     # ensure the report directory exists
     report_dir = os.path.dirname(os.path.abspath(report_file))
     if not os.path.exists(report_dir):
@@ -136,7 +144,7 @@ def render_interop_html_report(client_langs, server_langs, test_cases,
             'Mako template is not installed. Skipping HTML report generation.')
         return
     except IOError as e:
-        print('Failed to find the template %s: %s' % (template_file, e))
+        print(('Failed to find the template %s: %s' % (template_file, e)))
         return
 
     sorted_test_cases = sorted(test_cases)
@@ -169,7 +177,7 @@ def render_interop_html_report(client_langs, server_langs, test_cases,
         with open(html_file_path, 'w') as output_file:
             mytemplate.render_context(Context(output_file, **args))
     except:
-        print(exceptions.text_error_template().render())
+        print((exceptions.text_error_template().render()))
         raise
 
 

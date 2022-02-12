@@ -24,10 +24,13 @@
 #include <grpcpp/server_builder.h>
 
 namespace grpc {
-namespace experimental {
 
 class XdsServerServingStatusNotifierInterface {
  public:
+  struct ServingStatusUpdate {
+    ::grpc::Status status;
+  };
+
   virtual ~XdsServerServingStatusNotifierInterface() = default;
 
   // \a uri contains the listening target associated with the notification. Note
@@ -37,11 +40,30 @@ class XdsServerServingStatusNotifierInterface {
   // The API does not provide any guarantees around duplicate updates.
   // Status::OK signifies that the server is serving, while a non-OK status
   // signifies that the server is not serving.
-  virtual void OnServingStatusUpdate(std::string uri, grpc::Status status) = 0;
+  virtual void OnServingStatusUpdate(std::string uri,
+                                     ServingStatusUpdate update) = 0;
 };
 
 class XdsServerBuilder : public ::grpc::ServerBuilder {
  public:
+  // NOTE: class experimental_type is not part of the public API of this class
+  // TODO(yashykt): Integrate into public API when this is no longer
+  // experimental.
+  class experimental_type : public ::grpc::ServerBuilder::experimental_type {
+   public:
+    explicit experimental_type(XdsServerBuilder* builder)
+        : ServerBuilder::experimental_type(builder), builder_(builder) {}
+
+    // EXPERIMENTAL: Sets the drain grace period in ms for older connections
+    // when updates to a Listener is received.
+    void set_drain_grace_time(int drain_grace_time_ms) {
+      builder_->drain_grace_time_ms_ = drain_grace_time_ms;
+    }
+
+   private:
+    XdsServerBuilder* builder_;
+  };
+
   // It is the responsibility of the application to make sure that \a notifier
   // outlasts the life of the server. Notifications will start being made
   // asynchronously once `BuildAndStart()` has been called. Note that it is
@@ -50,10 +72,19 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
     notifier_ = notifier;
   }
 
+  /// NOTE: The function experimental() is not stable public API. It is a view
+  /// to the experimental components of this class. It may be changed or removed
+  /// at any time.
+  experimental_type experimental() { return experimental_type(this); }
+
  private:
   // Called at the beginning of BuildAndStart().
   ChannelArguments BuildChannelArgs() override {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
+    if (drain_grace_time_ms_ >= 0) {
+      args.SetInt(GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
+                  drain_grace_time_ms_);
+    }
     grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
         {OnServingStatusUpdate, notifier_}, &c_channel_args);
@@ -62,18 +93,30 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   }
 
   static void OnServingStatusUpdate(void* user_data, const char* uri,
-                                    grpc_status_code code,
-                                    const char* error_message) {
+                                    grpc_serving_status_update update) {
     if (user_data == nullptr) return;
     XdsServerServingStatusNotifierInterface* notifier =
         static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
     notifier->OnServingStatusUpdate(
-        uri, grpc::Status(static_cast<StatusCode>(code), error_message));
+        uri, {grpc::Status(static_cast<StatusCode>(update.code),
+                           update.error_message)});
   }
 
   XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
+  int drain_grace_time_ms_ = -1;
 };
 
+namespace experimental {
+// TODO(yashykt): Delete this after the 1.42 release.
+GRPC_DEPRECATED(
+    "Use grpc::XdsServerServingStatusNotifierInterface instead. The "
+    "experimental version will be deleted after the 1.42 release.")
+typedef grpc::XdsServerServingStatusNotifierInterface
+    XdsServerServingStatusNotifierInterface;
+GRPC_DEPRECATED(
+    "Use grpc::XdsServerBuilder instead. The experimental version will be "
+    "deleted after the 1.42 release.")
+typedef grpc::XdsServerBuilder XdsServerBuilder;
 }  // namespace experimental
 }  // namespace grpc
 

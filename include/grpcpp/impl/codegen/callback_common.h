@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALLBACK_COMMON_H
 #define GRPCPP_IMPL_CODEGEN_CALLBACK_COMMON_H
 
+// IWYU pragma: private
+
 #include <functional>
 
 #include <grpc/impl/codegen/grpc_types.h>

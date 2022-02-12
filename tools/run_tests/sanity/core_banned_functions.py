@@ -25,16 +25,16 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 # map of banned function signature to allowlist
 BANNED_EXCEPT = {
     'grpc_slice_from_static_buffer(': ['src/core/lib/slice/slice.cc'],
-    'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],
+    'grpc_resource_quota_ref(': ['src/core/lib/resource_quota/api.cc'],
     'grpc_resource_quota_unref(': [
-        'src/core/lib/iomgr/resource_quota.cc', 'src/core/lib/surface/server.cc'
+        'src/core/lib/resource_quota/api.cc', 'src/core/lib/surface/server.cc'
     ],
     'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
     'grpc_slice_buffer_reset_and_unref(': [
         'src/core/lib/slice/slice_buffer.cc'
     ],
-    'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
-    'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
+    'grpc_slice_ref(': ['src/core/lib/slice/slice_api.cc'],
+    'grpc_slice_unref(': ['src/core/lib/slice/slice_api.cc'],
     'grpc_error_create(': [
         'src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_cfstream.cc'
     ],
@@ -50,6 +50,14 @@ BANNED_EXCEPT = {
     'grpc_closure_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_run(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
+    'grpc_error*': ['src/core/lib/iomgr/error.cc'],
+    'grpc_error_string': ['src/core/lib/iomgr/error.cc'],
+    # std::random_device needs /dev/random which is not available on all linuxes that we support.
+    # Any usage must be optional and opt-in, so that those platforms can use gRPC without problem.
+    'std::random_device': [
+        'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
+        'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
+    ]
 }
 
 errors = 0
@@ -64,11 +72,11 @@ for root, dirs, files in os.walk('src/core'):
             continue
         with open(path) as f:
             text = f.read()
-        for banned, exceptions in BANNED_EXCEPT.items():
+        for banned, exceptions in list(BANNED_EXCEPT.items()):
             if path in exceptions:
                 continue
             if banned in text:
-                print('Illegal use of "%s" in %s' % (banned, path))
+                print(('Illegal use of "%s" in %s' % (banned, path)))
                 errors += 1
 
 assert errors == 0

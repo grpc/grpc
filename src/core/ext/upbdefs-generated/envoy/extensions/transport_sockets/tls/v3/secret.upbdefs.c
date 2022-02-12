@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.h"
+#include "envoy/extensions/transport_sockets/tls/v3/secret.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_config_source_proto_upbdefinit;
@@ -16,17 +17,7 @@ extern upb_def_init udpa_annotations_sensitive_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit;
-extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_Secret_msginit;
-
-static const upb_msglayout *layouts[3] = {
-  &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_Secret_msginit,
-};
-
-static const char descriptor[1236] = {'\n', '6', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
+static const char descriptor[1325] = {'\n', '6', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 'l', 's', '/', 'v', '3', '/', 's', 'e', 'c', 'r', 'e', 't', 
 '.', 'p', 'r', 'o', 't', 'o', '\022', ')', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 
 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '.', 't', 'l', 's', '.', 'v', '3', '\032', 
@@ -71,11 +62,14 @@ static const char descriptor[1236] = {'\n', '6', 'e', 'n', 'v', 'o', 'y', '/', '
 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '.', 't', 'l', 's', '.', 'v', '3', '.', 
 'G', 'e', 'n', 'e', 'r', 'i', 'c', 'S', 'e', 'c', 'r', 'e', 't', 'H', '\000', 'R', '\r', 'g', 'e', 'n', 'e', 'r', 'i', 'c', 'S', 
 'e', 'c', 'r', 'e', 't', ':', '\037', '\232', '\305', '\210', '\036', '\032', '\n', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', 
-'2', '.', 'a', 'u', 't', 'h', '.', 'S', 'e', 'c', 'r', 'e', 't', 'B', '\006', '\n', '\004', 't', 'y', 'p', 'e', 'B', 'P', '\n', '7', 
-'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 
-'s', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '.', 't', 
-'l', 's', '.', 'v', '3', 'B', '\013', 'S', 'e', 'c', 'r', 'e', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', 
-'\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'2', '.', 'a', 'u', 't', 'h', '.', 'S', 'e', 'c', 'r', 'e', 't', 'B', '\006', '\n', '\004', 't', 'y', 'p', 'e', 'B', '\250', '\001', '\n', 
+'7', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 
+'n', 's', 'i', 'o', 'n', 's', '.', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '.', 
+'t', 'l', 's', '.', 'v', '3', 'B', '\013', 'S', 'e', 'c', 'r', 'e', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'V', 'g', 'i', 
+'t', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 
+'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 
+'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 'l', 's', 
+'/', 'v', '3', ';', 't', 'l', 's', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[8] = {
@@ -91,7 +85,7 @@ static upb_def_init *deps[8] = {
 
 upb_def_init envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_extensions_transport_sockets_tls_v3_secret_proto_upb_file_layout,
   "envoy/extensions/transport_sockets/tls/v3/secret.proto",
-  UPB_STRVIEW_INIT(descriptor, 1236)
+  UPB_STRVIEW_INIT(descriptor, 1325)
 };

@@ -20,6 +20,7 @@
 #define GRPC_SUPPORT_HISTOGRAM_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 #ifdef __cplusplus

@@ -23,12 +23,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "test/core/util/fuzzer_util.h"
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "test/core/util/fuzzer_util.h"
 
 using grpc_core::testing::grpc_fuzzer_get_next_byte;
 using grpc_core::testing::grpc_fuzzer_get_next_string;

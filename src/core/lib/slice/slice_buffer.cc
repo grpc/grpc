@@ -18,10 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice_buffer.h>
-
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -85,6 +84,10 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
   grpc_slice_buffer_reset_and_unref_internal(sb);
   if (sb->base_slices != sb->inlined) {
     gpr_free(sb->base_slices);
+    // As a precaution, set sb->base_slices to equal sb->inlined
+    // to prevent a double free attempt if grpc_slice_buffer_destroy_internal
+    // is invoked two times on the same slice buffer.
+    sb->base_slices = sb->slices = sb->inlined;
   }
 }
 
@@ -232,19 +235,19 @@ void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
     memcpy(a->base_slices, b->inlined, b_count * sizeof(grpc_slice));
   } else {
     /* no inlining: easy swap */
-    GPR_SWAP(grpc_slice*, a->base_slices, b->base_slices);
+    std::swap(a->base_slices, b->base_slices);
   }
 
-  /* Update the slices pointers (cannot do a GPR_SWAP on slices fields here).
+  /* Update the slices pointers (cannot do a std::swap on slices fields here).
    * Also note that since the base_slices pointers are already swapped we need
    * use 'b_offset' for 'a->base_slices' and vice versa */
   a->slices = a->base_slices + b_offset;
   b->slices = b->base_slices + a_offset;
 
   /* base_slices and slices fields are correctly set. Swap all other fields */
-  GPR_SWAP(size_t, a->count, b->count);
-  GPR_SWAP(size_t, a->capacity, b->capacity);
-  GPR_SWAP(size_t, a->length, b->length);
+  std::swap(a->count, b->count);
+  std::swap(a->capacity, b->capacity);
+  std::swap(a->length, b->length);
 }
 
 void grpc_slice_buffer_move_into(grpc_slice_buffer* src,

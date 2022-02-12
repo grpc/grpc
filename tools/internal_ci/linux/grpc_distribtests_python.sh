@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
@@ -25,8 +28,11 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # under qemu emulator.
 source tools/internal_ci/helper_scripts/prepare_qemu_rc
 
+# configure ccache
+source tools/internal_ci/helper_scripts/prepare_ccache_rc
+
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
-tools/run_tests/task_runner.py -f artifact linux python -j 6 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
@@ -35,7 +41,7 @@ cp -r artifacts/* input_artifacts/ || true
 rm -rf artifacts_from_build_artifacts_step
 mv artifacts artifacts_from_build_artifacts_step || true
 
-# This step mostly just copies artifacts from input_artifacts (but it also does some wheel stripping)
+# This step only copies artifacts from input_artifacts
 tools/run_tests/task_runner.py -f package linux python -x build_packages/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
@@ -48,7 +54,9 @@ cp -r artifacts/* input_artifacts/ || true
 # Run all python linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
-tools/run_tests/task_runner.py -f distribtest linux python -j 6 -x distribtests/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
+
+tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
 if [ "$FAILED" != "" ]
 then

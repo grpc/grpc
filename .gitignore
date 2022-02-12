@@ -6,24 +6,23 @@ libs
 objs
 
 # Python items
-cython_debug/
-python_build/
-yapf_virtual_environment/
-python_pylint_venv/
 .coverage*
 .eggs
-htmlcov/
-dist/
+.pytype
 *.egg
-py27_gevent/
-py27_native/
-py3[0-9]_gevent/
-py3[0-9]_native/
+*.egg-info
 a.out
+cython_debug/
+dist/
+htmlcov/
+py3*/
+python_build/
+python_pylint_venv/
+src/python/grpcio_*/=*
+src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
-.pytype
-*.egg-info
+yapf_virtual_environment/
 
 # Node installation output
 node_modules
@@ -157,3 +156,8 @@ BenchmarkDotNet.Artifacts/
 
 # clang JSON compilation database file
 compile_commands.json
+
+# IWYU byproducts
+compile_commands_for_iwyu.json
+iwyu.out
+iwyu_files.txt

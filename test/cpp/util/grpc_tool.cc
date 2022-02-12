@@ -16,15 +16,9 @@
  *
  */
 
-#include "test/cpp/util/grpc_tool.h"
-
-#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/string_ref.h>
+
+#include "test/cpp/util/grpc_tool.h"
 
 #include <cstdio>
 #include <fstream>
@@ -36,6 +30,14 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+
+#include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/string_ref.h>
+
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"

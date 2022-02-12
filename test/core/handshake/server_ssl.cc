@@ -17,11 +17,12 @@
  */
 
 #include <arpa/inet.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -31,10 +32,9 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "test/core/handshake/server_ssl_common.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include "test/core/handshake/server_ssl_common.h"
 
 int main(int argc, char* argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 #define GRPCPP_IMPL_CODEGEN_INTERCEPTOR_H
 
+// IWYU pragma: private, include <grpcpp/support/interceptor.h>
+
 #include <memory>
 
 #include <grpc/impl/codegen/grpc_types.h>

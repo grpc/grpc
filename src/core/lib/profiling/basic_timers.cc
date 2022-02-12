@@ -22,14 +22,15 @@
 
 #ifdef GRPC_BASIC_PROFILER
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/global_config.h"

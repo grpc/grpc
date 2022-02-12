@@ -20,6 +20,8 @@
 
 #ifdef GPR_LINUX
 
+#include <inttypes.h>
+
 #include <cstdio>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
@@ -32,7 +34,8 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   FILE* fp;
   fp = fopen("/proc/stat", "r");
   uint64_t user, nice, system, idle;
-  if (fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle) != 4) {
+  if (fscanf(fp, "cpu %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64, &user,
+             &nice, &system, &idle) != 4) {
     // Something bad happened with the information, so assume it's all invalid
     user = nice = system = idle = 0;
   }

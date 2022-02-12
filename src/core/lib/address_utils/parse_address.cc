@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
@@ -83,14 +84,13 @@ namespace grpc_core {
 
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
                                        grpc_resolved_address* resolved_addr) {
+  memset(resolved_addr, 0, sizeof(*resolved_addr));
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Path name should not have more than ", maxlen,
-                     " characters")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Path name should not have more than ", maxlen, " characters"));
   }
   un->sun_family = AF_UNIX;
   path.copy(un->sun_path, path.size());
@@ -101,14 +101,13 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
 
 grpc_error_handle UnixAbstractSockaddrPopulate(
     absl::string_view path, grpc_resolved_address* resolved_addr) {
+  memset(resolved_addr, 0, sizeof(*resolved_addr));
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path) - 1;
   if (path.size() > maxlen) {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Path name should not have more than ", maxlen,
-                     " characters")
-            .c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "Path name should not have more than ", maxlen, " characters"));
   }
   un->sun_family = AF_UNIX;
   un->sun_path[0] = '\0';
@@ -319,4 +318,23 @@ uint16_t grpc_strhtons(const char* port) {
     return htons(443);
   }
   return htons(static_cast<unsigned short>(atoi(port)));
+}
+
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                          const char* addr, int port) {
+  memset(out, 0, sizeof(grpc_resolved_address));
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
+  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
+  if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
+    addr6->sin6_family = GRPC_AF_INET6;
+    out->len = sizeof(grpc_sockaddr_in6);
+  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
+    addr4->sin_family = GRPC_AF_INET;
+    out->len = sizeof(grpc_sockaddr_in);
+  } else {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Failed to parse address:", addr));
+  }
+  grpc_sockaddr_set_port(out, port);
+  return GRPC_ERROR_NONE;
 }

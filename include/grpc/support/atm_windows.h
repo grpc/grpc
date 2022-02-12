@@ -21,6 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/atm_windows.h>
+#include <grpc/impl/codegen/atm_windows.h>  // IWYU pragma: export
 
 #endif /* GRPC_SUPPORT_ATM_WINDOWS_H */

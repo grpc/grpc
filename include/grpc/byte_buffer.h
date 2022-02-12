@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/byte_buffer.h>  // IWYU pragma: export
 #include <grpc/slice_buffer.h>
 
 #endif /* GRPC_BYTE_BUFFER_H */

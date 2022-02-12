@@ -15,9 +15,11 @@
 #ifndef GRPC_CORE_LIB_GPRPP_BITSET_H
 #define GRPC_CORE_LIB_GPRPP_BITSET_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
+
+#include "src/core/lib/gpr/useful.h"
 
 #if __cplusplus > 201103l
 #define GRPC_BITSET_CONSTEXPR_MUTATOR constexpr
@@ -29,7 +31,7 @@ namespace grpc_core {
 
 // Given a bit count as an integer, vend as member type `Type` a type with
 // exactly that number of bits. Undefined if that bit count is not available.
-template <std::size_t kBits>
+template <size_t kBits>
 struct UintSelector;
 template <>
 struct UintSelector<8> {
@@ -49,7 +51,7 @@ struct UintSelector<64> {
 };
 
 // An unsigned integer of some number of bits.
-template <std::size_t kBits>
+template <size_t kBits>
 using Uint = typename UintSelector<kBits>::Type;
 
 // Given the total number of bits that need to be stored, choose the size of
@@ -58,7 +60,7 @@ using Uint = typename UintSelector<kBits>::Type;
 // size and performance
 // - the details will likely be tweaked into the future.
 // Once we get over 96 bits, we just use uint64_t for everything.
-constexpr std::size_t ChooseUnitBitsForBitSet(std::size_t total_bits) {
+constexpr size_t ChooseUnitBitsForBitSet(size_t total_bits) {
   return total_bits <= 8    ? 8
          : total_bits <= 16 ? 16
          : total_bits <= 24 ? 8
@@ -74,11 +76,10 @@ constexpr std::size_t ChooseUnitBitsForBitSet(std::size_t total_bits) {
 // kUnitBits. e.g. to store 72 bits in 8 bit chunks, we'd say BitSet<72, 8>.
 // Since most users shouldn't care about the size of unit used, we default
 // kUnitBits to whatever is selected by ChooseUnitBitsForBitSet
-template <std::size_t kTotalBits,
-          std::size_t kUnitBits = ChooseUnitBitsForBitSet(kTotalBits)>
+template <size_t kTotalBits,
+          size_t kUnitBits = ChooseUnitBitsForBitSet(kTotalBits)>
 class BitSet {
-  static constexpr std::size_t kUnits =
-      (kTotalBits + kUnitBits - 1) / kUnitBits;
+  static constexpr size_t kUnits = (kTotalBits + kUnitBits - 1) / kUnitBits;
 
  public:
   // Initialize to all bits false
@@ -113,7 +114,7 @@ class BitSet {
     if (kTotalBits % kUnitBits == 0) {
       // kTotalBits is a multiple of kUnitBits ==> we can just check for all
       // ones in each unit.
-      for (std::size_t i = 0; i < kUnits; i++) {
+      for (size_t i = 0; i < kUnits; i++) {
         if (units_[i] != all_ones()) return false;
       }
       return true;
@@ -121,7 +122,7 @@ class BitSet {
       // kTotalBits is not a multiple of kUnitBits ==> we need special handling
       // for checking partial filling of the last unit (since not all of its
       // bits are used!)
-      for (std::size_t i = 0; i < kUnits - 1; i++) {
+      for (size_t i = 0; i < kUnits - 1; i++) {
         if (units_[i] != all_ones()) return false;
       }
       return units_[kUnits - 1] == n_ones(kTotalBits % kUnitBits);
@@ -130,20 +131,34 @@ class BitSet {
 
   // Return true if *no* bits are set.
   bool none() const {
-    for (std::size_t i = 0; i < kUnits; i++) {
+    for (size_t i = 0; i < kUnits; i++) {
       if (units_[i] != 0) return false;
+    }
+    return true;
+  }
+
+  // Return a count of how many bits are set.
+  uint32_t count() const {
+    uint32_t count = 0;
+    for (size_t i = 0; i < kUnits; i++) {
+      count += BitCount(units_[i]);
+    }
+    return count;
+  }
+
+  bool operator==(const BitSet& other) const {
+    for (size_t i = 0; i < kUnits; i++) {
+      if (units_[i] != other.units_[i]) return false;
     }
     return true;
   }
 
  private:
   // Given a bit index, return which unit it's stored in.
-  static constexpr std::size_t unit_for(std::size_t bit) {
-    return bit / kUnitBits;
-  }
+  static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }
 
   // Given a bit index, return a mask to access that bit within it's unit.
-  static constexpr Uint<kUnitBits> mask_for(std::size_t bit) {
+  static constexpr Uint<kUnitBits> mask_for(size_t bit) {
     return Uint<kUnitBits>{1} << (bit % kUnitBits);
   }
 
@@ -153,12 +168,26 @@ class BitSet {
   }
 
   // Return a value with n bottom bits ones
-  static constexpr Uint<kUnitBits> n_ones(std::size_t n) {
+  static constexpr Uint<kUnitBits> n_ones(size_t n) {
     return n == kUnitBits ? all_ones() : (Uint<kUnitBits>(1) << n) - 1;
   }
 
   // The set of units - kUnitBits sized integers that store kUnitBits bits!
   Uint<kUnitBits> units_[kUnits];
+};
+
+// Zero-size specialization of BitSet.
+// Useful for generic programming.
+// Make a compile time error out of get/set type accesses, and hard-codes
+// queries that do make sense.
+template <>
+class BitSet<0> {
+ public:
+  constexpr BitSet() {}
+
+  bool all() const { return true; }
+  bool none() const { return true; }
+  uint32_t count() const { return 0; }
 };
 
 }  // namespace grpc_core

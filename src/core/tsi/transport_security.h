@@ -29,7 +29,8 @@
 extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
-   See transport_security_interface.h for documentation. */
+   See transport_security_interface.h for documentation.
+   All methods must be implemented. */
 struct tsi_frame_protector_vtable {
   tsi_result (*protect)(tsi_frame_protector* self,
                         const unsigned char* unprotected_bytes,
@@ -54,6 +55,9 @@ struct tsi_frame_protector {
 /* Base for tsi_handshaker implementations.
    See transport_security_interface.h for documentation. */
 struct tsi_handshaker_vtable {
+  /* Methods for supporting the old synchronous API.
+     These can be null if the TSI impl supports only the new
+     async-capable API. */
   tsi_result (*get_bytes_to_send_to_peer)(tsi_handshaker* self,
                                           unsigned char* bytes,
                                           size_t* bytes_size);
@@ -65,7 +69,10 @@ struct tsi_handshaker_vtable {
   tsi_result (*create_frame_protector)(tsi_handshaker* self,
                                        size_t* max_protected_frame_size,
                                        tsi_frame_protector** protector);
+  /* Must be implemented by all TSI impls. */
   void (*destroy)(tsi_handshaker* self);
+  /* Methods for supporting the new async-capable API.
+     These can be null if the TSI impl supports only the old sync API. */
   tsi_result (*next)(tsi_handshaker* self, const unsigned char* received_bytes,
                      size_t received_bytes_size,
                      const unsigned char** bytes_to_send,
@@ -88,13 +95,21 @@ struct tsi_handshaker {
    API depend on grpc. The create_zero_copy_grpc_protector() method is only used
    in grpc, where we do need the exec_ctx passed through, but the API still
    needs to compile in other applications, where grpc_exec_ctx is not defined.
+   All methods must be non-null, except where noted below.
 */
 struct tsi_handshaker_result_vtable {
   tsi_result (*extract_peer)(const tsi_handshaker_result* self, tsi_peer* peer);
+  tsi_result (*get_frame_protector_type)(
+      const tsi_handshaker_result* self,
+      tsi_frame_protector_type* frame_protector_type);
+  /* May be null if get_frame_protector_type() returns
+     TSI_FRAME_PROTECTOR_NORMAL or TSI_FRAME_PROTECTOR_NONE. */
   tsi_result (*create_zero_copy_grpc_protector)(
       const tsi_handshaker_result* self,
       size_t* max_output_protected_frame_size,
       tsi_zero_copy_grpc_protector** protector);
+  /* May be null if get_frame_protector_type() returns
+     TSI_FRAME_PROTECTOR_ZERO_COPY or TSI_FRAME_PROTECTOR_NONE. */
   tsi_result (*create_frame_protector)(const tsi_handshaker_result* self,
                                        size_t* max_output_protected_frame_size,
                                        tsi_frame_protector** protector);

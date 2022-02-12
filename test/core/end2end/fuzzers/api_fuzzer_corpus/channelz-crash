@@ -1,0 +1,19 @@
+actions {
+  create_channel {
+    target: "\001\000\000\000\323\273`*"
+    channel_args {
+      key: "grpc.channelz_channel_node"
+      resource_quota {
+      }
+    }
+    channel_args {
+      resource_quota {
+      }
+    }
+    channel_args {
+      resource_quota {
+      }
+    }
+  }
+}
+

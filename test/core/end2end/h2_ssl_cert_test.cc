@@ -16,10 +16,11 @@
  *
  */
 
-#include "test/core/end2end/end2end_tests.h"
-
 #include <stdio.h>
 #include <string.h>
+
+#include <gtest/gtest.h>
+#include <openssl/crypto.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,14 +34,9 @@
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-
-#include <gtest/gtest.h>
-
-extern "C" {
-#include <openssl/crypto.h>
-}
 
 static std::string test_server1_key_id;
 
@@ -79,8 +75,7 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -95,8 +90,8 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(
-      f->server, ffd->localaddr.c_str(), server_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }

@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPR_TLS_H
 #define GRPC_CORE_LIB_GPR_TLS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <type_traits>
 
@@ -48,10 +48,12 @@ class TlsTypeConstrainer {
 
 #if defined(GPR_PTHREAD_TLS)
 
-#include <grpc/support/log.h> /* for GPR_ASSERT */
 #include <pthread.h>
+
 #include <array>
 #include <cstring>
+
+#include <grpc/support/log.h> /* for GPR_ASSERT */
 
 namespace grpc_core {
 
@@ -114,6 +116,12 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
       dst += step;
     }
     return t;
+  }
+
+  T operator->() const {
+    static_assert(std::is_pointer<T>::value,
+                  "operator-> only usable on pointers");
+    return this->operator T();
   }
 
   T operator=(T t) {

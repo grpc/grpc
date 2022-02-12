@@ -18,16 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/iomgr_custom.h"
 
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_custom.h"
 #include "src/core/lib/iomgr/pollset_set_custom.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address_custom.h"
 
 gpr_thd_id g_init_thread;
@@ -68,7 +68,10 @@ void grpc_custom_iomgr_init(grpc_socket_vtable* socket,
   grpc_custom_timer_init(timer);
   grpc_custom_pollset_init(poller);
   grpc_custom_pollset_set_init();
-  grpc_custom_resolver_init(resolver);
+  grpc_core::CustomDNSResolver::Create(resolver);
+  grpc_core::CustomDNSResolver* custom_dns_resolver =
+      grpc_core::CustomDNSResolver::Get();
+  grpc_core::SetDNSResolver(custom_dns_resolver);
   grpc_set_iomgr_platform_vtable(&vtable);
 }
 

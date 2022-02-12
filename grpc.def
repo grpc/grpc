@@ -45,11 +45,14 @@ EXPORTS
     grpc_channel_get_target
     grpc_channel_get_info
     grpc_channel_reset_connect_backoff
-    grpc_insecure_channel_create
+    grpc_channel_credentials_release
+    grpc_server_credentials_release
+    grpc_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
     grpc_call_cancel
     grpc_call_cancel_with_status
+    grpc_call_failed_before_recv_message
     grpc_call_ref
     grpc_call_unref
     grpc_server_request_call
@@ -60,7 +63,7 @@ EXPORTS
     grpc_server_config_fetcher_xds_create
     grpc_server_config_fetcher_destroy
     grpc_server_set_config_fetcher
-    grpc_server_add_insecure_http2_port
+    grpc_server_add_http2_port
     grpc_server_start
     grpc_server_shutdown_and_notify
     grpc_server_cancel_all_calls
@@ -85,8 +88,8 @@ EXPORTS
     grpc_channelz_get_subchannel
     grpc_channelz_get_socket
     grpc_authorization_policy_provider_arg_vtable
-    grpc_insecure_channel_create_from_fd
-    grpc_server_add_insecure_channel_from_fd
+    grpc_channel_create_from_fd
+    grpc_server_add_channel_from_fd
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity
@@ -102,7 +105,6 @@ EXPORTS
     grpc_ssl_session_cache_destroy
     grpc_ssl_session_cache_create_channel_arg
     grpc_call_credentials_release
-    grpc_channel_credentials_release
     grpc_google_default_credentials_create
     grpc_set_ssl_roots_override_callback
     grpc_ssl_credentials_create
@@ -120,8 +122,6 @@ EXPORTS
     grpc_auth_metadata_context_copy
     grpc_auth_metadata_context_reset
     grpc_metadata_credentials_create_from_plugin
-    grpc_secure_channel_create
-    grpc_server_credentials_release
     grpc_ssl_server_certificate_config_create
     grpc_ssl_server_certificate_config_destroy
     grpc_ssl_server_credentials_create
@@ -130,7 +130,6 @@ EXPORTS
     grpc_ssl_server_credentials_create_options_using_config_fetcher
     grpc_ssl_server_credentials_options_destroy
     grpc_ssl_server_credentials_create_with_options
-    grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
     grpc_alts_credentials_client_options_create
@@ -148,20 +147,23 @@ EXPORTS
     grpc_tls_certificate_provider_file_watcher_create
     grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
-    grpc_tls_credentials_options_set_cert_request_type
-    grpc_tls_credentials_options_set_server_verification_option
     grpc_tls_credentials_options_set_certificate_provider
     grpc_tls_credentials_options_watch_root_certs
     grpc_tls_credentials_options_set_root_cert_name
     grpc_tls_credentials_options_watch_identity_key_cert_pairs
     grpc_tls_credentials_options_set_identity_cert_name
-    grpc_tls_credentials_options_set_server_authorization_check_config
-    grpc_tls_server_authorization_check_config_create
-    grpc_tls_server_authorization_check_config_release
+    grpc_tls_credentials_options_set_cert_request_type
+    grpc_tls_credentials_options_set_crl_directory
+    grpc_tls_credentials_options_set_verify_server_cert
+    grpc_tls_credentials_options_set_check_call_host
+    grpc_insecure_credentials_create
+    grpc_insecure_server_credentials_create
     grpc_xds_credentials_create
     grpc_xds_server_credentials_create
     grpc_authorization_policy_provider_static_data_create
+    grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
+    grpc_tls_credentials_options_set_tls_session_key_log_file_path
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
@@ -188,7 +190,6 @@ EXPORTS
     grpc_slice_new_with_len
     grpc_slice_malloc
     grpc_slice_malloc_large
-    grpc_slice_intern
     grpc_slice_from_copied_string
     grpc_slice_from_copied_buffer
     grpc_slice_from_static_string
@@ -199,8 +200,6 @@ EXPORTS
     grpc_slice_split_tail_maybe_ref
     grpc_slice_split_head
     grpc_empty_slice
-    grpc_slice_default_hash_impl
-    grpc_slice_default_eq_impl
     grpc_slice_eq
     grpc_slice_cmp
     grpc_slice_str_cmp
@@ -208,7 +207,6 @@ EXPORTS
     grpc_slice_rchr
     grpc_slice_chr
     grpc_slice_slice
-    grpc_slice_hash
     grpc_slice_is_equivalent
     grpc_slice_dup
     grpc_slice_to_c_string

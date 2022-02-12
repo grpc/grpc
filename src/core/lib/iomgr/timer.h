@@ -21,13 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/port.h"
 
 typedef struct grpc_timer {
   grpc_millis deadline;

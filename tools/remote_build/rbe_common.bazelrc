@@ -79,7 +79,6 @@ build:tsan --copt=-gmlt
 # tests tend to be slower
 build:tsan --test_timeout=60,600,1800,3600
 build:tsan --test_tag_filters=-no_linux,-notsan,-qps_json_driver
-build:tsan --extra_execution_platforms=@rbe_default//config:platform
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -87,8 +86,12 @@ build:ubsan --copt=-gmlt
 # use double the default value for "moderate" and "long" timeout as sanitizer
 # tests tend to be slower
 build:ubsan --test_timeout=60,600,1800,3600
-# override the config-agnostic crosstool_top
-# how to update the bazel toolchain for ubsan:
-# - check for the latest released version in https://github.com/bazelbuild/bazel-toolchains/tree/master/configs/experimental/ubuntu16_04_clang
-# - you might need to update the bazel_toolchains dependency in grpc_deps.bzl
-build:ubsan --crosstool_top=@bazel_toolchains//configs/experimental/ubuntu16_04_clang/1.3/bazel_0.29.1/ubsan:toolchain
+# RBE docker image only has a msan specific version of libc++, so to be able to link against it,
+# we need to involuntarily enable msan as well to be able to build. See b/200667821
+# TODO(jtattermusch): disable memory sanitizer for ubsan build as soon as possible.
+build:ubsan --copt=-fsanitize=memory
+build:ubsan --copt=-fsanitize-recover=memory
+build:ubsan --linkopt=-fsanitize=memory
+build:ubsan --cxxopt=--stdlib=libc++
+build:ubsan --action_env=MSAN_OPTIONS=halt_on_error=0
+build:ubsan --test_tag_filters=-no_linux,-noubsan

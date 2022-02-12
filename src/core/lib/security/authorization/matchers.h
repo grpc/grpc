@@ -89,7 +89,21 @@ class NotAuthorizationMatcher : public AuthorizationMatcher {
   std::unique_ptr<AuthorizationMatcher> matcher_;
 };
 
-// TODO(ashithasantosh): Add matcher implementation for metadata field.
+class MetadataAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit MetadataAuthorizationMatcher(bool invert) : invert_(invert) {}
+
+  // In RBAC, metadata refers to the Envoy metadata which has no relation to
+  // gRPC metadata. Envoy metadata is a generic state shared between filters,
+  // which has no gRPC equivalent. RBAC implementations in gRPC will treat Envoy
+  // metadata as an empty map. Since ValueMatcher can only match if a value is
+  // present (even NullMatch), the metadata matcher will not match unless invert
+  // is set to true.
+  bool Matches(const EvaluateArgs&) const override { return invert_; }
+
+ private:
+  const bool invert_;
+};
 
 // Perform a match against HTTP headers.
 class HeaderAuthorizationMatcher : public AuthorizationMatcher {
@@ -139,13 +153,13 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
 // or DNS SAN in that order, otherwise uses subject field.
 class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
+  explicit AuthenticatedAuthorizationMatcher(absl::optional<StringMatcher> auth)
       : matcher_(std::move(auth)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
-  const StringMatcher matcher_;
+  const absl::optional<StringMatcher> matcher_;
 };
 
 // Perform a match against the request server from the client's connection

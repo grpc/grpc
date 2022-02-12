@@ -16,6 +16,8 @@
  *
  */
 
+#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -23,7 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
 

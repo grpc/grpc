@@ -16,13 +16,14 @@
  *
  */
 
+#include "src/compiler/csharp_generator.h"
+
 #include <cctype>
 #include <map>
 #include <sstream>
 #include <vector>
 
 #include "src/compiler/config.h"
-#include "src/compiler/csharp_generator.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
 using grpc::protobuf::Descriptor;

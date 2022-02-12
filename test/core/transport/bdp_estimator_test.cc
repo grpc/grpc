@@ -18,13 +18,14 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <limits.h>
+
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-
-#include <gtest/gtest.h>
-#include <limits.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -60,7 +61,7 @@ namespace {
 void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   estimator->SchedulePing();
   estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
@@ -68,7 +69,7 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_core::ExecCtx::Get()->InvalidateNow();
+  ExecCtx::Get()->InvalidateNow();
   estimator->CompletePing();
 }
 
@@ -125,7 +126,7 @@ TEST_P(BdpEstimatorRandomTest, GetEstimateRandomValues) {
     if (sample > max) max = sample;
     AddSample(&est, sample);
     if (i >= 3) {
-      EXPECT_LE(est.EstimateBdp(), GPR_MAX(65536, 2 * NextPow2(max)))
+      EXPECT_LE(est.EstimateBdp(), std::max(int64_t(65536), 2 * NextPow2(max)))
           << " min:" << min << " max:" << max << " sample:" << sample;
     }
   }

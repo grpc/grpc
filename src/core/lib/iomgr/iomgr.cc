@@ -53,7 +53,9 @@ static bool g_grpc_abort_on_leaks;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_determine_iomgr_platform();
+  if (!grpc_have_determined_iomgr_platform()) {
+    grpc_set_default_iomgr_platform();
+  }
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);

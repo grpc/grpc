@@ -22,12 +22,11 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
 
-#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
-
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #include <string>
 
@@ -40,6 +39,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100

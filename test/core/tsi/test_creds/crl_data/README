@@ -1,0 +1,54 @@
+The test credentials have been generated with the following
+commands:
+
+The ca is self-signed:
+----------------------
+
+$ openssl req -x509 -new -newkey rsa:2048 -nodes -keyout ca.key -out ca.pem \
+  -config ca-openssl.cnf -days 3650 -extensions v3_req
+When prompted for certificate information, everything is default.
+
+valid is issued by CA:
+----------------------------------------------------------------------------
+
+$ openssl genrsa -out valid.key.rsa 2048
+$ openssl pkcs8 -topk8 -in valid.key.rsa -out valid.key -nocrypt
+$ openssl req -new -key valid.key -out valid.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to valid.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in valid.csr \
+  -out valid.pem  -days 3650
+
+revoked is issued by CA:
+-----------------------
+
+$ openssl genrsa -out revoked.key.rsa 2048
+$ openssl pkcs8 -topk8 -in revoked.key.rsa -out revoked.key -nocrypt
+$ openssl req -new -key revoked.key -out revoked.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to revoked.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revoked.csr \
+  -out revoked.pem -days 3650
+
+$ openssl ca -revoke revoked.pem -keyfile ca.key -cert ca.pem -days 3650
+
+Generate the CRL file:
+----------------------------------------------------------------------------
+$ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem -crldays 3650
+$ openssl rehash ./
+
+Clean up:
+---------
+$ rm *.rsa
+$ rm *.csr
+$ rm ca.srl
+
+demoCA folder:
+----------------------------------------------------------------------------
+
+The demoCA folder contains files used by the openssl CA commands to revoke 
+credentials and create CRL files.

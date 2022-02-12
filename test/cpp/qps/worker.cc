@@ -16,8 +16,6 @@
  *
  */
 
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
 #include <signal.h>
 
 #include <chrono>
@@ -25,6 +23,10 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
+
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/util/test_config.h"
@@ -53,7 +55,7 @@ static void RunServer() {
 
   while (!got_sigint && !worker.Done()) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_seconds(5, GPR_TIMESPAN)));
+                                 gpr_time_from_millis(500, GPR_TIMESPAN)));
   }
 }
 

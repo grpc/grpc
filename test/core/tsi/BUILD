@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(
     name = "test/core/tsi",
@@ -27,7 +27,6 @@ grpc_cc_library(
     hdrs = ["transport_security_test_lib.h"],
     deps = [
         "//:grpc",
-        "//:tsi",
     ],
 )
 
@@ -39,7 +38,6 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//:tsi",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -54,7 +52,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//:tsi",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -76,6 +73,30 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+    ],
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "crl_ssl_transport_security_test",
+    srcs = ["crl_ssl_transport_security_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:revoked.key",
+        "//test/core/tsi/test_creds/crl_data:revoked.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
+    ],
+    external_deps = [
+        "gtest",
     ],
     language = "C++",
     tags = ["no_windows"],

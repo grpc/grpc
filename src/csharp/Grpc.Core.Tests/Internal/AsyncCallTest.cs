@@ -410,6 +410,22 @@ namespace Grpc.Core.Internal.Tests
             // try alternative order of completions
             fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
+        public void ServerStreaming_NoResponse_Success3()
+        {
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+            var readTask = responseStream.MoveNext();
+
+            // try alternative order of completions
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
         }
@@ -420,6 +436,9 @@ namespace Grpc.Core.Internal.Tests
             asyncCall.StartServerStreamingCall("request1");
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
             var readTask = responseStream.MoveNext();
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, CreateNullResponse());  // after a failed read, we rely on C core to deliver appropriate status code.
             fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.Internal));
@@ -432,6 +451,9 @@ namespace Grpc.Core.Internal.Tests
         {
             asyncCall.StartServerStreamingCall("request1");
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             var readTask1 = responseStream.MoveNext();
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
@@ -472,11 +494,14 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void DuplexStreaming_NoRequestNoResponse_Success()
+        public void DuplexStreaming_NoRequestNoResponse_Success1()
         {
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             var writeTask1 = requestStream.CompleteAsync();
             fakeCall.SendCompletionCallback.OnSendCompletion(true);
@@ -490,11 +515,35 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void DuplexStreaming_NoRequestNoResponse_Success2()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask1 = requestStream.CompleteAsync();
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
+            Assert.DoesNotThrowAsync(async () => await writeTask1);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
+        }
+
+        [Test]
         public void DuplexStreaming_WriteAfterReceivingStatusThrowsRpcException()
         {
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
@@ -514,6 +563,9 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
             var readTask = responseStream.MoveNext();
             fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateNullResponse());
             fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
@@ -529,6 +581,9 @@ namespace Grpc.Core.Internal.Tests
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             var writeTask = requestStream.WriteAsync("request1");
             fakeCall.SendCompletionCallback.OnSendCompletion(false);
@@ -553,6 +608,9 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
             var writeTask = requestStream.WriteAsync("request1");
 
             var readTask = responseStream.MoveNext();
@@ -573,6 +631,9 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
 
@@ -591,6 +652,9 @@ namespace Grpc.Core.Internal.Tests
         {
             asyncCall.StartDuplexStreamingCall();
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
@@ -612,6 +676,9 @@ namespace Grpc.Core.Internal.Tests
         {
             asyncCall.StartDuplexStreamingCall();
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
             var readTask1 = responseStream.MoveNext();  // initiate the read before cancel request
             asyncCall.Cancel();
