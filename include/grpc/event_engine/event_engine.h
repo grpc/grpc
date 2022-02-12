@@ -27,7 +27,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 
-// TODO(hork): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
 namespace experimental {
 
