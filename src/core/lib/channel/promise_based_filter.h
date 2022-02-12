@@ -428,7 +428,7 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
                 send_initial_state_ = SendInitialState::kCancelled;
                 cancel_send_initial_metadata_error = error;
               } else {
-                call_combiner()->Cancel();
+                call_combiner()->Cancel(GRPC_ERROR_REF(error));
                 forward_batch =
                     grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
                         [](void*, grpc_error_handle) {}, nullptr, nullptr));
@@ -463,7 +463,9 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
     GRPC_CALL_STACK_REF(call_stack(), "finish_poll");
     is_polling_ = false;
     bool in_combiner = true;
+    bool repoll = absl::exchange(repoll_, false);
     if (forward_batch != nullptr) {
+      GPR_ASSERT(in_combiner);
       in_combiner = false;
       forward_send_initial_metadata_ = false;
       grpc_call_next_op(elem(), forward_batch);
@@ -487,7 +489,7 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
       in_combiner = false;
       Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_NONE);
     }
-    if (absl::exchange(repoll_, false)) {
+    if (repoll) {
       if (in_combiner) {
         WakeInsideCombiner();
       } else {
@@ -818,7 +820,7 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
   ArenaPromise<TrailingMetadata> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
-  // Closure to call when we're done with the trailing meta=data.
+  // Closure to call when we're done with the trailing metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
