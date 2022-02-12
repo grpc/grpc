@@ -22,8 +22,6 @@
 
 #include <atomic>
 
-#include "idle_filter_state.h"
-
 #include "src/core/ext/filters/client_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
