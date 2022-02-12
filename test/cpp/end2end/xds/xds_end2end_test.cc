@@ -6360,7 +6360,7 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
       {"locality0", {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()}},
   });
   EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -6371,7 +6371,6 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   new_cluster1.set_name(kNewCluster1Name);
   new_cluster1.mutable_eds_cluster_config()->set_service_name(
       kNewEdsService1Name);
-  new_cluster1.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(new_cluster1);
   Cluster new_cluster2 = default_cluster_;
   new_cluster2.set_name(kNewCluster2Name);
@@ -6380,6 +6379,7 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
@@ -6387,9 +6387,26 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   cluster_config.add_clusters(kNewCluster2Name);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // Wait for traffic to go backend 0, meaning we failed over to the second
-  // priority.
-  WaitForBackend(0);
+  // Set up route with channel id hashing
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Verifying that we are using ring hash as only 1 endpoint is receiving all
+  // the traffic.
+  CheckRpcSendOk(100);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
