@@ -2493,9 +2493,13 @@ grpc_cc_library(
     deps = [
         "capture",
         "config",
+        "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "grpc_base",
         "idle_filter_state",
+        "loop",
+        "sleep",
+        "try_seq",
     ],
 )
 

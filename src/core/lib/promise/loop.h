@@ -44,6 +44,18 @@ struct LoopTraits;
 template <typename T>
 struct LoopTraits<LoopCtl<T>> {
   using Result = T;
+  static LoopCtl<T> ToLoopCtl(LoopCtl<T> value) { return value; }
+};
+
+template <typename T>
+struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
+  using Result = absl::StatusOr<T>;
+  static LoopCtl<Result> ToLoopCtl(absl::StatusOr<LoopCtl<T>> value) {
+    if (!value.ok()) return value.status();
+    const auto& inner = *value;
+    if (absl::holds_alternative<Continue>(inner)) return Continue{};
+    return absl::get<T>(inner);
+  }
 };
 
 template <typename F>
@@ -74,13 +86,14 @@ class Loop {
       if (auto* p = absl::get_if<kPollReadyIdx>(&promise_result)) {
         //  - then if it's Continue, destroy the promise and recreate a new one
         //  from our factory.
-        if (absl::holds_alternative<Continue>(*p)) {
+        auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
+        if (absl::holds_alternative<Continue>(lc)) {
           promise_.~Promise();
           new (&promise_) Promise(factory_.Repeated());
           continue;
         }
         //  - otherwise there's our result... return it out.
-        return absl::get<Result>(*p);
+        return absl::get<Result>(lc);
       } else {
         // Otherwise the inner promise was pending, so we are pending.
         return Pending();
