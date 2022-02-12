@@ -3016,7 +3016,11 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
+<<<<<<< HEAD
   GTEST_FLAG_SET(death_test_style, "threadsafe");
+=======
+  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+>>>>>>> master
   CreateClientsAndServers(BootstrapBuilder(),
                           /*lb_expected_authority=*/"incorrect_server_name");
   StartAllBackends();
