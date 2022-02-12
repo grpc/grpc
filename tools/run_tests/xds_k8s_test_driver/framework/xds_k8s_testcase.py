@@ -83,6 +83,9 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         """Hook method for setting up class fixture before running tests in
         the class.
         """
+        logger.info('----- Testing %s -----', cls.__name__)
+        logger.info('Logs timezone: %s', time.localtime().tm_zone)
+
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value

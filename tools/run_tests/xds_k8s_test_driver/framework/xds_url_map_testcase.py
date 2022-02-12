@@ -355,6 +355,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def setUpClass(cls):
+        logging.info('----- Testing %s -----', cls.__name__)
+        logging.info('Logs timezone: %s', time.localtime().tm_zone)
+
         if not cls.started_test_cases:
             # Create the GCP resource once before the first test start
             GcpResourceManager().setup(cls.test_case_classes)
