@@ -204,7 +204,6 @@ grpc_cc_test(
         ":end2end_tests",
         "//:gpr",
         "//:grpc",
-        "//:tsi",
         "//test/core/util:grpc_test_util",
     ],
 )

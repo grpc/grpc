@@ -36,6 +36,13 @@ netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 prim
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
+@rem Install nasm (required for boringssl assembly optimized build as boringssl no long supports yasm)
+@rem Downloading from GCS should be very reliables when on a GCP VM.
+mkdir C:\nasm
+curl -sSL -o C:\nasm\nasm.exe https://storage.googleapis.com/grpc-build-helper/nasm-2.15.05/nasm.exe || goto :error
+set PATH=C:\nasm;%PATH%
+nasm
+
 @rem Only install C# dependencies if we are running C# tests
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
   @rem C# prerequisites: Install dotnet SDK

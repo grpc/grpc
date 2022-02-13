@@ -328,3 +328,21 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "sleep_test",
+    srcs = ["sleep_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/synchronization",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:activity",
+        "//:grpc",
+        "//:sleep",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
