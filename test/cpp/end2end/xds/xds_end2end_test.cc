@@ -521,6 +521,19 @@ grpc_millis NowFromCycleCounter() {
   return grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
+// There can be milliseconds of difference between cycle time and time spec,
+// when the difference is in the order of a few seconds, we need to know that so
+// that our tests can account for the difference and reduce flakes due to the
+// clock difference.
+grpc_millis ClockDifference() {
+  gpr_cycle_counter now = gpr_get_cycle_counter();
+  grpc_millis cycle_time = grpc_cycle_counter_to_millis_round_up(now);
+  grpc_millis time_spec =
+      grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
+  return (cycle_time >= time_spec ? cycle_time - time_spec
+                                  : time_spec - cycle_time);
+}
+
 // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
 // chance. Rolling dices in drop/fault-injection generates a binomial
 // distribution (if our code is not horribly wrong). Let's make "n" the number
@@ -4816,11 +4829,18 @@ TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
   // Set listener and route config.
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
                                    new_route_config);
+  // Obtain clock difference if any.
+  grpc_millis clock_difference = ClockDifference();
+  if (clock_difference != 0) {
+    gpr_log(GPR_INFO, "There can be a clock difference of %ld milliseconds.",
+            clock_difference);
+  }
   // Test grpc_timeout_header_max of 1.5 seconds applied
   grpc_millis t0 = NowFromCycleCounter();
-  grpc_millis t1 =
-      t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis;
-  grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  grpc_millis t1 = t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 +
+                   kTimeoutMillis - clock_difference;
+  grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 +
+                   kTimeoutMillis + clock_difference;
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(
@@ -4835,8 +4855,10 @@ TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
   EXPECT_LT(t0, t2);
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
-  t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
-  t2 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis -
+       clock_difference;
+  t2 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis +
+       clock_difference;
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(
@@ -4851,8 +4873,10 @@ TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
   EXPECT_LT(t0, t2);
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
-  t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
-  t2 = t0 + kTimeoutApplicationSecond * 1000 + kTimeoutMillis;
+  t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis -
+       clock_difference;
+  t2 =
+      t0 + kTimeoutApplicationSecond * 1000 + kTimeoutMillis + clock_difference;
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
