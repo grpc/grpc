@@ -29,61 +29,6 @@
 
 #include "src/core/lib/surface/api_trace.h"
 
-/** -- gRPC TLS server authorization check API implementation. -- **/
-grpc_tls_server_authorization_check_config::
-    grpc_tls_server_authorization_check_config(
-        const void* config_user_data,
-        int (*schedule)(void* config_user_data,
-                        grpc_tls_server_authorization_check_arg* arg),
-        void (*cancel)(void* config_user_data,
-                       grpc_tls_server_authorization_check_arg* arg),
-        void (*destruct)(void* config_user_data))
-    : config_user_data_(const_cast<void*>(config_user_data)),
-      schedule_(schedule),
-      cancel_(cancel),
-      destruct_(destruct) {}
-
-grpc_tls_server_authorization_check_config::
-    ~grpc_tls_server_authorization_check_config() {
-  if (destruct_ != nullptr) {
-    destruct_(config_user_data_);
-  }
-}
-
-int grpc_tls_server_authorization_check_config::Schedule(
-    grpc_tls_server_authorization_check_arg* arg) const {
-  if (schedule_ == nullptr) {
-    gpr_log(GPR_ERROR, "schedule API is nullptr");
-    if (arg != nullptr) {
-      arg->status = GRPC_STATUS_NOT_FOUND;
-      arg->error_details->set_error_details(
-          "schedule API in server authorization check config is nullptr");
-    }
-    return 1;
-  }
-  if (arg != nullptr && context_ != nullptr) {
-    arg->config = const_cast<grpc_tls_server_authorization_check_config*>(this);
-  }
-  return schedule_(config_user_data_, arg);
-}
-
-void grpc_tls_server_authorization_check_config::Cancel(
-    grpc_tls_server_authorization_check_arg* arg) const {
-  if (cancel_ == nullptr) {
-    gpr_log(GPR_ERROR, "cancel API is nullptr.");
-    if (arg != nullptr) {
-      arg->status = GRPC_STATUS_NOT_FOUND;
-      arg->error_details->set_error_details(
-          "schedule API in server authorization check config is nullptr");
-    }
-    return;
-  }
-  if (arg != nullptr) {
-    arg->config = const_cast<grpc_tls_server_authorization_check_config*>(this);
-  }
-  cancel_(config_user_data_, arg);
-}
-
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
@@ -98,11 +43,10 @@ void grpc_tls_credentials_options_set_cert_request_type(
   options->set_cert_request_type(type);
 }
 
-void grpc_tls_credentials_options_set_server_verification_option(
-    grpc_tls_credentials_options* options,
-    grpc_tls_server_verification_option server_verification_option) {
+void grpc_tls_credentials_options_set_verify_server_cert(
+    grpc_tls_credentials_options* options, int verify_server_cert) {
   GPR_ASSERT(options != nullptr);
-  options->set_server_verification_option(server_verification_option);
+  options->set_verify_server_cert(verify_server_cert);
 }
 
 void grpc_tls_credentials_options_set_certificate_provider(
@@ -139,39 +83,41 @@ void grpc_tls_credentials_options_set_identity_cert_name(
   options->set_identity_cert_name(identity_cert_name);
 }
 
-void grpc_tls_credentials_options_set_server_authorization_check_config(
+void grpc_tls_credentials_options_set_certificate_verifier(
     grpc_tls_credentials_options* options,
-    grpc_tls_server_authorization_check_config* config) {
+    grpc_tls_certificate_verifier* verifier) {
   GPR_ASSERT(options != nullptr);
-  GPR_ASSERT(config != nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  options->set_server_authorization_check_config(config->Ref());
+  GPR_ASSERT(verifier != nullptr);
+  options->set_certificate_verifier(verifier->Ref());
 }
 
-grpc_tls_server_authorization_check_config*
-grpc_tls_server_authorization_check_config_create(
-    const void* config_user_data,
-    int (*schedule)(void* config_user_data,
-                    grpc_tls_server_authorization_check_arg* arg),
-    void (*cancel)(void* config_user_data,
-                   grpc_tls_server_authorization_check_arg* arg),
-    void (*destruct)(void* config_user_data)) {
-  if (schedule == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Schedule API is nullptr in creating TLS server authorization "
-            "check config.");
-    return nullptr;
+void grpc_tls_credentials_options_set_crl_directory(
+    grpc_tls_credentials_options* options, const char* crl_directory) {
+  GPR_ASSERT(options != nullptr);
+  options->set_crl_directory(crl_directory);
+}
+
+void grpc_tls_credentials_options_set_check_call_host(
+    grpc_tls_credentials_options* options, int check_call_host) {
+  GPR_ASSERT(options != nullptr);
+  options->set_check_call_host(check_call_host);
+}
+
+void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
+    grpc_tls_credentials_options* options, const char* path) {
+  if (!tsi_tls_session_key_logging_supported() || options == nullptr) {
+    return;
   }
-  grpc_core::ExecCtx exec_ctx;
-  return new grpc_tls_server_authorization_check_config(
-      config_user_data, schedule, cancel, destruct);
-}
-
-void grpc_tls_server_authorization_check_config_release(
-    grpc_tls_server_authorization_check_config* config) {
   GRPC_API_TRACE(
-      "grpc_tls_server_authorization_check_config_release(config=%p)", 1,
-      (config));
-  grpc_core::ExecCtx exec_ctx;
-  if (config != nullptr) config->Unref();
+      "grpc_tls_credentials_options_set_tls_session_key_log_config(options=%p)",
+      1, (options));
+  // Tls session key logging is assumed to be enabled if the specified log
+  // file is non-empty.
+  if (path != nullptr) {
+    gpr_log(GPR_INFO,
+            "Enabling TLS session key logging with keys stored at: %s", path);
+  } else {
+    gpr_log(GPR_INFO, "Disabling TLS session key logging");
+  }
+  options->set_tls_session_key_log_file_path(path != nullptr ? path : "");
 }

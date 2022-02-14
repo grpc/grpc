@@ -4,6 +4,7 @@
 require 'google/protobuf'
 
 require 'src/proto/grpc/testing/control_pb'
+
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("src/proto/grpc/testing/worker_service.proto", :syntax => :proto3) do
   end

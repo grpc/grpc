@@ -12,21 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <android/binder_auto_utils.h>
-#include <android/binder_ibinder.h>
-#include <android/binder_ibinder_jni.h>
-#include <android/binder_interface_utils.h>
 #include <android/log.h>
 #include <jni.h>
 
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
 
+#include <grpcpp/create_channel_binder.h>
 #include <grpcpp/grpcpp.h>
-
-#include "src/core/ext/transport/binder/security_policy/untrusted_security_policy.h"
-#include "src/core/ext/transport/binder/server/binder_server.h"
-#include "src/core/ext/transport/binder/server/binder_server_credentials.h"
+#include <grpcpp/security/binder_credentials.h>
+#include <grpcpp/security/binder_security_policy.h>
 
 namespace {
 class GreeterService : public helloworld::Greeter::Service {
@@ -47,7 +42,10 @@ class GreeterService : public helloworld::Greeter::Service {
 
 extern "C" JNIEXPORT void JNICALL
 Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server(
-    JNIEnv* env, jobject /*this*/) {
+    JNIEnv* env, jobject /*this*/, jobject context) {
+  // Lower the gRPC logging level, here it is just for demo and debugging
+  // purpose.
+  setenv("GRPC_VERBOSITY", "INFO", true);
   __android_log_print(ANDROID_LOG_INFO, "DemoServer", "Line number %d",
                       __LINE__);
   static std::unique_ptr<grpc::Server> server = nullptr;
@@ -57,16 +55,29 @@ Java_io_grpc_binder_cpp_exampleserver_ExportedEndpointService_init_1grpc_1server
     return;
   }
 
+  if (grpc::experimental::InitializeBinderChannelJavaClass(env)) {
+    __android_log_print(ANDROID_LOG_INFO, "DemoServer",
+                        "InitializeBinderChannelJavaClass succeed");
+  } else {
+    __android_log_print(ANDROID_LOG_INFO, "DemoServer",
+                        "InitializeBinderChannelJavaClass failed");
+  }
+
   static GreeterService service;
   grpc::ServerBuilder server_builder;
   server_builder.RegisterService(&service);
 
-  // TODO(mingcl): Use same signature security after it become available
+  JavaVM* jvm;
+  {
+    jint result = env->GetJavaVM(&jvm);
+    assert(result == 0);
+  }
   server_builder.AddListeningPort(
       "binder:example.service",
       grpc::experimental::BinderServerCredentials(
           std::make_shared<
-              grpc::experimental::binder::UntrustedSecurityPolicy>()));
+              grpc::experimental::binder::SameSignatureSecurityPolicy>(
+              jvm, context)));
 
   server = server_builder.BuildAndStart();
 }

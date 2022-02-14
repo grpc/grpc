@@ -41,7 +41,6 @@ typedef struct local_zero_copy_grpc_protector {
 /* Main struct for local TSI handshaker result. */
 typedef struct local_tsi_handshaker_result {
   tsi_handshaker_result base;
-  bool is_client;
   unsigned char* unused_bytes;
   size_t unused_bytes_size;
 } local_tsi_handshaker_result;
@@ -49,26 +48,25 @@ typedef struct local_tsi_handshaker_result {
 /* Main struct for local TSI handshaker. */
 typedef struct local_tsi_handshaker {
   tsi_handshaker base;
-  bool is_client;
 } local_tsi_handshaker;
 
 /* --- tsi_handshaker_result methods implementation. --- */
 
-static tsi_result handshaker_result_extract_peer(
-    const tsi_handshaker_result* /*self*/, tsi_peer* /*peer*/) {
+tsi_result handshaker_result_extract_peer(const tsi_handshaker_result* /*self*/,
+                                          tsi_peer* /*peer*/) {
   return TSI_OK;
 }
 
-static tsi_result handshaker_result_get_frame_protector_type(
+tsi_result handshaker_result_get_frame_protector_type(
     const tsi_handshaker_result* /*self*/,
     tsi_frame_protector_type* frame_protector_type) {
   *frame_protector_type = TSI_FRAME_PROTECTOR_NONE;
   return TSI_OK;
 }
 
-static tsi_result handshaker_result_get_unused_bytes(
-    const tsi_handshaker_result* self, const unsigned char** bytes,
-    size_t* bytes_size) {
+tsi_result handshaker_result_get_unused_bytes(const tsi_handshaker_result* self,
+                                              const unsigned char** bytes,
+                                              size_t* bytes_size) {
   if (self == nullptr || bytes == nullptr || bytes_size == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to get_unused_bytes()");
     return TSI_INVALID_ARGUMENT;
@@ -80,7 +78,7 @@ static tsi_result handshaker_result_get_unused_bytes(
   return TSI_OK;
 }
 
-static void handshaker_result_destroy(tsi_handshaker_result* self) {
+void handshaker_result_destroy(tsi_handshaker_result* self) {
   if (self == nullptr) {
     return;
   }
@@ -91,7 +89,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result);
 }
 
-static const tsi_handshaker_result_vtable result_vtable = {
+const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_extract_peer,
     handshaker_result_get_frame_protector_type,
     nullptr, /* handshaker_result_create_zero_copy_grpc_protector */
@@ -99,17 +97,15 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_get_unused_bytes,
     handshaker_result_destroy};
 
-static tsi_result create_handshaker_result(bool is_client,
-                                           const unsigned char* received_bytes,
-                                           size_t received_bytes_size,
-                                           tsi_handshaker_result** self) {
+tsi_result create_handshaker_result(const unsigned char* received_bytes,
+                                    size_t received_bytes_size,
+                                    tsi_handshaker_result** self) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
     return TSI_INVALID_ARGUMENT;
   }
   local_tsi_handshaker_result* result =
       grpc_core::Zalloc<local_tsi_handshaker_result>();
-  result->is_client = is_client;
   if (received_bytes_size > 0) {
     result->unused_bytes =
         static_cast<unsigned char*>(gpr_malloc(received_bytes_size));
@@ -123,7 +119,7 @@ static tsi_result create_handshaker_result(bool is_client,
 
 /* --- tsi_handshaker methods implementation. --- */
 
-static tsi_result handshaker_next(
+tsi_result handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** /*bytes_to_send*/,
     size_t* bytes_to_send_size, tsi_handshaker_result** result,
@@ -135,15 +131,12 @@ static tsi_result handshaker_next(
   /* Note that there is no interaction between TSI peers, and all operations are
    * local.
    */
-  local_tsi_handshaker* handshaker =
-      reinterpret_cast<local_tsi_handshaker*>(self);
   *bytes_to_send_size = 0;
-  create_handshaker_result(handshaker->is_client, received_bytes,
-                           received_bytes_size, result);
+  create_handshaker_result(received_bytes, received_bytes_size, result);
   return TSI_OK;
 }
 
-static void handshaker_destroy(tsi_handshaker* self) {
+void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
   }
@@ -152,7 +145,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
   gpr_free(handshaker);
 }
 
-static const tsi_handshaker_vtable handshaker_vtable = {
+const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* get_bytes_to_send_to_peer -- deprecated */
     nullptr, /* process_bytes_from_peer   -- deprecated */
     nullptr, /* get_result                -- deprecated */
@@ -165,13 +158,12 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 
 }  // namespace
 
-tsi_result tsi_local_handshaker_create(bool is_client, tsi_handshaker** self) {
+tsi_result tsi_local_handshaker_create(tsi_handshaker** self) {
   if (self == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to local_tsi_handshaker_create()");
     return TSI_INVALID_ARGUMENT;
   }
   local_tsi_handshaker* handshaker = grpc_core::Zalloc<local_tsi_handshaker>();
-  handshaker->is_client = is_client;
   handshaker->base.vtable = &handshaker_vtable;
   *self = &handshaker->base;
   return TSI_OK;

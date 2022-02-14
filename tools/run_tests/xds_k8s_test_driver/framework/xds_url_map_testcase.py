@@ -29,7 +29,7 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import grpc
-import packaging
+import packaging.version
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_test_resources
@@ -85,10 +85,11 @@ class DumpedXdsConfig(dict):
         self.json_config = xds_json
         self.lds = None
         self.rds = None
+        self.rds_version = None
         self.cds = []
         self.eds = []
         self.endpoints = []
-        for xds_config in self['xdsConfig']:
+        for xds_config in self.get('xdsConfig', []):
             try:
                 if 'listenerConfig' in xds_config:
                     self.lds = xds_config['listenerConfig']['dynamicListeners'][
@@ -96,6 +97,8 @@ class DumpedXdsConfig(dict):
                 elif 'routeConfig' in xds_config:
                     self.rds = xds_config['routeConfig']['dynamicRouteConfigs'][
                         0]['routeConfig']
+                    self.rds_version = xds_config['routeConfig'][
+                        'dynamicRouteConfigs'][0]['versionInfo']
                 elif 'clusterConfig' in xds_config:
                     for cluster in xds_config['clusterConfig'][
                             'dynamicActiveClusters']:
@@ -105,7 +108,23 @@ class DumpedXdsConfig(dict):
                             'dynamicEndpointConfigs']:
                         self.eds.append(endpoint['endpointConfig'])
             except Exception as e:
-                logging.debug('Parse dumped xDS config failed with %s: %s',
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
+                              type(e), e)
+        for generic_xds_config in self.get('genericXdsConfigs', []):
+            try:
+                if re.search(r'\.Listener$', generic_xds_config['typeUrl']):
+                    self.lds = generic_xds_config["xdsConfig"]
+                elif re.search(r'\.RouteConfiguration$',
+                               generic_xds_config['typeUrl']):
+                    self.rds = generic_xds_config["xdsConfig"]
+                    self.rds_version = generic_xds_config["versionInfo"]
+                elif re.search(r'\.Cluster$', generic_xds_config['typeUrl']):
+                    self.cds.append(generic_xds_config["xdsConfig"])
+                elif re.search(r'\.ClusterLoadAssignment$',
+                               generic_xds_config['typeUrl']):
+                    self.eds.append(generic_xds_config["xdsConfig"])
+            except Exception as e:
+                logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for endpoint_config in self.eds:
             for endpoint in endpoint_config.get('endpoints', {}):

@@ -19,4 +19,4 @@ RUN apt-get update -y && apt-get install -y python3 python3-pip
 RUN apt-get install -y build-essential
 RUN apt-get install -y python3-dev
 
-RUN pip3 install virtualenv==16.7.9
+RUN python3 -m pip install virtualenv==16.7.9

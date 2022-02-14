@@ -44,13 +44,13 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/service_config/service_config.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
@@ -415,7 +415,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     if (subchannel_cache_delay_ms > 0) {
       args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
-                  subchannel_cache_delay_ms);
+                  subchannel_cache_delay_ms * grpc_test_slowdown_factor());
     }
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;

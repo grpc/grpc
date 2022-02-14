@@ -15,8 +15,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# Image(c7f1523ebd92) is built on Jul 29, 2021
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:c7f1523ebd9234b9ff57e5240f8c06569143373be019c92f1e6df18a1e048f37
+# Image(5eceb81f5759) is built on Jan 31, 2022
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:5eceb81f57599d63ca7c9a70c8968b23b128119699626ca749017019eb0b523f
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
@@ -24,48 +24,15 @@ FROM gcr.io/oss-fuzz-base/base-builder@sha256:c7f1523ebd9234b9ff57e5240f8c065691
 # accordingly.
 # -------------------------------------------------------------------------
 
-# Install basic packages and Bazel dependencies.
-RUN apt-get update && apt-get install -y software-properties-common python-software-properties
-RUN add-apt-repository ppa:webupd8team/java
+# Install basic packages
 RUN apt-get update && apt-get -y install \
   autoconf \
   build-essential \
   curl \
-  wget \
   libtool \
   make \
-  openjdk-8-jdk \
-  vim
-
-#====================
-# Python dependencies
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-setuptools
-
-#=================
-# Compile CPython 3.6.9 from source
-
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev
-
-RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
-    tar xzvf Python-3.6.9.tgz && \
-    cd Python-3.6.9 && \
-    ./configure && \
-    make install
-
-RUN cd /tmp && \
-    echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
-    md5sum -c checksum.md5
-
-RUN python3.6 -m ensurepip && \
-    python3.6 -m pip install coverage
-
+  vim \
+  wget
 
 #========================
 # Bazel installation

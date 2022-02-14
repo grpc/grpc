@@ -4,6 +4,7 @@
 require 'google/protobuf'
 
 require 'src/proto/grpc/core/stats_pb'
+
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("src/proto/grpc/testing/stats.proto", :syntax => :proto3) do
     add_message "grpc.testing.ServerStats" do

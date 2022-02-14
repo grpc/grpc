@@ -40,9 +40,6 @@
 
 /* --- Util --- */
 
-/* --- URL schemes. --- */
-#define GRPC_SSL_URL_SCHEME "https"
-
 /* Check ALPN information returned from SSL handshakes. */
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 
@@ -69,19 +66,8 @@ tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type);
 
-/* Map tsi_security_level string to grpc_security_level enum. */
-grpc_security_level grpc_tsi_security_level_string_to_enum(
-    const char* security_level);
-
 /* Map grpc_tls_version to tsi_tls_version. */
 tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
-
-/* Map grpc_security_level enum to a string. */
-const char* grpc_security_level_to_string(grpc_security_level security_level);
-
-/* Check security level of channel and call credential.*/
-bool grpc_check_security_level(grpc_security_level channel_level,
-                               grpc_security_level call_cred_level);
 
 /* Return an array of strings containing alpn protocols. */
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
@@ -91,6 +77,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
+    const char* crl_directory,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
@@ -98,8 +86,13 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     const char* pem_root_certs,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
+    tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
+    const char* crl_directory,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
+/* Free the memory occupied by key cert pairs. */
+void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
+                                             size_t num_key_cert_pairs);
 /* Exposed for testing only. */
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     const tsi_peer* peer, const char* transport_security_type);
@@ -181,7 +174,7 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-typedef absl::InlinedVector<grpc_core::PemKeyCertPair, 1> PemKeyCertPairList;
+typedef absl::InlinedVector<PemKeyCertPair, 1> PemKeyCertPairList;
 
 }  // namespace grpc_core
 

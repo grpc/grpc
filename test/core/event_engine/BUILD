@@ -23,6 +23,7 @@ grpc_cc_test(
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -41,6 +42,18 @@ grpc_cc_library(
         "gtest",
     ],
     language = "C++",
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+    # Ensure the linker doesn't throw away test cases.
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "smoke_test",
+    srcs = ["smoke_test.cc"],
+    external_deps = ["gtest"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",

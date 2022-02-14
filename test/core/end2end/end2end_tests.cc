@@ -81,6 +81,8 @@ extern void filter_status_code(grpc_end2end_test_config config);
 extern void filter_status_code_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
 extern void graceful_server_shutdown_pre_init(void);
+extern void grpc_authz(grpc_end2end_test_config config);
+extern void grpc_authz_pre_init(void);
 extern void high_initial_seqno(grpc_end2end_test_config config);
 extern void high_initial_seqno_pre_init(void);
 extern void hpack_size(grpc_end2end_test_config config);
@@ -157,6 +159,8 @@ extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
 extern void retry_recv_initial_metadata_pre_init(void);
 extern void retry_recv_message(grpc_end2end_test_config config);
 extern void retry_recv_message_pre_init(void);
+extern void retry_recv_message_replay(grpc_end2end_test_config config);
+extern void retry_recv_message_replay_pre_init(void);
 extern void retry_recv_trailing_metadata_error(grpc_end2end_test_config config);
 extern void retry_recv_trailing_metadata_error_pre_init(void);
 extern void retry_send_initial_metadata_refs(grpc_end2end_test_config config);
@@ -177,8 +181,12 @@ extern void retry_throttled(grpc_end2end_test_config config);
 extern void retry_throttled_pre_init(void);
 extern void retry_too_many_attempts(grpc_end2end_test_config config);
 extern void retry_too_many_attempts_pre_init(void);
-extern void sdk_authz(grpc_end2end_test_config config);
-extern void sdk_authz_pre_init(void);
+extern void retry_transparent_goaway(grpc_end2end_test_config config);
+extern void retry_transparent_goaway_pre_init(void);
+extern void retry_transparent_max_concurrent_streams(grpc_end2end_test_config config);
+extern void retry_transparent_max_concurrent_streams_pre_init(void);
+extern void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config);
+extern void retry_transparent_not_sent_on_wire_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void server_streaming(grpc_end2end_test_config config);
@@ -195,12 +203,6 @@ extern void simple_metadata(grpc_end2end_test_config config);
 extern void simple_metadata_pre_init(void);
 extern void simple_request(grpc_end2end_test_config config);
 extern void simple_request_pre_init(void);
-extern void stream_compression_compressed_payload(grpc_end2end_test_config config);
-extern void stream_compression_compressed_payload_pre_init(void);
-extern void stream_compression_payload(grpc_end2end_test_config config);
-extern void stream_compression_payload_pre_init(void);
-extern void stream_compression_ping_pong_streaming(grpc_end2end_test_config config);
-extern void stream_compression_ping_pong_streaming_pre_init(void);
 extern void streaming_error_response(grpc_end2end_test_config config);
 extern void streaming_error_response_pre_init(void);
 extern void trailing_metadata(grpc_end2end_test_config config);
@@ -239,6 +241,7 @@ void grpc_end2end_tests_pre_init(void) {
   filter_latency_pre_init();
   filter_status_code_pre_init();
   graceful_server_shutdown_pre_init();
+  grpc_authz_pre_init();
   high_initial_seqno_pre_init();
   hpack_size_pre_init();
   idempotent_request_pre_init();
@@ -277,6 +280,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_per_attempt_recv_timeout_on_last_attempt_pre_init();
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
+  retry_recv_message_replay_pre_init();
   retry_recv_trailing_metadata_error_pre_init();
   retry_send_initial_metadata_refs_pre_init();
   retry_send_op_fails_pre_init();
@@ -287,7 +291,9 @@ void grpc_end2end_tests_pre_init(void) {
   retry_streaming_succeeds_before_replay_finished_pre_init();
   retry_throttled_pre_init();
   retry_too_many_attempts_pre_init();
-  sdk_authz_pre_init();
+  retry_transparent_goaway_pre_init();
+  retry_transparent_max_concurrent_streams_pre_init();
+  retry_transparent_not_sent_on_wire_pre_init();
   server_finishes_request_pre_init();
   server_streaming_pre_init();
   shutdown_finishes_calls_pre_init();
@@ -296,9 +302,6 @@ void grpc_end2end_tests_pre_init(void) {
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
-  stream_compression_compressed_payload_pre_init();
-  stream_compression_payload_pre_init();
-  stream_compression_ping_pong_streaming_pre_init();
   streaming_error_response_pre_init();
   trailing_metadata_pre_init();
   write_buffering_pre_init();
@@ -339,6 +342,7 @@ void grpc_end2end_tests(int argc, char **argv,
     filter_latency(config);
     filter_status_code(config);
     graceful_server_shutdown(config);
+    grpc_authz(config);
     high_initial_seqno(config);
     hpack_size(config);
     idempotent_request(config);
@@ -377,6 +381,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_per_attempt_recv_timeout_on_last_attempt(config);
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
+    retry_recv_message_replay(config);
     retry_recv_trailing_metadata_error(config);
     retry_send_initial_metadata_refs(config);
     retry_send_op_fails(config);
@@ -387,7 +392,9 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_streaming_succeeds_before_replay_finished(config);
     retry_throttled(config);
     retry_too_many_attempts(config);
-    sdk_authz(config);
+    retry_transparent_goaway(config);
+    retry_transparent_max_concurrent_streams(config);
+    retry_transparent_not_sent_on_wire(config);
     server_finishes_request(config);
     server_streaming(config);
     shutdown_finishes_calls(config);
@@ -396,9 +403,6 @@ void grpc_end2end_tests(int argc, char **argv,
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
-    stream_compression_compressed_payload(config);
-    stream_compression_payload(config);
-    stream_compression_ping_pong_streaming(config);
     streaming_error_response(config);
     trailing_metadata(config);
     write_buffering(config);
@@ -509,6 +513,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("graceful_server_shutdown", argv[i])) {
       graceful_server_shutdown(config);
+      continue;
+    }
+    if (0 == strcmp("grpc_authz", argv[i])) {
+      grpc_authz(config);
       continue;
     }
     if (0 == strcmp("high_initial_seqno", argv[i])) {
@@ -663,6 +671,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_recv_message(config);
       continue;
     }
+    if (0 == strcmp("retry_recv_message_replay", argv[i])) {
+      retry_recv_message_replay(config);
+      continue;
+    }
     if (0 == strcmp("retry_recv_trailing_metadata_error", argv[i])) {
       retry_recv_trailing_metadata_error(config);
       continue;
@@ -703,8 +715,16 @@ void grpc_end2end_tests(int argc, char **argv,
       retry_too_many_attempts(config);
       continue;
     }
-    if (0 == strcmp("sdk_authz", argv[i])) {
-      sdk_authz(config);
+    if (0 == strcmp("retry_transparent_goaway", argv[i])) {
+      retry_transparent_goaway(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_max_concurrent_streams", argv[i])) {
+      retry_transparent_max_concurrent_streams(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_not_sent_on_wire", argv[i])) {
+      retry_transparent_not_sent_on_wire(config);
       continue;
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {
@@ -737,18 +757,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("simple_request", argv[i])) {
       simple_request(config);
-      continue;
-    }
-    if (0 == strcmp("stream_compression_compressed_payload", argv[i])) {
-      stream_compression_compressed_payload(config);
-      continue;
-    }
-    if (0 == strcmp("stream_compression_payload", argv[i])) {
-      stream_compression_payload(config);
-      continue;
-    }
-    if (0 == strcmp("stream_compression_ping_pong_streaming", argv[i])) {
-      stream_compression_ping_pong_streaming(config);
       continue;
     }
     if (0 == strcmp("streaming_error_response", argv[i])) {

@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -22,6 +20,7 @@
 
 #include <string.h>
 
+#include <cstdio>
 #include <string>
 
 #include "absl/strings/str_format.h"
@@ -35,135 +34,158 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolve_address_impl.h"
+#include "src/core/lib/transport/error_utils.h"
 
-struct grpc_custom_resolver {
-  grpc_closure* on_done = nullptr;
-  grpc_resolved_addresses** addresses = nullptr;
-  std::string host;
-  std::string port;
-};
-
-static grpc_custom_resolver_vtable* resolve_address_vtable = nullptr;
-
-static int retry_named_port_failure(grpc_custom_resolver* r,
-                                    grpc_resolved_addresses** res) {
-  // This loop is copied from resolve_address_posix.c
-  const char* svc[][2] = {{"http", "80"}, {"https", "443"}};
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
-    if (r->port == svc[i][0]) {
-      r->port = svc[i][1];
-      if (res) {
-        grpc_error_handle error = resolve_address_vtable->resolve(
-            r->host.c_str(), r->port.c_str(), res);
-        if (error != GRPC_ERROR_NONE) {
-          GRPC_ERROR_UNREF(error);
-          return 0;
-        }
-      } else {
-        resolve_address_vtable->resolve_async(r, r->host.c_str(),
-                                              r->port.c_str());
-      }
-      return 1;
-    }
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
+  if (addresses != nullptr) {
+    gpr_free(addresses->addrs);
   }
-  return 0;
+  gpr_free(addresses);
 }
 
-void grpc_custom_resolve_callback(grpc_custom_resolver* r,
+void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                   grpc_resolved_addresses* result,
                                   grpc_error_handle error) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  if (error == GRPC_ERROR_NONE) {
-    *r->addresses = result;
-  } else if (retry_named_port_failure(r, nullptr)) {
-    return;
+  grpc_core::CustomDNSResolver::Request* request =
+      grpc_core::CustomDNSResolver::Request::FromC(resolver);
+  if (error != GRPC_ERROR_NONE) {
+    request->ResolveCallback(grpc_error_to_absl_status(error));
+  } else {
+    std::vector<grpc_resolved_address> addresses;
+    for (size_t i = 0; i < result->naddrs; i++) {
+      addresses.push_back(result->addrs[i]);
+    }
+    request->ResolveCallback(std::move(addresses));
+    grpc_resolved_addresses_destroy(result);
   }
-  if (r->on_done) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
-  }
-  delete r;
+  GRPC_ERROR_UNREF(error);
 }
 
-static grpc_error_handle try_split_host_port(const char* name,
-                                             const char* default_port,
-                                             std::string* host,
-                                             std::string* port) {
-  /* parse name, splitting it into host and port parts */
-  grpc_core::SplitHostPort(name, host, port);
+namespace grpc_core {
+
+namespace {
+
+absl::Status TrySplitHostPort(absl::string_view name,
+                              absl::string_view default_port, std::string* host,
+                              std::string* port) {
+  // parse name, splitting it into host and port parts
+  SplitHostPort(name, host, port);
   if (host->empty()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    return absl::UnknownError(
         absl::StrFormat("unparseable host:port: '%s'", name));
   }
   if (port->empty()) {
     // TODO(murgatroid99): add tests for this case
-    if (default_port == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrFormat("no port in name '%s'", name));
+    if (default_port.empty()) {
+      return absl::UnknownError(absl::StrFormat("no port in name '%s'", name));
     }
-    *port = default_port;
+    *port = std::string(default_port);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-static grpc_error_handle blocking_resolve_address_impl(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
-  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
-
-  grpc_custom_resolver resolver;
-  grpc_error_handle err =
-      try_split_host_port(name, default_port, &resolver.host, &resolver.port);
-  if (err != GRPC_ERROR_NONE) {
-    return err;
+absl::StatusOr<std::string> NamedPortToNumeric(absl::string_view named_port) {
+  if (named_port == "http") {
+    return "80";
+  } else if (named_port == "https") {
+    return "443";
+  } else {
+    return absl::UnknownError(absl::StrCat("unknown named port: ", named_port));
   }
-
-  /* Call getaddrinfo */
-  grpc_resolved_addresses* addrs;
-  grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
-  grpc_core::ExecCtx::Set(nullptr);
-  err = resolve_address_vtable->resolve(resolver.host.c_str(),
-                                        resolver.port.c_str(), &addrs);
-  if (err != GRPC_ERROR_NONE) {
-    if (retry_named_port_failure(&resolver, &addrs)) {
-      GRPC_ERROR_UNREF(err);
-      err = GRPC_ERROR_NONE;
-    }
-  }
-  grpc_core::ExecCtx::Set(curr);
-  if (err == GRPC_ERROR_NONE) {
-    *addresses = addrs;
-  }
-  return err;
 }
 
-static void resolve_address_impl(const char* name, const char* default_port,
-                                 grpc_pollset_set* /*interested_parties*/,
-                                 grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
+}  // namespace
+
+void CustomDNSResolver::Request::ResolveCallback(
+    absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+  if (!result.ok()) {
+    auto numeric_port_or = NamedPortToNumeric(port_);
+    if (numeric_port_or.ok()) {
+      port_ = *numeric_port_or;
+      resolve_address_vtable_->resolve_async(c_ptr(), host_.c_str(),
+                                             port_.c_str());
+      // keep holding ref for active resolution
+      return;
+    }
+  }
+  // since we can't guarantee that we're not being called inline from
+  // Start(), run the callback on the ExecCtx.
+  new DNSCallbackExecCtxScheduler(std::move(on_done_), std::move(result));
+  Unref();
+}
+
+namespace {
+CustomDNSResolver* g_custom_dns_resolver;
+}  // namespace
+
+// Creates the global custom resolver with the specified vtable.
+void CustomDNSResolver::Create(grpc_custom_resolver_vtable* vtable) {
+  if (g_custom_dns_resolver != nullptr) return;
+  g_custom_dns_resolver = new CustomDNSResolver(vtable);
+}
+
+// Gets the singleton instance.
+CustomDNSResolver* CustomDNSResolver::Get() { return g_custom_dns_resolver; }
+
+absl::StatusOr<std::vector<grpc_resolved_address>>
+CustomDNSResolver::ResolveNameBlocking(absl::string_view name,
+                                       absl::string_view default_port) {
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+
   std::string host;
   std::string port;
-  grpc_error_handle err = try_split_host_port(name, default_port, &host, &port);
+  absl::Status parse_status =
+      TrySplitHostPort(name, default_port, &host, &port);
+  if (!parse_status.ok()) {
+    return parse_status;
+  }
+
+  // Call getaddrinfo
+  ExecCtx* curr = ExecCtx::Get();
+  ExecCtx::Set(nullptr);
+  grpc_resolved_addresses* addrs;
+  grpc_error_handle err =
+      resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
   if (err != GRPC_ERROR_NONE) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, err);
+    auto numeric_port_or = NamedPortToNumeric(port);
+    if (numeric_port_or.ok()) {
+      port = *numeric_port_or;
+      GRPC_ERROR_UNREF(err);
+      err =
+          resolve_address_vtable_->resolve(host.c_str(), port.c_str(), &addrs);
+    }
+  }
+  ExecCtx::Set(curr);
+  if (err == GRPC_ERROR_NONE) {
+    GPR_ASSERT(addrs != nullptr);
+    std::vector<grpc_resolved_address> result;
+    for (size_t i = 0; i < addrs->naddrs; i++) {
+      result.push_back(addrs->addrs[i]);
+    }
+    grpc_resolved_addresses_destroy(addrs);
+    return result;
+  }
+  auto error_result = grpc_error_to_absl_status(err);
+  GRPC_ERROR_UNREF(err);
+  return error_result;
+}
+
+void CustomDNSResolver::Request::Start() {
+  GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
+  absl::Status parse_status =
+      TrySplitHostPort(name_, default_port_, &host_, &port_);
+  if (!parse_status.ok()) {
+    new DNSCallbackExecCtxScheduler(std::move(on_done_),
+                                    std::move(parse_status));
     return;
   }
-  grpc_custom_resolver* r = new grpc_custom_resolver();
-  r->on_done = on_done;
-  r->addresses = addrs;
-  r->host = std::move(host);
-  r->port = std::move(port);
-
-  /* Call getaddrinfo */
-  resolve_address_vtable->resolve_async(r, r->host.c_str(), r->port.c_str());
+  // Call getaddrinfo
+  Ref().release();  // ref held by resolution
+  resolve_address_vtable_->resolve_async(c_ptr(), host_.c_str(), port_.c_str());
 }
 
-static grpc_address_resolver_vtable custom_resolver_vtable = {
-    resolve_address_impl, blocking_resolve_address_impl};
-
-void grpc_custom_resolver_init(grpc_custom_resolver_vtable* impl) {
-  resolve_address_vtable = impl;
-  grpc_set_resolver_impl(&custom_resolver_vtable);
-}
+}  // namespace grpc_core

@@ -30,7 +30,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32',
     'x86_64-linux', 'x86-linux',
-    'x86_64-darwin',
+    'x86_64-darwin', 'arm64-darwin',
     'universal-darwin'
   ]
   ext.cross_compiling do |spec|
@@ -78,10 +78,26 @@ namespace :suite do
   end
 end
 
-desc 'Build the Windows gRPC DLLs for Ruby'
-task 'dlls' do
+desc 'Build the Windows gRPC DLLs for Ruby. The argument contains the list of platforms for which to build dll. Empty placeholder files will be created for platforms that were not selected.'
+task 'dlls', [:plat] do |t, args|
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
   verbose = ENV['V'] || '0'
+  # use env variable to set artifact build paralellism
+  nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
+  plat_list = args[:plat]
+
+  build_configs = []
+  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
+  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
+  [w64, w32].each do |config|
+    if plat_list.include?(config[:platform])
+      # build the DLL (as grpc_c.*.ruby)
+      build_configs.append(config)
+    else
+      # create an empty grpc_c.*.ruby file as a placeholder
+      FileUtils.touch config[:out]
+    end
+  end
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
@@ -93,33 +109,46 @@ task 'dlls' do
   env += 'EMBED_CARES=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
+  env += "GRPC_RUBY_BUILD_PROCS=#{nproc_override} "
+
   out = GrpcBuildConfig::CORE_WINDOWS_DLL
 
-  w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
-  w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
+  # propagate env variables with ccache configuration to the rake-compiler-dock docker container
+  # and setup ccache symlinks as needed.
+  # TODO(jtattermusch): deduplicate creation of prepare_ccache_cmd
+  prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
+  prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+  prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
+  prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-  [ w64, w32 ].each do |opt|
+  build_configs.each do |opt|
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
     run_rake_compiler(opt[:platform], <<~EOT)
+      #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      #{env} #{env_comp} make -j`nproc` #{out} && \
+      #{env} #{env_comp} make -j#{nproc_override} #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
       cp #{out} #{opt[:out]}
     EOT
   end
 end
 
-desc 'Build the native gem file under rake_compiler_dock'
-task 'gem:native' do
+desc 'Build the native gem file under rake_compiler_dock. Optionally one can pass argument to build only native gem for a chosen platform.'
+task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0', '2.4.0'].join(':')
+  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+  selected_plat = "#{args[:plat]}"
 
   if RUBY_PLATFORM =~ /darwin/
+    if !selected_plat.empty? && selected_plat != 'darwin'
+      fail "Cannot pass platform as an argument when on Darwin."
+    end
+
     FileUtils.touch 'grpc_c.32.ruby'
     FileUtils.touch 'grpc_c.64.ruby'
     unless '2.5' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
@@ -127,32 +156,72 @@ task 'gem:native' do
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
         "build should be running on ruby 2.5."
     end
-    system "rake cross native gem RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}"
+    system "bundle exec rake cross native gem RUBY_CC_VERSION=#{ruby_cc_versions} V=#{verbose} GRPC_CONFIG=#{grpc_config}"
   else
-    Rake::Task['dlls'].execute
-    ['x86-mingw32', 'x64-mingw32'].each do |plat|
+    # use env variable to set artifact build paralellism
+    nproc_override = ENV['GRPC_RUBY_BUILD_PROCS'] || `nproc`.strip
+
+    # propagate env variables with ccache configuration to the rake-compiler-dock docker container
+    # and setup ccache symlinks as needed.
+    prepare_ccache_cmd = "export GRPC_BUILD_ENABLE_CCACHE=\"#{ENV.fetch('GRPC_BUILD_ENABLE_CCACHE', '')}\" && "
+    prepare_ccache_cmd += "export CCACHE_SECONDARY_STORAGE=\"#{ENV.fetch('CCACHE_SECONDARY_STORAGE', '')}\" && "
+    prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
+    prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
+
+    supported_windows_platforms = ['x86-mingw32', 'x64-mingw32']
+    supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin']
+    supported_platforms = supported_windows_platforms + supported_unix_platforms
+
+    if selected_plat.empty?
+      # build everything
+      windows_platforms = supported_windows_platforms
+      unix_platforms = supported_unix_platforms
+    else
+      # build only selected platform
+      if supported_windows_platforms.include?(selected_plat)
+        windows_platforms = [selected_plat]
+        unix_platforms = []
+      elsif supported_unix_platforms.include?(selected_plat)
+        windows_platforms = []
+        unix_platforms = [selected_plat]
+      else
+        fail "Unsupported platform '#{selected_plat}' passed as an argument."
+      end
+    end
+
+    # Create the windows dlls or create the empty placeholders
+    Rake::Task['dlls'].execute(plat: windows_platforms)
+
+    windows_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
+        #{prepare_ccache_cmd} && \
         gem update --system --no-document && \
         bundle && \
         bundle exec rake clean && \
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
-          GRPC_CONFIG=#{grpc_config}
+          GRPC_CONFIG=#{grpc_config} \
+          GRPC_RUBY_BUILD_PROCS=#{nproc_override}
       EOT
     end
-    # Truncate grpc_c.*.ruby files because they're for Windows only.
+
+    # Truncate grpc_c.*.ruby files because they're for Windows only and we don't want
+    # them to take up space in the gems that don't target windows.
     File.truncate('grpc_c.32.ruby', 0)
     File.truncate('grpc_c.64.ruby', 0)
-    ['x86_64-linux', 'x86-linux', 'x86_64-darwin'].each do |plat|
+
+    unix_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)
+        #{prepare_ccache_cmd} && \
         gem update --system --no-document && \
         bundle && \
         bundle exec rake clean && \
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
-          GRPC_CONFIG=#{grpc_config}
+          GRPC_CONFIG=#{grpc_config} \
+          GRPC_RUBY_BUILD_PROCS=#{nproc_override}
       EOT
     end
   end

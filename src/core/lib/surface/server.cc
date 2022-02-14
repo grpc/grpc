@@ -46,14 +46,13 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
 
@@ -499,6 +498,7 @@ class ChannelBroadcaster {
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -600,13 +600,11 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
-    const RefCountedPtr<grpc_core::channelz::SocketNode>& socket_node,
-    grpc_resource_user* resource_user, size_t preallocated_bytes) {
+    const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel =
-      grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport,
-                          resource_user, preallocated_bytes, &error);
+  grpc_channel* channel = grpc_channel_create_internal(
+      nullptr, args, GRPC_SERVER_CHANNEL, transport, &error);
   if (channel == nullptr) {
     return error;
   }
@@ -985,19 +983,7 @@ class Server::ChannelData::ConnectivityWatcher
 //
 
 Server::ChannelData::~ChannelData() {
-  if (registered_methods_ != nullptr) {
-    for (const ChannelRegisteredMethod& crm : *registered_methods_) {
-      grpc_slice_unref_internal(crm.method);
-      GPR_DEBUG_ASSERT(crm.method.refcount == &kNoopRefcount ||
-                       crm.method.refcount == nullptr);
-      if (crm.has_host) {
-        grpc_slice_unref_internal(crm.host);
-        GPR_DEBUG_ASSERT(crm.host.refcount == &kNoopRefcount ||
-                         crm.host.refcount == nullptr);
-      }
-    }
-    registered_methods_.reset();
-  }
+  registered_methods_.reset();
   if (server_ != nullptr) {
     if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
       server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
@@ -1030,14 +1016,13 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     registered_methods_ =
         absl::make_unique<std::vector<ChannelRegisteredMethod>>(slots);
     for (std::unique_ptr<RegisteredMethod>& rm : server_->registered_methods_) {
-      ExternallyManagedSlice host;
-      ExternallyManagedSlice method(rm->method.c_str());
+      Slice host;
+      Slice method = Slice::FromExternalString(rm->method);
       const bool has_host = !rm->host.empty();
       if (has_host) {
-        host = ExternallyManagedSlice(rm->host.c_str());
+        host = Slice::FromExternalString(rm->host.c_str());
       }
-      uint32_t hash =
-          GRPC_MDSTR_KV_HASH(has_host ? host.Hash() : 0, method.Hash());
+      uint32_t hash = MixHash32(has_host ? host.Hash() : 0, method.Hash());
       uint32_t probes = 0;
       for (probes = 0; (*registered_methods_)[(hash + probes) % slots]
                            .server_registered_method != nullptr;
@@ -1050,9 +1035,9 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
       crm->flags = rm->flags;
       crm->has_host = has_host;
       if (has_host) {
-        crm->host = host;
+        crm->host = std::move(host);
       }
-      crm->method = method;
+      crm->method = std::move(method);
     }
     GPR_ASSERT(slots <= UINT32_MAX);
     registered_method_max_probes_ = max_probes;
@@ -1081,8 +1066,8 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
   if (registered_methods_ == nullptr) return nullptr;
   /* TODO(ctiller): unify these two searches */
   /* check for an exact match with host */
-  uint32_t hash = GRPC_MDSTR_KV_HASH(grpc_slice_hash_internal(host),
-                                     grpc_slice_hash_internal(path));
+  uint32_t hash =
+      MixHash32(grpc_slice_hash_internal(host), grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];
@@ -1097,7 +1082,7 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     return rm;
   }
   /* check for a wildcard method definition (no host set) */
-  hash = GRPC_MDSTR_KV_HASH(0, grpc_slice_hash_internal(path));
+  hash = MixHash32(0, grpc_slice_hash_internal(path));
   for (size_t i = 0; i <= registered_method_max_probes_; i++) {
     ChannelRegisteredMethod* rm =
         &(*registered_methods_)[(hash + i) % registered_methods_->size()];
@@ -1125,8 +1110,6 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.cq = nullptr;
   args.pollset_set_alternative = nullptr;
   args.server_transport_data = transport_server_data;
-  args.add_initial_metadata = nullptr;
-  args.add_initial_metadata_count = 0;
   args.send_deadline = GRPC_MILLIS_INF_FUTURE;
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
@@ -1201,12 +1184,6 @@ Server::CallData::CallData(grpc_call_element* elem,
 Server::CallData::~CallData() {
   GPR_ASSERT(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   GRPC_ERROR_UNREF(recv_initial_metadata_error_);
-  if (host_.has_value()) {
-    grpc_slice_unref_internal(*host_);
-  }
-  if (path_.has_value()) {
-    grpc_slice_unref_internal(*path_);
-  }
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
 }
@@ -1259,8 +1236,9 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
     case RequestedCall::Type::BATCH_CALL:
       GPR_ASSERT(host_.has_value());
       GPR_ASSERT(path_.has_value());
-      rc->data.batch.details->host = grpc_slice_ref_internal(*host_);
-      rc->data.batch.details->method = grpc_slice_ref_internal(*path_);
+      rc->data.batch.details->host = grpc_slice_ref_internal(host_->c_slice());
+      rc->data.batch.details->method =
+          grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
           grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;
@@ -1321,7 +1299,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
     ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(*host_, *path_,
+        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice(),
                                    (recv_initial_metadata_flags_ &
                                     GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
     if (rm != nullptr) {
@@ -1353,6 +1331,8 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "Failed call creation: %s",
+            grpc_error_std_string(error).c_str());
     calld->FailCallCreation();
     return;
   }
@@ -1386,17 +1366,8 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
-    GPR_DEBUG_ASSERT(
-        calld->recv_initial_metadata_->legacy_index()->named.path != nullptr);
-    GPR_DEBUG_ASSERT(
-        calld->recv_initial_metadata_->legacy_index()->named.authority !=
-        nullptr);
-    calld->path_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
-        calld->recv_initial_metadata_->legacy_index()->named.path->md)));
-    calld->host_.emplace(grpc_slice_ref_internal(GRPC_MDVALUE(
-        calld->recv_initial_metadata_->legacy_index()->named.authority->md)));
-    calld->recv_initial_metadata_->Remove(GRPC_BATCH_PATH);
-    calld->recv_initial_metadata_->Remove(GRPC_BATCH_AUTHORITY);
+    calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
+    calld->host_ = calld->recv_initial_metadata_->Take(HttpAuthorityMetadata());
   } else {
     (void)GRPC_ERROR_REF(error);
   }
@@ -1475,12 +1446,13 @@ void Server::CallData::StartTransportStreamOpBatch(
 
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
-  args = grpc_channel_args_remove_grpc_internal(args);
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  grpc_server* c_server = new grpc_server;
-  c_server->core_server = grpc_core::MakeOrphanable<grpc_core::Server>(args);
-  grpc_channel_args_destroy(args);
-  return c_server;
+  const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
+                                          .channel_args_preconditioning()
+                                          .PreconditionChannelArgs(args);
+  grpc_core::Server* server = new grpc_core::Server(new_args);
+  grpc_channel_args_destroy(new_args);
+  return server->c_ptr();
 }
 
 void grpc_server_register_completion_queue(grpc_server* server,
@@ -1499,7 +1471,7 @@ void grpc_server_register_completion_queue(grpc_server* server,
     /* Ideally we should log an error and abort but ruby-wrapped-language API
        calls grpc_completion_queue_pluck() on server completion queues */
   }
-  server->core_server->RegisterCompletionQueue(cq);
+  grpc_core::Server::FromC(server)->RegisterCompletionQueue(cq);
 }
 
 void* grpc_server_register_method(
@@ -1510,14 +1482,14 @@ void* grpc_server_register_method(
       "grpc_server_register_method(server=%p, method=%s, host=%s, "
       "flags=0x%08x)",
       4, (server, method, host, flags));
-  return server->core_server->RegisterMethod(method, host, payload_handling,
-                                             flags);
+  return grpc_core::Server::FromC(server)->RegisterMethod(
+      method, host, payload_handling, flags);
 }
 
 void grpc_server_start(grpc_server* server) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
-  server->core_server->Start();
+  grpc_core::Server::FromC(server)->Start();
 }
 
 void grpc_server_shutdown_and_notify(grpc_server* server,
@@ -1526,21 +1498,21 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", 3,
                  (server, cq, tag));
-  server->core_server->ShutdownAndNotify(cq, tag);
+  grpc_core::Server::FromC(server)->ShutdownAndNotify(cq, tag);
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_cancel_all_calls(server=%p)", 1, (server));
-  server->core_server->CancelAllCalls();
+  grpc_core::Server::FromC(server)->CancelAllCalls();
 }
 
 void grpc_server_destroy(grpc_server* server) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_destroy(server=%p)", 1, (server));
-  delete server;
+  grpc_core::Server::FromC(server)->Orphan();
 }
 
 grpc_call_error grpc_server_request_call(
@@ -1558,9 +1530,9 @@ grpc_call_error grpc_server_request_call(
       7,
       (server, call, details, request_metadata, cq_bound_to_call,
        cq_for_notification, tag));
-  return server->core_server->RequestCall(call, details, request_metadata,
-                                          cq_bound_to_call, cq_for_notification,
-                                          tag);
+  return grpc_core::Server::FromC(server)->RequestCall(
+      call, details, request_metadata, cq_bound_to_call, cq_for_notification,
+      tag);
 }
 
 grpc_call_error grpc_server_request_registered_call(
@@ -1583,7 +1555,7 @@ grpc_call_error grpc_server_request_registered_call(
       9,
       (server, registered_method, call, deadline, request_metadata,
        optional_payload, cq_bound_to_call, cq_for_notification, tag_new));
-  return server->core_server->RequestRegisteredCall(
+  return grpc_core::Server::FromC(server)->RequestRegisteredCall(
       rm, call, deadline, request_metadata, optional_payload, cq_bound_to_call,
       cq_for_notification, tag_new);
 }
@@ -1594,7 +1566,7 @@ void grpc_server_set_config_fetcher(
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_set_config_fetcher(server=%p, config_fetcher=%p)",
                  2, (server, server_config_fetcher));
-  server->core_server->set_config_fetcher(
+  grpc_core::Server::FromC(server)->set_config_fetcher(
       std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
 }
 

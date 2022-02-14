@@ -35,7 +35,7 @@ _TARGETS += package_targets.targets()
 def _create_build_map():
     """Maps task names and labels to list of tasks to be built."""
     target_build_map = dict([(target.name, [target]) for target in _TARGETS])
-    if len(_TARGETS) > len(target_build_map.keys()):
+    if len(_TARGETS) > len(list(target_build_map.keys())):
         raise Exception('Target names need to be unique')
 
     label_build_map = {}
@@ -47,7 +47,7 @@ def _create_build_map():
             else:
                 label_build_map[label] = [target]
 
-    if set(target_build_map.keys()).intersection(label_build_map.keys()):
+    if set(target_build_map.keys()).intersection(list(label_build_map.keys())):
         raise Exception('Target names need to be distinct from label names')
     return dict(list(target_build_map.items()) + list(label_build_map.items()))
 
@@ -68,16 +68,23 @@ argp.add_argument('-f',
                   default=[],
                   help='Filter targets to build with AND semantics.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument('-t',
-                  '--travis',
-                  default=False,
-                  action='store_const',
-                  const=True)
 argp.add_argument('-x',
                   '--xml_report',
                   default='report_taskrunner_sponge_log.xml',
                   type=str,
                   help='Filename for the JUnit-compatible XML report')
+argp.add_argument('--dry_run',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Only print what would be run.')
+argp.add_argument(
+    '--inner_jobs',
+    default=None,
+    type=int,
+    help=
+    'Number of parallel jobs to use by each target. Passed as build_jobspec(inner_jobs=N) to each target.'
+)
 
 args = argp.parse_args()
 
@@ -88,7 +95,15 @@ for label in args.build:
 
 # Among targets selected by -b, filter out those that don't match the filter
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
-targets = sorted(set(targets), key=lambda target: target.name)
+
+print('Will build %d targets:' % len(targets))
+for target in targets:
+    print('  %s, labels %s' % (target.name, target.labels))
+print()
+
+if args.dry_run:
+    print('--dry_run was used, exiting')
+    sys.exit(1)
 
 # Execute pre-build phase
 prebuild_jobs = []
@@ -104,7 +119,7 @@ if prebuild_jobs:
 
 build_jobs = []
 for target in targets:
-    build_jobs.append(target.build_jobspec())
+    build_jobs.append(target.build_jobspec(inner_jobs=args.inner_jobs))
 if not build_jobs:
     print('Nothing to build.')
     sys.exit(1)

@@ -14,11 +14,19 @@
 """Python-related rules intended only for use internal to the repo."""
 
 load("//bazel:gevent_test.bzl", "py_grpc_gevent_test")
-load("//bazel:python_rules.bzl", "py2and3_test")
 
 def internal_py_grpc_test(name, **kwargs):
-    """Runs a test under all supported environments."""
-    py2and3_test(name, **kwargs)
+    """Runs a test under all supported environments.
+
+    Args:
+      name: The name of the test.
+      **kwargs: Any additional arguments to add to the test.
+    """
+    native.py_test(
+        name = name + ".native",
+        python_version = "PY3",
+        **kwargs
+    )
     py_grpc_gevent_test(name, **kwargs)
 
     suite_kwargs = {}
@@ -28,7 +36,7 @@ def internal_py_grpc_test(name, **kwargs):
     native.test_suite(
         name = name,
         tests = [
-            name + ".both_pythons",
+            name + ".native",
             name + ".gevent",
         ],
         **suite_kwargs

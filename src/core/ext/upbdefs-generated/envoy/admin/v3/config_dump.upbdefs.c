@@ -8,61 +8,14 @@
 
 #include "upb/def.h"
 #include "envoy/admin/v3/config_dump.upbdefs.h"
+#include "envoy/admin/v3/config_dump.upb.h"
 
 extern upb_def_init envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit;
 extern upb_def_init google_protobuf_any_proto_upbdefinit;
 extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_admin_v3_ConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_UpdateFailureState_msginit;
-extern const upb_msglayout envoy_admin_v3_BootstrapConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_ListenersConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_ListenersConfigDump_StaticListener_msginit;
-extern const upb_msglayout envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit;
-extern const upb_msglayout envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit;
-extern const upb_msglayout envoy_admin_v3_ClustersConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit;
-extern const upb_msglayout envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit;
-extern const upb_msglayout envoy_admin_v3_RoutesConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit;
-extern const upb_msglayout envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit;
-extern const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit;
-extern const upb_msglayout envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit;
-extern const upb_msglayout envoy_admin_v3_SecretsConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit;
-extern const upb_msglayout envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit;
-extern const upb_msglayout envoy_admin_v3_EndpointsConfigDump_msginit;
-extern const upb_msglayout envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit;
-extern const upb_msglayout envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit;
-
-static const upb_msglayout *layouts[22] = {
-  &envoy_admin_v3_ConfigDump_msginit,
-  &envoy_admin_v3_UpdateFailureState_msginit,
-  &envoy_admin_v3_BootstrapConfigDump_msginit,
-  &envoy_admin_v3_ListenersConfigDump_msginit,
-  &envoy_admin_v3_ListenersConfigDump_StaticListener_msginit,
-  &envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit,
-  &envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit,
-  &envoy_admin_v3_ClustersConfigDump_msginit,
-  &envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit,
-  &envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit,
-  &envoy_admin_v3_RoutesConfigDump_msginit,
-  &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit,
-  &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit,
-  &envoy_admin_v3_SecretsConfigDump_msginit,
-  &envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit,
-  &envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit,
-};
-
-static const char descriptor[6802] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 'v', '3', '/', 'c', 'o', 'n', 'f', 'i', 'g', '_', 'd', 
+static const char descriptor[6865] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 'v', '3', '/', 'c', 'o', 'n', 'f', 'i', 'g', '_', 'd', 
 'u', 'm', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'd', 'm', 'i', 'n', '.', 'v', '3', 
 '\032', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'b', 'o', 'o', 't', 's', 't', 'r', 'a', 'p', '/', 
 'v', '3', '/', 'b', 'o', 'o', 't', 's', 't', 'r', 'a', 'p', '.', 'p', 'r', 'o', 't', 'o', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 
@@ -331,10 +284,12 @@ static const char descriptor[6802] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', '
 'R', 'e', 's', 'o', 'u', 'r', 'c', 'e', 'S', 't', 'a', 't', 'u', 's', '\022', '\013', '\n', '\007', 'U', 'N', 'K', 'N', 'O', 'W', 'N', 
 '\020', '\000', '\022', '\r', '\n', '\t', 'R', 'E', 'Q', 'U', 'E', 'S', 'T', 'E', 'D', '\020', '\001', '\022', '\022', '\n', '\016', 'D', 'O', 'E', 'S', 
 '_', 'N', 'O', 'T', '_', 'E', 'X', 'I', 'S', 'T', '\020', '\002', '\022', '\t', '\n', '\005', 'A', 'C', 'K', 'E', 'D', '\020', '\003', '\022', '\n', 
-'\n', '\006', 'N', 'A', 'C', 'K', 'E', 'D', '\020', '\004', 'B', '9', '\n', '\034', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 
+'\n', '\006', 'N', 'A', 'C', 'K', 'E', 'D', '\020', '\004', 'B', 'x', '\n', '\034', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 
 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'd', 'm', 'i', 'n', '.', 'v', '3', 'B', '\017', 'C', 'o', 'n', 'f', 'i', 'g', 
-'D', 'u', 'm', 'p', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 
-'o', '3', 
+'D', 'u', 'm', 'p', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', '=', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 
+'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 
+'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 'v', '3', ';', 'a', 'd', 'm', 'i', 'n', 'v', '3', '\272', 
+'\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[6] = {
@@ -348,7 +303,7 @@ static upb_def_init *deps[6] = {
 
 upb_def_init envoy_admin_v3_config_dump_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_admin_v3_config_dump_proto_upb_file_layout,
   "envoy/admin/v3/config_dump.proto",
-  UPB_STRVIEW_INIT(descriptor, 6802)
+  UPB_STRVIEW_INIT(descriptor, 6865)
 };

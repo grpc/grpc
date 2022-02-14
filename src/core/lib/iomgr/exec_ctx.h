@@ -73,10 +73,10 @@ class Combiner;
  *  Generally, to create an exec_ctx instance, add the following line at the top
  *  of the public API entry point or at the start of a thread's work function :
  *
- *  grpc_core::ExecCtx exec_ctx;
+ *  ExecCtx exec_ctx;
  *
  *  Access the created ExecCtx instance using :
- *  grpc_core::ExecCtx::Get()
+ *  ExecCtx::Get()
  *
  *  Specific responsibilities (this may grow in the future):
  *  - track a list of core work that needs to be delayed until the base of the
@@ -90,7 +90,7 @@ class Combiner;
  *  - Instance of this must ALWAYS be constructed on the stack, never
  *    heap allocated.
  *  - Do not pass exec_ctx as a parameter to a function. Always access it using
- *    grpc_core::ExecCtx::Get().
+ *    ExecCtx::Get().
  *  - NOTE: In the future, the convention is likely to change to allow only one
  *          ExecCtx on a thread's stack at the same time. The TODO below
  *          discusses this plan in more detail.
@@ -108,14 +108,14 @@ class ExecCtx {
   /** Default Constructor */
 
   ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
-    grpc_core::Fork::IncExecCtxCount();
+    Fork::IncExecCtxCount();
     Set(this);
   }
 
   /** Parameterised Constructor */
   explicit ExecCtx(uintptr_t fl) : flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-      grpc_core::Fork::IncExecCtxCount();
+      Fork::IncExecCtxCount();
     }
     Set(this);
   }
@@ -126,7 +126,7 @@ class ExecCtx {
     Flush();
     Set(last_exec_ctx_);
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-      grpc_core::Fork::DecExecCtxCount();
+      Fork::DecExecCtxCount();
     }
   }
 
@@ -276,7 +276,7 @@ class ExecCtx {
  *  stacks of core re-entries. Instead, any application callbacks instead should
  *  not be invoked until other core work is done and other application callbacks
  *  have completed. To accomplish this, any application callback should be
- *  enqueued using grpc_core::ApplicationCallbackExecCtx::Enqueue .
+ *  enqueued using ApplicationCallbackExecCtx::Enqueue .
  *
  *  CONVENTIONS:
  *  - Instances of this must ALWAYS be constructed on the stack, never
@@ -289,8 +289,8 @@ class ExecCtx {
  *  Generally, core entry points that may trigger application-level callbacks
  *  will have the following declarations:
  *
- *  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
- *  grpc_core::ExecCtx exec_ctx;
+ *  ApplicationCallbackExecCtx callback_exec_ctx;
+ *  ExecCtx exec_ctx;
  *
  *  This ordering is important to make sure that the ApplicationCallbackExecCtx
  *  is destroyed after the ExecCtx (to prevent the re-entry problem described
@@ -320,7 +320,7 @@ class ApplicationCallbackExecCtx {
       }
       callback_exec_ctx_ = nullptr;
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-        grpc_core::Fork::DecExecCtxCount();
+        Fork::DecExecCtxCount();
       }
     } else {
       GPR_DEBUG_ASSERT(head_ == nullptr);
@@ -335,7 +335,7 @@ class ApplicationCallbackExecCtx {
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
     if (Get() == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
-        grpc_core::Fork::IncExecCtxCount();
+        Fork::IncExecCtxCount();
       }
       callback_exec_ctx_ = exec_ctx;
     }

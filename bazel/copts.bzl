@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Includes default copts.
+"""
+
 # This is a list of llvm flags to be used when being built with use_strict_warning=1
 GRPC_LLVM_WARNING_FLAGS = [
     # Enable all & extra warnings
@@ -43,11 +47,16 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wthread-safety-beta",
     "-Wunused-comparison",
     "-Wvla",
+    # -Wextra compatibility between gcc and clang
+    "-Wtype-limits",
     # A list of disabled flags coming from internal build system
     "-Wno-string-concatenation",
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",
+    # googletest 1.11 or later is needed to have this warning
+    # https://github.com/google/googletest/commit/1b3eb6ef34620c1203263d76ec169ef0853789cc
+    "-Wno-deprecated-copy",
 ]
 
 GRPC_DEFAULT_COPTS = select({

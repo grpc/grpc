@@ -31,7 +31,7 @@ namespace Grpc.Core
     /// </summary>
     public class AuthContext
     {
-        string peerIdentityPropertyName;
+        string? peerIdentityPropertyName;
         Dictionary<string, List<AuthProperty>> properties;
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="peerIdentityPropertyName">Peer identity property name.</param>
         /// <param name="properties">Multimap of auth properties by name.</param>
-        public AuthContext(string peerIdentityPropertyName, Dictionary<string, List<AuthProperty>> properties)
+        public AuthContext(string? peerIdentityPropertyName, Dictionary<string, List<AuthProperty>> properties)
         {
             this.peerIdentityPropertyName = peerIdentityPropertyName;
             this.properties = GrpcPreconditions.CheckNotNull(properties);
@@ -60,7 +60,7 @@ namespace Grpc.Core
         /// Gets the name of the property that indicates the peer identity. Returns <c>null</c>
         /// if the peer is not authenticated.
         /// </summary>
-        public string PeerIdentityPropertyName
+        public string? PeerIdentityPropertyName
         {
             get
             {

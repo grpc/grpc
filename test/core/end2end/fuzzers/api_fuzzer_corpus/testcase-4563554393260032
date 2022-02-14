@@ -1,0 +1,46 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "unix::::::::::::::::::::::::::;:::::;:::::::::::::>:::::::::::::::::::::::9:::::\026I:::::::c::,:::\332\261::::::::::::::::"
+    channel_actions {
+      add_n_bytes_writable: 18446744073709551607
+      add_n_bytes_readable: 18446744073709551607
+    }
+  }
+}
+actions {
+  create_call {
+    propagation_mask: 6881280
+    method {
+      value: "/foo"
+    }
+    timeout: 1953002608
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+        message {
+          intern: true
+        }
+        message {
+          value: "Bh\007-600"
+          intern: true
+        }
+      }
+    }
+  }
+}
+actions {
+  advance_time: 6881280
+}
+actions {
+}

@@ -23,20 +23,19 @@
 #include <limits.h>
 #include <string.h>
 
+#include <openssl/bn.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-extern "C" {
-#include <openssl/bn.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-}
-
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -346,6 +345,7 @@ struct verifier_cb_ctx {
   void* user_data;
   grpc_jwt_verification_done_cb user_cb;
   grpc_http_response responses[HTTP_RESPONSE_COUNT];
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request;
 };
 /* Takes ownership of the header, claims and signature. */
 static verifier_cb_ctx* verifier_cb_ctx_create(
@@ -397,10 +397,9 @@ struct grpc_jwt_verifier {
   email_key_mapping* mappings;
   size_t num_mappings; /* Should be very few, linear search ok. */
   size_t allocated_mappings;
-  grpc_httpcli_context http_ctx;
 };
 
-static Json json_from_http(const grpc_httpcli_response* response) {
+static Json json_from_http(const grpc_http_response* response) {
   if (response == nullptr) {
     gpr_log(GPR_ERROR, "HTTP response is NULL.");
     return Json();  // JSON null
@@ -669,10 +668,13 @@ static void on_openid_config_retrieved(void* user_data,
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);
-  grpc_httpcli_request req;
+  grpc_http_request req;
+  memset(&req, 0, sizeof(grpc_http_request));
   const char* jwks_uri;
-  grpc_resource_quota* resource_quota = nullptr;
   const Json* cur;
+  absl::StatusOr<grpc_core::URI> uri;
+  char* host;
+  char* path;
 
   /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time. */
   if (json.type() == Json::Type::JSON_NULL) goto error;
@@ -688,25 +690,30 @@ static void on_openid_config_retrieved(void* user_data,
     goto error;
   }
   jwks_uri += 8;
-  req.handshaker = &grpc_httpcli_ssl;
-  req.host = gpr_strdup(jwks_uri);
-  req.http.path = const_cast<char*>(strchr(jwks_uri, '/'));
-  if (req.http.path == nullptr) {
-    req.http.path = const_cast<char*>("");
+  host = gpr_strdup(jwks_uri);
+  path = const_cast<char*>(strchr(jwks_uri, '/'));
+  if (path == nullptr) {
+    path = const_cast<char*>("");
   } else {
-    *(req.host + (req.http.path - jwks_uri)) = '\0';
+    *(host + (path - jwks_uri)) = '\0';
   }
 
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  resource_quota = grpc_resource_quota_create("jwt_verifier");
-  grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+  uri = grpc_core::URI::Create("https", host, path, {} /* query params /*/,
+                               "" /* fragment */);
+  if (!uri.ok()) {
+    goto error;
+  }
+  ctx->http_request = grpc_core::HttpRequest::Get(
+      std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay,
       GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx),
-      &ctx->responses[HTTP_RESPONSE_KEYS]);
-  gpr_free(req.host);
+      &ctx->responses[HTTP_RESPONSE_KEYS],
+      grpc_core::CreateHttpRequestSSLCredentials());
+  ctx->http_request->Start();
+  gpr_free(host);
   return;
 
 error:
@@ -764,11 +771,12 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   grpc_closure* http_cb;
   char* path_prefix = nullptr;
   const char* iss;
-  grpc_httpcli_request req;
-  grpc_resource_quota* resource_quota = nullptr;
-  memset(&req, 0, sizeof(grpc_httpcli_request));
-  req.handshaker = &grpc_httpcli_ssl;
+  grpc_http_request req;
+  memset(&req, 0, sizeof(grpc_http_request));
   http_response_index rsp_idx;
+  char* host;
+  char* path;
+  absl::StatusOr<grpc_core::URI> uri;
 
   GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
              ctx->claims != nullptr);
@@ -796,26 +804,25 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
       gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
       goto error;
     }
-    req.host = gpr_strdup(mapping->key_url_prefix);
-    path_prefix = strchr(req.host, '/');
+    host = gpr_strdup(mapping->key_url_prefix);
+    path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
-      gpr_asprintf(&req.http.path, "/%s", iss);
+      gpr_asprintf(&path, "/%s", iss);
     } else {
       *(path_prefix++) = '\0';
-      gpr_asprintf(&req.http.path, "/%s/%s", path_prefix, iss);
+      gpr_asprintf(&path, "/%s/%s", path_prefix, iss);
     }
     http_cb =
         GRPC_CLOSURE_CREATE(on_keys_retrieved, ctx, grpc_schedule_on_exec_ctx);
     rsp_idx = HTTP_RESPONSE_KEYS;
   } else {
-    req.host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
-    path_prefix = strchr(req.host, '/');
+    host = gpr_strdup(strstr(iss, "https://") == iss ? iss + 8 : iss);
+    path_prefix = strchr(host, '/');
     if (path_prefix == nullptr) {
-      req.http.path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
+      path = gpr_strdup(GRPC_OPENID_CONFIG_URL_SUFFIX);
     } else {
       *(path_prefix++) = 0;
-      gpr_asprintf(&req.http.path, "/%s%s", path_prefix,
-                   GRPC_OPENID_CONFIG_URL_SUFFIX);
+      gpr_asprintf(&path, "/%s%s", path_prefix, GRPC_OPENID_CONFIG_URL_SUFFIX);
     }
     http_cb = GRPC_CLOSURE_CREATE(on_openid_config_retrieved, ctx,
                                   grpc_schedule_on_exec_ctx);
@@ -825,13 +832,18 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   /* TODO(ctiller): Carry the resource_quota in ctx and share it with the host
      channel. This would allow us to cancel an authentication query when under
      extreme memory pressure. */
-  resource_quota = grpc_resource_quota_create("jwt_verifier");
-  grpc_httpcli_get(
-      &ctx->verifier->http_ctx, &ctx->pollent, resource_quota, &req,
+  uri = grpc_core::URI::Create("https", host, path, {} /* query params */,
+                               "" /* fragment */);
+  if (!uri.ok()) {
+    goto error;
+  }
+  ctx->http_request = grpc_core::HttpRequest::Get(
+      std::move(*uri), nullptr /* channel args */, &ctx->pollent, &req,
       grpc_core::ExecCtx::Get()->Now() + grpc_jwt_verifier_max_delay, http_cb,
-      &ctx->responses[rsp_idx]);
-  gpr_free(req.host);
-  gpr_free(req.http.path);
+      &ctx->responses[rsp_idx], grpc_core::CreateHttpRequestSSLCredentials());
+  ctx->http_request->Start();
+  gpr_free(host);
+  gpr_free(path);
   return;
 
 error:
@@ -888,7 +900,6 @@ grpc_jwt_verifier* grpc_jwt_verifier_create(
     const grpc_jwt_verifier_email_domain_key_url_mapping* mappings,
     size_t num_mappings) {
   grpc_jwt_verifier* v = grpc_core::Zalloc<grpc_jwt_verifier>();
-  grpc_httpcli_context_init(&v->http_ctx);
 
   /* We know at least of one mapping. */
   v->allocated_mappings = 1 + num_mappings;
@@ -910,7 +921,6 @@ grpc_jwt_verifier* grpc_jwt_verifier_create(
 void grpc_jwt_verifier_destroy(grpc_jwt_verifier* v) {
   size_t i;
   if (v == nullptr) return;
-  grpc_httpcli_context_destroy(&v->http_ctx);
   if (v->mappings != nullptr) {
     for (i = 0; i < v->num_mappings; i++) {
       gpr_free(v->mappings[i].email_domain);

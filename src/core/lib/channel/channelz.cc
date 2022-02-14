@@ -34,6 +34,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
@@ -398,7 +399,7 @@ void SecurityArgDestroy(void* p) {
   xds_certificate_provider->Unref();
 }
 
-int SecurityArgCmp(void* p, void* q) { return grpc_core::QsortCompare(p, q); }
+int SecurityArgCmp(void* p, void* q) { return QsortCompare(p, q); }
 
 const grpc_arg_pointer_vtable kChannelArgVtable = {
     SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};

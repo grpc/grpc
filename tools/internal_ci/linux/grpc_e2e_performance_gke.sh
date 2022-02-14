@@ -66,7 +66,6 @@ go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
 # Fetch test-infra repository and build all tools.
-# Note: Submodules are not required for tools build.
 pushd ..
 git clone --depth 1 https://github.com/grpc/test-infra.git
 cd test-infra
@@ -128,6 +127,7 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 time ../test-infra/bin/runner \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -polling-interval 5s \
     -delete-successful-tests \
     -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
     -o "runner/sponge_log.xml"

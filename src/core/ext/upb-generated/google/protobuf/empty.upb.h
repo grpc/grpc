@@ -53,6 +53,8 @@ UPB_INLINE char *google_protobuf_Empty_serialize(const google_protobuf_Empty *ms
 
 
 
+extern const upb_msglayout_file google_protobuf_empty_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

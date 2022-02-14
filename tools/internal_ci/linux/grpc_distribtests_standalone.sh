@@ -15,9 +15,12 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/run_tests/task_runner.py -f distribtest linux cpp -j 6
+tools/run_tests/task_runner.py -f distribtest linux cpp ${TASK_RUNNER_EXTRA_FILTERS} -j 6 --inner_jobs 6

@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #define GRPC_ARG_XDS_CERTIFICATE_PROVIDER \
@@ -34,8 +35,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   XdsCertificateProvider();
   ~XdsCertificateProvider() override;
 
-  grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor()
-      const override {
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
 

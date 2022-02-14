@@ -205,7 +205,8 @@ static grpc_completion_queue_functor* tag(intptr_t t) {
 }
 
 static grpc_end2end_test_fixture inproc_create_fixture(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
       gpr_malloc(sizeof(inproc_fixture_data)));
@@ -221,13 +222,13 @@ static grpc_end2end_test_fixture inproc_create_fixture(
 }
 
 void inproc_init_client(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* client_args) {
+                        const grpc_channel_args* client_args) {
   f->client = grpc_inproc_channel_create(f->server, client_args, nullptr);
   GPR_ASSERT(f->client);
 }
 
 void inproc_init_server(grpc_end2end_test_fixture* f,
-                        grpc_channel_args* server_args) {
+                        const grpc_channel_args* server_args) {
   if (f->server) {
     grpc_server_destroy(f->server);
   }
@@ -241,10 +242,10 @@ void inproc_tear_down(grpc_end2end_test_fixture* f) {
   gpr_free(ffd);
 }
 
-static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
-                                            const char* test_name,
-                                            grpc_channel_args* client_args,
-                                            grpc_channel_args* server_args) {
+static grpc_end2end_test_fixture begin_test(
+    grpc_end2end_test_config config, const char* test_name,
+    const grpc_channel_args* client_args,
+    const grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   gpr_log(GPR_INFO, "Running test: %s/%s", test_name, config.name);
   f = config.create_fixture(client_args, server_args);
@@ -295,7 +296,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_config config,
+static void simple_request_body(grpc_end2end_test_config /* config */,
                                 grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;
@@ -430,11 +431,6 @@ static void simple_request_body(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  int expected_calls = 1;
-  if (config.feature_mask & FEATURE_MASK_SUPPORTS_REQUEST_PROXYING) {
-    expected_calls *= 2;
-  }
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config) {

@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-extern TraceFlag grpc_sdk_authz_trace;
+extern TraceFlag grpc_authz_trace;
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
@@ -113,14 +113,14 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace) && !status.ok()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
                 status.code(), std::string(status.message()).c_str());
       }
     }
   };
-  refresh_thread_ = absl::make_unique<grpc_core::Thread>(
+  refresh_thread_ = absl::make_unique<Thread>(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
@@ -155,7 +155,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     allow_engine_ =
         MakeRefCounted<GrpcAuthorizationEngine>(std::move(policies_or->at(1)));
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_sdk_authz_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
             "policy\n%s",

@@ -25,11 +25,13 @@
 
 #include "upb/upb.hpp"
 
+#include <grpc/status.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
 #define HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -59,6 +61,10 @@ HealthCheckClient::HealthCheckClient(
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
       channelz_node_(std::move(channelz_node)),
+      call_allocator_(
+          ResourceQuotaFromChannelArgs(connected_subchannel_->args())
+              ->memory_quota()
+              ->CreateMemoryAllocator(service_name_)),
       watcher_(std::move(watcher)),
       retry_backoff_(
           BackOff::Options()
@@ -253,12 +259,13 @@ HealthCheckClient::CallState::CallState(
     : health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(Arena::Create(health_check_client_->connected_subchannel_
-                               ->GetInitialCallSizeEstimate())),
+                               ->GetInitialCallSizeEstimate(),
+                           &health_check_client_->call_allocator_)),
       payload_(context_),
-      send_initial_metadata_(arena_),
-      send_trailing_metadata_(arena_),
-      recv_initial_metadata_(arena_),
-      recv_trailing_metadata_(arena_) {}
+      send_initial_metadata_(arena_.get()),
+      send_trailing_metadata_(arena_.get()),
+      recv_initial_metadata_(arena_.get()),
+      recv_trailing_metadata_(arena_.get()) {}
 
 HealthCheckClient::CallState::~CallState() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
@@ -275,7 +282,6 @@ HealthCheckClient::CallState::~CallState() {
   // any, so that it can release any internal references it may be
   // holding to the call stack.
   call_combiner_.SetNotifyOnCancel(nullptr);
-  arena_->Destroy();
 }
 
 void HealthCheckClient::CallState::Orphan() {
@@ -287,10 +293,10 @@ void HealthCheckClient::CallState::StartCall() {
   SubchannelCall::Args args = {
       health_check_client_->connected_subchannel_,
       &pollent_,
-      GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH,
+      Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
       gpr_get_cycle_counter(),  // start_time
       GRPC_MILLIS_INF_FUTURE,   // deadline
-      arena_,
+      arena_.get(),
       context_,
       &call_combiner_,
   };
@@ -319,12 +325,9 @@ void HealthCheckClient::CallState::StartCall() {
   batch_.on_complete = GRPC_CLOSURE_INIT(&on_complete_, OnComplete, this,
                                          grpc_schedule_on_exec_ctx);
   // Add send_initial_metadata op.
-  error = grpc_metadata_batch_add_head(
-      &send_initial_metadata_, &path_metadata_storage_,
-      grpc_mdelem_from_slices(
-          GRPC_MDSTR_PATH,
-          GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH),
-      GRPC_BATCH_PATH);
+  send_initial_metadata_.Set(
+      HttpPathMetadata(),
+      Slice::FromStaticString("/grpc.health.v1.Health/Watch"));
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
@@ -553,15 +556,13 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_,
                           "recv_trailing_metadata_ready");
   // Get call status.
-  grpc_status_code status = GRPC_STATUS_UNKNOWN;
+  grpc_status_code status =
+      self->recv_trailing_metadata_.get(GrpcStatusMetadata())
+          .value_or(GRPC_STATUS_UNKNOWN);
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
-  } else if (self->recv_trailing_metadata_.legacy_index()->named.grpc_status !=
-             nullptr) {
-    status = grpc_get_status_code_from_metadata(
-        self->recv_trailing_metadata_.legacy_index()->named.grpc_status->md);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO,

@@ -167,7 +167,8 @@ typedef enum {
   envoy_config_cluster_v3_Cluster_AUTO = 0,
   envoy_config_cluster_v3_Cluster_V4_ONLY = 1,
   envoy_config_cluster_v3_Cluster_V6_ONLY = 2,
-  envoy_config_cluster_v3_Cluster_V4_PREFERRED = 3
+  envoy_config_cluster_v3_Cluster_V4_PREFERRED = 3,
+  envoy_config_cluster_v3_Cluster_ALL = 4
 } envoy_config_cluster_v3_Cluster_DnsLookupFamily;
 
 typedef enum {
@@ -2106,6 +2107,8 @@ UPB_INLINE void envoy_config_cluster_v3_TrackClusterStats_set_timeout_budgets(en
 UPB_INLINE void envoy_config_cluster_v3_TrackClusterStats_set_request_response_sizes(envoy_config_cluster_v3_TrackClusterStats *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
+
+extern const upb_msglayout_file envoy_config_cluster_v3_cluster_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

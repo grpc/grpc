@@ -96,7 +96,7 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
-  python -m "tests.${test_name}" \
+  python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
@@ -148,7 +148,7 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
-  test_suites=("change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test")
+  test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test")
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))
   done

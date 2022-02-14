@@ -28,7 +28,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -474,7 +473,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
 static grpc_metadata gzip_compression_override() {
   grpc_metadata gzip_compression_override;
-  gzip_compression_override.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
+  gzip_compression_override.key =
+      grpc_slice_from_static_string("grpc-internal-encoding-request");
   gzip_compression_override.value = grpc_slice_from_static_string("gzip");
   memset(&gzip_compression_override.internal_data, 0,
          sizeof(gzip_compression_override.internal_data));

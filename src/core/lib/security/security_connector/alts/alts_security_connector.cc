@@ -69,7 +69,7 @@ class grpc_alts_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name)
-      : grpc_channel_security_connector(GRPC_ALTS_URL_SCHEME,
+      : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
@@ -141,7 +141,7 @@ class grpc_alts_server_security_connector final
  public:
   explicit grpc_alts_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(GRPC_ALTS_URL_SCHEME,
+      : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
                                        std::move(server_creds)) {}
 
   ~grpc_alts_server_security_connector() override = default;
@@ -187,8 +187,8 @@ class grpc_alts_server_security_connector final
 
 namespace grpc_core {
 namespace internal {
-grpc_core::RefCountedPtr<grpc_auth_context>
-grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
+RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
+    const tsi_peer* peer) {
   if (peer == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid arguments to grpc_alts_auth_context_from_tsi_peer()");
@@ -243,7 +243,7 @@ grpc_alts_auth_context_from_tsi_peer(const tsi_peer* peer) {
     return nullptr;
   }
   /* Create auth context. */
-  auto ctx = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  auto ctx = MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_ALTS_TRANSPORT_SECURITY_TYPE);

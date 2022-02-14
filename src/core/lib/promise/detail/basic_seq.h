@@ -17,8 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <array>
 #include <cassert>
+#include <new>
+#include <tuple>
+#include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
@@ -29,6 +34,8 @@
 
 namespace grpc_core {
 namespace promise_detail {
+template <typename F>
+class PromiseLike;
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -155,9 +162,9 @@ absl::enable_if_t<I <= J, SeqState<Traits, I, Fs...>*> GetSeqState(
 }
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
-auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg) -> decltype(
-    SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
-        &state->next_factory, std::forward<T>(arg))) {
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
+    -> decltype(SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::
+                    CallFactory(&state->next_factory, std::forward<T>(arg))) {
   return SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
       &state->next_factory, std::forward<T>(arg));
 }

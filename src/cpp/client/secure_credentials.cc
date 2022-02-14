@@ -68,8 +68,7 @@ SecureChannelCredentials::CreateChannelWithInterceptors(
   args.SetChannelArgs(&channel_args);
   return ::grpc::CreateChannelInternal(
       args.GetSslTargetNameOverride(),
-      grpc_secure_channel_create(c_creds_, target.c_str(), &channel_args,
-                                 nullptr),
+      grpc_channel_create(target.c_str(), c_creds_, &channel_args),
       std::move(interceptor_creators));
 }
 
@@ -524,6 +523,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
     std::unique_ptr<MetadataCredentialsPlugin> plugin)
-    : thread_pool_(CreateDefaultThreadPool()), plugin_(std::move(plugin)) {}
+    : plugin_(std::move(plugin)) {
+  if (plugin_->IsBlocking()) {
+    thread_pool_.reset(CreateDefaultThreadPool());
+  }
+}
 
 }  // namespace grpc

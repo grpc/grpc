@@ -27,15 +27,14 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -75,7 +74,7 @@ class SubchannelCall {
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
-    grpc_slice path;
+    Slice path;
     gpr_cycle_counter start_time;
     grpc_millis deadline;
     Arena* arena;

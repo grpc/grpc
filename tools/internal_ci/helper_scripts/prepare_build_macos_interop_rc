@@ -17,9 +17,9 @@
 # builds. This rc script must be used in the root directory of gRPC
 # and is expected to be used before prepare_build_macos_rc
 
-# Set up gRPC-Go and gRPC-Java to test
-git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
-git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
-git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
-git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart
-git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet
+# Clone repositories for languages tested by the interop test suite
+git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go && (cd ../grpc-go; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java && (cd ../grpc-java; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node && (cd ../grpc-node; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart && (cd ../grpc-dart; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet && (cd ../grpc-dotnet; git rev-parse HEAD)

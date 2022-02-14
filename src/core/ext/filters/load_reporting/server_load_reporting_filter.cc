@@ -24,6 +24,7 @@
 
 #include <string>
 
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc_security.h>
@@ -93,14 +94,13 @@ void ServerLoadReportingCallData::Destroy(
         {{::grpc::load_reporter::TagKeyToken(),
           {client_ip_and_lr_token_, client_ip_and_lr_token_len_}},
          {::grpc::load_reporter::TagKeyHost(),
-          {target_host_, target_host_len_}},
+          {target_host_.data(), target_host_.length()}},
          {::grpc::load_reporter::TagKeyUserId(),
           {chand->peer_identity(), chand->peer_identity_len()}},
          {::grpc::load_reporter::TagKeyStatus(),
           GetStatusTagForStatus(final_info->final_status)}});
     gpr_free(client_ip_and_lr_token_);
   }
-  gpr_free(target_host_);
   grpc_slice_unref_internal(service_method_);
 }
 
@@ -115,12 +115,24 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
     original_recv_initial_metadata_ready_ = op->recv_initial_metadata_ready();
     // Substitute the original closure for the wrapper closure.
     op->set_recv_initial_metadata_ready(&recv_initial_metadata_ready_);
-  } else if (op->send_trailing_metadata() != nullptr) {
-    GRPC_LOG_IF_ERROR(
-        "server_load_reporting_filter",
-        grpc_metadata_batch_filter(op->send_trailing_metadata()->batch(),
-                                   SendTrailingMetadataFilter, elem,
-                                   "send_trailing_metadata filtering error"));
+  }
+  if (op->send_trailing_metadata() != nullptr) {
+    const auto& costs = op->send_trailing_metadata()->batch()->Take(
+        grpc_core::LbCostBinMetadata());
+    for (const auto& cost : costs) {
+      ServerLoadReportingChannelData* chand =
+          reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
+      opencensus::stats::Record(
+          {{::grpc::load_reporter::MeasureOtherCallMetric(), cost.cost}},
+          {{::grpc::load_reporter::TagKeyToken(),
+            {client_ip_and_lr_token_, client_ip_and_lr_token_len_}},
+           {::grpc::load_reporter::TagKeyHost(),
+            {target_host_.data(), target_host_.length()}},
+           {::grpc::load_reporter::TagKeyUserId(),
+            {chand->peer_identity(), chand->peer_identity_len()}},
+           {::grpc::load_reporter::TagKeyMetricName(),
+            {cost.name.data(), cost.name.length()}}});
+    }
   }
   grpc_call_next_op(elem, op->op());
 }
@@ -205,35 +217,6 @@ void ServerLoadReportingCallData::StoreClientIpAndLrToken(const char* lr_token,
       client_ip_and_lr_token_len_);
 }
 
-grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-    calld->service_method_ = grpc_slice_ref_internal(GRPC_MDVALUE(md));
-  } else if (calld->target_host_ == nullptr &&
-             grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_AUTHORITY)) {
-    grpc_slice target_host_slice = GRPC_MDVALUE(md);
-    calld->target_host_len_ = GRPC_SLICE_LENGTH(target_host_slice);
-    calld->target_host_ =
-        reinterpret_cast<char*>(gpr_zalloc(calld->target_host_len_));
-    for (size_t i = 0; i < calld->target_host_len_; ++i) {
-      calld->target_host_[i] = static_cast<char>(
-          tolower(GRPC_SLICE_START_PTR(target_host_slice)[i]));
-    }
-  } else if (grpc_slice_str_cmp(GRPC_MDKEY(md),
-                                grpc_core::kGrpcLbLbTokenMetadataKey) == 0) {
-    if (calld->client_ip_and_lr_token_ == nullptr) {
-      calld->StoreClientIpAndLrToken(
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),
-          GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)));
-    }
-    return GRPC_FILTERED_REMOVE();
-  }
-  return GRPC_FILTERED_MDELEM(md);
-}
-
 void ServerLoadReportingCallData::RecvInitialMetadataReady(
     void* arg, grpc_error_handle err) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(arg);
@@ -242,11 +225,25 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
   ServerLoadReportingChannelData* chand =
       reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
   if (err == GRPC_ERROR_NONE) {
-    GRPC_LOG_IF_ERROR(
-        "server_load_reporting_filter",
-        grpc_metadata_batch_filter(calld->recv_initial_metadata_,
-                                   RecvInitialMetadataFilter, elem,
-                                   "recv_initial_metadata filtering error"));
+    if (const grpc_core::Slice* path =
+            calld->recv_initial_metadata_->get_pointer(
+                grpc_core::HttpPathMetadata())) {
+      calld->service_method_ = path->Ref().TakeCSlice();
+    }
+    if (const grpc_core::Slice* authority =
+            calld->recv_initial_metadata_->get_pointer(
+                grpc_core::HttpAuthorityMetadata())) {
+      calld->target_host_ = absl::AsciiStrToLower(authority->as_string_view());
+    }
+    std::string buffer;
+    auto lb_token =
+        calld->recv_initial_metadata_->Take(grpc_core::LbTokenMetadata());
+    if (lb_token.has_value()) {
+      if (calld->client_ip_and_lr_token_ == nullptr) {
+        calld->StoreClientIpAndLrToken(
+            reinterpret_cast<const char*>(lb_token->data()), lb_token->size());
+      }
+    }
     // If the LB token was not found in the recv_initial_metadata, only the
     // client IP part will be recorded (with an empty LB token).
     if (calld->client_ip_and_lr_token_ == nullptr) {
@@ -257,7 +254,7 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(
         {{::grpc::load_reporter::TagKeyToken(),
           {calld->client_ip_and_lr_token_, calld->client_ip_and_lr_token_len_}},
          {::grpc::load_reporter::TagKeyHost(),
-          {calld->target_host_, calld->target_host_len_}},
+          {calld->target_host_.data(), calld->target_host_.length()}},
          {::grpc::load_reporter::TagKeyUserId(),
           {chand->peer_identity(), chand->peer_identity_len()}}});
   }
@@ -272,45 +269,6 @@ grpc_error_handle ServerLoadReportingCallData::Init(
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
-}
-
-grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
-    void* user_data, grpc_mdelem md) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  ServerLoadReportingCallData* calld =
-      reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
-  ServerLoadReportingChannelData* chand =
-      reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
-  if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
-    const grpc_slice value = GRPC_MDVALUE(md);
-    const size_t cost_entry_size = GRPC_SLICE_LENGTH(value);
-    if (cost_entry_size < sizeof(double)) {
-      gpr_log(GPR_ERROR,
-              "Cost metadata value too small (%zu bytes) to hold valid data. "
-              "Ignoring.",
-              cost_entry_size);
-      return GRPC_FILTERED_REMOVE();
-    }
-    const double* cost_entry_ptr =
-        reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
-    double cost_value;
-    memcpy(&cost_value, cost_entry_ptr, sizeof(double));
-    cost_entry_ptr++;
-    const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
-    const size_t cost_name_len = cost_entry_size - sizeof(double);
-    opencensus::stats::Record(
-        {{::grpc::load_reporter::MeasureOtherCallMetric(), cost_value}},
-        {{::grpc::load_reporter::TagKeyToken(),
-          {calld->client_ip_and_lr_token_, calld->client_ip_and_lr_token_len_}},
-         {::grpc::load_reporter::TagKeyHost(),
-          {calld->target_host_, calld->target_host_len_}},
-         {::grpc::load_reporter::TagKeyUserId(),
-          {chand->peer_identity(), chand->peer_identity_len()}},
-         {::grpc::load_reporter::TagKeyMetricName(),
-          {cost_name, cost_name_len}}});
-    return GRPC_FILTERED_REMOVE();
-  }
-  return GRPC_FILTERED_MDELEM(md);
 }
 
 const char* ServerLoadReportingCallData::GetStatusTagForStatus(

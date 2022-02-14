@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/accesslog/v3/accesslog.upbdefs.h"
+#include "envoy/config/accesslog/v3/accesslog.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit;
@@ -18,41 +19,7 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_accesslog_v3_AccessLog_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_AccessLogFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_ComparisonFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_StatusCodeFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_DurationFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_NotHealthCheckFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_TraceableFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_RuntimeFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_AndFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_OrFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_HeaderFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_ResponseFlagFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_GrpcStatusFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_MetadataFilter_msginit;
-extern const upb_msglayout envoy_config_accesslog_v3_ExtensionFilter_msginit;
-
-static const upb_msglayout *layouts[15] = {
-  &envoy_config_accesslog_v3_AccessLog_msginit,
-  &envoy_config_accesslog_v3_AccessLogFilter_msginit,
-  &envoy_config_accesslog_v3_ComparisonFilter_msginit,
-  &envoy_config_accesslog_v3_StatusCodeFilter_msginit,
-  &envoy_config_accesslog_v3_DurationFilter_msginit,
-  &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit,
-  &envoy_config_accesslog_v3_TraceableFilter_msginit,
-  &envoy_config_accesslog_v3_RuntimeFilter_msginit,
-  &envoy_config_accesslog_v3_AndFilter_msginit,
-  &envoy_config_accesslog_v3_OrFilter_msginit,
-  &envoy_config_accesslog_v3_HeaderFilter_msginit,
-  &envoy_config_accesslog_v3_ResponseFlagFilter_msginit,
-  &envoy_config_accesslog_v3_GrpcStatusFilter_msginit,
-  &envoy_config_accesslog_v3_MetadataFilter_msginit,
-  &envoy_config_accesslog_v3_ExtensionFilter_msginit,
-};
-
-static const char descriptor[4402] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '/', 
+static const char descriptor[4481] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '/', 
 'v', '3', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\031', 'e', 'n', 'v', 'o', 'y', 
 '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 
 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 
@@ -225,10 +192,13 @@ static const char descriptor[4402] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', '
 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'f', 'i', 'l', 't', 'e', 'r', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 
 'o', 'g', '.', 'v', '2', '.', 'E', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 'F', 'i', 'l', 't', 'e', 'r', 'B', '\r', '\n', '\013', 
 'c', 'o', 'n', 'f', 'i', 'g', '_', 't', 'y', 'p', 'e', 'J', '\004', '\010', '\002', '\020', '\003', 'R', '\006', 'c', 'o', 'n', 'f', 'i', 'g', 
-'B', 'C', '\n', '\'', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
-'o', 'n', 'f', 'i', 'g', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 'v', '3', 'B', '\016', 'A', 'c', 'c', 'e', 's', 
-'s', 'l', 'o', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 
-'o', '3', 
+'B', '\221', '\001', '\n', '\'', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 
+'c', 'o', 'n', 'f', 'i', 'g', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 'v', '3', 'B', '\016', 'A', 'c', 'c', 'e', 
+'s', 's', 'l', 'o', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'L', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 
+'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 
+'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', 
+'/', 'v', '3', ';', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 
+'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[10] = {
@@ -246,7 +216,7 @@ static upb_def_init *deps[10] = {
 
 upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_accesslog_v3_accesslog_proto_upb_file_layout,
   "envoy/config/accesslog/v3/accesslog.proto",
-  UPB_STRVIEW_INIT(descriptor, 4402)
+  UPB_STRVIEW_INIT(descriptor, 4481)
 };

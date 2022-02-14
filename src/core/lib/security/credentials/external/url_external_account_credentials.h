@@ -51,6 +51,7 @@ class UrlExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string format_type_;
   std::string format_subject_token_field_name_;
 
+  OrphanablePtr<HttpRequest> http_request_;
   HTTPRequestContext* ctx_ = nullptr;
   std::function<void(std::string, grpc_error_handle)> cb_ = nullptr;
 };

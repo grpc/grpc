@@ -18,19 +18,22 @@
 #include <grpc/support/port_platform.h>
 
 #include <tuple>
+#include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
 namespace promise_detail {
 
-template <typename T>
-struct TrySeqTraits {
+template <typename T, typename Ignored = void>
+struct TrySeqTraitsWithSfinae {
   using UnwrappedType = T;
   using WrappedType = absl::StatusOr<T>;
   template <typename Next>
@@ -45,7 +48,7 @@ struct TrySeqTraits {
 };
 
 template <typename T>
-struct TrySeqTraits<absl::StatusOr<T>> {
+struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   using UnwrappedType = T;
   using WrappedType = absl::StatusOr<T>;
   template <typename Next>
@@ -60,22 +63,29 @@ struct TrySeqTraits<absl::StatusOr<T>> {
     return run_next(std::move(prior));
   }
 };
-template <>
-struct TrySeqTraits<absl::Status> {
+// If there exists a function 'IsStatusOk(const T&) -> bool' then we assume that
+// T is a status type for the purposes of promise sequences, and a non-OK T
+// should terminate the sequence and return.
+template <typename T>
+struct TrySeqTraitsWithSfinae<
+    T, absl::enable_if_t<
+           std::is_same<decltype(IsStatusOk(std::declval<T>())), bool>::value,
+           void>> {
   using UnwrappedType = void;
-  using WrappedType = absl::Status;
+  using WrappedType = T;
   template <typename Next>
-  static auto CallFactory(Next* next, absl::Status&&)
-      -> decltype(next->Once()) {
+  static auto CallFactory(Next* next, T&&) -> decltype(next->Once()) {
     return next->Once();
   }
   template <typename Result, typename RunNext>
-  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
-                                            RunNext run_next) {
-    if (!prior.ok()) return Result(prior);
+  static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
+    if (!IsStatusOk(prior)) return Result(std::move(prior));
     return run_next(std::move(prior));
   }
 };
+
+template <typename T>
+using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 
 template <typename... Fs>
 using TrySeq = BasicSeq<TrySeqTraits, Fs...>;

@@ -13,37 +13,39 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/port.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/sockaddr.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
-                                              socklen_t size)
-    : size_(size) {
-  GPR_ASSERT(size <= sizeof(address_));
-  memcpy(&address_, address, size);
+namespace {
+const std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory =
+    nullptr;
+grpc_core::Mutex* g_mu = new grpc_core::Mutex();
+}  // namespace
+
+void SetDefaultEventEngineFactory(
+    const std::function<std::unique_ptr<EventEngine>()>* factory) {
+  grpc_core::MutexLock lock(g_mu);
+  g_event_engine_factory = factory;
 }
 
-const struct sockaddr* EventEngine::ResolvedAddress::address() const {
-  return reinterpret_cast<const struct sockaddr*>(address_);
+std::unique_ptr<EventEngine> CreateEventEngine() {
+  grpc_core::MutexLock lock(g_mu);
+  if (g_event_engine_factory != nullptr) {
+    return (*g_event_engine_factory)();
+  }
+  return DefaultEventEngineFactory();
 }
 
-socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
-
-std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-DefaultEventEngineFactory() {
-  // TODO(nnoble): delete when uv-ee is merged
-  abort();
+EventEngine* GetDefaultEventEngine() {
+  static EventEngine* default_event_engine = CreateEventEngine().release();
+  return default_event_engine;
 }
 
 }  // namespace experimental

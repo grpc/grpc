@@ -14,8 +14,6 @@
 
 licenses(["notice"])
 
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-
 py_binary(
     name = "alts_server",
     srcs = [

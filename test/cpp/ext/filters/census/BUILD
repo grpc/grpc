@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -31,6 +30,7 @@ grpc_cc_test(
         "opencensus-with-tag-map",
     ],
     language = "C++",
+    linkstatic = True,
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:grpc++",

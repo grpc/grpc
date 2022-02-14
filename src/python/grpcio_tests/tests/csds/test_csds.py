@@ -88,7 +88,6 @@ class TestCsds(unittest.TestCase):
     def test_has_node(self):
         resp = self.get_xds_config_dump()
         self.assertEqual(1, len(resp.config))
-        self.assertEqual(4, len(resp.config[0].xds_config))
         self.assertEqual('python_test_csds', resp.config[0].node.id)
         self.assertEqual('test', resp.config[0].node.cluster)
 
@@ -107,11 +106,18 @@ class TestCsds(unittest.TestCase):
             config = json_format.MessageToDict(resp)
             ok = False
             try:
-                for xds_config in config["config"][0]["xdsConfig"]:
+                for xds_config in config["config"][0].get("xdsConfig", []):
                     if "listenerConfig" in xds_config:
                         listener = xds_config["listenerConfig"][
                             "dynamicListeners"][0]
                         if listener['clientStatus'] == 'DOES_NOT_EXIST':
+                            ok = True
+                            break
+                for generic_xds_config in config["config"][0].get(
+                        "genericXdsConfigs", []):
+                    if "Listener" in generic_xds_config["typeUrl"]:
+                        if generic_xds_config[
+                                'clientStatus'] == 'DOES_NOT_EXIST':
                             ok = True
                             break
             except KeyError as e:

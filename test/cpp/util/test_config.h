@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
 
-#include <type_traits>
-
 #ifndef GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE
 #define GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE(style) \
   ::testing::FLAGS_gtest_death_test_style = style
@@ -30,35 +28,6 @@ namespace grpc {
 namespace testing {
 
 void InitTest(int* argc, char*** argv, bool remove_flags);
-
-// FIXME(vyng): remove this
-// This is hack to accommdate accessing .threads and .thread_index on benchmark
-// State object. (In 1.6.0, the fields were made into methods, hence it's API
-// breaking).
-
-namespace hack {
-
-template <typename T>
-auto get_threads(T& t) -> decltype(t.threads()) {
-  return t.threads();
-}
-
-template <typename T>
-auto get_threads(T& t) -> decltype(t.threads) {
-  return t.threads;
-}
-
-template <typename T>
-auto get_thread_idx(T& t) -> decltype(t.thread_index()) {
-  return t.thread_index();
-}
-
-template <typename T>
-auto get_thread_idx(T& t) -> decltype(t.thread_index) {
-  return t.thread_index;
-}
-
-}  // namespace hack
 
 }  // namespace testing
 }  // namespace grpc

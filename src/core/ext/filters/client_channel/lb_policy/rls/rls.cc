@@ -29,6 +29,7 @@
 #include <functional>
 #include <list>
 #include <map>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -42,6 +43,7 @@
 #include "absl/strings/strip.h"
 #include "upb/upb.hpp"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -52,7 +54,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -64,13 +65,13 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
@@ -93,9 +94,9 @@ const grpc_millis kCacheBackoffInitial = 1 * GPR_MS_PER_SEC;
 const double kCacheBackoffMultiplier = 1.6;
 const double kCacheBackoffJitter = 0.2;
 const grpc_millis kCacheBackoffMax = 120 * GPR_MS_PER_SEC;
-const grpc_millis kDefaultThrottleWindowSize = 30 * GPR_MS_PER_SEC;
-const double kDefaultThrottleRatioForSuccesses = 2.0;
-const int kDefaultThrottlePaddings = 8;
+const grpc_millis kDefaultThrottleWindowSizeMs = 30 * GPR_MS_PER_SEC;
+const float kDefaultThrottleRatioForSuccesses = 2.0;
+const int kDefaultThrottlePadding = 8;
 const grpc_millis kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
@@ -122,11 +123,13 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
     std::string default_target;
   };
 
-  RlsLbConfig(RouteLookupConfig route_lookup_config, Json child_policy_config,
+  RlsLbConfig(RouteLookupConfig route_lookup_config,
+              std::string rls_channel_service_config, Json child_policy_config,
               std::string child_policy_config_target_field_name,
               RefCountedPtr<LoadBalancingPolicy::Config>
                   default_child_policy_parsed_config)
       : route_lookup_config_(std::move(route_lookup_config)),
+        rls_channel_service_config_(std::move(rls_channel_service_config)),
         child_policy_config_(std::move(child_policy_config)),
         child_policy_config_target_field_name_(
             std::move(child_policy_config_target_field_name)),
@@ -152,6 +155,9 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   const std::string& default_target() const {
     return route_lookup_config_.default_target;
   }
+  const std::string& rls_channel_service_config() const {
+    return rls_channel_service_config_;
+  }
   const Json& child_policy_config() const { return child_policy_config_; }
   const std::string& child_policy_config_target_field_name() const {
     return child_policy_config_target_field_name_;
@@ -163,6 +169,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 
  private:
   RouteLookupConfig route_lookup_config_;
+  std::string rls_channel_service_config_;
   Json child_policy_config_;
   std::string child_policy_config_target_field_name_;
   RefCountedPtr<LoadBalancingPolicy::Config>
@@ -510,8 +517,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Contains throttling logic for RLS requests.
   class RlsChannel : public InternallyRefCounted<RlsChannel> {
    public:
-    RlsChannel(RefCountedPtr<RlsLb> lb_policy, const std::string& target,
-               const grpc_channel_args* parent_channel_args);
+    explicit RlsChannel(RefCountedPtr<RlsLb> lb_policy);
 
     // Shuts down the channel.
     void Orphan() override;
@@ -557,8 +563,13 @@ class RlsLb : public LoadBalancingPolicy {
     // Throttle state for RLS requests.
     class Throttle {
      public:
-      explicit Throttle(int window_size_seconds = 0,
-                        double ratio_for_successes = 0, int paddings = 0);
+      explicit Throttle(
+          int window_size_ms = kDefaultThrottleWindowSizeMs,
+          float ratio_for_successes = kDefaultThrottleRatioForSuccesses,
+          int padding = kDefaultThrottlePadding)
+          : window_size_ms_(window_size_ms),
+            ratio_for_successes_(ratio_for_successes),
+            padding_(padding) {}
 
       bool ShouldThrottle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
@@ -566,15 +577,16 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
-      grpc_millis window_size_;
-      double ratio_for_successes_;
-      int paddings_;
+      grpc_millis window_size_ms_;
+      float ratio_for_successes_;
+      int padding_;
+      std::mt19937 rng_{std::random_device()()};
 
-      // Logged timestamp of requests.
+      // Logged timestamps of requests.
       std::deque<grpc_millis> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
 
-      // Logged timestamp of responses that were successful.
-      std::deque<grpc_millis> successes_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      // Logged timestamps of failures.
+      std::deque<grpc_millis> failures_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
@@ -669,7 +681,7 @@ class RlsLb : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  ServerAddressList addresses_;
+  absl::StatusOr<ServerAddressList> addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -1371,7 +1383,7 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
@@ -1459,50 +1471,45 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 // RlsLb::RlsChannel::Throttle
 //
 
-RlsLb::RlsChannel::Throttle::Throttle(int window_size_seconds,
-                                      double ratio_for_successes,
-                                      int paddings) {
-  GPR_DEBUG_ASSERT(window_size_seconds >= 0);
-  GPR_DEBUG_ASSERT(ratio_for_successes >= 0);
-  GPR_DEBUG_ASSERT(paddings >= 0);
-  window_size_ = window_size_seconds == 0 ? window_size_seconds * GPR_MS_PER_SEC
-                                          : kDefaultThrottleWindowSize;
-  ratio_for_successes_ = ratio_for_successes == 0
-                             ? kDefaultThrottleRatioForSuccesses
-                             : ratio_for_successes;
-  paddings_ = paddings == 0 ? kDefaultThrottlePaddings : paddings;
-}
-
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
   grpc_millis now = ExecCtx::Get()->Now();
-  while (!requests_.empty() && now - requests_.front() > window_size_) {
+  while (!requests_.empty() && now - requests_.front() > window_size_ms_) {
     requests_.pop_front();
   }
-  while (!successes_.empty() && now - successes_.front() > window_size_) {
-    successes_.pop_front();
+  while (!failures_.empty() && now - failures_.front() > window_size_ms_) {
+    failures_.pop_front();
   }
-  int successes = successes_.size();
-  int requests = requests_.size();
-  bool result = ((rand() % (requests + paddings_)) <
-                 static_cast<double>(requests) -
-                     static_cast<double>(successes) * ratio_for_successes_);
-  requests_.push_back(now);
-  return result;
+  // Compute probability of throttling.
+  float num_requests = requests_.size();
+  float num_successes = num_requests - failures_.size();
+  // Note: it's possible that this ratio will be negative, in which case
+  // no throttling will be done.
+  float throttle_probability =
+      (num_requests - (num_successes * ratio_for_successes_)) /
+      (num_requests + padding_);
+  // Generate a random number for the request.
+  std::uniform_real_distribution<float> dist(0, 1.0);
+  // Check if we should throttle the request.
+  bool throttle = dist(rng_) < throttle_probability;
+  // If we're throttling, record the request and the failure.
+  if (throttle) {
+    requests_.push_back(now);
+    failures_.push_back(now);
+  }
+  return throttle;
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  if (success) {
-    successes_.push_back(ExecCtx::Get()->Now());
-  }
+  grpc_millis now = ExecCtx::Get()->Now();
+  requests_.push_back(now);
+  if (!success) failures_.push_back(now);
 }
 
 //
 // RlsLb::RlsChannel
 //
 
-RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
-                              const std::string& target,
-                              const grpc_channel_args* parent_channel_args)
+RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     : InternallyRefCounted<RlsChannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsChannel" : nullptr),
       lb_policy_(std::move(lb_policy)) {
@@ -1510,7 +1517,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   // TODO(roth): Once we eliminate insecure builds, get this via a
   // method on the helper instead of digging through channel args.
   grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(parent_channel_args);
+      grpc_channel_credentials_find_in_args(lb_policy_->channel_args_);
   // Use the parent channel's authority.
   std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
   absl::InlinedVector<grpc_arg, 3> args = {
@@ -1525,18 +1532,29 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   // from the parent channel by default and then having a giant
   // exclude list of args to strip out, like we do in grpclb.)
   const char* fake_security_expected_targets = grpc_channel_args_find_string(
-      parent_channel_args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+      lb_policy_->channel_args_, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
   if (fake_security_expected_targets != nullptr) {
     args.push_back(grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
         const_cast<char*>(fake_security_expected_targets)));
   }
+  // Add service config args if needed.
+  const std::string& service_config =
+      lb_policy_->config_->rls_channel_service_config();
+  if (!service_config.empty()) {
+    args.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+        const_cast<char*>(service_config.c_str())));
+    args.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 1));
+  }
   grpc_channel_args rls_channel_args = {args.size(), args.data()};
-  channel_ = grpc_secure_channel_create(creds, target.c_str(),
-                                        &rls_channel_args, nullptr);
+  channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
+                                 creds, &rls_channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
-            lb_policy_.get(), this, channel_, target.c_str());
+            lb_policy_.get(), this, channel_,
+            lb_policy_->config_->lookup_service().c_str());
   }
   if (channel_ != nullptr) {
     // Set up channelz linkage.
@@ -1544,7 +1562,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
         grpc_channel_get_channelz_node(channel_);
     channelz::ChannelNode* parent_channelz_node =
         grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            parent_channel_args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+            lb_policy_->channel_args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
       parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
       parent_channelz_node_ = parent_channelz_node->Ref();
@@ -1710,7 +1728,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
       [request, error]() {
         request->OnRlsCallCompleteLocked(error);
@@ -1762,7 +1780,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
-    rls_channel_->ReportResponseLocked(!response.status.ok());
+    rls_channel_->ReportResponseLocked(response.status.ok());
     Cache::Entry* cache_entry = lb_policy_->cache_.FindOrInsert(key_);
     child_policies_to_finish_update = cache_entry->OnRlsResponseLocked(
         std::move(response), std::move(backoff_state_));
@@ -1863,19 +1881,28 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
-  // Swap out config, addresses, and channel args.
+  // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
   config_ = std::move(args.config);
-  ServerAddressList old_addresses = std::move(addresses_);
-  addresses_ = std::move(args.addresses);
-  grpc_channel_args_destroy(channel_args_);
-  channel_args_ = grpc_channel_args_copy(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
     gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
             config_->child_policy_config().Dump().c_str());
   }
+  // Swap out addresses.
+  // If the new address list is an error and we have an existing address list,
+  // stick with the existing addresses.
+  absl::StatusOr<ServerAddressList> old_addresses;
+  if (args.addresses.ok()) {
+    old_addresses = std::move(addresses_);
+    addresses_ = std::move(args.addresses);
+  } else {
+    old_addresses = addresses_;
+  }
+  // Swap out channel args.
+  grpc_channel_args_destroy(channel_args_);
+  channel_args_ = grpc_channel_args_copy(args.args);
   // Determine whether we need to update all child policies.
   bool update_child_policies =
       old_config == nullptr ||
@@ -1918,8 +1945,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
       rls_channel_ =
-          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"),
-                                     config_->lookup_service(), channel_args_);
+          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"));
     }
     // Resize cache if needed.
     if (old_config == nullptr ||
@@ -2439,6 +2465,26 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
           ParseRouteLookupConfig(*route_lookup_config_json, &child_error);
       if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
     }
+    // Parse routeLookupChannelServiceConfig.
+    std::string rls_channel_service_config;
+    const Json::Object* rls_channel_service_config_json_obj = nullptr;
+    if (ParseJsonObjectField(config.object_value(),
+                             "routeLookupChannelServiceConfig",
+                             &rls_channel_service_config_json_obj, &error_list,
+                             /*required=*/false)) {
+      grpc_error_handle child_error = GRPC_ERROR_NONE;
+      Json rls_channel_service_config_json(
+          *rls_channel_service_config_json_obj);
+      rls_channel_service_config = rls_channel_service_config_json.Dump();
+      auto service_config = MakeRefCounted<ServiceConfig>(
+          /*args=*/nullptr, rls_channel_service_config,
+          std::move(rls_channel_service_config_json), &child_error);
+      if (child_error != GRPC_ERROR_NONE) {
+        error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "field:routeLookupChannelServiceConfig", &child_error, 1));
+        GRPC_ERROR_UNREF(child_error);
+      }
+    }
     // Parse childPolicyConfigTargetFieldName.
     std::string child_policy_config_target_field_name;
     if (ParseJsonObjectField(
@@ -2475,7 +2521,8 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR(
         "errors parsing RLS LB policy config", &error_list);
     return MakeRefCounted<RlsLbConfig>(
-        std::move(route_lookup_config), std::move(child_policy_config),
+        std::move(route_lookup_config), std::move(rls_channel_service_config),
+        std::move(child_policy_config),
         std::move(child_policy_config_target_field_name),
         std::move(default_child_policy_parsed_config));
   }

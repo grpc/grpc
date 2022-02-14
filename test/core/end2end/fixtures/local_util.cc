@@ -45,13 +45,12 @@ grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack() {
 }
 
 void grpc_end2end_local_chttp2_init_client_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* client_args,
+    grpc_end2end_test_fixture* f, const grpc_channel_args* client_args,
     grpc_local_connect_type type) {
   grpc_channel_credentials* creds = grpc_local_credentials_create(type);
   grpc_end2end_local_fullstack_fixture_data* ffd =
       static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -61,7 +60,7 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
  * processor will be installed that always fails in processing client's
  * metadata.
  */
-static bool fail_server_auth_check(grpc_channel_args* server_args) {
+static bool fail_server_auth_check(const grpc_channel_args* server_args) {
   size_t i;
   if (server_args == nullptr) return false;
   for (i = 0; i < server_args->num_args; i++) {
@@ -83,7 +82,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
 }
 
 void grpc_end2end_local_chttp2_init_server_fullstack(
-    grpc_end2end_test_fixture* f, grpc_channel_args* server_args,
+    grpc_end2end_test_fixture* f, const grpc_channel_args* server_args,
     grpc_local_connect_type type) {
   grpc_server_credentials* creds = grpc_local_server_credentials_create(type);
   grpc_end2end_local_fullstack_fixture_data* ffd =
@@ -98,8 +97,8 @@ void grpc_end2end_local_chttp2_init_server_fullstack(
                                               nullptr};
     grpc_server_credentials_set_auth_metadata_processor(creds, processor);
   }
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server,
-                                               ffd->localaddr.c_str(), creds));
+  GPR_ASSERT(
+      grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(), creds));
   grpc_server_credentials_release(creds);
   grpc_server_start(f->server);
 }

@@ -31,8 +31,9 @@ namespace {
 absl::string_view GetMatcherType(absl::string_view value,
                                  StringMatcher::Type* type) {
   if (value == "*") {
-    *type = StringMatcher::Type::kPrefix;
-    return "";
+    *type = StringMatcher::Type::kSafeRegex;
+    // Presence match checks for non empty strings.
+    return ".+";
   } else if (absl::StartsWith(value, "*")) {
     *type = StringMatcher::Type::kSuffix;
     return absl::StripPrefix(value, "*");
@@ -91,11 +92,10 @@ absl::StatusOr<Rbac::Principal> ParsePrincipalsArray(const Json& json) {
                                        matcher_or.status().message()));
     }
     principal_names.push_back(absl::make_unique<Rbac::Principal>(
-        Rbac::Principal::RuleType::kPrincipalName,
-        std::move(matcher_or.value())));
+        Rbac::Principal::MakeAuthenticatedPrincipal(
+            std::move(matcher_or.value()))));
   }
-  return Rbac::Principal(Rbac::Principal::RuleType::kOr,
-                         std::move(principal_names));
+  return Rbac::Principal::MakeOrPrincipal(std::move(principal_names));
 }
 
 absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
@@ -117,9 +117,9 @@ absl::StatusOr<Rbac::Principal> ParsePeer(const Json& json) {
     }
   }
   if (peer.empty()) {
-    return Rbac::Principal(Rbac::Principal::RuleType::kAny);
+    return Rbac::Principal::MakeAnyPrincipal();
   }
-  return Rbac::Principal(Rbac::Principal::RuleType::kAnd, std::move(peer));
+  return Rbac::Principal::MakeAndPrincipal(std::move(peer));
 }
 
 absl::StatusOr<Rbac::Permission> ParseHeaderValues(
@@ -141,9 +141,9 @@ absl::StatusOr<Rbac::Permission> ParseHeaderValues(
           absl::StrCat("\"values\" ", i, ": ", matcher_or.status().message()));
     }
     values.push_back(absl::make_unique<Rbac::Permission>(
-        Rbac::Permission::RuleType::kHeader, std::move(matcher_or.value())));
+        Rbac::Permission::MakeHeaderPermission(std::move(matcher_or.value()))));
   }
-  return Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(values));
+  return Rbac::Permission::MakeOrPermission(std::move(values));
 }
 
 absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
@@ -196,7 +196,7 @@ absl::StatusOr<Rbac::Permission> ParseHeadersArray(const Json& json) {
     headers.push_back(
         absl::make_unique<Rbac::Permission>(std::move(headers_or.value())));
   }
-  return Rbac::Permission(Rbac::Permission::RuleType::kAnd, std::move(headers));
+  return Rbac::Permission::MakeAndPermission(std::move(headers));
 }
 
 absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
@@ -214,9 +214,9 @@ absl::StatusOr<Rbac::Permission> ParsePathsArray(const Json& json) {
           absl::StrCat("\"paths\" ", i, ": ", matcher_or.status().message()));
     }
     paths.push_back(absl::make_unique<Rbac::Permission>(
-        Rbac::Permission::RuleType::kPath, std::move(matcher_or.value())));
+        Rbac::Permission::MakePathPermission(std::move(matcher_or.value()))));
   }
-  return Rbac::Permission(Rbac::Permission::RuleType::kOr, std::move(paths));
+  return Rbac::Permission::MakeOrPermission(std::move(paths));
 }
 
 absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
@@ -249,9 +249,9 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
     }
   }
   if (request.empty()) {
-    return Rbac::Permission(Rbac::Permission::RuleType::kAny);
+    return Rbac::Permission::MakeAnyPermission();
   }
-  return Rbac::Permission(Rbac::Permission::RuleType::kAnd, std::move(request));
+  return Rbac::Permission::MakeAndPermission(std::move(request));
 }
 
 absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
@@ -290,12 +290,12 @@ absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
     return absl::InvalidArgumentError(absl::StrCat("\"name\" is not present."));
   }
   if (principals == nullptr) {
-    principals = absl::make_unique<Rbac::Principal>(
-        Rbac::Principal(Rbac::Principal::RuleType::kAny));
+    principals =
+        absl::make_unique<Rbac::Principal>(Rbac::Principal::MakeAnyPrincipal());
   }
   if (permissions == nullptr) {
     permissions = absl::make_unique<Rbac::Permission>(
-        Rbac::Permission(Rbac::Permission::RuleType::kAny));
+        Rbac::Permission::MakeAnyPermission());
   }
   return Rbac::Policy(std::move(*permissions), std::move(*principals));
 }
@@ -347,7 +347,7 @@ absl::StatusOr<absl::InlinedVector<Rbac, 2>> GenerateRbacPolicies(
   Json json = Json::Parse(authz_policy, &error);
   if (error != GRPC_ERROR_NONE) {
     absl::Status status = absl::InvalidArgumentError(
-        absl::StrCat("Failed to parse SDK authorization policy. Error: ",
+        absl::StrCat("Failed to parse gRPC authorization policy. Error: ",
                      grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return status;

@@ -75,29 +75,83 @@ std::string Rbac::CidrRange::ToString() const {
 // Permission
 //
 
-Rbac::Permission::Permission(
-    Permission::RuleType type,
-    std::vector<std::unique_ptr<Permission>> permissions)
-    : type(type), permissions(std::move(permissions)) {}
-Rbac::Permission::Permission(Permission::RuleType type, Permission permission)
-    : type(type) {
-  permissions.push_back(
-      absl::make_unique<Rbac::Permission>(std::move(permission)));
+Rbac::Permission Rbac::Permission::MakeAndPermission(
+    std::vector<std::unique_ptr<Permission>> permissions) {
+  Permission permission;
+  permission.type = Permission::RuleType::kAnd;
+  permission.permissions = std::move(permissions);
+  return permission;
 }
-Rbac::Permission::Permission(Permission::RuleType type) : type(type) {}
-Rbac::Permission::Permission(Permission::RuleType type,
-                             HeaderMatcher header_matcher)
-    : type(type), header_matcher(std::move(header_matcher)) {}
-Rbac::Permission::Permission(Permission::RuleType type,
-                             StringMatcher string_matcher)
-    : type(type), string_matcher(std::move(string_matcher)) {}
-Rbac::Permission::Permission(Permission::RuleType type, CidrRange ip)
-    : type(type), ip(std::move(ip)) {}
-Rbac::Permission::Permission(Permission::RuleType type, int port)
-    : type(type), port(port) {}
+
+Rbac::Permission Rbac::Permission::MakeOrPermission(
+    std::vector<std::unique_ptr<Permission>> permissions) {
+  Permission permission;
+  permission.type = Permission::RuleType::kOr;
+  permission.permissions = std::move(permissions);
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeNotPermission(Permission permission) {
+  Permission not_permission;
+  not_permission.type = Permission::RuleType::kNot;
+  not_permission.permissions.push_back(
+      absl::make_unique<Rbac::Permission>(std::move(permission)));
+  return not_permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeAnyPermission() {
+  Permission permission;
+  permission.type = Permission::RuleType::kAny;
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeHeaderPermission(
+    HeaderMatcher header_matcher) {
+  Permission permission;
+  permission.type = Permission::RuleType::kHeader;
+  permission.header_matcher = std::move(header_matcher);
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakePathPermission(
+    StringMatcher string_matcher) {
+  Permission permission;
+  permission.type = Permission::RuleType::kPath;
+  permission.string_matcher = std::move(string_matcher);
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeDestIpPermission(CidrRange ip) {
+  Permission permission;
+  permission.type = Permission::RuleType::kDestIp;
+  permission.ip = std::move(ip);
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeDestPortPermission(int port) {
+  Permission permission;
+  permission.type = Permission::RuleType::kDestPort;
+  permission.port = port;
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeMetadataPermission(bool invert) {
+  Permission permission;
+  permission.type = Permission::RuleType::kMetadata;
+  permission.invert = invert;
+  return permission;
+}
+
+Rbac::Permission Rbac::Permission::MakeReqServerNamePermission(
+    StringMatcher string_matcher) {
+  Permission permission;
+  permission.type = Permission::RuleType::kReqServerName;
+  permission.string_matcher = std::move(string_matcher);
+  return permission;
+}
 
 Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
-    : type(other.type) {
+    : type(other.type), invert(other.invert) {
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -124,6 +178,7 @@ Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
 Rbac::Permission& Rbac::Permission::operator=(
     Rbac::Permission&& other) noexcept {
   type = other.type;
+  invert = other.invert;
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -178,6 +233,8 @@ std::string Rbac::Permission::ToString() const {
       return absl::StrFormat("dest_ip=%s", ip.ToString());
     case RuleType::kDestPort:
       return absl::StrFormat("dest_port=%d", port);
+    case RuleType::kMetadata:
+      return absl::StrFormat("%smetadata", invert ? "invert " : "");
     case RuleType::kReqServerName:
       return absl::StrFormat("requested_server_name=%s",
                              string_matcher.ToString());
@@ -190,26 +247,90 @@ std::string Rbac::Permission::ToString() const {
 // Principal
 //
 
-Rbac::Principal::Principal(Principal::RuleType type,
-                           std::vector<std::unique_ptr<Principal>> principals)
-    : type(type), principals(std::move(principals)) {}
-Rbac::Principal::Principal(Principal::RuleType type, Principal principal)
-    : type(type) {
-  principals.push_back(
-      absl::make_unique<Rbac::Principal>(std::move(principal)));
+Rbac::Principal Rbac::Principal::MakeAndPrincipal(
+    std::vector<std::unique_ptr<Principal>> principals) {
+  Principal principal;
+  principal.type = Principal::RuleType::kAnd;
+  principal.principals = std::move(principals);
+  return principal;
 }
-Rbac::Principal::Principal(Principal::RuleType type) : type(type) {}
-Rbac::Principal::Principal(Principal::RuleType type,
-                           StringMatcher string_matcher)
-    : type(type), string_matcher(std::move(string_matcher)) {}
-Rbac::Principal::Principal(Principal::RuleType type, CidrRange ip)
-    : type(type), ip(std::move(ip)) {}
-Rbac::Principal::Principal(Principal::RuleType type,
-                           HeaderMatcher header_matcher)
-    : type(type), header_matcher(std::move(header_matcher)) {}
+
+Rbac::Principal Rbac::Principal::MakeOrPrincipal(
+    std::vector<std::unique_ptr<Principal>> principals) {
+  Principal principal;
+  principal.type = Principal::RuleType::kOr;
+  principal.principals = std::move(principals);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeNotPrincipal(Principal principal) {
+  Principal not_principal;
+  not_principal.type = Principal::RuleType::kNot;
+  not_principal.principals.push_back(
+      absl::make_unique<Rbac::Principal>(std::move(principal)));
+  return not_principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeAnyPrincipal() {
+  Principal principal;
+  principal.type = Principal::RuleType::kAny;
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeAuthenticatedPrincipal(
+    absl::optional<StringMatcher> string_matcher) {
+  Principal principal;
+  principal.type = Principal::RuleType::kPrincipalName;
+  principal.string_matcher = std::move(string_matcher);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeSourceIpPrincipal(CidrRange ip) {
+  Principal principal;
+  principal.type = Principal::RuleType::kSourceIp;
+  principal.ip = std::move(ip);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeDirectRemoteIpPrincipal(CidrRange ip) {
+  Principal principal;
+  principal.type = Principal::RuleType::kDirectRemoteIp;
+  principal.ip = std::move(ip);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeRemoteIpPrincipal(CidrRange ip) {
+  Principal principal;
+  principal.type = Principal::RuleType::kRemoteIp;
+  principal.ip = std::move(ip);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeHeaderPrincipal(
+    HeaderMatcher header_matcher) {
+  Principal principal;
+  principal.type = Principal::RuleType::kHeader;
+  principal.header_matcher = std::move(header_matcher);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakePathPrincipal(
+    StringMatcher string_matcher) {
+  Principal principal;
+  principal.type = Principal::RuleType::kPath;
+  principal.string_matcher = std::move(string_matcher);
+  return principal;
+}
+
+Rbac::Principal Rbac::Principal::MakeMetadataPrincipal(bool invert) {
+  Principal principal;
+  principal.type = Principal::RuleType::kMetadata;
+  principal.invert = invert;
+  return principal;
+}
 
 Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
-    : type(other.type) {
+    : type(other.type), invert(other.invert) {
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -232,6 +353,7 @@ Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
 
 Rbac::Principal& Rbac::Principal::operator=(Rbac::Principal&& other) noexcept {
   type = other.type;
+  invert = other.invert;
   switch (type) {
     case RuleType::kAnd:
     case RuleType::kOr:
@@ -276,7 +398,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kAny:
       return "any";
     case RuleType::kPrincipalName:
-      return absl::StrFormat("principal_name=%s", string_matcher.ToString());
+      return absl::StrFormat("principal_name=%s", string_matcher->ToString());
     case RuleType::kSourceIp:
       return absl::StrFormat("source_ip=%s", ip.ToString());
     case RuleType::kDirectRemoteIp:
@@ -286,7 +408,9 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kHeader:
       return absl::StrFormat("header=%s", header_matcher.ToString());
     case RuleType::kPath:
-      return absl::StrFormat("path=%s", string_matcher.ToString());
+      return absl::StrFormat("path=%s", string_matcher->ToString());
+    case RuleType::kMetadata:
+      return absl::StrFormat("%smetadata", invert ? "invert " : "");
     default:
       return "";
   }

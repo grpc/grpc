@@ -19,7 +19,9 @@
 
 #include <atomic>
 
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
@@ -35,17 +37,27 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
+    ChannelArgsPreconditioning::Builder* channel_args_preconditioning() {
+      return &channel_args_preconditioning_;
+    }
+
     ChannelInit::Builder* channel_init() { return &channel_init_; }
 
     HandshakerRegistry::Builder* handshaker_registry() {
       return &handshaker_registry_;
     }
 
+    ChannelCredsRegistry<>::Builder* channel_creds_registry() {
+      return &channel_creds_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
+    ChannelArgsPreconditioning::Builder channel_args_preconditioning_;
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
+    ChannelCredsRegistry<>::Builder channel_creds_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -111,10 +123,18 @@ class CoreConfiguration {
 
   // Accessors
 
+  const ChannelArgsPreconditioning& channel_args_preconditioning() const {
+    return channel_args_preconditioning_;
+  }
+
   const ChannelInit& channel_init() const { return channel_init_; }
 
   const HandshakerRegistry& handshaker_registry() const {
     return handshaker_registry_;
+  }
+
+  const ChannelCredsRegistry<>& channel_creds_registry() const {
+    return channel_creds_registry_;
   }
 
  private:
@@ -135,8 +155,10 @@ class CoreConfiguration {
   // Extra registered builders
   static std::atomic<RegisteredBuilder*> builders_;
 
+  ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
+  ChannelCredsRegistry<> channel_creds_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

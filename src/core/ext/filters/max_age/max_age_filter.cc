@@ -523,6 +523,7 @@ static void max_age_destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_max_age_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0, /* sizeof_call_data */
     max_age_init_call_elem,
@@ -538,9 +539,8 @@ namespace grpc_core {
 void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        const grpc_channel_args* channel_args =
-            grpc_channel_stack_builder_get_channel_arguments(builder);
+      [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* channel_args = builder->channel_args();
         bool enable = grpc_channel_arg_get_integer(
                           grpc_channel_args_find(
                               channel_args, GRPC_ARG_MAX_CONNECTION_AGE_MS),
@@ -550,11 +550,9 @@ void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder) {
                               channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
                           MAX_CONNECTION_IDLE_INTEGER_OPTIONS) != INT_MAX;
         if (enable) {
-          return grpc_channel_stack_builder_prepend_filter(
-              builder, &grpc_max_age_filter, nullptr, nullptr);
-        } else {
-          return true;
+          builder->PrependFilter(&grpc_max_age_filter, nullptr);
         }
+        return true;
       });
 }
 }  // namespace grpc_core

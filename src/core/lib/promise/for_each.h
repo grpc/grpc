@@ -17,6 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
+#include <utility>
+
 #include "absl/status/status.h"
 #include "absl/types/variant.h"
 
@@ -45,6 +48,7 @@ Poll<absl::Status> FinishIteration(absl::Status* r, Reader* reader,
 // easily.
 template <typename T>
 struct Done;
+
 template <>
 struct Done<absl::Status> {
   static absl::Status Make() { return absl::OkStatus(); }
@@ -54,8 +58,8 @@ template <typename Reader, typename Action>
 class ForEach {
  private:
   using ReaderNext = decltype(std::declval<Reader>().Next());
-  using ReaderResult = typename PollTraits<decltype(
-      std::declval<ReaderNext>()())>::Type::value_type;
+  using ReaderResult = typename PollTraits<
+      decltype(std::declval<ReaderNext>()())>::Type::value_type;
   using ActionFactory = promise_detail::PromiseFactory<ReaderResult, Action>;
   using ActionPromise = typename ActionFactory::Promise;
 

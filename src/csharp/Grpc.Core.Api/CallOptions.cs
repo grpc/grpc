@@ -28,12 +28,12 @@ namespace Grpc.Core
     /// </summary>
     public struct CallOptions
     {
-        Metadata headers;
+        Metadata? headers;
         DateTime? deadline;
         CancellationToken cancellationToken;
-        WriteOptions writeOptions;
-        ContextPropagationToken propagationToken;
-        CallCredentials credentials;
+        WriteOptions? writeOptions;
+        ContextPropagationToken? propagationToken;
+        CallCredentials? credentials;
         CallFlags flags;
 
         /// <summary>
@@ -45,8 +45,8 @@ namespace Grpc.Core
         /// <param name="writeOptions">Write options that will be used for this call.</param>
         /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
         /// <param name="credentials">Credentials to use for this call.</param>
-        public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
-                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
+        public CallOptions(Metadata? headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
+                           WriteOptions? writeOptions = null, ContextPropagationToken? propagationToken = null, CallCredentials? credentials = null)
         {
             this.headers = headers;
             this.deadline = deadline;
@@ -60,7 +60,7 @@ namespace Grpc.Core
         /// <summary>
         /// Headers to send at the beginning of the call.
         /// </summary>
-        public Metadata Headers
+        public Metadata? Headers
         {
             get { return headers; }
         }
@@ -90,7 +90,7 @@ namespace Grpc.Core
         /// <summary>
         /// Write options that will be used for this call.
         /// </summary>
-        public WriteOptions WriteOptions
+        public WriteOptions? WriteOptions
         {
             get { return this.writeOptions; }
         }
@@ -98,7 +98,7 @@ namespace Grpc.Core
         /// <summary>
         /// Token for propagating parent call context.
         /// </summary>
-        public ContextPropagationToken PropagationToken
+        public ContextPropagationToken? PropagationToken
         {
             get { return this.propagationToken; }
         }
@@ -106,7 +106,7 @@ namespace Grpc.Core
         /// <summary>
         /// Credentials to use for this call.
         /// </summary>
-        public CallCredentials Credentials
+        public CallCredentials? Credentials
         {
             get { return this.credentials; }
         }

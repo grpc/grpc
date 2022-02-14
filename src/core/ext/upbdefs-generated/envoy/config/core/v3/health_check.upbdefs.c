@@ -8,6 +8,7 @@
 
 #include "upb/def.h"
 #include "envoy/config/core/v3/health_check.upbdefs.h"
+#include "envoy/config/core/v3/health_check.upb.h"
 
 extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
 extern upb_def_init envoy_config_core_v3_event_service_config_proto_upbdefinit;
@@ -21,27 +22,7 @@ extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
 extern upb_def_init udpa_annotations_status_proto_upbdefinit;
 extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
 extern upb_def_init validate_validate_proto_upbdefinit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_Payload_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit;
-extern const upb_msglayout envoy_config_core_v3_HealthCheck_TlsOptions_msginit;
-
-static const upb_msglayout *layouts[8] = {
-  &envoy_config_core_v3_HealthCheck_msginit,
-  &envoy_config_core_v3_HealthCheck_Payload_msginit,
-  &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit,
-  &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit,
-  &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit,
-  &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit,
-  &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit,
-  &envoy_config_core_v3_HealthCheck_TlsOptions_msginit,
-};
-
-static const char descriptor[4221] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'h', 'e', 
+static const char descriptor[4290] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'h', 'e', 
 'a', 'l', 't', 'h', '_', 'c', 'h', 'e', 'c', 'k', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 
 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 'o', 't', 'o', '\032', '/', 'e', 'n', 
@@ -206,10 +187,13 @@ static const char descriptor[4221] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 
 '`', '\n', '\014', 'H', 'e', 'a', 'l', 't', 'h', 'S', 't', 'a', 't', 'u', 's', '\022', '\013', '\n', '\007', 'U', 'N', 'K', 'N', 'O', 'W', 
 'N', '\020', '\000', '\022', '\013', '\n', '\007', 'H', 'E', 'A', 'L', 'T', 'H', 'Y', '\020', '\001', '\022', '\r', '\n', '\t', 'U', 'N', 'H', 'E', 'A', 
 'L', 'T', 'H', 'Y', '\020', '\002', '\022', '\014', '\n', '\010', 'D', 'R', 'A', 'I', 'N', 'I', 'N', 'G', '\020', '\003', '\022', '\013', '\n', '\007', 'T', 
-'I', 'M', 'E', 'O', 'U', 'T', '\020', '\004', '\022', '\014', '\n', '\010', 'D', 'E', 'G', 'R', 'A', 'D', 'E', 'D', '\020', '\005', 'B', '@', '\n', 
-'\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 
-'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\020', 'H', 'e', 'a', 'l', 't', 'h', 'C', 'h', 'e', 'c', 'k', 'P', 'r', 
-'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'I', 'M', 'E', 'O', 'U', 'T', '\020', '\004', '\022', '\014', '\n', '\010', 'D', 'E', 'G', 'R', 'A', 'D', 'E', 'D', '\020', '\005', 'B', '\204', '\001', 
+'\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 
+'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\020', 'H', 'e', 'a', 'l', 't', 'h', 'C', 'h', 'e', 'c', 'k', 'P', 
+'r', 'o', 't', 'o', 'P', '\001', 'Z', 'B', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 
+'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 
+'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', ';', 'c', 'o', 'r', 'e', 'v', '3', '\272', 
+'\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
 static upb_def_init *deps[13] = {
@@ -230,7 +214,7 @@ static upb_def_init *deps[13] = {
 
 upb_def_init envoy_config_core_v3_health_check_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_config_core_v3_health_check_proto_upb_file_layout,
   "envoy/config/core/v3/health_check.proto",
-  UPB_STRVIEW_INIT(descriptor, 4221)
+  UPB_STRVIEW_INIT(descriptor, 4290)
 };

@@ -51,7 +51,9 @@
 /*
  * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
  */
+#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
 // #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+#endif
 
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
@@ -126,11 +128,13 @@
 #elif defined(ANDROID) || defined(__ANDROID__)
 #define GPR_PLATFORM_STRING "android"
 #define GPR_ANDROID 1
-#ifdef __ANDROID_API__
-#if (__ANDROID_API__) >= 29
+#ifndef __ANDROID_API__
+#error "__ANDROID_API__ must be defined for Android builds."
+#endif
+#if __ANDROID_API__ < 21
+#error "Requires Android API v21 and above"
+#endif
 #define GPR_SUPPORT_BINDER_TRANSPORT 1
-#endif
-#endif
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.
@@ -186,7 +190,14 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#ifdef __GLIBC_PREREQ
+#if __GLIBC_PREREQ(2, 12)
 #define GPR_LINUX_PTHREAD_NAME 1
+#endif
+#else
+// musl libc & others
+#define GPR_LINUX_PTHREAD_NAME 1
+#endif
 #include <linux/version.h>
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1

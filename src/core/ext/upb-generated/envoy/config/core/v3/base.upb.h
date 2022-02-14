@@ -951,6 +951,7 @@ typedef enum {
   envoy_config_core_v3_DataSource_specifier_filename = 1,
   envoy_config_core_v3_DataSource_specifier_inline_bytes = 2,
   envoy_config_core_v3_DataSource_specifier_inline_string = 3,
+  envoy_config_core_v3_DataSource_specifier_environment_variable = 4,
   envoy_config_core_v3_DataSource_specifier_NOT_SET = 0
 } envoy_config_core_v3_DataSource_specifier_oneofcases;
 UPB_INLINE envoy_config_core_v3_DataSource_specifier_oneofcases envoy_config_core_v3_DataSource_specifier_case(const envoy_config_core_v3_DataSource* msg) { return (envoy_config_core_v3_DataSource_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(8, 16), int32_t); }
@@ -961,6 +962,8 @@ UPB_INLINE bool envoy_config_core_v3_DataSource_has_inline_bytes(const envoy_con
 UPB_INLINE upb_strview envoy_config_core_v3_DataSource_inline_bytes(const envoy_config_core_v3_DataSource *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 2, upb_strview_make("", strlen(""))); }
 UPB_INLINE bool envoy_config_core_v3_DataSource_has_inline_string(const envoy_config_core_v3_DataSource *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 3; }
 UPB_INLINE upb_strview envoy_config_core_v3_DataSource_inline_string(const envoy_config_core_v3_DataSource *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 3, upb_strview_make("", strlen(""))); }
+UPB_INLINE bool envoy_config_core_v3_DataSource_has_environment_variable(const envoy_config_core_v3_DataSource *msg) { return _upb_getoneofcase(msg, UPB_SIZE(8, 16)) == 4; }
+UPB_INLINE upb_strview envoy_config_core_v3_DataSource_environment_variable(const envoy_config_core_v3_DataSource *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), UPB_SIZE(8, 16), 4, upb_strview_make("", strlen(""))); }
 
 UPB_INLINE void envoy_config_core_v3_DataSource_set_filename(envoy_config_core_v3_DataSource *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 1);
@@ -970,6 +973,9 @@ UPB_INLINE void envoy_config_core_v3_DataSource_set_inline_bytes(envoy_config_co
 }
 UPB_INLINE void envoy_config_core_v3_DataSource_set_inline_string(envoy_config_core_v3_DataSource *msg, upb_strview value) {
   UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 3);
+}
+UPB_INLINE void envoy_config_core_v3_DataSource_set_environment_variable(envoy_config_core_v3_DataSource *msg, upb_strview value) {
+  UPB_WRITE_ONEOF(msg, upb_strview, UPB_SIZE(0, 0), value, UPB_SIZE(8, 16), 4);
 }
 
 /* envoy.config.core.v3.RetryPolicy */
@@ -1285,6 +1291,8 @@ UPB_INLINE upb_strview envoy_config_core_v3_ControlPlane_identifier(const envoy_
 UPB_INLINE void envoy_config_core_v3_ControlPlane_set_identifier(envoy_config_core_v3_ControlPlane *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
+
+extern const upb_msglayout_file envoy_config_core_v3_base_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

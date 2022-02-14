@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-// Provider class will get SDK Authorization policy from string during
+// Provider class will get gRPC Authorization policy from string during
 // initialization. This policy will be translated to Envoy RBAC policies and
 // used to initialize allow and deny AuthorizationEngine objects. This provider
 // will return the same authorization engines everytime.
@@ -54,7 +54,7 @@ class StaticDataAuthorizationPolicyProvider
   RefCountedPtr<AuthorizationEngine> deny_engine_;
 };
 
-// Provider class will get SDK Authorization policy from provided file path.
+// Provider class will get gRPC Authorization policy from provided file path.
 // This policy will be translated to Envoy RBAC policies and used to initialize
 // allow and deny AuthorizationEngine objects. This provider will periodically
 // load file contents in specified path, and upon modification update the engine
@@ -78,7 +78,7 @@ class FileWatcherAuthorizationPolicyProvider
   void Orphan() override;
 
   AuthorizationEngines engines() override {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return {allow_engine_, deny_engine_};
   }
 
@@ -93,7 +93,7 @@ class FileWatcherAuthorizationPolicyProvider
   std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
 
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<AuthorizationEngine> deny_engine_ ABSL_GUARDED_BY(mu_);

@@ -219,6 +219,8 @@ UPB_INLINE void google_api_CustomHttpPattern_set_path(google_api_CustomHttpPatte
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_strview) = value;
 }
 
+extern const upb_msglayout_file google_api_http_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
