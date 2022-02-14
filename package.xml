@@ -1234,12 +1234,12 @@
     <file baseinstalldir="/" name="src/core/lib/security/authorization/evaluate_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_authorization_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_authorization_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_server_authz_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/authorization/grpc_server_authz_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/rbac_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/rbac_policy.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/authorization/sdk_server_authz_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/authorization/sdk_server_authz_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />

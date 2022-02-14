@@ -53,9 +53,9 @@ std::string ReadFile(const char* file_path) {
   return file_contents;
 }
 
-class SdkAuthzEnd2EndTest : public ::testing::Test {
+class GrpcAuthzEnd2EndTest : public ::testing::Test {
  protected:
-  SdkAuthzEnd2EndTest()
+  GrpcAuthzEnd2EndTest()
       : server_address_(
             absl::StrCat("localhost:", grpc_pick_unused_port_or_die())) {
     std::string root_cert = ReadFile(kCaCertPath);
@@ -83,7 +83,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
   }
 
-  ~SdkAuthzEnd2EndTest() override { server_->Shutdown(); }
+  ~GrpcAuthzEnd2EndTest() override { server_->Shutdown(); }
 
   // Replaces existing credentials with insecure credentials.
   void UseInsecureCredentials() {
@@ -91,7 +91,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     channel_creds_ = InsecureChannelCredentials();
   }
 
-  // Creates server with sdk authorization enabled when provider is not null.
+  // Creates server with gRPC authorization enabled when provider is not null.
   void InitServer(
       std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
           provider) {
@@ -145,7 +145,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
   std::shared_ptr<ChannelCredentials> channel_creds_;
 };
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        StaticInitAllowsRpcRequestNoMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -193,7 +193,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -228,7 +228,8 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -258,7 +259,7 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        StaticInitDeniesRpcRequestMatchInDenyNoMatchInAllow) {
   std::string policy =
       "{"
@@ -294,7 +295,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -331,7 +332,8 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -364,7 +366,7 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
 }
 
 TEST_F(
-    SdkAuthzEnd2EndTest,
+    GrpcAuthzEnd2EndTest,
     StaticInitDeniesRpcRequestWithPrincipalsFieldOnUnauthenticatedConnection) {
   std::string policy =
       "{"
@@ -389,7 +391,7 @@ TEST_F(
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        StaticInitAllowsRpcRequestWithPrincipalsFieldOnAuthenticatedConnection) {
   std::string policy =
       "{"
@@ -412,7 +414,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitAllowsRpcRequestNoMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -461,7 +463,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestNoMatchInAllowAndDeny) {
   std::string policy =
       "{"
@@ -498,7 +500,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -530,7 +532,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestMatchInDenyNoMatchInAllow) {
   std::string policy =
       "{"
@@ -567,7 +569,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -606,7 +608,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
   std::string policy =
       "{"
@@ -640,7 +642,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -699,7 +701,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   EXPECT_TRUE(resp2.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -734,7 +736,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   EXPECT_EQ(resp2.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
