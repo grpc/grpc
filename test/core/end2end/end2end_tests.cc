@@ -179,6 +179,12 @@ extern void retry_throttled(grpc_end2end_test_config config);
 extern void retry_throttled_pre_init(void);
 extern void retry_too_many_attempts(grpc_end2end_test_config config);
 extern void retry_too_many_attempts_pre_init(void);
+extern void retry_transparent_goaway(grpc_end2end_test_config config);
+extern void retry_transparent_goaway_pre_init(void);
+extern void retry_transparent_max_concurrent_streams(grpc_end2end_test_config config);
+extern void retry_transparent_max_concurrent_streams_pre_init(void);
+extern void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config);
+extern void retry_transparent_not_sent_on_wire_pre_init(void);
 extern void sdk_authz(grpc_end2end_test_config config);
 extern void sdk_authz_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
@@ -284,6 +290,9 @@ void grpc_end2end_tests_pre_init(void) {
   retry_streaming_succeeds_before_replay_finished_pre_init();
   retry_throttled_pre_init();
   retry_too_many_attempts_pre_init();
+  retry_transparent_goaway_pre_init();
+  retry_transparent_max_concurrent_streams_pre_init();
+  retry_transparent_not_sent_on_wire_pre_init();
   sdk_authz_pre_init();
   server_finishes_request_pre_init();
   server_streaming_pre_init();
@@ -382,6 +391,9 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_streaming_succeeds_before_replay_finished(config);
     retry_throttled(config);
     retry_too_many_attempts(config);
+    retry_transparent_goaway(config);
+    retry_transparent_max_concurrent_streams(config);
+    retry_transparent_not_sent_on_wire(config);
     sdk_authz(config);
     server_finishes_request(config);
     server_streaming(config);
@@ -697,6 +709,18 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_too_many_attempts", argv[i])) {
       retry_too_many_attempts(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_goaway", argv[i])) {
+      retry_transparent_goaway(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_max_concurrent_streams", argv[i])) {
+      retry_transparent_max_concurrent_streams(config);
+      continue;
+    }
+    if (0 == strcmp("retry_transparent_not_sent_on_wire", argv[i])) {
+      retry_transparent_not_sent_on_wire(config);
       continue;
     }
     if (0 == strcmp("sdk_authz", argv[i])) {
