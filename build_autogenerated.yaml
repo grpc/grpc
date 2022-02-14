@@ -6739,6 +6739,7 @@ targets:
   src:
   - test/core/promise/loop_test.cc
   deps:
+  - absl/status:statusor
   - absl/types:variant
   uses_polling: false
 - name: match_test
