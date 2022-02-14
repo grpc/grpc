@@ -201,6 +201,9 @@ struct grpc_channel_stack {
   /* Memory required for a call stack (computed at channel stack
      initialization) */
   size_t call_stack_size;
+
+  void IncrementRefCount();
+  void Unref();
 };
 
 /* A call stack tracks a set of related filters for one call, and guarantees
@@ -285,6 +288,14 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
     (void)(reason);                                     \
   } while (0);
 #endif
+
+inline void grpc_channel_stack::IncrementRefCount() {
+  GRPC_CHANNEL_STACK_REF(&refcount, "smart_pointer");
+}
+
+inline void grpc_channel_stack::Unref() {
+  GRPC_CHANNEL_STACK_UNREF(&refcount, "smart_pointer");
+}
 
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack* stack,
