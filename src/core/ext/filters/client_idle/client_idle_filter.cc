@@ -163,7 +163,7 @@ void ClientIdleFilter::StartIdleTimer() {
               if (idle_filter_state->CheckTimer()) {
                 return Continue{};
               } else {
-                auto* op = grpc_transport_op_create();
+                auto* op = grpc_make_transport_op(nullptr);
                 op->disconnect_with_error = grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
                     GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
