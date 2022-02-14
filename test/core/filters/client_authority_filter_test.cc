@@ -40,12 +40,12 @@ class TestChannelArgs {
 };
 
 TEST(ClientAuthorityFilterTest, DefaultFails) {
-  EXPECT_FALSE(ClientAuthorityFilter::Create(nullptr).ok());
+  EXPECT_FALSE(ClientAuthorityFilter::Create(nullptr, nullptr).ok());
 }
 
 TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
   EXPECT_EQ(ClientAuthorityFilter::Create(
-                TestChannelArgs("foo.test.google.au").args())
+                TestChannelArgs("foo.test.google.au").args(), nullptr)
                 .status(),
             absl::OkStatus());
 }
@@ -54,12 +54,12 @@ TEST(ClientAuthorityFilterTest, NonStringArgFails) {
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), 123);
   grpc_channel_args args = {1, &arg};
-  EXPECT_FALSE(ClientAuthorityFilter::Create(&args).ok());
+  EXPECT_FALSE(ClientAuthorityFilter::Create(&args, nullptr).ok());
 }
 
 TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au").args());
+      TestChannelArgs("foo.test.google.au").args(), nullptr);
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
@@ -85,7 +85,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
 TEST(ClientAuthorityFilterTest,
      PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au").args());
+      TestChannelArgs("foo.test.google.au").args(), nullptr);
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());

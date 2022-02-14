@@ -20,6 +20,7 @@
 #include <new>
 #include <type_traits>
 
+#include "absl/status/statusor.h"
 #include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -55,6 +56,18 @@ struct LoopTraits<absl::StatusOr<LoopCtl<T>>> {
     const auto& inner = *value;
     if (absl::holds_alternative<Continue>(inner)) return Continue{};
     return absl::get<T>(inner);
+  }
+};
+
+template <>
+struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
+  using Result = absl::Status;
+  static LoopCtl<Result> ToLoopCtl(
+      absl::StatusOr<LoopCtl<absl::Status>> value) {
+    if (!value.ok()) return value.status();
+    const auto& inner = *value;
+    if (absl::holds_alternative<Continue>(inner)) return Continue{};
+    return absl::get<absl::Status>(inner);
   }
 };
 

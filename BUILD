@@ -1188,6 +1188,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "loop",
+    external_deps = [
+        "absl/types:variant",
+        "absl/status:statusor",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/loop.h",
