@@ -18,16 +18,17 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 
 namespace grpc_core {
 
-class SdkServerAuthzFilter {
+class SdkServerAuthzFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilterVtable;
 
   static absl::StatusOr<SdkServerAuthzFilter> Create(
-      const grpc_channel_args* args, grpc_channel_stack* stack);
+      const grpc_channel_args* args, ChannelFilter::Args);
 
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,

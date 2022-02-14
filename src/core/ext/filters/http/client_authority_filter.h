@@ -31,10 +31,10 @@
 
 namespace grpc_core {
 
-class ClientAuthorityFilter {
+class ClientAuthorityFilter : public ChannelFilter {
  public:
   static absl::StatusOr<ClientAuthorityFilter> Create(
-      const grpc_channel_args* args, grpc_channel_stack* stack);
+      const grpc_channel_args* args, ChannelFilter::Args);
 
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(

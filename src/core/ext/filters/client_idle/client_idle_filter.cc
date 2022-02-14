@@ -62,10 +62,10 @@ grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
       MIN_IDLE_TIMEOUT_MS);
 }
 
-class ClientIdleFilter {
+class ClientIdleFilter : public ChannelFilter {
  public:
   static absl::StatusOr<ClientIdleFilter> Create(
-      const grpc_channel_args* args, grpc_channel_stack* channel_stack);
+      const grpc_channel_args* args, ChannelFilter::Args filter_args);
   ~ClientIdleFilter() = default;
 
   ClientIdleFilter(const ClientIdleFilter&) = delete;
@@ -76,15 +76,15 @@ class ClientIdleFilter {
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory);
+      NextPromiseFactory next_promise_factory) override;
+
+  bool StartTransportOp(grpc_transport_op* op) override;
 
  private:
   ClientIdleFilter(grpc_channel_stack* channel_stack,
                    grpc_millis client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
-
-  void StartTransportOp(grpc_channel_element* elem, grpc_transport_op* op);
 
   void StartIdleTimer();
 
@@ -107,8 +107,9 @@ class ClientIdleFilter {
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
-    const grpc_channel_args* args, grpc_channel_stack* channel_stack) {
-  ClientIdleFilter filter(channel_stack, GetClientIdleTimeout(args));
+    const grpc_channel_args* args, ChannelFilter::Args filter_args) {
+  ClientIdleFilter filter(filter_args.channel_stack(),
+                          GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
@@ -124,8 +125,7 @@ ArenaPromise<TrailingMetadata> ClientIdleFilter::MakeCallPromise(
       Decrementer(this), next_promise_factory(std::move(initial_metadata))));
 }
 
-void ClientIdleFilter::StartTransportOp(grpc_channel_element* elem,
-                                        grpc_transport_op* op) {
+bool ClientIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     // IncreaseCallCount() introduces a phony call and prevent the timer from
@@ -134,7 +134,7 @@ void ClientIdleFilter::StartTransportOp(grpc_channel_element* elem,
     activity_.reset();
   }
   // Pass the op to the next filter.
-  grpc_channel_next_op(elem, op);
+  return false;
 }
 
 void ClientIdleFilter::IncreaseCallCount() {

@@ -40,7 +40,7 @@
 namespace grpc_core {
 
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
-    const grpc_channel_args* args, grpc_channel_stack* stack) {
+    const grpc_channel_args* args, ChannelFilter::Args) {
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority_arg == nullptr) {

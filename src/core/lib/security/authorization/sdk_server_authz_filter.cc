@@ -32,7 +32,7 @@ SdkServerAuthzFilter::SdkServerAuthzFilter(
       provider_(std::move(provider)) {}
 
 absl::StatusOr<SdkServerAuthzFilter> SdkServerAuthzFilter::Create(
-    const grpc_channel_args* args, grpc_channel_stack*) {
+    const grpc_channel_args* args, ChannelFilter::Args) {
   grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
   grpc_authorization_policy_provider* provider =
       grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
