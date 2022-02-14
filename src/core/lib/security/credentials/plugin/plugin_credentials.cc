@@ -25,7 +25,6 @@
 #include <atomic>
 
 #include "absl/strings/str_cat.h"
-#include "plugin_credentials.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -34,6 +33,7 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
