@@ -140,7 +140,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (!policies_or.ok()) {
     return policies_or.status();
   }
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   GPR_ASSERT(policies_or->size() <= 2);
   if (policies_or->size() == 1) {
     GPR_ASSERT(policies_or->at(0).action == Rbac::Action::kAllow);
