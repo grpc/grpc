@@ -46,7 +46,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/security/authorization/sdk_server_authz_filter.h"
+#include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
@@ -104,14 +104,14 @@ static bool maybe_prepend_server_auth_filter(
   return true;
 }
 
-static bool maybe_prepend_sdk_server_authz_filter(
+static bool maybe_prepend_grpc_server_authz_filter(
     grpc_core::ChannelStackBuilder* builder) {
   const grpc_channel_args* args = builder->channel_args();
   const auto* provider =
       grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
           args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
   if (provider != nullptr) {
-    builder->PrependFilter(&grpc_core::SdkServerAuthzFilter::kFilterVtable,
+    builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable,
                            nullptr);
   }
   return true;
@@ -129,11 +129,11 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
                                          maybe_prepend_client_auth_filter);
   builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 1,
                                          maybe_prepend_server_auth_filter);
-  // Register the SdkServerAuthzFilter with a priority less than
-  // server_auth_filter to allow server_auth_filter on which the sdk filter
+  // Register the GrpcServerAuthzFilter with a priority less than
+  // server_auth_filter to allow server_auth_filter on which the grpc filter
   // depends on to be higher on the channel stack.
-  builder->channel_init()->RegisterStage(GRPC_SERVER_CHANNEL, INT_MAX - 2,
-                                         maybe_prepend_sdk_server_authz_filter);
+  builder->channel_init()->RegisterStage(
+      GRPC_SERVER_CHANNEL, INT_MAX - 2, maybe_prepend_grpc_server_authz_filter);
 }
 }  // namespace grpc_core
 

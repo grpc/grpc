@@ -40,7 +40,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/gethostname.h"
-#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
@@ -607,11 +606,8 @@ class AresDNSResolver : public DNSResolver {
 };
 
 bool ShouldUseAres(const char* resolver_env) {
-  // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
-  // custom IO managers (e.g. gevent).
-  return !g_custom_iomgr_enabled &&
-         (resolver_env == nullptr || strlen(resolver_env) == 0 ||
-          gpr_stricmp(resolver_env, "ares") == 0);
+  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
+         gpr_stricmp(resolver_env, "ares") == 0;
 }
 
 bool g_use_ares_dns_resolver;
