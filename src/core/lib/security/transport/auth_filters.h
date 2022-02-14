@@ -43,12 +43,6 @@ class ClientAuthFilter final : private AuthMetadataContext {
       NextPromiseFactory next_promise_factory);
 
  private:
-  ClientAuthFilter(grpc_channel_security_connector* security_connector,
-                   grpc_auth_context* auth_context);
-
-  ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
-      ClientInitialMetadata initial_metadata);
-
   struct PartialAuthContext {
     absl::string_view host_and_port;
     absl::string_view method_name;
@@ -56,6 +50,13 @@ class ClientAuthFilter final : private AuthMetadataContext {
     absl::string_view service;
     std::string ServiceUrl() const;
   };
+
+  ClientAuthFilter(
+      RefCountedPtr<grpc_channel_security_connector> security_connector,
+      RefCountedPtr<grpc_auth_context> auth_context);
+
+  ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
+      ClientInitialMetadata initial_metadata);
 
   PartialAuthContext GetPartialAuthContext(
       const ClientInitialMetadata& initial_metadata) const;

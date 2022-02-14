@@ -30,26 +30,6 @@ extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 // -Wmismatched-tags.
 struct grpc_plugin_credentials final : public grpc_call_credentials {
  public:
-  struct pending_request : public grpc_core::RefCounted<pending_request> {
-    ~pending_request() override {
-      grpc_auth_metadata_context_reset(&context);
-      for (size_t i = 0; i < metadata.size(); i++) {
-        grpc_slice_unref_internal(metadata[i].key);
-        grpc_slice_unref_internal(metadata[i].value);
-      }
-    }
-    std::atomic<bool> ready;
-    grpc_core::Waker waker;
-    struct grpc_plugin_credentials* creds;
-    grpc_core::ClientInitialMetadata md;
-    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
-    grpc_auth_metadata_context context;
-    // final status
-    absl::InlinedVector<grpc_metadata, 2> metadata;
-    std::string error_details;
-    grpc_status_code status;
-  };
-
   explicit grpc_plugin_credentials(grpc_metadata_credentials_plugin plugin,
                                    grpc_security_level min_security_level);
   ~grpc_plugin_credentials() override;
@@ -62,6 +42,50 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
+  class PendingRequest : public grpc_core::RefCounted<PendingRequest> {
+   public:
+    PendingRequest(grpc_plugin_credentials* creds,
+                   grpc_core::AuthMetadataContext* auth_metadata_context,
+                   grpc_core::ClientInitialMetadata initial_metadata)
+        : call_creds_(creds->Ref()),
+          context_(auth_metadata_context->MakeLegacyContext(initial_metadata)),
+          md_(std::move(initial_metadata)) {}
+
+    ~PendingRequest() override {
+      grpc_auth_metadata_context_reset(&context_);
+      for (size_t i = 0; i < metadata_.size(); i++) {
+        grpc_slice_unref_internal(metadata_[i].key);
+        grpc_slice_unref_internal(metadata_[i].value);
+      }
+    }
+
+    absl::StatusOr<grpc_core::ClientInitialMetadata> ProcessPluginResult(
+        const grpc_metadata* md, size_t num_md, grpc_status_code status,
+        const char* error_details);
+
+    grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+    PollAsyncResult();
+
+    static void RequestMetadataReady(void* request, const grpc_metadata* md,
+                                     size_t num_md, grpc_status_code status,
+                                     const char* error_details);
+
+    grpc_auth_metadata_context context() const { return context_; }
+    grpc_plugin_credentials* creds() const { return call_creds_.get(); }
+
+   private:
+    std::atomic<bool> ready_{false};
+    grpc_core::Waker waker_{
+        grpc_core::Activity::current()->MakeNonOwningWaker()};
+    grpc_core::RefCountedPtr<grpc_plugin_credentials> call_creds_;
+    grpc_auth_metadata_context context_;
+    grpc_core::ClientInitialMetadata md_;
+    // final status
+    absl::InlinedVector<grpc_metadata, 2> metadata_;
+    std::string error_details_;
+    grpc_status_code status_;
+  };
+
   grpc_metadata_credentials_plugin plugin_;
 };
 

@@ -144,10 +144,10 @@ grpc_auth_metadata_context ClientAuthFilter::MakeLegacyContext(
 }
 
 ClientAuthFilter::ClientAuthFilter(
-    grpc_channel_security_connector* security_connector,
-    grpc_auth_context* auth_context)
-    : security_connector_(security_connector->Ref()),
-      auth_context_(auth_context->Ref()) {}
+    RefCountedPtr<grpc_channel_security_connector> security_connector,
+    RefCountedPtr<grpc_auth_context> auth_context)
+    : security_connector_(std::move(security_connector)),
+      auth_context_(std::move(auth_context)) {}
 
 ArenaPromise<absl::StatusOr<ClientInitialMetadata>>
 ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
@@ -240,8 +240,9 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
         "Auth context missing from client auth filter args");
   }
 
-  return ClientAuthFilter(static_cast<grpc_channel_security_connector*>(sc),
-                          auth_context);
+  return ClientAuthFilter(
+      static_cast<grpc_channel_security_connector*>(sc)->Ref(),
+      auth_context->Ref());
 }
 
 }  // namespace grpc_core

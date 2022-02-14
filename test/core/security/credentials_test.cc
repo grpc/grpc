@@ -46,6 +46,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
@@ -417,20 +418,17 @@ class RequestMetadataState
  public:
   static grpc_core::RefCountedPtr<RequestMetadataState> NewInstance(
       grpc_error_handle expected_error, std::string expected) {
-    return grpc_core::RefCountedPtr<RequestMetadataState>(
-        new RequestMetadataState(expected_error, std::move(expected),
-                                 grpc_polling_entity_create_from_pollset_set(
-                                     grpc_pollset_set_create())));
+    return grpc_core::MakeRefCounted<RequestMetadataState>(
+        expected_error, std::move(expected),
+        grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create()));
   }
 
- private:
   RequestMetadataState(grpc_error_handle expected_error, std::string expected,
                        grpc_polling_entity pollent)
       : expected_error_(expected_error),
         expected_(std::move(expected)),
         pollent_(pollent) {}
 
- public:
   ~RequestMetadataState() override {
     grpc_pollset_set_destroy(grpc_polling_entity_pollset_set(&pollent_));
   }
@@ -504,6 +502,7 @@ class RequestMetadataState
     }
     gpr_log(GPR_INFO, "expected metadata: %s", expected_.c_str());
     gpr_log(GPR_INFO, "actual metadata: %s", md_.DebugString().c_str());
+    GPR_ASSERT(md_.DebugString() == expected_);
     GRPC_ERROR_UNREF(error);
   }
 

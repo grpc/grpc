@@ -264,9 +264,6 @@ class FreestandingActivity : public Activity, private Wakeable {
     }
   }
 
-  // All promise execution occurs under this mutex.
-  Mutex mu_;
-
   // Check if we got an internal wakeup since the last time this function was
   // called.
   ActionDuringRun GotActionDuringRun() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -283,6 +280,8 @@ class FreestandingActivity : public Activity, private Wakeable {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     action_during_run_ = std::max(action_during_run_, action);
   }
+
+  Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
  private:
   class Handle;
@@ -305,6 +304,9 @@ class FreestandingActivity : public Activity, private Wakeable {
   bool RefIfNonzero();
   // Drop the (proved existing) wait handle.
   void DropHandle() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  // All promise execution occurs under this mutex.
+  Mutex mu_;
 
   // Current refcount.
   std::atomic<uint32_t> refs_{1};
@@ -346,9 +348,9 @@ class PromiseActivity final : public FreestandingActivity,
     // This may hit a waiter, which could expose our this pointer to other
     // threads, meaning we do need to hold this mutex even though we're still
     // constructing.
-    mu_.Lock();
+    mu()->Lock();
     auto status = Start(Factory(std::move(promise_factory)));
-    mu_.Unlock();
+    mu()->Unlock();
     // We may complete immediately.
     if (status.has_value()) {
       on_done_(std::move(*status));
@@ -373,13 +375,13 @@ class PromiseActivity final : public FreestandingActivity,
 
   void Cancel() final {
     if (Activity::is_current()) {
-      mu_.AssertHeld();
+      mu()->AssertHeld();
       SetActionDuringRun(ActionDuringRun::kCancel);
       return;
     }
     bool was_done;
     {
-      MutexLock lock(&mu_);
+      MutexLock lock(mu());
       // Check if we were done, and flag done.
       was_done = done_;
       if (!done_) MarkDone();
@@ -399,7 +401,7 @@ class PromiseActivity final : public FreestandingActivity,
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
-      mu_.AssertHeld();
+      mu()->AssertHeld();
       SetActionDuringRun(ActionDuringRun::kWakeup);
       WakeupComplete();
       return;
@@ -418,7 +420,7 @@ class PromiseActivity final : public FreestandingActivity,
 
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
-  void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     GPR_ASSERT(!done_);
     done_ = true;
     Destruct(&promise_holder_.promise);
@@ -426,16 +428,16 @@ class PromiseActivity final : public FreestandingActivity,
 
   // In response to Wakeup, run the Promise state machine again until it
   // settles. Then check for completion, and if we have completed, call on_done.
-  void Step() ABSL_LOCKS_EXCLUDED(mu_) {
+  void Step() ABSL_LOCKS_EXCLUDED(mu()) {
     // Poll the promise until things settle out under a lock.
-    mu_.Lock();
+    mu()->Lock();
     if (done_) {
       // We might get some spurious wakeups after finishing.
-      mu_.Unlock();
+      mu()->Unlock();
       return;
     }
     auto status = RunStep();
-    mu_.Unlock();
+    mu()->Unlock();
     if (status.has_value()) {
       on_done_(std::move(*status));
     }
@@ -444,7 +446,7 @@ class PromiseActivity final : public FreestandingActivity,
   // The main body of a step: set the current activity, and any contexts, and
   // then run the main polling loop. Contained in a function by itself in
   // order to keep the scoping rules a little easier in Step().
-  absl::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  absl::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
     return StepLoop();
@@ -454,7 +456,7 @@ class PromiseActivity final : public FreestandingActivity,
   // promise factory before entering the main loop. Called once from the
   // constructor.
   absl::optional<ResultType> Start(Factory promise_factory)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
     Construct(&promise_holder_.promise, promise_factory.Once());
@@ -463,7 +465,7 @@ class PromiseActivity final : public FreestandingActivity,
 
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
-  absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     GPR_ASSERT(is_current());
     while (true) {
       // Run the promise.
@@ -493,7 +495,7 @@ class PromiseActivity final : public FreestandingActivity,
   // Callback on completion of the promise.
   GPR_NO_UNIQUE_ADDRESS OnDone on_done_;
   // Has execution completed?
-  GPR_NO_UNIQUE_ADDRESS bool done_ ABSL_GUARDED_BY(mu_) = false;
+  GPR_NO_UNIQUE_ADDRESS bool done_ ABSL_GUARDED_BY(mu()) = false;
   // Is there a wakeup scheduled?
   GPR_NO_UNIQUE_ADDRESS std::atomic<bool> wakeup_scheduled_{false};
   // We wrap the promise in a union to allow control over the construction
@@ -504,7 +506,7 @@ class PromiseActivity final : public FreestandingActivity,
     ~PromiseHolder() {}
     GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
-  GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu_);
+  GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu());
 };
 
 }  // namespace promise_detail

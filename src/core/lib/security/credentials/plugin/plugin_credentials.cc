@@ -25,6 +25,7 @@
 #include <atomic>
 
 #include "absl/strings/str_cat.h"
+#include "plugin_credentials.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -59,9 +60,10 @@ std::string grpc_plugin_credentials::debug_string() {
   return debug_str;
 }
 
-static absl::StatusOr<grpc_core::ClientInitialMetadata> process_plugin_result(
-    grpc_plugin_credentials::pending_request* r, const grpc_metadata* md,
-    size_t num_md, grpc_status_code status, const char* error_details) {
+absl::StatusOr<grpc_core::ClientInitialMetadata>
+grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
+    const grpc_metadata* md, size_t num_md, grpc_status_code status,
+    const char* error_details) {
   if (status != GRPC_STATUS_OK) {
     return absl::UnavailableError(absl::StrCat(
         "Getting metadata from plugin failed with error: ", error_details));
@@ -86,7 +88,7 @@ static absl::StatusOr<grpc_core::ClientInitialMetadata> process_plugin_result(
     } else {
       absl::Status error;
       for (size_t i = 0; i < num_md; ++i) {
-        r->md->Append(
+        md_->Append(
             grpc_core::StringViewFromSlice(md[i].key),
             grpc_core::Slice(grpc_slice_ref_internal(md[i].value)),
             [&error](absl::string_view message, const grpc_core::Slice&) {
@@ -94,38 +96,45 @@ static absl::StatusOr<grpc_core::ClientInitialMetadata> process_plugin_result(
             });
       }
       if (!error.ok()) return std::move(error);
-      return grpc_core::ClientInitialMetadata(std::move(r->md));
+      return grpc_core::ClientInitialMetadata(std::move(md_));
     }
   }
 }
 
-static void plugin_md_request_metadata_ready(void* request,
-                                             const grpc_metadata* md,
-                                             size_t num_md,
-                                             grpc_status_code status,
-                                             const char* error_details) {
+grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_plugin_credentials::PendingRequest::PollAsyncResult() {
+  if (!ready_.load(std::memory_order_acquire)) {
+    return grpc_core::Pending{};
+  }
+  return ProcessPluginResult(metadata_.data(), metadata_.size(), status_,
+                             error_details_.c_str());
+}
+
+void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
+    void* request, const grpc_metadata* md, size_t num_md,
+    grpc_status_code status, const char* error_details) {
   /* called from application code */
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
-  grpc_core::RefCountedPtr<grpc_plugin_credentials::pending_request> r(
-      static_cast<grpc_plugin_credentials::pending_request*>(request));
+  grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(
+      static_cast<grpc_plugin_credentials::PendingRequest*>(request));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "asynchronously",
-            r->creds, r.get());
+            r->creds(), r.get());
   }
   for (size_t i = 0; i < num_md; i++) {
     grpc_metadata p;
     p.key = grpc_slice_ref_internal(md[i].key);
     p.value = grpc_slice_ref_internal(md[i].value);
-    r->metadata.push_back(p);
+    r->metadata_.push_back(p);
   }
-  r->error_details = error_details == nullptr ? "" : error_details;
-  r->status = status;
-  r->ready.store(true, std::memory_order_release);
-  r->waker.Wakeup();
+  r->error_details_ = error_details == nullptr ? "" : error_details;
+  r->status_ = status;
+  r->ready_.store(true, std::memory_order_release);
+  r->waker_.Wakeup();
 }
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
@@ -137,13 +146,8 @@ grpc_plugin_credentials::GetRequestMetadata(
   }
 
   // Create pending_request object.
-  auto request = grpc_core::MakeRefCounted<pending_request>();
-  request->ready = false;
-  request->waker = grpc_core::Activity::current()->MakeNonOwningWaker();
-  request->creds = this;
-  request->call_creds = Ref();
-  request->context = auth_metadata_context->MakeLegacyContext(initial_metadata);
-  request->md = std::move(initial_metadata);
+  auto request = grpc_core::MakeRefCounted<PendingRequest>(
+      this, auth_metadata_context, std::move(initial_metadata));
   // Invoke the plugin.  The callback holds a ref to us.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
@@ -153,9 +157,13 @@ grpc_plugin_credentials::GetRequestMetadata(
   size_t num_creds_md = 0;
   grpc_status_code status = GRPC_STATUS_OK;
   const char* error_details = nullptr;
+  // Add an extra ref to the request object for the async callback.
+  // If the request completes synchronously, we'll drop this later.
+  // If the request completes asynchronously, it will own a ref to the request
+  // object (which we release from our ownership below).
   auto child_request = request->Ref();
-  if (!plugin_.get_metadata(plugin_.state, request->context,
-                            plugin_md_request_metadata_ready,
+  if (!plugin_.get_metadata(plugin_.state, request->context(),
+                            PendingRequest::RequestMetadataReady,
                             child_request.get(), creds_md, &num_creds_md,
                             &status, &error_details)) {
     child_request.release();
@@ -165,16 +173,7 @@ grpc_plugin_credentials::GetRequestMetadata(
               "asynchronously",
               this, request.get());
     }
-    return [request]() -> grpc_core::Poll<
-                           absl::StatusOr<grpc_core::ClientInitialMetadata>> {
-      if (!request->ready.load(std::memory_order_acquire)) {
-        return grpc_core::Pending{};
-      }
-      auto result = process_plugin_result(
-          request.get(), request->metadata.data(), request->metadata.size(),
-          request->status, request->error_details.c_str());
-      return std::move(result);
-    };
+    return [request] { return request->PollAsyncResult(); };
   }
   // Synchronous return.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
@@ -183,8 +182,8 @@ grpc_plugin_credentials::GetRequestMetadata(
             "synchronously",
             this, request.get());
   }
-  auto result = process_plugin_result(request.get(), creds_md, num_creds_md,
-                                      status, error_details);
+  auto result = request->ProcessPluginResult(creds_md, num_creds_md, status,
+                                             error_details);
   // Clean up.
   for (size_t i = 0; i < num_creds_md; ++i) {
     grpc_slice_unref_internal(creds_md[i].key);
