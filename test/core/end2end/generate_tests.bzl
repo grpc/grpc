@@ -266,6 +266,7 @@ END2END_TESTS = {
     "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
+    "grpc_authz": _test_options(secure = True),
     "hpack_size": _test_options(
         proxyable = False,
         traceable = False,
@@ -366,7 +367,6 @@ END2END_TESTS = {
         # See b/151617965
         short_name = "retry_transparent_mcs",
     ),
-    "sdk_authz": _test_options(secure = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),

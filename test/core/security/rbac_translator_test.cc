@@ -62,7 +62,7 @@ TEST(GenerateRbacPoliciesTest, InvalidPolicy) {
   EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
       std::string(rbac_policies.status().message()),
-      ::testing::StartsWith("Failed to parse SDK authorization policy."));
+      ::testing::StartsWith("Failed to parse gRPC authorization policy."));
 }
 
 TEST(GenerateRbacPoliciesTest, MissingAuthorizationPolicyName) {

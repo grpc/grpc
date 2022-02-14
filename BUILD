@@ -3564,13 +3564,13 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
-        "src/core/lib/security/authorization/sdk_server_authz_filter.cc",
+        "src/core/lib/security/authorization/grpc_server_authz_filter.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/authorization_policy_provider.h",
         "src/core/lib/security/authorization/evaluate_args.h",
-        "src/core/lib/security/authorization/sdk_server_authz_filter.h",
+        "src/core/lib/security/authorization/grpc_server_authz_filter.h",
     ],
     external_deps = [
         "absl/strings",

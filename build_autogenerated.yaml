@@ -199,6 +199,7 @@ libs:
   - test/core/end2end/tests/filter_latency.cc
   - test/core/end2end/tests/filter_status_code.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
+  - test/core/end2end/tests/grpc_authz.cc
   - test/core/end2end/tests/high_initial_seqno.cc
   - test/core/end2end/tests/hpack_size.cc
   - test/core/end2end/tests/idempotent_request.cc
@@ -251,7 +252,6 @@ libs:
   - test/core/end2end/tests/retry_transparent_goaway.cc
   - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
   - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  - test/core/end2end/tests/sdk_authz.cc
   - test/core/end2end/tests/server_finishes_request.cc
   - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -959,9 +959,9 @@ libs:
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
-  - src/core/lib/security/authorization/sdk_server_authz_filter.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1612,9 +1612,9 @@ libs:
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
-  - src/core/lib/security/authorization/sdk_server_authz_filter.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -2134,7 +2134,7 @@ libs:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/sdk_server_authz_filter.h
+  - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -2441,7 +2441,7 @@ libs:
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
-  - src/core/lib/security/authorization/sdk_server_authz_filter.cc
+  - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
@@ -6090,6 +6090,25 @@ targets:
   - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
   - grpc_test_util
+- name: grpc_authz_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - src/cpp/server/authorization_policy_provider.cc
+  - test/cpp/end2end/grpc_authz_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_util
 - name: grpc_cli
   build: test
   run: false
@@ -7510,25 +7529,6 @@ targets:
   - test/core/client_channel/rls_lb_config_parser_test.cc
   deps:
   - grpc_test_util
-- name: sdk_authz_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/rbac_translator.h
-  - test/cpp/end2end/test_service_impl.h
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/rbac_translator.cc
-  - src/cpp/server/authorization_policy_provider.cc
-  - test/cpp/end2end/sdk_authz_end2end_test.cc
-  - test/cpp/end2end/test_service_impl.cc
-  deps:
-  - grpc++_test_util
 - name: secure_auth_context_test
   gtest: true
   build: test
