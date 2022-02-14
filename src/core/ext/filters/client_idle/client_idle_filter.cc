@@ -152,29 +152,30 @@ void ClientIdleFilter::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
-  GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-  // DO NOT SUBMIT: activity should hold channel stack..
+  auto channel_stack = channel_stack_->Ref();
   auto timeout = client_idle_timeout_;
+  auto promise = Loop([timeout, idle_filter_state]() {
+    return TrySeq(Sleep(ExecCtx::Get()->Now() + timeout),
+                  [idle_filter_state]() -> Poll<LoopCtl<absl::Status>> {
+                    if (idle_filter_state->CheckTimer()) {
+                      return Continue{};
+                    } else {
+                      return absl::OkStatus();
+                    }
+                  });
+  });
   activity_ = MakeActivity(
-      Loop([timeout, idle_filter_state]() {
-        return TrySeq(
-            Sleep(ExecCtx::Get()->Now() + timeout),
-            [idle_filter_state]() -> Poll<LoopCtl<absl::Status>> {
-              if (idle_filter_state->CheckTimer()) {
-                return Continue{};
-              } else {
-                auto* op = grpc_make_transport_op(nullptr);
-                op->disconnect_with_error = grpc_error_set_int(
-                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-                    GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
-                    GRPC_CHANNEL_IDLE);
-                // Pass the transport op down to the channel stack.
-                grpc_channel_next_op(elem_, op);
-                return absl::OkStatus();
-              }
-            });
-      }),
-      ExecCtxWakeupScheduler{}, [](absl::Status) {});
+      std::move(promise), ExecCtxWakeupScheduler{},
+      [channel_stack](absl::Status status) {
+        if (!status.ok()) return;
+        auto* op = grpc_make_transport_op(nullptr);
+        op->disconnect_with_error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
+            GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+        // Pass the transport op down to the channel stack.
+        auto* elem = grpc_channel_stack_element(channel_stack.get(), 0);
+        elem->filter->start_transport_op(elem, op);
+      });
 }
 
 const grpc_channel_filter grpc_client_idle_filter =

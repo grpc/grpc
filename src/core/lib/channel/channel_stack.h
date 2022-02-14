@@ -56,6 +56,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -202,8 +203,17 @@ struct grpc_channel_stack {
      initialization) */
   size_t call_stack_size;
 
+  // Minimal infrastructure to act like a RefCounted thing without converting
+  // everything.
+  // It's likely that we'll want to replace grpc_channel_stack with something
+  // less regimented once the promise conversion completes, so avoiding doing a
+  // full C++-ification for now.
   void IncrementRefCount();
   void Unref();
+  grpc_core::RefCountedPtr<grpc_channel_stack> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
+  }
 };
 
 /* A call stack tracks a set of related filters for one call, and guarantees
@@ -290,11 +300,11 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
 #endif
 
 inline void grpc_channel_stack::IncrementRefCount() {
-  GRPC_CHANNEL_STACK_REF(&refcount, "smart_pointer");
+  GRPC_CHANNEL_STACK_REF(this, "smart_pointer");
 }
 
 inline void grpc_channel_stack::Unref() {
-  GRPC_CHANNEL_STACK_UNREF(&refcount, "smart_pointer");
+  GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
 }
 
 /* Destroy a call stack */
