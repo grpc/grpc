@@ -940,6 +940,8 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -1595,6 +1597,7 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -2117,6 +2120,8 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -2426,6 +2431,7 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -7752,10 +7758,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/sleep.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/lib/promise/sleep.cc
   - test/core/promise/sleep_test.cc
   deps:
   - grpc
@@ -8230,8 +8234,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/promise/try_seq.h
+  headers: []
   src:
   - test/core/promise/try_seq_metadata_test.cc
   deps:
