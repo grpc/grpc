@@ -50,16 +50,12 @@ void grpc_resolver_sockaddr_shutdown(void);
 void grpc_message_size_filter_init(void);
 void grpc_message_size_filter_shutdown(void);
 namespace grpc_core {
-void FaultInjectionFilterInit(void);
-void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
 #ifndef GRPC_NO_RLS
 void RlsLbPluginInit();
 void RlsLbPluginShutdown();
 #endif  // !GRPC_NO_RLS
-void ServiceConfigParserInit(void);
-void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
@@ -95,10 +91,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
                        grpc_resolver_sockaddr_shutdown);
-  grpc_register_plugin(grpc_message_size_filter_init,
-                       grpc_message_size_filter_shutdown);
-  grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
-                       grpc_core::FaultInjectionFilterShutdown);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   grpc_register_plugin(grpc_resolver_binder_init,
                        grpc_resolver_binder_shutdown);
@@ -125,6 +117,7 @@ extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
 extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
+extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -138,6 +131,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
+  FaultInjectionFilterRegister(builder);
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

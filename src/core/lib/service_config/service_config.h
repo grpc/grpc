@@ -20,8 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <unordered_map>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
@@ -103,8 +102,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   std::string json_string_;
   Json json_;
 
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfig>,
-                      ServiceConfigParser::kNumPreallocatedParsers>
+  std::vector<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
       parsed_global_configs_;
   // A map from the method name to the parsed config vector. Note that we are
   // using a raw pointer and not a unique pointer so that we can use the same

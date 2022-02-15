@@ -22,6 +22,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
@@ -51,6 +52,10 @@ class CoreConfiguration {
       return &channel_creds_registry_;
     }
 
+    ServiceConfigParser::Builder* service_config_parser() {
+      return &service_config_parser_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -58,6 +63,7 @@ class CoreConfiguration {
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
+    ServiceConfigParser::Builder service_config_parser_;
 
     Builder();
     CoreConfiguration* Build();
@@ -137,6 +143,10 @@ class CoreConfiguration {
     return channel_creds_registry_;
   }
 
+  const ServiceConfigParser& service_config_parser() const {
+    return service_config_parser_;
+  }
+
  private:
   explicit CoreConfiguration(Builder* builder);
 
@@ -159,6 +169,7 @@ class CoreConfiguration {
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
   ChannelCredsRegistry<> channel_creds_registry_;
+  ServiceConfigParser service_config_parser_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

@@ -113,9 +113,10 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
                                                     max_response_message_bytes);
 }
 
-void MessageSizeParser::Register() {
-  g_message_size_parser_index = ServiceConfigParser::RegisterParser(
-      absl::make_unique<MessageSizeParser>());
+void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
+  g_message_size_parser_index =
+      builder->service_config_parser()->RegisterParser(
+          absl::make_unique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
@@ -375,14 +376,9 @@ static bool maybe_add_message_size_filter(
   return true;
 }
 
-void grpc_message_size_filter_init(void) {
-  grpc_core::MessageSizeParser::Register();
-}
-
-void grpc_message_size_filter_shutdown(void) {}
-
 namespace grpc_core {
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
+  grpc_core::MessageSizeParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_add_message_size_filter_subchannel);

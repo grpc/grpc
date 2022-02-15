@@ -20,8 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -29,11 +28,6 @@
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
-
-// Initialization functions for ServiceConfigParser. ServiceConfigParser should
-// be initialized before any parser implementation is registered.
-void ServiceConfigParserInit();
-void ServiceConfigParserShutdown();
 
 // Service config parser registry.
 // See service_config.h for more information.
@@ -70,26 +64,36 @@ class ServiceConfigParser {
     }
   };
 
-  static constexpr int kNumPreallocatedParsers = 4;
-  typedef absl::InlinedVector<std::unique_ptr<ParsedConfig>,
-                              kNumPreallocatedParsers>
-      ParsedConfigVector;
+  using ServiceConfigParserList = std::vector<std::unique_ptr<Parser>>;
+  using ParsedConfigVector = std::vector<std::unique_ptr<ParsedConfig>>;
 
-  /// Globally register a service config parser. On successful registration, it
-  /// returns the index at which the parser was registered. On failure, -1 is
-  /// returned. Each new service config update will go through all the
-  /// registered parser. Each parser is responsible for reading the service
-  /// config json and returning a parsed config. This parsed config can later be
-  /// retrieved using the same index that was returned at registration time.
-  static size_t RegisterParser(std::unique_ptr<Parser> parser);
+  class Builder {
+   public:
+    /// Globally register a service config parser. On successful registration,
+    /// it returns the index at which the parser was registered. On failure, -1
+    /// is returned. Each new service config update will go through all the
+    /// registered parser. Each parser is responsible for reading the service
+    /// config json and returning a parsed config. This parsed config can later
+    /// be retrieved using the same index that was returned at registration
+    /// time.
+    size_t RegisterParser(std::unique_ptr<Parser> parser);
 
-  static ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
-                                                  const Json& json,
-                                                  grpc_error_handle* error);
+    ServiceConfigParser Build();
 
-  static ParsedConfigVector ParsePerMethodParameters(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error);
+   private:
+    ServiceConfigParserList registered_parsers_;
+  };
+
+  ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
+                                           const Json& json,
+                                           grpc_error_handle* error);
+
+  ParsedConfigVector ParsePerMethodParameters(const grpc_channel_args* args,
+                                              const Json& json,
+                                              grpc_error_handle* error);
+
+ private:
+  ServiceConfigParserList registered_parsers_;
 };
 
 }  // namespace grpc_core

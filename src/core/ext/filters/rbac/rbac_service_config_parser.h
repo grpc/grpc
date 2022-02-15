@@ -21,6 +21,7 @@
 
 #include <vector>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -62,7 +63,7 @@ class RbacServiceConfigParser : public ServiceConfigParser::Parser {
   // Returns the parser index for RbacServiceConfigParser.
   static size_t ParserIndex();
   // Registers RbacServiceConfigParser to ServiceConfigParser.
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
 };
 
 }  // namespace grpc_core

@@ -153,8 +153,8 @@ void RbacFilter::Destroy(grpc_channel_element* elem) {
   chand->~RbacFilter();
 }
 
-void RbacFilterInit(void) { RbacServiceConfigParser::Register(); }
-
-void RbacFilterShutdown(void) {}
+void RbacFilterRegister(CoreConfiguration::Builder* builder) {
+  RbacServiceConfigParser::Register(builder);
+}
 
 }  // namespace grpc_core

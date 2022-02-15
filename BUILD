@@ -975,6 +975,7 @@ grpc_cc_library(
         "channel_creds_registry",
         "channel_init",
         "gpr_base",
+        "grpc_service_config",
         "handshaker_registry",
     ],
 )

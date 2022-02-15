@@ -33,6 +33,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/json/json_util.h"
@@ -53,9 +54,10 @@ size_t RetryServiceConfigParser::ParserIndex() {
   return g_retry_service_config_parser_index;
 }
 
-void RetryServiceConfigParser::Register() {
-  g_retry_service_config_parser_index = ServiceConfigParser::RegisterParser(
-      absl::make_unique<RetryServiceConfigParser>());
+void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
+  g_retry_service_config_parser_index =
+      builder->service_config_parser()->RegisterParser(
+          absl::make_unique<RetryServiceConfigParser>());
 }
 
 namespace {

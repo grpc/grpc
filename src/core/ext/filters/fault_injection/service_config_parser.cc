@@ -167,9 +167,11 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
       std::move(fault_injection_policies));
 }
 
-void FaultInjectionServiceConfigParser::Register() {
-  g_fault_injection_parser_index = ServiceConfigParser::RegisterParser(
-      absl::make_unique<FaultInjectionServiceConfigParser>());
+void FaultInjectionServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  g_fault_injection_parser_index =
+      builder->service_config_parser()->RegisterParser(
+          absl::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {

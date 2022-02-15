@@ -484,10 +484,8 @@ extern const grpc_channel_filter FaultInjectionFilterVtable = {
     "fault_injection_filter",
 };
 
-void FaultInjectionFilterInit(void) {
-  FaultInjectionServiceConfigParser::Register();
+void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
+  FaultInjectionServiceConfigParser::Register(builder);
 }
-
-void FaultInjectionFilterShutdown(void) {}
 
 }  // namespace grpc_core

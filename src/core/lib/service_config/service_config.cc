@@ -24,6 +24,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -53,7 +54,8 @@ ServiceConfig::ServiceConfig(const grpc_channel_args* args,
   std::vector<grpc_error_handle> error_list;
   grpc_error_handle global_error = GRPC_ERROR_NONE;
   parsed_global_configs_ =
-      ServiceConfigParser::ParseGlobalParameters(args, json_, &global_error);
+      CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
+          args, json_, &global_error);
   if (global_error != GRPC_ERROR_NONE) error_list.push_back(global_error);
   grpc_error_handle local_error = ParsePerMethodParams(args);
   if (local_error != GRPC_ERROR_NONE) error_list.push_back(local_error);

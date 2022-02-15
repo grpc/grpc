@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -87,7 +88,7 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
 };
 
 }  // namespace internal

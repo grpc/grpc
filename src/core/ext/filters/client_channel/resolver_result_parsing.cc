@@ -53,9 +53,10 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
   return g_client_channel_service_config_parser_index;
 }
 
-void ClientChannelServiceConfigParser::Register() {
+void ClientChannelServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
   g_client_channel_service_config_parser_index =
-      ServiceConfigParser::RegisterParser(
+      builder->service_config_parser()->RegisterParser(
           absl::make_unique<ClientChannelServiceConfigParser>());
 }
 

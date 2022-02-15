@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
@@ -90,7 +91,7 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
 };
 
 }  // namespace internal
