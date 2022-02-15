@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -30,56 +30,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_library(
-    name = "event_engine_test_suite@timer",
-    testonly = True,
-    srcs = ["test_suite/timer_test.cc"],
-    language = "C++",
-    deps = [":event_engine_test_suite_base"],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "event_engine_test_suite@dns",
-    testonly = True,
-    srcs = ["test_suite/dns_test.cc"],
-    deps = [":event_engine_test_suite_base"],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "event_engine_test_suite@client",
-    testonly = True,
-    srcs = ["test_suite/client_test.cc"],
-    deps = [":event_engine_test_suite_base"],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "event_engine_test_suite@server",
-    testonly = True,
-    srcs = ["test_suite/server_test.cc"],
-    deps = [":event_engine_test_suite_base"],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
-)
-
-grpc_cc_library(
-    name = "event_engine_test_suite",
-    testonly = 1,
-    deps = [
-        ":event_engine_test_suite@client",
-        ":event_engine_test_suite@dns",
-        ":event_engine_test_suite@server",
-        ":event_engine_test_suite@timer",
-    ],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
-)
-
 grpc_cc_test(
     name = "smoke_test",
     srcs = ["smoke_test.cc"],
@@ -88,21 +38,4 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-)
-
-# -- Internal targets --
-
-grpc_cc_library(
-    name = "event_engine_test_suite_base",
-    testonly = True,
-    srcs = ["test_suite/event_engine_test.cc"],
-    hdrs = ["test_suite/event_engine_test.h"],
-    external_deps = ["gtest"],
-    language = "C++",
-    deps = [
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-    # Ensure the linker doesn't throw away test cases.
-    alwayslink = 1,
 )
