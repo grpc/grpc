@@ -318,18 +318,18 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 }  // namespace
 
 void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
-  grpc_core::UniquePtr<char> resolver =
+  UniquePtr<char> resolver =
       GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (gpr_stricmp(resolver.get(), "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
-        absl::make_unique<grpc_core::NativeClientChannelDNSResolverFactory>());
+        absl::make_unique<NativeClientChannelDNSResolverFactory>());
   } else {
     if (!builder->resolver_registry()->HasResolverFactory("dns")) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
       builder->resolver_registry()->RegisterResolverFactory(
           absl::make_unique<
-              grpc_core::NativeClientChannelDNSResolverFactory>());
+              NativeClientChannelDNSResolverFactory>());
     }
   }
 }

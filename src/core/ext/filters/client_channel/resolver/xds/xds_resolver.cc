@@ -1014,7 +1014,7 @@ class XdsResolverFactory : public ResolverFactory {
 
 void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>());
+      absl::make_unique<XdsResolverFactory>());
 }
 
 }  // namespace grpc_core
