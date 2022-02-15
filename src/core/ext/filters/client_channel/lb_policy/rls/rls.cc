@@ -55,6 +55,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -2345,7 +2346,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   // Parse lookupService.
   if (ParseJsonObjectField(json, "lookupService",
                            &route_lookup_config.lookup_service, &error_list)) {
-    if (!ResolverRegistry::IsValidTarget(route_lookup_config.lookup_service)) {
+    if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+            route_lookup_config.lookup_service)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:lookupService error:must be valid gRPC target URI"));
     }

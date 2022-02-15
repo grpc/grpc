@@ -14,6 +14,7 @@
 
 #include <gtest/gtest.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 
@@ -34,25 +35,38 @@
 
 // Registers the factory with `grpc_core::ResolverRegistry`. Defined in
 // binder_resolver.cc
-void grpc_resolver_binder_init(void);
+namespace grpc_core {
+void RegisterBinderResolver(CoreConfiguration::Builder* builder);
+}
 
 namespace {
 
 class BinderResolverTest : public ::testing::Test {
  public:
   BinderResolverTest() {
-    factory_ = grpc_core::ResolverRegistry::LookupResolverFactory("binder");
+    factory_ = grpc_core::CoreConfiguration::Get()
+                   .resolver_registry()
+                   .LookupResolverFactory("binder");
   }
   ~BinderResolverTest() override {}
   static void SetUpTestSuite() {
+    grpc_core::CoreConfiguration::Reset();
+    grpc_core::CoreConfiguration::BuildSpecialConfiguration(
+        [](grpc_core::CoreConfiguration::Builder* builder) {
+          BuildCoreConfiguration(builder);
+          if (!builder->resolver_registry()->HasResolverFactory("binder")) {
+            // Binder resolver will only be registered on platforms that support
+            // binder transport. If it is not registered on current platform, we
+            // manually register it here for testing purpose.
+            RegisterBinderResolver(builder);
+            ASSERT_TRUE(
+                builder->resolver_registry()->HasResolverFactory("binder"));
+          }
+        });
     grpc_init();
-    if (grpc_core::ResolverRegistry::LookupResolverFactory("binder") ==
-        nullptr) {
-      // Binder resolver will only be registered on platforms that support
-      // binder transport. If it is not registered on current platform, we
-      // manually register it here for testing purpose.
-      grpc_resolver_binder_init();
-      ASSERT_TRUE(grpc_core::ResolverRegistry::LookupResolverFactory("binder"));
+    if (grpc_core::CoreConfiguration::Get()
+            .resolver_registry()
+            .LookupResolverFactory("binder") == nullptr) {
     }
   }
   static void TearDownTestSuite() { grpc_shutdown(); }

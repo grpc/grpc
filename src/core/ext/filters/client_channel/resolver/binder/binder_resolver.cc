@@ -25,6 +25,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -121,19 +122,12 @@ class BinderResolverFactory : public ResolverFactory {
 };
 
 }  // namespace
-}  // namespace grpc_core
 
-void grpc_resolver_binder_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::BinderResolverFactory>());
 }
 
-void grpc_resolver_binder_shutdown() {}
-
-#else
-
-void grpc_resolver_binder_init() {}
-
-void grpc_resolver_binder_shutdown() {}
+}  // namespace grpc_core
 
 #endif

@@ -32,6 +32,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -370,11 +371,11 @@ class FakeResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_fake_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+void RegisterFakeResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::FakeResolverFactory>());
 }
+
+}  // namespace grpc_core
 
 void grpc_resolver_fake_shutdown() {}

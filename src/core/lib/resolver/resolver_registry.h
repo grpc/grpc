@@ -28,29 +28,45 @@
 namespace grpc_core {
 
 class ResolverRegistry {
+  class State;
+
  public:
   /// Methods used to create and populate the ResolverRegistry.
   /// NOT THREAD SAFE -- to be used only during global gRPC
   /// initialization and shutdown.
   class Builder {
    public:
-    /// Global initialization and shutdown hooks.
-    static void InitRegistry();
-    static void ShutdownRegistry();
+    Builder();
+    ~Builder();
 
     /// Sets the default URI prefix to \a default_prefix.
-    /// Calls InitRegistry() if it has not already been called.
-    static void SetDefaultPrefix(const char* default_prefix);
+    void SetDefaultPrefix(const char* default_prefix);
 
     /// Registers a resolver factory.  The factory will be used to create a
     /// resolver for any URI whose scheme matches that of the factory.
-    /// Calls InitRegistry() if it has not already been called.
-    static void RegisterResolverFactory(
-        std::unique_ptr<ResolverFactory> factory);
+    void RegisterResolverFactory(std::unique_ptr<ResolverFactory> factory);
+
+    /// Returns true iff scheme already has a registered factory.
+    bool HasResolverFactory(const char* scheme) const;
+
+    /// Wipe everything in the registry and reset to empty.
+    void Reset();
+
+    ResolverRegistry Build();
+
+   private:
+    std::unique_ptr<State> state_;
   };
 
+  ~ResolverRegistry();
+
+  ResolverRegistry(const ResolverRegistry&) = delete;
+  ResolverRegistry& operator=(const ResolverRegistry&) = delete;
+  ResolverRegistry(ResolverRegistry&&);
+  ResolverRegistry& operator=(ResolverRegistry&&);
+
   /// Checks whether the user input \a target is valid to create a resolver.
-  static bool IsValidTarget(absl::string_view target);
+  bool IsValidTarget(absl::string_view target) const;
 
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
@@ -65,21 +81,26 @@ class ResolverRegistry {
   /// name resolution process. \a work_serializer is the work_serializer under
   /// which all resolver calls will be run. \a result_handler is used to return
   /// results from the resolver.
-  static OrphanablePtr<Resolver> CreateResolver(
+  OrphanablePtr<Resolver> CreateResolver(
       const char* target, const grpc_channel_args* args,
       grpc_pollset_set* pollset_set,
       std::shared_ptr<WorkSerializer> work_serializer,
-      std::unique_ptr<Resolver::ResultHandler> result_handler);
+      std::unique_ptr<Resolver::ResultHandler> result_handler) const;
 
   /// Returns the default authority to pass from a client for \a target.
-  static std::string GetDefaultAuthority(absl::string_view target);
+  std::string GetDefaultAuthority(absl::string_view target) const;
 
   /// Returns \a target with the default prefix prepended, if needed.
-  static UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target);
+  UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target) const;
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.
-  static ResolverFactory* LookupResolverFactory(const char* scheme);
+  ResolverFactory* LookupResolverFactory(const char* scheme) const;
+
+ private:
+  ResolverRegistry(std::unique_ptr<State> state);
+
+  std::unique_ptr<State> state_;
 };
 
 }  // namespace grpc_core

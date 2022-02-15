@@ -26,6 +26,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "resolver_registry.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -33,11 +34,9 @@
 
 namespace grpc_core {
 
-namespace {
-
-class RegistryState {
+class ResolverRegistry::State {
  public:
-  RegistryState() : default_prefix_(gpr_strdup("dns:///")) {}
+  State() : default_prefix_(gpr_strdup("dns:///")) {}
 
   void SetDefaultPrefix(const char* default_resolver_prefix) {
     GPR_ASSERT(default_resolver_prefix != nullptr);
@@ -99,57 +98,56 @@ class RegistryState {
   }
 
  private:
-  // We currently support 10 factories without doing additional
-  // allocation.  This number could be raised if there is a case where
-  // more factories are needed and the additional allocations are
-  // hurting performance (which is unlikely, since these allocations
-  // only occur at gRPC initialization time).
-  absl::InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
+  std::vector<std::unique_ptr<ResolverFactory>> factories_;
   UniquePtr<char> default_prefix_;
 };
-
-RegistryState* g_state = nullptr;
-
-}  // namespace
 
 //
 // ResolverRegistry::Builder
 //
 
-void ResolverRegistry::Builder::InitRegistry() {
-  if (g_state == nullptr) g_state = new RegistryState();
-}
+ResolverRegistry::Builder::Builder() : state_(new State) {}
 
-void ResolverRegistry::Builder::ShutdownRegistry() {
-  delete g_state;
-  g_state = nullptr;
-}
+ResolverRegistry::Builder::~Builder() = default;
 
 void ResolverRegistry::Builder::SetDefaultPrefix(const char* default_prefix) {
-  InitRegistry();
-  g_state->SetDefaultPrefix(default_prefix);
+  state_->SetDefaultPrefix(default_prefix);
 }
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  InitRegistry();
-  g_state->RegisterResolverFactory(std::move(factory));
+  state_->RegisterResolverFactory(std::move(factory));
+}
+
+bool ResolverRegistry::Builder::HasResolverFactory(const char* scheme) const {
+  return state_->LookupResolverFactory(scheme) != nullptr;
+}
+
+void ResolverRegistry::Builder::Reset() { state_.reset(new State); }
+
+ResolverRegistry ResolverRegistry::Builder::Build() {
+  return ResolverRegistry(std::move(state_));
 }
 
 //
 // ResolverRegistry
 //
 
-ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
-  GPR_ASSERT(g_state != nullptr);
-  return g_state->LookupResolverFactory(scheme);
+ResolverRegistry::ResolverRegistry(std::unique_ptr<State> state)
+    : state_(std::move(state)) {}
+
+ResolverRegistry::~ResolverRegistry() = default;
+
+ResolverFactory* ResolverRegistry::LookupResolverFactory(
+    const char* scheme) const {
+  return state_->LookupResolverFactory(scheme);
 }
 
-bool ResolverRegistry::IsValidTarget(absl::string_view target) {
+bool ResolverRegistry::IsValidTarget(absl::string_view target) const {
   URI uri;
   std::string canonical_target;
   ResolverFactory* factory =
-      g_state->FindResolverFactory(target, &uri, &canonical_target);
+      state_->FindResolverFactory(target, &uri, &canonical_target);
   return factory == nullptr ? false : factory->IsValidUri(uri);
 }
 
@@ -157,10 +155,9 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
     grpc_pollset_set* pollset_set,
     std::shared_ptr<WorkSerializer> work_serializer,
-    std::unique_ptr<Resolver::ResultHandler> result_handler) {
-  GPR_ASSERT(g_state != nullptr);
+    std::unique_ptr<Resolver::ResultHandler> result_handler) const {
   ResolverArgs resolver_args;
-  ResolverFactory* factory = g_state->FindResolverFactory(
+  ResolverFactory* factory = state_->FindResolverFactory(
       target, &resolver_args.uri, &resolver_args.uri_string);
   if (factory == nullptr) return nullptr;
   if (resolver_args.uri_string.empty()) resolver_args.uri_string = target;
@@ -171,22 +168,22 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   return factory->CreateResolver(std::move(resolver_args));
 }
 
-std::string ResolverRegistry::GetDefaultAuthority(absl::string_view target) {
-  GPR_ASSERT(g_state != nullptr);
+std::string ResolverRegistry::GetDefaultAuthority(
+    absl::string_view target) const {
   URI uri;
   std::string canonical_target;
   ResolverFactory* factory =
-      g_state->FindResolverFactory(target, &uri, &canonical_target);
+      state_->FindResolverFactory(target, &uri, &canonical_target);
   std::string authority =
       factory == nullptr ? "" : factory->GetDefaultAuthority(uri);
   return authority;
 }
 
-UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(const char* target) {
-  GPR_ASSERT(g_state != nullptr);
+UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
+    const char* target) const {
   URI uri;
   std::string canonical_target;
-  g_state->FindResolverFactory(target, &uri, &canonical_target);
+  state_->FindResolverFactory(target, &uri, &canonical_target);
   return UniquePtr<char>(canonical_target.empty()
                              ? gpr_strdup(target)
                              : gpr_strdup(canonical_target.c_str()));

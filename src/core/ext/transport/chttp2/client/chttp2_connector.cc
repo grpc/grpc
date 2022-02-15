@@ -354,7 +354,8 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
   }
   // Add channel arg containing the server URI.
   UniquePtr<char> canonical_target =
-      ResolverRegistry::AddDefaultPrefixIfNeeded(target);
+      CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
+          target);
   grpc_arg arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};

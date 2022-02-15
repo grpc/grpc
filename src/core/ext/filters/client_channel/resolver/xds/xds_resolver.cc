@@ -35,6 +35,7 @@
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -1011,11 +1012,9 @@ class XdsResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_xds_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::XdsResolverFactory>());
 }
 
-void grpc_resolver_xds_shutdown() {}
+}  // namespace grpc_core

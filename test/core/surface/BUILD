@@ -31,17 +31,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "channel_create_test",
-    srcs = ["channel_create_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "grpc_completion_queue_test",
     srcs = ["completion_queue_test.cc"],
     language = "C++",

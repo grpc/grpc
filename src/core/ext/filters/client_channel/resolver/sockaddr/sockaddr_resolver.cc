@@ -30,6 +30,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -181,19 +182,17 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_sockaddr_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::IPv4ResolverFactory>());
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::UnixResolverFactory>());
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<grpc_core::UnixAbstractResolverFactory>());
 #endif
 }
 
-void grpc_resolver_sockaddr_shutdown() {}
+}  // namespace grpc_core
