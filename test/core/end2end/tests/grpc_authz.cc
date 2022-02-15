@@ -707,7 +707,7 @@ static void test_file_watcher_recovers_from_failure(
   config.tear_down_data(&f);
 }
 
-void sdk_authz(grpc_end2end_test_config config) {
+void grpc_authz(grpc_end2end_test_config config) {
   test_static_init_allow_authorized_request(config);
   test_static_init_deny_unauthorized_request(config);
   test_static_init_deny_request_no_match_in_policy(config);
@@ -719,4 +719,4 @@ void sdk_authz(grpc_end2end_test_config config) {
   test_file_watcher_recovers_from_failure(config);
 }
 
-void sdk_authz_pre_init(void) {}
+void grpc_authz_pre_init(void) {}
