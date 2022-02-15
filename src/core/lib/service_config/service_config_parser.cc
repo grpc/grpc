@@ -22,6 +22,10 @@
 
 namespace grpc_core {
 
+ServiceConfigParser ServiceConfigParser::Builder::Build() {
+  return ServiceConfigParser(std::move(registered_parsers_));
+}
+
 size_t ServiceConfigParser::Builder::RegisterParser(
     std::unique_ptr<Parser> parser) {
   registered_parsers_.push_back(std::move(parser));

@@ -93,6 +93,8 @@ class ServiceConfigParser {
                                               grpc_error_handle* error) const;
 
  private:
+  explicit ServiceConfigParser(ServiceConfigParserList registered_parsers)
+      : registered_parsers_(std::move(registered_parsers)) {}
   ServiceConfigParserList registered_parsers_;
 };
 
