@@ -148,7 +148,7 @@ struct grpc_channel_credentials
   const char* type() const { return type_; }
 
  private:
-  // Implementation for `cmp` method intended to be overriden by subclasses.
+  // Implementation for `cmp` method intended to be overridden by subclasses.
   // Only invoked if `type()` and `other->type()` compare equal as strings.
   virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
 
@@ -229,7 +229,7 @@ struct grpc_call_credentials
   const char* type() const { return type_; }
 
  private:
-  // Implementation for `cmp` method intended to be overriden by subclasses.
+  // Implementation for `cmp` method intended to be overridden by subclasses.
   // Only invoked if `type()` and `other->type()` compare equal as strings.
   virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
 
