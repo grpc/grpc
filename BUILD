@@ -2286,6 +2286,7 @@ grpc_cc_library(
         "src/core/lib/resolver/resolver_registry.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
     ],
