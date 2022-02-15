@@ -2880,7 +2880,6 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
-        "rls_upb",
         "rls_config_upb",
         "rls_config_upbdefs",
         "slice",

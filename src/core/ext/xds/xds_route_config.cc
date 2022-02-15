@@ -48,7 +48,6 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/proto/grpc/lookup/v1/rls.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 
 namespace grpc_core {
