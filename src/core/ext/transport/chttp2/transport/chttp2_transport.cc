@@ -512,7 +512,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     enable_bdp = read_channel_args(this, channel_args, is_client);
   }
 
-  if (!GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control)) {
+  static const bool kEnableFlowControl =
+      !GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control);
+  if (kEnableFlowControl) {
     flow_control.Init<grpc_core::chttp2::TransportFlowControl>(this,
                                                                enable_bdp);
   } else {
