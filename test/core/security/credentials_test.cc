@@ -1779,6 +1779,13 @@ struct fake_call_creds : public grpc_call_credentials {
   void cancel_get_request_metadata(
       grpc_core::CredentialsMetadataArray* /*md_array*/,
       grpc_error_handle /*error*/) override {}
+
+ private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
 };
 
 static void test_google_default_creds_not_default(void) {
@@ -3582,6 +3589,19 @@ static void test_insecure_credentials_compare_failure(void) {
   grpc_channel_credentials_release(fake_creds);
 }
 
+static void test_fake_call_credentials_compare_success(void) {
+  auto call_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  GPR_ASSERT(call_creds->cmp(call_creds.get()) == 0);
+}
+
+static void test_fake_call_credentials_compare_failure(void) {
+  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
+  GPR_ASSERT(fake_creds->cmp(md_creds) != 0);
+  GPR_ASSERT(md_creds->cmp(fake_creds.get()) != 0);
+  grpc_call_credentials_release(md_creds);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -3662,6 +3682,8 @@ int main(int argc, char** argv) {
   test_external_account_credentials_create_failure_invalid_workforce_pool_audience();
   test_insecure_credentials_compare_success();
   test_insecure_credentials_compare_failure();
+  test_fake_call_credentials_compare_success();
+  test_fake_call_credentials_compare_failure();
   grpc_shutdown();
   return 0;
 }

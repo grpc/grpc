@@ -103,6 +103,12 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
   grpc_security_level min_security_level_;
