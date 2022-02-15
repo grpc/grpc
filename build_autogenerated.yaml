@@ -5411,8 +5411,6 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/json/json.h
   - src/core/lib/security/credentials/channel_creds_registry.h
-  - src/core/lib/service_config/service_config.h
-  - src/core/lib/service_config/service_config_call_data.h
   - src/core/lib/service_config/service_config_parser.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -5434,7 +5432,6 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
-  - src/core/lib/service_config/service_config.cc
   - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
@@ -5443,7 +5440,6 @@ targets:
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/config/core_configuration_test.cc
   deps:
-  - absl/container:inlined_vector
   - gpr
   uses_polling: false
 - name: cpp_impl_of_test
