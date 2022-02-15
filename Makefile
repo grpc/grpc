@@ -1503,13 +1503,13 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/resolve_address.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/sockaddr_utils_posix.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
     src/core/lib/iomgr/socket_utils_linux.cc \
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
-    src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
@@ -1991,13 +1991,13 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/resolve_address.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/sockaddr_utils_posix.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
     src/core/lib/iomgr/socket_utils_linux.cc \
     src/core/lib/iomgr/socket_utils_posix.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
-    src/core/lib/iomgr/socket_windows.cc \
     src/core/lib/iomgr/tcp_client.cc \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \

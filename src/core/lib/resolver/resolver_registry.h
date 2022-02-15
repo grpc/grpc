@@ -62,8 +62,8 @@ class ResolverRegistry {
 
   ResolverRegistry(const ResolverRegistry&) = delete;
   ResolverRegistry& operator=(const ResolverRegistry&) = delete;
-  ResolverRegistry(ResolverRegistry&&);
-  ResolverRegistry& operator=(ResolverRegistry&&);
+  ResolverRegistry(ResolverRegistry&&) noexcept;
+  ResolverRegistry& operator=(ResolverRegistry&&) noexcept;
 
   /// Checks whether the user input \a target is valid to create a resolver.
   bool IsValidTarget(absl::string_view target) const;
@@ -98,7 +98,7 @@ class ResolverRegistry {
   ResolverFactory* LookupResolverFactory(const char* scheme) const;
 
  private:
-  ResolverRegistry(std::unique_ptr<State> state);
+  explicit ResolverRegistry(std::unique_ptr<State> state);
 
   std::unique_ptr<State> state_;
 };
