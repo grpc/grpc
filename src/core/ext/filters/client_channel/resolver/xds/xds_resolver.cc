@@ -415,17 +415,11 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             resolver_->current_listener_.http_connection_manager
                 .http_max_stream_duration;
       }
-      if (route_action->weighted_clusters.empty()) {
+      if (!route_action->cluster_name.empty()) {
         *error = CreateMethodConfig(route_entry.route, nullptr,
                                     &route_entry.method_config);
-        if (!route_action->cluster_name.empty()) {
-          MaybeAddCluster(absl::StrCat("cluster:", route_action->cluster_name));
-        } else {
-          MaybeAddCluster(
-              absl::StrCat("cluster_specifier_plugin:",
-                           route_action->cluster_specifier_plugin_name));
-        }
-      } else {
+        MaybeAddCluster(absl::StrCat("cluster:", route_action->cluster_name));
+      } else if (!route_action->weighted_clusters.empty()) {
         uint32_t end = 0;
         for (const auto& weighted_cluster : route_action->weighted_clusters) {
           Route::ClusterWeightState cluster_weight_state;
@@ -439,6 +433,13 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
               std::move(cluster_weight_state));
           MaybeAddCluster(absl::StrCat("cluster:", weighted_cluster.name));
         }
+      } else {
+        // cluster_specifier_plugin case:
+        *error = CreateMethodConfig(route_entry.route, nullptr,
+                                    &route_entry.method_config);
+        MaybeAddCluster(
+            absl::StrCat("cluster_specifier_plugin:",
+                         route_action->cluster_specifier_plugin_name));
       }
     }
   }
@@ -619,15 +620,11 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   }
   std::string cluster_name;
   RefCountedPtr<ServiceConfig> method_config;
-  if (route_action->weighted_clusters.empty()) {
-    if (!route_action->cluster_name.empty()) {
-      cluster_name = absl::StrCat("cluster:", route_action->cluster_name);
-    } else {
-      cluster_name = absl::StrCat("cluster_specifier_plugin:",
-                                  route_action->cluster_specifier_plugin_name);
-    }
+
+  if (!route_action->cluster_name.empty()) {
+    cluster_name = absl::StrCat("cluster:", route_action->cluster_name);
     method_config = entry.method_config;
-  } else {
+  } else if (!route_action->weighted_clusters.empty()) {
     const uint32_t key =
         rand() %
         entry.weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
@@ -653,6 +650,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     cluster_name =
         absl::StrCat("cluster:", entry.weighted_cluster_state[index].cluster);
     method_config = entry.weighted_cluster_state[index].method_config;
+  } else {
+    cluster_name = absl::StrCat("cluster_specifier_plugin:",
+                                route_action->cluster_specifier_plugin_name);
+    method_config = entry.method_config;
   }
   auto it = clusters_.find(cluster_name);
   GPR_ASSERT(it != clusters_.end());
@@ -921,10 +922,8 @@ absl::StatusOr<RefCountedPtr<ServiceConfig>>
 XdsResolver::CreateServiceConfig() {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
-    std::vector<absl::string_view> cluster_elements =
-        absl::StrSplit(cluster.first, absl::MaxSplits(':', 1));
-    GPR_ASSERT(cluster_elements.size() == 2);
-    if (cluster_elements[0] == "cluster_specifier_plugin") {
+    absl::string_view child_name = cluster.first;
+    if (absl::ConsumePrefix(&child_name, "cluster_specifier_lugin:")) {
       clusters.push_back(absl::StrFormat(
           "      \"%s\":{\n"
           "        \"childPolicy\":[ {\n"
@@ -934,13 +933,13 @@ XdsResolver::CreateServiceConfig() {
           "           \"childPolicy\":[ {\n"
           "             \"cds_experimental\": {}}\n"
           "           ],\n"
-          "           \"childPolicyConfigTargetFieldName\": \"%s\"\n"
+          "           \"childPolicyConfigTargetFieldName\": \"cluster\"\n"
           "        } ]\n"
           "       }",
           cluster.first,
-          cluster_specifier_plugin_map_[std::string(cluster_elements[1])],
-          cluster_elements[1]));
+          cluster_specifier_plugin_map_[std::string(child_name)]));
     } else {
+      absl::ConsumePrefix(&child_name, "cluster:");
       clusters.push_back(
           absl::StrFormat("      \"%s\":{\n"
                           "        \"childPolicy\":[ {\n"
@@ -949,7 +948,7 @@ XdsResolver::CreateServiceConfig() {
                           "          }\n"
                           "        } ]\n"
                           "       }",
-                          cluster.first, cluster_elements[1]));
+                          cluster.first, child_name));
     }
   }
   std::vector<std::string> config_parts;
