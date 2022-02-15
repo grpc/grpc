@@ -612,8 +612,7 @@ bool ShouldUseAres(const char* resolver_env) {
 
 bool UseAresDnsResolver() {
   static const bool result = []() {
-    UniquePtr<char> resolver =
-        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
     bool result = ShouldUseAres(resolver.get());
     if (result) gpr_log(GPR_DEBUG, "Using ares dns resolver");
     return result;
