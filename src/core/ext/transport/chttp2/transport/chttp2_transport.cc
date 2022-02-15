@@ -58,6 +58,12 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/core/lib/uri/uri_parser.h"
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_disable_flow_control, false,
+    "If set, flow control will be effectively disabled. Max out all values and "
+    "assume the remote peer does the same. Thus we can ignore any flow control "
+    "bookkeeping, error checking, and decision making");
+
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
@@ -162,10 +168,6 @@ static void keepalive_watchdog_fired(void* arg, grpc_error_handle error);
 static void keepalive_watchdog_fired_locked(void* arg, grpc_error_handle error);
 
 static void reset_byte_stream(void* arg, grpc_error_handle error);
-
-// Flow control default enabled. Can be disabled by setting
-// GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
-bool g_flow_control_enabled = true;
 
 namespace grpc_core {
 
@@ -510,7 +512,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     enable_bdp = read_channel_args(this, channel_args, is_client);
   }
 
-  if (g_flow_control_enabled) {
+  if (!GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control)) {
     flow_control.Init<grpc_core::chttp2::TransportFlowControl>(this,
                                                                enable_bdp);
   } else {
