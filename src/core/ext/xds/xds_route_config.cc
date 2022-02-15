@@ -879,7 +879,10 @@ grpc_error_handle XdsRouteConfigResource::Parse(
               name.c_str());
       const google_protobuf_Any* any =
           envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
-      GPR_ASSERT(any != nullptr);
+      if (any == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "could not obtrain TypedExtensionConfig for plugin config");
+      }
       absl::string_view plugin_type =
           UpbStringToAbsl(google_protobuf_Any_type_url(any));
       // Look inside for type TypeStruct.
