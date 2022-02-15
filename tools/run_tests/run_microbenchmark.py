@@ -207,7 +207,7 @@ def collect_summary(bm_name, args):
     text(run_summary(bm_name, 'opt', bm_name))
     heading('Summary: %s [with counters]' % bm_name)
     text(run_summary(bm_name, 'counters', bm_name))
-    if args.bigquery_upload:
+    if args.bq_result_table:
         with open('%s.csv' % bm_name, 'w') as f:
             f.write(
                 subprocess.check_output([
@@ -215,10 +215,10 @@ def collect_summary(bm_name, args):
                     '%s.counters.json' % bm_name,
                     '%s.opt.json' % bm_name
                 ]).decode('UTF-8'))
-        subprocess.check_call([
-            'bq', 'load', 'microbenchmarks.microbenchmarks',
-            '%s.csv' % bm_name
-        ])
+        subprocess.check_call(
+            ['bq', 'load',
+             '%s' % args.bq_result_table,
+             '%s.csv' % bm_name])
 
 
 collectors = {
@@ -241,11 +241,12 @@ argp.add_argument('-b',
                   nargs='+',
                   type=str,
                   help='Which microbenchmarks should be run')
-argp.add_argument('--bigquery_upload',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Upload results from summary collection to bigquery')
+argp.add_argument(
+    '--bq_result_table',
+    default='',
+    type=str,
+    help='Upload results from summary collection to a specified bigquery table.'
+)
 argp.add_argument(
     '--summary_time',
     default=None,
