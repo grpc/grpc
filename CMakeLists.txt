@@ -9687,7 +9687,6 @@ add_executable(core_configuration_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/service_config/service_config.cc
   src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -9721,7 +9720,6 @@ target_include_directories(core_configuration_test
 target_link_libraries(core_configuration_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::inlined_vector
   gpr
 )
 
