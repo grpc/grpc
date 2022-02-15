@@ -60,8 +60,8 @@ namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   RegisterHttpConnectHandshaker(builder);
-  grpc_core::internal::ClientChannelServiceConfigParser::Register(builder);
-  grpc_core::internal::RetryServiceConfigParser::Register(builder);
+  internal::ClientChannelServiceConfigParser::Register(builder);
+  internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {

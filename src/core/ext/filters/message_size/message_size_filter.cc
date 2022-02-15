@@ -378,7 +378,7 @@ static bool maybe_add_message_size_filter(
 
 namespace grpc_core {
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
-  grpc_core::MessageSizeParser::Register(builder);
+  MessageSizeParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_add_message_size_filter_subchannel);
