@@ -975,8 +975,8 @@ grpc_cc_library(
         "channel_creds_registry",
         "channel_init",
         "gpr_base",
-        "grpc_service_config",
         "handshaker_registry",
+        "service_config_parser",
     ],
 )
 
@@ -2232,15 +2232,34 @@ grpc_cc_library(
     name = "grpc_service_config",
     srcs = [
         "src/core/lib/service_config/service_config.cc",
-        "src/core/lib/service_config/service_config_parser.cc",
     ],
     hdrs = [
         "src/core/lib/service_config/service_config.h",
         "src/core/lib/service_config/service_config_call_data.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "error",
+        "gpr_base",
+        "json",
+        "service_config_parser",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "service_config_parser",
+    srcs = [
+        "src/core/lib/service_config/service_config_parser.cc",
+    ],
+    hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/strings",
     ],
     language = "c++",
@@ -2248,7 +2267,6 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
-        "slice",
     ],
 )
 

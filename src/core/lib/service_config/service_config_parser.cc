@@ -31,7 +31,7 @@ size_t ServiceConfigParser::Builder::RegisterParser(
 ServiceConfigParser::ParsedConfigVector
 ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
                                            const Json& json,
-                                           grpc_error_handle* error) {
+                                           grpc_error_handle* error) const {
   ParsedConfigVector parsed_global_configs;
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < registered_parsers_.size(); i++) {
@@ -52,7 +52,7 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
 ServiceConfigParser::ParsedConfigVector
 ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
                                               const Json& json,
-                                              grpc_error_handle* error) {
+                                              grpc_error_handle* error) const {
   ParsedConfigVector parsed_method_configs;
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < registered_parsers_.size(); i++) {

@@ -86,11 +86,11 @@ class ServiceConfigParser {
 
   ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
                                            const Json& json,
-                                           grpc_error_handle* error);
+                                           grpc_error_handle* error) const;
 
   ParsedConfigVector ParsePerMethodParameters(const grpc_channel_args* args,
                                               const Json& json,
-                                              grpc_error_handle* error);
+                                              grpc_error_handle* error) const;
 
  private:
   ServiceConfigParserList registered_parsers_;

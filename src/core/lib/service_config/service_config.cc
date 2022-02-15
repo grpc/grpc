@@ -79,7 +79,8 @@ grpc_error_handle ServiceConfig::ParseJsonMethodConfig(
       absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
   grpc_error_handle parser_error = GRPC_ERROR_NONE;
   *parsed_configs =
-      ServiceConfigParser::ParsePerMethodParameters(args, json, &parser_error);
+      CoreConfiguration::Get().service_config_parser().ParsePerMethodParameters(
+          args, json, &parser_error);
   if (parser_error != GRPC_ERROR_NONE) {
     error_list.push_back(parser_error);
   }
