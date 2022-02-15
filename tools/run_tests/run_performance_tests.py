@@ -169,12 +169,12 @@ def create_netperf_jobspec(server_host='localhost',
         # If netperf is running remotely, the env variables populated by Jenkins
         # won't be available on the client, but we need them for uploading results
         # to BigQuery.
-        jenkins_job_name = os.getenv('JOB_NAME')
+        jenkins_job_name = os.getenv('KOKORO_JOB_NAME')
         if jenkins_job_name:
-            cmd += 'JOB_NAME="%s" ' % jenkins_job_name
-        jenkins_build_number = os.getenv('BUILD_NUMBER')
+            cmd += 'KOKORO_JOB_NAME="%s" ' % jenkins_job_name
+        jenkins_build_number = os.getenv('KOKORO_BUILD_NUMBER')
         if jenkins_build_number:
-            cmd += 'BUILD_NUMBER="%s" ' % jenkins_build_number
+            cmd += 'KOKORO_BUILD_NUMBER="%s" ' % jenkins_build_number
 
     cmd += 'tools/run_tests/performance/run_netperf.sh'
     if client_host:

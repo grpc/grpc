@@ -403,9 +403,14 @@ void CdsLb::OnClusterChanged(const std::string& name,
   std::set<std::string> clusters_needed;
   if (GenerateDiscoveryMechanismForCluster(
           config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
+    // LB policy is configured by aggregate cluster, not by the individual
+    // underlying cluster that we may be processing an update for.
+    auto it = watchers_.find(config_->cluster());
+    GPR_ASSERT(it != watchers_.end());
+    const std::string& lb_policy = it->second.update->lb_policy;
     // Construct config for child policy.
     Json::Object xds_lb_policy;
-    if (cluster_data.lb_policy == "RING_HASH") {
+    if (lb_policy == "RING_HASH") {
       xds_lb_policy["RING_HASH"] = Json::Object{
           {"min_ring_size", cluster_data.min_ring_size},
           {"max_ring_size", cluster_data.max_ring_size},

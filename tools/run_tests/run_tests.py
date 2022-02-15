@@ -250,20 +250,43 @@ class CLanguage(object):
         self.args = args
         if self.platform == 'windows':
             _check_compiler(self.args.compiler, [
-                'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
-                'cmake_vs2019'
+                'default',
+                'cmake',
+                'cmake_ninja_vs2015',
+                'cmake_ninja_vs2017',
+                'cmake_vs2015',
+                'cmake_vs2017',
+                'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-            if self.args.compiler == 'cmake_vs2019':
-                cmake_generator_option = 'Visual Studio 16 2019'
+
+            activate_vs_tools = ''
+            if self.args.compiler == 'cmake_ninja_vs2015' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+                # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
+                # the compiler used is exactly the same as for cmake_vs2015
+                cmake_generator = 'Ninja'
+                activate_vs_tools = '2015'
+            elif self.args.compiler == 'cmake_ninja_vs2017':
+                cmake_generator = 'Ninja'
+                activate_vs_tools = '2017'
+            elif self.args.compiler == 'cmake_vs2015':
+                cmake_generator = 'Visual Studio 14 2015'
             elif self.args.compiler == 'cmake_vs2017':
-                cmake_generator_option = 'Visual Studio 15 2017'
+                cmake_generator = 'Visual Studio 15 2017'
+            elif self.args.compiler == 'cmake_vs2019':
+                cmake_generator = 'Visual Studio 16 2019'
             else:
-                cmake_generator_option = 'Visual Studio 14 2015'
-            cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
-            self._cmake_configure_extra_args = [
-                '-G', cmake_generator_option, '-A', cmake_arch_option
-            ]
+                print('should never reach here.')
+                sys.exit(1)
+
+            self._cmake_configure_extra_args = []
+            self._cmake_generator_windows = cmake_generator
+            # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
+            self._cmake_architecture_windows = 'x64' if self.args.arch == 'x64' else 'Win32'
+            # when builing with Ninja, the VS common tools need to be activated first
+            self._activate_vs_tools_windows = activate_vs_tools
+            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x86'
+
         else:
             if self.platform == 'linux':
                 # Allow all the known architectures. _check_arch_option has already checked that we're not doing
@@ -429,7 +452,16 @@ class CLanguage(object):
 
     def build_steps_environ(self):
         """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {'GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX': self.lang_suffix}
+        environ = {'GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX': self.lang_suffix}
+        if self.platform == 'windows':
+            environ['GRPC_CMAKE_GENERATOR'] = self._cmake_generator_windows
+            environ[
+                'GRPC_CMAKE_ARCHITECTURE'] = self._cmake_architecture_windows
+            environ[
+                'GRPC_BUILD_ACTIVATE_VS_TOOLS'] = self._activate_vs_tools_windows
+            environ[
+                'GRPC_BUILD_VS_TOOLS_ARCHITECTURE'] = self._vs_tools_architecture_windows
+        return environ
 
     def post_tests_steps(self):
         if self.platform == 'windows':
@@ -452,8 +484,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc4.9':
-            return ('gcc_4.9', [])
+        elif compiler == 'gcc5':
+            return ('gcc_5', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -1526,7 +1558,7 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc4.9',
+        'gcc5',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc11',
@@ -1547,6 +1579,8 @@ argp.add_argument(
         'electron1.6',
         'coreclr',
         'cmake',
+        'cmake_ninja_vs2015',
+        'cmake_ninja_vs2017',
         'cmake_vs2015',
         'cmake_vs2017',
         'cmake_vs2019',

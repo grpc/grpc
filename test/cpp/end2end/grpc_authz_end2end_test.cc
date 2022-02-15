@@ -22,6 +22,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -35,21 +36,54 @@ namespace grpc {
 namespace testing {
 namespace {
 
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
+
 constexpr char kMessage[] = "Hello";
 
-class SdkAuthzEnd2EndTest : public ::testing::Test {
- protected:
-  SdkAuthzEnd2EndTest()
-      : server_address_(
-            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())),
-        server_creds_(
-            std::shared_ptr<ServerCredentials>(new SecureServerCredentials(
-                grpc_fake_transport_security_server_credentials_create()))),
-        channel_creds_(
-            std::shared_ptr<ChannelCredentials>(new SecureChannelCredentials(
-                grpc_fake_transport_security_credentials_create()))) {}
+std::string ReadFile(const char* file_path) {
+  grpc_slice slice;
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
+  std::string file_contents(grpc_core::StringViewFromSlice(slice));
+  grpc_slice_unref(slice);
+  return file_contents;
+}
 
-  ~SdkAuthzEnd2EndTest() override { server_->Shutdown(); }
+class GrpcAuthzEnd2EndTest : public ::testing::Test {
+ protected:
+  GrpcAuthzEnd2EndTest()
+      : server_address_(
+            absl::StrCat("localhost:", grpc_pick_unused_port_or_die())) {
+    std::string root_cert = ReadFile(kCaCertPath);
+    std::string identity_cert = ReadFile(kServerCertPath);
+    std::string private_key = ReadFile(kServerKeyPath);
+    std::vector<experimental::IdentityKeyCertPair>
+        server_identity_key_cert_pairs = {{private_key, identity_cert}};
+    grpc::experimental::TlsServerCredentialsOptions server_options(
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            root_cert, server_identity_key_cert_pairs));
+    server_options.watch_root_certs();
+    server_options.watch_identity_key_cert_pairs();
+    server_options.set_cert_request_type(
+        GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+    server_creds_ = grpc::experimental::TlsServerCredentials(server_options);
+    std::vector<experimental::IdentityKeyCertPair>
+        channel_identity_key_cert_pairs = {
+            {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
+    grpc::experimental::TlsChannelCredentialsOptions channel_options;
+    channel_options.set_certificate_provider(
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            ReadFile(kCaCertPath), channel_identity_key_cert_pairs));
+    channel_options.watch_identity_key_cert_pairs();
+    channel_options.watch_root_certs();
+    channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
+  }
+
+  ~GrpcAuthzEnd2EndTest() override { server_->Shutdown(); }
 
   // Replaces existing credentials with insecure credentials.
   void UseInsecureCredentials() {
@@ -57,7 +91,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
     channel_creds_ = InsecureChannelCredentials();
   }
 
-  // Creates server with sdk authorization enabled when provider is not null.
+  // Creates server with gRPC authorization enabled when provider is not null.
   void InitServer(
       std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
           provider) {
@@ -90,6 +124,8 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannel() {
     ChannelArguments args;
+    // Override target name for host name check
+    args.SetSslTargetNameOverride("foo.test.google.fr");
     return ::grpc::CreateCustomChannel(server_address_, channel_creds_, args);
   }
 
@@ -109,7 +145,7 @@ class SdkAuthzEnd2EndTest : public ::testing::Test {
   std::shared_ptr<ChannelCredentials> channel_creds_;
 };
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        StaticInitAllowsRpcRequestNoMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -157,7 +193,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -192,7 +228,8 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestNoMatchInAllowAndDeny) {
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -222,7 +259,7 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        StaticInitDeniesRpcRequestMatchInDenyNoMatchInAllow) {
   std::string policy =
       "{"
@@ -258,7 +295,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
+TEST_F(GrpcAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -295,7 +332,8 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -328,23 +366,16 @@ TEST_F(SdkAuthzEnd2EndTest, StaticInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
 }
 
 TEST_F(
-    SdkAuthzEnd2EndTest,
+    GrpcAuthzEnd2EndTest,
     StaticInitDeniesRpcRequestWithPrincipalsFieldOnUnauthenticatedConnection) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
       "  \"allow_rules\": ["
       "    {"
-      "      \"name\": \"allow_echo\","
+      "      \"name\": \"allow_mtls\","
       "      \"source\": {"
-      "        \"principals\": ["
-      "          \"foo\""
-      "        ]"
-      "      },"
-      "      \"request\": {"
-      "        \"paths\": ["
-      "          \"*/Echo\""
-      "        ]"
+      "        \"principals\": [\"*\"]"
       "      }"
       "    }"
       "  ]"
@@ -360,7 +391,30 @@ TEST_F(
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
+       StaticInitAllowsRpcRequestWithPrincipalsFieldOnAuthenticatedConnection) {
+  std::string policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_mtls\","
+      "      \"source\": {"
+      "        \"principals\": [\"*\"]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  InitServer(CreateStaticAuthzPolicyProvider(policy));
+  auto channel = BuildChannel();
+  ClientContext context;
+  grpc::testing::EchoResponse resp;
+  grpc::Status status = SendRpc(channel, &context, &resp);
+  EXPECT_TRUE(status.ok());
+  EXPECT_EQ(resp.message(), kMessage);
+}
+
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitAllowsRpcRequestNoMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -409,7 +463,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestNoMatchInAllowAndDeny) {
   std::string policy =
       "{"
@@ -446,7 +500,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestMatchInDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -478,7 +532,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestMatchInDenyNoMatchInAllow) {
   std::string policy =
       "{"
@@ -515,7 +569,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitAllowsRpcRequestEmptyDenyMatchInAllow) {
   std::string policy =
       "{"
@@ -554,7 +608,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_EQ(resp.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest,
+TEST_F(GrpcAuthzEnd2EndTest,
        FileWatcherInitDeniesRpcRequestEmptyDenyNoMatchInAllow) {
   std::string policy =
       "{"
@@ -588,7 +642,7 @@ TEST_F(SdkAuthzEnd2EndTest,
   EXPECT_TRUE(resp.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -647,7 +701,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   EXPECT_TRUE(resp2.message().empty());
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","
@@ -682,7 +736,7 @@ TEST_F(SdkAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   EXPECT_EQ(resp2.message(), kMessage);
 }
 
-TEST_F(SdkAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
+TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   std::string policy =
       "{"
       "  \"name\": \"authz\","

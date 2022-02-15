@@ -456,11 +456,7 @@ TEST_F(AuthorizationMatchersTest,
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                  GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   EvaluateArgs args = args_.MakeEvaluateArgs();
-  AuthenticatedAuthorizationMatcher matcher(
-      StringMatcher::Create(StringMatcher::Type::kExact,
-                            /*matcher=*/"",
-                            /*case_sensitive=*/false)
-          .value());
+  AuthenticatedAuthorizationMatcher matcher(/*auth=*/absl::nullopt);
   EXPECT_TRUE(matcher.Matches(args));
 }
 

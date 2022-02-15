@@ -26,10 +26,4 @@ make -j"${GRPC_RUN_TESTS_JOBS}" grpc_csharp_ext
 popd
 pushd src/csharp
 
-if [ "$CONFIG" == "gcov" ]
-then
-  # overriding NativeDependenciesConfigurationUnix makes C# project pick up the gcov flavor of grpc_csharp_ext
-  dotnet build --configuration "$MSBUILD_CONFIG" /p:NativeDependenciesConfigurationUnix=gcov Grpc.sln
-else
-  dotnet build --configuration "$MSBUILD_CONFIG" Grpc.sln
-fi
+dotnet build --configuration "$MSBUILD_CONFIG" Grpc.sln
