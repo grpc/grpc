@@ -16,12 +16,11 @@
 
 #include "src/core/lib/resource_quota/api.h"
 
-#include "resource_quota.h"
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
 
