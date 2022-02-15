@@ -911,10 +911,9 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         gpr_log(GPR_INFO, "donna did not get the correct type");
       }
       // Find the plugin and generate the policy.
-      const XdsClusterSpecifierPluginImpl* plugin_impl =
-          XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
-      auto lb_policy_config = plugin_impl->GenerateLoadBalancingPolicyConfig(
-          google_protobuf_Any_type_url(any), context.arena);
+      auto lb_policy_config =
+          XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
+              plugin_type, google_protobuf_Any_type_url(any), context.arena);
       if (lb_policy_config.ok()) {
         rds_update->cluster_specifier_plugin_map[std::string(name)] =
             std::move(lb_policy_config.value());

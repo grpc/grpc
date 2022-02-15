@@ -923,7 +923,7 @@ XdsResolver::CreateServiceConfig() {
   std::vector<std::string> clusters;
   for (const auto& cluster : cluster_state_map_) {
     absl::string_view child_name = cluster.first;
-    if (absl::ConsumePrefix(&child_name, "cluster_specifier_lugin:")) {
+    if (absl::ConsumePrefix(&child_name, "cluster_specifier_plugin:")) {
       clusters.push_back(absl::StrFormat(
           "      \"%s\":{\n"
           "        \"childPolicy\":[ {\n"

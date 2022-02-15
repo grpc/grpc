@@ -61,12 +61,13 @@ class XdsClusterSpecifierPluginRegistry {
  public:
   static void RegisterPlugin(
       std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-      const std::set<absl::string_view>& config_proto_type_names);
-
-  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
-      absl::string_view proto_type_name);
+      absl::string_view config_proto_type_name);
 
   static void PopulateSymtab(upb_symtab* symtab);
+
+  static absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
+      absl::string_view proto_type_name, upb_strview serialized_plugin_config,
+      upb_arena* arena);
 
   // Global init and shutdown.
   static void Init();

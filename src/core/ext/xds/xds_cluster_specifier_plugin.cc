@@ -181,24 +181,27 @@ void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {
 
 void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
     std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
-    const std::set<absl::string_view>& config_proto_type_names) {
-  for (auto config_proto_type_name : config_proto_type_names) {
-    (*g_plugin_registry)[config_proto_type_name] = plugin.get();
-  }
+    absl::string_view config_proto_type_name) {
+  (*g_plugin_registry)[config_proto_type_name] = plugin.get();
 }
 
-const XdsClusterSpecifierPluginImpl*
-XdsClusterSpecifierPluginRegistry::GetPluginForType(
-    absl::string_view proto_type_name) {
+absl::StatusOr<std::string>
+XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
+    absl::string_view proto_type_name, upb_strview serialized_plugin_config,
+    upb_arena* arena) {
   auto it = g_plugin_registry->find(proto_type_name);
-  if (it == g_plugin_registry->end()) return nullptr;
-  return it->second;
+  if (it == g_plugin_registry->end()) {
+    return absl::InvalidArgumentError(
+        "Unable to locate the cluster specifier plugin in the registry");
+  }
+  return it->second->GenerateLoadBalancingPolicyConfig(serialized_plugin_config,
+                                                       arena);
 }
 
 void XdsClusterSpecifierPluginRegistry::Init() {
   g_plugin_registry = new PluginRegistryMap;
   RegisterPlugin(absl::make_unique<XdsRouteLookupClusterSpecifierPlugin>(),
-                 {kXdsRouteLookupClusterSpecifierPluginConfigName});
+                 kXdsRouteLookupClusterSpecifierPluginConfigName);
 }
 
 void XdsClusterSpecifierPluginRegistry::Shutdown() { delete g_plugin_registry; }
