@@ -18,10 +18,13 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/event_engine/test_suite")
 
+COMMON_HEADERS = ["event_engine_test.h"]
+
 grpc_cc_library(
     name = "timer",
     testonly = True,
     srcs = ["timer_test.cc"],
+    hdrs = COMMON_HEADERS,
     deps = [":conformance_test_base_lib"],
     alwayslink = 1,
 )
@@ -30,6 +33,7 @@ grpc_cc_library(
     name = "dns",
     testonly = True,
     srcs = ["dns_test.cc"],
+    hdrs = COMMON_HEADERS,
     deps = [":conformance_test_base_lib"],
     alwayslink = 1,
 )
@@ -38,6 +42,7 @@ grpc_cc_library(
     name = "client",
     testonly = True,
     srcs = ["client_test.cc"],
+    hdrs = COMMON_HEADERS,
     deps = [":conformance_test_base_lib"],
     alwayslink = 1,
 )
@@ -46,6 +51,7 @@ grpc_cc_library(
     name = "server",
     testonly = True,
     srcs = ["server_test.cc"],
+    hdrs = COMMON_HEADERS,
     deps = [":conformance_test_base_lib"],
     alwayslink = 1,
 )
@@ -53,6 +59,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "complete",
     testonly = 1,
+    hdrs = COMMON_HEADERS,
     deps = [
         ":client",
         ":dns",
@@ -68,7 +75,7 @@ grpc_cc_library(
     name = "conformance_test_base_lib",
     testonly = True,
     srcs = ["event_engine_test.cc"],
-    hdrs = ["event_engine_test.h"],
+    hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
     deps = [
         "//:grpc",
