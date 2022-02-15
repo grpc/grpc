@@ -43,7 +43,7 @@
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
-const int kNumThreads = 100;  // Number of threads
+const int kNumThreads = 300;  // Number of threads
 const int kNumAsyncSendThreads = 2;
 const int kNumAsyncReceiveThreads = 50;
 const int kNumAsyncServerThreads = 50;

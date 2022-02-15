@@ -24,12 +24,4 @@ CPUS=`python3 -c 'import multiprocessing; print(multiprocessing.cpu_count())'`
 
 ./tools/run_tests/start_port_server.py || true
 
-tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload || FAILED="true"
-
-# kill port_server.py to prevent the build from freezing
-ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+tools/run_tests/run_microbenchmark.py --collect summary --bq_result_table microbenchmarks.microbenchmarks

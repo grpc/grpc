@@ -190,6 +190,13 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   grpc_channel_args* update_arguments(grpc_channel_args* args) override {
     return args;
   }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return QsortCompare(static_cast<const grpc_channel_credentials*>(this),
+                        other);
+  }
 };
 
 }  // namespace

@@ -198,9 +198,13 @@ def expand_json(js, js2=None):
             labels = dict(labels_list)
         else:
             labels = {}
+        # TODO(jtattermusch): grabbing kokoro env values shouldn't be buried
+        # deep in the JSON conversion logic.
+        # Link the data to a kokoro job run by adding
+        # well known kokoro env variables as metadata for each row
         row = {
-            'jenkins_build': os.environ.get('BUILD_NUMBER', ''),
-            'jenkins_job': os.environ.get('JOB_NAME', ''),
+            'jenkins_build': os.environ.get('KOKORO_BUILD_NUMBER', ''),
+            'jenkins_job': os.environ.get('KOKORO_JOB_NAME', ''),
         }
         row.update(context)
         row.update(bm)
