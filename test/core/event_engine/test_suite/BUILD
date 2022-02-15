@@ -54,10 +54,10 @@ grpc_cc_library(
     name = "complete",
     testonly = 1,
     deps = [
-        ":event_engine_test_suite@client",
-        ":event_engine_test_suite@dns",
-        ":event_engine_test_suite@server",
-        ":event_engine_test_suite@timer",
+        ":client",
+        ":dns",
+        ":server",
+        ":timer",
     ],
     alwayslink = 1,
 )

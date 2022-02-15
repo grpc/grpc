@@ -10,9 +10,8 @@ Your custom test target will look something like:
 grpc_cc_test(
     name = "my_custom_event_engine_test",
     srcs = ["my_custom_event_engine_test.cc"],
-    language = "C++",
     uses_polling = False,
-    deps = [//test/core/event_engine/test_suite:complete],
+    deps = ["//test/core/event_engine/test_suite:complete"],
 )
 ```
 

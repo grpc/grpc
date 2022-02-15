@@ -29,4 +29,5 @@
 
 class EventEngineDNSTest : public EventEngineTest {};
 
+// TODO(hork): establish meaningful tests
 TEST_F(EventEngineDNSTest, TODO) {}

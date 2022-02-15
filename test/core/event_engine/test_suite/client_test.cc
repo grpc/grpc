@@ -29,4 +29,5 @@
 
 class EventEngineClientTest : public EventEngineTest {};
 
+// TODO(hork): establish meaningful tests
 TEST_F(EventEngineClientTest, TODO) {}
