@@ -60,23 +60,26 @@ bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
 
 ChannelArgs::ChannelArgs() = default;
 
+ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
+  switch (arg.type) {
+    case GRPC_ARG_INTEGER:
+      return Set(arg.key, arg.value.integer);
+    case GRPC_ARG_STRING:
+      if (arg.value.string != nullptr) return Set(arg.key, arg.value.string);
+      return Set(arg.key, "");
+    case GRPC_ARG_POINTER:
+      return Set(arg.key,
+                 Pointer(arg.value.pointer.vtable->copy(arg.value.pointer.p),
+                         arg.value.pointer.vtable));
+  }
+  GPR_UNREACHABLE_CODE(return ChannelArgs());
+}
+
 ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
   ChannelArgs result;
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; i++) {
-      switch (args->args[i].type) {
-        case GRPC_ARG_INTEGER:
-          result = result.Set(args->args[i].key, args->args[i].value.integer);
-          break;
-        case GRPC_ARG_STRING:
-          result = result.Set(args->args[i].key, args->args[i].value.string);
-          break;
-        case GRPC_ARG_POINTER:
-          result = result.Set(args->args[i].key,
-                              Pointer(args->args[i].value.pointer.p,
-                                      args->args[i].value.pointer.vtable));
-          break;
-      }
+      result = result.Set(args->args[i]);
     }
   }
   return result;
@@ -471,9 +474,9 @@ const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
   return dst;
 }
 
-const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
-  if (src == nullptr) return nullptr;
-  std::map<absl::string_view, const grpc_arg*> values;
+ChannelArgs UniquifyChannelArgKeys(const grpc_channel_args* src) {
+  if (src == nullptr) return ChannelArgs();
+  ChannelArgs output;
   std::map<absl::string_view, std::vector<std::string>> concatenated_values;
   for (size_t i = 0; i < src->num_args; i++) {
     absl::string_view key = src->args[i].key;
@@ -488,46 +491,23 @@ const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
         concatenated_values[key].push_back(src->args[i].value.string);
       }
       continue;
+    } else if (absl::StartsWith(key, "grpc.internal.")) {
+      continue;
     }
-    auto it = values.find(key);
-    if (it == values.end()) {
-      values[key] = &src->args[i];
+    if (!output.Contains(key)) {
+      output = output.Set(src->args[i]);
     } else {
       // Traditional grpc_channel_args_find behavior was to pick the first
       // value.
       // For compatibility with existing users, we will do the same here.
     }
   }
-  if (values.size() + concatenated_values.size() == src->num_args) {
-    return grpc_channel_args_copy(src);
-  }
   // Concatenate the concatenated values.
-  std::map<absl::string_view, std::string> concatenated_values_str;
   for (const auto& concatenated_value : concatenated_values) {
-    concatenated_values_str[concatenated_value.first] =
-        absl::StrJoin(concatenated_value.second, " ");
+    output = output.Set(concatenated_value.first,
+                        absl::StrJoin(concatenated_value.second, " "));
   }
-  // Create the result
-  std::vector<grpc_arg> argv;
-  argv.reserve(values.size());
-  for (const auto& a : values) {
-    argv.push_back(*a.second);
-  }
-  for (const auto& a : concatenated_values_str) {
-    argv.push_back(
-        grpc_channel_arg_string_create(const_cast<char*>(a.first.data()),
-                                       const_cast<char*>(a.second.c_str())));
-  }
-  grpc_channel_args args = {argv.size(), argv.data()};
-  // Log that we're mutating things
-  gpr_log(GPR_INFO,
-          "Uniquification pass on channel args is mutating them: {%s} is being "
-          "changed to {%s}",
-          grpc_channel_args_string(src).c_str(),
-          grpc_channel_args_string(&args).c_str());
-  // Return the result (note we need to copy because we're borrowing the args
-  // from src still!)
-  return grpc_channel_args_copy(&args);
+  return output;
 }
 }  // namespace grpc_core
 

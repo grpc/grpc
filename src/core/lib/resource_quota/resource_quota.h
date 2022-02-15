@@ -37,12 +37,18 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
 
+  static absl::string_view channel_arg_name() {
+    return GRPC_ARG_RESOURCE_QUOTA;
+  }
+
   MemoryQuotaRefPtr memory_quota() { return memory_quota_; }
 
   const RefCountedPtr<ThreadQuota>& thread_quota() { return thread_quota_; }
 
   // The default global resource quota
   static ResourceQuotaRefPtr Default();
+
+  bool operator<(const ResourceQuota& other) const { return this < &other; }
 
  private:
   MemoryQuotaRefPtr memory_quota_;

@@ -125,6 +125,7 @@ class ChannelArgs {
   const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        Value value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(grpc_arg arg) const;
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
@@ -279,15 +280,9 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
 std::string grpc_channel_args_string(const grpc_channel_args* args);
 
 namespace grpc_core {
-/** Remove any channel args prefixed with 'grpc.internal.'
- *  These are used for internal implementation details and are not intended to
- *  be exposed to users.
- *  Returns a new channel args instance.
- *  Does not take ownership of \a src.
- *  Should be called by any public API that receives channel args. */
-const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src);
-/** Ensure no duplicate channel args, in preparation for moving to a map<> */
-const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src);
+/** Ensure no duplicate channel args (with some backwards compatibility hacks),
+ * and return a C++ object */
+ChannelArgs UniquifyChannelArgKeys(const grpc_channel_args* src);
 }  // namespace grpc_core
 
 // Takes ownership of the old_args
