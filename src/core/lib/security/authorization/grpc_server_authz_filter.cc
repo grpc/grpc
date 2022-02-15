@@ -31,7 +31,7 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       per_channel_evaluate_args_(auth_context_.get(), endpoint),
       provider_(std::move(provider)) {}
 
-absl::StatusOr<SdkServerAuthzFilter> GrpcServerAuthzFilter::Create(
+absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
     const grpc_channel_args* args, ChannelFilter::Args) {
   grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
   grpc_authorization_policy_provider* provider =

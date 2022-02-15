@@ -66,7 +66,7 @@ class ClientIdleFilter : public ChannelFilter {
  public:
   static absl::StatusOr<ClientIdleFilter> Create(
       const grpc_channel_args* args, ChannelFilter::Args filter_args);
-  ~ClientIdleFilter() = default;
+  ~ClientIdleFilter() override = default;
 
   ClientIdleFilter(const ClientIdleFilter&) = delete;
   ClientIdleFilter& operator=(const ClientIdleFilter&) = delete;

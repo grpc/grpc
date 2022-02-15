@@ -27,12 +27,12 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<SdkServerAuthzFilter> Create(
+  static absl::StatusOr<GrpcServerAuthzFilter> Create(
       const grpc_channel_args* args, ChannelFilter::Args);
 
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory);
+      NextPromiseFactory next_promise_factory) override;
 
  private:
   GrpcServerAuthzFilter(
