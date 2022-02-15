@@ -64,7 +64,7 @@ bool XdsRbacEnabled() {
 
 // TODO(donnadionne): Remove once RLS is no longer experimental
 bool XdsRlsEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_RLS_LB");
+  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -301,8 +301,7 @@ std::string XdsRouteConfigResource::ToString() const {
   }
   parts.push_back("cluster_specifier_plugins={\n");
   for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={\n", it.first));
-    parts.push_back(absl::StrFormat("%s},\n", it.second));
+    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
@@ -901,21 +900,14 @@ grpc_error_handle XdsRouteConfigResource::Parse(
               "no plugin config specified for plugin name ", name));
         }
       }
-      // Always stripe off "type.googleapis.com".
+      // Always strip off "type.googleapis.com".
       plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
-      if (plugin_type == "grpc.lookup.v1.RouteLookupClusterSpecifier") {
-        gpr_log(GPR_INFO,
-                "donna parsed out the correct type as this is our only type "
-                "right now");
-      } else {
-        gpr_log(GPR_INFO, "donna did not get the correct type");
-      }
       // Find the plugin and generate the policy.
       auto lb_policy_config =
           XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
               plugin_type, google_protobuf_Any_type_url(any), context.arena);
       if (lb_policy_config.ok()) {
-        rds_update->cluster_specifier_plugin_map[std::string(name)] =
+        rds_update->cluster_specifier_plugin_map[std::move(name)] =
             std::move(lb_policy_config.value());
       }
     }

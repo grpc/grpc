@@ -29,9 +29,6 @@
 
 namespace grpc_core {
 
-const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
-    "grpc.lookup.v1.RouteLookupClusterSpecifier";
-
 namespace {
 
 using PluginRegistryMap =
@@ -173,9 +170,12 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   return Json(result).Dump();
 }
 
+const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
+    "grpc.lookup.v1.RouteLookupClusterSpecifier";
+
 void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {
-  for (const auto& it : *g_plugin_registry) {
-    it.second->PopulateSymtab(symtab);
+  for (const auto& p : *g_plugin_registry) {
+    p.second->PopulateSymtab(symtab);
   }
 }
 
