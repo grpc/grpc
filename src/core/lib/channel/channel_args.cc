@@ -109,16 +109,16 @@ ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
   return ChannelArgs(args_.Remove(key));
 }
 
-absl::optional<int> ChannelArgs::GetInt(absl::string_view key) const {
-  auto* v = Get(key);
+absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
+  auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;
   if (!absl::holds_alternative<int>(*v)) return absl::nullopt;
   return absl::get<int>(*v);
 }
 
 absl::optional<absl::string_view> ChannelArgs::GetString(
-    absl::string_view key) const {
-  auto* v = Get(key);
+    absl::string_view name) const {
+  auto* v = Get(name);
   if (v == nullptr) return absl::nullopt;
   if (!absl::holds_alternative<std::string>(*v)) return absl::nullopt;
   return absl::get<std::string>(*v);
