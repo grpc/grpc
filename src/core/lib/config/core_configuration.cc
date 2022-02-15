@@ -16,10 +16,13 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <atomic>
+
 #include <grpc/support/log.h>
 
 namespace grpc_core {
 
+std::atomic<Mutex*> CoreConfiguration::builder_mu_;
 std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
 std::atomic<CoreConfiguration::RegisteredBuilder*> CoreConfiguration::builders_{
     nullptr};
@@ -54,6 +57,27 @@ void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {
 }
 
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
+  // Acquire the builder lock - we only allow one builder at a time.
+  // But first, create it if it's not present.
+  Mutex* mu = builder_mu_.load(std::memory_order_acquire);
+  if (mu == nullptr) {
+    mu = new Mutex();
+    Mutex* expected = nullptr;
+    if (!builder_mu_.compare_exchange_strong(expected, mu,
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_relaxed)) {
+      delete mu;
+      mu = expected;
+    }
+  }
+  MutexLock lock(mu);
+
+  // Check again that there's no config present - in case we lost a race.
+  CoreConfiguration* p = config_.load(std::memory_order_acquire);
+  if (p != nullptr) {
+    return *p;
+  }
+
   // Construct builder, pass it up to code that knows about build configuration
   Builder builder;
   // The linked list of builders stores things in reverse registration order.
@@ -73,16 +97,8 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // Finally, call the built in configuration builder.
   BuildCoreConfiguration(&builder);
   // Use builder to construct a confguration
-  CoreConfiguration* p = builder.Build();
-  // Try to set configuration global - it's possible another thread raced us
-  // here, in which case we drop the work we did and use the one that got set
-  // first
-  CoreConfiguration* expected = nullptr;
-  if (!config_.compare_exchange_strong(expected, p, std::memory_order_acq_rel,
-                                       std::memory_order_acquire)) {
-    delete p;
-    return *expected;
-  }
+  p = builder.Build();
+  config_.store(p, std::memory_order_release);
   return *p;
 }
 

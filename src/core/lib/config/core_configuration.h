@@ -21,6 +21,7 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -92,6 +93,8 @@ class CoreConfiguration {
   template <typename BuildFunc>
   static void BuildSpecialConfiguration(BuildFunc build) {
     // Build bespoke configuration
+    // We don't care about the builder lock here, since it's expected this call
+    // will be made ensuring that there's only one path through here.
     Builder builder;
     build(&builder);
     CoreConfiguration* p = builder.Build();
@@ -164,6 +167,8 @@ class CoreConfiguration {
   static std::atomic<CoreConfiguration*> config_;
   // Extra registered builders
   static std::atomic<RegisteredBuilder*> builders_;
+  // One builder at a time
+  static std::atomic<Mutex*> builder_mu_;
 
   ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
