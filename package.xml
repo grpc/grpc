@@ -230,7 +230,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.cc" role="src" />
