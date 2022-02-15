@@ -610,11 +610,11 @@ bool ShouldUseAres(const char* resolver_env) {
          gpr_stricmp(resolver_env, "ares") == 0;
 }
 
-static bool UseAresDnsResolver() {
+bool UseAresDnsResolver() {
   static const bool result = []() {
-    grpc_core::UniquePtr<char> resolver =
+    UniquePtr<char> resolver =
         GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-    bool result = grpc_core::ShouldUseAres(resolver.get());
+    bool result = ShouldUseAres(resolver.get());
     if (result) gpr_log(GPR_DEBUG, "Using ares dns resolver");
     return result;
   }();
@@ -626,7 +626,7 @@ static bool UseAresDnsResolver() {
 void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
   if (UseAresDnsResolver()) {
     builder->resolver_registry()->RegisterResolverFactory(
-        absl::make_unique<grpc_core::AresClientChannelDNSResolverFactory>());
+        absl::make_unique<AresClientChannelDNSResolverFactory>());
   }
 }
 

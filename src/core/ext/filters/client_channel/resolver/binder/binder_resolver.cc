@@ -125,7 +125,7 @@ class BinderResolverFactory : public ResolverFactory {
 
 void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
   builder->resolver_registry()->RegisterResolverFactory(
-      absl::make_unique<grpc_core::BinderResolverFactory>());
+      absl::make_unique<BinderResolverFactory>());
 }
 
 }  // namespace grpc_core

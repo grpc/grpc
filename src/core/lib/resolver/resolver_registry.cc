@@ -24,13 +24,15 @@
 
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "resolver_registry.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
@@ -123,7 +125,7 @@ bool ResolverRegistry::Builder::HasResolverFactory(const char* scheme) const {
   return state_->LookupResolverFactory(scheme) != nullptr;
 }
 
-void ResolverRegistry::Builder::Reset() { state_.reset(new State); }
+void ResolverRegistry::Builder::Reset() { state_ = absl::make_unique<State>(); }
 
 ResolverRegistry ResolverRegistry::Builder::Build() {
   return ResolverRegistry(std::move(state_));
