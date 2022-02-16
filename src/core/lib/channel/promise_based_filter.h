@@ -61,7 +61,7 @@ class ChannelFilter {
   // next filter.
   // TODO(ctiller): design a new API for this - we probably don't want big op
   // structures going forward.
-  virtual bool StartTransportOp(grpc_transport_op* op) { return false; }
+  virtual bool StartTransportOp(grpc_transport_op*) { return false; }
 
  protected:
   virtual ~ChannelFilter() = default;
