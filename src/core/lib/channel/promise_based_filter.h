@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/utility/utility.h"
-#include "channel_stack.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -698,7 +697,7 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
 
 }  // namespace promise_filter_detail
 
-// F implements grpc_core::ChannelFilter and :
+// F implements ChannelFilter and :
 // class SomeChannelFilter : public ChannelFilter {
 //  public:
 //   static absl::StatusOr<SomeChannelFilter> Create(
