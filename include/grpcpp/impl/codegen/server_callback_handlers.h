@@ -33,7 +33,7 @@ template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackUnaryHandler(
-      std::function<ServerUnaryReactor*(::grpc::CallbackServerContext*,
+      std::function<ServerUnaryReactor*(grpc::CallbackServerContext*,
                                         const RequestType*, ResponseType*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
@@ -45,12 +45,12 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a controller structure (that includes request/response)
-    ::grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
     auto* allocator_state =
         static_cast<MessageHolder<RequestType, ResponseType>*>(
             param.internal_data);
 
-    auto* call = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+    auto* call = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackUnaryImpl)))
         ServerCallbackUnaryImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
@@ -68,10 +68,10 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
-      reactor = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+      reactor = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
           param.call->call(), sizeof(UnimplementedUnaryReactor)))
           UnimplementedUnaryReactor(
-              ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, ""));
+              grpc::Status(grpc::StatusCode::UNIMPLEMENTED, ""));
     }
 
     /// Invoke SetupReactor as the last part of the handler
@@ -79,8 +79,8 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    ::grpc::Status* status, void** handler_data) final {
-    ::grpc::ByteBuffer buf;
+                    grpc::Status* status, void** handler_data) final {
+    grpc::ByteBuffer buf;
     buf.set_buffer(req);
     RequestType* request = nullptr;
     MessageHolder<RequestType, ResponseType>* allocator_state;
@@ -88,14 +88,14 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       allocator_state = allocator_->AllocateMessages();
     } else {
       allocator_state =
-          new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+          new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
               call, sizeof(DefaultMessageHolder<RequestType, ResponseType>)))
               DefaultMessageHolder<RequestType, ResponseType>();
     }
     *handler_data = allocator_state;
     request = allocator_state->request();
     *status =
-        ::grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -104,14 +104,14 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<ServerUnaryReactor*(::grpc::CallbackServerContext*,
+  std::function<ServerUnaryReactor*(grpc::CallbackServerContext*,
                                     const RequestType*, ResponseType*)>
       get_reactor_;
   MessageAllocator<RequestType, ResponseType>* allocator_ = nullptr;
 
   class ServerCallbackUnaryImpl : public ServerCallbackUnary {
    public:
-    void Finish(::grpc::Status s) override {
+    void Finish(grpc::Status s) override {
       // A callback that only contains a call to MaybeDone can be run as an
       // inline callback regardless of whether or not OnDone is inlineable
       // because if the actual OnDone callback needs to be scheduled, MaybeDone
@@ -177,7 +177,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
     ServerCallbackUnaryImpl(
-        ::grpc::CallbackServerContext* ctx, grpc::internal::Call* call,
+        grpc::CallbackServerContext* ctx, grpc::internal::Call* call,
         MessageHolder<RequestType, ResponseType>* allocator_state,
         std::function<void()> call_requester)
         : ctx_(ctx),
@@ -210,7 +210,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackUnaryImpl();  // explicitly call destructor
-      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc::g_core_codegen_interface->grpc_call_unref(call);
       call_requester();
     }
 
@@ -227,7 +227,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         finish_ops_;
     grpc::internal::CallbackWithSuccessTag finish_tag_;
 
-    ::grpc::CallbackServerContext* const ctx_;
+    grpc::CallbackServerContext* const ctx_;
     grpc::internal::Call call_;
     MessageHolder<RequestType, ResponseType>* const allocator_state_;
     std::function<void()> call_requester_;
@@ -253,14 +253,14 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackClientStreamingHandler(
       std::function<ServerReadReactor<RequestType>*(
-          ::grpc::CallbackServerContext*, ResponseType*)>
+          grpc::CallbackServerContext*, ResponseType*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a reader structure (that includes response)
-    ::grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
 
-    auto* reader = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+    auto* reader = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderImpl)))
         ServerCallbackReaderImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
@@ -284,23 +284,23 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
-      reactor = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+      reactor = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
           param.call->call(), sizeof(UnimplementedReadReactor<RequestType>)))
           UnimplementedReadReactor<RequestType>(
-              ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, ""));
+              grpc::Status(grpc::StatusCode::UNIMPLEMENTED, ""));
     }
 
     reader->SetupReactor(reactor);
   }
 
  private:
-  std::function<ServerReadReactor<RequestType>*(::grpc::CallbackServerContext*,
+  std::function<ServerReadReactor<RequestType>*(grpc::CallbackServerContext*,
                                                 ResponseType*)>
       get_reactor_;
 
   class ServerCallbackReaderImpl : public ServerCallbackReader<RequestType> {
    public:
-    void Finish(::grpc::Status s) override {
+    void Finish(grpc::Status s) override {
       // A finish tag with only MaybeDone can have its callback inlined
       // regardless even if OnDone is not inlineable because this callback just
       // checks a ref and then decides whether or not to dispatch OnDone.
@@ -366,7 +366,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
    private:
     friend class CallbackClientStreamingHandler<RequestType, ResponseType>;
 
-    ServerCallbackReaderImpl(::grpc::CallbackServerContext* ctx,
+    ServerCallbackReaderImpl(grpc::CallbackServerContext* ctx,
                              grpc::internal::Call* call,
                              std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
@@ -407,7 +407,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackReaderImpl();  // explicitly call destructor
-      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc::g_core_codegen_interface->grpc_call_unref(call);
       call_requester();
     }
 
@@ -428,7 +428,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         read_ops_;
     grpc::internal::CallbackWithSuccessTag read_tag_;
 
-    ::grpc::CallbackServerContext* const ctx_;
+    grpc::CallbackServerContext* const ctx_;
     grpc::internal::Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
@@ -445,14 +445,14 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackServerStreamingHandler(
       std::function<ServerWriteReactor<ResponseType>*(
-          ::grpc::CallbackServerContext*, const RequestType*)>
+          grpc::CallbackServerContext*, const RequestType*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
     // Arena allocate a writer structure
-    ::grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
 
-    auto* writer = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+    auto* writer = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackWriterImpl)))
         ServerCallbackWriterImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
@@ -476,24 +476,24 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     }
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
-      reactor = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+      reactor = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
           param.call->call(), sizeof(UnimplementedWriteReactor<ResponseType>)))
           UnimplementedWriteReactor<ResponseType>(
-              ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, ""));
+              grpc::Status(grpc::StatusCode::UNIMPLEMENTED, ""));
     }
 
     writer->SetupReactor(reactor);
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    ::grpc::Status* status, void** /*handler_data*/) final {
-    ::grpc::ByteBuffer buf;
+                    grpc::Status* status, void** /*handler_data*/) final {
+    grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =
-        new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+        new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
             call, sizeof(RequestType))) RequestType();
     *status =
-        ::grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -504,12 +504,12 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
 
  private:
   std::function<ServerWriteReactor<ResponseType>*(
-      ::grpc::CallbackServerContext*, const RequestType*)>
+      grpc::CallbackServerContext*, const RequestType*)>
       get_reactor_;
 
   class ServerCallbackWriterImpl : public ServerCallbackWriter<ResponseType> {
    public:
-    void Finish(::grpc::Status s) override {
+    void Finish(grpc::Status s) override {
       // A finish tag with only MaybeDone can have its callback inlined
       // regardless even if OnDone is not inlineable because this callback just
       // checks a ref and then decides whether or not to dispatch OnDone.
@@ -562,7 +562,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     }
 
     void Write(const ResponseType* resp,
-               ::grpc::WriteOptions options) override {
+               grpc::WriteOptions options) override {
       this->Ref();
       if (options.is_last_message()) {
         options.set_buffer_hint();
@@ -580,8 +580,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       call_.PerformOps(&write_ops_);
     }
 
-    void WriteAndFinish(const ResponseType* resp, ::grpc::WriteOptions options,
-                        ::grpc::Status s) override {
+    void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
+                        grpc::Status s) override {
       // This combines the write into the finish callback
       // TODO(vjpai): don't assert
       GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
@@ -591,7 +591,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
    private:
     friend class CallbackServerStreamingHandler<RequestType, ResponseType>;
 
-    ServerCallbackWriterImpl(::grpc::CallbackServerContext* ctx,
+    ServerCallbackWriterImpl(grpc::CallbackServerContext* ctx,
                              grpc::internal::Call* call,
                              const RequestType* req,
                              std::function<void()> call_requester)
@@ -636,7 +636,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackWriterImpl();  // explicitly call destructor
-      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc::g_core_codegen_interface->grpc_call_unref(call);
       call_requester();
     }
 
@@ -657,7 +657,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         write_ops_;
     grpc::internal::CallbackWithSuccessTag write_tag_;
 
-    ::grpc::CallbackServerContext* const ctx_;
+    grpc::CallbackServerContext* const ctx_;
     grpc::internal::Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
@@ -674,13 +674,13 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackBidiHandler(
       std::function<ServerBidiReactor<RequestType, ResponseType>*(
-          ::grpc::CallbackServerContext*)>
+          grpc::CallbackServerContext*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
-    ::grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
+    grpc::g_core_codegen_interface->grpc_call_ref(param.call->call());
 
-    auto* stream = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+    auto* stream = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))
         ServerCallbackReaderWriterImpl(
             static_cast<::grpc::CallbackServerContext*>(param.server_context),
@@ -703,11 +703,11 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
 
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
-      reactor = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+      reactor = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
           param.call->call(),
           sizeof(UnimplementedBidiReactor<RequestType, ResponseType>)))
           UnimplementedBidiReactor<RequestType, ResponseType>(
-              ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, ""));
+              grpc::Status(grpc::StatusCode::UNIMPLEMENTED, ""));
     }
 
     stream->SetupReactor(reactor);
@@ -715,13 +715,13 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
 
  private:
   std::function<ServerBidiReactor<RequestType, ResponseType>*(
-      ::grpc::CallbackServerContext*)>
+      grpc::CallbackServerContext*)>
       get_reactor_;
 
   class ServerCallbackReaderWriterImpl
       : public ServerCallbackReaderWriter<RequestType, ResponseType> {
    public:
-    void Finish(::grpc::Status s) override {
+    void Finish(grpc::Status s) override {
       // A finish tag with only MaybeDone can have its callback inlined
       // regardless even if OnDone is not inlineable because this callback just
       // checks a ref and then decides whether or not to dispatch OnDone.
@@ -774,7 +774,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
     }
 
     void Write(const ResponseType* resp,
-               ::grpc::WriteOptions options) override {
+               grpc::WriteOptions options) override {
       this->Ref();
       if (options.is_last_message()) {
         options.set_buffer_hint();
@@ -792,8 +792,8 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       call_.PerformOps(&write_ops_);
     }
 
-    void WriteAndFinish(const ResponseType* resp, ::grpc::WriteOptions options,
-                        ::grpc::Status s) override {
+    void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
+                        grpc::Status s) override {
       // TODO(vjpai): don't assert
       GPR_CODEGEN_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
       Finish(std::move(s));
@@ -808,7 +808,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
    private:
     friend class CallbackBidiHandler<RequestType, ResponseType>;
 
-    ServerCallbackReaderWriterImpl(::grpc::CallbackServerContext* ctx,
+    ServerCallbackReaderWriterImpl(grpc::CallbackServerContext* ctx,
                                    grpc::internal::Call* call,
                                    std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
@@ -853,7 +853,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->context_allocator()->Release(ctx_);
       }
       this->~ServerCallbackReaderWriterImpl();  // explicitly call destructor
-      ::grpc::g_core_codegen_interface->grpc_call_unref(call);
+      grpc::g_core_codegen_interface->grpc_call_unref(call);
       call_requester();
     }
 
@@ -878,7 +878,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         read_ops_;
     grpc::internal::CallbackWithSuccessTag read_tag_;
 
-    ::grpc::CallbackServerContext* const ctx_;
+    grpc::CallbackServerContext* const ctx_;
     grpc::internal::Call call_;
     std::function<void()> call_requester_;
     // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.

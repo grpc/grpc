@@ -136,7 +136,7 @@ class MessageAllocatorEnd2endTestBase
         GetParam().credentials_type, &args);
     switch (GetParam().protocol) {
       case Protocol::TCP:
-        channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
+        channel_ = grpc::CreateCustomChannel(server_address_.str(),
                                                channel_creds, args);
         break;
       case Protocol::INPROC:

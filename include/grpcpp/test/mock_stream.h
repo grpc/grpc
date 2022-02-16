@@ -32,7 +32,7 @@ namespace grpc {
 namespace testing {
 
 template <class R>
-class MockClientReader : public ::grpc::ClientReaderInterface<R> {
+class MockClientReader : public grpc::ClientReaderInterface<R> {
  public:
   MockClientReader() = default;
 
@@ -48,7 +48,7 @@ class MockClientReader : public ::grpc::ClientReaderInterface<R> {
 };
 
 template <class W>
-class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
+class MockClientWriter : public grpc::ClientWriterInterface<W> {
  public:
   MockClientWriter() = default;
 
@@ -64,7 +64,7 @@ class MockClientWriter : public ::grpc::ClientWriterInterface<W> {
 
 template <class W, class R>
 class MockClientReaderWriter
-    : public ::grpc::ClientReaderWriterInterface<W, R> {
+    : public grpc::ClientReaderWriterInterface<W, R> {
  public:
   MockClientReaderWriter() = default;
 
@@ -87,7 +87,7 @@ class MockClientReaderWriter
 
 template <class R>
 class MockClientAsyncResponseReader
-    : public ::grpc::ClientAsyncResponseReaderInterface<R> {
+    : public grpc::ClientAsyncResponseReaderInterface<R> {
  public:
   MockClientAsyncResponseReader() = default;
 
@@ -112,7 +112,7 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
 };
 
 template <class W>
-class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
+class MockClientAsyncWriter : public grpc::ClientAsyncWriterInterface<W> {
  public:
   MockClientAsyncWriter() = default;
 
@@ -123,7 +123,7 @@ class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
-  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
+  MOCK_METHOD3_T(Write, void(const W&, grpc::WriteOptions, void*));
 
   /// ClientAsyncWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
@@ -142,7 +142,7 @@ class MockClientAsyncReaderWriter
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
-  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
+  MOCK_METHOD3_T(Write, void(const W&, grpc::WriteOptions, void*));
 
   /// AsyncReaderInterface
   MOCK_METHOD2_T(Read, void(R*, void*));
@@ -152,7 +152,7 @@ class MockClientAsyncReaderWriter
 };
 
 template <class R>
-class MockServerReader : public ::grpc::ServerReaderInterface<R> {
+class MockServerReader : public grpc::ServerReaderInterface<R> {
  public:
   MockServerReader() = default;
 
@@ -165,7 +165,7 @@ class MockServerReader : public ::grpc::ServerReaderInterface<R> {
 };
 
 template <class W>
-class MockServerWriter : public ::grpc::ServerWriterInterface<W> {
+class MockServerWriter : public grpc::ServerWriterInterface<W> {
  public:
   MockServerWriter() = default;
 

@@ -47,7 +47,7 @@ namespace grpc {
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Channel::Channel(const std::string& host, grpc_channel* channel,
                  std::vector<std::unique_ptr<
-                     ::grpc::experimental::ClientInterceptorFactoryInterface>>
+                     grpc::experimental::ClientInterceptorFactoryInterface>>
                      interceptor_creators)
     : host_(host), c_channel_(channel) {
   interceptor_creators_ = std::move(interceptor_creators);
@@ -109,8 +109,8 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 }  // namespace experimental
 
 grpc::internal::Call Channel::CreateCallInternal(
-    const grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-    ::grpc::CompletionQueue* cq, size_t interceptor_pos) {
+    const grpc::internal::RpcMethod& method, grpc::ClientContext* context,
+    grpc::CompletionQueue* cq, size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
@@ -129,7 +129,7 @@ grpc::internal::Call Channel::CreateCallInternal(
         SliceFromArray(method.name(), strlen(method.name()));
     grpc_slice host_slice;
     if (host_str != nullptr) {
-      host_slice = ::grpc::SliceFromCopiedString(*host_str);
+      host_slice = grpc::SliceFromCopiedString(*host_str);
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,
@@ -155,7 +155,7 @@ grpc::internal::Call Channel::CreateCallInternal(
 }
 
 grpc::internal::Call Channel::CreateCall(
-    const grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+    const grpc::internal::RpcMethod& method, grpc::ClientContext* context,
     CompletionQueue* cq) {
   return CreateCallInternal(method, context, cq, 0);
 }
@@ -195,7 +195,7 @@ class TagSaver final : public grpc::internal::CompletionQueueTag {
 
 void Channel::NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                       gpr_timespec deadline,
-                                      ::grpc::CompletionQueue* cq, void* tag) {
+                                      grpc::CompletionQueue* cq, void* tag) {
   TagSaver* tag_saver = new TagSaver(tag);
   grpc_channel_watch_connectivity_state(c_channel_, last_observed, deadline,
                                         cq->cq(), tag_saver);
@@ -203,7 +203,7 @@ void Channel::NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
 
 bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                                      gpr_timespec deadline) {
-  ::grpc::CompletionQueue cq;
+  grpc::CompletionQueue cq;
   bool ok = false;
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
@@ -225,7 +225,7 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   }
   // TakeCQ takes ownership of the cq into the shutdown callback
   // so that the shutdown callback will be responsible for destroying it
-  void TakeCQ(::grpc::CompletionQueue* cq) { cq_ = cq; }
+  void TakeCQ(grpc::CompletionQueue* cq) { cq_ = cq; }
 
   // The Run function will get invoked by the completion queue library
   // when the shutdown is actually complete
@@ -236,7 +236,7 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   }
 
  private:
-  ::grpc::CompletionQueue* cq_ = nullptr;
+  grpc::CompletionQueue* cq_ = nullptr;
 };
 }  // namespace
 
@@ -257,7 +257,7 @@ class ShutdownCallback : public grpc_completion_queue_functor {
 
       auto* shutdown_callback = new ShutdownCallback;
       callback_cq =
-          new ::grpc::CompletionQueue(grpc_completion_queue_attributes{
+          new grpc::CompletionQueue(grpc_completion_queue_attributes{
               GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK,
               GRPC_CQ_DEFAULT_POLLING, shutdown_callback});
 

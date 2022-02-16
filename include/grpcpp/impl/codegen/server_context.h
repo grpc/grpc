@@ -124,7 +124,7 @@ class ServerContextBase {
 
   /// Return the deadline for the server call.
   std::chrono::system_clock::time_point deadline() const {
-    return ::grpc::Timespec2Timepoint(deadline_);
+    return grpc::Timespec2Timepoint(deadline_);
   }
 
   /// Return a \a gpr_timespec representation of the server call's deadline.
@@ -263,9 +263,9 @@ class ServerContextBase {
   /// Return the authentication context for this server call.
   ///
   /// \see grpc::AuthContext.
-  std::shared_ptr<const ::grpc::AuthContext> auth_context() const {
+  std::shared_ptr<const grpc::AuthContext> auth_context() const {
     if (auth_context_ == nullptr) {
-      auth_context_ = ::grpc::CreateAuthContext(call_.call);
+      auth_context_ = grpc::CreateAuthContext(call_.call);
     }
     return auth_context_;
   }
@@ -313,7 +313,7 @@ class ServerContextBase {
   ///
   /// This method should not be called more than once or called after return
   /// from the method handler.
-  ::grpc::ServerUnaryReactor* DefaultReactor() {
+  grpc::ServerUnaryReactor* DefaultReactor() {
     // Short-circuit the case where a default reactor was already set up by
     // the TestPeer.
     if (test_unary_ != nullptr) {
@@ -341,23 +341,23 @@ class ServerContextBase {
   ContextAllocator* context_allocator() const { return context_allocator_; }
 
  private:
-  friend class ::grpc::testing::InteropServerContextInspector;
-  friend class ::grpc::testing::ServerContextTestSpouse;
-  friend class ::grpc::testing::DefaultReactorTestPeer;
-  friend class ::grpc::ServerInterface;
-  friend class ::grpc::Server;
+  friend class grpc::testing::InteropServerContextInspector;
+  friend class grpc::testing::ServerContextTestSpouse;
+  friend class grpc::testing::DefaultReactorTestPeer;
+  friend class grpc::ServerInterface;
+  friend class grpc::Server;
   template <class W, class R>
-  friend class ::grpc::ServerAsyncReader;
+  friend class grpc::ServerAsyncReader;
   template <class W>
-  friend class ::grpc::ServerAsyncWriter;
+  friend class grpc::ServerAsyncWriter;
   template <class W>
-  friend class ::grpc::ServerAsyncResponseWriter;
+  friend class grpc::ServerAsyncResponseWriter;
   template <class W, class R>
-  friend class ::grpc::ServerAsyncReaderWriter;
+  friend class grpc::ServerAsyncReaderWriter;
   template <class R>
-  friend class ::grpc::ServerReader;
+  friend class grpc::ServerReader;
   template <class W>
-  friend class ::grpc::ServerWriter;
+  friend class grpc::ServerWriter;
   template <class W, class R>
   friend class grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
@@ -385,9 +385,9 @@ class ServerContextBase {
   friend class grpc::internal::ErrorMethodHandler;
   template <class Base>
   friend class grpc::internal::FinishOnlyReactor;
-  friend class ::grpc::ClientContext;
-  friend class ::grpc::GenericServerContext;
-  friend class ::grpc::GenericCallbackServerContext;
+  friend class grpc::ClientContext;
+  friend class grpc::GenericServerContext;
+  friend class grpc::GenericCallbackServerContext;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -407,12 +407,12 @@ class ServerContextBase {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
-  ::grpc::experimental::ServerRpcInfo* set_server_rpc_info(
+  grpc::experimental::ServerRpcInfo* set_server_rpc_info(
       const char* method, grpc::internal::RpcMethod::RpcType type,
       const std::vector<std::unique_ptr<
-          ::grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
+          grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
     if (!creators.empty()) {
-      rpc_info_ = new ::grpc::experimental::ServerRpcInfo(this, method, type);
+      rpc_info_ = new grpc::experimental::ServerRpcInfo(this, method, type);
       rpc_info_->RegisterInterceptors(creators);
     }
     return rpc_info_;
@@ -447,9 +447,9 @@ class ServerContextBase {
   grpc::internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
-  ::grpc::CompletionQueue* cq_ = nullptr;
+  grpc::CompletionQueue* cq_ = nullptr;
   bool sent_initial_metadata_ = false;
-  mutable std::shared_ptr<const ::grpc::AuthContext> auth_context_;
+  mutable std::shared_ptr<const grpc::AuthContext> auth_context_;
   mutable grpc::internal::MetadataMap client_metadata_;
   std::multimap<std::string, std::string> initial_metadata_;
   std::multimap<std::string, std::string> trailing_metadata_;
@@ -463,11 +463,11 @@ class ServerContextBase {
       pending_ops_;
   bool has_pending_ops_ = false;
 
-  ::grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
+  grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
 
-  class Reactor : public ::grpc::ServerUnaryReactor {
+  class Reactor : public grpc::ServerUnaryReactor {
    public:
     void OnCancel() override {}
     void OnDone() override {}
@@ -478,23 +478,23 @@ class ServerContextBase {
     bool InternalInlineable() override { return true; }
   };
 
-  void SetupTestDefaultReactor(std::function<void(::grpc::Status)> func) {
+  void SetupTestDefaultReactor(std::function<void(grpc::Status)> func) {
     // NOLINTNEXTLINE(modernize-make-unique)
     test_unary_.reset(new TestServerCallbackUnary(this, std::move(func)));
   }
   bool test_status_set() const {
     return (test_unary_ != nullptr) && test_unary_->status_set();
   }
-  ::grpc::Status test_status() const { return test_unary_->status(); }
+  grpc::Status test_status() const { return test_unary_->status(); }
 
-  class TestServerCallbackUnary : public ::grpc::ServerCallbackUnary {
+  class TestServerCallbackUnary : public grpc::ServerCallbackUnary {
    public:
     TestServerCallbackUnary(ServerContextBase* ctx,
-                            std::function<void(::grpc::Status)> func)
+                            std::function<void(grpc::Status)> func)
         : reactor_(ctx->DefaultReactor()), func_(std::move(func)) {
       this->BindReactor(reactor_);
     }
-    void Finish(::grpc::Status s) override {
+    void Finish(grpc::Status s) override {
       status_ = s;
       func_(std::move(s));
       status_set_.store(true, std::memory_order_release);
@@ -504,16 +504,16 @@ class ServerContextBase {
     bool status_set() const {
       return status_set_.load(std::memory_order_acquire);
     }
-    ::grpc::Status status() const { return status_; }
+    grpc::Status status() const { return status_; }
 
    private:
     void CallOnDone() override {}
     grpc::internal::ServerReactor* reactor() override { return reactor_; }
 
-    ::grpc::ServerUnaryReactor* const reactor_;
+    grpc::ServerUnaryReactor* const reactor_;
     std::atomic_bool status_set_{false};
-    ::grpc::Status status_;
-    const std::function<void(::grpc::Status s)> func_;
+    grpc::Status status_;
+    const std::function<void(grpc::Status s)> func_;
   };
 
   typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type
@@ -568,7 +568,7 @@ class ServerContext : public ServerContextBase {
 
  private:
   // Constructor for internal use by server only
-  friend class ::grpc::Server;
+  friend class grpc::Server;
   ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
       : ServerContextBase(deadline, arr) {}
 
@@ -643,16 +643,16 @@ class ContextAllocator {
 }  // namespace grpc
 
 static_assert(
-    std::is_base_of<grpc::ServerContextBase, ::grpc::ServerContext>::value,
+    std::is_base_of<grpc::ServerContextBase, grpc::ServerContext>::value,
     "improper base class");
 static_assert(std::is_base_of<grpc::ServerContextBase,
-                              ::grpc::CallbackServerContext>::value,
+                              grpc::CallbackServerContext>::value,
               "improper base class");
 static_assert(sizeof(grpc::ServerContextBase) ==
                   sizeof(grpc::ServerContext),
               "wrong size");
 static_assert(sizeof(grpc::ServerContextBase) ==
-                  sizeof(::grpc::CallbackServerContext),
+                  sizeof(grpc::CallbackServerContext),
               "wrong size");
 
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H

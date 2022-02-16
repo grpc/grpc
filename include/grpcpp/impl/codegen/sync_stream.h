@@ -61,7 +61,7 @@ class ClientStreamingInterface {
   ///   - \a Status contains the status code, message and details for the call
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible trailing metadata sent from the server.
-  virtual ::grpc::Status Finish() = 0;
+  virtual grpc::Status Finish() = 0;
 };
 
 /// Common interface for all synchronous server side streaming.
@@ -114,7 +114,7 @@ class WriterInterface {
   /// \param options The WriteOptions affecting the write operation.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  virtual bool Write(const W& msg, ::grpc::WriteOptions options) = 0;
+  virtual bool Write(const W& msg, grpc::WriteOptions options) = 0;
 
   /// Block to write \a msg to the stream with default write options.
   /// This is thread-safe with respect to \a ReaderInterface::Read
@@ -122,7 +122,7 @@ class WriterInterface {
   /// \param msg The message to be written to the stream.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  inline bool Write(const W& msg) { return Write(msg, ::grpc::WriteOptions()); }
+  inline bool Write(const W& msg) { return Write(msg, grpc::WriteOptions()); }
 
   /// Write \a msg and coalesce it with the writing of trailing metadata, using
   /// WriteOptions \a options.
@@ -138,7 +138,7 @@ class WriterInterface {
   ///
   /// \param[in] msg The message to be written to the stream.
   /// \param[in] options The WriteOptions to be used to write this message.
-  void WriteLast(const W& msg, ::grpc::WriteOptions options) {
+  void WriteLast(const W& msg, grpc::WriteOptions options) {
     Write(msg, options.set_last_message());
   }
 };
@@ -162,9 +162,9 @@ template <class R>
 class ClientReaderFactory {
  public:
   template <class W>
-  static ClientReader<R>* Create(::grpc::ChannelInterface* channel,
+  static ClientReader<R>* Create(grpc::ChannelInterface* channel,
                                  const grpc::internal::RpcMethod& method,
-                                 ::grpc::ClientContext* context,
+                                 grpc::ClientContext* context,
                                  const W& request) {
     return new ClientReader<R>(channel, method, context, request);
   }
@@ -222,9 +222,9 @@ class ClientReader final : public ClientReaderInterface<R> {
   /// Side effect:
   ///   The \a ClientContext associated with this call is updated with
   ///   possible metadata received from the server.
-  ::grpc::Status Finish() override {
+  grpc::Status Finish() override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpClientRecvStatus> ops;
-    ::grpc::Status status;
+    grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
@@ -233,17 +233,17 @@ class ClientReader final : public ClientReaderInterface<R> {
 
  private:
   friend class internal::ClientReaderFactory<R>;
-  ::grpc::ClientContext* context_;
-  ::grpc::CompletionQueue cq_;
+  grpc::ClientContext* context_;
+  grpc::CompletionQueue cq_;
   grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
   /// out. Note that \a context will be used to fill in custom initial
   /// metadata used to send to the server when starting the call.
   template <class W>
-  ClientReader(::grpc::ChannelInterface* channel,
+  ClientReader(grpc::ChannelInterface* channel,
                const grpc::internal::RpcMethod& method,
-               ::grpc::ClientContext* context, const W& request)
+               grpc::ClientContext* context, const W& request)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -282,9 +282,9 @@ template <class W>
 class ClientWriterFactory {
  public:
   template <class R>
-  static ClientWriter<W>* Create(::grpc::ChannelInterface* channel,
+  static ClientWriter<W>* Create(grpc::ChannelInterface* channel,
                                  const grpc::internal::RpcMethod& method,
-                                 ::grpc::ClientContext* context, R* response) {
+                                 grpc::ClientContext* context, R* response) {
     return new ClientWriter<W>(channel, method, context, response);
   }
 };
@@ -319,7 +319,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   ///   Also sends initial metadata if not already sent (using the
   ///   \a ClientContext associated with this call).
   using internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, ::grpc::WriteOptions options) override {
+  bool Write(const W& msg, grpc::WriteOptions options) override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 grpc::internal::CallOpSendMessage,
                                 grpc::internal::CallOpClientSendClose>
@@ -355,8 +355,8 @@ class ClientWriter : public ClientWriterInterface<W> {
   ///   - Attempts to fill in the \a response parameter passed
   ///     to the constructor of this instance with the response
   ///     message from the server.
-  ::grpc::Status Finish() override {
-    ::grpc::Status status;
+  grpc::Status Finish() override {
+    grpc::Status status;
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
     }
@@ -375,9 +375,9 @@ class ClientWriter : public ClientWriterInterface<W> {
   /// single expected response message from the server upon a successful
   /// call to the \a Finish method of this instance.
   template <class R>
-  ClientWriter(::grpc::ChannelInterface* channel,
+  ClientWriter(grpc::ChannelInterface* channel,
                const grpc::internal::RpcMethod& method,
-               ::grpc::ClientContext* context, R* response)
+               grpc::ClientContext* context, R* response)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -396,12 +396,12 @@ class ClientWriter : public ClientWriterInterface<W> {
     }
   }
 
-  ::grpc::ClientContext* context_;
+  grpc::ClientContext* context_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                               grpc::internal::CallOpGenericRecvMessage,
                               grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
-  ::grpc::CompletionQueue cq_;
+  grpc::CompletionQueue cq_;
   grpc::internal::Call call_;
 };
 
@@ -433,9 +433,9 @@ template <class W, class R>
 class ClientReaderWriterFactory {
  public:
   static ClientReaderWriter<W, R>* Create(
-      ::grpc::ChannelInterface* channel,
+      grpc::ChannelInterface* channel,
       const grpc::internal::RpcMethod& method,
-      ::grpc::ClientContext* context) {
+      grpc::ClientContext* context) {
     return new ClientReaderWriter<W, R>(channel, method, context);
   }
 };
@@ -492,7 +492,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   ///   Also sends initial metadata if not already sent (using the
   ///   \a ClientContext associated with this call to fill in values).
   using internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, ::grpc::WriteOptions options) override {
+  bool Write(const W& msg, grpc::WriteOptions options) override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 grpc::internal::CallOpSendMessage,
                                 grpc::internal::CallOpClientSendClose>
@@ -527,14 +527,14 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible trailing metadata sent from the server.
-  ::grpc::Status Finish() override {
+  grpc::Status Finish() override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                                 grpc::internal::CallOpClientRecvStatus>
         ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
     }
-    ::grpc::Status status;
+    grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
     GPR_CODEGEN_ASSERT(cq_.Pluck(&ops));
@@ -544,16 +544,16 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  private:
   friend class internal::ClientReaderWriterFactory<W, R>;
 
-  ::grpc::ClientContext* context_;
-  ::grpc::CompletionQueue cq_;
+  grpc::ClientContext* context_;
+  grpc::CompletionQueue cq_;
   grpc::internal::Call call_;
 
   /// Block to create a stream and write the initial metadata and \a request
   /// out. Note that \a context will be used to fill in custom initial metadata
   /// used to send to the server when starting the call.
-  ClientReaderWriter(::grpc::ChannelInterface* channel,
+  ClientReaderWriter(grpc::ChannelInterface* channel,
                      const grpc::internal::RpcMethod& method,
-                     ::grpc::ClientContext* context)
+                     grpc::ClientContext* context)
       : context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
@@ -663,7 +663,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
   ///   Also sends initial metadata if not already sent (using the
   ///   \a ClientContext associated with this call to fill in values).
   using internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, ::grpc::WriteOptions options) override {
+  bool Write(const W& msg, grpc::WriteOptions options) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
@@ -747,7 +747,7 @@ class ServerReaderWriterBody final {
     return ok;
   }
 
-  bool Write(const W& msg, ::grpc::WriteOptions options) {
+  bool Write(const W& msg, grpc::WriteOptions options) {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
@@ -805,7 +805,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
   ///   Also sends initial metadata if not already sent (using the \a
   ///   ServerContext associated with this call).
   using internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, ::grpc::WriteOptions options) override {
+  bool Write(const W& msg, grpc::WriteOptions options) override {
     return body_.Write(msg, options);
   }
 
@@ -868,7 +868,7 @@ class ServerUnaryStreamer final
   /// \return \a true on success, \a false when the stream has been closed.
   using internal::WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response,
-             ::grpc::WriteOptions options) override {
+             grpc::WriteOptions options) override {
     if (write_done_ || !read_done_) {
       return false;
     }
@@ -934,7 +934,7 @@ class ServerSplitStreamer final
   /// \return \a true on success, \a false when the stream has been closed.
   using internal::WriterInterface<ResponseType>::Write;
   bool Write(const ResponseType& response,
-             ::grpc::WriteOptions options) override {
+             grpc::WriteOptions options) override {
     return read_done_ && body_.Write(response, options);
   }
 

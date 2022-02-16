@@ -138,7 +138,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   if (creds.get()) {
     channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
   }
-  return ::grpc::CreateCustomChannel(server, channel_creds, channel_args);
+  return grpc::CreateCustomChannel(server, channel_creds, channel_args);
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
@@ -153,7 +153,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (cred_type.empty()) {
     if (interceptor_creators.empty()) {
-      return ::grpc::CreateCustomChannel(server, InsecureChannelCredentials(),
+      return grpc::CreateCustomChannel(server, InsecureChannelCredentials(),
                                          channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
@@ -180,7 +180,7 @@ std::shared_ptr<Channel> CreateTestChannel(
       channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
     }
     if (interceptor_creators.empty()) {
-      return ::grpc::CreateCustomChannel(connect_to, channel_creds,
+      return grpc::CreateCustomChannel(connect_to, channel_creds,
                                          channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
@@ -193,7 +193,7 @@ std::shared_ptr<Channel> CreateTestChannel(
     GPR_ASSERT(channel_creds != nullptr);
 
     if (interceptor_creators.empty()) {
-      return ::grpc::CreateCustomChannel(server, channel_creds, channel_args);
+      return grpc::CreateCustomChannel(server, channel_creds, channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
           server, channel_creds, channel_args, std::move(interceptor_creators));

@@ -114,7 +114,7 @@ bool WaitForConnection(int wait_server_seconds) {
 // Test the channelz sampler
 TEST(ChannelzSamplerTest, SimpleTest) {
   // start server
-  ::grpc::channelz::experimental::InitChannelzService();
+  grpc::channelz::experimental::InitChannelzService();
   EchoServerImpl service;
   grpc::ServerBuilder builder;
   auto server_creds =

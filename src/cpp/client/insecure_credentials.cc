@@ -46,7 +46,7 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-    std::shared_ptr<Channel> channel = ::grpc::CreateChannelInternal(
+    std::shared_ptr<Channel> channel = grpc::CreateChannelInternal(
         "", grpc_channel_create(target.c_str(), creds, &channel_args),
         std::move(interceptor_creators));
     grpc_channel_credentials_release(creds);

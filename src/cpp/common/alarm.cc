@@ -46,7 +46,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     Unref();
     return true;
   }
-  void Set(::grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+  void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
@@ -131,7 +131,7 @@ Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
   g_gli_initializer.summon();
 }
 
-void Alarm::SetInternal(::grpc::CompletionQueue* cq, gpr_timespec deadline,
+void Alarm::SetInternal(grpc::CompletionQueue* cq, gpr_timespec deadline,
                         void* tag) {
   // Note that we know that alarm_ is actually an internal::AlarmImpl
   // but we declared it as the base pointer to avoid a forward declaration

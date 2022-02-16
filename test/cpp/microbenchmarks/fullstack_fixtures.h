@@ -77,7 +77,7 @@ class FullstackFixture : public BaseFixture {
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
     if (address.length() > 0) {
-      channel_ = ::grpc::CreateCustomChannel(
+      channel_ = grpc::CreateCustomChannel(
           address, InsecureChannelCredentials(), args);
     } else {
       channel_ = server_->InProcessChannel(args);
@@ -206,7 +206,7 @@ class EndpointPairFixture : public BaseFixture {
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
                                           nullptr);
 
-      channel_ = ::grpc::CreateChannelInternal(
+      channel_ = grpc::CreateChannelInternal(
           "", channel,
           std::vector<std::unique_ptr<
               experimental::ClientInterceptorFactoryInterface>>());
