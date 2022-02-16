@@ -1123,6 +1123,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sys_epoll_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.cc" role="src" />

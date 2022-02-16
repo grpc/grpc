@@ -1224,6 +1224,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/socket_utils_posix.cc',
                       'src/core/lib/iomgr/socket_utils_posix.h',
                       'src/core/lib/iomgr/socket_utils_windows.cc',
+                      'src/core/lib/iomgr/socket_windows.cc',
                       'src/core/lib/iomgr/socket_windows.h',
                       'src/core/lib/iomgr/sys_epoll_wrapper.h',
                       'src/core/lib/iomgr/tcp_client.cc',
