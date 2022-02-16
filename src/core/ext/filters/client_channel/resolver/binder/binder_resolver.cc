@@ -60,6 +60,8 @@ class BinderResolver : public Resolver {
 
 class BinderResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "binder"; }
+
   bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, nullptr);
   }
@@ -70,8 +72,6 @@ class BinderResolverFactory : public ResolverFactory {
     return MakeOrphanable<BinderResolver>(std::move(addresses),
                                           std::move(args));
   }
-
-  const char* scheme() const override { return "binder"; }
 
  private:
   static grpc_error_handle BinderAddrPopulate(

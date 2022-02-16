@@ -989,6 +989,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "xds"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (uri.path().empty() || uri.path().back() == '/') {
       gpr_log(GPR_ERROR,
@@ -1006,8 +1008,6 @@ class XdsResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "xds"; }
 };
 
 }  // namespace
