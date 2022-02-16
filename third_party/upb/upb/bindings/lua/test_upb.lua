@@ -29,7 +29,7 @@
 
 local upb = require "lupb"
 local lunit = require "lunit"
-local upb_test = require "tests.bindings.lua.test_pb"
+local upb_test = require "upb.bindings.lua.test_pb"
 local test_messages_proto3 = require "google.protobuf.test_messages_proto3_pb"
 local test_messages_proto2 = require "google.protobuf.test_messages_proto2_pb"
 local descriptor = require "google.protobuf.descriptor_pb"
@@ -829,6 +829,14 @@ function test_gc()
     m = m.recursive_message
     assert_not_nil(m)
   end
+end
+
+function test_b9440()
+  local m = upb_test.HelloRequest()
+  m.id = 8
+  assert_equal(8, m.id)
+  m.version = "1"
+  assert_equal(8, m.id)
 end
 
 local stats = lunit.main()
