@@ -359,13 +359,13 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "fake"; }
+
   bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<FakeResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "fake"; }
 };
 
 }  // namespace

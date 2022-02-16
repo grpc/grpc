@@ -38,7 +38,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -61,7 +61,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
 static void test_fails(grpc_core::ResolverFactory* factory,
                        const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {

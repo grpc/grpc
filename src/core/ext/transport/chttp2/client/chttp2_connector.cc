@@ -353,10 +353,11 @@ grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
     return nullptr;
   }
   // Add channel arg containing the server URI.
-  UniquePtr<char> canonical_target =
+  std::string canonical_target =
       ResolverRegistry::AddDefaultPrefixIfNeeded(target);
   grpc_arg arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
+      const_cast<char*>(GRPC_ARG_SERVER_URI),
+      const_cast<char*>(canonical_target.c_str()));
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);

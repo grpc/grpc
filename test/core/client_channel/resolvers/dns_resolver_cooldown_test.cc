@@ -291,7 +291,7 @@ static void start_test_under_work_serializer(void* arg) {
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(res_cb_arg->uri_str);
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());

@@ -466,6 +466,8 @@ void AresClientChannelDNSResolver::StartResolvingLocked() {
 //
 class AresClientChannelDNSResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "dns"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (absl::StripPrefix(uri.path(), "/").empty()) {
       gpr_log(GPR_ERROR, "no server name supplied in dns URI");
@@ -477,8 +479,6 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresClientChannelDNSResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "dns"; }
 };
 
 class AresDNSResolver : public DNSResolver {

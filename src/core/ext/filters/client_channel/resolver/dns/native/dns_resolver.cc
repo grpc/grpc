@@ -294,6 +294,8 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
 
 class NativeClientChannelDNSResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "dns"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
@@ -310,8 +312,6 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<NativeClientChannelDNSResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "dns"; }
 };
 
 }  // namespace
