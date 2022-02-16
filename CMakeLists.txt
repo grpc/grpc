@@ -1648,7 +1648,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2568,7 +2567,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   src/core/ext/transport/chttp2/transport/context_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
