@@ -230,6 +230,12 @@ class ActivityContexts : public ContextHolder<Contexts>... {
 // The alternative is an activity that's somehow tied into another system, for
 // instance the type seen in promise_based_filter.h as we're transitioning from
 // the old filter stack to the new system.
+// FreestandingActivity is-a Wakeable, but needs to increment a refcount before
+// returning that Wakeable interface. Additionally, we want to keep
+// FreestandingActivity as small as is possible, since it will be used
+// everywhere. So we use inheritance to provide the Wakeable interface: this
+// makes it zero sized, and we make the inheritance private to prevent
+// accidental casting.
 class FreestandingActivity : public Activity, private Wakeable {
  public:
   Waker MakeOwningWaker() final {
@@ -331,6 +337,10 @@ class FreestandingActivity : public Activity, private Wakeable {
 // It can assume that activity will remain live until RunScheduledWakeup() is
 // invoked, and that a given activity will not be concurrently scheduled again
 // until its RunScheduledWakeup() has been invoked.
+// We use private inheritance here as a way of getting private members for
+// each of the contexts.
+// TODO(ctiller): We can probably reconsider the private inheritance here
+// when we move away from C++11 and have more powerful template features.
 template <class F, class WakeupScheduler, class OnDone, typename... Contexts>
 class PromiseActivity final : public FreestandingActivity,
                               private ActivityContexts<Contexts...> {

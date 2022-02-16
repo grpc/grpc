@@ -3598,7 +3598,7 @@ static void test_fake_call_credentials_compare_success(void) {
 
 static void test_fake_call_credentials_compare_failure(void) {
   auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
-  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
+  auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
   GPR_ASSERT(fake_creds->cmp(md_creds) != 0);
   GPR_ASSERT(md_creds->cmp(fake_creds.get()) != 0);
   grpc_call_credentials_release(md_creds);

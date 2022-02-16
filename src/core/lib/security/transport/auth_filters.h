@@ -33,6 +33,10 @@ extern const grpc_channel_filter grpc_server_auth_filter;
 
 namespace grpc_core {
 
+// Handles calling out to credentials to fill in metadata per call.
+// Use private inheritance to AuthMetadataContext since we don't want to vend
+// this type generally, and we don't want to increase the size of this type if
+// we can help it.
 class ClientAuthFilter final : private AuthMetadataContext {
  public:
   static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args);

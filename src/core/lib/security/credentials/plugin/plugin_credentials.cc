@@ -125,7 +125,7 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
             "asynchronously",
             r->creds(), r.get());
   }
-  for (size_t i = 0; i < num_md; i++) {
+  for (size_t i = 0; i < num_md; ++i) {
     grpc_metadata p;
     p.key = grpc_slice_ref_internal(md[i].key);
     p.value = grpc_slice_ref_internal(md[i].value);
@@ -147,7 +147,7 @@ grpc_plugin_credentials::GetRequestMetadata(
 
   // Create pending_request object.
   auto request = grpc_core::MakeRefCounted<PendingRequest>(
-      this, auth_metadata_context, std::move(initial_metadata));
+      Ref(), auth_metadata_context, std::move(initial_metadata));
   // Invoke the plugin.  The callback holds a ref to us.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",

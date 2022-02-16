@@ -44,10 +44,10 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
  private:
   class PendingRequest : public grpc_core::RefCounted<PendingRequest> {
    public:
-    PendingRequest(grpc_plugin_credentials* creds,
+    PendingRequest(grpc_core::RefCountedPtr<grpc_plugin_credentials> creds,
                    grpc_core::AuthMetadataContext* auth_metadata_context,
                    grpc_core::ClientInitialMetadata initial_metadata)
-        : call_creds_(creds->Ref()),
+        : call_creds_(std::move(creds)),
           context_(auth_metadata_context->MakeLegacyContext(initial_metadata)),
           md_(std::move(initial_metadata)) {}
 
