@@ -25,6 +25,7 @@
 
 #include <string>
 
+#include <gmock/gmock.h>
 #include <openssl/rsa.h>
 
 #include "absl/strings/match.h"
@@ -307,7 +308,7 @@ static grpc_http_response http_response(int status, const char* body) {
 
 /* -- Tests. -- */
 
-static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -321,7 +322,7 @@ static void test_oauth2_token_fetcher_creds_parsing_ok(void) {
   grpc_http_response_destroy(&response);
 }
 
-static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -332,7 +333,7 @@ static void test_oauth2_token_fetcher_creds_parsing_bad_http_status(void) {
   grpc_http_response_destroy(&response);
 }
 
-static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -343,7 +344,7 @@ static void test_oauth2_token_fetcher_creds_parsing_empty_http_body(void) {
   grpc_http_response_destroy(&response);
 }
 
-static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -358,7 +359,7 @@ static void test_oauth2_token_fetcher_creds_parsing_invalid_json(void) {
   grpc_http_response_destroy(&response);
 }
 
-static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -372,7 +373,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token(void) {
   grpc_http_response_destroy(&response);
 }
 
-static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -387,8 +388,7 @@ static void test_oauth2_token_fetcher_creds_parsing_missing_token_type(void) {
   grpc_http_response_destroy(&response);
 }
 
-static void test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime(
-    void) {
+TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
   grpc_core::ExecCtx exec_ctx;
   absl::optional<grpc_core::Slice> token_value;
   grpc_millis token_lifetime;
@@ -501,7 +501,7 @@ class RequestMetadataState {
 
 }  // namespace
 
-static void test_google_iam_creds(void) {
+TEST(CredentialsTest, TestGoogleIamCreds) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
@@ -521,7 +521,7 @@ static void test_google_iam_creds(void) {
   creds->Unref();
 }
 
-static void test_access_token_creds(void) {
+TEST(CredentialsTest, TestAccessTokenCreds) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {GRPC_AUTHORIZATION_METADATA_KEY, "Bearer blah"}};
@@ -565,7 +565,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
 };
 }  // namespace
 
-static void test_channel_oauth2_composite_creds(void) {
+TEST(CredentialsTest, TestChannelOauth2CompositeCreds) {
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* new_args;
   grpc_channel_credentials* channel_creds = new check_channel_oauth2();
@@ -581,7 +581,7 @@ static void test_channel_oauth2_composite_creds(void) {
   grpc_channel_credentials_release(channel_oauth2_creds);
 }
 
-static void test_oauth2_google_iam_composite_creds(void) {
+TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {GRPC_AUTHORIZATION_METADATA_KEY, test_oauth2_bearer_token},
@@ -659,7 +659,7 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
 };
 }  // namespace
 
-static void test_channel_oauth2_google_iam_composite_creds(void) {
+TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* new_args;
   grpc_channel_credentials* channel_creds =
@@ -736,7 +736,7 @@ static int httpcli_get_should_not_be_called(
   return 1;
 }
 
-static void test_compute_engine_creds_success() {
+TEST(CredentialsTest, TestComputeEngineCredsSuccess) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
@@ -772,7 +772,7 @@ static void test_compute_engine_creds_success() {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_compute_engine_creds_failure(void) {
+TEST(CredentialsTest, TestComputeEngineCredsFailure) {
   grpc_core::ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
       "GoogleComputeEngineTokenFetcherCredentials{"
@@ -835,7 +835,7 @@ static int token_httpcli_post_failure(
   return 1;
 }
 
-static void test_refresh_token_creds_success(void) {
+TEST(CredentialsTest, TestRefreshTokenCredsSuccess) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
@@ -871,7 +871,7 @@ static void test_refresh_token_creds_success(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_refresh_token_creds_failure(void) {
+TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
   grpc_core::ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
@@ -894,7 +894,7 @@ static void test_refresh_token_creds_failure(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_valid_sts_creds_options(void) {
+TEST(CredentialsTest, TestValidStsCredsOptions) {
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
       nullptr,                      // resource
@@ -916,7 +916,7 @@ static void test_valid_sts_creds_options(void) {
   GPR_ASSERT(port == "5555");
 }
 
-static void test_invalid_sts_creds_options(void) {
+TEST(CredentialsTest, TestInvalidStsCredsOptions) {
   grpc_sts_credentials_options invalid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
       nullptr,                     // resource
@@ -1080,7 +1080,7 @@ static char* write_tmp_jwt_file(const char* jwt_contents) {
   return path;
 }
 
-static void test_sts_creds_success(void) {
+TEST(CredentialsTest, TestStsCredsSuccess) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
@@ -1131,7 +1131,7 @@ static void test_sts_creds_success(void) {
   gpr_free(actor_token_path);
 }
 
-static void test_sts_creds_token_file_not_found(void) {
+TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -1166,7 +1166,7 @@ static void test_sts_creds_token_file_not_found(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_sts_creds_no_actor_token_success(void) {
+TEST(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
@@ -1216,7 +1216,7 @@ static void test_sts_creds_no_actor_token_success(void) {
   gpr_free(subject_token_path);
 }
 
-static void test_sts_creds_load_token_failure(void) {
+TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
   const char expected_creds_debug_string[] =
       "StsTokenFetcherCredentials{Path:/v1/"
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
@@ -1251,7 +1251,7 @@ static void test_sts_creds_load_token_failure(void) {
   gpr_free(test_signed_jwt_path);
 }
 
-static void test_sts_creds_http_failure(void) {
+TEST(CredentialsTest, TestStsCredsHttpFailure) {
   const char expected_creds_debug_string[] =
       "StsTokenFetcherCredentials{Path:/v1/"
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
@@ -1343,7 +1343,7 @@ static grpc_service_account_jwt_access_credentials* creds_as_jwt(
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 
-static void test_jwt_creds_lifetime(void) {
+TEST(CredentialsTest, TestJwtCredsLifetime) {
   char* json_key_string = test_json_key_str();
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
@@ -1387,7 +1387,7 @@ static void test_jwt_creds_lifetime(void) {
   gpr_free(json_key_string);
 }
 
-static void test_remove_service_from_jwt_uri(void) {
+TEST(CredentialsTest, TestRemoveServiceFromJwtUri) {
   const char wrong_uri[] = "hello world";
   GPR_ASSERT(!grpc_core::RemoveServiceNameFromJwtUri(wrong_uri).ok());
   const char valid_uri[] = "https://foo.com/get/";
@@ -1397,7 +1397,7 @@ static void test_remove_service_from_jwt_uri(void) {
   GPR_ASSERT(strcmp(output->c_str(), expected_uri) == 0);
 }
 
-static void test_jwt_creds_success(void) {
+TEST(CredentialsTest, TestJwtCredsSuccess) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
 
@@ -1442,7 +1442,7 @@ static void test_jwt_creds_success(void) {
   grpc_jwt_encode_and_sign_set_override(nullptr);
 }
 
-static void test_jwt_creds_signing_failure(void) {
+TEST(CredentialsTest, TestJwtCredsSigningFailure) {
   const char expected_creds_debug_string_prefix[] =
       "JWTAccessCredentials{ExpirationTime:";
   char* json_key_string = test_json_key_str();
@@ -1485,7 +1485,7 @@ static bool test_gce_tenancy_checker(void) {
   return g_test_is_on_gce;
 }
 
-static void test_google_default_creds_auth_key(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   char* json_key = test_json_key_str();
@@ -1514,7 +1514,7 @@ static void test_google_default_creds_auth_key(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static void test_google_default_creds_refresh_token(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1535,7 +1535,7 @@ static void test_google_default_creds_refresh_token(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static void test_google_default_creds_external_account_credentials(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentials) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1556,8 +1556,8 @@ static void test_google_default_creds_external_account_credentials(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static void
-test_google_default_creds_external_account_credentials_multi_pattern_sts(void) {
+TEST(CredentialsTest,
+     TestGoogleDefaultCredsExternalAccountCredentialsMultiPatternSts) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1578,8 +1578,8 @@ test_google_default_creds_external_account_credentials_multi_pattern_sts(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static void
-test_google_default_creds_external_account_credentials_multi_pattern_iam(void) {
+TEST(CredentialsTest,
+     TestGoogleDefaultCredsExternalAccountCredentialsMultiPatternIam) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -1619,7 +1619,7 @@ static int default_creds_metadata_server_detection_httpcli_get_success_override(
 
 static std::string null_well_known_creds_path_getter(void) { return ""; }
 
-static void test_google_default_creds_gce(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsGce) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
@@ -1657,7 +1657,7 @@ static void test_google_default_creds_gce(void) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-static void test_google_default_creds_non_gce(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
   grpc_core::ExecCtx exec_ctx;
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
@@ -1706,7 +1706,7 @@ static int default_creds_gce_detection_httpcli_get_failure_override(
   return 1;
 }
 
-static void test_no_google_default_creds(void) {
+TEST(CredentialsTest, TestNoGoogleDefaultCreds) {
   grpc_flush_cached_google_default_credentials();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
   grpc_override_well_known_credentials_path_getter(
@@ -1728,7 +1728,7 @@ static void test_no_google_default_creds(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_google_default_creds_call_creds_specified(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_"}};
   RequestMetadataState* state =
@@ -1788,7 +1788,7 @@ struct fake_call_creds : public grpc_call_credentials {
   }
 };
 
-static void test_google_default_creds_not_default(void) {
+TEST(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
   std::map<std::string, std::string> emd = {{"foo", "oof"}};
   RequestMetadataState* state =
       RequestMetadataState::NewInstance(GRPC_ERROR_NONE, emd);
@@ -1894,7 +1894,7 @@ static char* plugin_debug_string(void* state) {
   return ret;
 }
 
-static void test_metadata_plugin_success(void) {
+TEST(CredentialsTest, TestMetadataPluginSuccess) {
   const char expected_creds_debug_string[] =
       "TestPluginCredentials{state:GET_METADATA_CALLED}";
   plugin_state state = PLUGIN_INITIAL_STATE;
@@ -1924,7 +1924,7 @@ static void test_metadata_plugin_success(void) {
   GPR_ASSERT(state == PLUGIN_DESTROY_CALLED_STATE);
 }
 
-static void test_metadata_plugin_failure(void) {
+TEST(CredentialsTest, TestMetadataPluginFailure) {
   const char expected_creds_debug_string[] =
       "TestPluginCredentials{state:GET_METADATA_CALLED}";
 
@@ -1956,7 +1956,7 @@ static void test_metadata_plugin_failure(void) {
   GPR_ASSERT(state == PLUGIN_DESTROY_CALLED_STATE);
 }
 
-static void test_get_well_known_google_credentials_file_path(void) {
+TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   char* home = gpr_getenv("HOME");
   bool restore_home_env = false;
 #if defined(GRPC_BAZEL_BUILD) && \
@@ -1985,7 +1985,7 @@ static void test_get_well_known_google_credentials_file_path(void) {
   gpr_free(home);
 }
 
-static void test_channel_creds_duplicate_without_call_creds(void) {
+TEST(CredentialsTest, TestChannelCredsDuplicateWithoutCallCreds) {
   const char expected_creds_debug_string[] =
       "AccessTokenCredentials{Token:present}";
   grpc_core::ExecCtx exec_ctx;
@@ -2023,7 +2023,7 @@ typedef struct {
   const char* desired_method_name;
 } auth_metadata_context_test_case;
 
-static void test_auth_metadata_context(void) {
+TEST(CredentialsTest, TestAuthMetadataContext) {
   auth_metadata_context_test_case test_cases[] = {
       // No service nor method.
       {"https", "www.foo.com", "", "https://www.foo.com", ""},
@@ -2321,7 +2321,7 @@ class TestExternalAccountCredentials final
   }
 };
 
-static void test_external_account_creds_success(void) {
+TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2361,7 +2361,7 @@ static void test_external_account_creds_success(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_external_account_creds_success_with_url_encode(void) {
+TEST(CredentialsTest, TestExternalAccountCredsSuccessWithUrlEncode) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2392,8 +2392,8 @@ static void test_external_account_creds_success_with_url_encode(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void
-test_external_account_creds_success_with_service_account_impersonation(void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredsSuccessWithServiceAccountImpersonation) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer service_account_impersonation_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2427,7 +2427,7 @@ test_external_account_creds_success_with_service_account_impersonation(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_external_account_creds_failure_invalid_token_url(void) {
+TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2461,9 +2461,8 @@ static void test_external_account_creds_failure_invalid_token_url(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void
-test_external_account_creds_failure_invalid_service_account_impersonation_url(
-    void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredsFailureInvalidServiceAccountImpersonationUrl) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2499,9 +2498,8 @@ test_external_account_creds_failure_invalid_service_account_impersonation_url(
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void
-test_external_account_creds_failure_token_exchange_response_missing_access_token(
-    void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredsFailureTokenExchangeResponseMissingAccessToken) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2538,7 +2536,7 @@ test_external_account_creds_failure_token_exchange_response_missing_access_token
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_url_external_account_creds_success_format_text(void) {
+TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2577,8 +2575,8 @@ static void test_url_external_account_creds_success_format_text(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void
-test_url_external_account_creds_success_with_qurey_params_format_text(void) {
+TEST(CredentialsTest,
+     TestUrlExternalAccountCredsSuccessWithQureyParamsFormatText) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2617,7 +2615,7 @@ test_url_external_account_creds_success_with_qurey_params_format_text(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_url_external_account_creds_success_format_json(void) {
+TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2656,8 +2654,8 @@ static void test_url_external_account_creds_success_format_json(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void
-test_url_external_account_creds_failure_invalid_credential_source_url(void) {
+TEST(CredentialsTest,
+     TestUrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
@@ -2685,7 +2683,7 @@ test_url_external_account_creds_failure_invalid_credential_source_url(void) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_file_external_account_creds_success_format_text(void) {
+TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2729,7 +2727,7 @@ static void test_file_external_account_creds_success_format_text(void) {
   gpr_free(subject_token_path);
 }
 
-static void test_file_external_account_creds_success_format_json(void) {
+TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2781,7 +2779,7 @@ static void test_file_external_account_creds_success_format_json(void) {
   gpr_free(subject_token_path);
 }
 
-static void test_file_external_account_creds_failure_file_not_found(void) {
+TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2820,8 +2818,7 @@ static void test_file_external_account_creds_failure_file_not_found(void) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_file_external_account_creds_failure_invalid_json_content(
-    void) {
+TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -2873,7 +2870,7 @@ static void test_file_external_account_creds_failure_invalid_json_content(
   gpr_free(subject_token_path);
 }
 
-static void test_aws_external_account_creds_success(void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2911,8 +2908,7 @@ static void test_aws_external_account_creds_success(void) {
   grpc_core::HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void test_aws_external_account_creds_success_path_region_env_keys_url(
-    void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2952,8 +2948,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
   gpr_unsetenv("AWS_REGION");
 }
 
-static void
-test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysUrl) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2993,9 +2989,8 @@ test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
   gpr_unsetenv("AWS_DEFAULT_REGION");
 }
 
-static void
-test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
-    void) {
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsSuccessPathDuplicateRegionEnvKeysUrl) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -3038,8 +3033,7 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
   gpr_unsetenv("AWS_DEFAULT_REGION");
 }
 
-static void test_aws_external_account_creds_success_path_region_url_keys_env(
-    void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -3083,8 +3077,7 @@ static void test_aws_external_account_creds_success_path_region_url_keys_env(
   gpr_unsetenv("AWS_SESSION_TOKEN");
 }
 
-static void test_aws_external_account_creds_success_path_region_env_keys_env(
-    void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -3130,8 +3123,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
   gpr_unsetenv("AWS_SESSION_TOKEN");
 }
 
-static void
-test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysEnv) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -3177,9 +3170,8 @@ test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
   gpr_unsetenv("AWS_SESSION_TOKEN");
 }
 
-static void
-test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
-    void) {
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsSuccessPathDuplicateRegionEnvKeysEnv) {
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -3228,8 +3220,8 @@ test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
   gpr_unsetenv("AWS_SESSION_TOKEN");
 }
 
-static void test_aws_external_account_creds_failure_unmatched_environment_id(
-    void) {
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json credential_source = grpc_core::Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id,
@@ -3259,7 +3251,7 @@ static void test_aws_external_account_creds_failure_unmatched_environment_id(
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_aws_external_account_creds_failure_invalid_region_url(void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -3302,7 +3294,7 @@ static void test_aws_external_account_creds_failure_invalid_region_url(void) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_aws_external_account_creds_failure_invalid_url(void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -3344,7 +3336,7 @@ static void test_aws_external_account_creds_failure_invalid_url(void) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_aws_external_account_creds_failure_missing_role_name(void) {
+TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -3387,9 +3379,8 @@ static void test_aws_external_account_creds_failure_missing_role_name(void) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void
-test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
-    void) {
+TEST(CredentialsTest,
+     TestAwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
                                             nullptr, nullptr};
@@ -3432,7 +3423,7 @@ test_aws_external_account_creds_failure_invalid_regional_cred_verification_url(
   GRPC_ERROR_UNREF(error);
 }
 
-static void test_external_account_credentials_create_success(void) {
+TEST(CredentialsTest, TestExternalAccountCredentialsCreateSuccess) {
   // url credentials
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
@@ -3485,25 +3476,25 @@ static void test_external_account_credentials_create_success(void) {
   aws_creds->Unref();
 }
 
-static void
-test_external_account_credentials_create_failure_invalid_json_format(void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredentialsCreateFailureInvalidJsonFormat) {
   const char* options_string = "invalid_json";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
   GPR_ASSERT(creds == nullptr);
 }
 
-static void
-test_external_account_credentials_create_failure_invalid_options_format(void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredentialsCreateFailureInvalidOptionsFormat) {
   const char* options_string = "{\"random_key\":\"random_value\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
   GPR_ASSERT(creds == nullptr);
 }
 
-static void
-test_external_account_credentials_create_failure_invalid_options_credential_source(
-    void) {
+TEST(
+    CredentialsTest,
+    TestExternalAccountCredentialsCreateFailureInvalidOptionsCredentialSource) {
   const char* options_string =
       "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
       "token_type\":\"subject_token_type\",\"service_account_impersonation_"
@@ -3518,8 +3509,8 @@ test_external_account_credentials_create_failure_invalid_options_credential_sour
   GPR_ASSERT(creds == nullptr);
 }
 
-static void test_external_account_credentials_create_success_workforce_pool(
-    void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredentialsCreateSuccessWorkforcePool) {
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"//iam.googleapis.com/"
       "locations/location/workforcePools/pool/providers/provider\",\"subject_"
@@ -3540,9 +3531,8 @@ static void test_external_account_credentials_create_success_workforce_pool(
   url_creds->Unref();
 }
 
-static void
-test_external_account_credentials_create_failure_invalid_workforce_pool_audience(
-    void) {
+TEST(CredentialsTest,
+     TestExternalAccountCredentialsCreateFailureInvalidWorkforcePoolAudience) {
   const char* url_options_string =
       "{\"type\":\"external_account\",\"audience\":\"invalid_workforce_pool_"
       "audience\",\"subject_"
@@ -3562,7 +3552,7 @@ test_external_account_credentials_create_failure_invalid_workforce_pool_audience
   GPR_ASSERT(url_creds == nullptr);
 }
 
-static void test_insecure_credentials_compare_success(void) {
+TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {
   auto* insecure_creds_1 = grpc_insecure_credentials_create();
   auto* insecure_creds_2 = grpc_insecure_credentials_create();
   GPR_ASSERT(insecure_creds_1->cmp(insecure_creds_2) == 0);
@@ -3575,7 +3565,7 @@ static void test_insecure_credentials_compare_success(void) {
   grpc_channel_credentials_release(insecure_creds_2);
 }
 
-static void test_insecure_credentials_compare_failure(void) {
+TEST(CredentialsTest, TestInsecureCredentialsCompareFailure) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_creds = grpc_fake_transport_security_credentials_create();
   GPR_ASSERT(insecure_creds->cmp(fake_creds) != 0);
@@ -3589,12 +3579,12 @@ static void test_insecure_credentials_compare_failure(void) {
   grpc_channel_credentials_release(fake_creds);
 }
 
-static void test_fake_call_credentials_compare_success(void) {
+TEST(CredentialsTest, TestFakeCallCredentialsCompareSuccess) {
   auto call_creds = grpc_core::MakeRefCounted<fake_call_creds>();
   GPR_ASSERT(call_creds->cmp(call_creds.get()) == 0);
 }
 
-static void test_fake_call_credentials_compare_failure(void) {
+TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
   auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
   GPR_ASSERT(fake_creds->cmp(md_creds) != 0);
@@ -3603,87 +3593,10 @@ static void test_fake_call_credentials_compare_failure(void) {
 }
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_oauth2_token_fetcher_creds_parsing_ok();
-  test_oauth2_token_fetcher_creds_parsing_bad_http_status();
-  test_oauth2_token_fetcher_creds_parsing_empty_http_body();
-  test_oauth2_token_fetcher_creds_parsing_invalid_json();
-  test_oauth2_token_fetcher_creds_parsing_missing_token();
-  test_oauth2_token_fetcher_creds_parsing_missing_token_type();
-  test_oauth2_token_fetcher_creds_parsing_missing_token_lifetime();
-  test_google_iam_creds();
-  test_access_token_creds();
-  test_channel_oauth2_composite_creds();
-  test_oauth2_google_iam_composite_creds();
-  test_channel_oauth2_google_iam_composite_creds();
-  test_compute_engine_creds_success();
-  test_compute_engine_creds_failure();
-  test_refresh_token_creds_success();
-  test_refresh_token_creds_failure();
-  test_valid_sts_creds_options();
-  test_invalid_sts_creds_options();
-  test_sts_creds_success();
-  test_sts_creds_no_actor_token_success();
-  test_sts_creds_load_token_failure();
-  test_sts_creds_http_failure();
-  test_sts_creds_token_file_not_found();
-  test_jwt_creds_lifetime();
-  test_jwt_creds_success();
-  test_jwt_creds_signing_failure();
-  test_remove_service_from_jwt_uri();
-  test_google_default_creds_auth_key();
-  test_google_default_creds_refresh_token();
-  test_google_default_creds_external_account_credentials();
-  test_google_default_creds_external_account_credentials_multi_pattern_sts();
-  test_google_default_creds_external_account_credentials_multi_pattern_iam();
-  test_google_default_creds_gce();
-  test_google_default_creds_non_gce();
-  test_no_google_default_creds();
-  test_google_default_creds_call_creds_specified();
-  test_google_default_creds_not_default();
-  test_metadata_plugin_success();
-  test_metadata_plugin_failure();
-  test_get_well_known_google_credentials_file_path();
-  test_channel_creds_duplicate_without_call_creds();
-  test_auth_metadata_context();
-  test_external_account_creds_success();
-  test_external_account_creds_success_with_url_encode();
-  test_external_account_creds_success_with_service_account_impersonation();
-  test_external_account_creds_failure_invalid_token_url();
-  test_external_account_creds_failure_invalid_service_account_impersonation_url();
-  test_external_account_creds_failure_token_exchange_response_missing_access_token();
-  test_url_external_account_creds_success_format_text();
-  test_url_external_account_creds_success_format_json();
-  test_url_external_account_creds_failure_invalid_credential_source_url();
-  test_url_external_account_creds_success_with_qurey_params_format_text();
-  test_file_external_account_creds_success_format_text();
-  test_file_external_account_creds_success_format_json();
-  test_file_external_account_creds_failure_file_not_found();
-  test_file_external_account_creds_failure_invalid_json_content();
-  test_aws_external_account_creds_success();
-  test_aws_external_account_creds_success_path_region_env_keys_url();
-  test_aws_external_account_creds_success_path_default_region_env_keys_url();
-  test_aws_external_account_creds_success_path_duplicate_region_env_keys_url();
-  test_aws_external_account_creds_success_path_region_url_keys_env();
-  test_aws_external_account_creds_success_path_region_env_keys_env();
-  test_aws_external_account_creds_success_path_default_region_env_keys_env();
-  test_aws_external_account_creds_success_path_duplicate_region_env_keys_env();
-  test_aws_external_account_creds_failure_unmatched_environment_id();
-  test_aws_external_account_creds_failure_invalid_region_url();
-  test_aws_external_account_creds_failure_invalid_url();
-  test_aws_external_account_creds_failure_missing_role_name();
-  test_aws_external_account_creds_failure_invalid_regional_cred_verification_url();
-  test_external_account_credentials_create_success();
-  test_external_account_credentials_create_failure_invalid_json_format();
-  test_external_account_credentials_create_failure_invalid_options_format();
-  test_external_account_credentials_create_failure_invalid_options_credential_source();
-  test_external_account_credentials_create_success_workforce_pool();
-  test_external_account_credentials_create_failure_invalid_workforce_pool_audience();
-  test_insecure_credentials_compare_success();
-  test_insecure_credentials_compare_failure();
-  test_fake_call_credentials_compare_success();
-  test_fake_call_credentials_compare_failure();
+  auto result = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return result;
 }
