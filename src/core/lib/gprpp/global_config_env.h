@@ -121,7 +121,7 @@ class GlobalConfigEnvString : public GlobalConfigEnv {
   static char g_env_str_##name[] = #name;                                  \
   static ::grpc_core::GlobalConfigEnvString g_env_##name(g_env_str_##name, \
                                                          default_value);   \
-  ::grpc_core::UniquePtr<char> gpr_global_config_get_##name() {            \
+  grpc_core::UniquePtr<char> gpr_global_config_get_##name() {              \
     return g_env_##name.Get();                                             \
   }                                                                        \
   void gpr_global_config_set_##name(const char* value) {                   \

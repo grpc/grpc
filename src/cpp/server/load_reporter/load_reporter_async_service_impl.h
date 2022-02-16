@@ -142,14 +142,14 @@ class LoadReporterAsyncServiceImpl
 
     // The data for RPC communication with the load reportee.
     ServerContext ctx_;
-    ::grpc::lb::v1::LoadReportRequest request_;
+    grpc::lb::v1::LoadReportRequest request_;
 
     // The members passed down from LoadReporterAsyncServiceImpl.
     ServerCompletionQueue* cq_;
     LoadReporterAsyncServiceImpl* service_;
     LoadReporter* load_reporter_;
     ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
-                            ::grpc::lb::v1::LoadReportRequest>
+                            grpc::lb::v1::LoadReportRequest>
         stream_;
 
     // The status of the RPC progress.
