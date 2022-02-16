@@ -907,7 +907,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       // Find the plugin and generate the policy.
       auto lb_policy_config =
           XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
-              plugin_type, google_protobuf_Any_type_url(any), context.arena);
+              plugin_type, google_protobuf_Any_value(any), context.arena);
       if (lb_policy_config.ok()) {
         rds_update->cluster_specifier_plugin_map[std::move(name)] =
             std::move(lb_policy_config.value());

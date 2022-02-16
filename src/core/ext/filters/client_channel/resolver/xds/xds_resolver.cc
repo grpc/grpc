@@ -926,15 +926,7 @@ XdsResolver::CreateServiceConfig() {
     if (absl::ConsumePrefix(&child_name, "cluster_specifier_plugin:")) {
       clusters.push_back(absl::StrFormat(
           "      \"%s\":{\n"
-          "        \"childPolicy\":[ {\n"
-          "          \"rls_experimental\":{\n"
-          "            \"routeLookupConfig\": \"%s\"\n"
-          "           },\n"
-          "           \"childPolicy\":[ {\n"
-          "             \"cds_experimental\": {}}\n"
-          "           ],\n"
-          "           \"childPolicyConfigTargetFieldName\": \"cluster\"\n"
-          "        } ]\n"
+          "        \"childPolicy\": \"%s\"\n"
           "       }",
           cluster.first,
           cluster_specifier_plugin_map_[std::string(child_name)]));

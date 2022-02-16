@@ -46,10 +46,17 @@ void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
 absl::StatusOr<std::string>
 XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     upb_strview serialized_plugin_config, upb_arena* arena) const {
-  const auto* plugin_config = grpc_lookup_v1_RouteLookupConfig_parse(
+  const auto* specifier = grpc_lookup_v1_RouteLookupClusterSpecifier_parse(
       serialized_plugin_config.data, serialized_plugin_config.size, arena);
-  if (plugin_config == nullptr) {
+  if (specifier == nullptr) {
     return absl::InvalidArgumentError("Could not parse plugin config");
+  }
+  const auto* plugin_config =
+      grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(specifier);
+  if (plugin_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "Could not get route lookup config from route lookup cluster "
+        "specifier");
   }
   Json::Object result;
   // parse array of grpc keybuilders
@@ -167,7 +174,20 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   // parse defaultTarget
   result["defaultTarget"] = UpbStringToStdString(
       grpc_lookup_v1_RouteLookupConfig_default_target(plugin_config));
-  return Json(result).Dump();
+  // Construct the config
+  Json::Object rls_policy;
+  rls_policy["routeLookupConfig"] = result;
+  Json::Object cds_policy;
+  cds_policy["cds_experimental"] = Json();
+  Json::Array child_policy;
+  child_policy.emplace_back(cds_policy);
+  rls_policy["childPolicy"] = child_policy;
+  rls_policy["childPolicyConfigTargetFieldName"] = "cluster";
+  Json::Object policy;
+  policy["rls_experimental"] = rls_policy;
+  Json::Array policies;
+  policies.emplace_back(policy);
+  return Json(policies).Dump();
 }
 
 const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
