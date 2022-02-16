@@ -2324,7 +2324,9 @@
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/utf8_range.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/naive.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-neon.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-sse.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
