@@ -570,7 +570,7 @@ LANG_RELEASE_MATRIX = {
             ('v1.38.1', ReleaseInfo(testcases_file='csharp__v1.20.0')),
             ('v1.39.1', ReleaseInfo(testcases_file='csharp__v1.20.0')),
             ('v1.41.1', ReleaseInfo(testcases_file='csharp__v1.20.0')),
-            ('v1.42.0', ReleaseInfo()),
+            ('v1.42.0', ReleaseInfo(testcases_file='csharp__v1.20.0')),
             ('v1.43.0', ReleaseInfo()),
             ('v1.44.0', ReleaseInfo()),
         ]),
