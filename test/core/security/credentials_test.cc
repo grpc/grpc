@@ -3593,7 +3593,7 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
 }
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
