@@ -203,11 +203,27 @@ def run_summary(bm_name, cfg, base_json_name):
 
 
 def collect_summary(bm_name, args):
-    heading('Summary: %s [no counters]' % bm_name)
-    text(run_summary(bm_name, 'opt', bm_name))
-    heading('Summary: %s [with counters]' % bm_name)
-    text(run_summary(bm_name, 'counters', bm_name))
+    # no counters, run microbenchmark and add summary
+    # both to HTML report and to console.
+    nocounters_heading = 'Summary: %s [no counters]' % bm_name
+    nocounters_summary = run_summary(bm_name, 'opt', bm_name)
+    heading(nocounters_heading)
+    text(nocounters_summary)
+    print(nocounters_heading)
+    print(nocounters_summary)
+
+    # with counters, run microbenchmark and add summary
+    # both to HTML report and to console.
+    counter_heading = 'Summary: %s [with counters]' % bm_name
+    counters_summary = run_summary(bm_name, 'counters', bm_name)
+    heading(counter_heading)
+    text(counters_summary)
+    print(counters_heading)
+    print(counters_summary)
+
     if args.bq_result_table:
+        # TODO(jtattermusch): currently there is no way to differentiate
+        # between the "counters" and "opt" data in bigquery.
         with open('%s.csv' % bm_name, 'w') as f:
             f.write(
                 subprocess.check_output([
