@@ -385,8 +385,8 @@ class ProtocArtifact:
                     timeout_seconds=60 * 60,
                     use_workspace=True)
         else:
-            generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
-            environ['generator'] = generator
+            vs_tools_architecture = self.arch  # architecture selector passed to vcvarsall.bat
+            environ['ARCHITECTURE'] = vs_tools_architecture
             return create_jobspec(
                 self.name,
                 ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
