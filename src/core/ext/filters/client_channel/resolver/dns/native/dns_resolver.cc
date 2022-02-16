@@ -318,8 +318,9 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 }  // namespace
 
 void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
-  UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (gpr_stricmp(resolver.get(), "native") == 0) {
+  static const char* const resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver).release();
+  if (gpr_stricmp(resolver, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     builder->resolver_registry()->RegisterResolverFactory(
         absl::make_unique<NativeClientChannelDNSResolverFactory>());
