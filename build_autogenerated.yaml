@@ -1148,7 +1148,6 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2244,7 +2243,6 @@ libs:
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -4326,14 +4324,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_security_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/credentials_test.cc
-  deps:
-  - grpc_test_util
 - name: thd_test
   build: test
   language: c
@@ -7878,6 +7868,15 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
+- name: test_core_security_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/credentials_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_slice_slice_test
   gtest: true
   build: test

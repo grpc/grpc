@@ -63,6 +63,12 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   void pending_request_remove_locked(pending_request* pending_request);
 
   grpc_metadata_credentials_plugin plugin_;
