@@ -643,15 +643,15 @@ class ContextAllocator {
 }  // namespace grpc
 
 static_assert(
-    std::is_base_of<::grpc::ServerContextBase, ::grpc::ServerContext>::value,
+    std::is_base_of<grpc::ServerContextBase, ::grpc::ServerContext>::value,
     "improper base class");
-static_assert(std::is_base_of<::grpc::ServerContextBase,
+static_assert(std::is_base_of<grpc::ServerContextBase,
                               ::grpc::CallbackServerContext>::value,
               "improper base class");
-static_assert(sizeof(::grpc::ServerContextBase) ==
-                  sizeof(::grpc::ServerContext),
+static_assert(sizeof(grpc::ServerContextBase) ==
+                  sizeof(grpc::ServerContext),
               "wrong size");
-static_assert(sizeof(::grpc::ServerContextBase) ==
+static_assert(sizeof(grpc::ServerContextBase) ==
                   sizeof(::grpc::CallbackServerContext),
               "wrong size");
 

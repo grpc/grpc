@@ -166,7 +166,7 @@ class ServerInterface : public internal::CallHook {
 
   class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
-    BaseAsyncRequest(ServerInterface* server, ::grpc::ServerContext* context,
+    BaseAsyncRequest(ServerInterface* server, grpc::ServerContext* context,
                      internal::ServerAsyncStreamingInterface* stream,
                      ::grpc::CompletionQueue* call_cq,
                      ::grpc::ServerCompletionQueue* notification_cq, void* tag,
@@ -180,7 +180,7 @@ class ServerInterface : public internal::CallHook {
 
    protected:
     ServerInterface* const server_;
-    ::grpc::ServerContext* const context_;
+    grpc::ServerContext* const context_;
     internal::ServerAsyncStreamingInterface* const stream_;
     ::grpc::CompletionQueue* const call_cq_;
     ::grpc::ServerCompletionQueue* const notification_cq_;
@@ -196,7 +196,7 @@ class ServerInterface : public internal::CallHook {
   class RegisteredAsyncRequest : public BaseAsyncRequest {
    public:
     RegisteredAsyncRequest(ServerInterface* server,
-                           ::grpc::ServerContext* context,
+                           grpc::ServerContext* context,
                            internal::ServerAsyncStreamingInterface* stream,
                            ::grpc::CompletionQueue* call_cq,
                            ::grpc::ServerCompletionQueue* notification_cq,
@@ -226,7 +226,7 @@ class ServerInterface : public internal::CallHook {
    public:
     NoPayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
                           ServerInterface* server,
-                          ::grpc::ServerContext* context,
+                          grpc::ServerContext* context,
                           internal::ServerAsyncStreamingInterface* stream,
                           ::grpc::CompletionQueue* call_cq,
                           ::grpc::ServerCompletionQueue* notification_cq,
@@ -244,7 +244,7 @@ class ServerInterface : public internal::CallHook {
   class PayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     PayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                        ServerInterface* server, ::grpc::ServerContext* context,
+                        ServerInterface* server, grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
                         ::grpc::ServerCompletionQueue* notification_cq,
@@ -314,7 +314,7 @@ class ServerInterface : public internal::CallHook {
 
   template <class Message>
   void RequestAsyncCall(internal::RpcServiceMethod* method,
-                        ::grpc::ServerContext* context,
+                        grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
                         ::grpc::ServerCompletionQueue* notification_cq,
@@ -325,7 +325,7 @@ class ServerInterface : public internal::CallHook {
   }
 
   void RequestAsyncCall(internal::RpcServiceMethod* method,
-                        ::grpc::ServerContext* context,
+                        grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc::CompletionQueue* call_cq,
                         ::grpc::ServerCompletionQueue* notification_cq,

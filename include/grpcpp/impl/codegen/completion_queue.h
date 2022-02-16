@@ -290,7 +290,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
-  friend class ::grpc::ServerContextBase;
+  friend class grpc::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;

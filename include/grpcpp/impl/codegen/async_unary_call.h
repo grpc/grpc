@@ -296,7 +296,7 @@ template <class W>
 class ServerAsyncResponseWriter final
     : public ::grpc::internal::ServerAsyncStreamingInterface {
  public:
-  explicit ServerAsyncResponseWriter(::grpc::ServerContext* ctx)
+  explicit ServerAsyncResponseWriter(grpc::ServerContext* ctx)
       : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
 
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
@@ -394,7 +394,7 @@ class ServerAsyncResponseWriter final
   void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
 
   ::grpc::internal::Call call_;
-  ::grpc::ServerContext* ctx_;
+  grpc::ServerContext* ctx_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_buf_;
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,

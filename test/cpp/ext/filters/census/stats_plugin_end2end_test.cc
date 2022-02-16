@@ -55,7 +55,7 @@ const auto TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
 class EchoServer final : public EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* context,
+  ::grpc::Status Echo(grpc::ServerContext* context,
                       const EchoRequest* request,
                       EchoResponse* response) override {
     for (const auto& metadata : context->client_metadata()) {

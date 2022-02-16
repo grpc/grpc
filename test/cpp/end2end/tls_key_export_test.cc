@@ -60,7 +60,7 @@ namespace testing {
 namespace {
 
 class EchoServer final : public EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* /*context*/,
+  ::grpc::Status Echo(grpc::ServerContext* /*context*/,
                       const EchoRequest* request,
                       EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {

@@ -100,7 +100,7 @@ template <class ServiceType, class RequestType, class ResponseType,
 class RpcMethodHandler : public ::grpc::internal::MethodHandler {
  public:
   RpcMethodHandler(
-      std::function<::grpc::Status(ServiceType*, ::grpc::ServerContext*,
+      std::function<::grpc::Status(ServiceType*, grpc::ServerContext*,
                                    const RequestType*, ResponseType*)>
           func,
       ServiceType* service)
@@ -112,7 +112,7 @@ class RpcMethodHandler : public ::grpc::internal::MethodHandler {
     if (status.ok()) {
       status = CatchingFunctionHandler([this, &param, &rsp] {
         return func_(service_,
-                     static_cast<::grpc::ServerContext*>(param.server_context),
+                     static_cast<grpc::ServerContext*>(param.server_context),
                      static_cast<RequestType*>(param.request), &rsp);
       });
       static_cast<RequestType*>(param.request)->~RequestType();
@@ -131,7 +131,7 @@ class RpcMethodHandler : public ::grpc::internal::MethodHandler {
 
  private:
   /// Application provided rpc handler function.
-  std::function<::grpc::Status(ServiceType*, ::grpc::ServerContext*,
+  std::function<::grpc::Status(ServiceType*, grpc::ServerContext*,
                                const RequestType*, ResponseType*)>
       func_;
   // The class the above handler function lives in.
@@ -143,7 +143,7 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler : public ::grpc::internal::MethodHandler {
  public:
   ClientStreamingHandler(
-      std::function<::grpc::Status(ServiceType*, ::grpc::ServerContext*,
+      std::function<::grpc::Status(ServiceType*, grpc::ServerContext*,
                                    ServerReader<RequestType>*, ResponseType*)>
           func,
       ServiceType* service)
@@ -151,12 +151,12 @@ class ClientStreamingHandler : public ::grpc::internal::MethodHandler {
 
   void RunHandler(const HandlerParameter& param) final {
     ServerReader<RequestType> reader(
-        param.call, static_cast<::grpc::ServerContext*>(param.server_context));
+        param.call, static_cast<grpc::ServerContext*>(param.server_context));
     ResponseType rsp;
     ::grpc::Status status = CatchingFunctionHandler([this, &param, &reader,
                                                      &rsp] {
       return func_(service_,
-                   static_cast<::grpc::ServerContext*>(param.server_context),
+                   static_cast<grpc::ServerContext*>(param.server_context),
                    &reader, &rsp);
     });
 
@@ -180,7 +180,7 @@ class ClientStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<::grpc::Status(ServiceType*, ::grpc::ServerContext*,
+  std::function<::grpc::Status(ServiceType*, grpc::ServerContext*,
                                ServerReader<RequestType>*, ResponseType*)>
       func_;
   ServiceType* service_;
@@ -191,7 +191,7 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler : public ::grpc::internal::MethodHandler {
  public:
   ServerStreamingHandler(std::function<::grpc::Status(
-                             ServiceType*, ::grpc::ServerContext*,
+                             ServiceType*, grpc::ServerContext*,
                              const RequestType*, ServerWriter<ResponseType>*)>
                              func,
                          ServiceType* service)
@@ -202,10 +202,10 @@ class ServerStreamingHandler : public ::grpc::internal::MethodHandler {
     if (status.ok()) {
       ServerWriter<ResponseType> writer(
           param.call,
-          static_cast<::grpc::ServerContext*>(param.server_context));
+          static_cast<grpc::ServerContext*>(param.server_context));
       status = CatchingFunctionHandler([this, &param, &writer] {
         return func_(service_,
-                     static_cast<::grpc::ServerContext*>(param.server_context),
+                     static_cast<grpc::ServerContext*>(param.server_context),
                      static_cast<RequestType*>(param.request), &writer);
       });
       static_cast<RequestType*>(param.request)->~RequestType();
@@ -247,7 +247,7 @@ class ServerStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<::grpc::Status(ServiceType*, ::grpc::ServerContext*,
+  std::function<::grpc::Status(ServiceType*, grpc::ServerContext*,
                                const RequestType*, ServerWriter<ResponseType>*)>
       func_;
   ServiceType* service_;
@@ -264,14 +264,14 @@ template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler : public ::grpc::internal::MethodHandler {
  public:
   explicit TemplatedBidiStreamingHandler(
-      std::function<::grpc::Status(::grpc::ServerContext*, Streamer*)> func)
+      std::function<::grpc::Status(grpc::ServerContext*, Streamer*)> func)
       : func_(func), write_needed_(WriteNeeded) {}
 
   void RunHandler(const HandlerParameter& param) final {
     Streamer stream(param.call,
-                    static_cast<::grpc::ServerContext*>(param.server_context));
+                    static_cast<grpc::ServerContext*>(param.server_context));
     ::grpc::Status status = CatchingFunctionHandler([this, &param, &stream] {
-      return func_(static_cast<::grpc::ServerContext*>(param.server_context),
+      return func_(static_cast<grpc::ServerContext*>(param.server_context),
                    &stream);
     });
 
@@ -300,7 +300,7 @@ class TemplatedBidiStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<::grpc::Status(::grpc::ServerContext*, Streamer*)> func_;
+  std::function<::grpc::Status(grpc::ServerContext*, Streamer*)> func_;
   const bool write_needed_;
 };
 
@@ -310,7 +310,7 @@ class BidiStreamingHandler
           ServerReaderWriter<ResponseType, RequestType>, false> {
  public:
   BidiStreamingHandler(std::function<::grpc::Status(
-                           ServiceType*, ::grpc::ServerContext*,
+                           ServiceType*, grpc::ServerContext*,
                            ServerReaderWriter<ResponseType, RequestType>*)>
                            func,
                        ServiceType* service)
@@ -318,7 +318,7 @@ class BidiStreamingHandler
       : TemplatedBidiStreamingHandler<
             ServerReaderWriter<ResponseType, RequestType>, false>(
             [func, service](
-                ::grpc::ServerContext* ctx,
+                grpc::ServerContext* ctx,
                 ServerReaderWriter<ResponseType, RequestType>* streamer) {
               return func(service, ctx, streamer);
             }) {}
@@ -331,7 +331,7 @@ class StreamedUnaryHandler
  public:
   explicit StreamedUnaryHandler(
       std::function<
-          ::grpc::Status(::grpc::ServerContext*,
+          ::grpc::Status(grpc::ServerContext*,
                          ServerUnaryStreamer<RequestType, ResponseType>*)>
           func)
       : TemplatedBidiStreamingHandler<
@@ -346,7 +346,7 @@ class SplitServerStreamingHandler
  public:
   explicit SplitServerStreamingHandler(
       std::function<
-          ::grpc::Status(::grpc::ServerContext*,
+          ::grpc::Status(grpc::ServerContext*,
                          ServerSplitStreamer<RequestType, ResponseType>*)>
           func)
       : TemplatedBidiStreamingHandler<
@@ -362,7 +362,7 @@ class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
   explicit ErrorMethodHandler(const std::string& message) : message_(message) {}
 
   template <class T>
-  static void FillOps(::grpc::ServerContextBase* context,
+  static void FillOps(grpc::ServerContextBase* context,
                       const std::string& message, T* ops) {
     ::grpc::Status status(code, message);
     if (!context->sent_initial_metadata_) {
