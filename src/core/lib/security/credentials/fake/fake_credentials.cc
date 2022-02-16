@@ -49,6 +49,13 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
     return grpc_fake_channel_security_connector_create(
         this->Ref(), std::move(call_creds), target, args);
   }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
 };
 
 class grpc_fake_server_credentials final : public grpc_server_credentials {
