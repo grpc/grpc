@@ -94,7 +94,7 @@ class Alarm : private ::grpc::GrpcLibraryCodegen {
                    void* tag);
   void SetInternal(gpr_timespec deadline, std::function<void(bool)> f);
 
-  ::grpc::internal::CompletionQueueTag* alarm_;
+  grpc::internal::CompletionQueueTag* alarm_;
 };
 
 }  // namespace grpc

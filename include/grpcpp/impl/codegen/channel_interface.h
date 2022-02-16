@@ -112,26 +112,26 @@ class ChannelInterface {
   template <class W, class R>
   friend class ::grpc::ClientReaderWriter;
   template <class R>
-  friend class ::grpc::internal::ClientAsyncReaderFactory;
+  friend class grpc::internal::ClientAsyncReaderFactory;
   template <class W>
-  friend class ::grpc::internal::ClientAsyncWriterFactory;
+  friend class grpc::internal::ClientAsyncWriterFactory;
   template <class W, class R>
-  friend class ::grpc::internal::ClientAsyncReaderWriterFactory;
-  friend class ::grpc::internal::ClientAsyncResponseReaderHelper;
+  friend class grpc::internal::ClientAsyncReaderWriterFactory;
+  friend class grpc::internal::ClientAsyncResponseReaderHelper;
   template <class W, class R>
-  friend class ::grpc::internal::ClientCallbackReaderWriterFactory;
+  friend class grpc::internal::ClientCallbackReaderWriterFactory;
   template <class R>
-  friend class ::grpc::internal::ClientCallbackReaderFactory;
+  friend class grpc::internal::ClientCallbackReaderFactory;
   template <class W>
-  friend class ::grpc::internal::ClientCallbackWriterFactory;
-  friend class ::grpc::internal::ClientCallbackUnaryFactory;
+  friend class grpc::internal::ClientCallbackWriterFactory;
+  friend class grpc::internal::ClientCallbackUnaryFactory;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::CallbackUnaryCallImpl;
-  friend class ::grpc::internal::RpcMethod;
+  friend class grpc::internal::CallbackUnaryCallImpl;
+  friend class grpc::internal::RpcMethod;
   friend class ::grpc::experimental::DelegatingChannel;
-  friend class ::grpc::internal::InterceptedChannel;
+  friend class grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ::grpc::ClientContext* context,
                                     ::grpc::CompletionQueue* cq) = 0;

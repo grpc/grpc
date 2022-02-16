@@ -181,10 +181,10 @@ class ClientAsyncReaderFactory {
   template <class W>
   static ClientAsyncReader<R>* Create(::grpc::ChannelInterface* channel,
                                       ::grpc::CompletionQueue* cq,
-                                      const ::grpc::internal::RpcMethod& method,
+                                      const grpc::internal::RpcMethod& method,
                                       ::grpc::ClientContext* context,
                                       const W& request, bool start, void* tag) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+    grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReader<R>)))
         ClientAsyncReader<R>(call, context, request, start, tag);
@@ -261,7 +261,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
  private:
   friend class internal::ClientAsyncReaderFactory<R>;
   template <class W>
-  ClientAsyncReader(::grpc::internal::Call call, ::grpc::ClientContext* context,
+  ClientAsyncReader(grpc::internal::Call call, ::grpc::ClientContext* context,
                     const W& request, bool start, void* tag)
       : context_(context), call_(call), started_(start) {
     // TODO(ctiller): don't assert
@@ -282,19 +282,19 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
   }
 
   ::grpc::ClientContext* context_;
-  ::grpc::internal::Call call_;
+  grpc::internal::Call call_;
   bool started_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpClientSendClose>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpClientSendClose>
       init_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
       meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpRecvMessage<R>>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
+                              grpc::internal::CallOpRecvMessage<R>>
       read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpClientRecvStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
+                              grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
 };
 
@@ -329,10 +329,10 @@ class ClientAsyncWriterFactory {
   template <class R>
   static ClientAsyncWriter<W>* Create(::grpc::ChannelInterface* channel,
                                       ::grpc::CompletionQueue* cq,
-                                      const ::grpc::internal::RpcMethod& method,
+                                      const grpc::internal::RpcMethod& method,
                                       ::grpc::ClientContext* context,
                                       R* response, bool start, void* tag) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+    grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncWriter<W>)))
         ClientAsyncWriter<W>(call, context, response, start, tag);
@@ -427,7 +427,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
  private:
   friend class internal::ClientAsyncWriterFactory<W>;
   template <class R>
-  ClientAsyncWriter(::grpc::internal::Call call, ::grpc::ClientContext* context,
+  ClientAsyncWriter(grpc::internal::Call call, ::grpc::ClientContext* context,
                     R* response, bool start, void* tag)
       : context_(context), call_(call), started_(start) {
     finish_ops_.RecvMessage(response);
@@ -451,17 +451,17 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
   }
 
   ::grpc::ClientContext* context_;
-  ::grpc::internal::Call call_;
+  grpc::internal::Call call_;
   bool started_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
       meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpClientSendClose>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpClientSendClose>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpGenericRecvMessage,
-                              ::grpc::internal::CallOpClientRecvStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
+                              grpc::internal::CallOpGenericRecvMessage,
+                              grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
 };
 
@@ -494,9 +494,9 @@ class ClientAsyncReaderWriterFactory {
   /// used to send to the server when starting the call.
   static ClientAsyncReaderWriter<W, R>* Create(
       ::grpc::ChannelInterface* channel, ::grpc::CompletionQueue* cq,
-      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+      const grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
       bool start, void* tag) {
-    ::grpc::internal::Call call = channel->CreateCall(method, context, cq);
+    grpc::internal::Call call = channel->CreateCall(method, context, cq);
 
     return new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncReaderWriter<W, R>)))
@@ -600,7 +600,7 @@ class ClientAsyncReaderWriter final
 
  private:
   friend class internal::ClientAsyncReaderWriterFactory<W, R>;
-  ClientAsyncReaderWriter(::grpc::internal::Call call,
+  ClientAsyncReaderWriter(grpc::internal::Call call,
                           ::grpc::ClientContext* context, bool start, void* tag)
       : context_(context), call_(call), started_(start) {
     if (start) {
@@ -622,25 +622,25 @@ class ClientAsyncReaderWriter final
   }
 
   ::grpc::ClientContext* context_;
-  ::grpc::internal::Call call_;
+  grpc::internal::Call call_;
   bool started_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
       meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpRecvMessage<R>>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
+                              grpc::internal::CallOpRecvMessage<R>>
       read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpClientSendClose>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpClientSendClose>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              ::grpc::internal::CallOpClientRecvStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
+                              grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
 };
 
 template <class W, class R>
 class ServerAsyncReaderInterface
-    : public ::grpc::internal::ServerAsyncStreamingInterface,
+    : public grpc::internal::ServerAsyncStreamingInterface,
       public internal::AsyncReaderInterface<R> {
  public:
   /// Indicate that the stream is to be finished with a certain status code
@@ -781,22 +781,22 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(grpc::internal::Call* call) override { call_ = *call; }
 
-  ::grpc::internal::Call call_;
+  grpc::internal::Call call_;
   grpc::ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
       finish_ops_;
 };
 
 template <class W>
 class ServerAsyncWriterInterface
-    : public ::grpc::internal::ServerAsyncStreamingInterface,
+    : public grpc::internal::ServerAsyncStreamingInterface,
       public internal::AsyncWriterInterface<W> {
  public:
   /// Indicate that the stream is to be finished with a certain status code.
@@ -927,7 +927,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   }
 
  private:
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(grpc::internal::Call* call) override { call_ = *call; }
 
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
@@ -941,23 +941,23 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     }
   }
 
-  ::grpc::internal::Call call_;
+  grpc::internal::Call call_;
   grpc::ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpServerSendStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpServerSendStatus>
       finish_ops_;
 };
 
 /// Server-side interface for asynchronous bi-directional streaming.
 template <class W, class R>
 class ServerAsyncReaderWriterInterface
-    : public ::grpc::internal::ServerAsyncStreamingInterface,
+    : public grpc::internal::ServerAsyncStreamingInterface,
       public internal::AsyncWriterInterface<W>,
       public internal::AsyncReaderInterface<R> {
  public:
@@ -1101,7 +1101,7 @@ class ServerAsyncReaderWriter final
  private:
   friend class ::grpc::Server;
 
-  void BindCall(::grpc::internal::Call* call) override { call_ = *call; }
+  void BindCall(grpc::internal::Call* call) override { call_ = *call; }
 
   template <class T>
   void EnsureInitialMetadataSent(T* ops) {
@@ -1115,17 +1115,17 @@ class ServerAsyncReaderWriter final
     }
   }
 
-  ::grpc::internal::Call call_;
+  grpc::internal::Call call_;
   grpc::ServerContext* ctx_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage,
-                              ::grpc::internal::CallOpServerSendStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
       write_ops_;
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpServerSendStatus>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpServerSendStatus>
       finish_ops_;
 };
 

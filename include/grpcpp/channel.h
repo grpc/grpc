@@ -52,7 +52,7 @@ void ChannelResetConnectionBackoff(Channel* channel);
 
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel final : public ::grpc::ChannelInterface,
-                      public ::grpc::internal::CallHook,
+                      public grpc::internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
                       private ::grpc::GrpcLibraryCodegen {
  public:
@@ -71,7 +71,7 @@ class Channel final : public ::grpc::ChannelInterface,
 
  private:
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class grpc::internal::BlockingUnaryCallImpl;
   friend class ::grpc::testing::ChannelTestPeer;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
   friend std::shared_ptr<Channel> grpc::CreateChannelInternal(
@@ -79,17 +79,17 @@ class Channel final : public ::grpc::ChannelInterface,
       std::vector<std::unique_ptr<
           ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
-  friend class ::grpc::internal::InterceptedChannel;
+  friend class grpc::internal::InterceptedChannel;
   Channel(const std::string& host, grpc_channel* c_channel,
           std::vector<std::unique_ptr<
               ::grpc::experimental::ClientInterceptorFactoryInterface>>
               interceptor_creators);
 
-  ::grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
+  grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
                                     ::grpc::ClientContext* context,
                                     ::grpc::CompletionQueue* cq) override;
-  void PerformOpsOnCall(::grpc::internal::CallOpSetInterface* ops,
-                        ::grpc::internal::Call* call) override;
+  void PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
+                        grpc::internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
@@ -100,8 +100,8 @@ class Channel final : public ::grpc::ChannelInterface,
 
   ::grpc::CompletionQueue* CallbackCQ() override;
 
-  ::grpc::internal::Call CreateCallInternal(
-      const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+  grpc::internal::Call CreateCallInternal(
+      const grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
       ::grpc::CompletionQueue* cq, size_t interceptor_pos) override;
 
   const std::string host_;

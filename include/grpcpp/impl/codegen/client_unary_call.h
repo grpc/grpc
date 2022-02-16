@@ -63,7 +63,7 @@ class BlockingUnaryCallImpl {
     ::grpc::CompletionQueue cq(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
         nullptr});  // Pluckable completion queue
-    ::grpc::internal::Call call(channel->CreateCall(method, context, &cq));
+    grpc::internal::Call call(channel->CreateCall(method, context, &cq));
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpRecvInitialMetadata, CallOpRecvMessage<OutputMessage>,
               CallOpClientSendClose, CallOpClientRecvStatus>

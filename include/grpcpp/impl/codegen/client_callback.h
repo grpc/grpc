@@ -49,7 +49,7 @@ template <class InputMessage, class OutputMessage,
           class BaseInputMessage = InputMessage,
           class BaseOutputMessage = OutputMessage>
 void CallbackUnaryCall(::grpc::ChannelInterface* channel,
-                       const ::grpc::internal::RpcMethod& method,
+                       const grpc::internal::RpcMethod& method,
                        ::grpc::ClientContext* context,
                        const InputMessage* request, OutputMessage* result,
                        std::function<void(::grpc::Status)> on_completion) {
@@ -65,7 +65,7 @@ template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl {
  public:
   CallbackUnaryCallImpl(::grpc::ChannelInterface* channel,
-                        const ::grpc::internal::RpcMethod& method,
+                        const grpc::internal::RpcMethod& method,
                         ::grpc::ClientContext* context,
                         const InputMessage* request, OutputMessage* result,
                         std::function<void(::grpc::Status)> on_completion) {
@@ -74,7 +74,7 @@ class CallbackUnaryCallImpl {
     grpc::internal::Call call(channel->CreateCall(method, context, cq));
 
     using FullCallOpSet = grpc::internal::CallOpSet<
-        ::grpc::internal::CallOpSendInitialMetadata,
+        grpc::internal::CallOpSendInitialMetadata,
         grpc::internal::CallOpSendMessage,
         grpc::internal::CallOpRecvInitialMetadata,
         grpc::internal::CallOpRecvMessage<OutputMessage>,
@@ -712,7 +712,7 @@ template <class Request, class Response>
 class ClientCallbackReaderWriterFactory {
  public:
   static void Create(::grpc::ChannelInterface* channel,
-                     const ::grpc::internal::RpcMethod& method,
+                     const grpc::internal::RpcMethod& method,
                      ::grpc::ClientContext* context,
                      ClientBidiReactor<Request, Response>* reactor) {
     grpc::internal::Call call =
@@ -810,7 +810,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
   friend class ClientCallbackReaderFactory<Response>;
 
   template <class Request>
-  ClientCallbackReaderImpl(::grpc::internal::Call call,
+  ClientCallbackReaderImpl(grpc::internal::Call call,
                            ::grpc::ClientContext* context, Request* request,
                            ClientReadReactor<Response>* reactor)
       : context_(context), call_(call), reactor_(reactor) {
@@ -872,7 +872,7 @@ class ClientCallbackReaderFactory {
  public:
   template <class Request>
   static void Create(::grpc::ChannelInterface* channel,
-                     const ::grpc::internal::RpcMethod& method,
+                     const grpc::internal::RpcMethod& method,
                      ::grpc::ClientContext* context, const Request* request,
                      ClientReadReactor<Response>* reactor) {
     grpc::internal::Call call =
@@ -995,7 +995,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
   friend class ClientCallbackWriterFactory<Request>;
 
   template <class Response>
-  ClientCallbackWriterImpl(::grpc::internal::Call call,
+  ClientCallbackWriterImpl(grpc::internal::Call call,
                            ::grpc::ClientContext* context, Response* response,
                            ClientWriteReactor<Request>* reactor)
       : context_(context),
@@ -1101,7 +1101,7 @@ class ClientCallbackWriterFactory {
  public:
   template <class Response>
   static void Create(::grpc::ChannelInterface* channel,
-                     const ::grpc::internal::RpcMethod& method,
+                     const grpc::internal::RpcMethod& method,
                      ::grpc::ClientContext* context, Response* response,
                      ClientWriteReactor<Request>* reactor) {
     grpc::internal::Call call =
@@ -1159,7 +1159,7 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
   friend class ClientCallbackUnaryFactory;
 
   template <class Request, class Response>
-  ClientCallbackUnaryImpl(::grpc::internal::Call call,
+  ClientCallbackUnaryImpl(grpc::internal::Call call,
                           ::grpc::ClientContext* context, Request* request,
                           Response* response, ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
@@ -1212,7 +1212,7 @@ class ClientCallbackUnaryFactory {
   template <class Request, class Response, class BaseRequest = Request,
             class BaseResponse = Response>
   static void Create(::grpc::ChannelInterface* channel,
-                     const ::grpc::internal::RpcMethod& method,
+                     const grpc::internal::RpcMethod& method,
                      ::grpc::ClientContext* context, const Request* request,
                      Response* response, ClientUnaryReactor* reactor) {
     grpc::internal::Call call =

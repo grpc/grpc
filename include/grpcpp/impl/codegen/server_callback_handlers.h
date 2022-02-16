@@ -30,7 +30,7 @@ namespace grpc {
 namespace internal {
 
 template <class RequestType, class ResponseType>
-class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
+class CallbackUnaryHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackUnaryHandler(
       std::function<ServerUnaryReactor*(::grpc::CallbackServerContext*,
@@ -60,7 +60,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
 
     ServerUnaryReactor* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = ::grpc::internal::CatchingReactorGetter<ServerUnaryReactor>(
+      reactor = grpc::internal::CatchingReactorGetter<ServerUnaryReactor>(
           get_reactor_,
           static_cast<::grpc::CallbackServerContext*>(param.server_context),
           call->request(), call->response());
@@ -177,7 +177,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
     ServerCallbackUnaryImpl(
-        ::grpc::CallbackServerContext* ctx, ::grpc::internal::Call* call,
+        ::grpc::CallbackServerContext* ctx, grpc::internal::Call* call,
         MessageHolder<RequestType, ResponseType>* allocator_state,
         std::function<void()> call_requester)
         : ctx_(ctx),
@@ -218,17 +218,17 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
       return reactor_.load(std::memory_order_relaxed);
     }
 
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
-    ::grpc::internal::CallbackWithSuccessTag meta_tag_;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage,
-                                ::grpc::internal::CallOpServerSendStatus>
+    grpc::internal::CallbackWithSuccessTag meta_tag_;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                grpc::internal::CallOpSendMessage,
+                                grpc::internal::CallOpServerSendStatus>
         finish_ops_;
-    ::grpc::internal::CallbackWithSuccessTag finish_tag_;
+    grpc::internal::CallbackWithSuccessTag finish_tag_;
 
     ::grpc::CallbackServerContext* const ctx_;
-    ::grpc::internal::Call call_;
+    grpc::internal::Call call_;
     MessageHolder<RequestType, ResponseType>* const allocator_state_;
     std::function<void()> call_requester_;
     // reactor_ can always be loaded/stored with relaxed memory ordering because
@@ -249,7 +249,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
 };
 
 template <class RequestType, class ResponseType>
-class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
+class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackClientStreamingHandler(
       std::function<ServerReadReactor<RequestType>*(
@@ -275,7 +275,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
 
     ServerReadReactor<RequestType>* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = ::grpc::internal::CatchingReactorGetter<
+      reactor = grpc::internal::CatchingReactorGetter<
           ServerReadReactor<RequestType>>(
           get_reactor_,
           static_cast<::grpc::CallbackServerContext*>(param.server_context),
@@ -367,7 +367,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
     friend class CallbackClientStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderImpl(::grpc::CallbackServerContext* ctx,
-                             ::grpc::internal::Call* call,
+                             grpc::internal::Call* call,
                              std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
@@ -415,21 +415,21 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
       return reactor_.load(std::memory_order_relaxed);
     }
 
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
-    ::grpc::internal::CallbackWithSuccessTag meta_tag_;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage,
-                                ::grpc::internal::CallOpServerSendStatus>
+    grpc::internal::CallbackWithSuccessTag meta_tag_;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                grpc::internal::CallOpSendMessage,
+                                grpc::internal::CallOpServerSendStatus>
         finish_ops_;
-    ::grpc::internal::CallbackWithSuccessTag finish_tag_;
-    ::grpc::internal::CallOpSet<
-        ::grpc::internal::CallOpRecvMessage<RequestType>>
+    grpc::internal::CallbackWithSuccessTag finish_tag_;
+    grpc::internal::CallOpSet<
+        grpc::internal::CallOpRecvMessage<RequestType>>
         read_ops_;
-    ::grpc::internal::CallbackWithSuccessTag read_tag_;
+    grpc::internal::CallbackWithSuccessTag read_tag_;
 
     ::grpc::CallbackServerContext* const ctx_;
-    ::grpc::internal::Call call_;
+    grpc::internal::Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
     // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
@@ -441,7 +441,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
 };
 
 template <class RequestType, class ResponseType>
-class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
+class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackServerStreamingHandler(
       std::function<ServerWriteReactor<ResponseType>*(
@@ -468,7 +468,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
 
     ServerWriteReactor<ResponseType>* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = ::grpc::internal::CatchingReactorGetter<
+      reactor = grpc::internal::CatchingReactorGetter<
           ServerWriteReactor<ResponseType>>(
           get_reactor_,
           static_cast<::grpc::CallbackServerContext*>(param.server_context),
@@ -592,7 +592,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
     friend class CallbackServerStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackWriterImpl(::grpc::CallbackServerContext* ctx,
-                             ::grpc::internal::Call* call,
+                             grpc::internal::Call* call,
                              const RequestType* req,
                              std::function<void()> call_requester)
         : ctx_(ctx),
@@ -644,21 +644,21 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
       return reactor_.load(std::memory_order_relaxed);
     }
 
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
-    ::grpc::internal::CallbackWithSuccessTag meta_tag_;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage,
-                                ::grpc::internal::CallOpServerSendStatus>
+    grpc::internal::CallbackWithSuccessTag meta_tag_;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                grpc::internal::CallOpSendMessage,
+                                grpc::internal::CallOpServerSendStatus>
         finish_ops_;
-    ::grpc::internal::CallbackWithSuccessTag finish_tag_;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage>
+    grpc::internal::CallbackWithSuccessTag finish_tag_;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                grpc::internal::CallOpSendMessage>
         write_ops_;
-    ::grpc::internal::CallbackWithSuccessTag write_tag_;
+    grpc::internal::CallbackWithSuccessTag write_tag_;
 
     ::grpc::CallbackServerContext* const ctx_;
-    ::grpc::internal::Call call_;
+    grpc::internal::Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
     // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
@@ -670,7 +670,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
 };
 
 template <class RequestType, class ResponseType>
-class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
+class CallbackBidiHandler : public grpc::internal::MethodHandler {
  public:
   explicit CallbackBidiHandler(
       std::function<ServerBidiReactor<RequestType, ResponseType>*(
@@ -695,7 +695,7 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
 
     ServerBidiReactor<RequestType, ResponseType>* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = ::grpc::internal::CatchingReactorGetter<
+      reactor = grpc::internal::CatchingReactorGetter<
           ServerBidiReactor<RequestType, ResponseType>>(
           get_reactor_,
           static_cast<::grpc::CallbackServerContext*>(param.server_context));
@@ -809,7 +809,7 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
     friend class CallbackBidiHandler<RequestType, ResponseType>;
 
     ServerCallbackReaderWriterImpl(::grpc::CallbackServerContext* ctx,
-                                   ::grpc::internal::Call* call,
+                                   grpc::internal::Call* call,
                                    std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
@@ -861,25 +861,25 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
       return reactor_.load(std::memory_order_relaxed);
     }
 
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
-    ::grpc::internal::CallbackWithSuccessTag meta_tag_;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage,
-                                ::grpc::internal::CallOpServerSendStatus>
+    grpc::internal::CallbackWithSuccessTag meta_tag_;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                grpc::internal::CallOpSendMessage,
+                                grpc::internal::CallOpServerSendStatus>
         finish_ops_;
-    ::grpc::internal::CallbackWithSuccessTag finish_tag_;
-    ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                ::grpc::internal::CallOpSendMessage>
+    grpc::internal::CallbackWithSuccessTag finish_tag_;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                                grpc::internal::CallOpSendMessage>
         write_ops_;
-    ::grpc::internal::CallbackWithSuccessTag write_tag_;
-    ::grpc::internal::CallOpSet<
-        ::grpc::internal::CallOpRecvMessage<RequestType>>
+    grpc::internal::CallbackWithSuccessTag write_tag_;
+    grpc::internal::CallOpSet<
+        grpc::internal::CallOpRecvMessage<RequestType>>
         read_ops_;
-    ::grpc::internal::CallbackWithSuccessTag read_tag_;
+    grpc::internal::CallbackWithSuccessTag read_tag_;
 
     ::grpc::CallbackServerContext* const ctx_;
-    ::grpc::internal::Call call_;
+    grpc::internal::Call call_;
     std::function<void()> call_requester_;
     // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
     std::atomic<ServerBidiReactor<RequestType, ResponseType>*> reactor_;

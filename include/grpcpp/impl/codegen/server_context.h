@@ -359,32 +359,32 @@ class ServerContextBase {
   template <class W>
   friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::internal::ServerReaderWriterBody;
+  friend class grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
-  friend void ::grpc::internal::UnaryRunHandlerHelper(
+  friend void grpc::internal::UnaryRunHandlerHelper(
       const internal::MethodHandler::HandlerParameter& param, ResponseType* rsp,
       Status& status);
   template <class ServiceType, class RequestType, class ResponseType,
             class BaseRequestType, class BaseResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  friend class grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class grpc::internal::TemplatedBidiStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackUnaryHandler;
+  friend class grpc::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackClientStreamingHandler;
+  friend class grpc::internal::CallbackClientStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackServerStreamingHandler;
+  friend class grpc::internal::CallbackServerStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackBidiHandler;
+  friend class grpc::internal::CallbackBidiHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class grpc::internal::ErrorMethodHandler;
   template <class Base>
-  friend class ::grpc::internal::FinishOnlyReactor;
+  friend class grpc::internal::FinishOnlyReactor;
   friend class ::grpc::ClientContext;
   friend class ::grpc::GenericServerContext;
   friend class ::grpc::GenericCallbackServerContext;
@@ -396,10 +396,10 @@ class ServerContextBase {
   class CompletionOp;
 
   void BeginCompletionOp(
-      ::grpc::internal::Call* call, std::function<void(bool)> callback,
-      ::grpc::internal::ServerCallbackCall* callback_controller);
+      grpc::internal::Call* call, std::function<void(bool)> callback,
+      grpc::internal::ServerCallbackCall* callback_controller);
   /// Return the tag queued by BeginCompletionOp()
-  ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
+  grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
   void set_call(grpc_call* call) { call_.call = call; }
 
@@ -408,7 +408,7 @@ class ServerContextBase {
   uint32_t initial_metadata_flags() const { return 0; }
 
   ::grpc::experimental::ServerRpcInfo* set_server_rpc_info(
-      const char* method, ::grpc::internal::RpcMethod::RpcType type,
+      const char* method, grpc::internal::RpcMethod::RpcType type,
       const std::vector<std::unique_ptr<
           ::grpc::experimental::ServerInterceptorFactoryInterface>>& creators) {
     if (!creators.empty()) {
@@ -444,13 +444,13 @@ class ServerContextBase {
   CompletionOp* completion_op_ = nullptr;
   bool has_notify_when_done_tag_ = false;
   void* async_notify_when_done_tag_ = nullptr;
-  ::grpc::internal::CallbackWithSuccessTag completion_tag_;
+  grpc::internal::CallbackWithSuccessTag completion_tag_;
 
   gpr_timespec deadline_;
   ::grpc::CompletionQueue* cq_ = nullptr;
   bool sent_initial_metadata_ = false;
   mutable std::shared_ptr<const ::grpc::AuthContext> auth_context_;
-  mutable ::grpc::internal::MetadataMap client_metadata_;
+  mutable grpc::internal::MetadataMap client_metadata_;
   std::multimap<std::string, std::string> initial_metadata_;
   std::multimap<std::string, std::string> trailing_metadata_;
 
@@ -458,8 +458,8 @@ class ServerContextBase {
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 
-  ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              ::grpc::internal::CallOpSendMessage>
+  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+                              grpc::internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_ = false;
 
@@ -508,7 +508,7 @@ class ServerContextBase {
 
    private:
     void CallOnDone() override {}
-    ::grpc::internal::ServerReactor* reactor() override { return reactor_; }
+    grpc::internal::ServerReactor* reactor() override { return reactor_; }
 
     ::grpc::ServerUnaryReactor* const reactor_;
     std::atomic_bool status_set_{false};

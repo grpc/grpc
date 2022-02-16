@@ -64,7 +64,7 @@ class ServerReaderWriterBody;
 
 template <class ResponseType>
 void UnaryRunHandlerHelper(
-    const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
+    const grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
     ::grpc::Status&);
 template <class ServiceType, class RequestType, class ResponseType,
           class BaseRequestType, class BaseResponseType>
@@ -277,30 +277,30 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   template <class W>
   friend class ::grpc::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::internal::ServerReaderWriterBody;
+  friend class grpc::internal::ServerReaderWriterBody;
   template <class ResponseType>
-  friend void ::grpc::internal::UnaryRunHandlerHelper(
-      const ::grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
+  friend void grpc::internal::UnaryRunHandlerHelper(
+      const grpc::internal::MethodHandler::HandlerParameter&, ResponseType*,
       ::grpc::Status&);
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class grpc::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class grpc::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class grpc::internal::ErrorMethodHandler;
   friend class grpc::ServerContextBase;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class grpc::internal::BlockingUnaryCallImpl;
 
   // Friends that need access to constructor for callback CQ
   friend class ::grpc::Channel;
 
   // For access to Register/CompleteAvalanching
   template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
-  friend class ::grpc::internal::CallOpSet;
+  friend class grpc::internal::CallOpSet;
 
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
@@ -321,7 +321,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
 
   /// Wraps \a grpc_completion_queue_pluck.
   /// \warning Must not be mixed with calls to \a Next.
-  bool Pluck(::grpc::internal::CompletionQueueTag* tag) {
+  bool Pluck(grpc::internal::CompletionQueueTag* tag) {
     auto deadline =
         ::grpc::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
     while (true) {
@@ -344,7 +344,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// implementation to simple call the other TryPluck function with a zero
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
-  void TryPluck(::grpc::internal::CompletionQueueTag* tag) {
+  void TryPluck(grpc::internal::CompletionQueueTag* tag) {
     auto deadline =
         ::grpc::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
     auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
@@ -361,7 +361,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   ///
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
-  void TryPluck(::grpc::internal::CompletionQueueTag* tag,
+  void TryPluck(grpc::internal::CompletionQueueTag* tag,
                 gpr_timespec deadline) {
     auto ev = ::grpc::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);

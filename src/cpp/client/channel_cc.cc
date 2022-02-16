@@ -44,7 +44,7 @@
 
 namespace grpc {
 
-static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 Channel::Channel(const std::string& host, grpc_channel* channel,
                  std::vector<std::unique_ptr<
                      ::grpc::experimental::ClientInterceptorFactoryInterface>>
@@ -108,8 +108,8 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 }  // namespace experimental
 
-::grpc::internal::Call Channel::CreateCallInternal(
-    const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+grpc::internal::Call Channel::CreateCallInternal(
+    const grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
     ::grpc::CompletionQueue* cq, size_t interceptor_pos) {
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
@@ -151,17 +151,17 @@ void ChannelResetConnectionBackoff(Channel* channel) {
       interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
-  return ::grpc::internal::Call(c_call, this, cq, info);
+  return grpc::internal::Call(c_call, this, cq, info);
 }
 
-::grpc::internal::Call Channel::CreateCall(
-    const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
+grpc::internal::Call Channel::CreateCall(
+    const grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
     CompletionQueue* cq) {
   return CreateCallInternal(method, context, cq, 0);
 }
 
-void Channel::PerformOpsOnCall(::grpc::internal::CallOpSetInterface* ops,
-                               ::grpc::internal::Call* call) {
+void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
+                               grpc::internal::Call* call) {
   ops->FillOps(
       call);  // Make a copy of call. It's fine since Call just has pointers
 }
@@ -177,7 +177,7 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
 
 namespace {
 
-class TagSaver final : public ::grpc::internal::CompletionQueueTag {
+class TagSaver final : public grpc::internal::CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
   ~TagSaver() override {}

@@ -34,7 +34,7 @@
 namespace grpc {
 
 namespace internal {
-class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
+class AlarmImpl : public grpc::internal::CompletionQueueTag {
  public:
   AlarmImpl() : cq_(nullptr), tag_(nullptr) {
     gpr_ref_init(&refs_, 1);
@@ -125,7 +125,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
 };
 }  // namespace internal
 
-static ::grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 
 Alarm::Alarm() : alarm_(new internal::AlarmImpl()) {
   g_gli_initializer.summon();

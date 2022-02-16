@@ -208,7 +208,7 @@ class ServerInterface : public internal::CallHook {
       if (done_intercepting_) {
         return BaseAsyncRequest::FinalizeResult(tag, status);
       }
-      call_wrapper_ = ::grpc::internal::Call(
+      call_wrapper_ = grpc::internal::Call(
           call_, server_, call_cq_, server_->max_receive_message_size(),
           context_->set_server_rpc_info(name_, type_,
                                         *server_->interceptor_creators()));
