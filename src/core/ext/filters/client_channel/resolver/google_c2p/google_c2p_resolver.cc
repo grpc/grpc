@@ -370,6 +370,12 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
 
 class GoogleCloud2ProdResolverFactory : public ResolverFactory {
  public:
+  // TODO(roth): Remove experimental suffix once this code is proven stable,
+  // and update the scheme in google_c2p_resolver_test.cc when doing so.
+  absl::string_view scheme() const override {
+    return "google-c2p-experimental";
+  }
+
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
@@ -382,10 +388,6 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<GoogleCloud2ProdResolver>(std::move(args));
   }
-
-  // TODO(roth): Remove experimental suffix once this code is proven stable,
-  // and update the scheme in google_c2p_resolver_test.cc when doing so.
-  const char* scheme() const override { return "google-c2p-experimental"; }
 };
 
 }  // namespace

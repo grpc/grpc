@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_LIB_RESOLVER_RESOLVER_REGISTRY_H
 #define GRPC_CORE_LIB_RESOLVER_RESOLVER_REGISTRY_H
@@ -28,7 +26,12 @@
 namespace grpc_core {
 
 class ResolverRegistry {
-  class State;
+ private:
+  // Forward declaration needed to use this in Builder.
+  struct State {
+    std::map<absl::string_view, std::unique_ptr<ResolverFactory>> factories;
+    std::string default_prefix;
+  };
 
  public:
   /// Methods used to create and populate the ResolverRegistry.
@@ -37,17 +40,16 @@ class ResolverRegistry {
   class Builder {
    public:
     Builder();
-    ~Builder();
 
     /// Sets the default URI prefix to \a default_prefix.
-    void SetDefaultPrefix(const char* default_prefix);
+    void SetDefaultPrefix(std::string default_prefix);
 
     /// Registers a resolver factory.  The factory will be used to create a
     /// resolver for any URI whose scheme matches that of the factory.
     void RegisterResolverFactory(std::unique_ptr<ResolverFactory> factory);
 
     /// Returns true iff scheme already has a registered factory.
-    bool HasResolverFactory(const char* scheme) const;
+    bool HasResolverFactory(absl::string_view scheme) const;
 
     /// Wipe everything in the registry and reset to empty.
     void Reset();
@@ -55,10 +57,8 @@ class ResolverRegistry {
     ResolverRegistry Build();
 
    private:
-    std::unique_ptr<State> state_;
+    ResolverRegistry::State state_;
   };
-
-  ~ResolverRegistry();
 
   ResolverRegistry(const ResolverRegistry&) = delete;
   ResolverRegistry& operator=(const ResolverRegistry&) = delete;
@@ -82,7 +82,7 @@ class ResolverRegistry {
   /// which all resolver calls will be run. \a result_handler is used to return
   /// results from the resolver.
   OrphanablePtr<Resolver> CreateResolver(
-      const char* target, const grpc_channel_args* args,
+      absl::string_view target, const grpc_channel_args* args,
       grpc_pollset_set* pollset_set,
       std::shared_ptr<WorkSerializer> work_serializer,
       std::unique_ptr<Resolver::ResultHandler> result_handler) const;
@@ -91,18 +91,21 @@ class ResolverRegistry {
   std::string GetDefaultAuthority(absl::string_view target) const;
 
   /// Returns \a target with the default prefix prepended, if needed.
-  UniquePtr<char> AddDefaultPrefixIfNeeded(const char* target) const;
+  std::string AddDefaultPrefixIfNeeded(absl::string_view target) const;
 
   /// Returns the resolver factory for \a scheme.
   /// Caller does NOT own the return value.
-  ResolverFactory* LookupResolverFactory(const char* scheme) const;
+  ResolverFactory* LookupResolverFactory(absl::string_view scheme) const;
 
  private:
-  explicit ResolverRegistry(std::unique_ptr<State> state);
+  explicit ResolverRegistry(State state) : state_(std::move(state)) {}
 
-  std::unique_ptr<State> state_;
+  ResolverFactory* FindResolverFactory(absl::string_view target,
+                                       URI* uri) const;
+
+  State state_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_RESOLVER_RESOLVER_REGISTRY_H */
+#endif  // GRPC_CORE_LIB_RESOLVER_RESOLVER_REGISTRY_H

@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -36,96 +34,31 @@
 
 namespace grpc_core {
 
-class ResolverRegistry::State {
- public:
-  State() : default_prefix_(gpr_strdup("dns:///")) {}
-
-  void SetDefaultPrefix(const char* default_resolver_prefix) {
-    GPR_ASSERT(default_resolver_prefix != nullptr);
-    GPR_ASSERT(*default_resolver_prefix != '\0');
-    default_prefix_.reset(gpr_strdup(default_resolver_prefix));
-  }
-
-  void RegisterResolverFactory(std::unique_ptr<ResolverFactory> factory) {
-    for (size_t i = 0; i < factories_.size(); ++i) {
-      GPR_ASSERT(strcmp(factories_[i]->scheme(), factory->scheme()) != 0);
-    }
-    factories_.push_back(std::move(factory));
-  }
-
-  ResolverFactory* LookupResolverFactory(absl::string_view scheme) const {
-    for (size_t i = 0; i < factories_.size(); ++i) {
-      if (scheme == factories_[i]->scheme()) {
-        return factories_[i].get();
-      }
-    }
-    return nullptr;
-  }
-
-  // Returns the factory for the scheme of \a target.  If \a target does
-  // not parse as a URI, prepends \a default_prefix_ and tries again.
-  // If URI parsing is successful (in either attempt), sets \a uri to
-  // point to the parsed URI.
-  // If \a default_prefix_ needs to be prepended, sets \a canonical_target
-  // to the canonical target string.
-  ResolverFactory* FindResolverFactory(absl::string_view target, URI* uri,
-                                       std::string* canonical_target) const {
-    GPR_ASSERT(uri != nullptr);
-    absl::StatusOr<URI> tmp_uri = URI::Parse(target);
-    ResolverFactory* factory =
-        tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;
-    if (factory != nullptr) {
-      *uri = std::move(*tmp_uri);
-      return factory;
-    }
-    *canonical_target = absl::StrCat(default_prefix_.get(), target);
-    absl::StatusOr<URI> tmp_uri2 = URI::Parse(*canonical_target);
-    factory =
-        tmp_uri2.ok() ? LookupResolverFactory(tmp_uri2->scheme()) : nullptr;
-    if (factory != nullptr) {
-      *uri = std::move(*tmp_uri2);
-      return factory;
-    }
-    if (!tmp_uri.ok() || !tmp_uri2.ok()) {
-      gpr_log(GPR_ERROR, "%s",
-              absl::StrFormat("Error parsing URI(s). '%s':%s; '%s':%s", target,
-                              tmp_uri.status().ToString(), *canonical_target,
-                              tmp_uri2.status().ToString())
-                  .c_str());
-      return nullptr;
-    }
-    gpr_log(GPR_ERROR, "Don't know how to resolve '%s' or '%s'.",
-            std::string(target).c_str(), canonical_target->c_str());
-    return nullptr;
-  }
-
- private:
-  std::vector<std::unique_ptr<ResolverFactory>> factories_;
-  UniquePtr<char> default_prefix_;
-};
-
 //
 // ResolverRegistry::Builder
 //
 
-ResolverRegistry::Builder::Builder() : state_(new State) {}
+ResolverRegistry::Builder::Builder() { Reset(); }
 
-ResolverRegistry::Builder::~Builder() = default;
-
-void ResolverRegistry::Builder::SetDefaultPrefix(const char* default_prefix) {
-  state_->SetDefaultPrefix(default_prefix);
+void ResolverRegistry::Builder::SetDefaultPrefix(std::string default_prefix) {
+  state_.default_prefix = std::move(default_prefix);
 }
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  state_->RegisterResolverFactory(std::move(factory));
+  auto p = state_.factories.emplace(factory->scheme(), std::move(factory));
+  GPR_ASSERT(p.second);
 }
 
-bool ResolverRegistry::Builder::HasResolverFactory(const char* scheme) const {
-  return state_->LookupResolverFactory(scheme) != nullptr;
+bool ResolverRegistry::Builder::HasResolverFactory(
+    absl::string_view scheme) const {
+  return state_.factories.find(scheme) != state_.factories.end();
 }
 
-void ResolverRegistry::Builder::Reset() { state_ = absl::make_unique<State>(); }
+void ResolverRegistry::Builder::Reset() {
+  state_.factories.clear();
+  state_.default_prefix = "dns:///";
+}
 
 ResolverRegistry ResolverRegistry::Builder::Build() {
   return ResolverRegistry(std::move(state_));
@@ -135,34 +68,21 @@ ResolverRegistry ResolverRegistry::Builder::Build() {
 // ResolverRegistry
 //
 
-ResolverRegistry::ResolverRegistry(std::unique_ptr<State> state)
-    : state_(std::move(state)) {}
-
-ResolverRegistry::~ResolverRegistry() = default;
-
-ResolverFactory* ResolverRegistry::LookupResolverFactory(
-    const char* scheme) const {
-  return state_->LookupResolverFactory(scheme);
-}
-
 bool ResolverRegistry::IsValidTarget(absl::string_view target) const {
   URI uri;
-  std::string canonical_target;
-  ResolverFactory* factory =
-      state_->FindResolverFactory(target, &uri, &canonical_target);
-  return factory == nullptr ? false : factory->IsValidUri(uri);
+  ResolverFactory* factory = FindResolverFactory(target, &uri);
+  if (factory == nullptr) return false;
+  return factory->IsValidUri(uri);
 }
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
-    const char* target, const grpc_channel_args* args,
+    absl::string_view target, const grpc_channel_args* args,
     grpc_pollset_set* pollset_set,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) const {
   ResolverArgs resolver_args;
-  ResolverFactory* factory = state_->FindResolverFactory(
-      target, &resolver_args.uri, &resolver_args.uri_string);
+  ResolverFactory* factory = FindResolverFactory(target, &resolver_args.uri);
   if (factory == nullptr) return nullptr;
-  if (resolver_args.uri_string.empty()) resolver_args.uri_string = target;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.work_serializer = std::move(work_serializer);
@@ -173,22 +93,57 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
 std::string ResolverRegistry::GetDefaultAuthority(
     absl::string_view target) const {
   URI uri;
-  std::string canonical_target;
-  ResolverFactory* factory =
-      state_->FindResolverFactory(target, &uri, &canonical_target);
-  std::string authority =
-      factory == nullptr ? "" : factory->GetDefaultAuthority(uri);
-  return authority;
+  ResolverFactory* factory = FindResolverFactory(target, &uri);
+  if (factory == nullptr) return "";
+  return factory->GetDefaultAuthority(uri);
 }
 
-UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
-    const char* target) const {
+std::string ResolverRegistry::AddDefaultPrefixIfNeeded(
+    absl::string_view target) const {
   URI uri;
-  std::string canonical_target;
-  state_->FindResolverFactory(target, &uri, &canonical_target);
-  return UniquePtr<char>(canonical_target.empty()
-                             ? gpr_strdup(target)
-                             : gpr_strdup(canonical_target.c_str()));
+  FindResolverFactory(target, &uri);
+  return uri.ToString();
+}
+
+ResolverFactory* ResolverRegistry::LookupResolverFactory(
+    absl::string_view scheme) const {
+  auto it = state_.factories.find(scheme);
+  if (it == state_.factories.end()) return nullptr;
+  return it->second.get();
+}
+
+// Returns the factory for the scheme of \a target.  If \a target does
+// not parse as a URI, prepends \a default_prefix_ and tries again.
+// If URI parsing is successful (in either attempt), sets \a uri to
+// point to the parsed URI.
+ResolverFactory* ResolverRegistry::FindResolverFactory(absl::string_view target,
+                                                       URI* uri) const {
+  GPR_ASSERT(uri != nullptr);
+  absl::StatusOr<URI> tmp_uri = URI::Parse(target);
+  ResolverFactory* factory =
+      tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;
+  if (factory != nullptr) {
+    *uri = std::move(*tmp_uri);
+    return factory;
+  }
+  std::string canonical_target = absl::StrCat(state_.default_prefix, target);
+  absl::StatusOr<URI> tmp_uri2 = URI::Parse(canonical_target);
+  factory = tmp_uri2.ok() ? LookupResolverFactory(tmp_uri2->scheme()) : nullptr;
+  if (factory != nullptr) {
+    *uri = std::move(*tmp_uri2);
+    return factory;
+  }
+  if (!tmp_uri.ok() || !tmp_uri2.ok()) {
+    gpr_log(GPR_ERROR, "%s",
+            absl::StrFormat("Error parsing URI(s). '%s':%s; '%s':%s", target,
+                            tmp_uri.status().ToString(), canonical_target,
+                            tmp_uri2.status().ToString())
+                .c_str());
+    return nullptr;
+  }
+  gpr_log(GPR_ERROR, "Don't know how to resolve '%s' or '%s'.",
+          std::string(target).c_str(), canonical_target.c_str());
+  return nullptr;
 }
 
 }  // namespace grpc_core

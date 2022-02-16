@@ -102,7 +102,7 @@ class BinderResolverTest : public ::testing::Test {
 
   void TestSucceeds(const char* string, const std::string& expected_path) {
     gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-            factory_->scheme());
+            std::string(factory_->scheme()).c_str());
     grpc_core::ExecCtx exec_ctx;
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
@@ -118,7 +118,7 @@ class BinderResolverTest : public ::testing::Test {
 
   void TestFails(const char* string) {
     gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-            factory_->scheme());
+            std::string(factory_->scheme()).c_str());
     grpc_core::ExecCtx exec_ctx;
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
