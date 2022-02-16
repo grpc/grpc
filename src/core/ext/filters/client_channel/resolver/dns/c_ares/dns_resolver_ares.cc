@@ -656,4 +656,8 @@ namespace grpc_core {
 void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
 }  // namespace grpc_core
 
+void grpc_resolver_dns_ares_init() {}
+
+void grpc_resolver_dns_ares_shutdown() {}
+
 #endif /* GRPC_ARES == 1 */
