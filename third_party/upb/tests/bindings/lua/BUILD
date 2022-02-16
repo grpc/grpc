@@ -24,43 +24,71 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 load(
+    "//upb/bindings/lua:lua_proto_library.bzl",
+    "lua_proto_library",
+)
+load(
     "//bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
-    "UPB_DEFAULT_CPPOPTS",
 )
 
 licenses(["notice"])
 
-cc_library(
-    name = "lupb",
-    srcs = [
-        "def.c",
-        "msg.c",
-        "upb.c",
-    ],
-    hdrs = [
-        "upb.h",
-    ],
+cc_test(
+    name = "test_lua",
+    srcs = ["main.c"],
     copts = UPB_DEFAULT_COPTS,
-    visibility = ["//visibility:public"],
+    data = [
+        "test_upb.lua",
+        ":descriptor_proto_lua",
+        ":empty_proto_lua",
+        ":test_messages_proto2_proto_lua",
+        ":test_messages_proto3_proto_lua",
+        ":test_proto_lua",
+        "//:third_party/lunit/console.lua",
+        "//:third_party/lunit/lunit.lua",
+        "//upb/bindings/lua:upb.lua",
+        "@com_google_protobuf//:conformance_proto",
+        "@com_google_protobuf//:descriptor_proto",
+    ],
+    linkstatic = 1,
     deps = [
-        "//:json",
-        "//:reflection",
-        "//:textformat",
-        "//:upb",
+        "//upb/bindings/lua:lupb",
         "@lua//:liblua",
     ],
 )
 
-cc_binary(
-    name = "protoc-gen-lua",
-    srcs = ["upbc.cc"],
-    copts = UPB_DEFAULT_CPPOPTS,
-    visibility = ["//visibility:public"],
-    deps = [
-        "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protoc_lib",
-    ],
+proto_library(
+    name = "test_proto",
+    testonly = 1,
+    srcs = ["test.proto"],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
-exports_files(["upb.lua"])
+lua_proto_library(
+    name = "test_proto_lua",
+    testonly = 1,
+    deps = [":test_proto"],
+)
+
+lua_proto_library(
+    name = "descriptor_proto_lua",
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+lua_proto_library(
+    name = "empty_proto_lua",
+    deps = ["@com_google_protobuf//:empty_proto"],
+)
+
+lua_proto_library(
+    name = "test_messages_proto3_proto_lua",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+lua_proto_library(
+    name = "test_messages_proto2_proto_lua",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:test_messages_proto2_proto"],
+)
