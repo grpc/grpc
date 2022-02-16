@@ -499,8 +499,13 @@ static void alts_tsi_handshaker_create_channel(
   alts_tsi_handshaker* handshaker = next_args->handshaker;
   GPR_ASSERT(handshaker->channel == nullptr);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  // Disable retries so that we quickly get a signal when the
+  // handshake server is not reachable.
+  grpc_arg disable_retries_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0);
+  grpc_channel_args args = {1, &disable_retries_arg};
   handshaker->channel = grpc_channel_create(
-      next_args->handshaker->handshaker_service_url, creds, nullptr);
+      next_args->handshaker->handshaker_service_url, creds, &args);
   grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(

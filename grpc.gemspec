@@ -250,7 +250,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_decoder.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_encoder.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/bin_encoder.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/chttp2_plugin.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/chttp2_transport.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/chttp2_transport.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/context_list.cc )
