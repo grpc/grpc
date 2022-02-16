@@ -26,15 +26,17 @@ cd github/grpc
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
-@rem TODO(jtattermusch): make this generate less output
-@rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
-choco install bazel -y --version 4.2.1 --limit-output || exit /b 1
+@rem Install bazel
+@rem Side effect of the tools/bazel script is that it downloads the correct version of bazel binary.
+mkdir C:\bazel
+bash -c "tools/bazel --version && cp tools/bazel-*.exe /c/bazel/bazel.exe"
+set PATH=C:\bazel;%PATH%
+bazel --version
 
 @rem Generate a random UUID and store in "bazel_invocation_ids" artifact file
 powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 
-@rem TODO(jtattermusch): windows RBE should be able to use the same credentials as Linux RBE.
 bazel --bazelrc=tools/remote_build/windows.bazelrc --output_user_root=T:\_bazel_output test --invocation_id="%BAZEL_INVOCATION_ID%" %BAZEL_FLAGS% --workspace_status_command=tools/remote_build/workspace_status_kokoro.bat //test/...
 set BAZEL_EXITCODE=%errorlevel%
 

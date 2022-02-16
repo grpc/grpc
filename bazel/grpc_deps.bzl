@@ -226,12 +226,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
-            strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
+            sha256 = "c8de6c60e12ad014a28225c5247ee735861d85cf906df617f6a29954ca05f547",
+            strip_prefix = "googletest-0e402173c97aea7a00749e825b194bfede4f2e45",
             urls = [
-                # 2019-08-19
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/googletest/archive/c9ccac7cb7345901884aabf5d1a786cfa6e2f397.tar.gz",
-                "https://github.com/google/googletest/archive/c9ccac7cb7345901884aabf5d1a786cfa6e2f397.tar.gz",
+                # 2022-02-09
+                "https://github.com/google/googletest/archive/0e402173c97aea7a00749e825b194bfede4f2e45.tar.gz",
             ],
         )
 

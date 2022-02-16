@@ -86,6 +86,12 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
     grpc_status_code status_;
   };
 
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   grpc_metadata_credentials_plugin plugin_;
 };
 

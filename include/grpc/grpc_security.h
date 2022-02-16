@@ -1192,9 +1192,9 @@ typedef struct grpc_authorization_policy_provider
 
 /**
  * EXPERIMENTAL - Subject to change.
- * Creates a grpc_authorization_policy_provider using SDK authorization policy
+ * Creates a grpc_authorization_policy_provider using gRPC authorization policy
  * from static string.
- * - authz_policy is the input SDK authorization policy.
+ * - authz_policy is the input gRPC authorization policy.
  * - code is the error status code on failure. On success, it equals
  *   GRPC_STATUS_OK.
  * - error_details contains details about the error if any. If the
@@ -1208,9 +1208,9 @@ grpc_authorization_policy_provider_static_data_create(
 
 /**
  * EXPERIMENTAL - Subject to change.
- * Creates a grpc_authorization_policy_provider by watching for SDK
+ * Creates a grpc_authorization_policy_provider by watching for gRPC
  * authorization policy changes in filesystem.
- * - authz_policy is the file path of SDK authorization policy.
+ * - authz_policy is the file path of gRPC authorization policy.
  * - refresh_interval_sec is the amount of time the internal thread would wait
  *   before checking for file updates.
  * - code is the error status code on failure. On success, it equals

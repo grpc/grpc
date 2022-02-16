@@ -38,6 +38,12 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
   std::string debug_string() override { return debug_string_; }
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   const absl::optional<grpc_core::Slice> token_;
   const grpc_core::Slice authority_selector_;
   const std::string debug_string_;

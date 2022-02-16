@@ -569,6 +569,13 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
                0);
     return nullptr;
   }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
 };
 }  // namespace
 
@@ -655,6 +662,13 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
     GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
                0);
     return nullptr;
+  }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
   }
 };
 }  // namespace
@@ -1760,6 +1774,13 @@ struct fake_call_creds : public grpc_call_credentials {
         "foo", grpc_core::Slice::FromStaticString("oof"),
         [](absl::string_view, const grpc_core::Slice&) { abort(); });
     return grpc_core::Immediate(std::move(initial_metadata));
+  }
+
+ private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
   }
 };
 
@@ -3546,7 +3567,7 @@ test_external_account_credentials_create_failure_invalid_workforce_pool_audience
 static void test_insecure_credentials_compare_success(void) {
   auto* insecure_creds_1 = grpc_insecure_credentials_create();
   auto* insecure_creds_2 = grpc_insecure_credentials_create();
-  GPR_ASSERT(grpc_core::QsortCompare(insecure_creds_1, insecure_creds_2) == 0);
+  GPR_ASSERT(insecure_creds_1->cmp(insecure_creds_2) == 0);
   grpc_arg arg_1 = grpc_channel_credentials_to_arg(insecure_creds_1);
   grpc_channel_args args_1 = {1, &arg_1};
   grpc_arg arg_2 = grpc_channel_credentials_to_arg(insecure_creds_2);
@@ -3559,7 +3580,8 @@ static void test_insecure_credentials_compare_success(void) {
 static void test_insecure_credentials_compare_failure(void) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* fake_creds = grpc_fake_transport_security_credentials_create();
-  GPR_ASSERT(grpc_core::QsortCompare(insecure_creds, fake_creds) != 0);
+  GPR_ASSERT(insecure_creds->cmp(fake_creds) != 0);
+  GPR_ASSERT(fake_creds->cmp(insecure_creds) != 0);
   grpc_arg arg_1 = grpc_channel_credentials_to_arg(insecure_creds);
   grpc_channel_args args_1 = {1, &arg_1};
   grpc_arg arg_2 = grpc_channel_credentials_to_arg(fake_creds);
@@ -3567,6 +3589,19 @@ static void test_insecure_credentials_compare_failure(void) {
   GPR_ASSERT(grpc_channel_args_compare(&args_1, &args_2) != 0);
   grpc_channel_credentials_release(insecure_creds);
   grpc_channel_credentials_release(fake_creds);
+}
+
+static void test_fake_call_credentials_compare_success(void) {
+  auto call_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  GPR_ASSERT(call_creds->cmp(call_creds.get()) == 0);
+}
+
+static void test_fake_call_credentials_compare_failure(void) {
+  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
+  GPR_ASSERT(fake_creds->cmp(md_creds) != 0);
+  GPR_ASSERT(md_creds->cmp(fake_creds.get()) != 0);
+  grpc_call_credentials_release(md_creds);
 }
 
 int main(int argc, char** argv) {
@@ -3649,6 +3684,8 @@ int main(int argc, char** argv) {
   test_external_account_credentials_create_failure_invalid_workforce_pool_audience();
   test_insecure_credentials_compare_success();
   test_insecure_credentials_compare_failure();
+  test_fake_call_credentials_compare_success();
+  test_fake_call_credentials_compare_failure();
   grpc_shutdown();
   return 0;
 }
