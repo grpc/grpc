@@ -45,6 +45,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
@@ -3590,6 +3591,13 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   GPR_ASSERT(fake_creds->cmp(md_creds) != 0);
   GPR_ASSERT(md_creds->cmp(fake_creds.get()) != 0);
   grpc_call_credentials_release(md_creds);
+}
+
+TEST(CredentialsTest, TestHttpRequestSSLCredentialsCompare) {
+  auto creds_1 = grpc_core::CreateHttpRequestSSLCredentials();
+  auto creds_2 = grpc_core::CreateHttpRequestSSLCredentials();
+  EXPECT_EQ(creds_1->cmp(creds_2.get()), 0);
+  EXPECT_EQ(creds_2->cmp(creds_1.get()), 0);
 }
 
 int main(int argc, char** argv) {
