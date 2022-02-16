@@ -710,12 +710,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
             .recv_initial_metadata->Set(grpc_core::GrpcTimeoutMetadata(),
                                         s->deadline);
       }
-      if (s->recv_initial_md_op->payload->recv_initial_metadata
-              .trailing_metadata_available != nullptr) {
-        *s->recv_initial_md_op->payload->recv_initial_metadata
-             .trailing_metadata_available =
-            (other != nullptr && other->send_trailing_md_op != nullptr);
-      }
       s->to_read_initial_md.Clear();
       s->to_read_initial_md_filled = false;
       grpc_core::ExecCtx::Run(

@@ -1332,6 +1332,28 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   EXPECT_EQ("", recv_status.error_message());
 }
 
+// Test a trailers-only response due to client cancellation
+TEST_P(AsyncEnd2endTest, TrailersOnlyResponse) {
+  ResetStub();
+
+  EchoResponse recv_response;
+  Status recv_status;
+  ClientContext cli_ctx;
+
+  std::unique_ptr<ClientAsyncWriter<EchoRequest>> cli_stream(
+      stub_->AsyncRequestStream(&cli_ctx, &recv_response, cq_.get(), tag(1)));
+  Verifier().Expect(1, true).Verify(cq_.get());
+  // Cancel the RPC
+  cli_ctx.TryCancel();
+  // Reading of initial metadata should fail due to the cancellation.
+  cli_stream->ReadInitialMetadata(tag(2));
+  Verifier().Expect(2, false).Verify(cq_.get());
+
+  cli_stream->Finish(&recv_status, tag(3));
+  Verifier().Expect(3, true).Verify(cq_.get());
+  EXPECT_EQ(recv_status.error_code(), grpc::StatusCode::CANCELLED);
+}
+
 // This class is for testing scenarios where RPCs are cancelled on the server
 // by calling ServerContext::TryCancel(). Server uses AsyncNotifyWhenDone
 // API to check for cancellation
