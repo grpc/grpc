@@ -167,7 +167,5 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   while (!signaled_) {
     cv_.Wait(&mu_);
   }
-  gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
-          thread_count * call_count);
   ASSERT_EQ(0, failed_call_count.load());
 }

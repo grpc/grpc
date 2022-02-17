@@ -66,6 +66,13 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
+@rem Install libuv
+mkdir third_party\libuv\cmake\build
+pushd third_party\libuv\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake --build . --config Release --target install || goto :error
+popd
+
 @rem Just before installing gRPC, wipe out contents of all the submodules to simulate
 @rem a standalone build from an archive
 git submodule deinit --all --force
@@ -83,6 +90,7 @@ cmake ^
   -DgRPC_BUILD_MSVC_MP_COUNT=-1 ^
   -DgRPC_ABSL_PROVIDER=package ^
   -DgRPC_CARES_PROVIDER=package ^
+  -DgRPC_LIBUV_PROVIDER=package ^
   -DgRPC_PROTOBUF_PROVIDER=package ^
   -DgRPC_RE2_PROVIDER=package ^
   -DgRPC_SSL_PROVIDER=package ^

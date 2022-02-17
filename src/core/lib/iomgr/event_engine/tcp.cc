@@ -56,7 +56,7 @@ class WrappedInternalSliceAllocator : public SliceAllocator {
     // TODO(nnoble): requires the SliceBuffer definition.
     grpc_slice_allocator_allocate(
         slice_allocator_, size, 1, grpc_slice_allocator_intent::kReadBuffer,
-        dest->RawSliceBuffer(),
+        dest->c_slice_buffer(),
         [](void* arg, grpc_error_handle error) {
           auto cb = static_cast<SliceAllocator::AllocateCallback*>(arg);
           (*cb)(grpc_error_to_absl_status(error));

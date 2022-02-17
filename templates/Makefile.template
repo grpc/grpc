@@ -57,7 +57,7 @@
     # Currently it is necessary because some dependencies are marked as "build: private" in build.yaml
     # (which itself is correct, as they are not "public" libraries from our perspective and cmake
     # needs to have them marked as such)
-    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 're2', 'upb', 'z']]
+    filtered_libs = [lib for lib in libs if (lib.build in ['all'] and lib.language != 'c++') or lib.name in ['ares', 'boringssl', 're2', 'upb', 'uv', 'z']]
     filtered_targets = [tgt for tgt in targets if tgt.build in ['all'] and lib.language != 'c++']
   %>
 
@@ -202,8 +202,14 @@
   W_NO_CXX14_COMPAT=-Wno-c++14-compat
   endif
 
+  ifeq ($(SYSTEM),Linux)
+  C99 = 'gnu99'
+  else
+  C99 = 'c99'
+  endif
+
   %for warning in CHECK_WARNINGS:
-  ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
+  ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=$(C99) -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
   ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
   ifeq ($(${warning_var('HAS_WORKING_%s', warning)}),true)
   ${warning_var('W_%s', warning)}=-W${warning}
@@ -221,7 +227,7 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  CFLAGS += -std=c99 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
+  CFLAGS += -std=$(C99) ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   CXXFLAGS += -std=c++11
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
@@ -276,7 +282,7 @@
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread ws2_32 dbghelp bcrypt
+  LIBS = m pthread ws2_32 dbghelp bcrypt psapi iphlpapi user32 userenv
   LDFLAGS += -pthread
   endif
 
@@ -304,13 +310,13 @@
   endif
 
   # V=1 can be used to print commands run by make
-  ifeq ($(V),1)
+  #ifeq ($(V),1)
   E = @:
   Q =
-  else
-  E = @echo
-  Q = @
-  endif
+  #else
+  #E = @echo
+  #Q = @
+  #endif
 
   CORE_VERSION = ${settings.core_version}
   CPP_VERSION = ${settings.cpp_version}
@@ -406,7 +412,7 @@
   else
   HAS_EMBEDDED_CARES = true
   endif
-  
+
   ifeq ($(HAS_EMBEDDED_CARES),true)
   EMBED_CARES ?= true
   else
@@ -446,6 +452,13 @@
   UPB_MERGE_OBJS = $(LIBUPB_OBJS)
   UPB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libupb.a
 
+  # Setup libuv dependency
+
+  LIBUV_DEP = $(LIBDIR)/$(CONFIG)/libuv.a
+  LIBUV_MERGE_OBJS = $(LIBUV_OBJS)
+  LIBUV_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libuv.a
+  CPPFLAGS := -Ithird_party/libuv/src -Ithird_party/libuv/include $(CPPFLAGS)
+
   # Setup boringssl dependency
 
   ifeq ($(wildcard third_party/boringssl-with-bazel/src/include/openssl/ssl.h),)
@@ -467,13 +480,13 @@
   OPENSSL_MERGE_LIBS += $(LIBDIR)/$(CONFIG)/libboringssl.a
   OPENSSL_MERGE_OBJS += $(LIBBORINGSSL_OBJS)
   # need to prefix these to ensure overriding system libraries
-  CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)  
+  CPPFLAGS := -Ithird_party/boringssl-with-bazel/src/include $(CPPFLAGS)
   ifeq ($(DISABLE_ALPN),true)
   CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
   LIBS_SECURE = $(OPENSSL_LIBS)
   endif # DISABLE_ALPN
   endif # EMBED_OPENSSL
-  
+
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
 
   ifeq ($(MAKECMDGOALS),clean)
@@ -896,14 +909,15 @@
 
   else
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(LIBUV_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'grpc_abseil']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'uv', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
+  $(LIBUV_DEP) \
   $(RE2_DEP) \
   $(UPB_DEP) \
   $(GRPC_ABSEIL_DEP) \
@@ -916,6 +930,7 @@
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
+   $(LIBUV_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
   % if 'libssl' in lib.get('deps', []):
@@ -933,6 +948,7 @@
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
+   $(LIBUV_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
   % if 'libssl' in lib.get('deps', []):
@@ -953,9 +969,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(LIBUV_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(LIBUV_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     for dep in lib.get('deps', []):
       if is_absl_lib(dep): continue
       if 'libssl' == dep: continue
@@ -967,7 +983,7 @@
     security = 'libssl' in lib.get('deps', [])
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LIBUV_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:

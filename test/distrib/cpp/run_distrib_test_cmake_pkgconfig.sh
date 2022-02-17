@@ -58,6 +58,13 @@ cmake -DCMAKE_BUILD_TYPE=Release ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
+# Install libuv
+mkdir -p "third_party/libuv/cmake/build"
+pushd "third_party/libuv/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DLIBUV_BUILD_TESTS=OFF ../..
+make -j4 install
+popd
+
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
 # a standalone build from an archive
 # shellcheck disable=SC2016
@@ -73,6 +80,7 @@ cmake \
   -DgRPC_BUILD_TESTS=OFF \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
+  -DgRPC_LIBUV_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
   -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \

@@ -197,6 +197,8 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return 'benchmark'
     elif bazel_dep == '//external:libssl':
         return 'libssl'
+    elif bazel_dep == '//external:uv':
+        return 'uv'
     else:
         # all the other external deps such as protobuf, cares, zlib
         # don't need to be listed explicitly, they are handled automatically
@@ -229,7 +231,7 @@ def _compute_transitive_metadata(
     * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
     * _COLLAPSED_HEADERS: the merged non-public headers;
     * _EXCLUDE_DEPS: intermediate targets to exclude when performing collapsing
-      of sources and dependencies. 
+      of sources and dependencies.
 
     For the collapsed_deps, the algorithm improved cases like:
 
@@ -237,7 +239,7 @@ def _compute_transitive_metadata(
         end2end_tests -> [grpc_test_util, grpc, gpr, address_sorting, upb]
         grpc_test_util -> [grpc, gpr, address_sorting, upb, ...]
         grpc -> [gpr, address_sorting, upb, ...]
-    
+
     The result of the algorithm:
         end2end_tests -> [grpc_test_util]
         grpc_test_util -> [grpc]

@@ -14,13 +14,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  // TODO(hork): call LibuvEventEngineFactory
-  return nullptr;
+  return LibuvEventEngine::Create();
 }
 
 }  // namespace experimental

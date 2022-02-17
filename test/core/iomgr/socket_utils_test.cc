@@ -21,6 +21,13 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
+// FreeBSD's netinet/in.h header is broken, and doesn't include what it needs.
+// Additionally, our formatter will want to sort these by alphabetical order.
+// So this comment is here just because (1) FreeBSD is broken and (2)
+// to please our formatter.
+#include <sys/types.h>
+
+// Now that the above is done, we can go in order.
 #include <errno.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>

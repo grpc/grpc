@@ -828,6 +828,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
+  - src/core/lib/event_engine/uv/libuv_event_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/capture.h
@@ -1487,6 +1488,7 @@ libs:
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/event_engine/uv/libuv_event_engine.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1733,6 +1735,7 @@ libs:
   - gpr
   - libssl
   - address_sorting
+  - uv
   baselib: true
   generate_plugin_registry: true
 - name: grpc_csharp_ext
@@ -1995,6 +1998,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/sockaddr.h
+  - src/core/lib/event_engine/uv/libuv_event_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/capture.h
@@ -2308,6 +2312,7 @@ libs:
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/event_engine/uv/libuv_event_engine.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2486,6 +2491,7 @@ libs:
   - absl/utility:utility
   - gpr
   - address_sorting
+  - uv
   baselib: true
   generate_plugin_registry: true
 - name: benchmark_helpers
@@ -6679,6 +6685,19 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: libuv_event_engine
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/libuv_event_engine_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: linux_system_roots_test
   gtest: true
   build: test
@@ -7736,6 +7755,7 @@ targets:
   - test/core/event_engine/smoke_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: sockaddr_utils_test
   gtest: true
   build: test

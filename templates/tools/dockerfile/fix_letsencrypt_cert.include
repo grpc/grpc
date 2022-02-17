@@ -1,0 +1,4 @@
+# Remove the expired letsencrypt.org cert and update the CA certificates
+RUN apt-get install -y ca-certificates
+RUN rm /usr/share/ca-certificates/mozilla/DST_Root_CA_X3.crt
+RUN update-ca-certificates

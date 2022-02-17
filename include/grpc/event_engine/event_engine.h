@@ -259,7 +259,7 @@ class EventEngine {
    public:
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key[2];
+      intptr_t keys[2];
     };
     /// DNS SRV record type.
     struct SRVRecord {

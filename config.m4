@@ -12,6 +12,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/abseil-cpp)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl-with-bazel/src/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/libuv/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/libuv/src)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/re2)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/xxhash)
@@ -461,6 +463,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/sockaddr.cc \
+    src/core/lib/event_engine/uv/libuv_event_engine.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \
@@ -740,6 +743,76 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/libuv/src/fs-poll-wrapper.c \
+    src/libuv/src/idna-wrapper.c \
+    src/libuv/src/inet-wrapper.c \
+    src/libuv/src/random-wrapper.c \
+    src/libuv/src/strscpy-wrapper.c \
+    src/libuv/src/threadpool-wrapper.c \
+    src/libuv/src/timer-wrapper.c \
+    src/libuv/src/unix/android-ifaddrs-wrapper.c \
+    src/libuv/src/unix/async-wrapper.c \
+    src/libuv/src/unix/bsd-ifaddrs-wrapper.c \
+    src/libuv/src/unix/bsd-proctitle-wrapper.c \
+    src/libuv/src/unix/core-wrapper.c \
+    src/libuv/src/unix/darwin-proctitle-wrapper.c \
+    src/libuv/src/unix/darwin-wrapper.c \
+    src/libuv/src/unix/dl-wrapper.c \
+    src/libuv/src/unix/epoll-wrapper.c \
+    src/libuv/src/unix/freebsd-wrapper.c \
+    src/libuv/src/unix/fs-wrapper.c \
+    src/libuv/src/unix/fsevents-wrapper.c \
+    src/libuv/src/unix/getaddrinfo-wrapper.c \
+    src/libuv/src/unix/getnameinfo-wrapper.c \
+    src/libuv/src/unix/kqueue-wrapper.c \
+    src/libuv/src/unix/linux-core-wrapper.c \
+    src/libuv/src/unix/linux-inotify-wrapper.c \
+    src/libuv/src/unix/linux-syscalls-wrapper.c \
+    src/libuv/src/unix/loop-watcher-wrapper.c \
+    src/libuv/src/unix/loop-wrapper.c \
+    src/libuv/src/unix/pipe-wrapper.c \
+    src/libuv/src/unix/poll-wrapper.c \
+    src/libuv/src/unix/process-wrapper.c \
+    src/libuv/src/unix/procfs-exepath-wrapper.c \
+    src/libuv/src/unix/proctitle-wrapper.c \
+    src/libuv/src/unix/pthread-fixes-wrapper.c \
+    src/libuv/src/unix/random-devurandom-wrapper.c \
+    src/libuv/src/unix/random-getentropy-wrapper.c \
+    src/libuv/src/unix/random-getrandom-wrapper.c \
+    src/libuv/src/unix/random-sysctl-linux-wrapper.c \
+    src/libuv/src/unix/signal-wrapper.c \
+    src/libuv/src/unix/stream-wrapper.c \
+    src/libuv/src/unix/tcp-wrapper.c \
+    src/libuv/src/unix/thread-wrapper.c \
+    src/libuv/src/unix/tty-wrapper.c \
+    src/libuv/src/unix/udp-wrapper.c \
+    src/libuv/src/uv-common-wrapper.c \
+    src/libuv/src/uv-data-getter-setters-wrapper.c \
+    src/libuv/src/version-wrapper.c \
+    src/libuv/src/win/async-wrapper.c \
+    src/libuv/src/win/core-wrapper.c \
+    src/libuv/src/win/detect-wakeup-wrapper.c \
+    src/libuv/src/win/dl-wrapper.c \
+    src/libuv/src/win/error-wrapper.c \
+    src/libuv/src/win/fs-event-wrapper.c \
+    src/libuv/src/win/fs-wrapper.c \
+    src/libuv/src/win/getaddrinfo-wrapper.c \
+    src/libuv/src/win/getnameinfo-wrapper.c \
+    src/libuv/src/win/handle-wrapper.c \
+    src/libuv/src/win/loop-watcher-wrapper.c \
+    src/libuv/src/win/pipe-wrapper.c \
+    src/libuv/src/win/poll-wrapper.c \
+    src/libuv/src/win/process-stdio-wrapper.c \
+    src/libuv/src/win/process-wrapper.c \
+    src/libuv/src/win/signal-wrapper.c \
+    src/libuv/src/win/stream-wrapper.c \
+    src/libuv/src/win/tcp-wrapper.c \
+    src/libuv/src/win/thread-wrapper.c \
+    src/libuv/src/win/tty-wrapper.c \
+    src/libuv/src/win/udp-wrapper.c \
+    src/libuv/src/win/util-wrapper.c \
+    src/libuv/src/win/winapi-wrapper.c \
+    src/libuv/src/win/winsock-wrapper.c \
     src/php/ext/grpc/byte_buffer.c \
     src/php/ext/grpc/call.c \
     src/php/ext/grpc/call_credentials.c \
@@ -1285,6 +1358,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/uv)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
@@ -1336,6 +1410,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/libuv/src)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/libuv/src/unix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/libuv/src/win)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)

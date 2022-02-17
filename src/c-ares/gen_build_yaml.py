@@ -25,10 +25,12 @@ out = {}
 
 try:
 
+    # TODO(hork): delete. This appears to be unused
     def gen_ares_build(x):
         subprocess.call("third_party/cares/cares/buildconf", shell=True)
         subprocess.call("third_party/cares/cares/configure", shell=True)
 
+    # TODO(hork): delete. This appears to be unused
     def config_platform(x):
         if 'darwin' in sys.platform:
             return 'src/cares/cares/config_darwin/ares_config.h'
@@ -42,6 +44,7 @@ try:
             gen_ares_build(x)
         return 'third_party/cares/cares/ares_config.h'
 
+    # TODO(hork): delete. This appears to be unused
     def ares_build(x):
         if os.path.isfile('src/cares/cares/ares_build.h'):
             return 'src/cares/cares/ares_build.h'

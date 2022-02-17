@@ -11,6 +11,7 @@ exports_files([
     "enum34.BUILD",
     "futures.BUILD",
     "libuv.BUILD",
+    "libuv.patch",
     "protobuf.patch",
     "rules_python.patch",
 ])

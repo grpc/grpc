@@ -13,9 +13,9 @@
   # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   # See the License for the specific language governing permissions and
   # limitations under the License.
-  
+
   FROM debian:11
-  
+
   RUN apt-get --allow-releaseinfo-change update
 
   <%include file="../../apt_get_basic.include"/>

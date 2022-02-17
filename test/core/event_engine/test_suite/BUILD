@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -68,6 +68,24 @@ grpc_cc_library(
     ],
     alwayslink = 1,
 )
+
+# -- Builtin EventEngines --
+
+grpc_cc_test(
+    name = "libuv_event_engine",
+    srcs = ["libuv_event_engine_test.cc"],
+    external_deps = [
+        "gtest",
+        "uv",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        ":timer",
+        "//:grpc",
+    ],
+)
+
 
 # -- Internal targets --
 

@@ -23,26 +23,35 @@ namespace experimental {
 /// A minimal promise implementation.
 ///
 /// This is light-duty, syntactical sugar around cv wait & signal, which is
-/// useful in some cases. A more robust implementation is being worked on
-/// separately.
+/// useful in some cases. Can be replaced in the future using C++20's atomics
+/// .wait() and .notify().
 template <typename T>
 class Promise {
  public:
+  // The getter will wait until the setter has been called, and will return the
+  // value passed during Set.
   T& Get() {
     absl::MutexLock lock(&mu_);
-    cv_.Wait(&mu_);
+    if (!set_) {
+      cv_.Wait(&mu_);
+    }
     return val_;
   }
+  // This setter can only be called exactly once. Will automatically unblock
+  // getters.
   void Set(T&& val) {
     absl::MutexLock lock(&mu_);
+    GPR_ASSERT(!set_);
     val_ = std::move(val);
-    cv_.Signal();
+    set_ = true;
+    cv_.SignalAll();
   }
 
  private:
   absl::Mutex mu_;
   absl::CondVar cv_;
   T val_;
+  bool set_ = false;
 };
 
 }  // namespace experimental

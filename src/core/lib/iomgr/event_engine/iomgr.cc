@@ -17,6 +17,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/uv/libuv_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/resolver.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -50,8 +51,7 @@ void iomgr_platform_shutdown(void) {}
 void iomgr_platform_shutdown_background_closure(void) {}
 
 bool iomgr_platform_is_any_background_poller_thread(void) {
-  return grpc_event_engine::experimental::GetDefaultEventEngine()
-      ->IsWorkerThread();
+  return GetDefaultEventEngine()->IsWorkerThread();
 }
 
 bool iomgr_platform_add_closure_to_background_poller(

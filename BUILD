@@ -1767,12 +1767,21 @@ grpc_cc_library(
     name = "default_event_engine_factory",
     srcs = [
         "src/core/lib/event_engine/default_event_engine_factory.cc",
+        "src/core/lib/event_engine/uv/libuv_event_engine.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/uv/libuv_event_engine.h",
+        "src/core/lib/iomgr/event_engine/promise.h",
     ],
     external_deps = [
-        # TODO(hork): uv, in a subsequent PR
+        "absl/strings:str_format",
+        "uv",
     ],
     deps = [
         "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
+        "event_engine_common",
+        "exec_ctx",
         "gpr_base",
     ],
 )
@@ -1994,6 +2003,7 @@ grpc_cc_library(
         "src/core/lib/compression/message_compress.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
+        "src/core/lib/event_engine/event_engine_factory.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
         "src/core/lib/event_engine/sockaddr.h",
         "src/core/lib/iomgr/block_annotate.h",

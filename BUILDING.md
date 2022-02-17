@@ -144,7 +144,7 @@ you will be able to browse and build the code.
 > cmake --build . --config Release
 ```
 
-Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`. 
+Using gRPC C++ as a DLL is not recommended, but you can still enable it by running `cmake` with `-DBUILD_SHARED_LIBS=ON`.
 
 ### Windows, Using Ninja (faster build).
 
@@ -208,7 +208,7 @@ If you are building gRPC < 1.27 or if you are using CMake < 3.13 you will need
 to select "package" mode (rather than "module" mode) for the dependencies.
 This means you will need to have external copies of these libraries available
 on your system. This [example](test/distrib/cpp/run_distrib_test_cmake.sh) shows
-how to install dependencies with cmake before proceeding to installing gRPC itself. 
+how to install dependencies with cmake before proceeding to installing gRPC itself.
 
 ```
 # NOTE: all of gRPC's dependencies need to be already installed
@@ -216,6 +216,7 @@ $ cmake ../.. -DgRPC_INSTALL=ON                \
               -DCMAKE_BUILD_TYPE=Release       \
               -DgRPC_ABSL_PROVIDER=package     \
               -DgRPC_CARES_PROVIDER=package    \
+              -DgRPC_LIBUV_PROVIDER=package \
               -DgRPC_PROTOBUF_PROVIDER=package \
               -DgRPC_RE2_PROVIDER=package      \
               -DgRPC_SSL_PROVIDER=package      \

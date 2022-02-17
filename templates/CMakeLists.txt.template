@@ -70,10 +70,15 @@
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
+      deps.append("${_gRPC_LIBUV_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
+    elif 'libuv' in target_dict['name']:
+      # TODO(hork): a hack around the automatic removal of uv dependencies in
+      # the generate_projects pipeline. Fix this there.
+      deps.append("${_gRPC_LIBUV_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -82,6 +87,8 @@
         deps.append("${_gRPC_SSL_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
+      elif d == 'uv':
+        deps.append("${_gRPC_LIBUV_LIBRARIES}")
       else:
         deps.append(d)
     return deps
@@ -206,6 +213,9 @@
 
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
+
+  set(gRPC_LIBUV_PROVIDER "module" CACHE STRING "Provider of libuv library")
+  set_property(CACHE gRPC_LIBUV_PROVIDER PROPERTY STRINGS "module" "package")
 
   set(gRPC_PROTOBUF_PACKAGE_TYPE "" CACHE STRING "Algorithm for searching protobuf package")
   set_property(CACHE gRPC_PROTOBUF_PACKAGE_TYPE PROPERTY STRINGS "CONFIG" "MODULE")
@@ -350,6 +360,7 @@
   include(cmake/address_sorting.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
+  include(cmake/libuv.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
@@ -487,7 +498,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 'uv', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -595,6 +606,7 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_LIBUV_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -676,6 +688,7 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_LIBUV_INCLUDE_DIR}</%text>
       <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -743,6 +756,7 @@
   install(FILES
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findc-ares.cmake
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findre2.cmake
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/cmake/modules/Findlibuv.cmake
     DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>/modules
   )
 
@@ -783,7 +797,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "uv", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
 

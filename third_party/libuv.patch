@@ -1,0 +1,14 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2ab6d17e..0a418744 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -370,7 +370,8 @@ target_compile_definitions(uv
+                            INTERFACE USING_UV_SHARED=1
+                            PRIVATE ${uv_defines} BUILDING_UV_SHARED=1)
+ target_compile_options(uv PRIVATE ${uv_cflags})
+-target_include_directories(uv PUBLIC include PRIVATE src)
++target_include_directories(uv PUBLIC "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
++target_include_directories(uv PRIVATE "src")
+ target_link_libraries(uv ${uv_libraries})
+
+ add_library(uv_a STATIC ${uv_sources})

@@ -66,10 +66,46 @@
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
   address_sorting_unwanted_files = list_lib_files("address_sorting", ("public_headers", "headers", "src"))
 
+  # ObjectiveC doesn't use c-core's libuv source at the moment, as it is pulling libuv dependency from cocoapod.
+  libuv_unwanted_files = list_lib_files("uv", ("public_headers", "headers", "src"))
+  # TODO(hork): dedup with Libuv-gRPC.podspec
+  libuv_wanted_headers = [
+      "third_party/libuv/include/uv.h",
+      "third_party/libuv/include/uv/errno.h",
+      "third_party/libuv/include/uv/threadpool.h",
+      "third_party/libuv/include/uv/version.h",
+      "third_party/libuv/include/uv/tree.h",
+      "third_party/libuv/include/uv/unix.h",
+      "third_party/libuv/include/uv/darwin.h",
+      "third_party/libuv/src/heap-inl.h",
+      "third_party/libuv/src/idna.h",
+      "third_party/libuv/src/queue.h",
+      "third_party/libuv/src/strscpy.h",
+      "third_party/libuv/src/uv-common.h",
+      "third_party/libuv/src/unix/atomic-ops.h",
+      "third_party/libuv/src/unix/internal.h",
+      "third_party/libuv/src/unix/spinlock.h"
+  ]
+
   # ObjectiveC needs to obtain re2 explicitly unlike other languages; TODO @donnadionne make ObjC more consistent with others
-  grpc_private_files = list(sorted((set(list_lib_files("grpc", ("headers", "src"))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers", "src")))))
-  grpc_public_headers = list(sorted((set(list_lib_files("grpc", ("public_headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("public_headers",)))))
-  grpc_private_headers = list(sorted((set(list_lib_files("grpc", ("headers",))) - set(address_sorting_unwanted_files)) | set(list_lib_files("re2", ("headers",)))))
+  grpc_private_files = list(sorted(
+    set(list_lib_files("grpc", ("headers", "src")))
+    - set(address_sorting_unwanted_files)
+    - set(libuv_unwanted_files)
+    | set(list_lib_files("re2", ("headers", "src")))
+  ))
+  grpc_public_headers = list(sorted(
+    set(list_lib_files("grpc", ("public_headers",)))
+    - set(address_sorting_unwanted_files)
+    - set(libuv_unwanted_files)
+    | set(list_lib_files("re2", ("public_headers",)))
+  ))
+  grpc_private_headers = list(sorted(
+    set(list_lib_files("grpc", ("headers",)))
+    - set(address_sorting_unwanted_files)
+    - set(libuv_unwanted_files)
+    | set(list_lib_files("re2", ("headers",)))
+  ))
 
   # TODO(jtattermusch): build.yaml no longer has filegroups, so the files here are just hand-listed
   # This template shouldn't be touching the filegroups anyway, so this is only a bit more fragile.
@@ -84,6 +120,7 @@
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     - set(grpcpp_proto_files)
     - set(address_sorting_unwanted_files)
+    - set(libuv_unwanted_files)
   )
   grpcpp_private_headers = filter_grpcpp(
     set(list_lib_files("grpc++", ("headers",)))
@@ -91,6 +128,8 @@
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     - set(grpcpp_proto_files)
     - set(address_sorting_unwanted_files)
+    - set(libuv_unwanted_files)
+    | set(libuv_wanted_headers)
   )
   grpcpp_public_headers = filter_grpcpp(
     set(list_lib_files("grpc++", ("public_headers",)))
@@ -98,6 +137,7 @@
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     - set(grpcpp_proto_files)
     - set(address_sorting_unwanted_files)
+    - set(libuv_unwanted_files)
   )
   grpcpp_abseil_specs = list_abseil_specs("grpc++")
   %>

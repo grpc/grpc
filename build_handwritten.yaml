@@ -183,9 +183,9 @@ defaults:
   global:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
-      -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
-      -Ithird_party/xxhash
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/libuv/src
+      -Ithird_party/libuv/include -Ithird_party/re2 -Ithird_party/upb -Isrc/core/ext/upb-generated
+      -Isrc/core/ext/upbdefs-generated -Ithird_party/xxhash
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
@@ -197,6 +197,7 @@ php_config_m4:
   - boringssl
   - re2
   - z
+  - uv
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -229,6 +230,7 @@ python_dependencies:
   - boringssl
   - re2
   - z
+  - uv
 ruby_gem:
   deps:
   - grpc
@@ -237,3 +239,4 @@ ruby_gem:
   - boringssl
   - re2
   - z
+  - uv
