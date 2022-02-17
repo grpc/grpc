@@ -65,7 +65,8 @@ def find_closing_mustache(contents, initial_depth):
 def is_a_define_statement(match, body):
     """See if the matching line begins with #define"""
     # This does not yet help with multi-line defines
-    m = re.search(r"^#define.*{}$".format(match.group(0)), body[:match.end()], re.MULTILINE)
+    m = re.search(r"^#define.*{}$".format(match.group(0)), body[:match.end()],
+                  re.MULTILINE)
     return m is not None
 
 
