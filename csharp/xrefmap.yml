@@ -151,6 +151,23 @@ references:
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall
   nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall
+- uid: Grpc.Core.AsyncClientStreamingCall`2.ConfigureAwait(System.Boolean)
+  name: ConfigureAwait(Boolean)
+  href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_ConfigureAwait_System_Boolean_
+  commentId: M:Grpc.Core.AsyncClientStreamingCall`2.ConfigureAwait(System.Boolean)
+  fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.ConfigureAwait(System.Boolean)
+  fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).ConfigureAwait(System.Boolean)
+  nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.ConfigureAwait(Boolean)
+  nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse).ConfigureAwait(Boolean)
+- uid: Grpc.Core.AsyncClientStreamingCall`2.ConfigureAwait*
+  name: ConfigureAwait
+  href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_ConfigureAwait_
+  commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.ConfigureAwait
+  isSpec: "True"
+  fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.ConfigureAwait
+  fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).ConfigureAwait
+  nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.ConfigureAwait
+  nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse).ConfigureAwait
 - uid: Grpc.Core.AsyncClientStreamingCall`2.Dispose
   name: Dispose()
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_Dispose
@@ -587,6 +604,23 @@ references:
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).AsyncUnaryCall
   nameWithType: AsyncUnaryCall<TResponse>.AsyncUnaryCall
   nameWithType.vb: AsyncUnaryCall(Of TResponse).AsyncUnaryCall
+- uid: Grpc.Core.AsyncUnaryCall`1.ConfigureAwait(System.Boolean)
+  name: ConfigureAwait(Boolean)
+  href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_ConfigureAwait_System_Boolean_
+  commentId: M:Grpc.Core.AsyncUnaryCall`1.ConfigureAwait(System.Boolean)
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>.ConfigureAwait(System.Boolean)
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).ConfigureAwait(System.Boolean)
+  nameWithType: AsyncUnaryCall<TResponse>.ConfigureAwait(Boolean)
+  nameWithType.vb: AsyncUnaryCall(Of TResponse).ConfigureAwait(Boolean)
+- uid: Grpc.Core.AsyncUnaryCall`1.ConfigureAwait*
+  name: ConfigureAwait
+  href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_ConfigureAwait_
+  commentId: Overload:Grpc.Core.AsyncUnaryCall`1.ConfigureAwait
+  isSpec: "True"
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>.ConfigureAwait
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).ConfigureAwait
+  nameWithType: AsyncUnaryCall<TResponse>.ConfigureAwait
+  nameWithType.vb: AsyncUnaryCall(Of TResponse).ConfigureAwait
 - uid: Grpc.Core.AsyncUnaryCall`1.Dispose
   name: Dispose()
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_Dispose

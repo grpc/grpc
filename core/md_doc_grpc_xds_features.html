@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">21.0.0</span>
+   &#160;<span id="projectnumber">22.0.0</span>
    </div>
   </td>
  </tr>
@@ -148,7 +148,7 @@ headers</li>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A33-Fault-Injection.md">A33</a> </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.4.0  </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.proto">Client Status Discovery Service</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A40-csds-support.md">A40</a> </td><td class="markdownTableBodyNone">v1.37.1 (C++)<br  />
-v1.38.0 (Python) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone"></td></tr>
+v1.38.0 (Python) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="markdownTableBodyNone">v1.37.0 </td><td class="markdownTableBodyNone">v1.5.0  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers#ring-hash">Ring hash</a> load balancing policy:<br  />
  Only the following <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/route/v3/route_components.proto#L706">policy specifiers</a> are supported:<ul>
@@ -175,12 +175,21 @@ retry_back_off</li>
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/security/security">Security</a>:<br  />
 Uses <a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md#certificate-provider-plugin-framework">certificate providers</a> instead of SDS </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md">A29</a> </td><td class="markdownTableBodyNone">v1.41.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.41.0 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/rbac/v3/rbac.proto">Authorization (RBAC)</a>:<br  />
+<ul>
+<li>
+<code>LOG</code> action has no effect</li>
+<li>
+CEL unsupported and rejected</li>
+</ul>
+</td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md">A41</a> </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.42.0 </td><td class="markdownTableBodyNone">1.42.0 </td><td class="markdownTableBodyNone"></td></tr>
 </table>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jan 20 2022 22:09:30 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Feb 17 2022 12:39:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

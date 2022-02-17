@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.43.1</span>
+   &#160;<span id="projectnumber">1.44.0</span>
    </div>
   </td>
  </tr>
@@ -394,6 +394,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a0d667304bfe61aaa0c83ef5fc739b67b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a0d667304bfe61aaa0c83ef5fc739b67b">grpc_tls_credentials_options_set_cert_request_type</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a> type)</td></tr>
 <tr class="memdesc:a0d667304bfe61aaa0c83ef5fc739b67b"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a0d667304bfe61aaa0c83ef5fc739b67b">More...</a><br /></td></tr>
 <tr class="separator:a0d667304bfe61aaa0c83ef5fc739b67b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af185cf6d18cc63d0d2ba7df8348b4a23"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#af185cf6d18cc63d0d2ba7df8348b4a23">grpc_tls_credentials_options_set_crl_directory</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, const char *crl_directory)</td></tr>
+<tr class="memdesc:af185cf6d18cc63d0d2ba7df8348b4a23"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#af185cf6d18cc63d0d2ba7df8348b4a23">More...</a><br /></td></tr>
+<tr class="separator:af185cf6d18cc63d0d2ba7df8348b4a23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a1bd0a20897756471d19c9adff72338"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2a1bd0a20897756471d19c9adff72338">grpc_tls_credentials_options_set_verify_server_cert</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, int verify_server_cert)</td></tr>
 <tr class="memdesc:a2a1bd0a20897756471d19c9adff72338"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a2a1bd0a20897756471d19c9adff72338">More...</a><br /></td></tr>
 <tr class="separator:a2a1bd0a20897756471d19c9adff72338"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -2985,6 +2988,37 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="af185cf6d18cc63d0d2ba7df8348b4a23"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af185cf6d18cc63d0d2ba7df8348b4a23">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_crl_directory()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_tls_credentials_options_set_crl_directory </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>crl_directory</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>EXPERIMENTAL API - Subject to change. </p>
+<p>If set, gRPC will read all hashed x.509 CRL files in the directory and enforce the CRL files on all TLS handshakes. Only supported for OpenSSL version &gt; 1.1. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
 <a id="a740c02c53ed078ad1ceb499124c79342"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a740c02c53ed078ad1ceb499124c79342">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_identity_cert_name()</h2>
 
@@ -3268,7 +3302,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jan 20 2022 22:09:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
