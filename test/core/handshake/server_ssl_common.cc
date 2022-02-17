@@ -126,8 +126,7 @@ void server_thread(void* arg) {
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_secure_http2_port(server, addr.c_str(), ssl_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 

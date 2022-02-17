@@ -130,7 +130,20 @@ libs:
 - name: end2end_tests
   build: private
   language: c
-  public_headers: []
+  public_headers:
+  - include/grpc/byte_buffer.h
+  - include/grpc/byte_buffer_reader.h
+  - include/grpc/compression.h
+  - include/grpc/fork.h
+  - include/grpc/grpc.h
+  - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
+  - include/grpc/load_reporting.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
+  - include/grpc/status.h
+  - include/grpc/support/workaround_list.h
   headers:
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/rbac_translator.h
@@ -183,6 +196,7 @@ libs:
   - test/core/end2end/tests/filter_latency.cc
   - test/core/end2end/tests/filter_status_code.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
+  - test/core/end2end/tests/grpc_authz.cc
   - test/core/end2end/tests/high_initial_seqno.cc
   - test/core/end2end/tests/hpack_size.cc
   - test/core/end2end/tests/idempotent_request.cc
@@ -232,7 +246,6 @@ libs:
   - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/sdk_authz.cc
   - test/core/end2end/tests/server_finishes_request.cc
   - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -427,7 +440,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
@@ -774,7 +786,6 @@ libs:
   - src/core/ext/xds/xds_bootstrap.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
-  - src/core/ext/xds/xds_channel_creds.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
@@ -820,6 +831,7 @@ libs:
   - src/core/lib/event_engine/uv/libuv_event_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -864,7 +876,6 @@ libs:
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
-  - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
@@ -872,15 +883,12 @@ libs:
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
-  - src/core/lib/iomgr/pollset_custom.h
   - src/core/lib/iomgr/pollset_set.h
-  - src/core/lib/iomgr/pollset_set_custom.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_custom.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
@@ -896,14 +904,12 @@ libs:
   - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
-  - src/core/lib/iomgr/tcp_custom.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_server_utils_posix.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
-  - src/core/lib/iomgr/timer_custom.h
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
@@ -929,6 +935,8 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -943,13 +951,14 @@ libs:
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
-  - src/core/lib/security/authorization/sdk_server_authz_filter.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/external/aws_external_account_credentials.h
@@ -1078,7 +1087,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1135,16 +1143,9 @@ libs:
   - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
-  - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
-  - src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
-  - src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -1446,7 +1447,6 @@ libs:
   - src/core/ext/xds/xds_api.cc
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_certificate_provider.cc
-  - src/core/ext/xds/xds_channel_creds.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
@@ -1533,7 +1533,6 @@ libs:
   - src/core/lib/iomgr/internal_errqueue.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
-  - src/core/lib/iomgr/iomgr_custom.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/iomgr_posix.cc
   - src/core/lib/iomgr/iomgr_posix_cfstream.cc
@@ -1543,13 +1542,10 @@ libs:
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
-  - src/core/lib/iomgr/pollset_custom.cc
   - src/core/lib/iomgr/pollset_set.cc
-  - src/core/lib/iomgr/pollset_set_custom.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
   - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_custom.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
@@ -1561,13 +1557,10 @@ libs:
   - src/core/lib/iomgr/socket_windows.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
-  - src/core/lib/iomgr/tcp_client_custom.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
   - src/core/lib/iomgr/tcp_client_windows.cc
-  - src/core/lib/iomgr/tcp_custom.cc
   - src/core/lib/iomgr/tcp_posix.cc
   - src/core/lib/iomgr/tcp_server.cc
-  - src/core/lib/iomgr/tcp_server_custom.cc
   - src/core/lib/iomgr/tcp_server_posix.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
@@ -1576,7 +1569,6 @@ libs:
   - src/core/lib/iomgr/tcp_windows.cc
   - src/core/lib/iomgr/time_averaged_stats.cc
   - src/core/lib/iomgr/timer.cc
-  - src/core/lib/iomgr/timer_custom.cc
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
@@ -1592,6 +1584,7 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -1604,9 +1597,9 @@ libs:
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
-  - src/core/lib/security/authorization/sdk_server_authz_filter.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1616,6 +1609,7 @@ libs:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/lib/security/credentials/channel_creds_registry_init.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/external/aws_external_account_credentials.cc
@@ -1684,7 +1678,6 @@ libs:
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/init.cc
-  - src/core/lib/surface/init_secure.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
@@ -1702,6 +1695,7 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
   - src/core/plugin_registry/grpc_plugin_registry.cc
+  - src/core/plugin_registry/grpc_plugin_registry_extra.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
   - src/core/tsi/alts/crypt/gsec.cc
   - src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -1904,7 +1898,6 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
@@ -1974,6 +1967,7 @@ libs:
   - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
   - src/core/lib/address_utils/parse_address.h
@@ -2007,6 +2001,7 @@ libs:
   - src/core/lib/event_engine/uv/libuv_event_engine.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -2050,7 +2045,6 @@ libs:
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
-  - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
@@ -2058,15 +2052,12 @@ libs:
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
-  - src/core/lib/iomgr/pollset_custom.h
   - src/core/lib/iomgr/pollset_set.h
-  - src/core/lib/iomgr/pollset_set_custom.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_custom.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
@@ -2082,14 +2073,12 @@ libs:
   - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
-  - src/core/lib/iomgr/tcp_custom.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_server_utils_posix.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
-  - src/core/lib/iomgr/timer_custom.h
   - src/core/lib/iomgr/timer_generic.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
@@ -2114,6 +2103,8 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -2124,15 +2115,26 @@ libs:
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/authorization_policy_provider.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/grpc_server_authz_filter.h
   - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
+  - src/core/lib/security/credentials/fake/fake_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
+  - src/core/lib/security/credentials/tls/tls_utils.h
+  - src/core/lib/security/security_connector/fake/fake_security_connector.h
+  - src/core/lib/security/security_connector/load_system_roots.h
+  - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
+  - src/core/lib/security/util/json_util.h
   - src/core/lib/service_config/service_config.h
   - src/core/lib/service_config/service_config_call_data.h
   - src/core/lib/service_config/service_config_parser.h
@@ -2171,6 +2173,7 @@ libs:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
+  - src/core/tsi/fake_transport_security.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
@@ -2196,12 +2199,12 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
+  - src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
@@ -2242,14 +2245,9 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  - src/core/ext/transport/chttp2/client/insecure/channel_create.cc
-  - src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
-  - src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
   - src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  - src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   - src/core/ext/transport/chttp2/transport/context_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
@@ -2284,6 +2282,7 @@ libs:
   - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   - src/core/lib/address_utils/parse_address.cc
@@ -2357,7 +2356,6 @@ libs:
   - src/core/lib/iomgr/internal_errqueue.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
-  - src/core/lib/iomgr/iomgr_custom.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/iomgr_posix.cc
   - src/core/lib/iomgr/iomgr_posix_cfstream.cc
@@ -2367,13 +2365,10 @@ libs:
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
-  - src/core/lib/iomgr/pollset_custom.cc
   - src/core/lib/iomgr/pollset_set.cc
-  - src/core/lib/iomgr/pollset_set_custom.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_windows.cc
   - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_custom.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
@@ -2385,13 +2380,10 @@ libs:
   - src/core/lib/iomgr/socket_windows.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
-  - src/core/lib/iomgr/tcp_client_custom.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
   - src/core/lib/iomgr/tcp_client_windows.cc
-  - src/core/lib/iomgr/tcp_custom.cc
   - src/core/lib/iomgr/tcp_posix.cc
   - src/core/lib/iomgr/tcp_server.cc
-  - src/core/lib/iomgr/tcp_server_custom.cc
   - src/core/lib/iomgr/tcp_server_posix.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
@@ -2400,7 +2392,6 @@ libs:
   - src/core/lib/iomgr/tcp_windows.cc
   - src/core/lib/iomgr/time_averaged_stats.cc
   - src/core/lib/iomgr/timer.cc
-  - src/core/lib/iomgr/timer_custom.cc
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
@@ -2415,6 +2406,7 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -2424,17 +2416,25 @@ libs:
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
-  - src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
+  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/grpc_server_authz_filter.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
+  - src/core/lib/security/credentials/fake/fake_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
+  - src/core/lib/security/credentials/tls/tls_utils.cc
+  - src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  - src/core/lib/security/security_connector/load_system_roots_fallback.cc
+  - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
+  - src/core/lib/security/util/json_util.cc
   - src/core/lib/service_config/service_config.cc
   - src/core/lib/service_config/service_config_parser.cc
   - src/core/lib/slice/b64.cc
@@ -2460,7 +2460,6 @@ libs:
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
   - src/core/lib/surface/init.cc
-  - src/core/lib/surface/init_unsecure.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
@@ -2477,13 +2476,16 @@ libs:
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
-  - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
+  - src/core/plugin_registry/grpc_plugin_registry.cc
+  - src/core/plugin_registry/grpc_plugin_registry_noextra.cc
+  - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:bind_front
+  - absl/hash:hash
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
@@ -3089,6 +3091,8 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   headers:
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
+  - src/core/tsi/local_transport_security.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3097,6 +3101,9 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
+  - src/core/tsi/local_transport_security.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -4325,14 +4332,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_security_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/credentials_test.cc
-  deps:
-  - grpc_test_util
 - name: thd_test
   build: test
   language: c
@@ -5038,6 +5037,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: channel_creds_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/channel_creds_registry_test.cc
+  deps:
+  - grpc_test_util
 - name: channel_filter_test
   gtest: true
   build: test
@@ -5383,110 +5391,52 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/config/core_configuration.h
-  - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/murmur_hash.h
-  - src/core/lib/gpr/spinlock.h
-  - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tls.h
-  - src/core/lib/gpr/tmpfile.h
-  - src/core/lib/gpr/useful.h
-  - src/core/lib/gprpp/construct_destruct.h
-  - src/core/lib/gprpp/debug_location.h
-  - src/core/lib/gprpp/examine_stack.h
-  - src/core/lib/gprpp/fork.h
-  - src/core/lib/gprpp/global_config.h
-  - src/core/lib/gprpp/global_config_custom.h
-  - src/core/lib/gprpp/global_config_env.h
-  - src/core/lib/gprpp/global_config_generic.h
-  - src/core/lib/gprpp/host_port.h
-  - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/memory.h
-  - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/status_helper.h
-  - src/core/lib/gprpp/sync.h
-  - src/core/lib/gprpp/thd.h
-  - src/core/lib/gprpp/time_util.h
-  - src/core/lib/profiling/timers.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_internal.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/json/json.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
-  - src/core/lib/gpr/alloc.cc
-  - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/cpu_iphone.cc
-  - src/core/lib/gpr/cpu_linux.cc
-  - src/core/lib/gpr/cpu_posix.cc
-  - src/core/lib/gpr/cpu_windows.cc
-  - src/core/lib/gpr/env_linux.cc
-  - src/core/lib/gpr/env_posix.cc
-  - src/core/lib/gpr/env_windows.cc
-  - src/core/lib/gpr/log.cc
-  - src/core/lib/gpr/log_android.cc
-  - src/core/lib/gpr/log_linux.cc
-  - src/core/lib/gpr/log_posix.cc
-  - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/murmur_hash.cc
-  - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/string_posix.cc
-  - src/core/lib/gpr/string_util_windows.cc
-  - src/core/lib/gpr/string_windows.cc
-  - src/core/lib/gpr/sync.cc
-  - src/core/lib/gpr/sync_abseil.cc
-  - src/core/lib/gpr/sync_posix.cc
-  - src/core/lib/gpr/sync_windows.cc
-  - src/core/lib/gpr/time.cc
-  - src/core/lib/gpr/time_posix.cc
-  - src/core/lib/gpr/time_precise.cc
-  - src/core/lib/gpr/time_windows.cc
-  - src/core/lib/gpr/tmpfile_msys.cc
-  - src/core/lib/gpr/tmpfile_posix.cc
-  - src/core/lib/gpr/tmpfile_windows.cc
-  - src/core/lib/gpr/wrap_memcpy.cc
-  - src/core/lib/gprpp/examine_stack.cc
-  - src/core/lib/gprpp/fork.cc
-  - src/core/lib/gprpp/global_config_env.cc
-  - src/core/lib/gprpp/host_port.cc
-  - src/core/lib/gprpp/mpscq.cc
-  - src/core/lib/gprpp/stat_posix.cc
-  - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/status_helper.cc
-  - src/core/lib/gprpp/thd_posix.cc
-  - src/core/lib/gprpp/thd_windows.cc
-  - src/core/lib/gprpp/time_util.cc
-  - src/core/lib/profiling/basic_timers.cc
-  - src/core/lib/profiling/stap_timers.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/json/json_reader.cc
+  - src/core/lib/json/json_writer.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
   - test/core/config/core_configuration_test.cc
   deps:
-  - absl/base:base
-  - absl/base:core_headers
-  - absl/memory:memory
-  - absl/random:random
-  - absl/status:status
-  - absl/strings:cord
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
-  - absl/types:optional
-  - upb
+  - gpr
   uses_polling: false
 - name: cpp_impl_of_test
   gtest: true
@@ -6066,6 +6016,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: google_c2p_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/fake_udp_and_tcp_server.h
+  src:
+  - test/core/client_channel/resolvers/google_c2p_resolver_test.cc
+  - test/core/util/fake_udp_and_tcp_server.cc
+  deps:
+  - grpc++_test_util
 - name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
   build: test
@@ -6099,6 +6060,25 @@ targets:
   - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
   - grpc_test_util
+- name: grpc_authz_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - src/cpp/server/authorization_policy_provider.cc
+  - test/cpp/end2end/grpc_authz_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - grpc++_test_util
 - name: grpc_cli
   build: test
   run: false
@@ -6705,7 +6685,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: libuv_event_engine_test
+- name: libuv_event_engine
   gtest: true
   build: test
   language: c++
@@ -6753,6 +6733,7 @@ targets:
   src:
   - test/core/promise/loop_test.cc
   deps:
+  - absl/status:statusor
   - absl/types:variant
   uses_polling: false
 - name: match_test
@@ -7532,25 +7513,6 @@ targets:
   - test/core/client_channel/rls_lb_config_parser_test.cc
   deps:
   - grpc_test_util
-- name: sdk_authz_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
-  - src/core/lib/security/authorization/rbac_translator.h
-  - test/cpp/end2end/test_service_impl.h
-  src:
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/simple_messages.proto
-  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
-  - src/core/lib/security/authorization/rbac_translator.cc
-  - src/cpp/server/authorization_policy_provider.cc
-  - test/cpp/end2end/sdk_authz_end2end_test.cc
-  - test/cpp/end2end/test_service_impl.cc
-  deps:
-  - grpc++_test_util
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -7773,6 +7735,17 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
+- name: sleep_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/promise/test_wakeup_schedulers.h
+  src:
+  - test/core/promise/sleep_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: smoke_test
   gtest: true
   build: test
@@ -7914,6 +7887,15 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
+- name: test_core_security_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/credentials_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_slice_slice_test
   gtest: true
   build: test
@@ -8244,8 +8226,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/promise/try_seq.h
+  headers: []
   src:
   - test/core/promise/try_seq_metadata_test.cc
   deps:
@@ -8594,15 +8575,6 @@ targets:
   headers: []
   src:
   - test/core/xds/xds_certificate_provider_test.cc
-  deps:
-  - grpc_test_util
-- name: xds_channel_creds_registry_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/xds/xds_channel_creds_registry_test.cc
   deps:
   - grpc_test_util
 - name: xds_credentials_end2end_test

@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -189,8 +190,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cqv = cq_verifier_create(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
-  state.channel =
-      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  state.channel = grpc_channel_create(state.target.c_str(), creds, nullptr);
+  grpc_channel_credentials_release(creds);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   // The default connect deadline is 20 seconds, so reduce the RPC deadline to 1
   // second. This helps us verify - a) If the server responded with a non-HTTP2

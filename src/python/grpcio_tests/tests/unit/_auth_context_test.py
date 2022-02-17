@@ -78,7 +78,11 @@ class AuthContextTest(unittest.TestCase):
         auth_data = pickle.loads(response)
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
-        self.assertDictEqual({}, auth_data[_AUTH_CTX])
+        self.assertDictEqual(
+            {
+                'security_level': [b'TSI_SECURITY_NONE'],
+                'transport_security_type': [b'insecure'],
+            }, auth_data[_AUTH_CTX])
 
     def testSecureNoCert(self):
         handler = grpc.method_handlers_generic_handler('test', {

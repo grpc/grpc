@@ -58,6 +58,12 @@
 #include "src/core/lib/transport/transport_impl.h"
 #include "src/core/lib/uri/uri_parser.h"
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_disable_flow_control, false,
+    "If set, flow control will be effectively disabled. Max out all values and "
+    "assume the remote peer does the same. Thus we can ignore any flow control "
+    "bookkeeping, error checking, and decision making");
+
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
@@ -162,10 +168,6 @@ static void keepalive_watchdog_fired(void* arg, grpc_error_handle error);
 static void keepalive_watchdog_fired_locked(void* arg, grpc_error_handle error);
 
 static void reset_byte_stream(void* arg, grpc_error_handle error);
-
-// Flow control default enabled. Can be disabled by setting
-// GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
-bool g_flow_control_enabled = true;
 
 namespace grpc_core {
 
@@ -510,7 +512,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     enable_bdp = read_channel_args(this, channel_args, is_client);
   }
 
-  if (g_flow_control_enabled) {
+  static const bool kEnableFlowControl =
+      !GPR_GLOBAL_CONFIG_GET(grpc_experimental_disable_flow_control);
+  if (kEnableFlowControl) {
     flow_control.Init<grpc_core::chttp2::TransportFlowControl>(this,
                                                                enable_bdp);
   } else {
@@ -1860,6 +1864,15 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(
       }
     }
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
+    // If we didn't receive initial metadata from the wire and instead faked a
+    // status (due to stream cancellations for example), let upper layers know
+    // that trailing metadata is immediately available.
+    if (s->trailing_metadata_available != nullptr &&
+        s->published_metadata[0] != GRPC_METADATA_PUBLISHED_FROM_WIRE &&
+        s->published_metadata[1] == GRPC_METADATA_SYNTHESIZED_FROM_FAKE) {
+      *s->trailing_metadata_available = true;
+      s->trailing_metadata_available = nullptr;
+    }
     null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
 }
