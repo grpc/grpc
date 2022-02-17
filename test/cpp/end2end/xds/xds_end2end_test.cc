@@ -3018,7 +3018,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   CreateClientsAndServers(BootstrapBuilder(),
                           /*lb_expected_authority=*/"incorrect_server_name");
   StartAllBackends();
@@ -13156,29 +13156,28 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
       matchers = {
           // Listener
           EqGenericXdsConfig(
-              kLdsTypeUrl, kServerName, /*version_info=*/"1",
+              kLdsTypeUrl, kServerName, "1",
               UnpackListener(EqListener(kServerName, api_listener_matcher)),
-              ClientResourceStatus::ACKED, /*error_state=*/::testing::_),
+              ClientResourceStatus::ACKED, ::testing::_),
           // Cluster
-          EqGenericXdsConfig(
-              kCdsTypeUrl, kDefaultClusterName, /*version_info=*/"1",
-              UnpackCluster(EqCluster(kDefaultClusterName)),
-              ClientResourceStatus::ACKED, /*error_state=*/::testing::_),
+          EqGenericXdsConfig(kCdsTypeUrl, kDefaultClusterName, "1",
+                             UnpackCluster(EqCluster(kDefaultClusterName)),
+                             ClientResourceStatus::ACKED, ::testing::_),
           // ClusterLoadAssignment
           EqGenericXdsConfig(
-              kEdsTypeUrl, kDefaultEdsServiceName, /*version_info=*/"1",
+              kEdsTypeUrl, kDefaultEdsServiceName, "1",
               UnpackClusterLoadAssignment(EqClusterLoadAssignment(
                   kDefaultEdsServiceName, backends_[0]->port(),
                   kDefaultLocalityWeight)),
-              ClientResourceStatus::ACKED, /*error_state=*/::testing::_),
+              ClientResourceStatus::ACKED, ::testing::_),
       };
   // If RDS is enabled, add matcher for RDS resource.
   if (GetParam().enable_rds_testing()) {
     matchers.push_back(EqGenericXdsConfig(
-        kRdsTypeUrl, kDefaultRouteConfigurationName, /*version_info=*/"1",
+        kRdsTypeUrl, kDefaultRouteConfigurationName, "1",
         UnpackRouteConfiguration(EqRouteConfiguration(
             kDefaultRouteConfigurationName, kDefaultClusterName)),
-        ClientResourceStatus::ACKED, /*error_state=*/::testing::_));
+        ClientResourceStatus::ACKED, ::testing::_));
   }
   // Validate the dumped xDS configs
   EXPECT_THAT(client_config.generic_xds_configs(),
@@ -13218,7 +13217,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
     bool ok = ::testing::Value(
         csds_response.config(0).generic_xds_configs(),
         ::testing::Contains(EqGenericXdsConfig(
-            kLdsTypeUrl, kServerName, /*version_info=*/"1",
+            kLdsTypeUrl, kServerName, "1",
             UnpackListener(EqListener(kServerName, api_listener_matcher)),
             ClientResourceStatus::NACKED,
             EqUpdateFailureState(
@@ -13253,7 +13252,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
       ok = ::testing::Value(
           csds_response.config(0).generic_xds_configs(),
           ::testing::Contains(EqGenericXdsConfig(
-              kRdsTypeUrl, kDefaultRouteConfigurationName, /*version_info=*/"1",
+              kRdsTypeUrl, kDefaultRouteConfigurationName, "1",
               UnpackRouteConfiguration(EqRouteConfiguration(
                   kDefaultRouteConfigurationName, kDefaultClusterName)),
               ClientResourceStatus::NACKED,
@@ -13263,7 +13262,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
       ok = ::testing::Value(
           csds_response.config(0).generic_xds_configs(),
           ::testing::Contains(EqGenericXdsConfig(
-              kLdsTypeUrl, kServerName, /*version_info=*/"1",
+              kLdsTypeUrl, kServerName, "1",
               UnpackListener(EqListener(
                   kServerName, EqNoRdsHCM(kDefaultRouteConfigurationName,
                                           kDefaultClusterName))),
@@ -13297,7 +13296,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
     bool ok = ::testing::Value(
         csds_response.config(0).generic_xds_configs(),
         ::testing::Contains(EqGenericXdsConfig(
-            kCdsTypeUrl, kDefaultClusterName, /*version_info=*/"1",
+            kCdsTypeUrl, kDefaultClusterName, "1",
             UnpackCluster(EqCluster(kDefaultClusterName)),
             ClientResourceStatus::NACKED,
             EqUpdateFailureState(
@@ -13332,7 +13331,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
     bool ok = ::testing::Value(
         csds_response.config(0).generic_xds_configs(),
         ::testing::Contains(EqGenericXdsConfig(
-            kEdsTypeUrl, kDefaultEdsServiceName, /*version_info=*/"1",
+            kEdsTypeUrl, kDefaultEdsServiceName, "1",
             UnpackClusterLoadAssignment(EqClusterLoadAssignment(
                 kDefaultEdsServiceName, backends_[0]->port(),
                 kDefaultLocalityWeight)),
@@ -13354,11 +13353,10 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerRequested) {
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(
-      csds_response.config(0).generic_xds_configs(),
-      ::testing::Contains(EqGenericXdsConfig(
-          kLdsTypeUrl, kServerName, /*version_info=*/::testing::_, ::testing::_,
-          ClientResourceStatus::REQUESTED, /*error_state=*/::testing::_)));
+  EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
+              ::testing::Contains(EqGenericXdsConfig(
+                  kLdsTypeUrl, kServerName, ::testing::_, ::testing::_,
+                  ClientResourceStatus::REQUESTED, ::testing::_)));
 }
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
@@ -13388,13 +13386,11 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::AllOf(
                   ::testing::Contains(EqGenericXdsConfig(
-                      kCdsTypeUrl, kClusterName1, /*version_info=*/::testing::_,
-                      ::testing::_, ClientResourceStatus::REQUESTED,
-                      /*error_state=*/::testing::_)),
+                      kCdsTypeUrl, kClusterName1, ::testing::_, ::testing::_,
+                      ClientResourceStatus::REQUESTED, ::testing::_)),
                   ::testing::Contains(EqGenericXdsConfig(
-                      kCdsTypeUrl, kClusterName2, /*version_info=*/::testing::_,
-                      ::testing::_, ClientResourceStatus::REQUESTED,
-                      /*error_state=*/::testing::_))));
+                      kCdsTypeUrl, kClusterName2, ::testing::_, ::testing::_,
+                      ClientResourceStatus::REQUESTED, ::testing::_))));
 }
 
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
@@ -13413,11 +13409,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(
-      csds_response.config(0).generic_xds_configs(),
-      ::testing::Contains(EqGenericXdsConfig(
-          kLdsTypeUrl, kServerName, /*version_info=*/::testing::_, ::testing::_,
-          ClientResourceStatus::DOES_NOT_EXIST, /*error_state=*/::testing::_)));
+  EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
+              ::testing::Contains(EqGenericXdsConfig(
+                  kLdsTypeUrl, kServerName, ::testing::_, ::testing::_,
+                  ClientResourceStatus::DOES_NOT_EXIST, ::testing::_)));
 }
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
@@ -13433,9 +13428,8 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
   EXPECT_THAT(
       csds_response.config(0).generic_xds_configs(),
       ::testing::Contains(EqGenericXdsConfig(
-          kRdsTypeUrl, kDefaultRouteConfigurationName,
-          /*version_info=*/::testing::_, ::testing::_,
-          ClientResourceStatus::DOES_NOT_EXIST, /*error_state=*/::testing::_)));
+          kRdsTypeUrl, kDefaultRouteConfigurationName, ::testing::_,
+          ::testing::_, ClientResourceStatus::DOES_NOT_EXIST, ::testing::_)));
 }
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
@@ -13446,12 +13440,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(
-      csds_response.config(0).generic_xds_configs(),
-      ::testing::Contains(EqGenericXdsConfig(
-          kCdsTypeUrl, kDefaultClusterName, /*version_info=*/::testing::_,
-          ::testing::_, ClientResourceStatus::DOES_NOT_EXIST,
-          /*error_state=*/::testing::_)));
+  EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
+              ::testing::Contains(EqGenericXdsConfig(
+                  kCdsTypeUrl, kDefaultClusterName, ::testing::_, ::testing::_,
+                  ClientResourceStatus::DOES_NOT_EXIST, ::testing::_)));
 }
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
@@ -13462,12 +13454,11 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
   auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
-              ::testing::Contains(EqGenericXdsConfig(
-                  kEdsTypeUrl, kDefaultEdsServiceName,
-                  /*version_info=*/::testing::_, ::testing::_,
-                  ClientResourceStatus::DOES_NOT_EXIST,
-                  /*error_state=*/::testing::_)));
+  EXPECT_THAT(
+      csds_response.config(0).generic_xds_configs(),
+      ::testing::Contains(EqGenericXdsConfig(
+          kEdsTypeUrl, kDefaultEdsServiceName, ::testing::_, ::testing::_,
+          ClientResourceStatus::DOES_NOT_EXIST, ::testing::_)));
 }
 
 #endif  // DISABLED_XDS_PROTO_IN_CC
