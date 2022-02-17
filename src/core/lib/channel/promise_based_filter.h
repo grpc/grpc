@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/utility/utility.h"
-#include "channel_stack.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
