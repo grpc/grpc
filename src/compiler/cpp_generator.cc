@@ -1087,9 +1087,8 @@ void PrintHeaderServerMethodRawCallback(
                    "$RealRequest$, $RealResponse$>(\n"
                    "        [this](\n"
                    "               grpc::CallbackServerContext* context, "
-                   "const"
-                   "$RealRequest$* request) { return "
-                   "this->$Method$(context, request); }));\n");
+                   "const $RealRequest$* request) { "
+                   "return  this->$Method$(context, request); }));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(*vars,
                    "  grpc::Service::MarkMethodRawCallback($Idx$,\n"
