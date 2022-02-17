@@ -970,6 +970,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/config/core_configuration.h",
     ],
+    visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args_preconditioning",
         "channel_creds_registry",
