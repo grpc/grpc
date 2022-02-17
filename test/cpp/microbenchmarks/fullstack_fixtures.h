@@ -77,8 +77,8 @@ class FullstackFixture : public BaseFixture {
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
     if (address.length() > 0) {
-      channel_ = grpc::CreateCustomChannel(
-          address, InsecureChannelCredentials(), args);
+      channel_ = grpc::CreateCustomChannel(address,
+                                           InsecureChannelCredentials(), args);
     } else {
       channel_ = server_->InProcessChannel(args);
     }

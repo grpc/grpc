@@ -88,7 +88,7 @@ class CallbackUnaryCallImpl {
     const size_t alloc_sz = sizeof(OpSetAndTag);
     auto* const alloced = static_cast<OpSetAndTag*>(
         grpc::g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
-                                                                alloc_sz));
+                                                              alloc_sz));
     auto* ops = new (&alloced->opset) FullCallOpSet;
     auto* tag = new (&alloced->tag)
         grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
@@ -258,9 +258,7 @@ class ClientBidiReactor : public internal::ClientReactor {
   /// \param[in] req The message to be written. The library does not take
   ///                ownership but the caller must ensure that the message is
   ///                not deleted or modified until OnWriteDone is called.
-  void StartWrite(const Request* req) {
-    StartWrite(req, grpc::WriteOptions());
-  }
+  void StartWrite(const Request* req) { StartWrite(req, grpc::WriteOptions()); }
 
   /// Initiate/post a write operation with specified options.
   ///
@@ -401,9 +399,7 @@ template <class Request>
 class ClientWriteReactor : public internal::ClientReactor {
  public:
   void StartCall() { writer_->StartCall(); }
-  void StartWrite(const Request* req) {
-    StartWrite(req, grpc::WriteOptions());
-  }
+  void StartWrite(const Request* req) { StartWrite(req, grpc::WriteOptions()); }
   void StartWrite(const Request* req, grpc::WriteOptions options) {
     writer_->Write(req, options);
   }

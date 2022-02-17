@@ -225,8 +225,7 @@ class ServerInterface : public internal::CallHook {
   class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     NoPayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                          ServerInterface* server,
-                          grpc::ServerContext* context,
+                          ServerInterface* server, grpc::ServerContext* context,
                           internal::ServerAsyncStreamingInterface* stream,
                           grpc::CompletionQueue* call_cq,
                           grpc::ServerCompletionQueue* notification_cq,
@@ -247,8 +246,8 @@ class ServerInterface : public internal::CallHook {
                         ServerInterface* server, grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         grpc::CompletionQueue* call_cq,
-                        grpc::ServerCompletionQueue* notification_cq,
-                        void* tag, Message* request)
+                        grpc::ServerCompletionQueue* notification_cq, void* tag,
+                        Message* request)
         : RegisteredAsyncRequest(
               server, context, stream, call_cq, notification_cq, tag,
               registered_method->name(), registered_method->method_type()),
@@ -303,8 +302,8 @@ class ServerInterface : public internal::CallHook {
     GenericAsyncRequest(ServerInterface* server, GenericServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         grpc::CompletionQueue* call_cq,
-                        grpc::ServerCompletionQueue* notification_cq,
-                        void* tag, bool delete_on_finalize);
+                        grpc::ServerCompletionQueue* notification_cq, void* tag,
+                        bool delete_on_finalize);
 
     bool FinalizeResult(void** tag, bool* status) override;
 
@@ -317,8 +316,8 @@ class ServerInterface : public internal::CallHook {
                         grpc::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         grpc::CompletionQueue* call_cq,
-                        grpc::ServerCompletionQueue* notification_cq,
-                        void* tag, Message* message) {
+                        grpc::ServerCompletionQueue* notification_cq, void* tag,
+                        Message* message) {
     GPR_CODEGEN_ASSERT(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);

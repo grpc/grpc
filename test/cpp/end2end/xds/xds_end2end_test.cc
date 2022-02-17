@@ -1686,8 +1686,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
    private:
-    class XdsChannelArgsServerBuilderOption
-        : public grpc::ServerBuilderOption {
+    class XdsChannelArgsServerBuilderOption : public grpc::ServerBuilderOption {
      public:
       explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
           : test_obj_(test_obj) {}

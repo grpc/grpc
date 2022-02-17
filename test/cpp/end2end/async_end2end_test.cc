@@ -303,8 +303,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
-        !(GetParam().inproc) ? grpc::CreateCustomChannel(
-                                   server_address_.str(), channel_creds, args)
+        !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
+                                                         channel_creds, args)
                              : server_->InProcessChannel(args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -1312,7 +1312,7 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
       !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
-                                                         channel_creds, args)
+                                                       channel_creds, args)
                            : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);

@@ -45,10 +45,11 @@
 namespace grpc {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-Channel::Channel(const std::string& host, grpc_channel* channel,
-                 std::vector<std::unique_ptr<
-                     grpc::experimental::ClientInterceptorFactoryInterface>>
-                     interceptor_creators)
+Channel::Channel(
+    const std::string& host, grpc_channel* channel,
+    std::vector<
+        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators)
     : host_(host), c_channel_(channel) {
   interceptor_creators_ = std::move(interceptor_creators);
   g_gli_initializer.summon();
@@ -256,10 +257,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
       // gRPC-core provides the backing needed for the preferred CQ type
 
       auto* shutdown_callback = new ShutdownCallback;
-      callback_cq =
-          new grpc::CompletionQueue(grpc_completion_queue_attributes{
-              GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK,
-              GRPC_CQ_DEFAULT_POLLING, shutdown_callback});
+      callback_cq = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+          GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
+          shutdown_callback});
 
       // Transfer ownership of the new cq to its own shutdown callback
       shutdown_callback->TakeCQ(callback_cq);

@@ -459,7 +459,7 @@ class ServerContextBase {
   grpc_compression_algorithm compression_algorithm_;
 
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage>
+                            grpc::internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_ = false;
 
@@ -648,8 +648,7 @@ static_assert(
 static_assert(std::is_base_of<grpc::ServerContextBase,
                               grpc::CallbackServerContext>::value,
               "improper base class");
-static_assert(sizeof(grpc::ServerContextBase) ==
-                  sizeof(grpc::ServerContext),
+static_assert(sizeof(grpc::ServerContextBase) == sizeof(grpc::ServerContext),
               "wrong size");
 static_assert(sizeof(grpc::ServerContextBase) ==
                   sizeof(grpc::CallbackServerContext),

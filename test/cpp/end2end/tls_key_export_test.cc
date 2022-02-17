@@ -61,15 +61,15 @@ namespace {
 
 class EchoServer final : public EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* /*context*/,
-                      const EchoRequest* request,
-                      EchoResponse* response) override {
+                    const EchoRequest* request,
+                    EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
       return grpc::Status::OK;
     } else {
       return grpc::Status(static_cast<::grpc::StatusCode>(
-                                request->param().expected_error().code()),
-                            "");
+                              request->param().expected_error().code()),
+                          "");
     }
   }
 };

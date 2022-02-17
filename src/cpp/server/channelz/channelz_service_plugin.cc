@@ -61,9 +61,9 @@ class ChannelzServicePlugin : public grpc::ServerBuilderPlugin {
   std::shared_ptr<grpc::ChannelzService> channelz_service_;
 };
 
-static std::unique_ptr< grpc::ServerBuilderPlugin>
+static std::unique_ptr<grpc::ServerBuilderPlugin>
 CreateChannelzServicePlugin() {
-  return std::unique_ptr< grpc::ServerBuilderPlugin>(
+  return std::unique_ptr<grpc::ServerBuilderPlugin>(
       new ChannelzServicePlugin());
 }
 

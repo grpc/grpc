@@ -187,8 +187,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-        ops;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  /// status ignored
@@ -207,7 +206,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   ///   accessed through the \a ClientContext associated with this call).
   bool Read(R* msg) override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                                grpc::internal::CallOpRecvMessage<R>>
+                              grpc::internal::CallOpRecvMessage<R>>
         ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -250,8 +249,8 @@ class ClientReader final : public ClientReaderInterface<R> {
             nullptr}),  // Pluckable cq
         call_(channel->CreateCall(method, context, &cq_)) {
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpClientSendClose>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpClientSendClose>
         ops;
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
@@ -305,8 +304,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   void WaitForInitialMetadata() {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-        ops;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  // status ignored
@@ -321,8 +319,8 @@ class ClientWriter : public ClientWriterInterface<W> {
   using internal::WriterInterface<W>::Write;
   bool Write(const W& msg, grpc::WriteOptions options) override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpClientSendClose>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpClientSendClose>
         ops;
 
     if (options.is_last_message()) {
@@ -398,8 +396,8 @@ class ClientWriter : public ClientWriterInterface<W> {
 
   grpc::ClientContext* context_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              grpc::internal::CallOpGenericRecvMessage,
-                              grpc::internal::CallOpClientRecvStatus>
+                            grpc::internal::CallOpGenericRecvMessage,
+                            grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
   grpc::CompletionQueue cq_;
   grpc::internal::Call call_;
@@ -433,8 +431,7 @@ template <class W, class R>
 class ClientReaderWriterFactory {
  public:
   static ClientReaderWriter<W, R>* Create(
-      grpc::ChannelInterface* channel,
-      const grpc::internal::RpcMethod& method,
+      grpc::ChannelInterface* channel, const grpc::internal::RpcMethod& method,
       grpc::ClientContext* context) {
     return new ClientReaderWriter<W, R>(channel, method, context);
   }
@@ -457,8 +454,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
-    grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
-        ops;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);  // status ignored
@@ -476,7 +472,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   ///   ClientContext associated with this call in that case).
   bool Read(R* msg) override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                                grpc::internal::CallOpRecvMessage<R>>
+                              grpc::internal::CallOpRecvMessage<R>>
         ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -494,8 +490,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   using internal::WriterInterface<W>::Write;
   bool Write(const W& msg, grpc::WriteOptions options) override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpClientSendClose>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpClientSendClose>
         ops;
 
     if (options.is_last_message()) {
@@ -529,7 +525,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   ///     possible trailing metadata sent from the server.
   grpc::Status Finish() override {
     grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                                grpc::internal::CallOpClientRecvStatus>
+                              grpc::internal::CallOpClientRecvStatus>
         ops;
     if (!context_->initial_metadata_received_) {
       ops.RecvInitialMetadata(context_);
@@ -587,8 +583,7 @@ class ServerReader final : public ServerReaderInterface<R> {
   void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
-    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-        ops;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(&ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {
@@ -645,8 +640,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
   void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
-    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
-        ops;
+    grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(&ctx_->initial_metadata_,
                             ctx_->initial_metadata_flags());
     if (ctx_->compression_level_set()) {

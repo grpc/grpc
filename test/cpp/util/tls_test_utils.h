@@ -39,8 +39,8 @@ class SyncCertificateVerifier
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(
-      grpc::experimental::TlsCustomVerificationCheckRequest*) override {}
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
 
  private:
   bool success_ = false;
@@ -57,8 +57,8 @@ class AsyncCertificateVerifier
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(
-      grpc::experimental::TlsCustomVerificationCheckRequest*) override {}
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
 
  private:
   // A request to pass to the worker thread.

@@ -222,8 +222,8 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
         meta_ops_;
     grpc::internal::CallbackWithSuccessTag meta_tag_;
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpServerSendStatus>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
         finish_ops_;
     grpc::internal::CallbackWithSuccessTag finish_tag_;
 
@@ -275,11 +275,11 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
 
     ServerReadReactor<RequestType>* reactor = nullptr;
     if (param.status.ok()) {
-      reactor = grpc::internal::CatchingReactorGetter<
-          ServerReadReactor<RequestType>>(
-          get_reactor_,
-          static_cast<::grpc::CallbackServerContext*>(param.server_context),
-          reader->response());
+      reactor =
+          grpc::internal::CatchingReactorGetter<ServerReadReactor<RequestType>>(
+              get_reactor_,
+              static_cast<::grpc::CallbackServerContext*>(param.server_context),
+              reader->response());
     }
 
     if (reactor == nullptr) {
@@ -419,12 +419,11 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
         meta_ops_;
     grpc::internal::CallbackWithSuccessTag meta_tag_;
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpServerSendStatus>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
         finish_ops_;
     grpc::internal::CallbackWithSuccessTag finish_tag_;
-    grpc::internal::CallOpSet<
-        grpc::internal::CallOpRecvMessage<RequestType>>
+    grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<RequestType>>
         read_ops_;
     grpc::internal::CallbackWithSuccessTag read_tag_;
 
@@ -489,9 +488,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
                     grpc::Status* status, void** /*handler_data*/) final {
     grpc::ByteBuffer buf;
     buf.set_buffer(req);
-    auto* request =
-        new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-            call, sizeof(RequestType))) RequestType();
+    auto* request = new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
+        call, sizeof(RequestType))) RequestType();
     *status =
         grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
     buf.Release();
@@ -503,8 +501,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<ServerWriteReactor<ResponseType>*(
-      grpc::CallbackServerContext*, const RequestType*)>
+  std::function<ServerWriteReactor<ResponseType>*(grpc::CallbackServerContext*,
+                                                  const RequestType*)>
       get_reactor_;
 
   class ServerCallbackWriterImpl : public ServerCallbackWriter<ResponseType> {
@@ -561,8 +559,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       call_.PerformOps(&meta_ops_);
     }
 
-    void Write(const ResponseType* resp,
-               grpc::WriteOptions options) override {
+    void Write(const ResponseType* resp, grpc::WriteOptions options) override {
       this->Ref();
       if (options.is_last_message()) {
         options.set_buffer_hint();
@@ -592,8 +589,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     friend class CallbackServerStreamingHandler<RequestType, ResponseType>;
 
     ServerCallbackWriterImpl(grpc::CallbackServerContext* ctx,
-                             grpc::internal::Call* call,
-                             const RequestType* req,
+                             grpc::internal::Call* call, const RequestType* req,
                              std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
@@ -648,12 +644,12 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         meta_ops_;
     grpc::internal::CallbackWithSuccessTag meta_tag_;
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpServerSendStatus>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
         finish_ops_;
     grpc::internal::CallbackWithSuccessTag finish_tag_;
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage>
+                              grpc::internal::CallOpSendMessage>
         write_ops_;
     grpc::internal::CallbackWithSuccessTag write_tag_;
 
@@ -773,8 +769,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       call_.PerformOps(&meta_ops_);
     }
 
-    void Write(const ResponseType* resp,
-               grpc::WriteOptions options) override {
+    void Write(const ResponseType* resp, grpc::WriteOptions options) override {
       this->Ref();
       if (options.is_last_message()) {
         options.set_buffer_hint();
@@ -865,16 +860,15 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         meta_ops_;
     grpc::internal::CallbackWithSuccessTag meta_tag_;
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage,
-                                grpc::internal::CallOpServerSendStatus>
+                              grpc::internal::CallOpSendMessage,
+                              grpc::internal::CallOpServerSendStatus>
         finish_ops_;
     grpc::internal::CallbackWithSuccessTag finish_tag_;
     grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                grpc::internal::CallOpSendMessage>
+                              grpc::internal::CallOpSendMessage>
         write_ops_;
     grpc::internal::CallbackWithSuccessTag write_tag_;
-    grpc::internal::CallOpSet<
-        grpc::internal::CallOpRecvMessage<RequestType>>
+    grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<RequestType>>
         read_ops_;
     grpc::internal::CallbackWithSuccessTag read_tag_;
 

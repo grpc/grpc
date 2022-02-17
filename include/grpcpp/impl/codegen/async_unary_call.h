@@ -122,11 +122,11 @@ class ClientAsyncResponseReaderHelper {
       const W& request) {
     using SingleBufType =
         grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                                    grpc::internal::CallOpSendMessage,
-                                    grpc::internal::CallOpClientSendClose,
-                                    grpc::internal::CallOpRecvInitialMetadata,
-                                    grpc::internal::CallOpRecvMessage<R>,
-                                    grpc::internal::CallOpClientRecvStatus>;
+                                  grpc::internal::CallOpSendMessage,
+                                  grpc::internal::CallOpClientSendClose,
+                                  grpc::internal::CallOpRecvInitialMetadata,
+                                  grpc::internal::CallOpRecvMessage<R>,
+                                  grpc::internal::CallOpClientRecvStatus>;
     SingleBufType* single_buf =
         new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
             call, sizeof(SingleBufType))) SingleBufType;
@@ -162,9 +162,9 @@ class ClientAsyncResponseReaderHelper {
                  internal::CallOpSetInterface** finish_buf_ptr, void* msg,
                  Status* status, void* tag) {
       if (initial_metadata_read) {
-        using FinishBufType = grpc::internal::CallOpSet<
-            grpc::internal::CallOpRecvMessage<R>,
-            grpc::internal::CallOpClientRecvStatus>;
+        using FinishBufType =
+            grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<R>,
+                                      grpc::internal::CallOpClientRecvStatus>;
         FinishBufType* finish_buf =
             new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
                 call->call(), sizeof(FinishBufType))) FinishBufType;
@@ -186,9 +186,8 @@ class ClientAsyncResponseReaderHelper {
     };
   }
 
-  static void StartCall(
-      grpc::ClientContext* context,
-      grpc::internal::CallOpSendInitialMetadata* single_buf) {
+  static void StartCall(grpc::ClientContext* context,
+                        grpc::internal::CallOpSendInitialMetadata* single_buf) {
     single_buf->SendInitialMetadata(&context->send_initial_metadata_,
                                     context->initial_metadata_flags());
   }
@@ -398,8 +397,8 @@ class ServerAsyncResponseWriter final
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_buf_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpServerSendStatus>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpServerSendStatus>
       finish_buf_;
 };
 
