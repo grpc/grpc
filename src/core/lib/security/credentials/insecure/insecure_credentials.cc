@@ -38,7 +38,7 @@ class InsecureCredentials final : public grpc_channel_credentials {
   }
 
  private:
-  int cmp_impl(const grpc_channel_credentials* other) const override {
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
     // All insecure credentials objects should compare equal.
     return 0;
   }
