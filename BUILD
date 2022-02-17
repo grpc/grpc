@@ -2698,8 +2698,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/container:inlined_vector",
+        "absl/functional:bind_front",
+        "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
         "upb_lib",

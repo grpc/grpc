@@ -58,6 +58,7 @@
 #include <string.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -87,6 +88,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -116,6 +118,9 @@ TraceFlag grpc_lb_glb_trace(false, "glb");
 const char kGrpcLbAddressAttributeKey[] = "grpclb";
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 constexpr char kGrpclb[] = "grpclb";
 
@@ -174,13 +179,15 @@ class GrpcLb : public LoadBalancingPolicy {
     void ScheduleNextClientLoadReportLocked();
     void SendClientLoadReportLocked();
 
-    static void MaybeSendClientLoadReport(void* arg, grpc_error_handle error);
+    // EventEngine callbacks
+    void MaybeSendClientLoadReport();
+    void MaybeSendClientLoadReportLocked();
+
     static void ClientLoadReportDone(void* arg, grpc_error_handle error);
     static void OnInitialRequestSent(void* arg, grpc_error_handle error);
     static void OnBalancerMessageReceived(void* arg, grpc_error_handle error);
     static void OnBalancerStatusReceived(void* arg, grpc_error_handle error);
 
-    void MaybeSendClientLoadReportLocked(grpc_error_handle error);
     void ClientLoadReportDoneLocked(grpc_error_handle error);
     void OnInitialRequestSentLocked();
     void OnBalancerMessageReceivedLocked();
@@ -215,12 +222,11 @@ class GrpcLb : public LoadBalancingPolicy {
     // Created after the first serverlist is received.
     RefCountedPtr<GrpcLbClientStats> client_stats_;
     grpc_millis client_stats_report_interval_ = 0;
-    grpc_timer client_load_report_timer_;
+    EventEngine::TaskHandle client_load_report_handle_;
     bool client_load_report_timer_callback_pending_ = false;
     bool last_client_load_report_counters_were_zero_ = false;
     bool client_load_report_is_due_ = false;
-    // The closure used for either the load report timer or the callback for
-    // completion of sending the load report.
+    // The closure used for the completion of sending the load report.
     grpc_closure client_load_report_closure_;
   };
 
@@ -782,8 +788,6 @@ GrpcLb::BalancerCallState::BalancerCallState(
                     OnBalancerMessageReceived, this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&lb_on_balancer_status_received_, OnBalancerStatusReceived,
                     this, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
-                    this, grpc_schedule_on_exec_ctx);
   const grpc_millis deadline =
       grpclb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
@@ -825,8 +829,10 @@ void GrpcLb::BalancerCallState::Orphan() {
   // up. Otherwise, we are here because grpclb_policy has to orphan a failed
   // call, then the following cancellation will be a no-op.
   grpc_call_cancel_internal(lb_call_);
-  if (client_load_report_timer_callback_pending_) {
-    grpc_timer_cancel(&client_load_report_timer_);
+  if (client_load_report_timer_callback_pending_ &&
+      GetDefaultEventEngine()->Cancel(client_load_report_handle_)) {
+    Unref(DEBUG_LOCATION, "client_load_report cancelled");
+  }
   }
   // Note that the initial ref is hold by lb_on_balancer_status_received_
   // instead of the caller of this function. So the corresponding unref happens
@@ -910,34 +916,21 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
-  // InvalidateNow to avoid getting stuck re-initializing this timer
-  // in a loop while draining the currently-held WorkSerializer.
-  // Also see https://github.com/grpc/grpc/issues/26079.
-  ExecCtx::Get()->InvalidateNow();
-  const grpc_millis next_client_load_report_time =
-      ExecCtx::Get()->Now() + client_stats_report_interval_;
-  GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
-                    this, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&client_load_report_timer_, next_client_load_report_time,
-                  &client_load_report_closure_);
+  client_load_report_handle_ = GetDefaultEventEngine()->RunAt(
+      absl::Now() + absl::Milliseconds(client_stats_report_interval_),
+      absl::bind_front(&MaybeSendClientLoadReport, this));
   client_load_report_timer_callback_pending_ = true;
 }
 
-void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(
-    void* arg, grpc_error_handle error) {
-  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-  lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld, error]() { lb_calld->MaybeSendClientLoadReportLocked(error); },
-      DEBUG_LOCATION);
+void GrpcLb::BalancerCallState::MaybeSendClientLoadReport() {
+  grpclb_policy()->work_serializer()->Run(
+      absl::bind_front(&MaybeSendClientLoadReportLocked, this), DEBUG_LOCATION);
 }
 
-void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
-    grpc_error_handle error) {
+void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
   client_load_report_timer_callback_pending_ = false;
-  if (error != GRPC_ERROR_NONE || this != grpclb_policy()->lb_calld_.get()) {
+  if (this != grpclb_policy()->lb_calld_.get()) {
     Unref(DEBUG_LOCATION, "client_load_report");
-    GRPC_ERROR_UNREF(error);
     return;
   }
   // If we've already sent the initial request, then we can go ahead and send
