@@ -228,7 +228,7 @@ ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
-    const grpc_channel_args* args) {
+    const grpc_channel_args* args, ChannelFilter::Args) {
   grpc_security_connector* sc = grpc_security_connector_find_in_args(args);
   if (sc == nullptr) {
     return absl::InvalidArgumentError(

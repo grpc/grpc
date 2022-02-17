@@ -1189,6 +1189,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "loop",
+    external_deps = [
+        "absl/types:variant",
+        "absl/status:statusor",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/loop.h",
@@ -2480,10 +2484,15 @@ grpc_cc_library(
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     deps = [
+        "capture",
         "config",
+        "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "grpc_base",
         "idle_filter_state",
+        "loop",
+        "sleep",
+        "try_seq",
     ],
 )
 

@@ -1211,6 +1211,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/promise.h )
   s.files += %w( src/core/lib/promise/race.h )
   s.files += %w( src/core/lib/promise/seq.h )
+  s.files += %w( src/core/lib/promise/sleep.cc )
+  s.files += %w( src/core/lib/promise/sleep.h )
   s.files += %w( src/core/lib/promise/try_seq.h )
   s.files += %w( src/core/lib/resolver/resolver.cc )
   s.files += %w( src/core/lib/resolver/resolver.h )

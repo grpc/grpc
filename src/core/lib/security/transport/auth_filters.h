@@ -24,6 +24,7 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
@@ -37,14 +38,16 @@ namespace grpc_core {
 // Use private inheritance to AuthMetadataContext since we don't want to vend
 // this type generally, and we don't want to increase the size of this type if
 // we can help it.
-class ClientAuthFilter final : private AuthMetadataContext {
+class ClientAuthFilter final : public ChannelFilter,
+                               private AuthMetadataContext {
  public:
-  static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args);
+  static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args,
+                                                 ChannelFilter::Args);
 
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory);
+      NextPromiseFactory next_promise_factory) override;
 
  private:
   struct PartialAuthContext {
