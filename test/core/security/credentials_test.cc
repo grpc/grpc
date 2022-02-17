@@ -3598,6 +3598,30 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   grpc_call_credentials_release(md_creds);
 }
 
+TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
+  auto* xds_creds_2 = grpc_xds_credentials_create(insecure_creds);
+  EXPECT_EQ(xds_creds_1->cmp(xds_creds_2), 0);
+  EXPECT_EQ(xds_creds_2->cmp(xds_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(xds_creds_1);
+  grpc_channel_credentials_release(xds_creds_2);
+}
+
+TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* fake_creds = grpc_fake_transport_security_credentials_create();
+  auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
+  auto* xds_creds_2 = grpc_xds_credentials_create(fake_creds);
+  EXPECT_NE(xds_creds_1->cmp(xds_creds_2), 0);
+  EXPECT_NE(xds_creds_2->cmp(xds_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(fake_creds);
+  grpc_channel_credentials_release(xds_creds_1);
+  grpc_channel_credentials_release(xds_creds_2);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
