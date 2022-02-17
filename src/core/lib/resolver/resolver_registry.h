@@ -100,8 +100,10 @@ class ResolverRegistry {
  private:
   explicit ResolverRegistry(State state) : state_(std::move(state)) {}
 
-  ResolverFactory* FindResolverFactory(absl::string_view target,
-                                       URI* uri) const;
+  // TODO(ctiller): fix callers such that the canonical_target argument can be
+  // removed, and replaced with uri.ToString().
+  ResolverFactory* FindResolverFactory(absl::string_view target, URI* uri,
+                                       std::string* canonical_target) const;
 
   State state_;
 };
