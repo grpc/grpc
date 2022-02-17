@@ -47,7 +47,7 @@ class QualificationValidator(object):
         for (i, line) in enumerate(fcontents):
             if not self.fully_qualified_re.search(line):
                 continue
-            # is it a `using` statement?
+            # skip `using` statements
             if self.using_re.search(line):
                 continue
             # fully-qualified namespace found, which may be unnecessary
@@ -64,6 +64,11 @@ class QualificationValidator(object):
 IGNORED_FILES = [
     # TODO(hork): rename symbols to avoid the need for fully-qualified names
     "src/cpp/common/core_codegen.cc",
+    # TODO(hork): This could be a breaking change for users that define their
+    # own (possibly nested) `grpc.*` namespaces that contain conflicting
+    # symbols. It may be worth trying to land this change at some point, as
+    # users would be better off using unique namespaces.
+    "src/compiler/cpp_generator.cc",
 ]
 
 # find our home
