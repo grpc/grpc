@@ -399,7 +399,7 @@ LANG_RELEASE_MATRIX = {
                 ('v1.42.0',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__v1.41.1')),
-                ('v1.43.0',
+                ('v1.43.2',
                  ReleaseInfo(runtimes=['python'],
                              testcases_file='python__v1.41.1')),
                 ('v1.44.0',
