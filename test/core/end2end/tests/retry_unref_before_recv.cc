@@ -215,7 +215,9 @@ static void test_retry_unref_before_recv(grpc_end2end_test_config config) {
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(0 == call_details.flags);
-  GPR_ASSERT(was_cancelled == 0);
+  // Note: Not checking the value of was_cancelled here, because it will
+  // be flaky, depending on whether the server sent its response before
+  // the client sent its cancellation.
 
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
