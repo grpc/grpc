@@ -222,8 +222,6 @@ def collect_summary(bm_name, args):
     print(counters_summary)
 
     if args.bq_result_table:
-        # TODO(jtattermusch): currently there is no way to differentiate
-        # between the "counters" and "opt" data in bigquery.
         with open('%s.csv' % bm_name, 'w') as f:
             f.write(
                 subprocess.check_output([
