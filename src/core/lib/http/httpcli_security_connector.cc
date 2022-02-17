@@ -192,7 +192,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   }
 
  private:
-  int cmp_impl(const grpc_channel_credentials* other) const override {
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
     // There's no differentiating factor between two HttpRequestSSLCredentials
     // objects.
     return 0;
