@@ -69,8 +69,10 @@ ResolverRegistry ResolverRegistry::Builder::Build() {
 //
 
 bool ResolverRegistry::IsValidTarget(absl::string_view target) const {
+  std::string canonical_target;
   URI uri;
-  ResolverFactory* factory = FindResolverFactory(target, &uri);
+  ResolverFactory* factory =
+      FindResolverFactory(target, &uri, &canonical_target);
   if (factory == nullptr) return false;
   return factory->IsValidUri(uri);
 }
@@ -80,8 +82,10 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     grpc_pollset_set* pollset_set,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) const {
+  std::string canonical_target;
   ResolverArgs resolver_args;
-  ResolverFactory* factory = FindResolverFactory(target, &resolver_args.uri);
+  ResolverFactory* factory =
+      FindResolverFactory(target, &resolver_args.uri, &canonical_target);
   if (factory == nullptr) return nullptr;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
@@ -92,17 +96,20 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
 
 std::string ResolverRegistry::GetDefaultAuthority(
     absl::string_view target) const {
+  std::string canonical_target;
   URI uri;
-  ResolverFactory* factory = FindResolverFactory(target, &uri);
+  ResolverFactory* factory =
+      FindResolverFactory(target, &uri, &canonical_target);
   if (factory == nullptr) return "";
   return factory->GetDefaultAuthority(uri);
 }
 
 std::string ResolverRegistry::AddDefaultPrefixIfNeeded(
     absl::string_view target) const {
+  std::string canonical_target;
   URI uri;
-  FindResolverFactory(target, &uri);
-  return uri.ToString();
+  FindResolverFactory(target, &uri, &canonical_target);
+  return canonical_target.empty() ? std::string(target) : canonical_target;
 }
 
 ResolverFactory* ResolverRegistry::LookupResolverFactory(
@@ -116,8 +123,8 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(
 // not parse as a URI, prepends \a default_prefix_ and tries again.
 // If URI parsing is successful (in either attempt), sets \a uri to
 // point to the parsed URI.
-ResolverFactory* ResolverRegistry::FindResolverFactory(absl::string_view target,
-                                                       URI* uri) const {
+ResolverFactory* ResolverRegistry::FindResolverFactory(
+    absl::string_view target, URI* uri, std::string* canonical_target) const {
   GPR_ASSERT(uri != nullptr);
   absl::StatusOr<URI> tmp_uri = URI::Parse(target);
   ResolverFactory* factory =
@@ -126,8 +133,8 @@ ResolverFactory* ResolverRegistry::FindResolverFactory(absl::string_view target,
     *uri = std::move(*tmp_uri);
     return factory;
   }
-  std::string canonical_target = absl::StrCat(state_.default_prefix, target);
-  absl::StatusOr<URI> tmp_uri2 = URI::Parse(canonical_target);
+  *canonical_target = absl::StrCat(state_.default_prefix, target);
+  absl::StatusOr<URI> tmp_uri2 = URI::Parse(*canonical_target);
   factory = tmp_uri2.ok() ? LookupResolverFactory(tmp_uri2->scheme()) : nullptr;
   if (factory != nullptr) {
     *uri = std::move(*tmp_uri2);
@@ -136,13 +143,13 @@ ResolverFactory* ResolverRegistry::FindResolverFactory(absl::string_view target,
   if (!tmp_uri.ok() || !tmp_uri2.ok()) {
     gpr_log(GPR_ERROR, "%s",
             absl::StrFormat("Error parsing URI(s). '%s':%s; '%s':%s", target,
-                            tmp_uri.status().ToString(), canonical_target,
+                            tmp_uri.status().ToString(), *canonical_target,
                             tmp_uri2.status().ToString())
                 .c_str());
     return nullptr;
   }
   gpr_log(GPR_ERROR, "Don't know how to resolve '%s' or '%s'.",
-          std::string(target).c_str(), canonical_target.c_str());
+          std::string(target).c_str(), canonical_target->c_str());
   return nullptr;
 }
 
