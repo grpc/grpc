@@ -458,10 +458,9 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
           " $Method$(grpc::ClientContext* context, const $Request$& request)"
           " {\n");
       printer->Indent();
-      printer->Print(
-          *vars,
-          "return std::unique_ptr< grpc::ClientReader< $Response$>>"
-          "($Method$Raw(context, request));\n");
+      printer->Print(*vars,
+                     "return std::unique_ptr< grpc::ClientReader< $Response$>>"
+                     "($Method$Raw(context, request));\n");
       printer->Outdent();
       printer->Print("}\n");
       for (auto async_prefix : async_prefixes) {
@@ -517,12 +516,11 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
     if (method->NoStreaming()) {
       for (auto async_prefix : async_prefixes) {
         (*vars)["AsyncPrefix"] = async_prefix.prefix;
-        printer->Print(
-            *vars,
-            "::grpc::ClientAsyncResponseReader< $Response$>* "
-            "$AsyncPrefix$$Method$Raw(grpc::ClientContext* context, "
-            "const $Request$& request, "
-            "::grpc::CompletionQueue* cq) override;\n");
+        printer->Print(*vars,
+                       "::grpc::ClientAsyncResponseReader< $Response$>* "
+                       "$AsyncPrefix$$Method$Raw(grpc::ClientContext* context, "
+                       "const $Request$& request, "
+                       "::grpc::CompletionQueue* cq) override;\n");
       }
     } else if (ClientOnlyStreaming(method)) {
       printer->Print(*vars,
@@ -1003,27 +1001,25 @@ void PrintHeaderServerMethodCallback(grpc_generator::Printer* printer,
                    "$RealRequest$, $RealResponse$>*>(handler)\n"
                    "          ->SetMessageAllocator(allocator);\n");
   } else if (ClientOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "  grpc::Service::MarkMethodCallback($Idx$,\n"
-        "      new grpc::internal::CallbackClientStreamingHandler< "
-        "$RealRequest$, $RealResponse$>(\n"
-        "        [this](\n"
-        "               grpc::CallbackServerContext* context, "
-        "$RealResponse$* "
-        "response) { "
-        "return this->$Method$(context, response); }));\n");
+    printer->Print(*vars,
+                   "  grpc::Service::MarkMethodCallback($Idx$,\n"
+                   "      new grpc::internal::CallbackClientStreamingHandler< "
+                   "$RealRequest$, $RealResponse$>(\n"
+                   "        [this](\n"
+                   "               grpc::CallbackServerContext* context, "
+                   "$RealResponse$* "
+                   "response) { "
+                   "return this->$Method$(context, response); }));\n");
   } else if (ServerOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "  grpc::Service::MarkMethodCallback($Idx$,\n"
-        "      new grpc::internal::CallbackServerStreamingHandler< "
-        "$RealRequest$, $RealResponse$>(\n"
-        "        [this](\n"
-        "               grpc::CallbackServerContext* context, "
-        "const $RealRequest$* "
-        "request) { "
-        "return this->$Method$(context, request); }));\n");
+    printer->Print(*vars,
+                   "  grpc::Service::MarkMethodCallback($Idx$,\n"
+                   "      new grpc::internal::CallbackServerStreamingHandler< "
+                   "$RealRequest$, $RealResponse$>(\n"
+                   "        [this](\n"
+                   "               grpc::CallbackServerContext* context, "
+                   "const $RealRequest$* "
+                   "request) { "
+                   "return this->$Method$(context, request); }));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(*vars,
                    "  grpc::Service::MarkMethodCallback($Idx$,\n"
@@ -1076,26 +1072,24 @@ void PrintHeaderServerMethodRawCallback(
                    "$RealResponse$* response) { return "
                    "this->$Method$(context, request, response); }));\n");
   } else if (ClientOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "  grpc::Service::MarkMethodRawCallback($Idx$,\n"
-        "      new grpc::internal::CallbackClientStreamingHandler< "
-        "$RealRequest$, $RealResponse$>(\n"
-        "        [this](\n"
-        "               grpc::CallbackServerContext* context, "
-        "$RealResponse$* response) "
-        "{ return this->$Method$(context, response); }));\n");
+    printer->Print(*vars,
+                   "  grpc::Service::MarkMethodRawCallback($Idx$,\n"
+                   "      new grpc::internal::CallbackClientStreamingHandler< "
+                   "$RealRequest$, $RealResponse$>(\n"
+                   "        [this](\n"
+                   "               grpc::CallbackServerContext* context, "
+                   "$RealResponse$* response) "
+                   "{ return this->$Method$(context, response); }));\n");
   } else if (ServerOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "  grpc::Service::MarkMethodRawCallback($Idx$,\n"
-        "      new grpc::internal::CallbackServerStreamingHandler< "
-        "$RealRequest$, $RealResponse$>(\n"
-        "        [this](\n"
-        "               grpc::CallbackServerContext* context, "
-        "const"
-        "$RealRequest$* request) { return "
-        "this->$Method$(context, request); }));\n");
+    printer->Print(*vars,
+                   "  grpc::Service::MarkMethodRawCallback($Idx$,\n"
+                   "      new grpc::internal::CallbackServerStreamingHandler< "
+                   "$RealRequest$, $RealResponse$>(\n"
+                   "        [this](\n"
+                   "               grpc::CallbackServerContext* context, "
+                   "const"
+                   "$RealRequest$* request) { return "
+                   "this->$Method$(context, request); }));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(*vars,
                    "  grpc::Service::MarkMethodRawCallback($Idx$,\n"
@@ -2237,19 +2231,17 @@ void PrintMockClientMethods(grpc_generator::Printer* printer,
         "const $Request$& request, $Response$* response));\n");
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
-      printer->Print(
-          *vars,
-          "MOCK_METHOD3($AsyncPrefix$$Method$Raw, "
-          "::grpc::ClientAsyncResponseReaderInterface< $Response$>*"
-          "(grpc::ClientContext* context, const $Request$& request, "
-          "::grpc::CompletionQueue* cq));\n");
+      printer->Print(*vars,
+                     "MOCK_METHOD3($AsyncPrefix$$Method$Raw, "
+                     "::grpc::ClientAsyncResponseReaderInterface< $Response$>*"
+                     "(grpc::ClientContext* context, const $Request$& request, "
+                     "::grpc::CompletionQueue* cq));\n");
     }
   } else if (ClientOnlyStreaming(method)) {
-    printer->Print(
-        *vars,
-        "MOCK_METHOD2($Method$Raw, "
-        "::grpc::ClientWriterInterface< $Request$>*"
-        "(grpc::ClientContext* context, $Response$* response));\n");
+    printer->Print(*vars,
+                   "MOCK_METHOD2($Method$Raw, "
+                   "::grpc::ClientWriterInterface< $Request$>*"
+                   "(grpc::ClientContext* context, $Response$* response));\n");
     for (auto async_prefix : async_prefixes) {
       (*vars)["AsyncPrefix"] = async_prefix.prefix;
       (*vars)["AsyncMethodParams"] = async_prefix.method_params;
@@ -2272,12 +2264,11 @@ void PrintMockClientMethods(grpc_generator::Printer* printer,
       (*vars)["AsyncMethodParams"] = async_prefix.method_params;
       (*vars)["MockArgs"] =
           std::to_string(3 + async_prefix.extra_method_param_count);
-      printer->Print(
-          *vars,
-          "MOCK_METHOD$MockArgs$($AsyncPrefix$$Method$Raw, "
-          "::grpc::ClientAsyncReaderInterface< $Response$>*"
-          "(grpc::ClientContext* context, const $Request$& request, "
-          "::grpc::CompletionQueue* cq$AsyncMethodParams$));\n");
+      printer->Print(*vars,
+                     "MOCK_METHOD$MockArgs$($AsyncPrefix$$Method$Raw, "
+                     "::grpc::ClientAsyncReaderInterface< $Response$>*"
+                     "(grpc::ClientContext* context, const $Request$& request, "
+                     "::grpc::CompletionQueue* cq$AsyncMethodParams$));\n");
     }
   } else if (method->BidiStreaming()) {
     printer->Print(
@@ -2290,13 +2281,12 @@ void PrintMockClientMethods(grpc_generator::Printer* printer,
       (*vars)["AsyncMethodParams"] = async_prefix.method_params;
       (*vars)["MockArgs"] =
           std::to_string(2 + async_prefix.extra_method_param_count);
-      printer->Print(
-          *vars,
-          "MOCK_METHOD$MockArgs$($AsyncPrefix$$Method$Raw, "
-          "::grpc::ClientAsyncReaderWriterInterface<$Request$, "
-          "$Response$>*"
-          "(grpc::ClientContext* context, grpc::CompletionQueue* cq"
-          "$AsyncMethodParams$));\n");
+      printer->Print(*vars,
+                     "MOCK_METHOD$MockArgs$($AsyncPrefix$$Method$Raw, "
+                     "::grpc::ClientAsyncReaderWriterInterface<$Request$, "
+                     "$Response$>*"
+                     "(grpc::ClientContext* context, grpc::CompletionQueue* cq"
+                     "$AsyncMethodParams$));\n");
     }
   }
 }

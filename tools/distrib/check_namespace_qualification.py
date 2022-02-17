@@ -23,6 +23,7 @@ import sys
 
 # TODO(hork): dedupe args/load/validate/save code with other check scripts.
 
+
 def load(fpath):
     with open(fpath, 'r') as f:
         return f.readlines()
@@ -37,8 +38,8 @@ class QualificationValidator(object):
 
     def __init__(self):
         self.fully_qualified_re = re.compile(r'([ (])::(grpc[A-Za-z_:])')
-        self.using_re = re.compile(r'(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::')
-
+        self.using_re = re.compile(
+            r'(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::')
 
     def check(self, fpath, fix):
         fcontents = load(fpath)
@@ -61,8 +62,8 @@ class QualificationValidator(object):
 
 
 IGNORED_FILES = [
-  # TODO(hork): rename symbols to avoid the need for fully-qualified names
-  "src/cpp/common/core_codegen.cc",
+    # TODO(hork): rename symbols to avoid the need for fully-qualified names
+    "src/cpp/common/core_codegen.cc",
 ]
 
 # find our home
@@ -70,7 +71,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
 # parse command line
-argp = argparse.ArgumentParser(description='c++ namespace full qualification checker')
+argp = argparse.ArgumentParser(
+    description='c++ namespace full qualification checker')
 argp.add_argument('-f', '--fix', default=False, action='store_true')
 argp.add_argument('--precommit', default=False, action='store_true')
 args = argp.parse_args()
@@ -99,8 +101,8 @@ validator = QualificationValidator()
 for filename in filename_list:
     # Skip check for upb generated code and ignored files.
     if (filename.endswith('.upb.h') or filename.endswith('.upb.c') or
-            filename.endswith('.upbdefs.h') or filename.endswith('.upbdefs.c')
-            or filename in IGNORED_FILES):
+            filename.endswith('.upbdefs.h') or
+            filename.endswith('.upbdefs.c') or filename in IGNORED_FILES):
         continue
     ok = validator.check(filename, args.fix) and ok
 

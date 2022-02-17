@@ -86,15 +86,15 @@ class Channel final : public grpc::ChannelInterface,
               interceptor_creators);
 
   grpc::internal::Call CreateCall(const grpc::internal::RpcMethod& method,
-                                    grpc::ClientContext* context,
-                                    grpc::CompletionQueue* cq) override;
+                                  grpc::ClientContext* context,
+                                  grpc::CompletionQueue* cq) override;
   void PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
                         grpc::internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               grpc::CompletionQueue* cq, void* tag) override;
+                               gpr_timespec deadline, grpc::CompletionQueue* cq,
+                               void* tag) override;
   bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
                               gpr_timespec deadline) override;
 

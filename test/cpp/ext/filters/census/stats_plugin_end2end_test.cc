@@ -55,9 +55,8 @@ const auto TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
 class EchoServer final : public EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* context,
-                      const EchoRequest* request,
-                      EchoResponse* response) override {
+  grpc::Status Echo(grpc::ServerContext* context, const EchoRequest* request,
+                    EchoResponse* response) override {
     for (const auto& metadata : context->client_metadata()) {
       if (metadata.first == kExpectedTraceIdKey) {
         EXPECT_EQ(metadata.second, reinterpret_cast<const grpc::CensusContext*>(
@@ -74,8 +73,8 @@ class EchoServer final : public EchoTestService::Service {
       return grpc::Status::OK;
     } else {
       return grpc::Status(static_cast<::grpc::StatusCode>(
-                                request->param().expected_error().code()),
-                            "");
+                              request->param().expected_error().code()),
+                          "");
     }
   }
 };
@@ -538,8 +537,7 @@ TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
   request.set_message("foo");
   EchoResponse response;
   grpc::ClientContext context;
-  grpc::CensusContext app_census_context("root",
-                                           ::opencensus::tags::TagMap{});
+  grpc::CensusContext app_census_context("root", ::opencensus::tags::TagMap{});
   context.set_census_context(
       reinterpret_cast<census_context*>(&app_census_context));
   context.AddMetadata(kExpectedTraceIdKey,

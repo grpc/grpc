@@ -154,7 +154,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   if (cred_type.empty()) {
     if (interceptor_creators.empty()) {
       return grpc::CreateCustomChannel(server, InsecureChannelCredentials(),
-                                         channel_args);
+                                       channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
           server, InsecureChannelCredentials(), channel_args,
@@ -180,8 +180,7 @@ std::shared_ptr<Channel> CreateTestChannel(
       channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
     }
     if (interceptor_creators.empty()) {
-      return grpc::CreateCustomChannel(connect_to, channel_creds,
-                                         channel_args);
+      return grpc::CreateCustomChannel(connect_to, channel_creds, channel_args);
     } else {
       return experimental::CreateCustomChannelWithInterceptors(
           connect_to, channel_creds, channel_args,

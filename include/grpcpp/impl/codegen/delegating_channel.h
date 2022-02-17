@@ -61,8 +61,7 @@ class DelegatingChannel : public grpc::ChannelInterface {
   }
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               grpc::CompletionQueue* cq,
+                               gpr_timespec deadline, grpc::CompletionQueue* cq,
                                void* tag) override {
     delegate_channel()->NotifyOnStateChangeImpl(last_observed, deadline, cq,
                                                 tag);

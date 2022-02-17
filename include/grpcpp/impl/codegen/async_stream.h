@@ -285,16 +285,16 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
   grpc::internal::Call call_;
   bool started_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpClientSendClose>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose>
       init_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
       meta_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              grpc::internal::CallOpRecvMessage<R>>
+                            grpc::internal::CallOpRecvMessage<R>>
       read_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              grpc::internal::CallOpClientRecvStatus>
+                            grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
 };
 
@@ -330,8 +330,8 @@ class ClientAsyncWriterFactory {
   static ClientAsyncWriter<W>* Create(grpc::ChannelInterface* channel,
                                       grpc::CompletionQueue* cq,
                                       const grpc::internal::RpcMethod& method,
-                                      grpc::ClientContext* context,
-                                      R* response, bool start, void* tag) {
+                                      grpc::ClientContext* context, R* response,
+                                      bool start, void* tag) {
     grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncWriter<W>)))
@@ -456,12 +456,12 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
       meta_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpClientSendClose>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose>
       write_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              grpc::internal::CallOpGenericRecvMessage,
-                              grpc::internal::CallOpClientRecvStatus>
+                            grpc::internal::CallOpGenericRecvMessage,
+                            grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
 };
 
@@ -627,14 +627,14 @@ class ClientAsyncReaderWriter final
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
       meta_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              grpc::internal::CallOpRecvMessage<R>>
+                            grpc::internal::CallOpRecvMessage<R>>
       read_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpClientSendClose>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpClientSendClose>
       write_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
-                              grpc::internal::CallOpClientRecvStatus>
+                            grpc::internal::CallOpClientRecvStatus>
       finish_ops_;
 };
 
@@ -665,8 +665,7 @@ class ServerAsyncReaderInterface
   /// \param[in] tag Tag identifying this request.
   /// \param[in] status To be sent to the client as the result of this call.
   /// \param[in] msg To be sent to the client as the response for this call.
-  virtual void Finish(const W& msg, const grpc::Status& status,
-                      void* tag) = 0;
+  virtual void Finish(const W& msg, const grpc::Status& status, void* tag) = 0;
 
   /// Indicate that the stream is to be finished with a certain
   /// non-OK status code.
@@ -789,8 +788,8 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
       meta_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpServerSendStatus>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpServerSendStatus>
       finish_ops_;
 };
 
@@ -946,11 +945,11 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
       meta_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpServerSendStatus>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpServerSendStatus>
       write_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpServerSendStatus>
+                            grpc::internal::CallOpServerSendStatus>
       finish_ops_;
 };
 
@@ -1121,11 +1120,11 @@ class ServerAsyncReaderWriter final
       meta_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpRecvMessage<R>> read_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpSendMessage,
-                              grpc::internal::CallOpServerSendStatus>
+                            grpc::internal::CallOpSendMessage,
+                            grpc::internal::CallOpServerSendStatus>
       write_ops_;
   grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
-                              grpc::internal::CallOpServerSendStatus>
+                            grpc::internal::CallOpServerSendStatus>
       finish_ops_;
 };
 

@@ -91,8 +91,8 @@ using RlsService =
 class RlsServiceImpl : public RlsService {
  public:
   grpc::Status RouteLookup(grpc::ServerContext* context,
-                             const RouteLookupRequest* request,
-                             RouteLookupResponse* response) override {
+                           const RouteLookupRequest* request,
+                           RouteLookupResponse* response) override {
     gpr_log(GPR_INFO, "RLS: Received request: %s",
             request->DebugString().c_str());
     // RLS server should see call creds.

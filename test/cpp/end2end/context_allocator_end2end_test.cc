@@ -112,7 +112,7 @@ class ContextAllocatorEnd2endTestBase
     switch (GetParam().protocol) {
       case Protocol::TCP:
         channel_ = grpc::CreateCustomChannel(server_address_.str(),
-                                               channel_creds, args);
+                                             channel_creds, args);
         break;
       case Protocol::INPROC:
         channel_ = server_->InProcessChannel(args);

@@ -61,8 +61,7 @@ class InterceptedChannel : public ChannelInterface {
   }
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline,
-                               grpc::CompletionQueue* cq,
+                               gpr_timespec deadline, grpc::CompletionQueue* cq,
                                void* tag) override {
     return channel_->NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);
   }
