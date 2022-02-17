@@ -22,7 +22,7 @@
 
 #include <atomic>
 
-#include "src/core/ext/filters/client_idle/idle_filter_state.h"
+#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -62,16 +62,16 @@ grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
       MIN_IDLE_TIMEOUT_MS);
 }
 
-class ClientIdleFilter : public ChannelFilter {
+class ChannelIdleFilter : public ChannelFilter {
  public:
-  static absl::StatusOr<ClientIdleFilter> Create(
+  static absl::StatusOr<ChannelIdleFilter> Create(
       const grpc_channel_args* args, ChannelFilter::Args filter_args);
-  ~ClientIdleFilter() override = default;
+  ~ChannelIdleFilter() override = default;
 
-  ClientIdleFilter(const ClientIdleFilter&) = delete;
-  ClientIdleFilter& operator=(const ClientIdleFilter&) = delete;
-  ClientIdleFilter(ClientIdleFilter&&) = default;
-  ClientIdleFilter& operator=(ClientIdleFilter&&) = default;
+  ChannelIdleFilter(const ClientIdleFilter&) = delete;
+  ChannelIdleFilter& operator=(const ClientIdleFilter&) = delete;
+  ChannelIdleFilter(ClientIdleFilter&&) = default;
+  ChannelIdleFilter& operator=(ClientIdleFilter&&) = default;
 
   // Construct a promise for one call.
   ArenaPromise<TrailingMetadata> MakeCallPromise(
@@ -81,7 +81,7 @@ class ClientIdleFilter : public ChannelFilter {
   bool StartTransportOp(grpc_transport_op* op) override;
 
  private:
-  ClientIdleFilter(grpc_channel_stack* channel_stack,
+  ChannelIdleFilter(grpc_channel_stack* channel_stack,
                    grpc_millis client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
@@ -92,7 +92,7 @@ class ClientIdleFilter : public ChannelFilter {
   void DecreaseCallCount();
 
   struct CallCountDecreaser {
-    void operator()(ClientIdleFilter* filter) const {
+    void operator()(ChannelIdleFilter* filter) const {
       filter->DecreaseCallCount();
     }
   };
@@ -106,18 +106,18 @@ class ClientIdleFilter : public ChannelFilter {
   ActivityPtr activity_;
 };
 
-absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
+absl::StatusOr<ChannelIdleFilter> ChannelIdleFilter::Create(
     const grpc_channel_args* args, ChannelFilter::Args filter_args) {
-  ClientIdleFilter filter(filter_args.channel_stack(),
+  ChannelIdleFilter filter(filter_args.channel_stack(),
                           GetClientIdleTimeout(args));
-  return absl::StatusOr<ClientIdleFilter>(std::move(filter));
+  return absl::StatusOr<ChannelIdleFilter>(std::move(filter));
 }
 
 // Construct a promise for one call.
-ArenaPromise<TrailingMetadata> ClientIdleFilter::MakeCallPromise(
+ArenaPromise<TrailingMetadata> ChannelIdleFilter::MakeCallPromise(
     ClientInitialMetadata initial_metadata,
     NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ClientIdleFilter, CallCountDecreaser>;
+  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
   return ArenaPromise<TrailingMetadata>(Capture(
       [](Decrementer*, ArenaPromise<TrailingMetadata>* next)
@@ -125,7 +125,7 @@ ArenaPromise<TrailingMetadata> ClientIdleFilter::MakeCallPromise(
       Decrementer(this), next_promise_factory(std::move(initial_metadata))));
 }
 
-bool ClientIdleFilter::StartTransportOp(grpc_transport_op* op) {
+bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     // IncreaseCallCount() introduces a phony call and prevent the timer from
@@ -137,18 +137,18 @@ bool ClientIdleFilter::StartTransportOp(grpc_transport_op* op) {
   return false;
 }
 
-void ClientIdleFilter::IncreaseCallCount() {
+void ChannelIdleFilter::IncreaseCallCount() {
   idle_filter_state_->IncreaseCallCount();
 }
 
-void ClientIdleFilter::DecreaseCallCount() {
+void ChannelIdleFilter::DecreaseCallCount() {
   if (idle_filter_state_->DecreaseCallCount()) {
     // If there are no more calls in progress, start the idle timer.
     StartIdleTimer();
   }
 }
 
-void ClientIdleFilter::StartIdleTimer() {
+void ChannelIdleFilter::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   auto idle_filter_state = idle_filter_state_;
   // Hold a ref to the channel stack for the timer callback.
@@ -179,7 +179,7 @@ void ClientIdleFilter::StartIdleTimer() {
 }
 
 const grpc_channel_filter grpc_client_idle_filter =
-    MakePromiseBasedFilter<ClientIdleFilter, FilterEndpoint::kClient>(
+    MakePromiseBasedFilter<ChannelIdleFilter, FilterEndpoint::kClient>(
         "client_idle");
 
 }  // namespace
