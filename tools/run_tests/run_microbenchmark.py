@@ -214,9 +214,9 @@ def collect_summary(bm_name, args):
 
     # with counters, run microbenchmark and add summary
     # both to HTML report and to console.
-    counter_heading = 'Summary: %s [with counters]' % bm_name
+    counters_heading = 'Summary: %s [with counters]' % bm_name
     counters_summary = run_summary(bm_name, 'counters', bm_name)
-    heading(counter_heading)
+    heading(counters_heading)
     text(counters_summary)
     print(counters_heading)
     print(counters_summary)
