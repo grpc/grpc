@@ -833,7 +833,6 @@ void GrpcLb::BalancerCallState::Orphan() {
       GetDefaultEventEngine()->Cancel(client_load_report_handle_)) {
     Unref(DEBUG_LOCATION, "client_load_report cancelled");
   }
-  }
   // Note that the initial ref is hold by lb_on_balancer_status_received_
   // instead of the caller of this function. So the corresponding unref happens
   // in lb_on_balancer_status_received_ instead of here.
@@ -918,13 +917,16 @@ void GrpcLb::BalancerCallState::StartQuery() {
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ = GetDefaultEventEngine()->RunAt(
       absl::Now() + absl::Milliseconds(client_stats_report_interval_),
-      absl::bind_front(&MaybeSendClientLoadReport, this));
+      absl::bind_front(&GrpcLb::BalancerCallState::MaybeSendClientLoadReport,
+                       this));
   client_load_report_timer_callback_pending_ = true;
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReport() {
   grpclb_policy()->work_serializer()->Run(
-      absl::bind_front(&MaybeSendClientLoadReportLocked, this), DEBUG_LOCATION);
+      absl::bind_front(
+          &GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked, this),
+      DEBUG_LOCATION);
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
