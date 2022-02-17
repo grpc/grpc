@@ -66,7 +66,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncClientStreamingCall-2.html",
-          "hash": "KowIjIm1kQwda2rQkVJJjQ=="
+          "hash": "hMLzr0eMitp1a8oZ0jv+bQ=="
         }
       },
       "is_incremental": false,
@@ -114,7 +114,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncUnaryCall-1.html",
-          "hash": "3cYcqN0/JZhnMHZOnvNajw=="
+          "hash": "DkcBznZ/GWEiG9k4WpSNhA=="
         }
       },
       "is_incremental": false,
@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "eewSeQD4vwTerGNluDRV4A=="
+          "hash": "IPu3WsecJqexS5ViuaZvzw=="
         }
       },
       "is_incremental": false,
@@ -1372,7 +1372,8 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": true,
+        "can_incremental": false,
+        "details": "Cannot build incrementally because last build info is missing.",
         "incrementalPhase": "build"
       },
       "processors": {
@@ -1382,7 +1383,7 @@
           "incrementalPhase": "build"
         },
         "ManagedReferenceDocumentProcessor": {
-          "can_incremental": true,
+          "can_incremental": false,
           "incrementalPhase": "build"
         }
       }

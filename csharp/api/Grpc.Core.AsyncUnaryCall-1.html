@@ -303,6 +303,49 @@
   </table>
   <h3 id="methods">Methods
   </h3>
+  <a id="Grpc_Core_AsyncUnaryCall_1_ConfigureAwait_" data-uid="Grpc.Core.AsyncUnaryCall`1.ConfigureAwait*"></a>
+  <h4 id="Grpc_Core_AsyncUnaryCall_1_ConfigureAwait_System_Boolean_" data-uid="Grpc.Core.AsyncUnaryCall`1.ConfigureAwait(System.Boolean)">ConfigureAwait(Boolean)</h4>
+  <div class="markdown level1 summary"><p>Configures an awaiter used to await this <a class="xref" href="Grpc.Core.AsyncUnaryCall-1.html">AsyncUnaryCall&lt;TResponse&gt;</a>.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public ConfiguredTaskAwaitable&lt;TResponse&gt; ConfigureAwait(bool continueOnCapturedContext)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Boolean</span></td>
+        <td><span class="parametername">continueOnCapturedContext</span></td>
+        <td><p>true to attempt to marshal the continuation back to the original context captured; otherwise, false.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Runtime.CompilerServices.ConfiguredTaskAwaitable</span>&lt;TResponse&gt;</td>
+        <td><p>An object used to await this task.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_AsyncUnaryCall_1_Dispose_" data-uid="Grpc.Core.AsyncUnaryCall`1.Dispose*"></a>
   <h4 id="Grpc_Core_AsyncUnaryCall_1_Dispose" data-uid="Grpc.Core.AsyncUnaryCall`1.Dispose">Dispose()</h4>
   <div class="markdown level1 summary"><p>Provides means to cleanup after the call.
@@ -321,7 +364,7 @@ As a result, all resources being used by the call should be released eventually.
 </div>
   <a id="Grpc_Core_AsyncUnaryCall_1_GetAwaiter_" data-uid="Grpc.Core.AsyncUnaryCall`1.GetAwaiter*"></a>
   <h4 id="Grpc_Core_AsyncUnaryCall_1_GetAwaiter" data-uid="Grpc.Core.AsyncUnaryCall`1.GetAwaiter">GetAwaiter()</h4>
-  <div class="markdown level1 summary"><p>Allows awaiting this object directly.</p>
+  <div class="markdown level1 summary"><p>Gets an awaiter used to await this <a class="xref" href="Grpc.Core.AsyncUnaryCall-1.html">AsyncUnaryCall&lt;TResponse&gt;</a>.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
@@ -339,10 +382,14 @@ As a result, all resources being used by the call should be released eventually.
     <tbody>
       <tr>
         <td><span class="xref">System.Runtime.CompilerServices.TaskAwaiter</span>&lt;TResponse&gt;</td>
-        <td></td>
+        <td><p>An awaiter instance.</p>
+</td>
       </tr>
     </tbody>
   </table>
+  <h5 id="Grpc_Core_AsyncUnaryCall_1_GetAwaiter_remarks">Remarks</h5>
+  <div class="markdown level1 remarks"><p>This method is intended for compiler use rather than use directly in code.</p>
+</div>
   <a id="Grpc_Core_AsyncUnaryCall_1_GetStatus_" data-uid="Grpc.Core.AsyncUnaryCall`1.GetStatus*"></a>
   <h4 id="Grpc_Core_AsyncUnaryCall_1_GetStatus" data-uid="Grpc.Core.AsyncUnaryCall`1.GetStatus">GetStatus()</h4>
   <div class="markdown level1 summary"><p>Gets the call status if the call has already finished.
