@@ -75,14 +75,14 @@ template <typename F>
 class Loop {
  private:
   using Factory = promise_detail::PromiseFactory<void, F>;
-  using Promise = decltype(std::declval<Factory>().Repeated());
-  using PromiseResult = typename Promise::Result;
+  using PromiseType = decltype(std::declval<Factory>().Repeated());
+  using PromiseResult = typename PromiseType::Result;
 
  public:
   using Result = typename LoopTraits<PromiseResult>::Result;
 
   explicit Loop(F f) : factory_(std::move(f)), promise_(factory_.Repeated()) {}
-  ~Loop() { promise_.~Promise(); }
+  ~Loop() { promise_.~PromiseType(); }
 
   Loop(Loop&& loop) noexcept
       : factory_(std::move(loop.factory_)),
@@ -101,8 +101,8 @@ class Loop {
         //  from our factory.
         auto lc = LoopTraits<PromiseResult>::ToLoopCtl(*p);
         if (absl::holds_alternative<Continue>(lc)) {
-          promise_.~Promise();
-          new (&promise_) Promise(factory_.Repeated());
+          promise_.~PromiseType();
+          new (&promise_) PromiseType(factory_.Repeated());
           continue;
         }
         //  - otherwise there's our result... return it out.
@@ -116,7 +116,7 @@ class Loop {
 
  private:
   GPR_NO_UNIQUE_ADDRESS Factory factory_;
-  GPR_NO_UNIQUE_ADDRESS union { GPR_NO_UNIQUE_ADDRESS Promise promise_; };
+  GPR_NO_UNIQUE_ADDRESS union { GPR_NO_UNIQUE_ADDRESS PromiseType promise_; };
 };
 
 }  // namespace promise_detail
