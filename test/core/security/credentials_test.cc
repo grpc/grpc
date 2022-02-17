@@ -3600,6 +3600,12 @@ TEST(CredentialsTest, TestHttpRequestSSLCredentialsCompare) {
   EXPECT_EQ(creds_2->cmp(creds_1.get()), 0);
 }
 
+TEST(CredentialsTest, TestHttpRequestSSLCredentialsSingleton) {
+  auto creds_1 = grpc_core::CreateHttpRequestSSLCredentials();
+  auto creds_2 = grpc_core::CreateHttpRequestSSLCredentials();
+  EXPECT_EQ(creds_1, creds_2);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
