@@ -2091,6 +2091,7 @@ add_library(grpc
   src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/sleep.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -2730,6 +2731,7 @@ add_library(grpc_unsecure
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/sleep.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -12798,6 +12800,7 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::statusor
   absl::variant
 )
 
@@ -15195,7 +15198,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sleep_test
-  src/core/lib/promise/sleep.cc
   test/core/promise/sleep_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
