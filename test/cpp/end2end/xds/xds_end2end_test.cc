@@ -3449,6 +3449,18 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
 
 using LdsRdsTest = BasicTest;
 
+MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
+  gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
+  grpc_millis cycle_time = grpc_cycle_counter_to_millis_round_down(cycle_now);
+  grpc_millis time_spec =
+      grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_millis now = arg + time_spec - cycle_time;
+  bool ok = true;
+  ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
+  return ok;
+}
+
 // Tests that LDS client should send an ACK upon correct LDS response (with
 // inlined RDS result).
 TEST_P(LdsRdsTest, Vanilla) {
@@ -4732,7 +4744,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
 
-TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
+TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const int64_t kTimeoutMillis = 500;
   const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
@@ -4830,9 +4842,7 @@ TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
                   .set_wait_for_ready(true)
                   .set_timeout_ms(kTimeoutApplicationSecond * 1000))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  t0 = NowFromCycleCounter();
-  EXPECT_GE(t0, t1);
-  EXPECT_LT(t0, t2);
+  EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
   t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
@@ -4846,9 +4856,7 @@ TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
                   .set_wait_for_ready(true)
                   .set_timeout_ms(kTimeoutApplicationSecond * 1000))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  t0 = NowFromCycleCounter();
-  EXPECT_GE(t0, t1);
-  EXPECT_LT(t0, t2);
+  EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
   t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
@@ -4858,9 +4866,7 @@ TEST_P(LdsRdsTest, DISABLED_XdsRoutingApplyXdsTimeout) {
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
               kTimeoutApplicationSecond * 1000))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
-  t0 = NowFromCycleCounter();
-  EXPECT_GE(t0, t1);
-  EXPECT_LT(t0, t2);
+  EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
