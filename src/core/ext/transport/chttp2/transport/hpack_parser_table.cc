@@ -218,7 +218,9 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
   return grpc_metadata_batch::Parse(
       sm.key, Slice::FromStaticString(sm.value),
       strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
-      [](absl::string_view, const Slice&) {
+      [sm](absl::string_view, const Slice&) {
+        // We know this will be invalid, but we don't care.
+        if (sm.key == ":method" && sm.value == "GET") return;
         abort();  // not expecting to see this
       });
 }
