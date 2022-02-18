@@ -44,16 +44,8 @@ void test_register_method_fail(void) {
   method = grpc_server_register_method(
       server, "m", "h", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   GPR_ASSERT(method == nullptr);
-  method_old =
-      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE,
-                                  GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method_old != nullptr);
   method =
       grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method == nullptr);
-  method = grpc_server_register_method(
-      server, "m2", "h2", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-      GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
   GPR_ASSERT(method == nullptr);
   grpc_server_destroy(server);
 }

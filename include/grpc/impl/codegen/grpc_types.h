@@ -519,12 +519,8 @@ typedef enum grpc_call_error {
 
 /** Initial metadata flags */
 /** These flags are to be passed to the `grpc_op::flags` field */
-/** Signal that the call is idempotent */
-#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
-/** Signal that the call is cacheable. GRPC is free to use GET verb */
-#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
@@ -533,10 +529,7 @@ typedef enum grpc_call_error {
 
 /** Mask of all valid flags */
 #define GRPC_INITIAL_METADATA_USED_MASK                  \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
+  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
    GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
 
 /** A single metadata element */

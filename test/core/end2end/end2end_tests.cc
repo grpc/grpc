@@ -87,8 +87,6 @@ extern void high_initial_seqno(grpc_end2end_test_config config);
 extern void high_initial_seqno_pre_init(void);
 extern void hpack_size(grpc_end2end_test_config config);
 extern void hpack_size_pre_init(void);
-extern void idempotent_request(grpc_end2end_test_config config);
-extern void idempotent_request_pre_init(void);
 extern void invoke_large_request(grpc_end2end_test_config config);
 extern void invoke_large_request_pre_init(void);
 extern void keepalive_timeout(grpc_end2end_test_config config);
@@ -189,8 +187,6 @@ extern void shutdown_finishes_calls(grpc_end2end_test_config config);
 extern void shutdown_finishes_calls_pre_init(void);
 extern void shutdown_finishes_tags(grpc_end2end_test_config config);
 extern void shutdown_finishes_tags_pre_init(void);
-extern void simple_cacheable_request(grpc_end2end_test_config config);
-extern void simple_cacheable_request_pre_init(void);
 extern void simple_delayed_request(grpc_end2end_test_config config);
 extern void simple_delayed_request_pre_init(void);
 extern void simple_metadata(grpc_end2end_test_config config);
@@ -238,7 +234,6 @@ void grpc_end2end_tests_pre_init(void) {
   grpc_authz_pre_init();
   high_initial_seqno_pre_init();
   hpack_size_pre_init();
-  idempotent_request_pre_init();
   invoke_large_request_pre_init();
   keepalive_timeout_pre_init();
   large_metadata_pre_init();
@@ -289,7 +284,6 @@ void grpc_end2end_tests_pre_init(void) {
   server_streaming_pre_init();
   shutdown_finishes_calls_pre_init();
   shutdown_finishes_tags_pre_init();
-  simple_cacheable_request_pre_init();
   simple_delayed_request_pre_init();
   simple_metadata_pre_init();
   simple_request_pre_init();
@@ -336,7 +330,6 @@ void grpc_end2end_tests(int argc, char **argv,
     grpc_authz(config);
     high_initial_seqno(config);
     hpack_size(config);
-    idempotent_request(config);
     invoke_large_request(config);
     keepalive_timeout(config);
     large_metadata(config);
@@ -387,7 +380,6 @@ void grpc_end2end_tests(int argc, char **argv,
     server_streaming(config);
     shutdown_finishes_calls(config);
     shutdown_finishes_tags(config);
-    simple_cacheable_request(config);
     simple_delayed_request(config);
     simple_metadata(config);
     simple_request(config);
@@ -513,10 +505,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("hpack_size", argv[i])) {
       hpack_size(config);
-      continue;
-    }
-    if (0 == strcmp("idempotent_request", argv[i])) {
-      idempotent_request(config);
       continue;
     }
     if (0 == strcmp("invoke_large_request", argv[i])) {
@@ -717,10 +705,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("shutdown_finishes_tags", argv[i])) {
       shutdown_finishes_tags(config);
-      continue;
-    }
-    if (0 == strcmp("simple_cacheable_request", argv[i])) {
-      simple_cacheable_request(config);
       continue;
     }
     if (0 == strcmp("simple_delayed_request", argv[i])) {

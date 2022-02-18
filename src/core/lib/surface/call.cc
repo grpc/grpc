@@ -950,9 +950,6 @@ static bool are_write_flags_valid(uint32_t flags) {
 static bool are_initial_metadata_flags_valid(uint32_t flags, bool is_client) {
   /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
   uint32_t invalid_positions = ~GRPC_INITIAL_METADATA_USED_MASK;
-  if (!is_client) {
-    invalid_positions |= GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-  }
   return !(flags & invalid_positions);
 }
 
