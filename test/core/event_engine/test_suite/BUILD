@@ -86,7 +86,6 @@ grpc_cc_test(
     ],
 )
 
-
 # -- Internal targets --
 
 grpc_cc_library(
