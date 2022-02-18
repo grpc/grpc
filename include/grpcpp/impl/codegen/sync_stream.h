@@ -385,8 +385,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     finish_ops_.AllowNoMessage();
 
     if (!context_->initial_metadata_corked_) {
-      grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata>
-          ops;
+      grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
       ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
       call_.PerformOps(&ops);
@@ -556,8 +555,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
             nullptr}),  // Pluckable cq
         call_(channel->CreateCall(method, context, &cq_)) {
     if (!context_->initial_metadata_corked_) {
-      grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata>
-          ops;
+      grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
       ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
       call_.PerformOps(&ops);

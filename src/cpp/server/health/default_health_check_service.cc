@@ -162,7 +162,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
       kHealthWatchMethodName, internal::RpcMethod::SERVER_STREAMING, nullptr));
   // Create serving thread.
   thread_ = absl::make_unique<grpc_core::Thread>("grpc_health_check_service",
-                                                   Serve, this);
+                                                 Serve, this);
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {

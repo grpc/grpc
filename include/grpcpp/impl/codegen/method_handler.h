@@ -101,7 +101,7 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
  public:
   RpcMethodHandler(
       std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
-                                   const RequestType*, ResponseType*)>
+                                 const RequestType*, ResponseType*)>
           func,
       ServiceType* service)
       : func_(func), service_(service) {}
@@ -131,7 +131,7 @@ class RpcMethodHandler : public grpc::internal::MethodHandler {
  private:
   /// Application provided rpc handler function.
   std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
-                               const RequestType*, ResponseType*)>
+                             const RequestType*, ResponseType*)>
       func_;
   // The class the above handler function lives in.
   ServiceType* service_;
@@ -143,7 +143,7 @@ class ClientStreamingHandler : public grpc::internal::MethodHandler {
  public:
   ClientStreamingHandler(
       std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
-                                   ServerReader<RequestType>*, ResponseType*)>
+                                 ServerReader<RequestType>*, ResponseType*)>
           func,
       ServiceType* service)
       : func_(func), service_(service) {}
@@ -180,7 +180,7 @@ class ClientStreamingHandler : public grpc::internal::MethodHandler {
 
  private:
   std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
-                               ServerReader<RequestType>*, ResponseType*)>
+                             ServerReader<RequestType>*, ResponseType*)>
       func_;
   ServiceType* service_;
 };
@@ -245,7 +245,7 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
 
  private:
   std::function<grpc::Status(ServiceType*, grpc::ServerContext*,
-                               const RequestType*, ServerWriter<ResponseType>*)>
+                             const RequestType*, ServerWriter<ResponseType>*)>
       func_;
   ServiceType* service_;
 };
