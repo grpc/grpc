@@ -356,6 +356,17 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "retry_transparent_goaway": _test_options(needs_client_channel = True),
+    "retry_transparent_not_sent_on_wire": _test_options(
+        needs_client_channel = True,
+    ),
+    "retry_transparent_max_concurrent_streams": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_transparent_mcs",
+    ),
     "retry_unref_before_finish": _test_options(needs_client_channel = True),
     "retry_unref_before_recv": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),
