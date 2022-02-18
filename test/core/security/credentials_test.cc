@@ -1535,7 +1535,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentials) {
+static void TestGoogleDefaultCredsExternalAccountCredentials(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
@@ -3627,6 +3627,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
+  TestGoogleDefaultCredsExternalAccountCredentials();
   grpc_shutdown();
   return result;
 }
