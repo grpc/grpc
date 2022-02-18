@@ -25,7 +25,7 @@ namespace grpc_core {
 // through all plugins
 namespace {
 using ConfigBuilderFunction = std::function<void(CoreConfiguration::Builder*)>;
-static ConfigBuilderFunction g_mock_builder;
+ConfigBuilderFunction g_mock_builder;
 }  // namespace
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
