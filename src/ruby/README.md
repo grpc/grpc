@@ -7,7 +7,7 @@ A Ruby implementation of gRPC.
 PREREQUISITES
 -------------
 
-- Ruby 2.x. The gRPC API uses keyword args.
+- Ruby 2.x or 3.x
 
 INSTALLATION
 ---------------
