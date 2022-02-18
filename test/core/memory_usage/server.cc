@@ -22,10 +22,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "memstats.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+#include "test/core/memory_usage/memstats.h"
 #ifndef _WIN32
 /* This is for _exit() below, which is temporary. */
 #include <unistd.h>
