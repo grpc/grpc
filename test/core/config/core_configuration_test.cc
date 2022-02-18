@@ -29,7 +29,7 @@ static ConfigBuilderFunction g_mock_builder;
 }  // namespace testing
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
-  ::grpc_core::testing::g_mock_builder(builder);
+  testing::g_mock_builder(builder);
 }
 
 namespace testing {

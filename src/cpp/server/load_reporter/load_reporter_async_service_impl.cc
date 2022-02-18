@@ -285,7 +285,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     Shutdown(std::move(self), "SendReport");
     return;
   }
-  ::grpc::lb::v1::LoadReportResponse response;
+  grpc::lb::v1::LoadReportResponse response;
   auto loads = load_reporter_->GenerateLoads(load_balanced_hostname_, lb_id_);
   response.mutable_load()->Swap(&loads);
   auto feedback = load_reporter_->GenerateLoadBalancingFeedback();
@@ -294,7 +294,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     auto initial_response = response.mutable_initial_response();
     initial_response->set_load_balancer_id(lb_id_);
     initial_response->set_implementation_id(
-        ::grpc::lb::v1::InitialLoadReportResponse::CPP);
+        grpc::lb::v1::InitialLoadReportResponse::CPP);
     initial_response->set_server_version(kVersion);
     call_status_ = INITIAL_RESPONSE_SENT;
   }

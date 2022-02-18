@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_cv);
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }
