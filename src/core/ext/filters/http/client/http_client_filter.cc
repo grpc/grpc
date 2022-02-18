@@ -77,12 +77,6 @@ struct call_data {
   grpc_closure recv_trailing_metadata_ready;
   grpc_error_handle recv_trailing_metadata_error = GRPC_ERROR_NONE;
   bool seen_recv_trailing_metadata_ready = false;
-  // State for handling send_message ops.
-  grpc_transport_stream_op_batch* send_message_batch;
-  size_t send_message_bytes_read = 0;
-  grpc_core::ManualConstructor<grpc_core::ByteStreamCache> send_message_cache;
-  grpc_core::ManualConstructor<grpc_core::ByteStreamCache::CachingByteStream>
-      send_message_caching_stream;
 };
 
 struct channel_data {

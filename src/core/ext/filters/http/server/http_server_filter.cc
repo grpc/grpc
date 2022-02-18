@@ -37,7 +37,6 @@ static void hs_recv_initial_metadata_ready(void* user_data,
                                            grpc_error_handle err);
 static void hs_recv_trailing_metadata_ready(void* user_data,
                                             grpc_error_handle err);
-static void hs_recv_message_ready(void* user_data, grpc_error_handle err);
 
 namespace {
 
@@ -46,8 +45,6 @@ struct call_data {
       : call_combiner(args.call_combiner) {
     GRPC_CLOSURE_INIT(&recv_initial_metadata_ready,
                       hs_recv_initial_metadata_ready, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&recv_message_ready, hs_recv_message_ready, elem,
                       grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
                       hs_recv_trailing_metadata_ready, elem,
@@ -75,12 +72,6 @@ struct call_data {
   grpc_metadata_batch* recv_initial_metadata = nullptr;
   uint32_t* recv_initial_metadata_flags;
   bool seen_recv_initial_metadata_ready = false;
-
-  // State for intercepting recv_message.
-  grpc_closure* original_recv_message_ready;
-  grpc_closure recv_message_ready;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  bool seen_recv_message_ready = false;
 
   // State for intercepting recv_trailing_metadata
   grpc_closure recv_trailing_metadata_ready;
@@ -201,22 +192,6 @@ static void hs_recv_initial_metadata_ready(void* user_data,
   if (err == GRPC_ERROR_NONE) {
     err = hs_filter_incoming_metadata(elem, calld->recv_initial_metadata);
     calld->recv_initial_metadata_ready_error = GRPC_ERROR_REF(err);
-    if (calld->seen_recv_message_ready) {
-      // We've already seen the recv_message callback, but we previously
-      // deferred it, so we need to return it here.
-      // Replace the recv_message byte stream if needed.
-      if (calld->have_read_stream) {
-        calld->recv_message->reset(calld->read_stream.get());
-        calld->have_read_stream = false;
-      }
-      // Re-enter call combiner for original_recv_message_ready, since the
-      // surface code will release the call combiner for each callback it
-      // receives.
-      GRPC_CALL_COMBINER_START(
-          calld->call_combiner, calld->original_recv_message_ready,
-          GRPC_ERROR_REF(err),
-          "resuming recv_message_ready from recv_initial_metadata_ready");
-    }
   } else {
     (void)GRPC_ERROR_REF(err);
   }
@@ -229,31 +204,6 @@ static void hs_recv_initial_metadata_ready(void* user_data,
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->original_recv_initial_metadata_ready, err);
-}
-
-static void hs_recv_message_ready(void* user_data, grpc_error_handle err) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->seen_recv_message_ready = true;
-  if (calld->seen_recv_initial_metadata_ready) {
-    // We've already seen the recv_initial_metadata callback, so
-    // replace the recv_message byte stream if needed and invoke the
-    // original recv_message callback immediately.
-    if (calld->have_read_stream) {
-      calld->recv_message->reset(calld->read_stream.get());
-      calld->have_read_stream = false;
-    }
-    grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_recv_message_ready,
-                            GRPC_ERROR_REF(err));
-  } else {
-    // We have not yet seen the recv_initial_metadata callback, so we
-    // need to wait to see if this is a GET request.
-    // Note that we release the call combiner here, so that other
-    // callbacks can run.
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner,
-        "pausing recv_message_ready until recv_initial_metadata_ready");
-  }
 }
 
 static void hs_recv_trailing_metadata_ready(void* user_data,
@@ -305,13 +255,6 @@ static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready;
-  }
-
-  if (op->recv_message) {
-    calld->recv_message = op->payload->recv_message.recv_message;
-    calld->original_recv_message_ready =
-        op->payload->recv_message.recv_message_ready;
-    op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
 
   if (op->recv_trailing_metadata) {
