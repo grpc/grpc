@@ -404,7 +404,7 @@ LANG_RELEASE_MATRIX = {
                              testcases_file='python__v1.41.1')),
                 ('v1.44.0',
                  ReleaseInfo(runtimes=['python'],
-                             testcases_file='python__v1.41.1')),
+                             testcases_file='python__master')),
             ]),
     'node':
         OrderedDict([
