@@ -207,9 +207,7 @@ class StreamsNotSeenTest : public ::testing::Test {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0)};
+            const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();

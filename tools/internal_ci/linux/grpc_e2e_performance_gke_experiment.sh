@@ -39,7 +39,7 @@ BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
 BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
+PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.
@@ -93,7 +93,7 @@ buildConfigs() {
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
-        -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
+        -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
 buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
@@ -123,8 +123,8 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 
 # Run tests.
 time ../test-infra/bin/runner \
-    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
-    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -i "loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
+    -i "loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
     -polling-interval 5s \
     -delete-successful-tests \
     -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
