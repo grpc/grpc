@@ -115,8 +115,7 @@ MaxAgeConfig GetMaxAgeConfig(const grpc_channel_args* args) {
           ? GRPC_MILLIS_INF_FUTURE
           : static_cast<grpc_millis>(args_max_age),
       args_max_idle == INT_MAX ? GRPC_MILLIS_INF_FUTURE : args_max_idle,
-      args_max_age_grace == INT_MAX ? GRPC_MILLIS_INF_FUTURE
-                                    : args_max_age_grace};
+      args_max_age_grace};
 }
 
 class ChannelIdleFilter : public ChannelFilter {
@@ -192,9 +191,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
 
     void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                    const absl::Status&) override {
-      if (new_state == GRPC_CHANNEL_SHUTDOWN) {
-        filter_->Shutdown();
-      }
+      if (new_state == GRPC_CHANNEL_SHUTDOWN) filter_->Shutdown();
     }
 
    private:
@@ -241,37 +238,45 @@ void MaxAgeFilter::Start() {
 
   auto channel_stack = this->channel_stack()->Ref();
 
-  // Start the idle timer
-  max_age_activity_ = MakeActivity(
-      TrySeq(
-          Sleep(ExecCtx::Get()->Now() + max_connection_age_),
-          [this] {
-            GRPC_CHANNEL_STACK_REF(this->channel_stack(),
-                                   "max_age send_goaway");
-            // Jump out of the activity to sent the goaway.
-            auto fn = [](void* arg, grpc_error_handle) {
-              auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
-              grpc_transport_op* op = grpc_make_transport_op(nullptr);
-              op->goaway_error = grpc_error_set_int(
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
-                  GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
-              grpc_channel_element* elem =
-                  grpc_channel_stack_element(channel_stack, 0);
-              elem->filter->start_transport_op(elem, op);
-              GRPC_CHANNEL_STACK_UNREF(channel_stack, "max_age send_goaway");
-            };
-            ExecCtx::Run(
-                DEBUG_LOCATION,
-                GRPC_CLOSURE_CREATE(fn, this->channel_stack(), nullptr),
-                GRPC_ERROR_NONE);
-            return Immediate(absl::OkStatus());
-          },
-          [this] {
-            return Sleep(ExecCtx::Get()->Now() + max_connection_age_grace_);
-          }),
-      ExecCtxWakeupScheduler(), [channel_stack, this](absl::Status status) {
-        if (status.ok()) CloseChannel();
-      });
+  // Start the max age timer
+  if (max_connection_age_ != GRPC_MILLIS_INF_FUTURE) {
+    max_age_activity_ = MakeActivity(
+        TrySeq(
+            // First sleep until the max connection age
+            Sleep(ExecCtx::Get()->Now() + max_connection_age_),
+            // Then send a goaway.
+            [this] {
+              GRPC_CHANNEL_STACK_REF(this->channel_stack(),
+                                     "max_age send_goaway");
+              // Jump out of the activity to sent the goaway.
+              auto fn = [](void* arg, grpc_error_handle) {
+                auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
+                grpc_transport_op* op = grpc_make_transport_op(nullptr);
+                op->goaway_error = grpc_error_set_int(
+                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("max_age"),
+                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_NO_ERROR);
+                grpc_channel_element* elem =
+                    grpc_channel_stack_element(channel_stack, 0);
+                elem->filter->start_transport_op(elem, op);
+                GRPC_CHANNEL_STACK_UNREF(channel_stack, "max_age send_goaway");
+              };
+              ExecCtx::Run(
+                  DEBUG_LOCATION,
+                  GRPC_CLOSURE_CREATE(fn, this->channel_stack(), nullptr),
+                  GRPC_ERROR_NONE);
+              return Immediate(absl::OkStatus());
+            },
+            // Sleep for the grace period
+            [this] {
+              return Sleep(ExecCtx::Get()->Now() + max_connection_age_grace_);
+            }),
+        ExecCtxWakeupScheduler(), [channel_stack, this](absl::Status status) {
+          // OnDone -- close the connection if the promise completed
+          // successfully.
+          // (if it did not, it was cancelled)
+          if (status.ok()) CloseChannel();
+        });
+  }
 }
 
 // Construct a promise for one call.
