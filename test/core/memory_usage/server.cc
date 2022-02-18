@@ -71,8 +71,8 @@ typedef struct {
   grpc_metadata_array initial_metadata_send;
 } fling_call;
 
-// hold up to 10000 calls and 6 snaphost calls
-static fling_call calls[100006];
+// hold up to 100000 calls and 6 snaphost calls
+static fling_call calls[1000006];
 
 static void request_call_unary(int call_idx) {
   if (call_idx == static_cast<int>(sizeof(calls) / sizeof(fling_call))) {

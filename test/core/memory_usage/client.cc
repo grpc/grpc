@@ -51,9 +51,9 @@ typedef struct {
   grpc_metadata_array trailing_metadata_recv;
 } fling_call;
 
-// Statically allocate call data structs. Enough to accommodate 10000 ping-pong
+// Statically allocate call data structs. Enough to accommodate 100000 ping-pong
 // calls and 1 extra for the snapshot calls.
-static fling_call calls[10001];
+static fling_call calls[100001];
 
 static void* tag(intptr_t t) { return (void*)t; }
 
@@ -271,19 +271,13 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "client call memory usage: %f bytes per call",
           static_cast<double>(client_calls_inflight.rss -
                               client_benchmark_calls_start.rss) /
-              benchmark_iterations);
-  gpr_log(GPR_INFO, "client channel memory usage %zi bytes",
-          client_channel_end.rss - client_channel_start.rss);
+              benchmark_iterations * 1024);
 
   gpr_log(GPR_INFO, "---------server stats--------");
-  gpr_log(GPR_INFO, "server create: %zi bytes",
-          after_server_create.rss - before_server_create.rss);
   gpr_log(GPR_INFO, "server call memory usage: %f bytes per call",
           static_cast<double>(server_calls_inflight.rss -
                               server_benchmark_calls_start.rss) /
-              benchmark_iterations);
-  gpr_log(GPR_INFO, "server channel memory usage %zi bytes",
-          server_calls_end.rss - after_server_create.rss);
+              benchmark_iterations * 1024);
 
   const char* csv_file = "memory_usage.csv";
   FILE* csv = fopen(csv_file, "w");

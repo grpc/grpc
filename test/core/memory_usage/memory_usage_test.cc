@@ -62,8 +62,8 @@ int main(int /*argc*/, char** argv) {
   args[1] = "--target";
   joined = grpc_core::JoinHostPort("127.0.0.1", port);
   args[2] = joined.c_str();
-  args[3] = "--warmup=1000";
-  args[4] = "--benchmark=9000";
+  args[3] = "--warmup=10000";
+  args[4] = "--benchmark=90000";
   cli = gpr_subprocess_create(5, (const char**)args);
 
   /* wait for completion */

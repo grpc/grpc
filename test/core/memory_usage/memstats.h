@@ -20,7 +20,7 @@
 #include <sys/time.h>
 
 struct MemStats {
-  long rss;
+  long rss;  // Resident set size, in kb
   static MemStats Snapshot() {
     struct rusage usage;
     if (0 != getrusage(RUSAGE_SELF, &usage)) abort();
