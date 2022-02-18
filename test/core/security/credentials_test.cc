@@ -1535,26 +1535,30 @@ TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static void TestGoogleDefaultCredsExternalAccountCredentials(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_composite_channel_credentials* creds;
-  grpc_flush_cached_google_default_credentials();
-  set_google_default_creds_env_var_with_file_contents(
-      "google_default_creds_external_account_credentials",
-      test_external_account_credentials_str);
-  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
-  auto* default_creds =
-      reinterpret_cast<const grpc_google_default_channel_credentials*>(
-          creds->inner_creds());
-  GPR_ASSERT(default_creds->ssl_creds() != nullptr);
-  auto* external =
-      reinterpret_cast<const grpc_core::ExternalAccountCredentials*>(
-          creds->call_creds());
-  GPR_ASSERT(external != nullptr);
-  creds->Unref();
-  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
-}
+// static void TestGoogleDefaultCredsExternalAccountCredentials(void) {
+//   grpc_core::ExecCtx exec_ctx;
+//   grpc_composite_channel_credentials* creds;
+//   grpc_flush_cached_google_default_credentials();
+//   set_google_default_creds_env_var_with_file_contents(
+//       "google_default_creds_external_account_credentials",
+//       test_external_account_credentials_str);
+//   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+//       grpc_google_default_credentials_create(nullptr));
+//   auto* default_creds =
+//       reinterpret_cast<const grpc_google_default_channel_credentials*>(
+//           creds->inner_creds());
+//   GPR_ASSERT(default_creds->ssl_creds() != nullptr);
+//   auto* external =
+//       reinterpret_cast<const grpc_core::ExternalAccountCredentials*>(
+//           creds->call_creds());
+//   GPR_ASSERT(external != nullptr);
+//   creds->Unref();
+//   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+//   char* filename_template;
+//   gpr_asprintf(&filename_template, "/tmp/%s_XXXXXX", "prefix");
+//   GPR_ASSERT(filename_template != nullptr);
+//   gpr_log(GPR_ERROR, "%s", filename_template);
+// }
 
 TEST(CredentialsTest,
      TestGoogleDefaultCredsExternalAccountCredentialsMultiPatternSts) {
@@ -3627,7 +3631,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
-  TestGoogleDefaultCredsExternalAccountCredentials();
+  //TestGoogleDefaultCredsExternalAccountCredentials();
   grpc_shutdown();
   return result;
 }
