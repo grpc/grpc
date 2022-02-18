@@ -22,6 +22,7 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
@@ -57,6 +58,7 @@ int main(int /*argc*/, char** argv) {
   /* start the client */
   cmd = absl::StrCat(root, "/memory_usage_client",
                      gpr_subprocess_binary_extension());
+  args[0] = cmd.c_str();
   args[1] = "--target";
   joined = grpc_core::JoinHostPort("127.0.0.1", port);
   args[2] = joined.c_str();
@@ -67,14 +69,15 @@ int main(int /*argc*/, char** argv) {
   /* wait for completion */
   printf("waiting for client\n");
   if ((status = gpr_subprocess_join(cli))) {
+    printf("client failed with: %d", status);
     gpr_subprocess_destroy(cli);
     gpr_subprocess_destroy(svr);
-    return status;
+    return 1;
   }
   gpr_subprocess_destroy(cli);
 
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);
   gpr_subprocess_destroy(svr);
-  return status;
+  return status == 0 ? 0 : 2;
 }

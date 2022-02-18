@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "memstats.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -30,8 +32,8 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/cmdline.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/test_config.h"
 
 static grpc_channel* channel;
@@ -110,8 +112,7 @@ static void finish_ping_pong_request(int call_idx) {
   calls[call_idx].call = nullptr;
 }
 
-static struct grpc_memory_counters send_snapshot_request(int call_idx,
-                                                         grpc_slice call_type) {
+static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_init(&calls[call_idx].trailing_metadata_recv);
 
@@ -152,24 +153,8 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, response_payload_recv);
   grpc_slice response = grpc_byte_buffer_reader_readall(&reader);
-
-  struct grpc_memory_counters snapshot;
-  snapshot.total_size_absolute =
-      (reinterpret_cast<struct grpc_memory_counters*> GRPC_SLICE_START_PTR(
-           response))
-          ->total_size_absolute;
-  snapshot.total_allocs_absolute =
-      (reinterpret_cast<struct grpc_memory_counters*> GRPC_SLICE_START_PTR(
-           response))
-          ->total_allocs_absolute;
-  snapshot.total_size_relative =
-      (reinterpret_cast<struct grpc_memory_counters*> GRPC_SLICE_START_PTR(
-           response))
-          ->total_size_relative;
-  snapshot.total_allocs_relative =
-      (reinterpret_cast<struct grpc_memory_counters*> GRPC_SLICE_START_PTR(
-           response))
-          ->total_allocs_relative;
+  MemStats snapshot =
+      *reinterpret_cast<MemStats*>(GRPC_SLICE_START_PTR(response));
 
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
@@ -185,7 +170,6 @@ static struct grpc_memory_counters send_snapshot_request(int call_idx,
 }
 
 int main(int argc, char** argv) {
-  grpc_memory_counters_init();
   grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 
@@ -216,16 +200,15 @@ int main(int argc, char** argv) {
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
-  struct grpc_memory_counters client_channel_start =
-      grpc_memory_counters_snapshot();
+  MemStats client_channel_start = MemStats::Snapshot();
   channel =
       grpc_channel_create(target, grpc_insecure_credentials_create(), nullptr);
 
   int call_idx = 0;
 
-  struct grpc_memory_counters before_server_create = send_snapshot_request(
+  MemStats before_server_create = send_snapshot_request(
       0, grpc_slice_from_static_string("Reflector/GetBeforeSvrCreation"));
-  struct grpc_memory_counters after_server_create = send_snapshot_request(
+  MemStats after_server_create = send_snapshot_request(
       0, grpc_slice_from_static_string("Reflector/GetAfterSvrCreation"));
 
   // warmup period
@@ -238,22 +221,19 @@ int main(int argc, char** argv) {
     init_ping_pong_request(call_idx + 1);
   }
 
-  struct grpc_memory_counters server_benchmark_calls_start =
-      send_snapshot_request(
-          0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
+  MemStats server_benchmark_calls_start = send_snapshot_request(
+      0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
 
-  struct grpc_memory_counters client_benchmark_calls_start =
-      grpc_memory_counters_snapshot();
+  MemStats client_benchmark_calls_start = MemStats::Snapshot();
 
   // benchmark period
   for (; call_idx < warmup_iterations + benchmark_iterations; ++call_idx) {
     init_ping_pong_request(call_idx + 1);
   }
 
-  struct grpc_memory_counters client_calls_inflight =
-      grpc_memory_counters_snapshot();
+  MemStats client_calls_inflight = MemStats::Snapshot();
 
-  struct grpc_memory_counters server_calls_inflight = send_snapshot_request(
+  MemStats server_calls_inflight = send_snapshot_request(
       0, grpc_slice_from_static_string("Reflector/DestroyCalls"));
 
   do {
@@ -270,11 +250,10 @@ int main(int argc, char** argv) {
     finish_ping_pong_request(call_idx + 1);
   }
 
-  struct grpc_memory_counters server_calls_end = send_snapshot_request(
+  MemStats server_calls_end = send_snapshot_request(
       0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
 
-  struct grpc_memory_counters client_channel_end =
-      grpc_memory_counters_snapshot();
+  MemStats client_channel_end = MemStats::Snapshot();
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
@@ -289,53 +268,43 @@ int main(int argc, char** argv) {
   grpc_shutdown_blocking();
 
   gpr_log(GPR_INFO, "---------client stats--------");
-  gpr_log(
-      GPR_INFO, "client call memory usage: %f bytes per call",
-      static_cast<double>(client_calls_inflight.total_size_relative -
-                          client_benchmark_calls_start.total_size_relative) /
-          benchmark_iterations);
+  gpr_log(GPR_INFO, "client call memory usage: %f bytes per call",
+          static_cast<double>(client_calls_inflight.rss -
+                              client_benchmark_calls_start.rss) /
+              benchmark_iterations);
   gpr_log(GPR_INFO, "client channel memory usage %zi bytes",
-          client_channel_end.total_size_relative -
-              client_channel_start.total_size_relative);
+          client_channel_end.rss - client_channel_start.rss);
 
   gpr_log(GPR_INFO, "---------server stats--------");
   gpr_log(GPR_INFO, "server create: %zi bytes",
-          after_server_create.total_size_relative -
-              before_server_create.total_size_relative);
-  gpr_log(
-      GPR_INFO, "server call memory usage: %f bytes per call",
-      static_cast<double>(server_calls_inflight.total_size_relative -
-                          server_benchmark_calls_start.total_size_relative) /
-          benchmark_iterations);
+          after_server_create.rss - before_server_create.rss);
+  gpr_log(GPR_INFO, "server call memory usage: %f bytes per call",
+          static_cast<double>(server_calls_inflight.rss -
+                              server_benchmark_calls_start.rss) /
+              benchmark_iterations);
   gpr_log(GPR_INFO, "server channel memory usage %zi bytes",
-          server_calls_end.total_size_relative -
-              after_server_create.total_size_relative);
+          server_calls_end.rss - after_server_create.rss);
 
   const char* csv_file = "memory_usage.csv";
   FILE* csv = fopen(csv_file, "w");
   if (csv) {
     char* env_build = gpr_getenv("BUILD_NUMBER");
     char* env_job = gpr_getenv("JOB_NAME");
-    fprintf(
-        csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
-        static_cast<double>(client_calls_inflight.total_size_relative -
-                            client_benchmark_calls_start.total_size_relative) /
-            benchmark_iterations,
-        client_channel_end.total_size_relative -
-            client_channel_start.total_size_relative,
-        after_server_create.total_size_relative -
-            before_server_create.total_size_relative,
-        static_cast<double>(server_calls_inflight.total_size_relative -
-                            server_benchmark_calls_start.total_size_relative) /
-            benchmark_iterations,
-        server_calls_end.total_size_relative -
-            after_server_create.total_size_relative,
-        env_build == nullptr ? "" : env_build,
-        env_job == nullptr ? "" : env_job);
+    fprintf(csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
+            static_cast<double>(client_calls_inflight.rss -
+                                client_benchmark_calls_start.rss) /
+                benchmark_iterations,
+            client_channel_end.rss - client_channel_start.rss,
+            after_server_create.rss - before_server_create.rss,
+            static_cast<double>(server_calls_inflight.rss -
+                                server_benchmark_calls_start.rss) /
+                benchmark_iterations,
+            server_calls_end.rss - after_server_create.rss,
+            env_build == nullptr ? "" : env_build,
+            env_job == nullptr ? "" : env_job);
     fclose(csv);
     gpr_log(GPR_INFO, "Summary written to %s", csv_file);
   }
 
-  grpc_memory_counters_destroy();
   return 0;
 }

@@ -22,6 +22,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "memstats.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #ifndef _WIN32
@@ -35,8 +37,8 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/memory_usage/memstats.h"
 #include "test/core/util/cmdline.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -106,7 +108,7 @@ static void send_status(void* tag) {
                                                    nullptr));
 }
 
-static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
+static void send_snapshot(void* tag, MemStats* snapshot) {
   grpc_op* op;
 
   grpc_slice snapshot_slice =
@@ -147,7 +149,6 @@ static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
 static void sigint_handler(int /*x*/) { _exit(0); }
 
 int main(int argc, char** argv) {
-  grpc_memory_counters_init();
   grpc_event ev;
   std::string addr_buf;
   gpr_cmdline* cl;
@@ -181,8 +182,7 @@ int main(int argc, char** argv) {
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
-  struct grpc_memory_counters before_server_create =
-      grpc_memory_counters_snapshot();
+  MemStats before_server_create = MemStats::Snapshot();
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
@@ -200,8 +200,7 @@ int main(int argc, char** argv) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
-  struct grpc_memory_counters after_server_create =
-      grpc_memory_counters_snapshot();
+  MemStats after_server_create = MemStats::Snapshot();
 
   addr = nullptr;
 
@@ -213,7 +212,7 @@ int main(int argc, char** argv) {
   }
 
   int next_call_idx = 0;
-  struct grpc_memory_counters current_snapshot;
+  MemStats current_snapshot;
 
   request_call_unary(next_call_idx);
 
@@ -261,12 +260,12 @@ int main(int argc, char** argv) {
             } else if (0 == grpc_slice_str_cmp(s->call_details.method,
                                                "Reflector/SimpleSnapshot")) {
               s->state = FLING_SERVER_SEND_STATUS_SNAPSHOT;
-              current_snapshot = grpc_memory_counters_snapshot();
+              current_snapshot = MemStats::Snapshot();
               send_snapshot(s, &current_snapshot);
             } else if (0 == grpc_slice_str_cmp(s->call_details.method,
                                                "Reflector/DestroyCalls")) {
               s->state = FLING_SERVER_BATCH_SEND_STATUS_FLING_CALL;
-              current_snapshot = grpc_memory_counters_snapshot();
+              current_snapshot = MemStats::Snapshot();
               send_snapshot(s, &current_snapshot);
             } else {
               gpr_log(GPR_ERROR, "Wrong call method");
@@ -319,6 +318,5 @@ int main(int argc, char** argv) {
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_shutdown_blocking();
-  grpc_memory_counters_destroy();
   return 0;
 }

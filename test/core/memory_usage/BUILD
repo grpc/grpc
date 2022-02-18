@@ -12,28 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(name = "test/core/memory_usage")
 
 licenses(["notice"])  # Apache v2
 
 grpc_cc_library(
+    name = "memstats",
+    testonly = 1,
+    hdrs = ["memstats.h"],
+)
+
+grpc_cc_binary(
     name = "memory_usage_client",
     testonly = 1,
     srcs = ["client.cc"],
     deps = [
+        ":memstats",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
 
-grpc_cc_library(
+grpc_cc_binary(
     name = "memory_usage_server",
     testonly = 1,
     srcs = ["server.cc"],
     deps = [
+        ":memstats",
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
@@ -50,10 +58,10 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): breaks windows RBE build if enabled
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
