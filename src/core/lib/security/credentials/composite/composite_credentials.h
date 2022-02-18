@@ -64,10 +64,9 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
-    auto* o = static_cast<const grpc_composite_channel_credentials*>(other);
-    int r = inner_creds_->cmp(o->inner_creds_.get());
-    if (r != 0) return r;
-    return call_creds_->cmp(o->call_creds_.get());
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
   }
 
   grpc_core::RefCountedPtr<grpc_channel_credentials> inner_creds_;
