@@ -3640,6 +3640,7 @@ TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
   EXPECT_NE(composite_creds_1->cmp(composite_creds_2), 0);
   EXPECT_NE(composite_creds_2->cmp(composite_creds_1), 0);
   grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(fake_channel_creds);
   grpc_channel_credentials_release(composite_creds_1);
   grpc_channel_credentials_release(composite_creds_2);
 }
