@@ -51,7 +51,7 @@ void TryConnectAndDestroy(const char* fake_metadata_server_address) {
   args.SetInt("grpc.testing.google_c2p_resolver_pretend_running_on_gcp", 1);
   args.SetString("grpc.testing.google_c2p_resolver_metadata_server_override",
                  fake_metadata_server_address);
-  auto channel = grpc::CreateCustomChannel(
+  auto channel = ::grpc::CreateCustomChannel(
       target, grpc::InsecureChannelCredentials(), args);
   // Start connecting, and give some time for the google-c2p resolver to begin
   // resolution and start trying to contact the metadata server.

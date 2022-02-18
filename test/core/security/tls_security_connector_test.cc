@@ -110,7 +110,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
-class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
+class TlsTestCertificateProvider : public ::grpc_tls_certificate_provider {
  public:
   explicit TlsTestCertificateProvider(
       RefCountedPtr<grpc_tls_certificate_distributor> distributor)

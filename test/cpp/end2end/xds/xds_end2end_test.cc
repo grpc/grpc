@@ -939,7 +939,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             ? XdsCredentials(CreateTlsFallbackCredentials())
             : std::make_shared<SecureChannelCredentials>(
                   grpc_fake_transport_security_credentials_create());
-    return grpc::CreateCustomChannel(uri, channel_creds, args);
+    return ::grpc::CreateCustomChannel(uri, channel_creds, args);
   }
 
   enum RpcService {
@@ -1686,7 +1686,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
    private:
-    class XdsChannelArgsServerBuilderOption : public grpc::ServerBuilderOption {
+    class XdsChannelArgsServerBuilderOption
+        : public ::grpc::ServerBuilderOption {
      public:
       explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
           : test_obj_(test_obj) {}

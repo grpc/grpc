@@ -27,7 +27,7 @@ namespace load_reporter {
 namespace experimental {
 
 void LoadReportingServiceServerBuilderOption::UpdateArguments(
-    grpc::ChannelArguments* args) {
+    ::grpc::ChannelArguments* args) {
   args->SetInt(GRPC_ARG_ENABLE_LOAD_REPORTING, true);
 }
 

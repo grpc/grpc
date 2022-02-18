@@ -275,16 +275,16 @@ const char* ServerLoadReportingCallData::GetStatusTagForStatus(
     grpc_status_code status) {
   switch (status) {
     case GRPC_STATUS_OK:
-      return grpc::load_reporter::kCallStatusOk;
+      return ::grpc::load_reporter::kCallStatusOk;
     case GRPC_STATUS_UNKNOWN:
     case GRPC_STATUS_DEADLINE_EXCEEDED:
     case GRPC_STATUS_UNIMPLEMENTED:
     case GRPC_STATUS_INTERNAL:
     case GRPC_STATUS_UNAVAILABLE:
     case GRPC_STATUS_DATA_LOSS:
-      return grpc::load_reporter::kCallStatusServerError;
+      return ::grpc::load_reporter::kCallStatusServerError;
     default:
-      return grpc::load_reporter::kCallStatusClientError;
+      return ::grpc::load_reporter::kCallStatusClientError;
   }
 }
 
@@ -309,12 +309,12 @@ struct ServerLoadReportingFilterStaticRegistrar {
         MaybeAddServerLoadReportingFilter);
     // Access measures to ensure they are initialized. Otherwise, we can't
     // create any valid view before the first RPC.
-    grpc::load_reporter::MeasureStartCount();
-    grpc::load_reporter::MeasureEndCount();
-    grpc::load_reporter::MeasureEndBytesSent();
-    grpc::load_reporter::MeasureEndBytesReceived();
-    grpc::load_reporter::MeasureEndLatencyMs();
-    grpc::load_reporter::MeasureOtherCallMetric();
+    ::grpc::load_reporter::MeasureStartCount();
+    ::grpc::load_reporter::MeasureEndCount();
+    ::grpc::load_reporter::MeasureEndBytesSent();
+    ::grpc::load_reporter::MeasureEndBytesReceived();
+    ::grpc::load_reporter::MeasureEndLatencyMs();
+    ::grpc::load_reporter::MeasureOtherCallMetric();
     registered.store(true, std::memory_order_release);
   }
 } server_load_reporting_filter_static_registrar;

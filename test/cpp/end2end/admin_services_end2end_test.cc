@@ -41,7 +41,7 @@ class AdminServicesTest : public ::testing::Test {
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
     builder.AddListeningPort(address, InsecureServerCredentials());
-    grpc::AddAdminServices(&builder);
+    ::grpc::AddAdminServices(&builder);
     server_ = builder.BuildAndStart();
     // Create channel
     auto reflection_stub = reflection::v1alpha::ServerReflection::NewStub(

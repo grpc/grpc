@@ -48,7 +48,7 @@ class ServerContextBase::CompletionOp final
   // initial refs: one in the server context, one in the cq
   // must ref the call before calling constructor and after deleting this
   CompletionOp(internal::Call* call,
-               grpc::internal::ServerCallbackCall* callback_controller)
+               ::grpc::internal::ServerCallbackCall* callback_controller)
       : call_(*call),
         callback_controller_(callback_controller),
         has_tag_(false),
@@ -141,7 +141,7 @@ class ServerContextBase::CompletionOp final
   }
 
   internal::Call call_;
-  grpc::internal::ServerCallbackCall* const callback_controller_;
+  ::grpc::internal::ServerCallbackCall* const callback_controller_;
   bool has_tag_;
   void* tag_;
   void* core_cq_tag_;
@@ -275,7 +275,7 @@ ServerContextBase::CallWrapper::~CallWrapper() {
 
 void ServerContextBase::BeginCompletionOp(
     internal::Call* call, std::function<void(bool)> callback,
-    grpc::internal::ServerCallbackCall* callback_controller) {
+    ::grpc::internal::ServerCallbackCall* callback_controller) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();
