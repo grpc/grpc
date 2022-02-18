@@ -180,7 +180,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   static absl::StatusOr<MaxAgeFilter> Create(const grpc_channel_args* args,
                                              ChannelFilter::Args filter_args);
 
-  void Start() override;
+  void Start();
 
  private:
   class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
@@ -372,7 +372,11 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         if (GetMaxAgeConfig(channel_args).enable()) {
-          builder->PrependFilter(&grpc_max_age_filter, nullptr);
+          builder->PrependFilter(
+              &grpc_max_age_filter, [](grpc_channel_stack* channel_stack,
+                                       grpc_channel_element* elem) {
+                static_cast<MaxAgeFilter*>(elem->channel_data)->Start();
+              });
         }
         return true;
       });

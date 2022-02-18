@@ -62,9 +62,6 @@ class ChannelFilter {
   // structures going forward.
   virtual bool StartTransportOp(grpc_transport_op*) { return false; }
 
-  // Called once the channel has initialized and it's safe to start timers etc.
-  virtual void Start() {}
-
  protected:
   virtual ~ChannelFilter() = default;
 };
@@ -754,24 +751,6 @@ MakePromiseBasedFilter(const char* name) {
                                 ChannelFilter::Args(args->channel_stack));
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
         new (elem->channel_data) F(std::move(*status));
-        GRPC_CHANNEL_STACK_REF(args->channel_stack, "start_promise_filter");
-        struct Args {
-          grpc_channel_stack* channel_stack;
-          F* filter;
-          grpc_closure closure;
-        };
-        auto* start_args =
-            new Args{args->channel_stack, static_cast<F*>(elem->channel_data),
-                     grpc_closure{}};
-        auto fn = [](void* p, grpc_error_handle) {
-          auto* start_args = static_cast<Args*>(p);
-          start_args->filter->Start();
-          GRPC_CHANNEL_STACK_UNREF(start_args->channel_stack,
-                                   "start_promise_filter");
-          delete start_args;
-        };
-        GRPC_CLOSURE_INIT(&start_args->closure, fn, start_args, nullptr);
-        ExecCtx::Run(DEBUG_LOCATION, &start_args->closure, GRPC_ERROR_NONE);
         return GRPC_ERROR_NONE;
       },
       // destroy_channel_elem
