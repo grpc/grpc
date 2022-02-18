@@ -204,7 +204,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
 RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
   // Create a singleton object for HttpRequestSSLCredentials so that channels to
   // the same target with HttpRequestSSLCredentials can reuse the subchannels.
-  static auto* creds = new grpc_core::HttpRequestSSLCredentials();
+  static auto* creds = new HttpRequestSSLCredentials();
   return creds->Ref();
 }
 
