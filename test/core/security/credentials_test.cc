@@ -3598,55 +3598,6 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   grpc_call_credentials_release(md_creds);
 }
 
-TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
-  auto* insecure_creds = grpc_insecure_credentials_create();
-  auto* fake_channel_creds = grpc_fake_transport_security_credentials_create();
-  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
-  auto* composite_creds_1 = grpc_composite_channel_credentials_create(
-      insecure_creds, fake_creds.get(), nullptr);
-  auto* composite_creds_2 = grpc_composite_channel_credentials_create(
-      fake_channel_creds, fake_creds.get(), nullptr);
-  EXPECT_NE(composite_creds_1->cmp(composite_creds_2), 0);
-  EXPECT_NE(composite_creds_2->cmp(composite_creds_1), 0);
-  grpc_channel_credentials_release(insecure_creds);
-  grpc_channel_credentials_release(composite_creds_1);
-  grpc_channel_credentials_release(composite_creds_2);
-}
-
-TEST(CredentialsTest,
-     TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
-  auto* insecure_creds = grpc_insecure_credentials_create();
-  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
-  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
-  auto* composite_creds_1 = grpc_composite_channel_credentials_create(
-      insecure_creds, fake_creds.get(), nullptr);
-  auto* composite_creds_2 = grpc_composite_channel_credentials_create(
-      insecure_creds, md_creds, nullptr);
-  EXPECT_NE(composite_creds_1->cmp(composite_creds_2), 0);
-  EXPECT_NE(composite_creds_2->cmp(composite_creds_1), 0);
-  grpc_channel_credentials_release(insecure_creds);
-  grpc_call_credentials_release(md_creds);
-  grpc_channel_credentials_release(composite_creds_1);
-  grpc_channel_credentials_release(composite_creds_2);
-}
-
-TEST(CredentialsTest,
-     TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
-  auto* insecure_creds = grpc_insecure_credentials_create();
-  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
-  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
-  auto* composite_creds_1 = grpc_composite_channel_credentials_create(
-      insecure_creds, fake_creds.get(), nullptr);
-  auto* composite_creds_2 = grpc_composite_channel_credentials_create(
-      insecure_creds, md_creds, nullptr);
-  EXPECT_NE(composite_creds_1->cmp(composite_creds_2), 0);
-  EXPECT_NE(composite_creds_2->cmp(composite_creds_1), 0);
-  grpc_channel_credentials_release(insecure_creds);
-  grpc_call_credentials_release(md_creds);
-  grpc_channel_credentials_release(composite_creds_1);
-  grpc_channel_credentials_release(composite_creds_2);
-}
-
 TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
