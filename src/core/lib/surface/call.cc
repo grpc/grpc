@@ -947,7 +947,7 @@ static bool are_write_flags_valid(uint32_t flags) {
   return !(flags & invalid_positions);
 }
 
-static bool are_initial_metadata_flags_valid(uint32_t flags, bool is_client) {
+static bool are_initial_metadata_flags_valid(uint32_t flags) {
   /* check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set */
   uint32_t invalid_positions = ~GRPC_INITIAL_METADATA_USED_MASK;
   return !(flags & invalid_positions);
@@ -1387,7 +1387,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
     switch (op->op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
         /* Flag validation: currently allow no flags */
-        if (!are_initial_metadata_flags_valid(op->flags, call->is_client)) {
+        if (!are_initial_metadata_flags_valid(op->flags)) {
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
