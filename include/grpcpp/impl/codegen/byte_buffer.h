@@ -45,7 +45,7 @@ template <class RequestType>
 void* UnaryDeserializeHelper(grpc_byte_buffer*, grpc::Status*, RequestType*);
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
-template <::grpc::StatusCode code>
+template <grpc::StatusCode code>
 class ErrorMethodHandler;
 class CallOpSendMessage;
 template <class R>

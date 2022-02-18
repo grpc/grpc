@@ -95,7 +95,7 @@ class ServerStreamingHandler;
 class ServerReactor;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
-template <::grpc::StatusCode code>
+template <grpc::StatusCode code>
 class ErrorMethodHandler;
 }  // namespace internal
 
@@ -381,7 +381,7 @@ class ServerContextBase {
   friend class grpc::internal::CallbackServerStreamingHandler;
   template <class RequestType, class ResponseType>
   friend class grpc::internal::CallbackBidiHandler;
-  template <::grpc::StatusCode code>
+  template <grpc::StatusCode code>
   friend class grpc::internal::ErrorMethodHandler;
   template <class Base>
   friend class grpc::internal::FinishOnlyReactor;
@@ -458,7 +458,7 @@ class ServerContextBase {
   grpc_compression_level compression_level_;
   grpc_compression_algorithm compression_algorithm_;
 
-  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage>
       pending_ops_;
   bool has_pending_ops_ = false;

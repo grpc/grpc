@@ -115,7 +115,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::vector<std::unique_ptr<::grpc::testing::EchoTestService::Stub>> stubs_;
+  std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs_;
 };
 
 enum class CredentialsType {

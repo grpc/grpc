@@ -75,7 +75,7 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
-template <::grpc::StatusCode code>
+template <grpc::StatusCode code>
 class ErrorMethodHandler;
 }  // namespace internal
 
@@ -288,7 +288,7 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
   friend class grpc::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
   friend class grpc::internal::TemplatedBidiStreamingHandler;
-  template <::grpc::StatusCode code>
+  template <grpc::StatusCode code>
   friend class grpc::internal::ErrorMethodHandler;
   friend class grpc::ServerContextBase;
   friend class grpc::ServerInterface;

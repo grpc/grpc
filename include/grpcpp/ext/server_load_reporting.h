@@ -38,7 +38,7 @@ class LoadReportingServiceServerBuilderOption
     : public grpc::ServerBuilderOption {
  public:
   void UpdateArguments(grpc::ChannelArguments* args) override;
-  void UpdatePlugins(std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>*
+  void UpdatePlugins(std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>*
                          plugins) override;
 };
 

@@ -41,11 +41,11 @@ class BenchmarkCallbackServiceImpl final
     return reactor;
   }
 
-  grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
+  grpc::ServerBidiReactor<grpc::testing::SimpleRequest,
                           grpc::testing::SimpleResponse>*
   StreamingCall(grpc::CallbackServerContext*) override {
     class Reactor
-        : public grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
+        : public grpc::ServerBidiReactor<grpc::testing::SimpleRequest,
                                          grpc::testing::SimpleResponse> {
      public:
       Reactor() { StartRead(&request_); }

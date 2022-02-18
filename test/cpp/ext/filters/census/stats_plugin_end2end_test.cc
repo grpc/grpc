@@ -72,7 +72,7 @@ class EchoServer final : public EchoTestService::Service {
       response->set_message(request->message());
       return grpc::Status::OK;
     } else {
-      return grpc::Status(static_cast<::grpc::StatusCode>(
+      return grpc::Status(static_cast<grpc::StatusCode>(
                               request->param().expected_error().code()),
                           "");
     }

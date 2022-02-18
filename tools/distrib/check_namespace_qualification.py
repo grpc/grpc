@@ -37,7 +37,7 @@ def save(fpath, contents):
 class QualificationValidator(object):
 
     def __init__(self):
-        self.fully_qualified_re = re.compile(r'([ (])::(grpc[A-Za-z_:])')
+        self.fully_qualified_re = re.compile(r'([ (<])::(grpc[A-Za-z_:])')
         self.using_re = re.compile(
             r'(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::')
         self.define_re = re.compile(r'^#define')

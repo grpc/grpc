@@ -67,7 +67,7 @@ class EchoServer final : public EchoTestService::Service {
       response->set_message(request->message());
       return grpc::Status::OK;
     } else {
-      return grpc::Status(static_cast<::grpc::StatusCode>(
+      return grpc::Status(static_cast<grpc::StatusCode>(
                               request->param().expected_error().code()),
                           "");
     }
@@ -244,7 +244,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   std::vector<std::string> server_addresses_;
   std::vector<std::unique_ptr<EchoTestService::Stub>> stubs_;
   EchoServer service_;
-  std::unique_ptr<::grpc::Server> server_;
+  std::unique_ptr<grpc::Server> server_;
   std::thread server_thread_;
 };
 

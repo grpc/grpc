@@ -32,7 +32,7 @@ void LoadReportingServiceServerBuilderOption::UpdateArguments(
 }
 
 void LoadReportingServiceServerBuilderOption::UpdatePlugins(
-    std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>* plugins) {
+    std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* plugins) {
   plugins->emplace_back(
       new grpc::load_reporter::LoadReportingServiceServerBuilderPlugin());
 }

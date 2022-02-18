@@ -121,7 +121,7 @@ class ClientAsyncResponseReaderHelper {
                internal::CallOpSetInterface**, void*, Status*, void*)>* finish,
       const W& request) {
     using SingleBufType =
-        grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+        grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                                   grpc::internal::CallOpSendMessage,
                                   grpc::internal::CallOpClientSendClose,
                                   grpc::internal::CallOpRecvInitialMetadata,
@@ -394,9 +394,9 @@ class ServerAsyncResponseWriter final
 
   grpc::internal::Call call_;
   grpc::ServerContext* ctx_;
-  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata>
       meta_buf_;
-  grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
+  grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
                             grpc::internal::CallOpServerSendStatus>
       finish_buf_;
@@ -406,12 +406,12 @@ class ServerAsyncResponseWriter final
 
 namespace std {
 template <class R>
-class default_delete<::grpc::ClientAsyncResponseReader<R>> {
+class default_delete<grpc::ClientAsyncResponseReader<R>> {
  public:
   void operator()(void* /*p*/) {}
 };
 template <class R>
-class default_delete<::grpc::ClientAsyncResponseReaderInterface<R>> {
+class default_delete<grpc::ClientAsyncResponseReaderInterface<R>> {
  public:
   void operator()(void* /*p*/) {}
 };

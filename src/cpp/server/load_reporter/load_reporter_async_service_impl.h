@@ -148,7 +148,7 @@ class LoadReporterAsyncServiceImpl
     ServerCompletionQueue* cq_;
     LoadReporterAsyncServiceImpl* service_;
     LoadReporter* load_reporter_;
-    ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
+    ServerAsyncReaderWriter<grpc::lb::v1::LoadReportResponse,
                             grpc::lb::v1::LoadReportRequest>
         stream_;
 
@@ -184,7 +184,7 @@ class LoadReporterAsyncServiceImpl
   // don't enqueue new tags into cq_ after it is already shut down.
   grpc_core::Mutex cq_shutdown_mu_;
   std::atomic_bool shutdown_{false};
-  std::unique_ptr<::grpc_core::Thread> thread_;
+  std::unique_ptr<grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
   std::unique_ptr<Alarm> next_fetch_and_sample_alarm_;
 };

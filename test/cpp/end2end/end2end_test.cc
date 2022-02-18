@@ -260,7 +260,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
   }
 
  private:
-  std::unique_ptr<::grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
 };
 
 class TestServiceImplDupPkg

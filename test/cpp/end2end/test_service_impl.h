@@ -490,7 +490,7 @@ class CallbackTestServiceImpl
 };
 
 using TestServiceImpl =
-    TestMultipleServiceImpl<::grpc::testing::EchoTestService::Service>;
+    TestMultipleServiceImpl<grpc::testing::EchoTestService::Service>;
 
 }  // namespace testing
 }  // namespace grpc

@@ -470,7 +470,7 @@ class ClientContext {
 
   grpc_call* call() const { return call_; }
   void set_call(grpc_call* call,
-                const std::shared_ptr<::grpc::Channel>& channel);
+                const std::shared_ptr<grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, const char* suffix_for_stats,
@@ -507,7 +507,7 @@ class ClientContext {
   bool wait_for_ready_explicitly_set_;
   bool idempotent_;
   bool cacheable_;
-  std::shared_ptr<::grpc::Channel> channel_;
+  std::shared_ptr<grpc::Channel> channel_;
   grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;

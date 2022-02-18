@@ -33,14 +33,14 @@ class DelegatingChannel : public grpc::ChannelInterface {
   ~DelegatingChannel() override {}
 
   explicit DelegatingChannel(
-      std::shared_ptr<::grpc::ChannelInterface> delegate_channel)
+      std::shared_ptr<grpc::ChannelInterface> delegate_channel)
       : delegate_channel_(delegate_channel) {}
 
   grpc_connectivity_state GetState(bool try_to_connect) override {
     return delegate_channel()->GetState(try_to_connect);
   }
 
-  std::shared_ptr<::grpc::ChannelInterface> delegate_channel() {
+  std::shared_ptr<grpc::ChannelInterface> delegate_channel() {
     return delegate_channel_;
   }
 
@@ -84,7 +84,7 @@ class DelegatingChannel : public grpc::ChannelInterface {
     return delegate_channel()->CallbackCQ();
   }
 
-  std::shared_ptr<::grpc::ChannelInterface> delegate_channel_;
+  std::shared_ptr<grpc::ChannelInterface> delegate_channel_;
 };
 
 }  // namespace experimental

@@ -1728,15 +1728,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     explicit BackendServerThread(XdsEnd2endTest* test_obj)
         : ServerThread(test_obj, test_obj->use_xds_enabled_server_) {}
 
-    BackendServiceImpl<::grpc::testing::EchoTestService::Service>*
+    BackendServiceImpl<grpc::testing::EchoTestService::Service>*
     backend_service() {
       return &backend_service_;
     }
-    BackendServiceImpl<::grpc::testing::EchoTest1Service::Service>*
+    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>*
     backend_service1() {
       return &backend_service1_;
     }
-    BackendServiceImpl<::grpc::testing::EchoTest2Service::Service>*
+    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
     backend_service2() {
       return &backend_service2_;
     }
@@ -1789,11 +1789,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     const char* Type() override { return "Backend"; }
 
-    BackendServiceImpl<::grpc::testing::EchoTestService::Service>
+    BackendServiceImpl<grpc::testing::EchoTestService::Service>
         backend_service_;
-    BackendServiceImpl<::grpc::testing::EchoTest1Service::Service>
+    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>
         backend_service1_;
-    BackendServiceImpl<::grpc::testing::EchoTest2Service::Service>
+    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
         backend_service2_;
   };
 

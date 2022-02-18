@@ -117,7 +117,7 @@ class Channel final : public grpc::ChannelInterface,
   std::atomic<CompletionQueue*> callback_cq_{nullptr};
 
   std::vector<
-      std::unique_ptr<::grpc::experimental::ClientInterceptorFactoryInterface>>
+      std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators_;
 };
 

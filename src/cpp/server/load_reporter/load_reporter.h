@@ -140,7 +140,7 @@ class LoadReporter {
   // all the stats data accumulated between the last report (i.e., the last
   // consumption) and the last fetch from Census (i.e., the last production).
   // Thread-safe.
-  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> GenerateLoads(
+  ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> GenerateLoads(
       const std::string& hostname, const std::string& lb_id);
 
   // The feedback is calculated from the stats data recorded in the sliding
