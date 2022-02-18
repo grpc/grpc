@@ -110,18 +110,6 @@ static const char test_refresh_token_str[] =
     "  \"refresh_token\": \"1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42\","
     "  \"type\": \"authorized_user\"}";
 
-/* Test external account credentials. */
-static const char test_external_account_credentials_str[] =
-    "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
-    "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-    "url\":\"\",\"token_url\":\"https://"
-    "sts.googleapis.com:5555/"
-    "token\",\"token_info_url\":\"\",\"credential_source\":{\"file\":"
-    "\"credentials_file_path\"},"
-    "\"quota_project_id\":\"quota_"
-    "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
-    "secret\"}";
-
 static const char test_external_account_credentials_multi_pattern_sts_str[] =
     "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
     "token_type\":\"subject_token_type\",\"service_account_impersonation_"
