@@ -85,8 +85,8 @@ class ProfileScope {
 #define GPR_TIMER_SCOPE_NAME_INTERNAL(prefix, line) prefix##line
 #define GPR_TIMER_SCOPE_NAME(prefix, line) \
   GPR_TIMER_SCOPE_NAME_INTERNAL(prefix, line)
-#define GPR_TIMER_SCOPE(tag, important)                               \
-  grpc::ProfileScope GPR_TIMER_SCOPE_NAME(_profile_scope_, __LINE__)( \
+#define GPR_TIMER_SCOPE(tag, important)                                 \
+  ::grpc::ProfileScope GPR_TIMER_SCOPE_NAME(_profile_scope_, __LINE__)( \
       (tag), (important), __FILE__, __LINE__)
 
 #endif /* at least one profiler requested. */

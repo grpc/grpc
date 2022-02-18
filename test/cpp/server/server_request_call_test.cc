@@ -130,7 +130,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
     // deadline, whether due to the sleep or because the server was unable to
     // even fetch the request from the CQ before the deadline elapsed.
     testing::EchoResponse response;
-    grpc::ClientContext ctx;
+    ::grpc::ClientContext ctx;
     ctx.set_fail_fast(false);
     ctx.set_deadline(std::chrono::system_clock::now() +
                      std::chrono::milliseconds(1));

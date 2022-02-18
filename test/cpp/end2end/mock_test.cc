@@ -196,7 +196,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
     grpc::internal::CondVar cv;
     absl::optional<grpc::Status> ABSL_GUARDED_BY(mu) status;
   } status;
-  DefaultReactorTestPeer peer(&ctx, [&](grpc::Status s) {
+  DefaultReactorTestPeer peer(&ctx, [&](::grpc::Status s) {
     grpc::internal::MutexLock l(&status.mu);
     status.status = std::move(s);
     status.cv.Signal();

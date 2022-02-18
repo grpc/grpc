@@ -351,7 +351,7 @@ class ServerBuilder {
   virtual ChannelArguments BuildChannelArgs();
 
  private:
-  friend class grpc::testing::ServerBuilderPluginTest;
+  friend class ::grpc::testing::ServerBuilderPluginTest;
 
   struct SyncServerSettings {
     SyncServerSettings()

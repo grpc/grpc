@@ -85,7 +85,7 @@ const char* kLargeString =
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   static void BidiStream_Sender(
       ServerReaderWriter<EchoResponse, EchoRequest>* stream,

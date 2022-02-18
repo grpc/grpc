@@ -52,7 +52,7 @@ const int kProtoBufferWriterMaxBufferLength = 1024 * 1024;
 ///
 /// Read more about ZeroCopyOutputStream interface here:
 /// https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyOutputStream
-class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
+class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   /// Constructor for this derived class
   ///

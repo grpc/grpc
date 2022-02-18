@@ -44,7 +44,7 @@ const char kServerReturnStatusCode[] = "server_return_status_code";
 const char kServerDelayBeforeReturnUs[] = "server_delay_before_return_us";
 const char kServerReturnAfterNReads[] = "server_return_after_n_reads";
 
-class TestServiceImpl : public grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   // Unused methods are not implemented.
 
