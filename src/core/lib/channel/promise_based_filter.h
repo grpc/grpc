@@ -761,7 +761,8 @@ MakePromiseBasedFilter(const char* name) {
           grpc_closure closure;
         };
         auto* start_args =
-            new Args{args->channel_stack, static_cast<F*>(elem->channel_data)};
+            new Args{args->channel_stack, static_cast<F*>(elem->channel_data),
+                     grpc_closure{}};
         auto fn = [](void* p, grpc_error_handle) {
           auto* start_args = static_cast<Args*>(p);
           start_args->filter->Start();
