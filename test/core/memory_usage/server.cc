@@ -22,10 +22,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "test/core/memory_usage/memstats.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+
+#include "test/core/memory_usage/memstats.h"
 #ifndef _WIN32
 /* This is for _exit() below, which is temporary. */
 #include <unistd.h>
@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
                 send_status(&calls[k]);
               }
             }
-          /* fallthrough */
+            ABSL_FALLTHROUGH_INTENDED;
           // no break here since we want to continue to case
           // FLING_SERVER_SEND_STATUS_SNAPSHOT to destroy the snapshot call
           case FLING_SERVER_SEND_STATUS_SNAPSHOT:
