@@ -19,8 +19,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "test/core/memory_usage/memstats.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
