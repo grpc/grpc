@@ -140,13 +140,13 @@ class LoadReporter {
   // all the stats data accumulated between the last report (i.e., the last
   // consumption) and the last fetch from Census (i.e., the last production).
   // Thread-safe.
-  ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> GenerateLoads(
+  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> GenerateLoads(
       const std::string& hostname, const std::string& lb_id);
 
   // The feedback is calculated from the stats data recorded in the sliding
   // window. Outdated records are discarded.
   // Thread-safe.
-  grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
+  ::grpc::lb::v1::LoadBalancingFeedback GenerateLoadBalancingFeedback();
 
   // Wrapper around LoadDataStore::ReportStreamCreated.
   // Thread-safe.
@@ -209,7 +209,7 @@ class LoadReporter {
 
   // Extracts an OrphanedLoadIdentifier from the per-balancer store and attaches
   // it to the load.
-  void AttachOrphanLoadId(grpc::lb::v1::Load* load,
+  void AttachOrphanLoadId(::grpc::lb::v1::Load* load,
                           const PerBalancerStore& per_balancer_store);
 
   std::atomic<int64_t> next_lb_id_{0};

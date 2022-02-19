@@ -47,7 +47,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 
 class InteropClientContextInspector {
  public:
-  explicit InteropClientContextInspector(const grpc::ClientContext& context)
+  explicit InteropClientContextInspector(const ::grpc::ClientContext& context)
       : context_(context) {}
 
   // Inspector methods, able to peek inside ClientContext, follow.
@@ -63,7 +63,7 @@ class InteropClientContextInspector {
   }
 
  private:
-  const grpc::ClientContext& context_;
+  const ::grpc::ClientContext& context_;
 };
 
 class AdditionalMetadataInterceptor : public experimental::Interceptor {

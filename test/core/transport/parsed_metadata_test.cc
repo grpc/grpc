@@ -114,7 +114,7 @@ class FakeContainer {
   void Set(IntptrTrait, intptr_t x) { SetIntptr(x); }
   void Set(StringTrait, std::string x) { SetString(x); }
 
-  void Set(const ParsedMetadata<FakeContainer>& metadata) {
+  void Set(const ::grpc_core::ParsedMetadata<FakeContainer>& metadata) {
     metadata.SetOnContainer(this);
   }
 

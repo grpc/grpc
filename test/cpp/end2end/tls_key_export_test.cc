@@ -60,16 +60,16 @@ namespace testing {
 namespace {
 
 class EchoServer final : public EchoTestService::Service {
-  grpc::Status Echo(grpc::ServerContext* /*context*/,
-                    const EchoRequest* request,
-                    EchoResponse* response) override {
+  ::grpc::Status Echo(::grpc::ServerContext* /*context*/,
+                      const EchoRequest* request,
+                      EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
-      return grpc::Status::OK;
+      return ::grpc::Status::OK;
     } else {
-      return grpc::Status(static_cast<grpc::StatusCode>(
-                              request->param().expected_error().code()),
-                          "");
+      return ::grpc::Status(static_cast<::grpc::StatusCode>(
+                                request->param().expected_error().code()),
+                            "");
     }
   }
 };
@@ -131,8 +131,8 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void SetUp() override {
-    grpc::ServerBuilder builder;
-    grpc::ChannelArguments args;
+    ::grpc::ServerBuilder builder;
+    ::grpc::ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.com.au");
 
     if (GetParam().num_listening_ports() > 0) {
@@ -179,7 +179,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
 
       builder.AddListeningPort(
           "0.0.0.0:0",
-          grpc::experimental::TlsServerCredentials(server_creds_options),
+          ::grpc::experimental::TlsServerCredentials(server_creds_options),
           &ports_[i]);
     }
 
@@ -213,9 +213,9 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
             tmp_stub_tls_key_log_file_[i]);
       }
 
-      stubs_.push_back(EchoTestService::NewStub(grpc::CreateCustomChannel(
+      stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(
           server_addresses_[i],
-          grpc::experimental::TlsCredentials(channel_creds_options), args)));
+          ::grpc::experimental::TlsCredentials(channel_creds_options), args)));
     }
   }
 
@@ -244,7 +244,7 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   std::vector<std::string> server_addresses_;
   std::vector<std::unique_ptr<EchoTestService::Stub>> stubs_;
   EchoServer service_;
-  std::unique_ptr<grpc::Server> server_;
+  std::unique_ptr<::grpc::Server> server_;
   std::thread server_thread_;
 };
 
@@ -256,16 +256,16 @@ TEST_P(TlsKeyLoggingEnd2EndTest, KeyLogging) {
       request.set_message("foo");
       request.mutable_param()->mutable_expected_error()->set_code(0);
       EchoResponse response;
-      grpc::ClientContext context;
-      grpc::Status status = stubs_[j]->Echo(&context, request, &response);
+      ::grpc::ClientContext context;
+      ::grpc::Status status = stubs_[j]->Echo(&context, request, &response);
       EXPECT_TRUE(status.ok());
     }
   }
 
   for (int i = 0; i < GetParam().num_listening_ports(); i++) {
-    std::string server_key_log = grpc_core::testing::GetFileContents(
+    std::string server_key_log = ::grpc_core::testing::GetFileContents(
         tmp_server_tls_key_log_file_by_port_[i].c_str());
-    std::string channel_key_log = grpc_core::testing::GetFileContents(
+    std::string channel_key_log = ::grpc_core::testing::GetFileContents(
         tmp_stub_tls_key_log_file_[i].c_str());
 
     if (!GetParam().enable_tls_key_logging()) {

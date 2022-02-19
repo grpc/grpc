@@ -126,7 +126,7 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
     ChannelArguments args;
     // Override target name for host name check
     args.SetSslTargetNameOverride("foo.test.google.fr");
-    return grpc::CreateCustomChannel(server_address_, channel_creds_, args);
+    return ::grpc::CreateCustomChannel(server_address_, channel_creds_, args);
   }
 
   grpc::Status SendRpc(const std::shared_ptr<Channel>& channel,

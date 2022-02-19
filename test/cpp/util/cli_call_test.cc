@@ -39,7 +39,7 @@ using grpc::testing::EchoResponse;
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {

@@ -25,9 +25,9 @@ tools/distrib/add-iwyu.py
 tools/distrib/check_trailing_newlines.sh --fix
 tools/run_tests/sanity/check_port_platform.py --fix
 tools/run_tests/sanity/check_include_style.py --fix || true
-tools/distrib/check_namespace_qualification.py --fix
 tools/distrib/yapf_code.sh
 tools/distrib/isort_code.sh
 tools/distrib/clang_format_code.sh
 tools/distrib/buildifier_format_code_strict.sh || true
 tools/distrib/check_redundant_namespace_qualifiers.py || true
+
