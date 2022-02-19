@@ -243,7 +243,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     ChannelArguments args;
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   std::shared_ptr<Channel> BuildChannelWithDefaultServiceConfig() {
@@ -254,7 +254,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     args.SetServiceConfigJSON(ValidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   std::shared_ptr<Channel> BuildChannelWithInvalidDefaultServiceConfig() {
@@ -265,7 +265,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     args.SetServiceConfigJSON(InvalidDefaultServiceConfig());
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(

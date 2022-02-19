@@ -61,7 +61,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       return Status(StatusCode::FAILED_PRECONDITION, "Client error requested");
     }
     response->set_message(request->message());
-    ::grpc::load_reporter::experimental::AddLoadReportingCost(
+    grpc::load_reporter::experimental::AddLoadReportingCost(
         context, kMetricName, kMetricValue);
     return Status::OK;
   }
@@ -76,8 +76,8 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
         ServerBuilder()
             .AddListeningPort(server_address_, InsecureServerCredentials())
             .RegisterService(&echo_service_)
-            .SetOption(std::unique_ptr<::grpc::ServerBuilderOption>(
-                new ::grpc::load_reporter::experimental::
+            .SetOption(std::unique_ptr<grpc::ServerBuilderOption>(
+                new grpc::load_reporter::experimental::
                     LoadReportingServiceServerBuilderOption()))
             .BuildAndStart();
     server_thread_ =
@@ -125,10 +125,10 @@ TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   auto channel =
       grpc::CreateChannel(server_address_, InsecureChannelCredentials());
-  auto stub = ::grpc::lb::v1::LoadReporter::NewStub(channel);
+  auto stub = grpc::lb::v1::LoadReporter::NewStub(channel);
   ClientContext ctx;
   auto stream = stub->ReportLoad(&ctx);
-  ::grpc::lb::v1::LoadReportRequest request;
+  grpc::lb::v1::LoadReportRequest request;
   request.mutable_initial_request()->set_load_balanced_hostname(
       server_address_);
   request.mutable_initial_request()->set_load_key("LOAD_KEY");
@@ -137,7 +137,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
       ->set_seconds(5);
   stream->Write(request);
   gpr_log(GPR_INFO, "Initial request sent.");
-  ::grpc::lb::v1::LoadReportResponse response;
+  grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
   const std::string& lb_id = response.initial_response().load_balancer_id();
   gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
