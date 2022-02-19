@@ -206,7 +206,7 @@ def _get_python_lib(repository_ctx, python_bin, lib_path_key):
         "    paths.append(path)\n" + "if len(paths) >=1:\n" +
         "  print(paths[0])\n" + "END"
     )
-    cmd = "%s - %s" % (python_bin, print_lib)
+    cmd = '"%s" - %s' % (python_bin, print_lib)
     result = repository_ctx.execute([_get_bash_bin(repository_ctx), "-c", cmd])
     return result.stdout.strip("\n")
 
