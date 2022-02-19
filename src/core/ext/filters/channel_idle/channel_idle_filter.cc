@@ -373,8 +373,8 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         if (GetMaxAgeConfig(channel_args).enable()) {
           builder->PrependFilter(
-              &grpc_max_age_filter, [](grpc_channel_stack* channel_stack,
-                                       grpc_channel_element* elem) {
+              &grpc_max_age_filter,
+              [](grpc_channel_stack*, grpc_channel_element* elem) {
                 static_cast<MaxAgeFilter*>(elem->channel_data)->Start();
               });
         }
