@@ -35,7 +35,7 @@ int main(int /*argc*/, char** argv) {
   char* lslash = strrchr(me, '/');
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
-  const char* args[10];
+  std::vector<const char*> args;
   int status;
   gpr_subprocess *svr, *cli;
   /* figure out where we are */
@@ -48,23 +48,20 @@ int main(int /*argc*/, char** argv) {
   /* start the server */
   std::string cmd = absl::StrCat(root, "/memory_usage_server",
                                  gpr_subprocess_binary_extension());
-  args[0] = cmd.c_str();
-  args[1] = "--bind";
   std::string joined = grpc_core::JoinHostPort("::", port);
-  args[2] = joined.c_str();
-  args[3] = "--no-secure";
-  svr = gpr_subprocess_create(4, (const char**)args);
+  args = std::vector<const char*>{cmd.c_str(), "--bind", joined.c_str(),
+                                  "--no-secure"};
+  svr = gpr_subprocess_create(args.size(), args.data());
 
   /* start the client */
   cmd = absl::StrCat(root, "/memory_usage_client",
                      gpr_subprocess_binary_extension());
-  args[0] = cmd.c_str();
-  args[1] = "--target";
   joined = grpc_core::JoinHostPort("127.0.0.1", port);
-  args[2] = joined.c_str();
-  args[3] = "--warmup=10000";
-  args[4] = "--benchmark=90000";
-  cli = gpr_subprocess_create(5, (const char**)args);
+  args = std::vector<const char*>{
+      cmd.c_str(),      "--target",          joined.c_str(),
+      "--warmup=10000", "--benchmark=90000",
+  };
+  cli = gpr_subprocess_create(args.size(), args.data());
 
   /* wait for completion */
   printf("waiting for client\n");

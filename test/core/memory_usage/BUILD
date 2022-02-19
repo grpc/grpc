@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 grpc_package(name = "test/core/memory_usage")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_library(
     name = "memstats",
