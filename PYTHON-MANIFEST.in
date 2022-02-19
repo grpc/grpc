@@ -8,6 +8,7 @@ graft third_party/abseil-cpp/absl
 graft third_party/address_sorting
 graft third_party/boringssl-with-bazel
 graft third_party/cares
+graft third_party/libuv
 graft third_party/re2
 graft third_party/upb
 graft third_party/xxhash
