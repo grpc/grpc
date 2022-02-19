@@ -143,11 +143,6 @@ config_setting(
     values = {"define": "use_strict_warning=true"},
 )
 
-config_setting(
-    name = "use_abseil_status",
-    values = {"define": "use_abseil_status=true"},
-)
-
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml

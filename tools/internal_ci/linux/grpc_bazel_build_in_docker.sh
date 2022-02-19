@@ -38,13 +38,6 @@ bazel build --define=use_strict_warning=true \
 	//examples/... \
 	-//examples/android/binder/...
 
-# TODO(veblush): Remove this test after migration to abseil-status is done.
-bazel build --define=use_strict_warning=true --define=use_abseil_status=true \
-	-- \
-	//src/core/... \
-	//src/compiler/... \
-	//test/...
-
 # TODO(jtattersmusch): Adding a build here for --define=grpc_no_xds is not ideal
 # and we should find a better place for this. Refer
 # https://github.com/grpc/grpc/pull/24536#pullrequestreview-517466531 for more

@@ -128,7 +128,7 @@ void ServerTryCancelNonblocking(CallbackServerContext* context) {
 ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     CallbackServerContext* context, const EchoRequest* request,
     EchoResponse* response) {
-  class Reactor : public ::grpc::ServerUnaryReactor {
+  class Reactor : public grpc::ServerUnaryReactor {
    public:
     Reactor(CallbackTestServiceImpl* service, CallbackServerContext* ctx,
             const EchoRequest* request, EchoResponse* response)
@@ -323,7 +323,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
 
 ServerUnaryReactor* CallbackTestServiceImpl::CheckClientInitialMetadata(
     CallbackServerContext* context, const SimpleRequest*, SimpleResponse*) {
-  class Reactor : public ::grpc::ServerUnaryReactor {
+  class Reactor : public grpc::ServerUnaryReactor {
    public:
     explicit Reactor(CallbackServerContext* ctx) {
       EXPECT_EQ(internal::MetadataMatchCount(ctx->client_metadata(),
@@ -358,7 +358,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
     return nullptr;
   }
 
-  class Reactor : public ::grpc::ServerReadReactor<EchoRequest> {
+  class Reactor : public grpc::ServerReadReactor<EchoRequest> {
    public:
     Reactor(CallbackServerContext* ctx, EchoResponse* response,
             int server_try_cancel)
@@ -441,7 +441,7 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
     internal::ServerTryCancelNonblocking(context);
   }
 
-  class Reactor : public ::grpc::ServerWriteReactor<EchoResponse> {
+  class Reactor : public grpc::ServerWriteReactor<EchoResponse> {
    public:
     Reactor(CallbackServerContext* ctx, const EchoRequest* request,
             int server_try_cancel)
@@ -528,7 +528,7 @@ ServerWriteReactor<EchoResponse>* CallbackTestServiceImpl::ResponseStream(
 
 ServerBidiReactor<EchoRequest, EchoResponse>*
 CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
-  class Reactor : public ::grpc::ServerBidiReactor<EchoRequest, EchoResponse> {
+  class Reactor : public grpc::ServerBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Reactor(CallbackServerContext* ctx) : ctx_(ctx) {
       // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
