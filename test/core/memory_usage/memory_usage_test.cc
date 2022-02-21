@@ -39,6 +39,7 @@ class Subprocess {
  public:
   explicit Subprocess(std::vector<std::string> args) {
     std::vector<const char*> args_c;
+    args_c.reserve(args.size());
     for (const auto& arg : args) {
       args_c.push_back(arg.c_str());
     }
