@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/call_creds_util.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
@@ -37,18 +38,20 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
   GetRequestMetadata(
       grpc_core::ClientInitialMetadata initial_metadata,
-      grpc_core::AuthMetadataContext* auth_metadata_context) override;
+      const GetRequestMetadataArgs* args) override;
 
   std::string debug_string() override;
 
  private:
   class PendingRequest : public grpc_core::RefCounted<PendingRequest> {
    public:
-    PendingRequest(grpc_core::RefCountedPtr<grpc_plugin_credentials> creds,
-                   grpc_core::AuthMetadataContext* auth_metadata_context,
-                   grpc_core::ClientInitialMetadata initial_metadata)
+    PendingRequest(
+        grpc_core::RefCountedPtr<grpc_plugin_credentials> creds,
+        grpc_core::ClientInitialMetadata initial_metadata,
+        const grpc_call_credentials::GetRequestMetadataArgs* args)
         : call_creds_(std::move(creds)),
-          context_(auth_metadata_context->MakeLegacyContext(initial_metadata)),
+          context_(
+              grpc_core::MakePluginAuthMetadataContext(initial_metadata, args)),
           md_(std::move(initial_metadata)) {}
 
     ~PendingRequest() override {

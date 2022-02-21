@@ -100,7 +100,7 @@ const char* grpc_fake_transport_get_expected_targets(
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_md_only_test_credentials::GetRequestMetadata(
     grpc_core::ClientInitialMetadata initial_metadata,
-    grpc_core::AuthMetadataContext*) {
+    const grpc_call_credentials::GetRequestMetadataArgs* args) {
   initial_metadata->Append(
       key_.as_string_view(), value_.Ref(),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });

@@ -40,18 +40,7 @@ static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
-  class NullContext final : public grpc_core::AuthMetadataContext {
-   public:
-    std::string JwtServiceUrl(
-        const grpc_core::ClientInitialMetadata&) const override {
-      return "";
-    }
-    grpc_auth_metadata_context MakeLegacyContext(
-        const grpc_core::ClientInitialMetadata&) const override {
-      return {"", "", nullptr, nullptr};
-    }
-  };
-  NullContext null_ctx;
+  grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args;
 
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
@@ -65,12 +54,12 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   char* token = nullptr;
 
   auto activity = grpc_core::MakeActivity(
-      [creds, &initial_metadata, &null_ctx]() {
+      [creds, &initial_metadata, &get_request_metadata_args]() {
         return grpc_core::Map(
             creds->GetRequestMetadata(
                 grpc_core::ClientInitialMetadata::TestOnlyWrap(
                     &initial_metadata),
-                &null_ctx),
+                &get_request_metadata_args),
             [](const absl::StatusOr<grpc_core::ClientInitialMetadata>& s) {
               return s.status();
             });

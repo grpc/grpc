@@ -93,68 +93,17 @@ bool grpc_check_security_level(grpc_security_level channel_level,
 
 namespace grpc_core {
 
-ClientAuthFilter::PartialAuthContext ClientAuthFilter::GetPartialAuthContext(
-    const ClientInitialMetadata& initial_metadata) const {
-  auto service =
-      initial_metadata->get_pointer(HttpPathMetadata())->as_string_view();
-  auto last_slash = service.find_last_of('/');
-  absl::string_view method_name;
-  if (last_slash == absl::string_view::npos) {
-    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
-    service = "";
-    method_name = "";
-  } else if (last_slash == 0) {
-    method_name = "";
-  } else {
-    method_name = service.substr(last_slash + 1);
-    service = service.substr(0, last_slash);
-  }
-  auto host_and_port =
-      initial_metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
-  auto url_scheme = security_connector_->url_scheme();
-  if (url_scheme == GRPC_SSL_URL_SCHEME) {
-    /* Remove the port if it is 443. */
-    auto port_delimiter = host_and_port.find_last_of(':');
-    if (port_delimiter != absl::string_view::npos &&
-        host_and_port.substr(port_delimiter + 1) == "443") {
-      host_and_port = host_and_port.substr(0, port_delimiter);
-    }
-  }
-  return PartialAuthContext{host_and_port, method_name, url_scheme, service};
-}
-
-std::string ClientAuthFilter::PartialAuthContext::ServiceUrl() const {
-  return absl::StrCat(url_scheme, "://", host_and_port, service);
-}
-
-std::string ClientAuthFilter::JwtServiceUrl(
-    const ClientInitialMetadata& initial_metadata) const {
-  return GetPartialAuthContext(initial_metadata).ServiceUrl();
-}
-
-grpc_auth_metadata_context ClientAuthFilter::MakeLegacyContext(
-    const ClientInitialMetadata& initial_metadata) const {
-  PartialAuthContext a = GetPartialAuthContext(initial_metadata);
-  grpc_auth_metadata_context r;
-  r.channel_auth_context =
-      auth_context_ != nullptr ? auth_context_->Ref().release() : nullptr;
-  r.service_url = gpr_strdup(a.ServiceUrl().c_str());
-  r.method_name = gpr_strdup(std::string(a.method_name).c_str());
-  return r;
-}
-
 ClientAuthFilter::ClientAuthFilter(
     RefCountedPtr<grpc_channel_security_connector> security_connector,
     RefCountedPtr<grpc_auth_context> auth_context)
-    : security_connector_(std::move(security_connector)),
-      auth_context_(std::move(auth_context)) {}
+    : args_{std::move(security_connector), std::move(auth_context)} {}
 
 ArenaPromise<absl::StatusOr<ClientInitialMetadata>>
 ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
   auto* ctx = static_cast<grpc_client_security_context*>(
       GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY].value);
   grpc_call_credentials* channel_call_creds =
-      security_connector_->mutable_request_metadata_creds();
+      args_.security_connector->mutable_request_metadata_creds();
   const bool call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
 
   if (channel_call_creds == nullptr && !call_creds_has_md) {
@@ -181,7 +130,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
   /* Check security level of call credential and channel, and do not send
    * metadata if the check fails. */
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+      args_.auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   if (prop == nullptr) {
     return Immediate(
@@ -199,7 +148,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
         "transfer call credential."));
   }
 
-  return creds->GetRequestMetadata(std::move(initial_metadata), this);
+  return creds->GetRequestMetadata(std::move(initial_metadata), &args_);
 }
 
 ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
@@ -215,16 +164,17 @@ ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
   }
   static_cast<grpc_client_security_context*>(
       legacy_ctx[GRPC_CONTEXT_SECURITY].value)
-      ->auth_context = auth_context_;
+      ->auth_context = args_.auth_context;
 
   auto* host = initial_metadata->get_pointer(HttpAuthorityMetadata());
   if (host == nullptr) {
     return next_promise_factory(std::move(initial_metadata));
   }
-  return TrySeq(security_connector_->CheckCallHost(host->as_string_view(),
-                                                   auth_context_.get()),
-                GetCallCredsMetadata(std::move(initial_metadata)),
-                next_promise_factory);
+  return TrySeq(
+      args_.security_connector->CheckCallHost(host->as_string_view(),
+                                              args_.auth_context.get()),
+      GetCallCredsMetadata(std::move(initial_metadata)),
+      next_promise_factory);
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(

@@ -1239,6 +1239,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/call_creds_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/credentials/call_creds_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/channel_creds_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/channel_creds_registry_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.cc" role="src" />

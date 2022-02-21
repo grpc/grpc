@@ -99,11 +99,9 @@ grpc_security_connector* grpc_security_connector_find_in_args(
 class grpc_channel_security_connector : public grpc_security_connector {
  public:
   grpc_channel_security_connector(
-      const char* url_scheme,
+      absl::string_view url_scheme,
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds
-      /*,
-      grpc_channel_args* channel_args = nullptr*/);
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds);
   ~grpc_channel_security_connector() override;
 
   /// Checks that the host that will be set for a call is acceptable.
@@ -153,7 +151,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
 class grpc_server_security_connector : public grpc_security_connector {
  public:
   grpc_server_security_connector(
-      const char* url_scheme,
+      absl::string_view url_scheme,
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~grpc_server_security_connector() override;
 

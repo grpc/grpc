@@ -34,7 +34,7 @@
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
 grpc_google_iam_credentials::GetRequestMetadata(
     grpc_core::ClientInitialMetadata initial_metadata,
-    grpc_core::AuthMetadataContext*) {
+    const grpc_call_credentials::GetRequestMetadataArgs* args) {
   if (token_.has_value()) {
     initial_metadata->Append(
         GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, token_->Ref(),
