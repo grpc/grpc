@@ -241,11 +241,11 @@ int main(int argc, char** argv) {
   const int benchmark_iterations = absl::GetFlag(FLAGS_benchmark);
 
   // warmup period
-  run_test_loop(warmup_iterations, &call_idx);
-
   MemStats server_benchmark_calls_start = send_snapshot_request(
       0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
   MemStats client_benchmark_calls_start = MemStats::Snapshot();
+
+  run_test_loop(warmup_iterations, &call_idx);
 
   std::pair<MemStats, MemStats> peak =
       run_test_loop(benchmark_iterations, &call_idx);

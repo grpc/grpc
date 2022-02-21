@@ -76,10 +76,12 @@ int main(int argc, char** argv) {
                   "--bind", grpc_core::JoinHostPort("::", port), "--nosecure"});
 
   /* start the client */
-  Subprocess cli({absl::StrCat(root, "/memory_usage_client",
-                               gpr_subprocess_binary_extension()),
-                  "--target", grpc_core::JoinHostPort("127.0.0.1", port),
-                  "--warmup=10000", "--benchmark=90000"});
+  Subprocess cli(
+      {absl::StrCat(root, "/memory_usage_client",
+                    gpr_subprocess_binary_extension()),
+       "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+       absl::StrCat("--warmup=", absl::GetFlag(FLAGS_warmup)),
+       absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_benchmark))});
 
   /* wait for completion */
   if ((status = cli.Join()) != 0) {
