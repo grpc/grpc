@@ -19,7 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "test/core/memory_usage/memstats.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
@@ -33,7 +34,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
 
 static grpc_channel* channel;
@@ -169,72 +169,21 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
   return snapshot;
 }
 
-int main(int argc, char** argv) {
-  grpc_slice slice = grpc_slice_from_copied_string("x");
-  char* fake_argv[1];
-
-  const char* target = "localhost:443";
-  gpr_cmdline* cl;
+// Create iterations calls, return MemStats when all outstanding
+std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
   grpc_event event;
 
-  GPR_ASSERT(argc >= 1);
-  fake_argv[0] = argv[0];
-  grpc::testing::TestEnvironment env(1, fake_argv);
-
-  grpc_init();
-
-  int warmup_iterations = 100;
-  int benchmark_iterations = 1000;
-
-  cl = gpr_cmdline_create("memory profiling client");
-  gpr_cmdline_add_string(cl, "target", "Target host:port", &target);
-  gpr_cmdline_add_int(cl, "warmup", "Warmup iterations", &warmup_iterations);
-  gpr_cmdline_add_int(cl, "benchmark", "Benchmark iterations",
-                      &benchmark_iterations);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
-
-  for (size_t k = 0; k < GPR_ARRAY_SIZE(calls); k++) {
-    calls[k].details = grpc_empty_slice();
-  }
-
-  cq = grpc_completion_queue_create_for_next(nullptr);
-
-  MemStats client_channel_start = MemStats::Snapshot();
-  channel =
-      grpc_channel_create(target, grpc_insecure_credentials_create(), nullptr);
-
-  int call_idx = 0;
-
-  MemStats before_server_create = send_snapshot_request(
-      0, grpc_slice_from_static_string("Reflector/GetBeforeSvrCreation"));
-  MemStats after_server_create = send_snapshot_request(
-      0, grpc_slice_from_static_string("Reflector/GetAfterSvrCreation"));
-
-  // warmup period
-  for (int i = 0; i < warmup_iterations; i++) {
-    send_snapshot_request(
-        0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
-  }
-
-  for (call_idx = 0; call_idx < warmup_iterations; ++call_idx) {
-    init_ping_pong_request(call_idx + 1);
-  }
-
-  MemStats server_benchmark_calls_start = send_snapshot_request(
-      0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
-
-  MemStats client_benchmark_calls_start = MemStats::Snapshot();
-
   // benchmark period
-  for (; call_idx < warmup_iterations + benchmark_iterations; ++call_idx) {
-    init_ping_pong_request(call_idx + 1);
+  for (int i = 0; i < iterations; ++i) {
+    init_ping_pong_request(*call_idx + i + 1);
   }
 
-  MemStats client_calls_inflight = MemStats::Snapshot();
-
-  MemStats server_calls_inflight = send_snapshot_request(
-      0, grpc_slice_from_static_string("Reflector/DestroyCalls"));
+  auto peak = std::make_pair(
+      // client
+      MemStats::Snapshot(),
+      // server
+      send_snapshot_request(
+          0, grpc_slice_from_static_string("Reflector/DestroyCalls")));
 
   do {
     event = grpc_completion_queue_next(
@@ -245,19 +194,69 @@ int main(int argc, char** argv) {
   } while (event.type != GRPC_QUEUE_TIMEOUT);
 
   // second step - recv status and destroy call
-  for (call_idx = 0; call_idx < warmup_iterations + benchmark_iterations;
-       ++call_idx) {
-    finish_ping_pong_request(call_idx + 1);
+  for (int i = 0; i < iterations; ++i) {
+    finish_ping_pong_request(*call_idx + i + 1);
   }
 
-  MemStats server_calls_end = send_snapshot_request(
-      0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
+  do {
+    event = grpc_completion_queue_next(
+        cq,
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_micros(10000, GPR_TIMESPAN)),
+        nullptr);
+  } while (event.type != GRPC_QUEUE_TIMEOUT);
 
-  MemStats client_channel_end = MemStats::Snapshot();
+  *call_idx += iterations;
+
+  return peak;
+}
+
+ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
+ABSL_FLAG(int, warmup, 100, "Warmup iterations");
+ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
+
+int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+
+  grpc_slice slice = grpc_slice_from_copied_string("x");
+  char* fake_argv[1];
+
+  GPR_ASSERT(argc >= 1);
+  fake_argv[0] = argv[0];
+  grpc::testing::TestEnvironment env(1, fake_argv);
+
+  grpc_init();
+
+  for (size_t k = 0; k < GPR_ARRAY_SIZE(calls); k++) {
+    calls[k].details = grpc_empty_slice();
+  }
+
+  cq = grpc_completion_queue_create_for_next(nullptr);
+
+  channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
+                                grpc_insecure_credentials_create(), nullptr);
+
+  int call_idx = 0;
+  const int warmup_iterations = absl::GetFlag(FLAGS_warmup);
+  const int benchmark_iterations = absl::GetFlag(FLAGS_benchmark);
+
+  // warmup period
+  run_test_loop(warmup_iterations, &call_idx);
+
+  MemStats server_benchmark_calls_start = send_snapshot_request(
+      0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
+  MemStats client_benchmark_calls_start = MemStats::Snapshot();
+
+  std::pair<MemStats, MemStats> peak =
+      run_test_loop(benchmark_iterations, &call_idx);
+
+  MemStats client_calls_inflight = peak.first;
+  MemStats server_calls_inflight = peak.second;
 
   grpc_channel_destroy(channel);
   grpc_completion_queue_shutdown(cq);
 
+  grpc_event event;
   do {
     event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                        nullptr);
@@ -267,38 +266,17 @@ int main(int argc, char** argv) {
   grpc_completion_queue_destroy(cq);
   grpc_shutdown_blocking();
 
-  gpr_log(GPR_INFO, "---------client stats--------");
-  gpr_log(GPR_INFO, "client call memory usage: %f bytes per call",
-          static_cast<double>(client_calls_inflight.rss -
-                              client_benchmark_calls_start.rss) /
-              benchmark_iterations * 1024);
+  printf("---------client stats--------\n");
+  printf("client call memory usage: %f bytes per call\n",
+         static_cast<double>(client_calls_inflight.rss -
+                             client_benchmark_calls_start.rss) /
+             benchmark_iterations * 1024);
 
-  gpr_log(GPR_INFO, "---------server stats--------");
-  gpr_log(GPR_INFO, "server call memory usage: %f bytes per call",
-          static_cast<double>(server_calls_inflight.rss -
-                              server_benchmark_calls_start.rss) /
-              benchmark_iterations * 1024);
-
-  const char* csv_file = "memory_usage.csv";
-  FILE* csv = fopen(csv_file, "w");
-  if (csv) {
-    char* env_build = gpr_getenv("BUILD_NUMBER");
-    char* env_job = gpr_getenv("JOB_NAME");
-    fprintf(csv, "%f,%zi,%zi,%f,%zi,%s,%s\n",
-            static_cast<double>(client_calls_inflight.rss -
-                                client_benchmark_calls_start.rss) /
-                benchmark_iterations,
-            client_channel_end.rss - client_channel_start.rss,
-            after_server_create.rss - before_server_create.rss,
-            static_cast<double>(server_calls_inflight.rss -
-                                server_benchmark_calls_start.rss) /
-                benchmark_iterations,
-            server_calls_end.rss - after_server_create.rss,
-            env_build == nullptr ? "" : env_build,
-            env_job == nullptr ? "" : env_job);
-    fclose(csv);
-    gpr_log(GPR_INFO, "Summary written to %s", csv_file);
-  }
+  printf("---------server stats--------\n");
+  printf("server call memory usage: %f bytes per call\n",
+         static_cast<double>(server_calls_inflight.rss -
+                             server_benchmark_calls_start.rss) /
+             benchmark_iterations * 1024);
 
   return 0;
 }

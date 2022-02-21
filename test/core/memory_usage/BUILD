@@ -28,6 +28,10 @@ grpc_cc_binary(
     name = "memory_usage_client",
     testonly = 1,
     srcs = ["client.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+    ],
     deps = [
         ":memstats",
         "//:gpr",
@@ -40,6 +44,10 @@ grpc_cc_binary(
     name = "memory_usage_server",
     testonly = 1,
     srcs = ["server.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+    ],
     deps = [
         ":memstats",
         "//:gpr",
@@ -55,6 +63,10 @@ grpc_cc_test(
     data = [
         ":memory_usage_client",
         ":memory_usage_server",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): breaks windows RBE build if enabled

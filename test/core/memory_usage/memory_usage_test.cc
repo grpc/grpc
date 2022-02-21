@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -30,14 +32,37 @@
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
-int main(int /*argc*/, char** argv) {
+ABSL_FLAG(int, warmup, 100, "Warmup iterations");
+ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
+
+class Subprocess {
+ public:
+  explicit Subprocess(std::vector<std::string> args) {
+    std::vector<const char*> args_c;
+    for (const auto& arg : args) {
+      args_c.push_back(arg.c_str());
+    }
+    process_ = gpr_subprocess_create(args_c.size(), args_c.data());
+  }
+
+  int Join() { return gpr_subprocess_join(process_); }
+  void Interrupt() { gpr_subprocess_interrupt(process_); }
+
+  ~Subprocess() { gpr_subprocess_destroy(process_); }
+
+ private:
+  gpr_subprocess* process_;
+};
+
+int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
   std::vector<const char*> args;
   int status;
-  gpr_subprocess *svr, *cli;
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, static_cast<size_t>(lslash - me));
@@ -46,35 +71,22 @@ int main(int /*argc*/, char** argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  std::string cmd = absl::StrCat(root, "/memory_usage_server",
-                                 gpr_subprocess_binary_extension());
-  std::string joined = grpc_core::JoinHostPort("::", port);
-  args = std::vector<const char*>{cmd.c_str(), "--bind", joined.c_str(),
-                                  "--no-secure"};
-  svr = gpr_subprocess_create(args.size(), args.data());
+  Subprocess svr({absl::StrCat(root, "/memory_usage_server",
+                               gpr_subprocess_binary_extension()),
+                  "--bind", grpc_core::JoinHostPort("::", port), "--nosecure"});
 
   /* start the client */
-  cmd = absl::StrCat(root, "/memory_usage_client",
-                     gpr_subprocess_binary_extension());
-  joined = grpc_core::JoinHostPort("127.0.0.1", port);
-  args = std::vector<const char*>{
-      cmd.c_str(),      "--target",          joined.c_str(),
-      "--warmup=10000", "--benchmark=90000",
-  };
-  cli = gpr_subprocess_create(args.size(), args.data());
+  Subprocess cli({absl::StrCat(root, "/memory_usage_client",
+                               gpr_subprocess_binary_extension()),
+                  "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+                  "--warmup=10000", "--benchmark=90000"});
 
   /* wait for completion */
-  printf("waiting for client\n");
-  if ((status = gpr_subprocess_join(cli))) {
+  if ((status = cli.Join()) != 0) {
     printf("client failed with: %d", status);
-    gpr_subprocess_destroy(cli);
-    gpr_subprocess_destroy(svr);
     return 1;
   }
-  gpr_subprocess_destroy(cli);
 
-  gpr_subprocess_interrupt(svr);
-  status = gpr_subprocess_join(svr);
-  gpr_subprocess_destroy(svr);
-  return status == 0 ? 0 : 2;
+  svr.Interrupt();
+  return svr.Join() == 0 ? 0 : 2;
 }

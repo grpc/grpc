@@ -22,6 +22,11 @@
 #include <string.h>
 #include <time.h>
 
+#include <string>
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
@@ -38,7 +43,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -148,16 +152,16 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
    When that is resolved, please remove the #include <unistd.h> above. */
 static void sigint_handler(int /*x*/) { _exit(0); }
 
+ABSL_FLAG(std::string, bind, "", "Bind host:port");
+ABSL_FLAG(bool, secure, false, "Use security");
+
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+
   grpc_event ev;
-  std::string addr_buf;
-  gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
   int shutdown_finished = 0;
-
-  int secure = 0;
-  const char* addr = nullptr;
 
   char* fake_argv[1];
 
@@ -168,41 +172,33 @@ int main(int argc, char** argv) {
   grpc_init();
   srand(static_cast<unsigned>(clock()));
 
-  cl = gpr_cmdline_create("fling server");
-  gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
-  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
-
-  if (addr == nullptr) {
-    addr_buf = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
-    addr = addr_buf.c_str();
+  std::string addr = absl::GetFlag(FLAGS_bind);
+  if (addr.empty()) {
+    addr = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
   }
-  gpr_log(GPR_INFO, "creating server on: %s", addr);
+  gpr_log(GPR_INFO, "creating server on: %s", addr.c_str());
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
   MemStats before_server_create = MemStats::Snapshot();
-  if (secure) {
+  if (absl::GetFlag(FLAGS_secure)) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     server = grpc_server_create(nullptr, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(server, addr, ssl_creds));
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
     server = grpc_server_create(nullptr, nullptr);
     GPR_ASSERT(grpc_server_add_http2_port(
-        server, addr, grpc_insecure_server_credentials_create()));
+        server, addr.c_str(), grpc_insecure_server_credentials_create()));
   }
 
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
   MemStats after_server_create = MemStats::Snapshot();
-
-  addr = nullptr;
 
   // initialize call instances
   for (int i = 0; i < static_cast<int>(sizeof(calls) / sizeof(fling_call));
