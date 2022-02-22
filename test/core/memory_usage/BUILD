@@ -32,7 +32,10 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/flags:parse",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [
         ":memstats",
         "//:gpr",
@@ -49,7 +52,10 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/flags:parse",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [
         ":memstats",
         "//:gpr",
@@ -71,7 +77,10 @@ grpc_cc_test(
         "absl/flags:parse",
     ],
     language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [
         "//:gpr",
