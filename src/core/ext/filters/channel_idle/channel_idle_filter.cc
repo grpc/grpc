@@ -1,20 +1,16 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <grpc/support/port_platform.h>
 
@@ -36,15 +32,14 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// TODO(juanlishen): The idle filter is disabled in client channel by default
-// due to b/143502997. Try to fix the bug and enable the filter by default.
+// TODO(juanlishen): The idle filter was disabled in client channel by default
+// due to b/143502997. Now the bug is fixed enable the filter by default.
 #define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
 // The user input idle timeout smaller than this would be capped to it.
 #define MIN_IDLE_TIMEOUT_MS (1 /*second*/ * 1000)
 
-/* If these settings change, make sure that we are not sending a GOAWAY for
- * inproc transport, since a GOAWAY to inproc ends up destroying the transport.
- */
+// If these settings change, make sure that we are not sending a GOAWAY for
+// inproc transport, since a GOAWAY to inproc ends up destroying the transport.
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
@@ -248,7 +243,7 @@ void MaxAgeFilter::Start() {
             [this] {
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
                                      "max_age send_goaway");
-              // Jump out of the activity to sent the goaway.
+              // Jump out of the activity to send the goaway.
               auto fn = [](void* arg, grpc_error_handle) {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
