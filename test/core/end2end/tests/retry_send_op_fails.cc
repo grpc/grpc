@@ -277,14 +277,14 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
 
 namespace {
 
-// A filter that, for the first call it sees, will fail all batches except
-// for cancellations, so that the call fails with status ABORTED.
-// All subsequent calls are allowed through without failures.
-class FailFirstCallFilter {
+// A filter that, for the first call it sees, will fail the batch
+// containing send_initial_metadata and then fail the call with status
+// ABORTED.  All subsequent calls are allowed through without failures.
+class FailFirstSendOpFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
- private:
+ public:
   class CallData {
    public:
     static grpc_error_handle Init(grpc_call_element* elem,
@@ -302,7 +302,7 @@ class FailFirstCallFilter {
 
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
+      auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
       auto* calld = static_cast<CallData*>(elem->call_data);
       if (!chand->seen_first_) {
         chand->seen_first_ = true;
@@ -312,7 +312,7 @@ class FailFirstCallFilter {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
             grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "FailFirstCallFilter failing batch"),
+                                   "FailFirstSendOpFilter failing batch"),
                                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
@@ -330,19 +330,19 @@ class FailFirstCallFilter {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
-    new (elem->channel_data) FailFirstCallFilter();
+    new (elem->channel_data) FailFirstSendOpFilter();
     return GRPC_ERROR_NONE;
   }
 
   static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
-    chand->~FailFirstCallFilter();
+    auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
+    chand->~FailFirstSendOpFilter();
   }
 
   bool seen_first_ = false;
 };
 
-grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
+grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
     nullptr,
     grpc_channel_next_op,
@@ -350,11 +350,11 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
-    sizeof(FailFirstCallFilter),
+    sizeof(FailFirstSendOpFilter),
     Init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstCallFilter",
+    "FailFirstSendOpFilter",
 };
 
 }  // namespace
@@ -374,7 +374,7 @@ void retry_send_op_fails(grpc_end2end_test_config config) {
                 return true;
               }
               // Install filter.
-              builder->PrependFilter(&FailFirstCallFilter::kFilterVtable,
+              builder->PrependFilter(&FailFirstSendOpFilter::kFilterVtable,
                                      nullptr);
               return true;
             });

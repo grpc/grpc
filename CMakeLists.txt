@@ -1190,9 +1190,8 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -1336,9 +1335,8 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -2091,6 +2089,7 @@ add_library(grpc
   src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/sleep.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -2731,6 +2730,7 @@ add_library(grpc_unsecure
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/sleep.cc
   src/core/lib/resolver/resolver.cc
   src/core/lib/resolver/resolver_registry.cc
   src/core/lib/resolver/server_address.cc
@@ -12784,6 +12784,7 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::statusor
   absl::variant
 )
 
@@ -15181,7 +15182,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sleep_test
-  src/core/lib/promise/sleep.cc
   test/core/promise/sleep_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc

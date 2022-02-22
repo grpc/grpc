@@ -1539,6 +1539,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/promise/sleep.cc \
     src/core/lib/resolver/resolver.cc \
     src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resolver/server_address.cc \
@@ -2026,6 +2027,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/promise/sleep.cc \
     src/core/lib/resolver/resolver.cc \
     src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resolver/server_address.cc \

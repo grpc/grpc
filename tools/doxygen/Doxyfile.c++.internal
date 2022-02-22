@@ -1959,6 +1959,7 @@ src/core/lib/gpr/useful.h \
 src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
+src/core/lib/gprpp/capture.h \
 src/core/lib/gprpp/chunked_vector.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
@@ -2189,6 +2190,9 @@ src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
+src/core/lib/promise/sleep.cc \
+src/core/lib/promise/sleep.h \
+src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
 src/core/lib/resolver/resolver_factory.h \

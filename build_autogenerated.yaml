@@ -112,9 +112,8 @@ libs:
   - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  - test/core/end2end/tests/retry_unref_before_finish.cc
+  - test/core/end2end/tests/retry_unref_before_recv.cc
   - test/core/end2end/tests/server_finishes_request.cc
   - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -249,9 +248,8 @@ libs:
   - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
-  - test/core/end2end/tests/retry_transparent_goaway.cc
-  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  - test/core/end2end/tests/retry_unref_before_finish.cc
+  - test/core/end2end/tests/retry_unref_before_recv.cc
   - test/core/end2end/tests/server_finishes_request.cc
   - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -836,6 +834,7 @@ libs:
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -939,6 +938,8 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -1586,6 +1587,7 @@ libs:
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -2000,6 +2002,7 @@ libs:
   - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -2101,6 +2104,8 @@ libs:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
@@ -2402,6 +2407,7 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
@@ -6735,6 +6741,7 @@ targets:
   src:
   - test/core/promise/loop_test.cc
   deps:
+  - absl/status:statusor
   - absl/types:variant
   uses_polling: false
 - name: match_test
@@ -7741,10 +7748,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/sleep.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/lib/promise/sleep.cc
   - test/core/promise/sleep_test.cc
   deps:
   - grpc
@@ -8228,8 +8233,7 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/promise/try_seq.h
+  headers: []
   src:
   - test/core/promise/try_seq_metadata_test.cc
   deps:
