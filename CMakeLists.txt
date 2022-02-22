@@ -700,6 +700,9 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c memory_quota_stress_test)
   endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_c memory_usage_test)
+  endif()
   add_dependencies(buildtests_c message_compress_test)
   add_dependencies(buildtests_c minimal_stack_is_minimal_test)
   add_dependencies(buildtests_c mpmcqueue_test)
@@ -2372,7 +2375,6 @@ add_library(grpc_test_util
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
-  test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
@@ -2441,7 +2443,6 @@ add_library(grpc_test_util_unsecure
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
-  test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
@@ -6127,6 +6128,37 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     absl::statusor
     absl::variant
     gpr
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(memory_usage_test
+    test/core/memory_usage/memory_usage_test.cc
+  )
+
+  target_include_directories(memory_usage_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+  )
+
+  target_link_libraries(memory_usage_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::flags
+    absl::flags_parse
+    grpc_test_util
   )
 
 
@@ -16937,7 +16969,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
-    test/core/util/memory_counters.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
     test/core/util/passthru_endpoint.cc
