@@ -3648,7 +3648,7 @@ TEST(CredentialsTest,
      TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
-  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
+  auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
   auto* composite_creds_1 = grpc_composite_channel_credentials_create(
       insecure_creds, fake_creds.get(), nullptr);
   auto* composite_creds_2 = grpc_composite_channel_credentials_create(
