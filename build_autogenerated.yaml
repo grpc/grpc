@@ -3943,6 +3943,8 @@ targets:
   src:
   - test/core/memory_usage/memory_usage_test.cc
   deps:
+  - absl/flags:flag
+  - absl/flags:parse
   - grpc_test_util
   platforms:
   - linux
