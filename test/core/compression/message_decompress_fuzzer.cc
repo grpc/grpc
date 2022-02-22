@@ -24,10 +24,8 @@
 
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "test/core/util/memory_counters.h"
 
 bool squelch = true;
-bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (size < 1) return 0;
@@ -38,7 +36,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   const auto compression_algorithm =
       static_cast<grpc_compression_algorithm>(data[0]);
 
-  grpc_core::testing::LeakDetector leak_detector(true);
   grpc_init();
   grpc_slice_buffer input_buffer;
   grpc_slice_buffer_init(&input_buffer);

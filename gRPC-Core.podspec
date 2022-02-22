@@ -2512,8 +2512,6 @@ Pod::Spec.new do |s|
                       'test/core/util/grpc_profiler.h',
                       'test/core/util/histogram.cc',
                       'test/core/util/histogram.h',
-                      'test/core/util/memory_counters.cc',
-                      'test/core/util/memory_counters.h',
                       'test/core/util/mock_authorization_endpoint.h',
                       'test/core/util/mock_endpoint.cc',
                       'test/core/util/mock_endpoint.h',

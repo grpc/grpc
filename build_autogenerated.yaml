@@ -1759,7 +1759,6 @@ libs:
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
-  - test/core/util/memory_counters.h
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
@@ -1781,7 +1780,6 @@ libs:
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
-  - test/core/util/memory_counters.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
   - test/core/util/passthru_endpoint.cc
@@ -1814,7 +1812,6 @@ libs:
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
-  - test/core/util/memory_counters.h
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
@@ -1835,7 +1832,6 @@ libs:
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
-  - test/core/util/memory_counters.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
   - test/core/util/passthru_endpoint.cc
@@ -3936,6 +3932,20 @@ targets:
   - absl/status:statusor
   - absl/types:variant
   - gpr
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
+- name: memory_usage_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/memory_usage/memory_usage_test.cc
+  deps:
+  - absl/flags:flag
+  - absl/flags:parse
+  - grpc_test_util
   platforms:
   - linux
   - posix
@@ -8493,7 +8503,6 @@ targets:
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
-  - test/core/util/memory_counters.h
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
@@ -8517,7 +8526,6 @@ targets:
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
-  - test/core/util/memory_counters.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
   - test/core/util/passthru_endpoint.cc
