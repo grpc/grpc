@@ -415,10 +415,15 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             resolver_->current_listener_.http_connection_manager
                 .http_max_stream_duration;
       }
-      if (!route_action->cluster_name.empty()) {
+      if (route_action->action.index() ==
+          XdsRouteConfigResource::Route::RouteAction::kClusterIndex) {
         *error = CreateMethodConfig(route_entry.route, nullptr,
                                     &route_entry.method_config);
-        MaybeAddCluster(absl::StrCat("cluster:", route_action->cluster_name));
+        MaybeAddCluster(absl::StrCat(
+            "cluster:",
+            absl::get<
+                XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
+                route_action->action)));
       } else if (!route_action->weighted_clusters.empty()) {
         uint32_t end = 0;
         for (const auto& weighted_cluster : route_action->weighted_clusters) {
@@ -433,13 +438,16 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
               std::move(cluster_weight_state));
           MaybeAddCluster(absl::StrCat("cluster:", weighted_cluster.name));
         }
-      } else {
+      } else if (route_action->action.index() ==
+                 XdsRouteConfigResource::Route::RouteAction::
+                     kClusterSpecifierPluginIndex) {
         // cluster_specifier_plugin case:
         *error = CreateMethodConfig(route_entry.route, nullptr,
                                     &route_entry.method_config);
-        MaybeAddCluster(
-            absl::StrCat("cluster_specifier_plugin:",
-                         route_action->cluster_specifier_plugin_name));
+        MaybeAddCluster(absl::StrCat(
+            "cluster_specifier_plugin:",
+            absl::get<XdsRouteConfigResource::Route::RouteAction::
+                          kClusterSpecifierPluginIndex>(route_action->action)));
       }
     }
   }
@@ -620,9 +628,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   }
   std::string cluster_name;
   RefCountedPtr<ServiceConfig> method_config;
-
-  if (!route_action->cluster_name.empty()) {
-    cluster_name = absl::StrCat("cluster:", route_action->cluster_name);
+  if (route_action->action.index() ==
+      XdsRouteConfigResource::Route::RouteAction::kClusterIndex) {
+    cluster_name = absl::StrCat(
+        "cluster:",
+        absl::get<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
+            route_action->action));
     method_config = entry.method_config;
   } else if (!route_action->weighted_clusters.empty()) {
     const uint32_t key =
@@ -650,9 +661,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     cluster_name =
         absl::StrCat("cluster:", entry.weighted_cluster_state[index].cluster);
     method_config = entry.weighted_cluster_state[index].method_config;
-  } else {
-    cluster_name = absl::StrCat("cluster_specifier_plugin:",
-                                route_action->cluster_specifier_plugin_name);
+  } else if (route_action->action.index() ==
+             XdsRouteConfigResource::Route::RouteAction::
+                 kClusterSpecifierPluginIndex) {
+    cluster_name = absl::StrCat(
+        "cluster_specifier_plugin:",
+        absl::get<XdsRouteConfigResource::Route::RouteAction::
+                      kClusterSpecifierPluginIndex>(route_action->action));
     method_config = entry.method_config;
   }
   auto it = clusters_.find(cluster_name);

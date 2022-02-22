@@ -225,15 +225,21 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   if (retry_policy.has_value()) {
     contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
-  if (!cluster_name.empty()) {
-    contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
+  if (action.index() == kClusterIndex) {
+    gpr_log(GPR_INFO, "donna should not be here when empty???");
+    contents.push_back(
+        absl::StrFormat("Cluster name: %s", absl::get<kClusterIndex>(action)));
+  } else if (action.index() == kWeightedClustersIndex) {
+    for (const ClusterWeight& cluster_weight : weighted_clusters) {
+      contents.push_back(cluster_weight.ToString());
+    }
+  } else if (action.index() == kClusterSpecifierPluginIndex) {
+    contents.push_back(
+        absl::StrFormat("Cluster specifier plugin name: %s",
+                        absl::get<kClusterSpecifierPluginIndex>(action)));
   }
   for (const ClusterWeight& cluster_weight : weighted_clusters) {
     contents.push_back(cluster_weight.ToString());
-  }
-  if (!cluster_specifier_plugin_name.empty()) {
-    contents.push_back(absl::StrFormat("Cluster specifier plugin name: %s",
-                                       cluster_specifier_plugin_name));
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
@@ -660,9 +666,13 @@ grpc_error_handle RouteActionParse(
       envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action)) {
-    route->cluster_name = UpbStringToStdString(
-        envoy_config_route_v3_RouteAction_cluster(route_action));
-    if (route->cluster_name.empty()) {
+    route->action
+        .emplace<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
+            UpbStringToStdString(
+                envoy_config_route_v3_RouteAction_cluster(route_action)));
+    if (absl::get<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
+            route->action)
+            .empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster name.");
     }
@@ -724,6 +734,7 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
+    route->action = route->weighted_clusters;
   } else if (XdsRlsEnabled() &&
              envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {
@@ -740,7 +751,9 @@ grpc_error_handle RouteActionParse(
           "RouteAction cluster contains cluster specifier plugin name not "
           "configured.");
     }
-    route->cluster_specifier_plugin_name = std::move(plugin_name);
+    route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
+                              kClusterSpecifierPluginIndex>(
+        std::move(plugin_name));
     gpr_log(GPR_INFO,
             "donna found plugin in RouteAction, don't forget to double check "
             "unused plugins");
