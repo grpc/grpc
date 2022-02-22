@@ -167,8 +167,6 @@ class CoreConfiguration {
   static std::atomic<CoreConfiguration*> config_;
   // Extra registered builders
   static std::atomic<RegisteredBuilder*> builders_;
-  // One builder at a time
-  static std::atomic<Mutex*> builder_mu_;
 
   ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
