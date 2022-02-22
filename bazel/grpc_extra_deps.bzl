@@ -51,7 +51,7 @@ def grpc_extra_deps(ignore_version_differences = False):
     api_dependencies()
 
     go_rules_dependencies()
-    go_register_toolchains()
+    go_register_toolchains(version = "1.17.6")
 
     apple_rules_dependencies(ignore_version_differences = ignore_version_differences)
 
