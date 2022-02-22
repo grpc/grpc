@@ -37,6 +37,10 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
 
+namespace grpc_core {
+const char kCredentialsTypeComposite[] = "composite";
+}  // namespace grpc_core
+
 /* -- Composite call credentials. -- */
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>

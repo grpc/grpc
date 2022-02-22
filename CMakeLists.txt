@@ -1194,6 +1194,8 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_transparent_goaway.cc
   test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
   test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -1340,6 +1342,8 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_transparent_goaway.cc
   test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
   test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc

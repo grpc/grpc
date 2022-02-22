@@ -187,7 +187,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     ClientContext context;
     HealthCheckRequest request;
     request.set_service(kServiceName);
-    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
+    std::unique_ptr<grpc::ClientReaderInterface<HealthCheckResponse>> reader =
         hc_stub_->Watch(&context, request);
     // Initial response will be SERVICE_UNKNOWN.
     HealthCheckResponse response;
@@ -230,7 +230,7 @@ class HealthServiceEnd2endTest : public ::testing::Test {
     ClientContext context;
     HealthCheckRequest request;
     request.set_service(kHealthyService);
-    std::unique_ptr<::grpc::ClientReaderInterface<HealthCheckResponse>> reader =
+    std::unique_ptr<grpc::ClientReaderInterface<HealthCheckResponse>> reader =
         hc_stub_->Watch(&context, request);
 
     HealthCheckResponse response;

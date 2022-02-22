@@ -90,9 +90,9 @@ using RlsService =
 
 class RlsServiceImpl : public RlsService {
  public:
-  ::grpc::Status RouteLookup(::grpc::ServerContext* context,
-                             const RouteLookupRequest* request,
-                             RouteLookupResponse* response) override {
+  grpc::Status RouteLookup(grpc::ServerContext* context,
+                           const RouteLookupRequest* request,
+                           RouteLookupResponse* response) override {
     gpr_log(GPR_INFO, "RLS: Received request: %s",
             request->DebugString().c_str());
     // RLS server should see call creds.
@@ -289,7 +289,7 @@ class RlsEnd2endTest : public ::testing::Test {
                                                   nullptr));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = ::grpc::CreateCustomChannel(
+    channel_ = grpc::CreateCustomChannel(
         absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }

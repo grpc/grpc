@@ -45,6 +45,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/promise.h"
@@ -123,9 +124,11 @@ static const char test_refresh_token_str[] =
 static const char test_external_account_credentials_str[] =
     "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
     "token_type\":\"subject_token_type\",\"service_account_impersonation_"
-    "url\":\"\",\"token_url\":\"https://"
+    "url\":\"https://iamcredentials.googleapis.com:5555/"
+    "service_account_impersonation_url\",\"token_url\":\"https://"
     "sts.googleapis.com:5555/"
-    "token\",\"token_info_url\":\"\",\"credential_source\":{\"file\":"
+    "token\",\"token_info_url\":\"https://sts.googleapis.com:5555/"
+    "token_info\",\"credential_source\":{\"file\":"
     "\"credentials_file_path\"},"
     "\"quota_project_id\":\"quota_"
     "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
@@ -1506,6 +1509,8 @@ static bool test_gce_tenancy_checker(void) {
   return g_test_is_on_gce;
 }
 
+static std::string null_well_known_creds_path_getter(void) { return ""; }
+
 TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   grpc_core::ExecCtx exec_ctx;
   grpc_composite_channel_credentials* creds;
@@ -1516,6 +1521,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   g_test_is_on_gce = true;
   set_google_default_creds_env_var_with_file_contents(
       "json_key_google_default_creds", json_key);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
   gpr_free(json_key);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create(nullptr));
@@ -1533,6 +1540,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
 TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
@@ -1541,6 +1549,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create(nullptr));
   auto* default_creds =
@@ -1554,6 +1564,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
                     "32555999999.apps.googleusercontent.com") == 0);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
 TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentials) {
@@ -1563,6 +1574,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentials) {
   set_google_default_creds_env_var_with_file_contents(
       "google_default_creds_external_account_credentials",
       test_external_account_credentials_str);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create(nullptr));
   auto* default_creds =
@@ -1575,6 +1588,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsExternalAccountCredentials) {
   GPR_ASSERT(external != nullptr);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
 TEST(CredentialsTest,
@@ -1583,8 +1597,10 @@ TEST(CredentialsTest,
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
-      "google_default_creds_external_account_credentials",
+      "google_default_creds_external_account_credentials_multi_pattern_sts",
       test_external_account_credentials_multi_pattern_sts_str);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create(nullptr));
   auto* default_creds =
@@ -1597,6 +1613,7 @@ TEST(CredentialsTest,
   GPR_ASSERT(external != nullptr);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
 TEST(CredentialsTest,
@@ -1605,8 +1622,10 @@ TEST(CredentialsTest,
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
-      "google_default_creds_external_account_credentials",
+      "google_default_creds_external_account_credentials_multi_pattern_iam",
       test_external_account_credentials_multi_pattern_iam_str);
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create(nullptr));
   auto* default_creds =
@@ -1619,6 +1638,7 @@ TEST(CredentialsTest,
   GPR_ASSERT(external != nullptr);
   creds->Unref();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
 static int default_creds_metadata_server_detection_httpcli_get_success_override(
@@ -1637,8 +1657,6 @@ static int default_creds_metadata_server_detection_httpcli_get_success_override(
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
-
-static std::string null_well_known_creds_path_getter(void) { return ""; }
 
 TEST(CredentialsTest, TestGoogleDefaultCredsGce) {
   grpc_core::ExecCtx exec_ctx;
@@ -3582,6 +3600,91 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   GPR_ASSERT(fake_creds->cmp(md_creds) != 0);
   GPR_ASSERT(md_creds->cmp(fake_creds.get()) != 0);
   grpc_call_credentials_release(md_creds);
+}
+
+TEST(CredentialsTest, TestHttpRequestSSLCredentialsCompare) {
+  auto creds_1 = grpc_core::CreateHttpRequestSSLCredentials();
+  auto creds_2 = grpc_core::CreateHttpRequestSSLCredentials();
+  EXPECT_EQ(creds_1->cmp(creds_2.get()), 0);
+  EXPECT_EQ(creds_2->cmp(creds_1.get()), 0);
+}
+
+TEST(CredentialsTest, TestHttpRequestSSLCredentialsSingleton) {
+  auto creds_1 = grpc_core::CreateHttpRequestSSLCredentials();
+  auto creds_2 = grpc_core::CreateHttpRequestSSLCredentials();
+  EXPECT_EQ(creds_1, creds_2);
+}
+
+TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  auto* composite_creds_1 = grpc_composite_channel_credentials_create(
+      insecure_creds, fake_creds.get(), nullptr);
+  auto* composite_creds_2 = grpc_composite_channel_credentials_create(
+      insecure_creds, fake_creds.get(), nullptr);
+  EXPECT_EQ(composite_creds_1->cmp(composite_creds_2), 0);
+  EXPECT_EQ(composite_creds_2->cmp(composite_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(composite_creds_1);
+  grpc_channel_credentials_release(composite_creds_2);
+}
+
+TEST(CredentialsTest,
+     TestCompositeChannelCredsCompareFailureDifferentChannelCreds) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* fake_channel_creds = grpc_fake_transport_security_credentials_create();
+  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  auto* composite_creds_1 = grpc_composite_channel_credentials_create(
+      insecure_creds, fake_creds.get(), nullptr);
+  auto* composite_creds_2 = grpc_composite_channel_credentials_create(
+      fake_channel_creds, fake_creds.get(), nullptr);
+  EXPECT_NE(composite_creds_1->cmp(composite_creds_2), 0);
+  EXPECT_NE(composite_creds_2->cmp(composite_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(fake_channel_creds);
+  grpc_channel_credentials_release(composite_creds_1);
+  grpc_channel_credentials_release(composite_creds_2);
+}
+
+TEST(CredentialsTest,
+     TestCompositeChannelCredsCompareFailureDifferentCallCreds) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto fake_creds = grpc_core::MakeRefCounted<fake_call_creds>();
+  auto* md_creds = grpc_md_only_test_credentials_create("key", "value", false);
+  auto* composite_creds_1 = grpc_composite_channel_credentials_create(
+      insecure_creds, fake_creds.get(), nullptr);
+  auto* composite_creds_2 = grpc_composite_channel_credentials_create(
+      insecure_creds, md_creds, nullptr);
+  EXPECT_NE(composite_creds_1->cmp(composite_creds_2), 0);
+  EXPECT_NE(composite_creds_2->cmp(composite_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_call_credentials_release(md_creds);
+  grpc_channel_credentials_release(composite_creds_1);
+  grpc_channel_credentials_release(composite_creds_2);
+}
+
+TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
+  auto* xds_creds_2 = grpc_xds_credentials_create(insecure_creds);
+  EXPECT_EQ(xds_creds_1->cmp(xds_creds_2), 0);
+  EXPECT_EQ(xds_creds_2->cmp(xds_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(xds_creds_1);
+  grpc_channel_credentials_release(xds_creds_2);
+}
+
+TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto* fake_creds = grpc_fake_transport_security_credentials_create();
+  auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
+  auto* xds_creds_2 = grpc_xds_credentials_create(fake_creds);
+  EXPECT_NE(xds_creds_1->cmp(xds_creds_2), 0);
+  EXPECT_NE(xds_creds_2->cmp(xds_creds_1), 0);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(fake_creds);
+  grpc_channel_credentials_release(xds_creds_1);
+  grpc_channel_credentials_release(xds_creds_2);
 }
 
 int main(int argc, char** argv) {

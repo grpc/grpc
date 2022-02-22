@@ -23,16 +23,16 @@ namespace grpc_core {
 
 // Allow substitution of config builder - in real code this would iterate
 // through all plugins
-namespace testing {
+namespace {
 using ConfigBuilderFunction = std::function<void(CoreConfiguration::Builder*)>;
-static ConfigBuilderFunction g_mock_builder;
-}  // namespace testing
+ConfigBuilderFunction g_mock_builder;
+}  // namespace
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
-  ::grpc_core::testing::g_mock_builder(builder);
+  g_mock_builder(builder);
 }
 
-namespace testing {
+namespace {
 // Helper for testing - clear out any state, rebuild configuration with fn being
 // the initializer
 void InitConfigWithBuilder(ConfigBuilderFunction fn) {
@@ -63,7 +63,7 @@ TEST(ConfigTest, ThreadedInit) {
   g_mock_builder = nullptr;
   CoreConfiguration::Get();
 }
-}  // namespace testing
+}  // namespace
 
 }  // namespace grpc_core
 

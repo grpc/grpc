@@ -85,7 +85,7 @@ void TryConnectAndDestroy() {
               grpc_test_slowdown_factor() * 100);
   std::ostringstream uri;
   uri << "fake:///servername_not_used";
-  auto channel = ::grpc::CreateCustomChannel(
+  auto channel = grpc::CreateCustomChannel(
       uri.str(), grpc::InsecureChannelCredentials(), args);
   // Start connecting, and give some time for the TCP connection attempt to the
   // unreachable balancer to begin. The connection should never become ready

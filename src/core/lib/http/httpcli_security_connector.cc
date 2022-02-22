@@ -185,17 +185,20 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   }
 
  private:
-  int cmp_impl(const grpc_channel_credentials* other) const override {
-    // TODO(yashykt): Check if we can do something better here
-    return QsortCompare(static_cast<const grpc_channel_credentials*>(this),
-                        other);
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
+    // There's no differentiating factor between two HttpRequestSSLCredentials
+    // objects.
+    return 0;
   }
 };
 
 }  // namespace
 
 RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
-  return MakeRefCounted<HttpRequestSSLCredentials>();
+  // Create a singleton object for HttpRequestSSLCredentials so that channels to
+  // the same target with HttpRequestSSLCredentials can reuse the subchannels.
+  static auto* creds = new HttpRequestSSLCredentials();
+  return creds->Ref();
 }
 
 }  // namespace grpc_core
