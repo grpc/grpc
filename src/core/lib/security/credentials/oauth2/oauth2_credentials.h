@@ -97,7 +97,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
   GetRequestMetadata(
       grpc_core::ClientInitialMetadata initial_metadata,
-      grpc_core::AuthMetadataContext* auth_metadata_context) override;
+      const GetRequestMetadataArgs* args) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error_handle error);
@@ -156,7 +156,7 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
   GetRequestMetadata(
       grpc_core::ClientInitialMetadata initial_metadata,
-      grpc_core::AuthMetadataContext* auth_metadata_context) override;
+      const GetRequestMetadataArgs* args) override;
 
   std::string debug_string() override;
 

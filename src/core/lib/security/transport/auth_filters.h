@@ -35,11 +35,7 @@ extern const grpc_channel_filter grpc_server_auth_filter;
 namespace grpc_core {
 
 // Handles calling out to credentials to fill in metadata per call.
-// Use private inheritance to AuthMetadataContext since we don't want to vend
-// this type generally, and we don't want to increase the size of this type if
-// we can help it.
-class ClientAuthFilter final : public ChannelFilter,
-                               private AuthMetadataContext {
+class ClientAuthFilter final : public ChannelFilter {
  public:
   static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args,
                                                  ChannelFilter::Args);
@@ -50,14 +46,6 @@ class ClientAuthFilter final : public ChannelFilter,
       NextPromiseFactory next_promise_factory) override;
 
  private:
-  struct PartialAuthContext {
-    absl::string_view host_and_port;
-    absl::string_view method_name;
-    absl::string_view url_scheme;
-    absl::string_view service;
-    std::string ServiceUrl() const;
-  };
-
   ClientAuthFilter(
       RefCountedPtr<grpc_channel_security_connector> security_connector,
       RefCountedPtr<grpc_auth_context> auth_context);
@@ -65,16 +53,8 @@ class ClientAuthFilter final : public ChannelFilter,
   ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
       ClientInitialMetadata initial_metadata);
 
-  PartialAuthContext GetPartialAuthContext(
-      const ClientInitialMetadata& initial_metadata) const;
-
-  std::string JwtServiceUrl(
-      const ClientInitialMetadata& metadata) const override;
-  grpc_auth_metadata_context MakeLegacyContext(
-      const ClientInitialMetadata& metadata) const override;
-
-  RefCountedPtr<grpc_channel_security_connector> security_connector_;
-  RefCountedPtr<grpc_auth_context> auth_context_;
+  // Contains refs to security connector and auth context.
+  grpc_call_credentials::GetRequestMetadataArgs args_;
 };
 
 }  // namespace grpc_core

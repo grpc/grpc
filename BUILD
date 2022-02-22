@@ -4027,6 +4027,7 @@ grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
         "src/core/lib/security/context/security_context.cc",
+        "src/core/lib/security/credentials/call_creds_util.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
         "src/core/lib/security/credentials/credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
@@ -4039,6 +4040,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/security/context/security_context.h",
+        "src/core/lib/security/credentials/call_creds_util.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
         "src/core/lib/security/credentials/credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",

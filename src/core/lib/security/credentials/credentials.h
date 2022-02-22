@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -181,28 +182,22 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 
 /* --- grpc_call_credentials. --- */
 
-namespace grpc_core {
-
-// Abstract interface to obtain contextual data for some call credentials.
-class AuthMetadataContext {
- public:
-  virtual std::string JwtServiceUrl(
-      const ClientInitialMetadata& metadata) const = 0;
-  virtual grpc_auth_metadata_context MakeLegacyContext(
-      const ClientInitialMetadata& metadata) const = 0;
-
- protected:
-  ~AuthMetadataContext() = default;
-};
-
-}  // namespace grpc_core
-
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
+  // TODO(roth): Consider whether security connector actually needs to
+  // be part of this interface.  Currently, it is here only for the
+  // url_scheme() method, which we might be able to instead add as an
+  // auth context property.
+  struct GetRequestMetadataArgs {
+    grpc_core::RefCountedPtr<grpc_channel_security_connector>
+        security_connector;
+    grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  };
+
   explicit grpc_call_credentials(
       const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
@@ -212,8 +207,9 @@ struct grpc_call_credentials
 
   virtual grpc_core::ArenaPromise<
       absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
-                     grpc_core::AuthMetadataContext* auth_metadata_context) = 0;
+  GetRequestMetadata(
+      grpc_core::ClientInitialMetadata initial_metadata,
+      const GetRequestMetadataArgs* args) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
