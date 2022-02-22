@@ -3949,7 +3949,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
   uses_polling: false
 - name: message_compress_test
   build: test
