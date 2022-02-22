@@ -224,7 +224,9 @@ static void destroy_made_transport_stream_op(void* arg,
   made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;
   delete op;
-  grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
+  if (c != nullptr) {
+    grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_REF(error));
+  }
 }
 
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(

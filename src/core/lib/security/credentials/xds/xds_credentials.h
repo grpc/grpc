@@ -43,9 +43,8 @@ class XdsCredentials final : public grpc_channel_credentials {
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
-    // TODO(yashykt): Check if we can do something better here
-    return QsortCompare(static_cast<const grpc_channel_credentials*>(this),
-                        other);
+    auto* o = static_cast<const XdsCredentials*>(other);
+    return fallback_credentials_->cmp(o->fallback_credentials_.get());
   }
 
   RefCountedPtr<grpc_channel_credentials> fallback_credentials_;

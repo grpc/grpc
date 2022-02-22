@@ -52,7 +52,7 @@ const int kNumRpcs = 1000;  // Number of RPCs per thread
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
@@ -256,7 +256,7 @@ class CommonStressTestAsyncServer : public BaseClass {
     enum { READY, DONE } state;
   };
   std::vector<Context> contexts_;
-  ::grpc::testing::EchoTestService::AsyncService service_;
+  grpc::testing::EchoTestService::AsyncService service_;
   std::unique_ptr<ServerCompletionQueue> cq_;
   bool shutting_down_;
   grpc::internal::Mutex mu_;
