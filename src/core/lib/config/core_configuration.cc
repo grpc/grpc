@@ -23,6 +23,7 @@ namespace grpc_core {
 std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
 std::atomic<CoreConfiguration::RegisteredBuilder*> CoreConfiguration::builders_{
     nullptr};
+void (*CoreConfiguration::default_builder_)(CoreConfiguration::Builder*);
 
 CoreConfiguration::Builder::Builder() = default;
 
@@ -71,7 +72,7 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
     (*it)->builder(&builder);
   }
   // Finally, call the built in configuration builder.
-  BuildCoreConfiguration(&builder);
+  if (default_builder_ != nullptr) (*default_builder_)(&builder);
   // Use builder to construct a confguration
   CoreConfiguration* p = builder.Build();
   // Try to set configuration global - it's possible another thread raced us
