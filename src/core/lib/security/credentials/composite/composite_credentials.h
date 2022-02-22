@@ -30,12 +30,16 @@
 
 /* -- Composite channel credentials. -- */
 
+namespace grpc_core {
+extern const char kCredentialsTypeComposite[];
+}
+
 class grpc_composite_channel_credentials : public grpc_channel_credentials {
  public:
   grpc_composite_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds)
-      : grpc_channel_credentials(channel_creds->type()),
+      : grpc_channel_credentials(grpc_core::kCredentialsTypeComposite),
         inner_creds_(std::move(channel_creds)),
         call_creds_(std::move(call_creds)) {}
 
@@ -64,9 +68,10 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
-    // TODO(yashykt): Check if we can do something better here
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_channel_credentials*>(this), other);
+    auto* o = static_cast<const grpc_composite_channel_credentials*>(other);
+    int r = inner_creds_->cmp(o->inner_creds_.get());
+    if (r != 0) return r;
+    return call_creds_->cmp(o->call_creds_.get());
   }
 
   grpc_core::RefCountedPtr<grpc_channel_credentials> inner_creds_;
