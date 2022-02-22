@@ -177,6 +177,10 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
+                  }) +
+                  select({
+                      "//:use_abseil_status": ["GRPC_ERROR_IS_ABSEIL_STATUS=1"],
+                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
