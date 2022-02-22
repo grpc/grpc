@@ -170,11 +170,10 @@ ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
   if (host == nullptr) {
     return next_promise_factory(std::move(initial_metadata));
   }
-  return TrySeq(
-      args_.security_connector->CheckCallHost(host->as_string_view(),
-                                              args_.auth_context.get()),
-      GetCallCredsMetadata(std::move(initial_metadata)),
-      next_promise_factory);
+  return TrySeq(args_.security_connector->CheckCallHost(
+                    host->as_string_view(), args_.auth_context.get()),
+                GetCallCredsMetadata(std::move(initial_metadata)),
+                next_promise_factory);
 }
 
 absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
