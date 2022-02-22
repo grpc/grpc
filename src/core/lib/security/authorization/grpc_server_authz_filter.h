@@ -12,29 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 
 namespace grpc_core {
 
-class SdkServerAuthzFilter {
+class GrpcServerAuthzFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<SdkServerAuthzFilter> Create(
-      const grpc_channel_args* args);
+  static absl::StatusOr<GrpcServerAuthzFilter> Create(
+      const grpc_channel_args* args, ChannelFilter::Args);
 
   ArenaPromise<TrailingMetadata> MakeCallPromise(
       ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory);
+      NextPromiseFactory next_promise_factory) override;
 
  private:
-  SdkServerAuthzFilter(
+  GrpcServerAuthzFilter(
       RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
 
@@ -47,4 +48,4 @@ class SdkServerAuthzFilter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_SDK_SERVER_AUTHZ_FILTER_H
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H

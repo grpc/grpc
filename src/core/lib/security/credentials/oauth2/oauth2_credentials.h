@@ -110,6 +110,12 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
                             grpc_millis deadline) = 0;
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   gpr_mu mu_;
   absl::optional<grpc_core::Slice> access_token_value_;
   gpr_timespec token_expiration_;
@@ -161,6 +167,12 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   const grpc_core::Slice access_token_value_;
 };
 

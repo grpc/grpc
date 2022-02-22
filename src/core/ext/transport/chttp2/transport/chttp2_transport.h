@@ -32,8 +32,6 @@ extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
 
-extern bool g_flow_control_enabled;
-
 /// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
 /// from the caller; if the caller still needs the resource_user after creating
 /// a transport, the caller must take another ref.
