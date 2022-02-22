@@ -18,8 +18,8 @@
 
 #include "src/core/lib/security/credentials/call_creds_util.h"
 
-#include "absl/strings/string_view.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -31,7 +31,7 @@ struct ServiceUrlAndMethod {
 };
 
 ServiceUrlAndMethod MakeServiceUrlAndMethod(
-    const grpc_core::ClientInitialMetadata& initial_metadata,
+    const ClientInitialMetadata& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto service =
       initial_metadata->get_pointer(HttpPathMetadata())->as_string_view();
@@ -65,13 +65,13 @@ ServiceUrlAndMethod MakeServiceUrlAndMethod(
 }  // namespace
 
 std::string MakeJwtServiceUrl(
-    const grpc_core::ClientInitialMetadata& initial_metadata,
+    const ClientInitialMetadata& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   return MakeServiceUrlAndMethod(initial_metadata, args).service_url;
 }
 
 grpc_auth_metadata_context MakePluginAuthMetadataContext(
-    const grpc_core::ClientInitialMetadata& initial_metadata,
+    const ClientInitialMetadata& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto fields = MakeServiceUrlAndMethod(initial_metadata, args);
   grpc_auth_metadata_context ctx;

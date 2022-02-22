@@ -46,9 +46,8 @@ grpc_composite_call_credentials::GetRequestMetadata(
   auto self = Ref();
   return TrySeqIter(
       inner_.begin(), inner_.end(), std::move(initial_metadata),
-      [self, args](
-          const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
-          grpc_core::ClientInitialMetadata initial_metadata) {
+      [self, args](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
+                   grpc_core::ClientInitialMetadata initial_metadata) {
         return creds->GetRequestMetadata(std::move(initial_metadata), args);
       });
 }

@@ -147,7 +147,7 @@ grpc_plugin_credentials::GetRequestMetadata(
 
   // Create pending_request object.
   auto request = grpc_core::MakeRefCounted<PendingRequest>(
-      Ref(), std::move(initial_metadata), std::move(args));
+      Ref(), std::move(initial_metadata), args);
   // Invoke the plugin.  The callback holds a ref to us.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",

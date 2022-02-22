@@ -39,9 +39,8 @@ class grpc_service_account_jwt_access_credentials
   ~grpc_service_account_jwt_access_credentials() override;
 
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(
-      grpc_core::ClientInitialMetadata initial_metadata,
-      const GetRequestMetadataArgs* args) override;
+  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
   const grpc_auth_json_key& key() const { return key_; }
