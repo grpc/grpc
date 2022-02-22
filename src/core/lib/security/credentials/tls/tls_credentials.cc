@@ -109,6 +109,13 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
+int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
+  const TlsCredentials* o = static_cast<const TlsCredentials*>(other);
+  if (*options_ == *o->options_) return 0;
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
+}
+
 TlsServerCredentials::TlsServerCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
     : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_TLS),

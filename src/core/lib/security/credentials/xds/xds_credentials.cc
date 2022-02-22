@@ -61,44 +61,57 @@ bool XdsVerifySubjectAlternativeNames(
   return false;
 }
 
-class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
- public:
-  XdsCertificateVerifier(
-      RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
-      std::string cluster_name)
-      : xds_certificate_provider_(std::move(xds_certificate_provider)),
-        cluster_name_(std::move(cluster_name)) {}
-
-  bool Verify(grpc_tls_custom_verification_check_request* request,
-              std::function<void(absl::Status)>,
-              absl::Status* sync_status) override {
-    GPR_ASSERT(request != nullptr);
-    if (!XdsVerifySubjectAlternativeNames(
-            request->peer_info.san_names.uri_names,
-            request->peer_info.san_names.uri_names_size,
-            xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
-        !XdsVerifySubjectAlternativeNames(
-            request->peer_info.san_names.ip_names,
-            request->peer_info.san_names.ip_names_size,
-            xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
-        !XdsVerifySubjectAlternativeNames(
-            request->peer_info.san_names.dns_names,
-            request->peer_info.san_names.dns_names_size,
-            xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
-      *sync_status = absl::Status(
-          absl::StatusCode::kUnauthenticated,
-          "SANs from certificate did not match SANs from xDS control plane");
-    }
-    return true; /* synchronous check */
-  }
-  void Cancel(grpc_tls_custom_verification_check_request*) override {}
-
- private:
-  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
-  std::string cluster_name_;
-};
+const char kTlsCertificateVerifierTypeXds[] = "xds";
 
 }  // namespace
+
+//
+// XdsCertificateVerifier
+//
+
+XdsCertificateVerifier::XdsCertificateVerifier(
+    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
+    std::string cluster_name)
+    : grpc_tls_certificate_verifier(kTlsCertificateVerifierTypeXds),
+      xds_certificate_provider_(std::move(xds_certificate_provider)),
+      cluster_name_(std::move(cluster_name)) {}
+
+bool XdsCertificateVerifier::Verify(
+    grpc_tls_custom_verification_check_request* request,
+    std::function<void(absl::Status)>, absl::Status* sync_status) {
+  GPR_ASSERT(request != nullptr);
+  if (!XdsVerifySubjectAlternativeNames(
+          request->peer_info.san_names.uri_names,
+          request->peer_info.san_names.uri_names_size,
+          xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
+      !XdsVerifySubjectAlternativeNames(
+          request->peer_info.san_names.ip_names,
+          request->peer_info.san_names.ip_names_size,
+          xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
+      !XdsVerifySubjectAlternativeNames(
+          request->peer_info.san_names.dns_names,
+          request->peer_info.san_names.dns_names_size,
+          xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
+    *sync_status = absl::Status(
+        absl::StatusCode::kUnauthenticated,
+        "SANs from certificate did not match SANs from xDS control plane");
+  }
+  return true; /* synchronous check */
+}
+
+void XdsCertificateVerifier::Cancel(
+    grpc_tls_custom_verification_check_request*) {}
+
+int XdsCertificateVerifier::cmp_impl(
+    const grpc_tls_certificate_verifier* other) const {
+  auto* o = static_cast<const XdsCertificateVerifier*>(other);
+  if (xds_certificate_provider_ == o->xds_certificate_provider_ &&
+      cluster_name_ == o->cluster_name_) {
+    return 0;
+  }
+  return QsortCompare(static_cast<const grpc_tls_certificate_verifier*>(this),
+                      other);
+}
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,

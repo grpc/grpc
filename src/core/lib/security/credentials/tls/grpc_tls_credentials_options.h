@@ -126,6 +126,25 @@ struct grpc_tls_credentials_options
   // not enable CRL checking. Only supported for OpenSSL version > 1.1.
   void set_crl_directory(std::string path) { crl_directory_ = std::move(path); }
 
+  bool operator==(const grpc_tls_credentials_options& other) const {
+    return cert_request_type_ == other.cert_request_type_ &&
+           verify_server_cert_ == other.verify_server_cert_ &&
+           min_tls_version_ == other.min_tls_version_ &&
+           max_tls_version_ == other.max_tls_version_ &&
+           (verifier_ == other.verifier_ ||
+            (verifier_ != nullptr && other.verifier_ != nullptr &&
+             verifier_->cmp(other.verifier_.get()) == 0)) &&
+           check_call_host_ == other.check_call_host_ &&
+           provider_ == other.provider_ &&
+           watch_root_cert_ == other.watch_root_cert_ &&
+           root_cert_name_ == other.root_cert_name_ &&
+           watch_identity_pair_ == other.watch_identity_pair_ &&
+           identity_cert_name_ == other.identity_cert_name_ &&
+           tls_session_key_log_file_path_ ==
+               other.tls_session_key_log_file_path_ &&
+           crl_directory_ == other.crl_directory_;
+  }
+
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;

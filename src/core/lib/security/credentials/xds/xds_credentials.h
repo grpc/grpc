@@ -23,10 +23,30 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 
 namespace grpc_core {
+
+class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
+ public:
+  XdsCertificateVerifier(
+      RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
+      std::string cluster_name);
+
+  bool Verify(grpc_tls_custom_verification_check_request* request,
+              std::function<void(absl::Status)>,
+              absl::Status* sync_status) override;
+  void Cancel(grpc_tls_custom_verification_check_request*) override;
+
+ private:
+  int cmp_impl(const grpc_tls_certificate_verifier* other) const override;
+
+  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+  std::string cluster_name_;
+};
 
 extern const char kCredentialsTypeXds[];
 
