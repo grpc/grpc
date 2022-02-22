@@ -1731,6 +1731,10 @@ grpc_cc_library(
         "gpr_base",
         "iomgr_port",
     ],
+    linkopts = select({
+        ":windows": ["-defaultlib:ws2_32.lib"],
+        "//conditions:default": [],
+    }),
 )
 
 grpc_cc_library(
