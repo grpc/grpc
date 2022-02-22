@@ -796,9 +796,9 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
   HttpRequest::SetOverride(nullptr, nullptr);
 }
 
-static void validate_refresh_token_http_request(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size) {
+void validate_refresh_token_http_request(const grpc_http_request* request,
+                                         const char* host, const char* path,
+                                         const char* body, size_t body_size) {
   /* The content of the assertion is tested extensively in json_token_test. */
   GPR_ASSERT(body != nullptr);
   GPR_ASSERT(body_size != 0);
