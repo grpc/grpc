@@ -35,6 +35,10 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
 
+namespace grpc_core {
+const char kCredentialsTypeComposite[] = "composite";
+}  // namespace grpc_core
+
 /* -- Composite call credentials. -- */
 
 static void composite_call_metadata_cb(void* arg, grpc_error_handle error);
