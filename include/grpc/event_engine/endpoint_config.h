@@ -34,7 +34,7 @@ class EndpointConfig {
   using Setting = absl::variant<absl::monostate, int, absl::string_view, void*>;
   /// Returns the Setting for a specified key, or \a absl::monostate if there is
   /// no such entry. Caller does not take ownership of the resulting value.
-  virtual Setting Get(absl::string_view key) const { abort(); };
+  virtual Setting Get(absl::string_view key) const = 0;
 };
 
 }  // namespace experimental
