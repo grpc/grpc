@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -374,3 +375,25 @@ void grpc_ssl_server_credentials_options_destroy(
   grpc_ssl_server_certificate_config_destroy(o->certificate_config);
   gpr_free(o);
 }
+
+namespace grpc_core {
+namespace {
+class SslChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    // TODO(yashykt): Fill it out when we have a JSON representation for this.
+    return nullptr;
+  }
+};
+}  // namespace
+
+void RegisterSslChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<SslChannelCredsFactory>());
+}
+}  // namespace grpc_core

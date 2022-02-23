@@ -600,7 +600,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc',
     'src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc',
     'src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc',
-    'src/core/lib/security/credentials/channel_creds_registry_init.cc',
     'src/core/lib/security/credentials/composite/composite_credentials.cc',
     'src/core/lib/security/credentials/credentials.cc',
     'src/core/lib/security/credentials/external/aws_external_account_credentials.cc',

@@ -32,6 +32,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -435,6 +436,28 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
 }
 
 namespace grpc_core {
+
+namespace {
+class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_google_default_credentials_create(nullptr));
+  }
+};
+}  // namespace
+
+void RegisterGoogleDefaultChannelCredsFactory(
+    CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<GoogleDefaultChannelCredsFactory>());
+}
+
 namespace internal {
 
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {

@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
@@ -55,7 +56,26 @@ class InsecureServerCredentials final : public grpc_server_credentials {
   }
 };
 
+class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return GRPC_CREDENTIALS_TYPE_INSECURE;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_insecure_credentials_create());
+  }
+};
+
 }  // namespace
+
+void RegisterInsecureChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<InsecureChannelCredsFactory>());
+}
+
 }  // namespace grpc_core
 
 grpc_channel_credentials* grpc_insecure_credentials_create() {

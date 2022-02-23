@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
@@ -109,3 +110,25 @@ grpc_server_credentials* grpc_alts_server_credentials_create(
   return grpc_alts_server_credentials_create_customized(
       options, GRPC_ALTS_HANDSHAKER_SERVICE_URL, false);
 }
+
+namespace grpc_core {
+namespace {
+class AltsChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return GRPC_CREDENTIALS_TYPE_ALTS;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    // TODO(yashykt): Fill it out when we have a JSON representation for this.
+    return nullptr;
+  }
+};
+}  // namespace
+
+void RegisterAltsChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<AltsChannelCredsFactory>());
+}
+}  // namespace grpc_core

@@ -1259,7 +1259,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h )
   s.files += %w( src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc )
   s.files += %w( src/core/lib/security/credentials/channel_creds_registry.h )
-  s.files += %w( src/core/lib/security/credentials/channel_creds_registry_init.cc )
   s.files += %w( src/core/lib/security/credentials/composite/composite_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/composite/composite_credentials.h )
   s.files += %w( src/core/lib/security/credentials/credentials.cc )

@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_LOCAL "Local"
@@ -63,3 +64,25 @@ grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type connect_type) {
   return new grpc_local_server_credentials(connect_type);
 }
+
+namespace grpc_core {
+namespace {
+class LocalChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return GRPC_CREDENTIALS_TYPE_LOCAL;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    // TODO(yashykt): Fill it out when we have a JSON representation for this.
+    return nullptr;
+  }
+};
+}  // namespace
+
+void RegisterLocalChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<LocalChannelCredsFactory>());
+}
+}  // namespace grpc_core

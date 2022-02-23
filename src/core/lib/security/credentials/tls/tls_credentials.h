@@ -26,43 +26,44 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+namespace grpc_core {
+
 class TlsCredentials final : public grpc_channel_credentials {
  public:
-  explicit TlsCredentials(
-      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
+  explicit TlsCredentials(RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsCredentials() override;
 
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-  create_security_connector(
-      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+  RefCountedPtr<grpc_channel_security_connector> create_security_connector(
+      RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
+      const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
   grpc_tls_credentials_options* options() const { return options_.get(); }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_channel_credentials*>(this), other);
+    return QsortCompare(static_cast<const grpc_channel_credentials*>(this),
+                        other);
   }
 
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  RefCountedPtr<grpc_tls_credentials_options> options_;
 };
 
 class TlsServerCredentials final : public grpc_server_credentials {
  public:
   explicit TlsServerCredentials(
-      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
+      RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsServerCredentials() override;
 
-  grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* /* args */) override;
+  RefCountedPtr<grpc_server_security_connector> create_security_connector(
+      const grpc_channel_args* /* args */) override;
 
   grpc_tls_credentials_options* options() const { return options_.get(); }
 
  private:
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  RefCountedPtr<grpc_tls_credentials_options> options_;
 };
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_CREDENTIALS_H */

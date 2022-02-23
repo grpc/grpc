@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
@@ -86,6 +87,28 @@ grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
       const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
       expected_targets);
 }
+
+namespace grpc_core {
+namespace {
+class FakeChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_fake_transport_security_credentials_create());
+  }
+};
+}  // namespace
+
+void RegisterFakeChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<FakeChannelCredsFactory>());
+}
+}  // namespace grpc_core
 
 const char* grpc_fake_transport_get_expected_targets(
     const grpc_channel_args* args) {

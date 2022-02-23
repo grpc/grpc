@@ -22,6 +22,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
@@ -186,6 +187,24 @@ XdsCredentials::create_security_connector(
   GPR_ASSERT(fallback_credentials_ != nullptr);
   return fallback_credentials_->create_security_connector(
       std::move(call_creds), target_name, temp_args.args, new_args);
+}
+
+namespace {
+class XdsChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override { return kCredentialsTypeXds; }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    // TODO(yashykt): Fill it out when we have a JSON representation for this.
+    return nullptr;
+  }
+};
+}  // namespace
+
+void RegisterXdsChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<XdsChannelCredsFactory>());
 }
 
 //

@@ -157,9 +157,12 @@ httpcli_ssl_channel_security_connector_create(
   return c;
 }
 
+const char kCredentialsTypeHttpRequestSSL[] = "HttpRequestSSL";
+
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
-  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpRequestSSL") {}
+  HttpRequestSSLCredentials()
+      : grpc_channel_credentials(kCredentialsTypeHttpRequestSSL) {}
   ~HttpRequestSSLCredentials() override {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
@@ -206,6 +209,27 @@ RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
   // the same target with HttpRequestSSLCredentials can reuse the subchannels.
   static auto* creds = new HttpRequestSSLCredentials();
   return creds->Ref();
+}
+
+namespace {
+
+class HttpRequestSSLCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return kCredentialsTypeHttpRequestSSL;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    return CreateHttpRequestSSLCredentials();
+  }
+};
+
+}  // namespace
+
+void RegisterHttpRequestSSLCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<HttpRequestSSLCredsFactory>());
 }
 
 }  // namespace grpc_core

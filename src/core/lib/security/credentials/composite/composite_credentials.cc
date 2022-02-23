@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -232,3 +233,25 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
   return new grpc_composite_channel_credentials(channel_creds->Ref(),
                                                 call_creds->Ref());
 }
+
+namespace grpc_core {
+namespace {
+class CompositeChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view creds_type() const override {
+    return kCredentialsTypeComposite;
+  }
+  bool IsValidConfig(const Json& /*config*/) const override { return true; }
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      const Json& /*config*/) const override {
+    // TODO(yashykt): Fill it out when we have a JSON representation for this.
+    return nullptr;
+  }
+};
+}  // namespace
+
+void RegisterCompositeChannelCredsFactory(CoreConfiguration::Builder* builder) {
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      absl::make_unique<CompositeChannelCredsFactory>());
+}
+}  // namespace grpc_core

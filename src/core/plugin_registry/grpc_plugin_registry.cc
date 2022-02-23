@@ -124,6 +124,15 @@ extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
 extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
+extern void RegisterInsecureChannelCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterCompositeChannelCredsFactory(CoreConfiguration::Builder* builder);
+
+namespace {
+void RegisterChannelCredsFactories(CoreConfiguration::Builder* builder) {
+  RegisterInsecureChannelCredsFactory(builder);
+  RegisterCompositeChannelCredsFactory(builder);
+}
+} // namespace
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -140,6 +149,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);
+  RegisterChannelCredsFactories(builder);
   RegisterExtraFilters(builder);
   RegisterBuiltins(builder);
 }

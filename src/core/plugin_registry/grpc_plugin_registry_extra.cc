@@ -74,18 +74,44 @@ void grpc_register_extra_plugins() {
 }
 
 namespace grpc_core {
+
+extern void RegisterGoogleDefaultChannelCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterFakeChannelCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterHttpRequestSSLCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterAltsChannelCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterLocalChannelCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterSslChannelCredsFactory(CoreConfiguration::Builder* builder);
+extern void RegisterTlsChannelCredsFactory(CoreConfiguration::Builder* builder);
+#ifndef GRPC_NO_XDS
+extern void RegisterXdsChannelCredsFactory(CoreConfiguration::Builder* builder);
+#endif
+
+namespace {
+void RegisterChannelCredsFactories(CoreConfiguration::Builder* builder) {
+  RegisterGoogleDefaultChannelCredsFactory(builder);
+  RegisterFakeChannelCredsFactory(builder);
+  RegisterHttpRequestSSLCredsFactory(builder);
+  RegisterAltsChannelCredsFactory(builder);
+  RegisterLocalChannelCredsFactory(builder);
+  RegisterSslChannelCredsFactory(builder);
+  #ifndef GRPC_NO_XDS
+  RegisterXdsChannelCredsFactory(builder);
+  #endif
+}
+} // namespace
+
 #ifndef GRPC_NO_XDS
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
-extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
 #endif
+
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
   (void)builder;
 #ifndef GRPC_NO_XDS
   RegisterXdsChannelStackModifier(builder);
-  RegisterChannelDefaultCreds(builder);
 #endif
+  RegisterChannelCredsFactories(builder);
 }
 }  // namespace grpc_core
 

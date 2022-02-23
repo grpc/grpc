@@ -410,9 +410,6 @@ GRPC_XDS_TARGETS = [
     "grpc_resolver_xds",
     "grpc_resolver_c2p",
     "grpc_xds_server_config_fetcher",
-
-    # Not xDS-specific but currently only used by xDS.
-    "channel_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -2924,22 +2921,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "channel_creds_registry_init",
-    srcs = [
-        "src/core/lib/security/credentials/channel_creds_registry_init.cc",
-    ],
-    language = "c++",
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_fake_credentials",
-        "grpc_secure",
-        "grpc_security_base",
-        "json",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_google_mesh_ca_certificate_provider_factory",
     srcs = [
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc",
@@ -3622,6 +3603,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
@@ -3641,6 +3623,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr",
         "grpc_security_base",
         "ref_counted_ptr",
@@ -3680,6 +3663,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3711,6 +3695,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
@@ -3736,6 +3721,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_credentials_util",
@@ -3764,6 +3750,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "alts_util",
+        "config",
         "gpr_base",
         "grpc_alts_credentials",
         "grpc_base",
@@ -3805,6 +3792,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_credentials_util",

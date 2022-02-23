@@ -1340,7 +1340,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h',
                       'src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc',
                       'src/core/lib/security/credentials/channel_creds_registry.h',
-                      'src/core/lib/security/credentials/channel_creds_registry_init.cc',
                       'src/core/lib/security/credentials/composite/composite_credentials.cc',
                       'src/core/lib/security/credentials/composite/composite_credentials.h',
                       'src/core/lib/security/credentials/credentials.cc',
