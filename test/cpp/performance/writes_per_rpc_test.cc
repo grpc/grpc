@@ -100,7 +100,7 @@ class EndpointPairFixture {
           "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr);
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
-      channel_ = ::grpc::CreateChannelInternal(
+      channel_ = grpc::CreateChannelInternal(
           "", channel,
           std::vector<std::unique_ptr<
               experimental::ClientInterceptorFactoryInterface>>());
