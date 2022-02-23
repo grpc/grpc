@@ -65,12 +65,12 @@ TEST_INFRA_GOVERSION=go1.17.1
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
-# Fetch test-infra repository and build all tools.
-git init -b master ../test-infra
-pushd ../test-infra
+# Clone test-infra repository and build all tools.
+pushd ..
+git clone https://github.com/grpc/test-infra.git
+cd test-infra
 # Tools are built from a known good version.
-git fetch --depth 1 https://github.com/grpc/test-infra.git v1.0.0
-git checkout --detach FETCH_HEAD
+git checkout --detach v1.0.0
 make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
