@@ -35,6 +35,45 @@
 
 namespace grpc_core {
 
+class ChannelFilter {
+ public:
+  class Args {
+   public:
+    Args() : Args(nullptr) {}
+    explicit Args(grpc_channel_stack* channel_stack)
+        : channel_stack_(channel_stack) {}
+
+    grpc_channel_stack* channel_stack() const { return channel_stack_; }
+
+   private:
+    friend class ChannelFilter;
+    grpc_channel_stack* channel_stack_;
+  };
+
+  // Construct a promise for one call.
+  virtual ArenaPromise<TrailingMetadata> MakeCallPromise(
+      ClientInitialMetadata initial_metadata,
+      NextPromiseFactory next_promise_factory) = 0;
+
+  // Start a legacy transport op
+  // Return true if the op was handled, false if it should be passed to the
+  // next filter.
+  // TODO(ctiller): design a new API for this - we probably don't want big op
+  // structures going forward.
+  virtual bool StartTransportOp(grpc_transport_op*) { return false; }
+
+ protected:
+  virtual ~ChannelFilter() = default;
+};
+
+// Designator for whether a filter is client side or server side.
+// Please don't use this outside calls to MakePromiseBasedFilter - it's intended
+// to be deleted once the promise conversion is complete.
+enum class FilterEndpoint {
+  kClient,
+  kServer,
+};
+
 namespace promise_filter_detail {
 
 // Call data shared between all implementations of promise-based filters.
@@ -77,12 +116,12 @@ class BaseCallData {
 // Specific call data per channel filter.
 // Note that we further specialize for clients and servers since their
 // implementations are very different.
-template <class ChannelFilter, bool kIsClient = ChannelFilter::is_client()>
+template <class ChannelFilter, FilterEndpoint endpoint>
 class CallData;
 
 // Client implementation of call data.
 template <class ChannelFilter>
-class CallData<ChannelFilter, true> : public BaseCallData {
+class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
  public:
   CallData(grpc_call_element* elem, const grpc_call_element_args* args)
       : BaseCallData(elem, args) {
@@ -386,7 +425,7 @@ class CallData<ChannelFilter, true> : public BaseCallData {
 
 // Server implementation of call data.
 template <class ChannelFilter>
-class CallData<ChannelFilter, false> : public BaseCallData {
+class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
  public:
   CallData(grpc_call_element* elem, const grpc_call_element_args* args)
       : BaseCallData(elem, args) {
@@ -598,6 +637,7 @@ class CallData<ChannelFilter, false> : public BaseCallData {
               destroy_md = false;
             }
             forward_send_trailing_metadata = true;
+            send_trailing_state_ = SendTrailingState::kForwarded;
           } break;
           case SendTrailingState::kForwarded:
             abort();  // unreachable
@@ -658,21 +698,18 @@ class CallData<ChannelFilter, false> : public BaseCallData {
 
 }  // namespace promise_filter_detail
 
-// ChannelFilter contains the following:
-// class SomeChannelFilter {
+// F implements ChannelFilter and :
+// class SomeChannelFilter : public ChannelFilter {
 //  public:
-//   static constexpr bool is_client();
-//   static constexpr const char* name();
 //   static absl::StatusOr<SomeChannelFilter> Create(
-//       const grpc_channel_args* args);
-//   ArenaPromise<TrailingMetadata> MakeCallPromise(
-//       InitialMetadata* initial_metadata, NextPromiseFactory next_promise);
+//       ChannelFilter::Args filter_args);
 // };
 // TODO(ctiller): allow implementing get_channel_info, start_transport_op in
 // some way on ChannelFilter.
-template <typename ChannelFilter>
-grpc_channel_filter MakePromiseBasedFilter() {
-  using CallData = promise_filter_detail::CallData<ChannelFilter>;
+template <typename F, FilterEndpoint kEndpoint>
+absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value, grpc_channel_filter>
+MakePromiseBasedFilter(const char* name) {
+  using CallData = promise_filter_detail::CallData<F, kEndpoint>;
 
   return grpc_channel_filter{
       // start_transport_stream_op_batch
@@ -682,12 +719,16 @@ grpc_channel_filter MakePromiseBasedFilter() {
       // make_call_promise
       [](grpc_channel_element* elem, ClientInitialMetadata initial_metadata,
          NextPromiseFactory next_promise_factory) {
-        return static_cast<ChannelFilter*>(elem->channel_data)
+        return static_cast<F*>(elem->channel_data)
             ->MakeCallPromise(std::move(initial_metadata),
                               std::move(next_promise_factory));
       },
-      // start_transport_op - for now unsupported
-      grpc_channel_next_op,
+      // start_transport_op
+      [](grpc_channel_element* elem, grpc_transport_op* op) {
+        if (!static_cast<F*>(elem->channel_data)->StartTransportOp(op)) {
+          grpc_channel_next_op(elem, op);
+        }
+      },
       // sizeof_call_data
       sizeof(CallData),
       // init_call_elem
@@ -702,23 +743,24 @@ grpc_channel_filter MakePromiseBasedFilter() {
         static_cast<CallData*>(elem->call_data)->~CallData();
       },
       // sizeof_channel_data
-      sizeof(ChannelFilter),
+      sizeof(F),
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
         GPR_ASSERT(!args->is_last);
-        auto status = ChannelFilter::Create(args->channel_args);
+        auto status = F::Create(args->channel_args,
+                                ChannelFilter::Args(args->channel_stack));
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
-        new (elem->channel_data) ChannelFilter(std::move(*status));
+        new (elem->channel_data) F(std::move(*status));
         return GRPC_ERROR_NONE;
       },
       // destroy_channel_elem
       [](grpc_channel_element* elem) {
-        static_cast<ChannelFilter*>(elem->channel_data)->~ChannelFilter();
+        static_cast<F*>(elem->channel_data)->~F();
       },
       // get_channel_info
       grpc_channel_next_get_info,
       // name
-      ChannelFilter::name(),
+      name,
   };
 }
 

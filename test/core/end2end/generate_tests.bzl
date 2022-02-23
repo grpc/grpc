@@ -266,6 +266,7 @@ END2END_TESTS = {
     "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
+    "grpc_authz": _test_options(secure = True),
     "hpack_size": _test_options(
         proxyable = False,
         traceable = False,
@@ -355,7 +356,8 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
-    "sdk_authz": _test_options(secure = True),
+    "retry_unref_before_finish": _test_options(needs_client_channel = True),
+    "retry_unref_before_recv": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),

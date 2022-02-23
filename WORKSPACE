@@ -53,18 +53,13 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_android/archive/v0.1.1.zip"],
 )
 
-android_sdk_repository(
-    name = "androidsdk",
-    # version 31.0.0 won't work https://stackoverflow.com/a/68036845
-    build_tools_version = "30.0.3",
-)
+load("//third_party/android:android_configure.bzl", "android_configure")
 
-android_ndk_repository(
-    name = "androidndk",
-    # Note that Bazel does not support NDK 22 yet, and Bazel 3.7.1 only
-    # supports up to API level 29 for NDK 21
-    # https://github.com/bazelbuild/bazel/issues/13421
-)
+android_configure(name = "local_config_android")
+
+load("@local_config_android//:android_configure.bzl", "android_workspace")
+
+android_workspace()
 
 # Prevents bazel's '...' expansion from including the following folder.
 # This is required because the BUILD file in the following folder

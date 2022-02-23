@@ -28,9 +28,6 @@ LibraryInitializer::LibraryInitializer() {
   g_libraryInitializer = this;
 
   g_gli_initializer.summon();
-#ifdef GPR_LOW_LEVEL_COUNTERS
-  grpc_memory_counters_init();
-#endif
   init_lib_.init();
 }
 
@@ -84,7 +81,6 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   }
 #endif
 #ifdef GPR_LOW_LEVEL_COUNTERS
-  grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
   out << " locks/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
                    mu_locks_at_start_) /
@@ -100,10 +96,6 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
       << " nows/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_now_call_count) -
                    now_calls_at_start_) /
-          (double)state.iterations())
-      << " allocs/iter:"
-      << ((double)(counters_at_end.total_allocs_absolute -
-                   counters_at_start_.total_allocs_absolute) /
           (double)state.iterations());
 #endif
 }

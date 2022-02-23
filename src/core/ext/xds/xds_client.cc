@@ -516,8 +516,8 @@ grpc_channel* CreateXdsChannel(grpc_channel_args* args,
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_type, server.channel_creds_config);
-  return grpc_secure_channel_create(channel_creds.get(),
-                                    server.server_uri.c_str(), args, nullptr);
+  return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
+                             args);
 }
 
 }  // namespace

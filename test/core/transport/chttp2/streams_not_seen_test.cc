@@ -29,18 +29,16 @@
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_tcp_server.h"
@@ -50,31 +48,17 @@ namespace {
 
 void* Tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-// A filter that fails all batches with send ops.
+// A filter that records state about trailing metadata.
 class TrailingMetadataRecordingFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<TrailingMetadataRecordingFilter> Create(
-      const grpc_channel_args*) {
-    return TrailingMetadataRecordingFilter();
+  static bool trailing_metadata_available() {
+    return trailing_metadata_available_;
   }
 
-  static constexpr bool is_client() { return true; }
-  static constexpr const char* name() {
-    return "trailing-metadata-recording-filter";
-  }
-
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) {
-    return ArenaPromise<TrailingMetadata>(
-        Seq(next_promise_factory(std::move(initial_metadata)),
-            [](TrailingMetadata trailing_metadata) {
-              stream_network_state_ =
-                  trailing_metadata->get(GrpcStreamNetworkState());
-              return Immediate(std::move(trailing_metadata));
-            }));
+  static void reset_trailing_metadata_available() {
+    trailing_metadata_available_ = false;
   }
 
   static absl::optional<GrpcStreamNetworkState::ValueType>
@@ -86,13 +70,114 @@ class TrailingMetadataRecordingFilter {
     stream_network_state_ = absl::nullopt;
   }
 
+  static void reset_state() {
+    reset_trailing_metadata_available();
+    reset_stream_network_state();
+  }
+
  private:
+  class CallData {
+   public:
+    static grpc_error_handle Init(grpc_call_element* elem,
+                                  const grpc_call_element_args* args) {
+      new (elem->call_data) CallData(args);
+      return GRPC_ERROR_NONE;
+    }
+
+    static void Destroy(grpc_call_element* elem,
+                        const grpc_call_final_info* /*final_info*/,
+                        grpc_closure* /*ignored*/) {
+      auto* calld = static_cast<CallData*>(elem->call_data);
+      calld->~CallData();
+    }
+
+    static void StartTransportStreamOpBatch(
+        grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+      auto* calld = static_cast<CallData*>(elem->call_data);
+      if (batch->recv_initial_metadata) {
+        calld->trailing_metadata_available_ =
+            batch->payload->recv_initial_metadata.trailing_metadata_available;
+        calld->original_recv_initial_metadata_ready_ =
+            batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+            &calld->recv_initial_metadata_ready_;
+      }
+      if (batch->recv_trailing_metadata) {
+        calld->recv_trailing_metadata_ =
+            batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+        calld->original_recv_trailing_metadata_ready_ =
+            batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+            &calld->recv_trailing_metadata_ready_;
+      }
+      grpc_call_next_op(elem, batch);
+    }
+
+   private:
+    explicit CallData(const grpc_call_element_args* /*args*/) {
+      GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,
+                        this, nullptr);
+      GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                        RecvTrailingMetadataReady, this, nullptr);
+    }
+
+    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error) {
+      auto* calld = static_cast<CallData*>(arg);
+      TrailingMetadataRecordingFilter::trailing_metadata_available_ =
+          *calld->trailing_metadata_available_;
+      Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
+                   GRPC_ERROR_REF(error));
+    }
+
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
+      auto* calld = static_cast<CallData*>(arg);
+      stream_network_state_ =
+          calld->recv_trailing_metadata_->get(GrpcStreamNetworkState());
+      Closure::Run(DEBUG_LOCATION,
+                   calld->original_recv_trailing_metadata_ready_,
+                   GRPC_ERROR_REF(error));
+    }
+
+    bool* trailing_metadata_available_ = nullptr;
+    grpc_closure recv_initial_metadata_ready_;
+    grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
+    grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+    grpc_closure recv_trailing_metadata_ready_;
+    grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+  };
+
+  static grpc_error_handle Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* /*args*/) {
+    new (elem->channel_data) TrailingMetadataRecordingFilter();
+    return GRPC_ERROR_NONE;
+  }
+
+  static void Destroy(grpc_channel_element* elem) {
+    auto* chand =
+        static_cast<TrailingMetadataRecordingFilter*>(elem->channel_data);
+    chand->~TrailingMetadataRecordingFilter();
+  }
+
+  static bool trailing_metadata_available_;
   static absl::optional<GrpcStreamNetworkState::ValueType>
       stream_network_state_;
 };
 
-grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable =
-    MakePromiseBasedFilter<TrailingMetadataRecordingFilter>();
+grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
+    CallData::StartTransportStreamOpBatch,
+    nullptr,
+    grpc_channel_next_op,
+    sizeof(CallData),
+    CallData::Init,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    CallData::Destroy,
+    sizeof(TrailingMetadataRecordingFilter),
+    Init,
+    Destroy,
+    grpc_channel_next_get_info,
+    "trailing-metadata-recording-filter",
+};
+bool TrailingMetadataRecordingFilter::trailing_metadata_available_;
 absl::optional<GrpcStreamNetworkState::ValueType>
     TrailingMetadataRecordingFilter::stream_network_state_;
 
@@ -101,7 +186,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   explicit StreamsNotSeenTest(bool server_allows_streams = true)
       : server_allows_streams_(server_allows_streams) {
     // Reset the filter state
-    TrailingMetadataRecordingFilter::reset_stream_network_state();
+    TrailingMetadataRecordingFilter::reset_state();
     grpc_slice_buffer_init(&read_buffer_);
     GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
     // Start the test tcp server
@@ -124,9 +209,10 @@ class StreamsNotSeenTest : public ::testing::Test {
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
-    channel_ =
-        grpc_insecure_channel_create(JoinHostPort("127.0.0.1", port_).c_str(),
-                                     &client_channel_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(JoinHostPort("127.0.0.1", port_).c_str(),
+                                   creds, &client_channel_args);
+    grpc_channel_credentials_release(creds);
     // Wait for the channel to connect
     grpc_connectivity_state state = grpc_channel_check_connectivity_state(
         channel_, /*try_to_connect=*/true);
@@ -363,6 +449,7 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   cq_verify(cqv_);
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
+  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
   ASSERT_TRUE(
       TrailingMetadataRecordingFilter::stream_network_state().has_value());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
@@ -501,6 +588,7 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
   cq_verify(cqv_);
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
+  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
   ASSERT_TRUE(
       TrailingMetadataRecordingFilter::stream_network_state().has_value());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
@@ -578,6 +666,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   cq_verify(cqv_);
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
+  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
   ASSERT_TRUE(
       TrailingMetadataRecordingFilter::stream_network_state().has_value());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
@@ -643,6 +732,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   cq_verify(cqv_);
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
+  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
   ASSERT_TRUE(
       TrailingMetadataRecordingFilter::stream_network_state().has_value());
   EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),

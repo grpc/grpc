@@ -49,6 +49,7 @@ typedef enum {
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
   "FakeTransportSecurity"
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
+#define GRPC_CREDENTIALS_TYPE_INSECURE "insecure"
 
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
@@ -129,9 +130,28 @@ struct grpc_channel_credentials
     return args;
   }
 
+  // Compares this grpc_channel_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two channel
+  // credentials as effectively the same. This method is used to compare
+  // `grpc_channel_credentials` objects when they are present in channel_args.
+  // One important usage of this is when channel args are used in SubchannelKey,
+  // which leads to a useful property that allows subchannels to be reused when
+  // two different `grpc_channel_credentials` objects are used but they compare
+  // as equal (assuming other channel args match).
+  int cmp(const grpc_channel_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = strcmp(type(), other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
+  }
+
   const char* type() const { return type_; }
 
  private:
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
+
   const char* type_;
 };
 
@@ -192,6 +212,16 @@ struct grpc_call_credentials
     return min_security_level_;
   }
 
+  // Compares this grpc_call_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two call
+  // credentials as effectively the same..
+  int cmp(const grpc_call_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = strcmp(type(), other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
+  }
+
   virtual std::string debug_string() {
     return "grpc_call_credentials did not provide debug string";
   }
@@ -199,6 +229,10 @@ struct grpc_call_credentials
   const char* type() const { return type_; }
 
  private:
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
+
   const char* type_;
   const grpc_security_level min_security_level_;
 };

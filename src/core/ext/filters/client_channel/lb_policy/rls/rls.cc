@@ -43,6 +43,7 @@
 #include "absl/strings/strip.h"
 #include "upb/upb.hpp"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -54,6 +55,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -1548,9 +1550,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
         const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 1));
   }
   grpc_channel_args rls_channel_args = {args.size(), args.data()};
-  channel_ = grpc_secure_channel_create(
-      creds, lb_policy_->config_->lookup_service().c_str(), &rls_channel_args,
-      nullptr);
+  channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
+                                 creds, &rls_channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_,
@@ -2345,7 +2346,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   // Parse lookupService.
   if (ParseJsonObjectField(json, "lookupService",
                            &route_lookup_config.lookup_service, &error_list)) {
-    if (!ResolverRegistry::IsValidTarget(route_lookup_config.lookup_service)) {
+    if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+            route_lookup_config.lookup_service)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:lookupService error:must be valid gRPC target URI"));
     }

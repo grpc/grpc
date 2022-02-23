@@ -229,7 +229,7 @@ class GenericEnd2endTest : public ::testing::Test {
         switch (event) {
           case Event::kCallReceived:
             reader_writer.Finish(
-                ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "go away"),
+                grpc::Status(grpc::StatusCode::UNIMPLEMENTED, "go away"),
                 reinterpret_cast<void*>(Event::kResponseSent));
             break;
 
