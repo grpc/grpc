@@ -65,6 +65,9 @@ class LibuvEventEngine::LibuvTask {
   /// Must be called from within the libuv thread.
   /// Precondition: the EventEngine must be tracking this task.
   void Cancel(Promise<bool>& will_be_cancelled);
+  intptr_t Key() { return key_; }
+
+ private:
   /// A callback passed to uv_close to erase the timer from the EventEngine
   static void Erase(uv_handle_t* handle);
   /// A callback passed to uv_close to coordinate running the task then erasing
@@ -72,9 +75,7 @@ class LibuvEventEngine::LibuvTask {
   /// timer handle is open after the function is run and the EventEngine is
   /// being destroyed.
   static void RunAndErase(uv_handle_t* handle);
-  intptr_t Key() { return key_; }
 
- private:
   std::function<void()> fn_;
   bool ran_ = false;
   uv_timer_t timer_;
