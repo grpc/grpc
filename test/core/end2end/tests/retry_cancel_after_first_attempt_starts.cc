@@ -191,8 +191,10 @@ static void test_retry_cancel_after_first_attempt_starts(
   // This should trigger a cancellation.
   grpc_call_unref(c);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), false);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), false);
+  // The send ops batch and the first recv ops batch will fail in most
+  // fixtures but will pass in the proxy fixtures on some platforms.
+  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(1));
+  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(2));
   CQ_EXPECT_COMPLETION(cqv, tag(3), true);
   cq_verify(cqv);
 
