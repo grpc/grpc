@@ -50,7 +50,6 @@ Json = Any
 KubernetesClientRunner = client_app.KubernetesClientRunner
 KubernetesServerRunner = server_app.KubernetesServerRunner
 
-KEEP_PERIOD = datetime.timedelta(days=7)
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
@@ -59,6 +58,11 @@ SECONDARY_ZONE = 'us-west1-b'
 PSM_SECURITY_PREFIX = 'xds-k8s-security'  # Prefix for gke resources to delete.
 URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources to delete.
 
+KEEP_PERIOD_DAYS = flags.DEFINE_integer(
+    "keep_days",
+    default=7,
+    help="number of days for a resource to keep. Resources older than this will be deleted"
+)
 DRY_RUN = flags.DEFINE_bool(
     "dry_run",
     default=False,
@@ -104,7 +108,7 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 @functools.lru_cache()
 def get_expire_timestamp() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc) - KEEP_PERIOD
+    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=KEEP_PERIOD_DAYS.value)
 
 
 def exec_gcloud(project: str, *cmds: List[str]) -> Json:
