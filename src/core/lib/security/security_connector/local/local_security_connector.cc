@@ -38,7 +38,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -190,13 +189,20 @@ class grpc_local_channel_security_connector final
     GRPC_ERROR_UNREF(error);
   }
 
-  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context*) override {
+  bool check_call_host(absl::string_view host,
+                       grpc_auth_context* /*auth_context*/,
+                       grpc_closure* /*on_call_host_checked*/,
+                       grpc_error_handle* error) override {
     if (host.empty() || host != target_name_) {
-      return grpc_core::Immediate(absl::UnauthenticatedError(
-          "local call host does not match target name"));
+      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "local call host does not match target name");
     }
-    return grpc_core::ImmediateOkStatus();
+    return true;
+  }
+
+  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
+                              grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   const char* target_name() const { return target_name_; }

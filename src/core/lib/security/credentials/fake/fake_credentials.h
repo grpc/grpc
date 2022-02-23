@@ -59,15 +59,23 @@ const char* grpc_fake_transport_get_expected_targets(
 
 class grpc_md_only_test_credentials : public grpc_call_credentials {
  public:
-  grpc_md_only_test_credentials(const char* md_key, const char* md_value)
+  grpc_md_only_test_credentials(const char* md_key, const char* md_value,
+                                bool is_async)
       : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
                               GRPC_SECURITY_NONE),
         key_(grpc_core::Slice::FromCopiedString(md_key)),
-        value_(grpc_core::Slice::FromCopiedString(md_value)) {}
+        value_(grpc_core::Slice::FromCopiedString(md_value)),
+        is_async_(is_async) {}
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
-                     const GetRequestMetadataArgs* args) override;
+  bool get_request_metadata(grpc_polling_entity* pollent,
+                            grpc_auth_metadata_context context,
+                            grpc_core::CredentialsMetadataArray* md_array,
+                            grpc_closure* on_request_metadata,
+                            grpc_error_handle* error) override;
+
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   std::string debug_string() override { return "MD only Test Credentials"; };
 
@@ -80,6 +88,7 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
 
   grpc_core::Slice key_;
   grpc_core::Slice value_;
+  bool is_async_;
 };
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H */

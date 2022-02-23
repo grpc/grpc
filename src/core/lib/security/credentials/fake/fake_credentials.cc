@@ -29,7 +29,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 
 /* -- Fake transport security credentials. -- */
@@ -97,17 +96,26 @@ const char* grpc_fake_transport_get_expected_targets(
 
 /* -- Metadata-only test credentials. -- */
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-grpc_md_only_test_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
-    const grpc_call_credentials::GetRequestMetadataArgs*) {
-  initial_metadata->Append(
-      key_.as_string_view(), value_.Ref(),
-      [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  return grpc_core::Immediate(std::move(initial_metadata));
+bool grpc_md_only_test_credentials::get_request_metadata(
+    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* on_request_metadata, grpc_error_handle* /*error*/) {
+  md_array->emplace_back(key_.Ref(), value_.Ref());
+  if (is_async_) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_request_metadata,
+                            GRPC_ERROR_NONE);
+    return false;
+  }
+  return true;
+}
+
+void grpc_md_only_test_credentials::cancel_get_request_metadata(
+    grpc_core::CredentialsMetadataArray* /*md_array*/,
+    grpc_error_handle error) {
+  GRPC_ERROR_UNREF(error);
 }
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value) {
-  return new grpc_md_only_test_credentials(md_key, md_value);
+    const char* md_key, const char* md_value, bool is_async) {
+  return new grpc_md_only_test_credentials(md_key, md_value, is_async);
 }
