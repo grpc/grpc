@@ -480,30 +480,28 @@ class RequestMetadataState
     explicit BogusSecurityConnector(absl::string_view url_scheme)
         : grpc_channel_security_connector(url_scheme, nullptr, nullptr) {}
 
-    void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                    grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-                    grpc_closure* on_peer_checked) override {
+    void check_peer(tsi_peer, grpc_endpoint*,
+                    grpc_core::RefCountedPtr<grpc_auth_context>*,
+                    grpc_closure*) override {
       GPR_ASSERT(false);
     }
 
-    void cancel_check_peer(grpc_closure* on_peer_checked,
-                           grpc_error_handle error) override {
+    void cancel_check_peer(grpc_closure*, grpc_error_handle) override {
       GPR_ASSERT(false);
     }
 
-    int cmp(const grpc_security_connector* other) const override {
+    int cmp(const grpc_security_connector*) const override {
       GPR_UNREACHABLE_CODE(return 0);
     }
 
     grpc_core::ArenaPromise<absl::Status> CheckCallHost(
-        absl::string_view host, grpc_auth_context* auth_context) override {
+        absl::string_view, grpc_auth_context*) override {
       GPR_UNREACHABLE_CODE(return grpc_core::Immediate(
           absl::PermissionDeniedError("should never happen")));
     }
 
-    void add_handshakers(const grpc_channel_args* args,
-                         grpc_pollset_set* interested_parties,
-                         grpc_core::HandshakeManager* handshake_mgr) override {
+    void add_handshakers(const grpc_channel_args*, grpc_pollset_set*,
+                         grpc_core::HandshakeManager*) override {
       GPR_ASSERT(false);
     }
   };
