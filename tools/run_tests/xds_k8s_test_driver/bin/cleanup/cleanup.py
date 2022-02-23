@@ -25,6 +25,7 @@ python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 """
 import datetime
+import dateutil
 import functools
 import json
 import logging
@@ -337,7 +338,7 @@ def main(argv):
     compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
     leakedHealthChecks = []
     for item in compute.list_health_check()['items']:
-        if datetime.datetime.fromisoformat(
+        if dateutil.parser.isoparse(
                 item['creationTimestamp']) <= get_expire_timestamp():
             leakedHealthChecks.append(item)
 
