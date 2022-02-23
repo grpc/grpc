@@ -72,7 +72,7 @@ grpc_cc_library(
 # -- Builtin EventEngines --
 
 grpc_cc_test(
-    name = "libuv_event_engine",
+    name = "libuv_event_engine_test",
     srcs = ["libuv_event_engine_test.cc"],
     external_deps = [
         "gtest",
