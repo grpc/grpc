@@ -2127,6 +2127,9 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     }
     // Fail any pending batches.
     PendingBatchesFail(GRPC_ERROR_REF(cancelled_from_surface_));
+    // We're not going to process any subsequent callbacks or make any
+    // subsequent attempts, so free the cached send op data now.
+    FreeAllCachedSendOpData();
     // If we have a current call attempt, commit the call, then send
     // the cancellation down to that attempt.  When the call fails, it
     // will not be retried, because we have committed it here.
@@ -2150,7 +2153,6 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       }
       retry_timer_pending_ = false;  // Lame timer callback.
       grpc_timer_cancel(&retry_timer_);
-      FreeAllCachedSendOpData();
     }
     // We have no call attempt, so there's nowhere to send the cancellation
     // batch.  Return it back to the surface immediately.
