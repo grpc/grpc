@@ -62,6 +62,8 @@ class TestParsedConfig1 : public ServiceConfigParser::ParsedConfig {
 
 class TestParser1 : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return "test_parser_1"; }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const grpc_channel_args* args, const Json& json,
       grpc_error_handle* error) override {
@@ -98,6 +100,8 @@ class TestParser1 : public ServiceConfigParser::Parser {
 
 class TestParser2 : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return "test_parser_2"; }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* args, const Json& json,
       grpc_error_handle* error) override {
@@ -135,6 +139,10 @@ class TestParser2 : public ServiceConfigParser::Parser {
 // This parser always adds errors
 class ErrorParser : public ServiceConfigParser::Parser {
  public:
+  explicit ErrorParser(absl::string_view name) : name_(name) {}
+
+  absl::string_view name() const override { return name_; }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* /*arg*/, const Json& /*json*/,
       grpc_error_handle* error) override {
@@ -154,6 +162,9 @@ class ErrorParser : public ServiceConfigParser::Parser {
   static const char* MethodError() { return "ErrorParser : methodError"; }
 
   static const char* GlobalError() { return "ErrorParser : globalError"; }
+
+ private:
+  absl::string_view name_;
 };
 
 class ServiceConfigTest : public ::testing::Test {
@@ -162,13 +173,17 @@ class ServiceConfigTest : public ::testing::Test {
     CoreConfiguration::Reset();
     CoreConfiguration::BuildSpecialConfiguration(
         [](CoreConfiguration::Builder* builder) {
-          EXPECT_EQ(builder->service_config_parser()->RegisterParser(
-                        absl::make_unique<TestParser1>()),
-                    0);
-          EXPECT_EQ(builder->service_config_parser()->RegisterParser(
-                        absl::make_unique<TestParser2>()),
-                    1);
+          builder->service_config_parser()->RegisterParser(
+              absl::make_unique<TestParser1>());
+          builder->service_config_parser()->RegisterParser(
+              absl::make_unique<TestParser2>());
         });
+    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
+                  "test_parser_1"),
+              0);
+    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
+                  "test_parser_2"),
+              1);
   }
 };
 
@@ -435,13 +450,17 @@ class ErroredParsersScopingTest : public ::testing::Test {
     CoreConfiguration::Reset();
     CoreConfiguration::BuildSpecialConfiguration(
         [](CoreConfiguration::Builder* builder) {
-          EXPECT_EQ(builder->service_config_parser()->RegisterParser(
-                        absl::make_unique<ErrorParser>()),
-                    0);
-          EXPECT_EQ(builder->service_config_parser()->RegisterParser(
-                        absl::make_unique<ErrorParser>()),
-                    1);
+          builder->service_config_parser()->RegisterParser(
+              absl::make_unique<ErrorParser>("ep1"));
+          builder->service_config_parser()->RegisterParser(
+              absl::make_unique<ErrorParser>("ep2"));
         });
+    EXPECT_EQ(
+        CoreConfiguration::Get().service_config_parser().GetParserIndex("ep1"),
+        0);
+    EXPECT_EQ(
+        CoreConfiguration::Get().service_config_parser().GetParserIndex("ep2"),
+        1);
   }
 };
 
@@ -481,13 +500,14 @@ class ClientChannelParserTest : public ::testing::Test {
  protected:
   void SetUp() override {
     CoreConfiguration::Reset();
-    CoreConfiguration::BuildSpecialConfiguration([](CoreConfiguration::Builder*
-                                                        builder) {
-      EXPECT_EQ(
+    CoreConfiguration::BuildSpecialConfiguration(
+        [](CoreConfiguration::Builder* builder) {
           builder->service_config_parser()->RegisterParser(
-              absl::make_unique<internal::ClientChannelServiceConfigParser>()),
-          0);
-    });
+              absl::make_unique<internal::ClientChannelServiceConfigParser>());
+        });
+    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
+                  "client_channel_resolver_result"),
+              0);
   }
 };
 
@@ -776,11 +796,12 @@ class RetryParserTest : public ::testing::Test {
     CoreConfiguration::Reset();
     CoreConfiguration::BuildSpecialConfiguration(
         [](CoreConfiguration::Builder* builder) {
-          EXPECT_EQ(
-              builder->service_config_parser()->RegisterParser(
-                  absl::make_unique<internal::RetryServiceConfigParser>()),
-              0);
+          builder->service_config_parser()->RegisterParser(
+              absl::make_unique<internal::RetryServiceConfigParser>());
         });
+    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
+                  "retry_service"),
+              0);
   }
 };
 
@@ -1457,10 +1478,12 @@ class MessageSizeParserTest : public ::testing::Test {
     CoreConfiguration::Reset();
     CoreConfiguration::BuildSpecialConfiguration(
         [](CoreConfiguration::Builder* builder) {
-          EXPECT_EQ(builder->service_config_parser()->RegisterParser(
-                        absl::make_unique<MessageSizeParser>()),
-                    0);
+          builder->service_config_parser()->RegisterParser(
+              absl::make_unique<MessageSizeParser>());
         });
+    EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
+                  "message_size"),
+              0);
   }
 };
 
