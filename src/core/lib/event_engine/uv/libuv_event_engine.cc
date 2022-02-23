@@ -77,7 +77,6 @@ class LibuvEventEngine::LibuvTask {
   static void RunAndErase(uv_handle_t* handle);
 
   std::function<void()> fn_;
-  bool ran_ = false;
   uv_timer_t timer_;
   const intptr_t key_;
 };
@@ -106,7 +105,6 @@ void LibuvEventEngine::LibuvTask::Start(LibuvEventEngine* engine,
           gpr_log(GPR_DEBUG, "LibuvTask@%p, triggered: key = %" PRIiPTR, task,
                   task->Key());
         }
-        task->ran_ = true;
         // TODO(hork): Timer callbacks will be delayed by one iteration of the
         // uv_loop to avoid race conditions around EventEngine destruction.
         // Before the timer callback has run, the uv state for that timer is
@@ -123,8 +121,6 @@ void LibuvEventEngine::LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %" PRIiPTR, this, key_);
   }
   if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_)) != 0) {
-    // TODO(hork): check if this can be called on uv shutdown instead
-    GPR_ASSERT(GPR_LIKELY(ran_));
     will_be_cancelled.Notify(false);
     return;
   }
