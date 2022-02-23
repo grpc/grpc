@@ -35,6 +35,7 @@
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -988,6 +989,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "xds"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (uri.path().empty() || uri.path().back() == '/') {
       gpr_log(GPR_ERROR,
@@ -1005,17 +1008,13 @@ class XdsResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "xds"; }
 };
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_xds_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>());
+void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<XdsResolverFactory>());
 }
 
-void grpc_resolver_xds_shutdown() {}
+}  // namespace grpc_core

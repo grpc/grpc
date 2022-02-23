@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/config/core_configuration.h"
+
 #if GRPC_ARES == 1
 
 #include <limits.h>
@@ -466,6 +468,8 @@ void AresClientChannelDNSResolver::StartResolvingLocked() {
 //
 class AresClientChannelDNSResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "dns"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (absl::StripPrefix(uri.path(), "/").empty()) {
       gpr_log(GPR_ERROR, "no server name supplied in dns URI");
@@ -477,8 +481,6 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresClientChannelDNSResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "dns"; }
 };
 
 class AresDNSResolver : public DNSResolver {
@@ -608,18 +610,29 @@ bool ShouldUseAres(const char* resolver_env) {
          gpr_stricmp(resolver_env, "ares") == 0;
 }
 
-bool g_use_ares_dns_resolver;
+bool UseAresDnsResolver() {
+  static const bool result = []() {
+    UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    bool result = ShouldUseAres(resolver.get());
+    if (result) gpr_log(GPR_DEBUG, "Using ares dns resolver");
+    return result;
+  }();
+  return result;
+}
 
 }  // namespace
+
+void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
+  if (UseAresDnsResolver()) {
+    builder->resolver_registry()->RegisterResolverFactory(
+        absl::make_unique<AresClientChannelDNSResolverFactory>());
+  }
+}
 
 }  // namespace grpc_core
 
 void grpc_resolver_dns_ares_init() {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (grpc_core::ShouldUseAres(resolver.get())) {
-    grpc_core::g_use_ares_dns_resolver = true;
-    gpr_log(GPR_DEBUG, "Using ares dns resolver");
+  if (grpc_core::UseAresDnsResolver()) {
     address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
@@ -627,15 +640,11 @@ void grpc_resolver_dns_ares_init() {
       return;
     }
     grpc_core::SetDNSResolver(grpc_core::AresDNSResolver::GetOrCreate());
-    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        absl::make_unique<grpc_core::AresClientChannelDNSResolverFactory>());
-  } else {
-    grpc_core::g_use_ares_dns_resolver = false;
   }
 }
 
 void grpc_resolver_dns_ares_shutdown() {
-  if (grpc_core::g_use_ares_dns_resolver) {
+  if (grpc_core::UseAresDnsResolver()) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
@@ -643,8 +652,12 @@ void grpc_resolver_dns_ares_shutdown() {
 
 #else /* GRPC_ARES == 1 */
 
-void grpc_resolver_dns_ares_init(void) {}
+namespace grpc_core {
+void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
+}  // namespace grpc_core
 
-void grpc_resolver_dns_ares_shutdown(void) {}
+void grpc_resolver_dns_ares_init() {}
+
+void grpc_resolver_dns_ares_shutdown() {}
 
 #endif /* GRPC_ARES == 1 */
