@@ -46,18 +46,14 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-size_t g_retry_service_config_parser_index;
-}
-
 size_t RetryServiceConfigParser::ParserIndex() {
-  return g_retry_service_config_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
 void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
-  g_retry_service_config_parser_index =
-      builder->service_config_parser()->RegisterParser(
-          absl::make_unique<RetryServiceConfigParser>());
+  builder->service_config_parser()->RegisterParser(
+      absl::make_unique<RetryServiceConfigParser>());
 }
 
 namespace {

@@ -45,19 +45,15 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-size_t g_client_channel_service_config_parser_index;
-}
-
 size_t ClientChannelServiceConfigParser::ParserIndex() {
-  return g_client_channel_service_config_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
 void ClientChannelServiceConfigParser::Register(
     CoreConfiguration::Builder* builder) {
-  g_client_channel_service_config_parser_index =
-      builder->service_config_parser()->RegisterParser(
-          absl::make_unique<ClientChannelServiceConfigParser>());
+  builder->service_config_parser()->RegisterParser(
+      absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {

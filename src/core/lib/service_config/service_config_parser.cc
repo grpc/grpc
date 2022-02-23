@@ -26,10 +26,9 @@ ServiceConfigParser ServiceConfigParser::Builder::Build() {
   return ServiceConfigParser(std::move(registered_parsers_));
 }
 
-size_t ServiceConfigParser::Builder::RegisterParser(
+void ServiceConfigParser::Builder::RegisterParser(
     std::unique_ptr<Parser> parser) {
-  registered_parsers_.push_back(std::move(parser));
-  return registered_parsers_.size() - 1;
+  registered_parsers_.emplace_back(std::move(parser));
 }
 
 ServiceConfigParser::ParsedConfigVector
@@ -72,6 +71,13 @@ ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
   }
   return parsed_method_configs;
+}
+
+size_t ServiceConfigParser::GetParserIndex(absl::string_view name) const {
+  for (size_t i = 0; i < registered_parsers_.size(); i++) {
+    if (registered_parsers_[i]->name() == name) return i;
+  }
+  return -1;
 }
 
 }  // namespace grpc_core

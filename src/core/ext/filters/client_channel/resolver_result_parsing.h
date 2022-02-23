@@ -82,6 +82,8 @@ class ClientChannelMethodParsedConfig
 
 class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
@@ -92,6 +94,11 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
 
   static size_t ParserIndex();
   static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() {
+    return "client_channel_resolver_result";
+  }
 };
 
 }  // namespace internal

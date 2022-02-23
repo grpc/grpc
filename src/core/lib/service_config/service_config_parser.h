@@ -45,6 +45,8 @@ class ServiceConfigParser {
    public:
     virtual ~Parser() = default;
 
+    virtual absl::string_view name() const = 0;
+
     virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
         const grpc_channel_args*, const Json& /* json */,
         grpc_error_handle* error) {
@@ -69,14 +71,11 @@ class ServiceConfigParser {
 
   class Builder {
    public:
-    /// Globally register a service config parser. On successful registration,
-    /// it returns the index at which the parser was registered. On failure, -1
-    /// is returned. Each new service config update will go through all the
-    /// registered parser. Each parser is responsible for reading the service
-    /// config json and returning a parsed config. This parsed config can later
-    /// be retrieved using the same index that was returned at registration
-    /// time.
-    size_t RegisterParser(std::unique_ptr<Parser> parser);
+    /// Globally register a service config parser. Each new service config
+    /// update will go through all the registered parser. Each parser is
+    /// responsible for reading the service config json and returning a parsed
+    /// config.
+    void RegisterParser(std::unique_ptr<Parser> parser);
 
     ServiceConfigParser Build();
 
@@ -91,6 +90,10 @@ class ServiceConfigParser {
   ParsedConfigVector ParsePerMethodParameters(const grpc_channel_args* args,
                                               const Json& json,
                                               grpc_error_handle* error) const;
+
+  // Return the index for a given registered parser.
+  // If there is an error, return -1.
+  size_t GetParserIndex(absl::string_view name) const;
 
  private:
   explicit ServiceConfigParser(ServiceConfigParserList registered_parsers)

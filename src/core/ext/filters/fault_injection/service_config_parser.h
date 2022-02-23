@@ -69,8 +69,10 @@ class FaultInjectionMethodParsedConfig
   std::vector<FaultInjectionPolicy> fault_injection_policies_;
 };
 
-class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
+class FaultInjectionServiceConfigParser final
+    : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for fault injection filter.
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* args, const Json& json,
@@ -79,6 +81,9 @@ class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.
   static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "fault_injection"; }
 };
 
 }  // namespace grpc_core

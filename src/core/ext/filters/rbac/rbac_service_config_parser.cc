@@ -596,7 +596,7 @@ RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
 }
 
 void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
-  g_rbac_parser_index = builder->service_config_parser()->RegisterParser(
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<RbacServiceConfigParser>());
 }
 

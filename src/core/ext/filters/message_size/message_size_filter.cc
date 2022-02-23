@@ -42,10 +42,6 @@ static void recv_trailing_metadata_ready(void* user_data,
 
 namespace grpc_core {
 
-namespace {
-size_t g_message_size_parser_index;
-}  // namespace
-
 //
 // MessageSizeParsedConfig
 //
@@ -114,12 +110,14 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
 }
 
 void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
-  g_message_size_parser_index =
-      builder->service_config_parser()->RegisterParser(
-          absl::make_unique<MessageSizeParser>());
+  builder->service_config_parser()->RegisterParser(
+      absl::make_unique<MessageSizeParser>());
 }
 
-size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
+size_t MessageSizeParser::ParserIndex() {
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
+}
 
 int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args) {
   if (grpc_channel_args_want_minimal_stack(args)) return -1;

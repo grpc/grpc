@@ -50,6 +50,8 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
 
 class MessageSizeParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
@@ -57,6 +59,9 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   static void Register(CoreConfiguration::Builder* builder);
 
   static size_t ParserIndex();
+
+ private:
+  static absl::string_view parser_name() { return "message_size"; }
 };
 
 int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args);
