@@ -28,8 +28,6 @@ namespace grpc_core {
 
 namespace {
 
-size_t g_rbac_parser_index;
-
 std::string ParseRegexMatcher(const Json::Object& regex_matcher_json,
                               std::vector<grpc_error_handle>* error_list) {
   std::string regex;
@@ -600,6 +598,9 @@ void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
       absl::make_unique<RbacServiceConfigParser>());
 }
 
-size_t RbacServiceConfigParser::ParserIndex() { return g_rbac_parser_index; }
+size_t RbacServiceConfigParser::ParserIndex() {
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
+}
 
 }  // namespace grpc_core
