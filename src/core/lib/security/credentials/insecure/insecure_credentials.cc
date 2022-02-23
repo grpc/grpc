@@ -36,6 +36,12 @@ class InsecureCredentials final : public grpc_channel_credentials {
     return MakeRefCounted<InsecureChannelSecurityConnector>(
         Ref(), std::move(call_creds));
   }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
+    // All insecure credentials objects should compare equal.
+    return 0;
+  }
 };
 
 class InsecureServerCredentials final : public grpc_server_credentials {

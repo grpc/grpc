@@ -61,7 +61,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       return Status(StatusCode::FAILED_PRECONDITION, "Client error requested");
     }
     response->set_message(request->message());
-    ::grpc::load_reporter::experimental::AddLoadReportingCost(
+    grpc::load_reporter::experimental::AddLoadReportingCost(
         context, kMetricName, kMetricValue);
     return Status::OK;
   }
@@ -77,7 +77,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
             .AddListeningPort(server_address_, InsecureServerCredentials())
             .RegisterService(&echo_service_)
             .SetOption(std::unique_ptr<::grpc::ServerBuilderOption>(
-                new ::grpc::load_reporter::experimental::
+                new grpc::load_reporter::experimental::
                     LoadReportingServiceServerBuilderOption()))
             .BuildAndStart();
     server_thread_ =

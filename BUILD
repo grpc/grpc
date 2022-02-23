@@ -1077,6 +1077,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "sleep",
+    srcs = [
+        "src/core/lib/promise/sleep.cc",
+    ],
+    hdrs = [
+        "src/core/lib/promise/sleep.h",
+    ],
+    deps = [
+        "activity",
+        "gpr_platform",
+        "grpc_base",
+        "poll",
+    ],
+)
+
+grpc_cc_library(
     name = "promise",
     external_deps = [
         "absl/types:optional",
@@ -1172,6 +1188,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "loop",
+    external_deps = [
+        "absl/types:variant",
+        "absl/status:statusor",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/loop.h",
@@ -1862,7 +1882,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/internal_errqueue.cc",
         "src/core/lib/iomgr/iocp_windows.cc",
         "src/core/lib/iomgr/iomgr.cc",
-        "src/core/lib/iomgr/iomgr_custom.cc",
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
@@ -1871,13 +1890,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/polling_entity.cc",
         "src/core/lib/iomgr/pollset.cc",
-        "src/core/lib/iomgr/pollset_custom.cc",
         "src/core/lib/iomgr/pollset_set.cc",
-        "src/core/lib/iomgr/pollset_set_custom.cc",
         "src/core/lib/iomgr/pollset_set_windows.cc",
         "src/core/lib/iomgr/pollset_windows.cc",
         "src/core/lib/iomgr/resolve_address.cc",
-        "src/core/lib/iomgr/resolve_address_custom.cc",
         "src/core/lib/iomgr/resolve_address_posix.cc",
         "src/core/lib/iomgr/resolve_address_windows.cc",
         "src/core/lib/iomgr/socket_factory_posix.cc",
@@ -1889,13 +1905,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
-        "src/core/lib/iomgr/tcp_client_custom.cc",
         "src/core/lib/iomgr/tcp_client_posix.cc",
         "src/core/lib/iomgr/tcp_client_windows.cc",
-        "src/core/lib/iomgr/tcp_custom.cc",
         "src/core/lib/iomgr/tcp_posix.cc",
         "src/core/lib/iomgr/tcp_server.cc",
-        "src/core/lib/iomgr/tcp_server_custom.cc",
         "src/core/lib/iomgr/tcp_server_posix.cc",
         "src/core/lib/iomgr/tcp_server_utils_posix_common.cc",
         "src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc",
@@ -1904,7 +1917,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_windows.cc",
         "src/core/lib/iomgr/time_averaged_stats.cc",
         "src/core/lib/iomgr/timer.cc",
-        "src/core/lib/iomgr/timer_custom.cc",
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
         "src/core/lib/iomgr/timer_manager.cc",
@@ -2005,22 +2017,18 @@ grpc_cc_library(
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
-        "src/core/lib/iomgr/iomgr_custom.h",
         "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
         "src/core/lib/iomgr/polling_entity.h",
         "src/core/lib/iomgr/pollset.h",
-        "src/core/lib/iomgr/pollset_custom.h",
         "src/core/lib/iomgr/pollset_set.h",
-        "src/core/lib/iomgr/pollset_set_custom.h",
         "src/core/lib/iomgr/pollset_set_windows.h",
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_impl.h",
-        "src/core/lib/iomgr/resolve_address_custom.h",
         "src/core/lib/iomgr/resolve_address_posix.h",
         "src/core/lib/iomgr/resolve_address_windows.h",
         "src/core/lib/iomgr/sockaddr.h",
@@ -2033,14 +2041,12 @@ grpc_cc_library(
         "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
-        "src/core/lib/iomgr/tcp_custom.h",
         "src/core/lib/iomgr/tcp_posix.h",
         "src/core/lib/iomgr/tcp_server.h",
         "src/core/lib/iomgr/tcp_server_utils_posix.h",
         "src/core/lib/iomgr/tcp_windows.h",
         "src/core/lib/iomgr/time_averaged_stats.h",
         "src/core/lib/iomgr/timer.h",
-        "src/core/lib/iomgr/timer_custom.h",
         "src/core/lib/iomgr/timer_generic.h",
         "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
@@ -2475,10 +2481,15 @@ grpc_cc_library(
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     deps = [
+        "capture",
         "config",
+        "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "grpc_base",
         "idle_filter_state",
+        "loop",
+        "sleep",
+        "try_seq",
     ],
 )
 
@@ -3548,13 +3559,13 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
-        "src/core/lib/security/authorization/sdk_server_authz_filter.cc",
+        "src/core/lib/security/authorization/grpc_server_authz_filter.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
         "src/core/lib/security/authorization/authorization_policy_provider.h",
         "src/core/lib/security/authorization/evaluate_args.h",
-        "src/core/lib/security/authorization/sdk_server_authz_filter.h",
+        "src/core/lib/security/authorization/grpc_server_authz_filter.h",
     ],
     external_deps = [
         "absl/strings",
@@ -4337,7 +4348,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
-        "src/core/ext/transport/chttp2/transport/chttp2_plugin.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
         "src/core/ext/transport/chttp2/transport/flow_control.cc",

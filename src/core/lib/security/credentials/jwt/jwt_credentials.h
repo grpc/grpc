@@ -59,6 +59,12 @@ class grpc_service_account_jwt_access_credentials
   };
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   // Have a simple cache for now with just 1 entry. We could have a map based on
   // the service_url for a more sophisticated one.
   gpr_mu cache_mu_;

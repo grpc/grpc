@@ -16,11 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/port.h"
-
-// This test only works with the generic timer implementation
-#ifndef GRPC_CUSTOM_SOCKET
-
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -28,6 +23,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tracer_util.h"
@@ -257,9 +253,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
-#else /* GRPC_CUSTOM_SOCKET */
-
-int main(int argc, char** argv) { return 1; }
-
-#endif /* GRPC_CUSTOM_SOCKET */
