@@ -22,12 +22,12 @@
 #include <string.h>
 
 #include "absl/strings/str_format.h"
-#include "message_size_filter.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"

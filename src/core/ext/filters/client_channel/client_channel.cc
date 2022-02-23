@@ -32,7 +32,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "resolver_result_parsing.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

@@ -21,7 +21,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/strip.h"
-#include "retry_service_config.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
