@@ -21,7 +21,6 @@
 #include <atomic>
 
 #include "absl/strings/numbers.h"
-#include "service_config_parser.h"
 
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
