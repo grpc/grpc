@@ -528,9 +528,10 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK                  \
-  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
-   GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
+#define GRPC_INITIAL_METADATA_USED_MASK                                  \
+  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET |                 \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_INITIAL_METADATA_CORKED | \
+   GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

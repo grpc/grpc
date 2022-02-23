@@ -51,19 +51,9 @@ struct call_data {
                       grpc_schedule_on_exec_ctx);
   }
 
-  ~call_data() {
-    GRPC_ERROR_UNREF(recv_initial_metadata_ready_error);
-    if (have_read_stream) {
-      read_stream->Orphan();
-    }
-  }
+  ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_ready_error); }
 
   grpc_core::CallCombiner* call_combiner;
-
-  // If we see the recv_message contents in the GET query string, we
-  // store it here.
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> read_stream;
-  bool have_read_stream = false;
 
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
