@@ -81,7 +81,6 @@ grpc_cc_test(
     language = "C++",
     tags = [
         "bazel_only",
-        "local",
         "no_mac",
         "no_windows",
     ],
