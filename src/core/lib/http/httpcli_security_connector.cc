@@ -32,7 +32,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -117,9 +116,17 @@ class grpc_httpcli_ssl_channel_security_connector final
     return strcmp(secure_peer_name_, other->secure_peer_name_);
   }
 
-  ArenaPromise<absl::Status> CheckCallHost(absl::string_view,
-                                           grpc_auth_context*) override {
-    return ImmediateOkStatus();
+  bool check_call_host(absl::string_view /*host*/,
+                       grpc_auth_context* /*auth_context*/,
+                       grpc_closure* /*on_call_host_checked*/,
+                       grpc_error_handle* error) override {
+    *error = GRPC_ERROR_NONE;
+    return true;
+  }
+
+  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
+                              grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   const char* secure_peer_name() const { return secure_peer_name_; }

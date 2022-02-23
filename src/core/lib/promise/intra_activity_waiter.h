@@ -36,7 +36,7 @@ class IntraActivityWaiter {
   void Wake() {
     if (waiting_) {
       waiting_ = false;
-      Activity::current()->ForceImmediateRepoll();
+      Activity::WakeupCurrent();
     }
   }
 
