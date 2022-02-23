@@ -1133,6 +1133,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/resolved_address.h )
   s.files += %w( src/core/lib/iomgr/sockaddr.h )
   s.files += %w( src/core/lib/iomgr/sockaddr_posix.h )
+  s.files += %w( src/core/lib/iomgr/sockaddr_utils_posix.cc )
   s.files += %w( src/core/lib/iomgr/sockaddr_windows.h )
   s.files += %w( src/core/lib/iomgr/socket_factory_posix.cc )
   s.files += %w( src/core/lib/iomgr/socket_factory_posix.h )

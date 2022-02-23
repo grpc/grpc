@@ -143,6 +143,11 @@ config_setting(
     values = {"define": "use_strict_warning=true"},
 )
 
+config_setting(
+    name = "use_abseil_status",
+    values = {"define": "use_abseil_status=true"},
+)
+
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
@@ -965,11 +970,13 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/config/core_configuration.h",
     ],
+    visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
         "gpr_base",
+        "grpc_resolver",
         "handshaker_registry",
     ],
 )
@@ -1710,6 +1717,8 @@ grpc_cc_library(
     name = "grpc_sockaddr",
     srcs = [
         "src/core/lib/event_engine/sockaddr.cc",
+        "src/core/lib/iomgr/sockaddr_utils_posix.cc",
+        "src/core/lib/iomgr/socket_utils_windows.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/sockaddr.h",
@@ -1719,7 +1728,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils.h",
     ],
     deps = [
-        "gpr_platform",
+        "gpr_base",
         "iomgr_port",
     ],
 )
@@ -1905,7 +1914,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
-        "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
@@ -2294,6 +2302,7 @@ grpc_cc_library(
         "src/core/lib/resolver/resolver_registry.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -2736,6 +2745,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -3018,6 +3028,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3374,6 +3385,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3408,6 +3420,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr_base",
         "grpc_base",
@@ -3434,6 +3447,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3453,6 +3467,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3473,6 +3488,7 @@ grpc_cc_library(
         "@grpc:grpc_resolver_fake",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3503,6 +3519,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",

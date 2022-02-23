@@ -661,6 +661,9 @@ def _generate_build_extra_metadata_for_tests(
             print(('skipping fuzzer ' + test))
             continue
 
+        if 'bazel_only' in bazel_tags:
+            continue
+
         # if any tags that restrict platform compatibility are present,
         # generate the "platforms" field accordingly
         # TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
