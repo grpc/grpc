@@ -2462,7 +2462,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/request_with_payload.cc',
                       'test/core/end2end/tests/resource_quota_server.cc',
                       'test/core/end2end/tests/retry.cc',
-                      'test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc',
                       'test/core/end2end/tests/retry_cancel_during_delay.cc',
                       'test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc',
                       'test/core/end2end/tests/retry_cancellation.cc',
