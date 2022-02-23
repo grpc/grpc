@@ -2091,6 +2091,7 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       retry_timer_pending_(false) {}
 
 RetryFilter::CallData::~CallData() {
+  FreeAllCachedSendOpData();
   grpc_slice_unref_internal(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2127,9 +2128,6 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     }
     // Fail any pending batches.
     PendingBatchesFail(GRPC_ERROR_REF(cancelled_from_surface_));
-    // We're not going to process any subsequent callbacks or make any
-    // subsequent attempts, so free the cached send op data now.
-    FreeAllCachedSendOpData();
     // If we have a current call attempt, commit the call, then send
     // the cancellation down to that attempt.  When the call fails, it
     // will not be retried, because we have committed it here.
@@ -2153,6 +2151,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       }
       retry_timer_pending_ = false;  // Lame timer callback.
       grpc_timer_cancel(&retry_timer_);
+      FreeAllCachedSendOpData();
     }
     // We have no call attempt, so there's nowhere to send the cancellation
     // batch.  Return it back to the surface immediately.
@@ -2291,12 +2290,15 @@ void RetryFilter::CallData::FreeCachedSendInitialMetadata() {
 }
 
 void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]", chand_,
-            this, idx);
+  if (send_messages_[idx] != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]",
+              chand_, this, idx);
+    }
+    send_messages_[idx]->Destroy();
+    send_messages_[idx] = nullptr;
   }
-  send_messages_[idx]->Destroy();
 }
 
 void RetryFilter::CallData::FreeCachedSendTrailingMetadata() {
