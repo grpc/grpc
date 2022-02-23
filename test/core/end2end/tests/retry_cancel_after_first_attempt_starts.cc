@@ -90,7 +90,8 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
-static void test_retry_cancel_after_first_attempt_starts(grpc_end2end_test_config config) {
+static void test_retry_cancel_after_first_attempt_starts(
+    grpc_end2end_test_config config) {
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -131,8 +132,8 @@ static void test_retry_cancel_after_first_attempt_starts(grpc_end2end_test_confi
               "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  grpc_end2end_test_fixture f =
-      begin_test(config, "retry_cancel_after_first_attempt_starts", &client_args, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "retry_cancel_after_first_attempt_starts", &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
