@@ -355,6 +355,8 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "retry_unref_before_finish": _test_options(needs_client_channel = True),
+    "retry_unref_before_recv": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),

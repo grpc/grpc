@@ -970,11 +970,13 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/config/core_configuration.h",
     ],
+    visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
         "gpr_base",
+        "grpc_resolver",
         "handshaker_registry",
     ],
 )
@@ -1715,6 +1717,8 @@ grpc_cc_library(
     name = "grpc_sockaddr",
     srcs = [
         "src/core/lib/event_engine/sockaddr.cc",
+        "src/core/lib/iomgr/sockaddr_utils_posix.cc",
+        "src/core/lib/iomgr/socket_utils_windows.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/sockaddr.h",
@@ -1724,7 +1728,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils.h",
     ],
     deps = [
-        "gpr_platform",
+        "gpr_base",
         "iomgr_port",
     ],
 )
@@ -1901,7 +1905,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
-        "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
@@ -2216,8 +2219,7 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
-        "grpc_client_idle_filter",
-        "grpc_max_age_filter",
+        "grpc_channel_idle_filter",
         "grpc_message_size_filter",
         "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
@@ -2289,6 +2291,7 @@ grpc_cc_library(
         "src/core/lib/resolver/resolver_registry.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -2464,10 +2467,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
-        "src/core/ext/filters/client_idle/idle_filter_state.cc",
+        "src/core/ext/filters/channel_idle/idle_filter_state.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_idle/idle_filter_state.h",
+        "src/core/ext/filters/channel_idle/idle_filter_state.h",
     ],
     language = "c++",
     deps = [
@@ -2476,9 +2479,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_client_idle_filter",
+    name = "grpc_channel_idle_filter",
     srcs = [
-        "src/core/ext/filters/client_idle/client_idle_filter.cc",
+        "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
     ],
     deps = [
         "capture",
@@ -2490,22 +2493,6 @@ grpc_cc_library(
         "loop",
         "sleep",
         "try_seq",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_max_age_filter",
-    srcs = [
-        "src/core/ext/filters/max_age/max_age_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/max_age/max_age_filter.h",
-    ],
-    language = "c++",
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_base",
     ],
 )
 
@@ -2731,6 +2718,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -3013,6 +3001,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3369,6 +3358,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3403,6 +3393,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr_base",
         "grpc_base",
@@ -3429,6 +3420,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3448,6 +3440,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3468,6 +3461,7 @@ grpc_cc_library(
         "@grpc:grpc_resolver_fake",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3498,6 +3492,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",

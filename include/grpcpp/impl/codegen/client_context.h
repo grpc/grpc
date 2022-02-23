@@ -418,38 +418,38 @@ class ClientContext {
   ClientContext(const ClientContext&);
   ClientContext& operator=(const ClientContext&);
 
-  friend class ::grpc::testing::InteropClientContextInspector;
-  friend class ::grpc::testing::ClientContextTestPeer;
-  friend class ::grpc::internal::CallOpClientRecvStatus;
-  friend class ::grpc::internal::CallOpRecvInitialMetadata;
-  friend class ::grpc::Channel;
+  friend class grpc::testing::InteropClientContextInspector;
+  friend class grpc::testing::ClientContextTestPeer;
+  friend class grpc::internal::CallOpClientRecvStatus;
+  friend class grpc::internal::CallOpRecvInitialMetadata;
+  friend class grpc::Channel;
   template <class R>
-  friend class ::grpc::ClientReader;
+  friend class grpc::ClientReader;
   template <class W>
-  friend class ::grpc::ClientWriter;
+  friend class grpc::ClientWriter;
   template <class W, class R>
-  friend class ::grpc::ClientReaderWriter;
+  friend class grpc::ClientReaderWriter;
   template <class R>
-  friend class ::grpc::ClientAsyncReader;
+  friend class grpc::ClientAsyncReader;
   template <class W>
-  friend class ::grpc::ClientAsyncWriter;
+  friend class grpc::ClientAsyncWriter;
   template <class W, class R>
-  friend class ::grpc::ClientAsyncReaderWriter;
+  friend class grpc::ClientAsyncReaderWriter;
   template <class R>
-  friend class ::grpc::ClientAsyncResponseReader;
-  friend class ::grpc::internal::ClientAsyncResponseReaderHelper;
+  friend class grpc::ClientAsyncResponseReader;
+  friend class grpc::internal::ClientAsyncResponseReaderHelper;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::CallbackUnaryCallImpl;
+  friend class grpc::internal::CallbackUnaryCallImpl;
   template <class Request, class Response>
-  friend class ::grpc::internal::ClientCallbackReaderWriterImpl;
+  friend class grpc::internal::ClientCallbackReaderWriterImpl;
   template <class Response>
-  friend class ::grpc::internal::ClientCallbackReaderImpl;
+  friend class grpc::internal::ClientCallbackReaderImpl;
   template <class Request>
-  friend class ::grpc::internal::ClientCallbackWriterImpl;
-  friend class ::grpc::internal::ClientCallbackUnaryImpl;
-  friend class ::grpc::internal::ClientContextAccessor;
+  friend class grpc::internal::ClientCallbackWriterImpl;
+  friend class grpc::internal::ClientCallbackUnaryImpl;
+  friend class grpc::internal::ClientContextAccessor;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const std::string& debug_error_string) {
@@ -457,8 +457,7 @@ class ClientContext {
   }
 
   grpc_call* call() const { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<::grpc::Channel>& channel);
+  void set_call(grpc_call* call, const std::shared_ptr<grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
       const char* method, const char* suffix_for_stats,
@@ -491,7 +490,7 @@ class ClientContext {
   bool initial_metadata_received_;
   bool wait_for_ready_;
   bool wait_for_ready_explicitly_set_;
-  std::shared_ptr<::grpc::Channel> channel_;
+  std::shared_ptr<grpc::Channel> channel_;
   grpc::internal::Mutex mu_;
   grpc_call* call_;
   bool call_canceled_;

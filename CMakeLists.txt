@@ -632,7 +632,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c bin_encoder_test)
   add_dependencies(buildtests_c buffer_list_test)
   add_dependencies(buildtests_c channel_args_test)
-  add_dependencies(buildtests_c channel_create_test)
   add_dependencies(buildtests_c channel_stack_test)
   add_dependencies(buildtests_c check_gcp_environment_linux_test)
   add_dependencies(buildtests_c check_gcp_environment_windows_test)
@@ -1190,6 +1189,8 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -1331,6 +1332,8 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
+  test/core/end2end/tests/retry_unref_before_finish.cc
+  test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
@@ -1566,6 +1569,8 @@ endif()
 
 add_library(grpc
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/channel_idle/channel_idle_filter.cc
+  src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1622,8 +1627,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_idle/client_idle_filter.cc
-  src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -1633,7 +1636,6 @@ add_library(grpc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
@@ -2045,6 +2047,7 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
   src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -2364,7 +2367,6 @@ add_library(grpc_test_util
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
-  test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
@@ -2433,7 +2435,6 @@ add_library(grpc_test_util_unsecure
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
-  test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
@@ -2496,6 +2497,8 @@ endif()
 
 add_library(grpc_unsecure
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/channel_idle/channel_idle_filter.cc
+  src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2546,8 +2549,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_idle/client_idle_filter.cc
-  src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -2557,7 +2558,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2686,6 +2686,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
   src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -4817,33 +4818,6 @@ target_include_directories(channel_args_test
 )
 
 target_link_libraries(channel_args_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(channel_create_test
-  test/core/surface/channel_create_test.cc
-)
-
-target_include_directories(channel_create_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9638,23 +9612,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(core_configuration_test
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_args_preconditioning.cc
-  src/core/lib/channel/handshaker_registry.cc
-  src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_stack_type.cc
   test/core/config/core_configuration_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -9682,7 +9639,7 @@ target_include_directories(core_configuration_test
 target_link_libraries(core_configuration_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  grpc
 )
 
 
@@ -12097,7 +12054,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(idle_filter_state_test
-  src/core/ext/filters/client_idle/idle_filter_state.cc
+  src/core/ext/filters/channel_idle/idle_filter_state.cc
   test/core/client_idle/idle_filter_state_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16928,7 +16885,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
-    test/core/util/memory_counters.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
     test/core/util/passthru_endpoint.cc

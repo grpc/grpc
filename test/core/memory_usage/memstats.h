@@ -1,5 +1,4 @@
-//
-// Copyright 2017 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
-#ifndef GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H
+#ifndef TEST_H
+#define TEST_H
 
-#include <grpc/support/port_platform.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+struct MemStats {
+  long rss;  // Resident set size, in kb
+  static MemStats Snapshot() {
+    struct rusage usage;
+    if (0 != getrusage(RUSAGE_SELF, &usage)) abort();
+    return MemStats{usage.ru_maxrss};
+  }
+};
 
-extern const grpc_channel_filter grpc_max_age_filter;
-
-#endif /* GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H */
+#endif
