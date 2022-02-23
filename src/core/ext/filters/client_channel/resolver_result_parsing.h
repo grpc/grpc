@@ -96,9 +96,7 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
   static void Register(CoreConfiguration::Builder* builder);
 
  private:
-  static absl::string_view parser_name() {
-    return "client_channel_resolver_result";
-  }
+  static absl::string_view parser_name() { return "client_channel"; }
 };
 
 }  // namespace internal

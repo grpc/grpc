@@ -28,6 +28,16 @@ ServiceConfigParser ServiceConfigParser::Builder::Build() {
 
 void ServiceConfigParser::Builder::RegisterParser(
     std::unique_ptr<Parser> parser) {
+  for (const auto& registered_parser : registered_parsers_) {
+    if (registered_parser->name() == parser->name()) {
+      gpr_log(GPR_ERROR, "%s",
+              absl::StrCat("Parser with name '", parser->name(),
+                           "' already registered")
+                  .c_str());
+      // We'll otherwise crash later.
+      abort();
+    }
+  }
   registered_parsers_.emplace_back(std::move(parser));
 }
 
@@ -58,7 +68,7 @@ ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
                                               grpc_error_handle* error) const {
   ParsedConfigVector parsed_method_configs;
   std::vector<grpc_error_handle> error_list;
-  for (size_t i = 0; i < registered_parsers_.size(); i++) {
+  for (size_t i = 0; i < registered_parsers_.size(); ++i) {
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config =
         registered_parsers_[i]->ParsePerMethodParams(args, json, &parser_error);
@@ -74,7 +84,7 @@ ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
 }
 
 size_t ServiceConfigParser::GetParserIndex(absl::string_view name) const {
-  for (size_t i = 0; i < registered_parsers_.size(); i++) {
+  for (size_t i = 0; i < registered_parsers_.size(); ++i) {
     if (registered_parsers_[i]->name() == name) return i;
   }
   return -1;

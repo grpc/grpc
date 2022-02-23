@@ -93,7 +93,7 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
   static void Register(CoreConfiguration::Builder* builder);
 
  private:
-  static absl::string_view parser_name() { return "retry_service"; }
+  static absl::string_view parser_name() { return "retry"; }
 };
 
 }  // namespace internal

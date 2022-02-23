@@ -70,13 +70,14 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
                                                     grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
+  RbacFilter* filter = static_cast<RbacFilter*>(elem->channel_data);
   if (error == GRPC_ERROR_NONE) {
     // Fetch and apply the rbac policy from the service config.
     auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
         calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     auto* method_params = static_cast<RbacMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
-            RbacServiceConfigParser::ParserIndex()));
+            filter->service_config_parser_index_));
     if (method_params == nullptr) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("No RBAC policy found.");
     } else {

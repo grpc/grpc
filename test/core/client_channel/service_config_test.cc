@@ -444,6 +444,19 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
   GRPC_ERROR_UNREF(error);
 }
 
+TEST(ServiceConfigParserTest, DoubleRegistration) {
+  CoreConfiguration::Reset();
+  ASSERT_DEATH_IF_SUPPORTED(
+      CoreConfiguration::BuildSpecialConfiguration(
+          [](CoreConfiguration::Builder* builder) {
+            builder->service_config_parser()->RegisterParser(
+                absl::make_unique<ErrorParser>("xyzabc"));
+            builder->service_config_parser()->RegisterParser(
+                absl::make_unique<ErrorParser>("xyzabc"));
+          }),
+      "xyzabc.*already registered");
+}
+
 // Test parsing with ErrorParsers which always add errors
 class ErroredParsersScopingTest : public ::testing::Test {
  protected:
@@ -507,7 +520,7 @@ class ClientChannelParserTest : public ::testing::Test {
               absl::make_unique<internal::ClientChannelServiceConfigParser>());
         });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
-                  "client_channel_resolver_result"),
+                  "client_channel"),
               0);
   }
 };
@@ -801,7 +814,7 @@ class RetryParserTest : public ::testing::Test {
               absl::make_unique<internal::RetryServiceConfigParser>());
         });
     EXPECT_EQ(CoreConfiguration::Get().service_config_parser().GetParserIndex(
-                  "retry_service"),
+                  "retry"),
               0);
   }
 };

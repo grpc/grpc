@@ -98,8 +98,6 @@ class CoreConfiguration {
   template <typename BuildFunc>
   static void BuildSpecialConfiguration(BuildFunc build) {
     // Build bespoke configuration
-    // We don't care about the builder lock here, since it's expected this call
-    // will be made ensuring that there's only one path through here.
     Builder builder;
     build(&builder);
     CoreConfiguration* p = builder.Build();
