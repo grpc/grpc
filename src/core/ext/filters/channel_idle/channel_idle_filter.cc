@@ -234,6 +234,26 @@ void MaxAgeFilter::Start() {
   IncreaseCallCount();
   DecreaseCallCount();
 
+  struct StartupClosure {
+    RefCountedPtr<grpc_channel_stack> channel_stack;
+    MaxAgeFilter* filter;
+    grpc_closure closure;
+  };
+  auto run_startup = [](void* p, grpc_error_handle) {
+    auto* startup = static_cast<StartupClosure*>(p);
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->start_connectivity_watch.reset(
+        new ConnectivityWatcher(startup->filter));
+    op->start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
+    grpc_channel_next_op(
+        grpc_channel_stack_element(startup->channel_stack.get(), 0), op);
+    delete startup;
+  };
+  auto* startup =
+      new StartupClosure{this->channel_stack()->Ref(), this, grpc_closure{}};
+  GRPC_CLOSURE_INIT(&startup->closure, run_startup, startup, nullptr);
+  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, GRPC_ERROR_NONE);
+
   auto channel_stack = this->channel_stack()->Ref();
 
   // Start the max age timer
