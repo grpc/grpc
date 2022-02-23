@@ -811,7 +811,6 @@ libs:
   - src/core/ext/xds/xds_route_config.h
   - src/core/ext/xds/xds_routing.h
   - src/core/lib/address_utils/parse_address.h
-  - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_tracer.h
@@ -895,19 +894,16 @@ libs:
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
-  - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
-  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
   - src/core/lib/iomgr/socket_mutator.h
-  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/sys_epoll_wrapper.h
@@ -1471,7 +1467,6 @@ libs:
   - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/address_utils/parse_address.cc
-  - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -1556,13 +1551,11 @@ libs:
   - src/core/lib/iomgr/resolve_address.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
-  - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
   - src/core/lib/iomgr/socket_utils_common_posix.cc
   - src/core/lib/iomgr/socket_utils_linux.cc
   - src/core/lib/iomgr/socket_utils_posix.cc
-  - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
@@ -1743,6 +1736,7 @@ libs:
   - absl/utility:utility
   - gpr
   - libssl
+  - sockaddr_utils
   - address_sorting
   baselib: true
   generate_plugin_registry: true
@@ -1979,7 +1973,6 @@ libs:
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
   - src/core/lib/address_utils/parse_address.h
-  - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_tracer.h
@@ -2062,19 +2055,16 @@ libs:
   - src/core/lib/iomgr/pollset_set.h
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
-  - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
   - src/core/lib/iomgr/resolve_address_windows.h
-  - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/iomgr/sockaddr.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
   - src/core/lib/iomgr/socket_mutator.h
-  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
   - src/core/lib/iomgr/sys_epoll_wrapper.h
@@ -2293,7 +2283,6 @@ libs:
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
   - src/core/lib/address_utils/parse_address.cc
-  - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -2377,13 +2366,11 @@ libs:
   - src/core/lib/iomgr/resolve_address.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
-  - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_factory_posix.cc
   - src/core/lib/iomgr/socket_mutator.cc
   - src/core/lib/iomgr/socket_utils_common_posix.cc
   - src/core/lib/iomgr/socket_utils_linux.cc
   - src/core/lib/iomgr/socket_utils_posix.cc
-  - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
@@ -2497,6 +2484,7 @@ libs:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - sockaddr_utils
   - address_sorting
   baselib: true
   generate_plugin_registry: true
@@ -3205,6 +3193,155 @@ libs:
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
   - grpc++
+- name: sockaddr_utils
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc/impl/codegen/atm.h
+  - include/grpc/impl/codegen/atm_gcc_atomic.h
+  - include/grpc/impl/codegen/atm_gcc_sync.h
+  - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/byte_buffer_reader.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
+  - include/grpc/impl/codegen/gpr_slice.h
+  - include/grpc/impl/codegen/gpr_types.h
+  - include/grpc/impl/codegen/grpc_types.h
+  - include/grpc/impl/codegen/log.h
+  - include/grpc/impl/codegen/port_platform.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/status.h
+  - include/grpc/impl/codegen/sync.h
+  - include/grpc/impl/codegen/sync_abseil.h
+  - include/grpc/impl/codegen/sync_custom.h
+  - include/grpc/impl/codegen/sync_generic.h
+  - include/grpc/impl/codegen/sync_posix.h
+  - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
+  - include/grpc/support/atm_gcc_atomic.h
+  - include/grpc/support/atm_gcc_sync.h
+  - include/grpc/support/atm_windows.h
+  - include/grpc/support/cpu.h
+  - include/grpc/support/log.h
+  - include/grpc/support/log_windows.h
+  - include/grpc/support/port_platform.h
+  - include/grpc/support/string_util.h
+  - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
+  - include/grpc/support/sync_custom.h
+  - include/grpc/support/sync_generic.h
+  - include/grpc/support/sync_posix.h
+  - include/grpc/support/sync_windows.h
+  - include/grpc/support/thd_id.h
+  - include/grpc/support/time.h
+  headers:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/address_utils/sockaddr_utils.h
+  - src/core/lib/event_engine/sockaddr.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/profiling/timers.h
+  src:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/event_engine/sockaddr.cc
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
+  deps:
+  - absl/base:base
+  - absl/base:core_headers
+  - absl/memory:memory
+  - absl/random:random
+  - absl/status:status
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
+  - upb
+  baselib: true
 targets:
 - name: alloc_test
   build: test
@@ -5389,14 +5526,12 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -5408,12 +5543,6 @@ targets:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolved_address.h
-  - src/core/lib/iomgr/sockaddr.h
-  - src/core/lib/iomgr/sockaddr_posix.h
-  - src/core/lib/iomgr/sockaddr_windows.h
-  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/json/json.h
   - src/core/lib/resolver/resolver.h
   - src/core/lib/resolver/resolver_factory.h
@@ -5432,20 +5561,16 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/uri/uri_parser.h
   src:
-  - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/trace.cc
-  - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/iomgr/sockaddr_utils_posix.cc
-  - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/resolver/resolver.cc
@@ -5464,6 +5589,7 @@ targets:
   - absl/container:inlined_vector
   - absl/status:statusor
   - gpr
+  - sockaddr_utils
   uses_polling: false
 - name: cpp_impl_of_test
   gtest: true

@@ -791,6 +791,11 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c++',
         'build': 'private',
     },
+    'sockaddr_utils': {
+        'language': 'c++',
+        'build': 'all',
+        'baselib': True,
+    },
     'src/compiler:grpc_plugin_support': {
         'language': 'c++',
         'build': 'protoc',
