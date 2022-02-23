@@ -54,7 +54,7 @@ struct SchedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
 /// Its API is used solely by the Run and RunAt functions, while in the libuv
 /// loop thread.
 ////////////////////////////////////////////////////////////////////////////////
-class LibuvTask {
+class LibuvEventEngine::LibuvTask {
  public:
   LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn);
   /// Executes the held \a fn_ and removes itself from EventEngine's accounting.
@@ -82,7 +82,8 @@ class LibuvTask {
 };
 
 // TODO(hork): keys should be recycled.
-LibuvTask::LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn)
+LibuvEventEngine::LibuvTask::LibuvTask(LibuvEventEngine* engine,
+                                       std::function<void()>&& fn)
     : fn_(std::move(fn)), key_(engine->task_key_.fetch_add(1)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, created task: key = %" PRIiPTR, this,
@@ -91,7 +92,8 @@ LibuvTask::LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn)
   timer_.data = this;
 }
 
-void LibuvTask::Start(LibuvEventEngine* engine, uint64_t timeout) {
+void LibuvEventEngine::LibuvTask::Start(LibuvEventEngine* engine,
+                                        uint64_t timeout) {
   uv_update_time(&engine->loop_);
   uv_timer_init(&engine->loop_, &timer_);
   uv_timer_start(
@@ -115,7 +117,7 @@ void LibuvTask::Start(LibuvEventEngine* engine, uint64_t timeout) {
       timeout, 0);
 }
 
-void LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
+void LibuvEventEngine::LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %" PRIiPTR, this, key_);
   }
@@ -130,7 +132,7 @@ void LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
   uv_close(reinterpret_cast<uv_handle_t*>(&timer_), &LibuvTask::Erase);
 }
 
-void LibuvTask::Erase(uv_handle_t* handle) {
+void LibuvEventEngine::LibuvTask::Erase(uv_handle_t* handle) {
   uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(handle);
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   LibuvEventEngine* engine =
@@ -138,7 +140,7 @@ void LibuvTask::Erase(uv_handle_t* handle) {
   engine->EraseTask(task->key_);
 }
 
-void LibuvTask::RunAndErase(uv_handle_t* handle) {
+void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
   uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(handle);
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   std::function<void()> fn = std::move(task->fn_);
@@ -423,10 +425,6 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time /* when */,
   GPR_ASSERT(false &&
              "LibuvEventEngine::RunAt(absl::Time, Closure*) not implemented");
 }
-
-////////////////////////////////////////////////////////////////////////////////
-/// LibuvTask
-////////////////////////////////////////////////////////////////////////////////
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

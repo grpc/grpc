@@ -33,8 +33,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class LibuvTask;
-
 ////////////////////////////////////////////////////////////////////////////////
 /// The LibUV Event Engine itself. It implements an EventEngine class.
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +69,9 @@ class LibuvEventEngine final
   }
 
  private:
+  // An internal task representation
+  class LibuvTask;
+
   // The main logic in the uv event loop
   void RunThread();
   // Schedules one lambda to be executed on the libuv thread. Our libuv loop
@@ -106,8 +107,6 @@ class LibuvEventEngine final
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
   gpr_thd_id worker_thread_id_;
-
-  friend class LibuvTask;
 };
 
 }  // namespace experimental
