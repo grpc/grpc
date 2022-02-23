@@ -95,13 +95,17 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.1.415/dotnet-sdk-3.1.415-linux-x64.tar.gz \
+RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz
 
 # Install .NET 6
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/6.0.100/dotnet-sdk-6.0.100-linux-x64.tar.gz \
+RUN DOTNET_DOWNLOAD_VERSION=6.0.100 \
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz
