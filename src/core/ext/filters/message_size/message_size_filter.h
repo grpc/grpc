@@ -42,7 +42,8 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
   const message_size_limits& limits() const { return limits_; }
 
   static const MessageSizeParsedConfig* GetFromCallContext(
-      const grpc_call_context_element* context);
+      const grpc_call_context_element* context,
+      size_t service_config_parser_index);
 
  private:
   message_size_limits limits_;

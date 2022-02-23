@@ -32,6 +32,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "resolver_result_parsing.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -1036,6 +1037,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
       channelz_node_(GetChannelzNode(args->channel_args)),
       interested_parties_(grpc_pollset_set_create()),
+      service_config_parser_index_(
+          internal::ClientChannelServiceConfigParser::ParserIndex()),
       work_serializer_(std::make_shared<WorkSerializer>()),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(args->channel_args)) {
@@ -1275,7 +1278,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
-                internal::ClientChannelServiceConfigParser::ParserIndex()));
+                service_config_parser_index_));
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);
@@ -2220,7 +2223,7 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // Apply our own method params to the call.
     auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
-            internal::ClientChannelServiceConfigParser::ParserIndex()));
+            chand->service_config_parser_index_));
     if (method_params != nullptr) {
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.

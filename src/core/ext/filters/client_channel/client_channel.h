@@ -279,6 +279,7 @@ class ClientChannel {
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
+  const size_t service_config_parser_index_;
 
   //
   // Fields related to name resolution.  Guarded by resolution_mu_.

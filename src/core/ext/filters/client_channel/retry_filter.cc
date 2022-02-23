@@ -21,6 +21,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/strip.h"
+#include "retry_service_config.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -145,7 +146,9 @@ class RetryFilter {
   RetryFilter(const grpc_channel_args* args, grpc_error_handle* error)
       : client_channel_(grpc_channel_args_find_pointer<ClientChannel>(
             args, GRPC_ARG_CLIENT_CHANNEL)),
-        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)) {
+        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
+        service_config_parser_index_(
+            internal::RetryServiceConfigParser::ParserIndex()) {
     // Get retry throttling parameters from service config.
     auto* service_config = grpc_channel_args_find_pointer<ServiceConfig>(
         args, GRPC_ARG_SERVICE_CONFIG_OBJ);
@@ -175,9 +178,13 @@ class RetryFilter {
         server_name, config->max_milli_tokens(), config->milli_token_ratio());
   }
 
+  const RetryMethodConfig* GetRetryPolicy(
+      const grpc_call_context_element* context);
+
   ClientChannel* client_channel_;
   size_t per_rpc_retry_buffer_size_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  const size_t service_config_parser_index_;
 };
 
 //
@@ -2049,22 +2056,21 @@ void RetryFilter::CallData::SetPollent(grpc_call_element* elem,
 // CallData implementation
 //
 
-const RetryMethodConfig* GetRetryPolicy(
+const RetryMethodConfig* RetryFilter::GetRetryPolicy(
     const grpc_call_context_element* context) {
   if (context == nullptr) return nullptr;
   auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
       context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const RetryMethodConfig*>(
-      svc_cfg_call_data->GetMethodParsedConfig(
-          RetryServiceConfigParser::ParserIndex()));
+      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
 }
 
 RetryFilter::CallData::CallData(RetryFilter* chand,
                                 const grpc_call_element_args& args)
     : chand_(chand),
       retry_throttle_data_(chand->retry_throttle_data_),
-      retry_policy_(GetRetryPolicy(args.context)),
+      retry_policy_(chand->GetRetryPolicy(args.context)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(retry_policy_ == nullptr

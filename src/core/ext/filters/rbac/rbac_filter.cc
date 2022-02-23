@@ -18,6 +18,8 @@
 
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 
+#include "rbac_service_config_parser.h"
+
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -125,6 +127,7 @@ const grpc_channel_filter RbacFilter::kFilterVtable = {
 RbacFilter::RbacFilter(size_t index,
                        EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
     : index_(index),
+      service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
       per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
 grpc_error_handle RbacFilter::Init(grpc_channel_element* elem,
