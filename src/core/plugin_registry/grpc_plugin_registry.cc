@@ -92,12 +92,11 @@ extern void BuildClientChannelConfiguration(
 extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
-extern void RegisterClientIdleFilter(CoreConfiguration::Builder* builder);
+extern void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder);
 extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
 extern void RegisterGrpcLbLoadReportingFilter(
     CoreConfiguration::Builder* builder);
 extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
-extern void RegisterMaxAgeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
 extern void RegisterSecurityFilters(CoreConfiguration::Builder* builder);
 extern void RegisterServiceConfigChannelArgFilter(
@@ -116,10 +115,9 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
-  RegisterClientIdleFilter(builder);
+  RegisterChannelIdleFilters(builder);
   RegisterGrpcLbLoadReportingFilter(builder);
   RegisterHttpFilters(builder);
-  RegisterMaxAgeFilter(builder);
   RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);

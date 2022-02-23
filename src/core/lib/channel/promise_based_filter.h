@@ -637,6 +637,7 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
               destroy_md = false;
             }
             forward_send_trailing_metadata = true;
+            send_trailing_state_ = SendTrailingState::kForwarded;
           } break;
           case SendTrailingState::kForwarded:
             abort();  // unreachable
