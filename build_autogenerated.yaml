@@ -3936,20 +3936,6 @@ targets:
   - linux
   - posix
   uses_polling: false
-- name: memory_usage_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/memory_usage/memory_usage_test.cc
-  deps:
-  - absl/flags:flag
-  - absl/flags:parse
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
 - name: message_compress_test
   build: test
   language: c

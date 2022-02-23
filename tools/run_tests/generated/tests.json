@@ -1614,26 +1614,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "posix"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": false,
-    "language": "c",
-    "name": "memory_usage_test",
-    "platforms": [
-      "linux",
-      "posix"
-    ],
-    "uses_polling": false
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
       "mac",
       "posix",
       "windows"
