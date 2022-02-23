@@ -72,7 +72,11 @@ extern void grpc_register_built_in_plugins(void);
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static grpc_core::Mutex* g_init_mu;
-static int g_initializations ABSL_GUARDED_BY(g_init_mu) = 0;
+static int g_initializations ABSL_GUARDED_BY(g_init_mu) = []() {
+  grpc_core::CoreConfiguration::SetDefaultBuilder(
+      grpc_core::BuildCoreConfiguration);
+  return 0;
+}();
 static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 

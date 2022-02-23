@@ -40,6 +40,7 @@
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -452,7 +453,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
     target = absl::StrCat("dns:", target);
     args = grpc_channel_args_copy(parent()->args_);
   }
-  resolver_ = ResolverRegistry::CreateResolver(
+  resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       target.c_str(), args, parent()->interested_parties(),
       parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
