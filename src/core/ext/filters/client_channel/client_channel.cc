@@ -1440,7 +1440,7 @@ void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
 
 void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
-    RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name) {
+    RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name) {
   std::string service_config_json(service_config->json_string());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
@@ -1450,10 +1450,9 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
   // Save service config.
   saved_service_config_ = std::move(service_config);
   // Swap out the data used by GetChannelInfo().
-  std::string lb_policy_name_owned = lb_policy_name;
   {
     MutexLock lock(&info_mu_);
-    info_lb_policy_name_ = std::move(lb_policy_name_owned);
+    info_lb_policy_name_ = std::move(lb_policy_name);
     info_service_config_json_ = std::move(service_config_json);
   }
   // Save config selector.

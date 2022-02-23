@@ -1,5 +1,5 @@
 //
-// Copyright 2022 gRPC authors.
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,8 +59,6 @@
 
 namespace grpc_core {
 
-// TODO(roth): Consider stripping this down further to the completely minimal
-// interface requied to be exposed as part of the resolver API.
 class ServiceConfigImpl final : public ServiceConfig {
  public:
   /// Creates a new service config from parsing \a json_string.
