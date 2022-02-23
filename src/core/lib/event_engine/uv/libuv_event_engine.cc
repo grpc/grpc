@@ -125,10 +125,10 @@ void LibuvEventEngine::LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
   if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_)) != 0) {
     // TODO(hork): check if this can be called on uv shutdown instead
     GPR_ASSERT(GPR_LIKELY(ran_));
-    will_be_cancelled.Set(false);
+    will_be_cancelled.Notify(false);
     return;
   }
-  will_be_cancelled.Set(true);
+  will_be_cancelled.Notify(true);
   uv_timer_stop(&timer_);
   uv_close(reinterpret_cast<uv_handle_t*>(&timer_), &LibuvTask::Erase);
 }
@@ -167,7 +167,7 @@ LibuvEventEngine::LibuvEventEngine() {
   GPR_ASSERT(GPR_LIKELY(success));
   // This promise will be set to true once the thread has fully started and is
   // operational, so let's wait on it.
-  success = ready_.Get();
+  success = ready_.Wait();
   GPR_ASSERT(GPR_LIKELY(success));
 }
 
@@ -182,7 +182,7 @@ LibuvEventEngine::~LibuvEventEngine() {
               "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
               engine);
     }
-    GPR_ASSERT(uv_shutdown_can_proceed.Get());
+    GPR_ASSERT(uv_shutdown_can_proceed.Wait());
     // Shutting down at this point is essentially just this unref call here.
     // After it, the libuv loop will continue working until it has no more
     // events to monitor. It means that scheduling new work becomes essentially
@@ -212,7 +212,7 @@ LibuvEventEngine::~LibuvEventEngine() {
           nullptr);
     }
   });
-  uv_shutdown_can_proceed.Set(true);
+  uv_shutdown_can_proceed.Notify(true);
   thread_.Join();
   GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
 }
@@ -283,10 +283,10 @@ void LibuvEventEngine::RunThread() {
       gpr_log(GPR_ERROR, "LibuvEventEngine@%p::Thread, failed to start: %i",
               this, r);
     }
-    ready_.Set(false);
+    ready_.Notify(false);
     return;
   }
-  ready_.Set(true);
+  ready_.Notify(true);
 
   // The meat of running our event loop. We need the various exec contexts,
   // because some of the callbacks we will call will depend on them
@@ -359,13 +359,13 @@ bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
   RunInLibuvThread([handle, &will_be_cancelled](LibuvEventEngine* engine) {
     auto it = engine->task_map_.find(handle.keys[0]);
     if (it == engine->task_map_.end()) {
-      will_be_cancelled.Set(false);
+      will_be_cancelled.Notify(false);
       return;
     }
     auto* task = it->second;
     task->Cancel(will_be_cancelled);
   });
-  return will_be_cancelled.Get();
+  return will_be_cancelled.Wait();
 }
 
 void LibuvEventEngine::EraseTask(intptr_t taskKey) {

@@ -28,18 +28,17 @@ namespace experimental {
 template <typename T>
 class Promise {
  public:
-  // The getter will wait until the setter has been called, and will return the
-  // value passed during Set.
-  T& Get() {
+  /// Blocks until Notify has been called, and will return the value passed to
+  /// \a Notify.
+  T& Wait() {
     absl::MutexLock lock(&mu_);
     if (!set_) {
       cv_.Wait(&mu_);
     }
     return val_;
   }
-  // This setter can only be called exactly once. Will automatically unblock
-  // getters.
-  void Set(T&& val) {
+  /// Can only be called once. Will automatically unblock all waiting callers.
+  void Notify(T&& val) {
     absl::MutexLock lock(&mu_);
     GPR_ASSERT(!set_);
     val_ = std::move(val);
