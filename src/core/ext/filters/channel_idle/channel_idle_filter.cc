@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(ctiller): Add a unit test suite for these filters once it's practical to mock transport operations.
+// TODO(ctiller): Add a unit test suite for these filters once it's practical to
+// mock transport operations.
 
 #include <grpc/support/port_platform.h>
 
