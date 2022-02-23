@@ -632,7 +632,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c bin_encoder_test)
   add_dependencies(buildtests_c buffer_list_test)
   add_dependencies(buildtests_c channel_args_test)
-  add_dependencies(buildtests_c channel_create_test)
   add_dependencies(buildtests_c channel_stack_test)
   add_dependencies(buildtests_c check_gcp_environment_linux_test)
   add_dependencies(buildtests_c check_gcp_environment_windows_test)
@@ -2056,6 +2055,7 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
   src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -2695,6 +2695,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
   src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -4826,33 +4827,6 @@ target_include_directories(channel_args_test
 )
 
 target_link_libraries(channel_args_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(channel_create_test
-  test/core/surface/channel_create_test.cc
-)
-
-target_include_directories(channel_create_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9723,7 +9697,7 @@ target_include_directories(core_configuration_test
 target_link_libraries(core_configuration_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  grpc
 )
 
 

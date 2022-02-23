@@ -29,8 +29,6 @@ void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
 void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
-void grpc_resolver_fake_init(void);
-void grpc_resolver_fake_shutdown(void);
 void grpc_lb_policy_grpclb_init(void);
 void grpc_lb_policy_grpclb_shutdown(void);
 void grpc_lb_policy_priority_init(void);
@@ -43,10 +41,6 @@ void grpc_lb_policy_round_robin_init(void);
 void grpc_lb_policy_round_robin_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-void grpc_resolver_dns_native_init(void);
-void grpc_resolver_dns_native_shutdown(void);
-void grpc_resolver_sockaddr_init(void);
-void grpc_resolver_sockaddr_shutdown(void);
 namespace grpc_core {
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
@@ -56,14 +50,8 @@ void RlsLbPluginShutdown();
 #endif  // !GRPC_NO_RLS
 }  // namespace grpc_core
 
-#ifdef GPR_SUPPORT_BINDER_TRANSPORT
-void grpc_resolver_binder_init(void);
-void grpc_resolver_binder_shutdown(void);
-#endif
-
 void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
-  grpc_register_plugin(grpc_resolver_fake_init, grpc_resolver_fake_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
 #ifndef GRPC_NO_RLS
@@ -82,14 +70,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::GrpcLbPolicyRingHashShutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
-  grpc_register_plugin(grpc_resolver_dns_native_init,
-                       grpc_resolver_dns_native_shutdown);
-  grpc_register_plugin(grpc_resolver_sockaddr_init,
-                       grpc_resolver_sockaddr_shutdown);
-#ifdef GPR_SUPPORT_BINDER_TRANSPORT
-  grpc_register_plugin(grpc_resolver_binder_init,
-                       grpc_resolver_binder_shutdown);
-#endif
   grpc_register_extra_plugins();
 }
 
@@ -113,6 +93,13 @@ extern void RegisterServiceConfigChannelArgFilter(
 extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
+extern void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
+extern void RegisterAresDnsResolver(CoreConfiguration::Builder* builder);
+extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
+extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
+#endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
@@ -127,6 +114,13 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
   FaultInjectionFilterRegister(builder);
+  RegisterAresDnsResolver(builder);
+  RegisterNativeDnsResolver(builder);
+  RegisterSockaddrResolver(builder);
+  RegisterFakeResolver(builder);
+#ifdef GPR_SUPPORT_BINDER_TRANSPORT
+  RegisterBinderResolver(builder);
+#endif
   // Run last so it gets a consistent location.
   // TODO(ctiller): Is this actually necessary?
   RegisterSecurityFilters(builder);

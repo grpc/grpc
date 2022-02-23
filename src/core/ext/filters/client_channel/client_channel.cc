@@ -1085,7 +1085,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   }
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
-  if (!ResolverRegistry::IsValidTarget(uri_to_resolve_)) {
+  if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+          uri_to_resolve_)) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("the target uri is not valid: ", uri_to_resolve_));
     return;
@@ -1104,7 +1105,9 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   const char* default_authority =
       grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority == nullptr) {
-    default_authority_ = ResolverRegistry::GetDefaultAuthority(server_uri);
+    default_authority_ =
+        CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+            server_uri);
   } else {
     default_authority_ = default_authority;
   }
@@ -1541,7 +1544,7 @@ void ClientChannel::CreateResolverLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
   }
-  resolver_ = ResolverRegistry::CreateResolver(
+  resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       uri_to_resolve_.c_str(), channel_args_, interested_parties_,
       work_serializer_, absl::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,

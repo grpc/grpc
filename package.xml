@@ -1111,6 +1111,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolved_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.h" role="src" />

@@ -25,6 +25,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -59,6 +60,8 @@ class BinderResolver : public Resolver {
 
 class BinderResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "binder"; }
+
   bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, nullptr);
   }
@@ -69,8 +72,6 @@ class BinderResolverFactory : public ResolverFactory {
     return MakeOrphanable<BinderResolver>(std::move(addresses),
                                           std::move(args));
   }
-
-  const char* scheme() const override { return "binder"; }
 
  private:
   static grpc_error_handle BinderAddrPopulate(
@@ -121,19 +122,12 @@ class BinderResolverFactory : public ResolverFactory {
 };
 
 }  // namespace
-}  // namespace grpc_core
 
-void grpc_resolver_binder_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::BinderResolverFactory>());
+void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<BinderResolverFactory>());
 }
 
-void grpc_resolver_binder_shutdown() {}
-
-#else
-
-void grpc_resolver_binder_init() {}
-
-void grpc_resolver_binder_shutdown() {}
+}  // namespace grpc_core
 
 #endif

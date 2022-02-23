@@ -46,6 +46,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -639,7 +640,7 @@ void RunResolvesRelevantRecordsTest(
   }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(
+      grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);

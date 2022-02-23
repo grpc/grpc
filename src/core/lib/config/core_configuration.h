@@ -21,7 +21,7 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -57,6 +57,10 @@ class CoreConfiguration {
       return &service_config_parser_;
     }
 
+    ResolverRegistry::Builder* resolver_registry() {
+      return &resolver_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -65,6 +69,7 @@ class CoreConfiguration {
     HandshakerRegistry::Builder handshaker_registry_;
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
     ServiceConfigParser::Builder service_config_parser_;
+    ResolverRegistry::Builder resolver_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -150,6 +155,14 @@ class CoreConfiguration {
     return service_config_parser_;
   }
 
+  const ResolverRegistry& resolver_registry() const {
+    return resolver_registry_;
+  }
+
+  static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
+    default_builder_ = builder;
+  }
+
  private:
   explicit CoreConfiguration(Builder* builder);
 
@@ -167,12 +180,15 @@ class CoreConfiguration {
   static std::atomic<CoreConfiguration*> config_;
   // Extra registered builders
   static std::atomic<RegisteredBuilder*> builders_;
+  // Default builder
+  static void (*default_builder_)(CoreConfiguration::Builder*);
 
   ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
   ChannelCredsRegistry<> channel_creds_registry_;
   ServiceConfigParser service_config_parser_;
+  ResolverRegistry resolver_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

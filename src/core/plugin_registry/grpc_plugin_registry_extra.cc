@@ -40,12 +40,6 @@ void grpc_lb_policy_xds_cluster_resolver_init(void);
 void grpc_lb_policy_xds_cluster_resolver_shutdown(void);
 void grpc_lb_policy_xds_cluster_manager_init(void);
 void grpc_lb_policy_xds_cluster_manager_shutdown(void);
-void grpc_resolver_xds_init(void);
-void grpc_resolver_xds_shutdown(void);
-namespace grpc_core {
-void GoogleCloud2ProdResolverInit();
-void GoogleCloud2ProdResolverShutdown();
-}  // namespace grpc_core
 #endif
 
 void grpc_register_extra_plugins() {
@@ -63,9 +57,6 @@ void grpc_register_extra_plugins() {
                        grpc_lb_policy_xds_cluster_resolver_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_cluster_manager_init,
                        grpc_lb_policy_xds_cluster_manager_shutdown);
-  grpc_register_plugin(grpc_resolver_xds_init, grpc_resolver_xds_shutdown);
-  grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
-                       grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
 }
 
@@ -75,6 +66,8 @@ extern void RbacFilterRegister(CoreConfiguration::Builder* builder);
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
+extern void RegisterXdsResolver(CoreConfiguration::Builder* builder);
+extern void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
@@ -85,6 +78,8 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RbacFilterRegister(builder);
   RegisterXdsChannelStackModifier(builder);
   RegisterChannelDefaultCreds(builder);
+  RegisterXdsResolver(builder);
+  RegisterCloud2ProdResolver(builder);
 #endif
 }
 }  // namespace grpc_core
