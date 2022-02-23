@@ -24,14 +24,40 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/transport.h"
 
 extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
 
-void grpc_auth_metadata_context_build(
-    const char* url_scheme, const grpc_slice& call_host,
-    const grpc_slice& call_method, grpc_auth_context* auth_context,
-    grpc_auth_metadata_context* auth_md_context);
+namespace grpc_core {
+
+// Handles calling out to credentials to fill in metadata per call.
+class ClientAuthFilter final : public ChannelFilter {
+ public:
+  static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args,
+                                                 ChannelFilter::Args);
+
+  // Construct a promise for one call.
+  ArenaPromise<TrailingMetadata> MakeCallPromise(
+      ClientInitialMetadata initial_metadata,
+      NextPromiseFactory next_promise_factory) override;
+
+ private:
+  ClientAuthFilter(
+      RefCountedPtr<grpc_channel_security_connector> security_connector,
+      RefCountedPtr<grpc_auth_context> auth_context);
+
+  ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
+      ClientInitialMetadata initial_metadata);
+
+  // Contains refs to security connector and auth context.
+  grpc_call_credentials::GetRequestMetadataArgs args_;
+};
+
+}  // namespace grpc_core
 
 // Exposed for testing purposes only.
 // Check if the channel's security level is higher or equal to
