@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
+#include "src/core/ext/filters/client_idle/idle_filter_state.h"
 
 #include <stdio.h>
 
