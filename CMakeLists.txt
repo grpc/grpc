@@ -699,9 +699,6 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c memory_quota_stress_test)
   endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c memory_usage_test)
-  endif()
   add_dependencies(buildtests_c message_compress_test)
   add_dependencies(buildtests_c minimal_stack_is_minimal_test)
   add_dependencies(buildtests_c mpmcqueue_test)
@@ -6104,37 +6101,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     absl::statusor
     absl::variant
     gpr
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(memory_usage_test
-    test/core/memory_usage/memory_usage_test.cc
-  )
-
-  target_include_directories(memory_usage_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(memory_usage_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::flags
-    absl::flags_parse
-    grpc_test_util
   )
 
 
