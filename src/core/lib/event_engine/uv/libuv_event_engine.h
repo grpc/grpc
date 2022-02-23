@@ -51,6 +51,25 @@ class LibuvEventEngine final
   TaskHandle RunAt(absl::Time when, std::function<void()> fn) override;
   bool Cancel(TaskHandle handle) override;
 
+  // Unimplemented methods
+  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
+      Listener::AcceptCallback on_accept,
+      std::function<void(absl::Status)> on_shutdown, const EndpointConfig& args,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override;
+  ConnectionHandle Connect(OnConnectCallback on_connect,
+                           const ResolvedAddress& addr,
+                           const EndpointConfig& args,
+                           MemoryAllocator memory_allocator,
+                           absl::Time deadline) override;
+  bool CancelConnect(ConnectionHandle handle) override;
+  std::unique_ptr<DNSResolver> GetDNSResolver() override;
+  void Run(Closure* fn) override;
+  TaskHandle RunAt(absl::Time when, Closure* fn) override;
+  bool IsWorkerThread() override {
+    return worker_thread_id_ == gpr_thd_currentid();
+  }
+
  private:
   // The main logic in the uv event loop
   void RunThread();
@@ -60,27 +79,7 @@ class LibuvEventEngine final
   void RunInLibuvThread(std::function<void(LibuvEventEngine*)>&& f);
   void Kicker();
   uv_loop_t* GetLoop() { return &loop_; }
-  bool IsWorkerThread() override {
-    return worker_thread_id_ == gpr_thd_currentid();
-  }
   void EraseTask(intptr_t taskKey);
-
-  // Unimplemented methods
-  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      Listener::AcceptCallback /* on_accept */,
-      std::function<void(absl::Status)> /* on_shutdown */,
-      const EndpointConfig& /* args */,
-      std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */)
-      override;
-  ConnectionHandle Connect(OnConnectCallback /* on_connect */,
-                           const ResolvedAddress& /* addr */,
-                           const EndpointConfig& /* args */,
-                           MemoryAllocator /* memory_allocator */,
-                           absl::Time /* deadline */) override;
-  bool CancelConnect(ConnectionHandle /* handle */) override;
-  std::unique_ptr<DNSResolver> GetDNSResolver() override;
-  void Run(Closure* fn) override;
-  TaskHandle RunAt(absl::Time when, Closure* fn) override;
 
   uv_loop_t loop_;
   uv_async_t kicker_;
