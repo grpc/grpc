@@ -241,7 +241,7 @@ class ClientChannelStressTest {
       const std::vector<AddressData>& balancer_address_data) {
     grpc_core::Resolver::Result result;
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfig::Create(
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
         nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     grpc_core::ServerAddressList balancer_addresses =

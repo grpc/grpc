@@ -501,7 +501,7 @@ class CheckingResultHandler : public ResultHandler {
       const char* service_config_json =
           *result.service_config == nullptr
               ? nullptr
-              : (*result.service_config)->json_string().c_str();
+              : std::string((*result.service_config)->json_string()).c_str();
       CheckServiceConfigResultLocked(service_config_json, absl::OkStatus(),
                                      args);
     }

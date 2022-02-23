@@ -63,8 +63,8 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/channel.h"
@@ -1060,7 +1060,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   if (service_config_json == nullptr) service_config_json = "{}";
   *error = GRPC_ERROR_NONE;
   default_service_config_ =
-      ServiceConfig::Create(args->channel_args, service_config_json, error);
+      ServiceConfigImpl::Create(args->channel_args, service_config_json, error);
   if (*error != GRPC_ERROR_NONE) {
     default_service_config_.reset();
     return;
@@ -1441,17 +1441,16 @@ void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
 void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
     RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name) {
-  UniquePtr<char> service_config_json(
-      gpr_strdup(service_config->json_string().c_str()));
+  std::string service_config_json(service_config->json_string());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p: resolver returned updated service config: \"%s\"", this,
-            service_config_json.get());
+            service_config_json.c_str());
   }
   // Save service config.
   saved_service_config_ = std::move(service_config);
   // Swap out the data used by GetChannelInfo().
-  UniquePtr<char> lb_policy_name_owned(gpr_strdup(lb_policy_name));
+  std::string lb_policy_name_owned = lb_policy_name;
   {
     MutexLock lock(&info_mu_);
     info_lb_policy_name_ = std::move(lb_policy_name_owned);
@@ -1786,11 +1785,11 @@ void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   MutexLock lock(&chand->info_mu_);
   if (info->lb_policy_name != nullptr) {
-    *info->lb_policy_name = gpr_strdup(chand->info_lb_policy_name_.get());
+    *info->lb_policy_name = gpr_strdup(chand->info_lb_policy_name_.c_str());
   }
   if (info->service_config_json != nullptr) {
     *info->service_config_json =
-        gpr_strdup(chand->info_service_config_json_.get());
+        gpr_strdup(chand->info_service_config_json_.c_str());
   }
 }
 

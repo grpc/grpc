@@ -24,6 +24,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 
 namespace grpc_core {
 
@@ -37,7 +38,7 @@ class ServiceConfigChannelArgChannelData {
         args->channel_args, GRPC_ARG_SERVICE_CONFIG);
     if (service_config_str != nullptr) {
       grpc_error_handle service_config_error = GRPC_ERROR_NONE;
-      auto service_config = ServiceConfig::Create(
+      auto service_config = ServiceConfigImpl::Create(
           args->channel_args, service_config_str, &service_config_error);
       if (service_config_error == GRPC_ERROR_NONE) {
         service_config_ = std::move(service_config);

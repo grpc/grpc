@@ -2237,9 +2237,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_service_config",
-    srcs = [
-        "src/core/lib/service_config/service_config.cc",
-    ],
     hdrs = [
         "src/core/lib/service_config/service_config.h",
         "src/core/lib/service_config/service_config_call_data.h",
@@ -2249,9 +2246,31 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "error",
+        "gpr_base",
+        "json",
+        "service_config_parser",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_service_config_impl",
+    srcs = [
+        "src/core/lib/service_config/service_config_impl.cc",
+    ],
+    hdrs = [
+        "src/core/lib/service_config/service_config_impl.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
         "config",
         "error",
         "gpr_base",
+        "grpc_service_config",
         "json",
         "service_config_parser",
         "slice",
@@ -2434,6 +2453,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_resolver",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "handshaker_registry",
         "httpcli",
@@ -2764,6 +2784,7 @@ grpc_cc_library(
         "grpc_fake_credentials",
         "grpc_resolver",
         "grpc_security_base",
+        "grpc_service_config_impl",
         "json",
         "json_util",
         "orphanable",
@@ -2938,6 +2959,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
+        "grpc_service_config_impl",
         "grpc_sockaddr",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
@@ -3438,6 +3460,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_sockaddr",
         "iomgr_port",
         "json",
@@ -3534,6 +3557,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver",
+        "grpc_service_config_impl",
         "grpc_xds_client",
     ],
 )
@@ -4628,6 +4652,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_health_upb",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
@@ -4660,6 +4685,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_insecure_credentials",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",

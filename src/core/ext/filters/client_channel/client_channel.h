@@ -340,8 +340,8 @@ class ClientChannel {
   // synchronously via get_channel_info().
   //
   Mutex info_mu_;
-  UniquePtr<char> info_lb_policy_name_ ABSL_GUARDED_BY(info_mu_);
-  UniquePtr<char> info_service_config_json_ ABSL_GUARDED_BY(info_mu_);
+  std::string info_lb_policy_name_ ABSL_GUARDED_BY(info_mu_);
+  std::string info_service_config_json_ ABSL_GUARDED_BY(info_mu_);
 
   //
   // Fields guarded by a mutex, since they need to be accessed
