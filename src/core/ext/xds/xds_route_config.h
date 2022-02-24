@@ -131,8 +131,8 @@ struct XdsRouteConfigResource {
       // TODO(roth): When we can use absl::variant<>, consider using that
       // here, to enforce the fact that only one of the two fields can be set.
       static constexpr size_t kClusterIndex = 0;
-      static constexpr size_t kWeightedClustersIndex = 0;
-      static constexpr size_t kClusterSpecifierPluginIndex = 0;
+      static constexpr size_t kWeightedClustersIndex = 1;
+      static constexpr size_t kClusterSpecifierPluginIndex = 2;
       absl::variant<std::string, std::vector<ClusterWeight>, std::string>
           action;
       std::vector<ClusterWeight> weighted_clusters;
@@ -145,7 +145,6 @@ struct XdsRouteConfigResource {
       bool operator==(const RouteAction& other) const {
         return hash_policies == other.hash_policies &&
                retry_policy == other.retry_policy && action == other.action &&
-               weighted_clusters == other.weighted_clusters &&
                max_stream_duration == other.max_stream_duration;
       }
       std::string ToString() const;

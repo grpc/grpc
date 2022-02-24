@@ -226,7 +226,6 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
     contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
   if (action.index() == kClusterIndex) {
-    gpr_log(GPR_INFO, "donna should not be here when empty???");
     contents.push_back(
         absl::StrFormat("Cluster name: %s", absl::get<kClusterIndex>(action)));
   } else if (action.index() == kWeightedClustersIndex) {
@@ -734,7 +733,20 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
-    route->action = route->weighted_clusters;
+    gpr_log(GPR_INFO, "donna has weights %d", route->weighted_clusters.size());
+    for (const auto& weighted_cluster : route->weighted_clusters) {
+      gpr_log(GPR_INFO, "donna old name is %s", weighted_cluster.name.c_str());
+    }
+    route->action =
+        std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>(
+            {route->weighted_clusters.begin(), route->weighted_clusters.end()});
+    auto action_weighted_clusters = absl::get<
+        XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
+        route->action);
+    for (const auto& weighted_cluster : action_weighted_clusters) {
+      gpr_log(GPR_INFO, "donna new name is %s", weighted_cluster.name.c_str());
+    }
+    gpr_log(GPR_INFO, "donna action index %d", route->action.index());
   } else if (XdsRlsEnabled() &&
              envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {
