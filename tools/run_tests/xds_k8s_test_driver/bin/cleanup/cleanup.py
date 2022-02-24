@@ -25,7 +25,6 @@ python3 tools/run_tests/xds_k8s_test_driver/bin/cleanup/cleanup.py\
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 """
 import datetime
-import dateutil
 import functools
 import json
 import logging
@@ -36,6 +35,7 @@ from typing import Any, List
 
 from absl import app
 from absl import flags
+import dateutil
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -61,7 +61,8 @@ URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources
 KEEP_PERIOD_DAYS = flags.DEFINE_integer(
     "keep_days",
     default=7,
-    help="number of days for a resource to keep. Resources older than this will be deleted"
+    help=
+    "number of days for a resource to keep. Resources older than this will be deleted"
 )
 DRY_RUN = flags.DEFINE_bool(
     "dry_run",
@@ -108,7 +109,8 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 @functools.lru_cache()
 def get_expire_timestamp() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=KEEP_PERIOD_DAYS.value)
+    return datetime.datetime.now(
+        datetime.timezone.utc) - datetime.timedelta(days=KEEP_PERIOD_DAYS.value)
 
 
 def exec_gcloud(project: str, *cmds: List[str]) -> Json:
