@@ -185,9 +185,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
   if (!host || !path) {
     return nil;
   }
-  if (safety > GRPCCallSafetyCacheableRequest) {
-    return nil;
-  }
   if (requestsWriter.state != GRXWriterStateNotStarted) {
     return nil;
   }
@@ -586,7 +583,6 @@ static NSString *const kBearerPrefix = @"Bearer ";
       if (_timeout > 0) {
         callOptions.timeout = _timeout;
       }
-      uint32_t callFlags = [GRPCCall callFlagsForHost:_host path:_path];
 
       id<GRPCAuthorizationProtocol> tokenProvider = self.tokenProvider;
       if (tokenProvider != nil) {
