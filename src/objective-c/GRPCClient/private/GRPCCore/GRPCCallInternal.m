@@ -87,10 +87,6 @@
     NSLog(@"Invalid host and path.");
     return;
   }
-  if (requestOptions.safety > GRPCCallSafetyCacheableRequest) {
-    NSLog(@"Invalid call safety.");
-    return;
-  }
 
   GRPCCall *copiedCall = nil;
   @synchronized(self) {
