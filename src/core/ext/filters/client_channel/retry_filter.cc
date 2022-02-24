@@ -2601,6 +2601,7 @@ void RetryFilter::CallData::AddClosureToStartTransparentRetry(
     gpr_log(GPR_INFO, "chand=%p calld=%p: scheduling transparent retry", chand_,
             this);
   }
+  GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   GRPC_CLOSURE_INIT(&retry_closure_, StartTransparentRetry, this, nullptr);
   closures->Add(&retry_closure_, GRPC_ERROR_NONE, "start transparent retry");
 }
@@ -2608,7 +2609,13 @@ void RetryFilter::CallData::AddClosureToStartTransparentRetry(
 void RetryFilter::CallData::StartTransparentRetry(void* arg,
                                                   grpc_error_handle /*error*/) {
   auto* calld = static_cast<CallData*>(arg);
-  calld->CreateCallAttempt(/*is_transparent_retry=*/true);
+  if (calld->cancelled_from_surface_ == GRPC_ERROR_NONE) {
+    calld->CreateCallAttempt(/*is_transparent_retry=*/true);
+  } else {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
+                            "call cancelled before transparent retry");
+  }
+  GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }
 
 }  // namespace
