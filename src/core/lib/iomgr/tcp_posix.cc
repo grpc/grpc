@@ -61,6 +61,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -365,6 +366,7 @@ struct grpc_tcp {
   /* Used by the endpoint read function to distinguish the very first read call
    * from the rest */
   bool is_first_read;
+  bool has_posted_reclaimer;
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -400,7 +402,8 @@ struct grpc_tcp {
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
-  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
+  gpr_mu tb_mu;        /* Lock for access to list of traced buffers */
+  gpr_mu reclaimer_mu; /* Lock for reclaiming memory */
 
   /* grpc_endpoint_write takes an argument which if non-null means that the
    * transport layer wants the TCP layer to collect timestamps for this write.
