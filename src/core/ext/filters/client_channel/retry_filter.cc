@@ -144,7 +144,9 @@ class RetryFilter {
   RetryFilter(const grpc_channel_args* args, grpc_error_handle* error)
       : client_channel_(grpc_channel_args_find_pointer<ClientChannel>(
             args, GRPC_ARG_CLIENT_CHANNEL)),
-        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)) {
+        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
+        service_config_parser_index_(
+            internal::RetryServiceConfigParser::ParserIndex()) {
     // Get retry throttling parameters from service config.
     auto* service_config = grpc_channel_args_find_pointer<ServiceConfig>(
         args, GRPC_ARG_SERVICE_CONFIG_OBJ);
@@ -174,9 +176,13 @@ class RetryFilter {
         server_name, config->max_milli_tokens(), config->milli_token_ratio());
   }
 
+  const RetryMethodConfig* GetRetryPolicy(
+      const grpc_call_context_element* context);
+
   ClientChannel* client_channel_;
   size_t per_rpc_retry_buffer_size_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
+  const size_t service_config_parser_index_;
 };
 
 //
@@ -2091,22 +2097,21 @@ void RetryFilter::CallData::SetPollent(grpc_call_element* elem,
 // CallData implementation
 //
 
-const RetryMethodConfig* GetRetryPolicy(
+const RetryMethodConfig* RetryFilter::GetRetryPolicy(
     const grpc_call_context_element* context) {
   if (context == nullptr) return nullptr;
   auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
       context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const RetryMethodConfig*>(
-      svc_cfg_call_data->GetMethodParsedConfig(
-          RetryServiceConfigParser::ParserIndex()));
+      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
 }
 
 RetryFilter::CallData::CallData(RetryFilter* chand,
                                 const grpc_call_element_args& args)
     : chand_(chand),
       retry_throttle_data_(chand->retry_throttle_data_),
-      retry_policy_(GetRetryPolicy(args.context)),
+      retry_policy_(chand->GetRetryPolicy(args.context)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(retry_policy_ == nullptr
@@ -2135,6 +2140,7 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       sent_transparent_retry_not_seen_by_server_(false) {}
 
 RetryFilter::CallData::~CallData() {
+  FreeAllCachedSendOpData();
   grpc_slice_unref_internal(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2175,9 +2181,6 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     }
     // Fail any pending batches.
     PendingBatchesFail(GRPC_ERROR_REF(cancelled_from_surface_));
-    // We're not going to process any subsequent callbacks or make any
-    // subsequent attempts, so free the cached send op data now.
-    FreeAllCachedSendOpData();
     // If we have a current call attempt, commit the call, then send
     // the cancellation down to that attempt.  When the call fails, it
     // will not be retried, because we have committed it here.
@@ -2201,6 +2204,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       }
       retry_timer_pending_ = false;  // Lame timer callback.
       grpc_timer_cancel(&retry_timer_);
+      FreeAllCachedSendOpData();
     }
     // We have no call attempt, so there's nowhere to send the cancellation
     // batch.  Return it back to the surface immediately.
@@ -2335,12 +2339,15 @@ void RetryFilter::CallData::FreeCachedSendInitialMetadata() {
 }
 
 void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]", chand_,
-            this, idx);
+  if (send_messages_[idx] != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]",
+              chand_, this, idx);
+    }
+    send_messages_[idx]->Destroy();
+    send_messages_[idx] = nullptr;
   }
-  send_messages_[idx]->Destroy();
 }
 
 void RetryFilter::CallData::FreeCachedSendTrailingMetadata() {

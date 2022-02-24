@@ -33,8 +33,6 @@ namespace grpc_core {
 
 namespace {
 
-size_t g_fault_injection_parser_index;
-
 std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
 ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                           std::vector<grpc_error_handle>* error_list) {
@@ -167,13 +165,15 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
       std::move(fault_injection_policies));
 }
 
-void FaultInjectionServiceConfigParser::Register() {
-  g_fault_injection_parser_index = ServiceConfigParser::RegisterParser(
+void FaultInjectionServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {
-  return g_fault_injection_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
 }  // namespace grpc_core

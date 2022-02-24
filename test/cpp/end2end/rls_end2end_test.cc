@@ -47,6 +47,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -230,7 +231,7 @@ class FakeResolverResponseGeneratorWrapper {
       absl::string_view service_config_json) {
     grpc_core::Resolver::Result result;
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfig::Create(
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
         result.args, service_config_json, &error);
     EXPECT_EQ(error, GRPC_ERROR_NONE)
         << "JSON: " << service_config_json
@@ -283,7 +284,7 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        kCallCredsMdKey, kCallCredsMdValue, false);
+        kCallCredsMdKey, kCallCredsMdValue);
     auto creds = std::make_shared<SecureChannelCredentials>(
         grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                   nullptr));

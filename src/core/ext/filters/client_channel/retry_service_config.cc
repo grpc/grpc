@@ -33,6 +33,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/json/json_util.h"
@@ -45,16 +46,13 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-size_t g_retry_service_config_parser_index;
-}
-
 size_t RetryServiceConfigParser::ParserIndex() {
-  return g_retry_service_config_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
-void RetryServiceConfigParser::Register() {
-  g_retry_service_config_parser_index = ServiceConfigParser::RegisterParser(
+void RetryServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<RetryServiceConfigParser>());
 }
 
