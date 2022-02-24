@@ -18,8 +18,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
-#include <unordered_map>
+#include <cinttypes>
 
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/str_format.h"
 #include "uv.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -69,8 +71,45 @@ class LibuvEventEngine final
   }
 
  private:
-  // An internal task representation
   class LibuvTask;
+  ////////////////////////////////////////////////////////////////////////////////
+  /// A LibuvEventEngine-specific TaskHandle.
+  ///
+  /// This enables conversion to and from EventEngine::TaskHandles, and hides
+  /// details of intptr_t key meanings. This type is copyable and movable.
+  /// Destruction does not delete the underlying task.
+  ////////////////////////////////////////////////////////////////////////////////
+  class LibuvTaskHandle {
+   public:
+    static LibuvTaskHandle CreateFromEngineTaskHandle(
+        const EventEngine::TaskHandle& handle) {
+      return LibuvTaskHandle(reinterpret_cast<LibuvTask*>(handle.keys[0]),
+                             handle.keys[1]);
+    }
+    LibuvTaskHandle() = delete;
+    LibuvTaskHandle(LibuvTask* task, intptr_t tag) : task_(task), tag_(tag) {}
+    // Does not delete the underlying task
+    ~LibuvTaskHandle() = default;
+    EventEngine::TaskHandle ToEventEngineTaskHandle() const {
+      return EventEngine::TaskHandle{reinterpret_cast<intptr_t>(task_), tag_};
+    }
+    std::string ToString() const {
+      return absl::StrFormat("{%p, %" PRIdPTR "}", task_, tag_);
+    }
+    LibuvTask* Task() { return task_; }
+    // Compatible with absl::flat_hash_set
+    template <typename H>
+    friend H AbslHashValue(H h, const LibuvTaskHandle& handle) {
+      return H::combine(std::move(h), handle.task_, handle.tag_);
+    }
+    bool operator==(const LibuvTaskHandle& handle) const {
+      return &handle == this || handle.task_ == task_ && handle.tag_ == tag_;
+    }
+
+   private:
+    LibuvTask* task_;
+    intptr_t tag_;
+  };
 
   // The main logic in the uv event loop
   void RunThread();
@@ -80,7 +119,10 @@ class LibuvEventEngine final
   void RunInLibuvThread(std::function<void(LibuvEventEngine*)>&& f);
   void Kicker();
   uv_loop_t* GetLoop() { return &loop_; }
-  void EraseTask(intptr_t taskKey);
+  // Erases a task from the set of known tasks.
+  // Must only be called after the task is know to exist in the EventEngine task
+  // set.
+  void EraseTask(LibuvTaskHandle taskKey);
   // Destructor logic that must be executed in the libuv thread before the
   // engine can be destroyed (from any thread).
   void DestroyInLibuvThread(Promise<bool>& uv_shutdown_can_proceed);
@@ -96,16 +138,8 @@ class LibuvEventEngine final
   // We keep a list of all of the tasks here. The atomics will serve as a
   // simple counter mechanism, with the assumption that if it ever rolls over,
   // the colliding tasks will have long been completed.
-  //
-  // NOTE: now that we're returning two intptr_t instead of just one for the
-  // keys, this can be improved, as we can hold the pointer in one
-  // key, and a tag in the other, to avoid the ABA problem. We'll keep the
-  // atomics as tags in the second key slot, but we can get rid of the maps.
-  //
-  // TODO(nnoble): remove the maps, and fold the pointers into the keys,
-  // alongside the ABA tag.
   std::atomic<intptr_t> task_key_;
-  std::unordered_map<intptr_t, LibuvTask*> task_map_;
+  absl::flat_hash_set<LibuvTaskHandle> task_set_;
 
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
