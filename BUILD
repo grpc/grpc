@@ -2269,6 +2269,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    visibility = ["@grpc:client_channel"],
     deps = [
         "config",
         "error",
