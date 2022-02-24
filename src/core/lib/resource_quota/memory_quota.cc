@@ -135,7 +135,7 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
   if (!empty) {
     // If we don't, but the queue is probably not empty, schedule an immediate
     // repoll.
-    Activity::current()->ForceImmediateRepoll();
+    Activity::WakeupCurrent();
   } else {
     // Otherwise, schedule a wakeup for whenever something is pushed.
     state_->waker = Activity::current()->MakeNonOwningWaker();

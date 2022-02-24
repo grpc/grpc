@@ -118,6 +118,18 @@ TEST(ActivityTest, DropImmediately) {
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
 }
 
+TEST(ActivityTest, Cancel) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  auto activity = MakeActivity(
+      [] { return []() -> Poll<absl::Status> { return Pending(); }; },
+      NoWakeupScheduler(),
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
+  EXPECT_CALL(on_done, Call(absl::CancelledError()));
+  activity->Cancel();
+  Mock::VerifyAndClearExpectations(&on_done);
+  activity.reset();
+}
+
 template <typename B>
 class BarrierTest : public testing::Test {
  public:

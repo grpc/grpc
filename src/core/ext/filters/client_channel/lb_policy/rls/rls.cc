@@ -69,6 +69,7 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -2478,7 +2479,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       Json rls_channel_service_config_json(
           *rls_channel_service_config_json_obj);
       rls_channel_service_config = rls_channel_service_config_json.Dump();
-      auto service_config = MakeRefCounted<ServiceConfig>(
+      auto service_config = MakeRefCounted<ServiceConfigImpl>(
           /*args=*/nullptr, rls_channel_service_config,
           std::move(rls_channel_service_config_json), &child_error);
       if (child_error != GRPC_ERROR_NONE) {

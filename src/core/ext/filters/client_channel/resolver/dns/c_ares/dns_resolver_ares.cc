@@ -48,7 +48,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -346,7 +346,7 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
-        service_config = ServiceConfig::Create(
+        service_config = ServiceConfigImpl::Create(
             channel_args_, service_config_string, &service_config_error);
       }
       if (service_config_error != GRPC_ERROR_NONE) {

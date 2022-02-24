@@ -25,7 +25,6 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -74,14 +73,11 @@ struct grpc_credentials_metadata_request {
   grpc_http_response response;
 };
 
-struct grpc_oauth2_pending_get_request_metadata
-    : public grpc_core::RefCounted<grpc_oauth2_pending_get_request_metadata> {
-  std::atomic<bool> done{false};
-  grpc_core::Waker waker;
+struct grpc_oauth2_pending_get_request_metadata {
+  grpc_core::CredentialsMetadataArray* md_array;
+  grpc_closure* on_request_metadata;
   grpc_polling_entity* pollent;
-  grpc_core::ClientInitialMetadata md;
   struct grpc_oauth2_pending_get_request_metadata* next;
-  absl::StatusOr<grpc_core::ClientInitialMetadata> result;
 };
 
 // -- Oauth2 Token Fetcher credentials --
@@ -94,9 +90,15 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   grpc_oauth2_token_fetcher_credentials();
   ~grpc_oauth2_token_fetcher_credentials() override;
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
-                     const GetRequestMetadataArgs* args) override;
+  bool get_request_metadata(grpc_polling_entity* pollent,
+                            grpc_auth_metadata_context context,
+                            grpc_core::CredentialsMetadataArray* md_array,
+                            grpc_closure* on_request_metadata,
+                            grpc_error_handle* error) override;
+
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error_handle error);
@@ -152,9 +154,15 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
  public:
   explicit grpc_access_token_credentials(const char* access_token);
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
-                     const GetRequestMetadataArgs* args) override;
+  bool get_request_metadata(grpc_polling_entity* pollent,
+                            grpc_auth_metadata_context context,
+                            grpc_core::CredentialsMetadataArray* md_array,
+                            grpc_closure* on_request_metadata,
+                            grpc_error_handle* error) override;
+
+  void cancel_get_request_metadata(
+      grpc_core::CredentialsMetadataArray* md_array,
+      grpc_error_handle error) override;
 
   std::string debug_string() override;
 

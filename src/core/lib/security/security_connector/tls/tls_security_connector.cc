@@ -34,7 +34,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -409,14 +408,20 @@ int TlsChannelSecurityConnector::cmp(
   return 0;
 }
 
-ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
-    absl::string_view host, grpc_auth_context* auth_context) {
+bool TlsChannelSecurityConnector::check_call_host(
+    absl::string_view host, grpc_auth_context* auth_context,
+    grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
   if (options_->check_call_host()) {
-    return Immediate(SslCheckCallHost(host, target_name_.c_str(),
-                                      overridden_target_name_.c_str(),
-                                      auth_context));
+    return grpc_ssl_check_call_host(host, target_name_.c_str(),
+                                    overridden_target_name_.c_str(),
+                                    auth_context, error);
   }
-  return ImmediateOkStatus();
+  return true;
+}
+
+void TlsChannelSecurityConnector::cancel_check_call_host(
+    grpc_closure* /*on_call_host_checked*/, grpc_error_handle error) {
+  GRPC_ERROR_UNREF(error);
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
