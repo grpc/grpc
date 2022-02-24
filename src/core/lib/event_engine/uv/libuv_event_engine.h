@@ -81,6 +81,9 @@ class LibuvEventEngine final
   void Kicker();
   uv_loop_t* GetLoop() { return &loop_; }
   void EraseTask(intptr_t taskKey);
+  // Destructor logic that must be executed in the libuv thread before the
+  // engine can be destroyed (from any thread).
+  void DestroyInLibuvThread(Promise<bool>& uv_shutdown_can_proceed);
 
   uv_loop_t loop_;
   uv_async_t kicker_;

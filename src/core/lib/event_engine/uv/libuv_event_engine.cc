@@ -167,48 +167,62 @@ LibuvEventEngine::LibuvEventEngine() {
   GPR_ASSERT(GPR_LIKELY(success));
 }
 
+void LibuvEventEngine::DestroyInLibuvThread(
+    Promise<bool>& uv_shutdown_can_proceed) {
+  GPR_ASSERT(IsWorkerThread());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG,
+            "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
+            this);
+  }
+  GPR_ASSERT(uv_shutdown_can_proceed.Wait());
+  // Shutting down at this point is essentially just this unref call here.
+  // After it, the libuv loop will continue working until it has no more
+  // events to monitor. It means that scheduling new work becomes essentially
+  // undefined behavior, which is in line with our surface API contracts,
+  // which stipulate the same thing.
+  uv_unref(reinterpret_cast<uv_handle_t*>(&kicker_));
+  uv_close(reinterpret_cast<uv_handle_t*>(&kicker_), nullptr);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_map_.size=%zu", this,
+            task_map_.size());
+    for (const auto& entry : task_map_) {
+      gpr_log(GPR_DEBUG, " - key@%" PRIdPTR " maps to task %p", entry.first,
+              entry.second);
+    }
+    // This is an unstable API from libuv that we use for its intended
+    // purpose: debugging. This can tell us if there's lingering handles
+    // that are still going to hold up the loop at this point.
+    uv_walk(
+        &loop_,
+        [](uv_handle_t* handle, /*arg=*/void*) {
+          uv_handle_type type = uv_handle_get_type(handle);
+          const char* name = uv_handle_type_name(type);
+          gpr_log(GPR_DEBUG,
+                  "in shutdown, handle %p type %s has references: %s", handle,
+                  name, uv_has_ref(handle) ? "yes" : "no");
+        },
+        nullptr);
+  }
+}
+
 LibuvEventEngine::~LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::~LibuvEventEngine", this);
   }
   Promise<bool> uv_shutdown_can_proceed;
-  RunInLibuvThread([&uv_shutdown_can_proceed](LibuvEventEngine* engine) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_DEBUG,
-              "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
-              engine);
-    }
-    GPR_ASSERT(uv_shutdown_can_proceed.Wait());
-    // Shutting down at this point is essentially just this unref call here.
-    // After it, the libuv loop will continue working until it has no more
-    // events to monitor. It means that scheduling new work becomes essentially
-    // undefined behavior, which is in line with our surface API contracts,
-    // which stipulate the same thing.
-    uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
-    uv_close(reinterpret_cast<uv_handle_t*>(&engine->kicker_), nullptr);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_map_.size=%zu", engine,
-              engine->task_map_.size());
-      for (const auto& entry : engine->task_map_) {
-        gpr_log(GPR_DEBUG, " - key@%" PRIdPTR " maps to task %p", entry.first,
-                entry.second);
-      }
-      // This is an unstable API from libuv that we use for its intended
-      // purpose: debugging. This can tell us if there's lingering handles
-      // that are still going to hold up the loop at this point.
-      uv_walk(
-          &engine->loop_,
-          [](uv_handle_t* handle, /*arg=*/void*) {
-            uv_handle_type type = uv_handle_get_type(handle);
-            const char* name = uv_handle_type_name(type);
-            gpr_log(GPR_DEBUG,
-                    "in shutdown, handle %p type %s has references: %s", handle,
-                    name, uv_has_ref(handle) ? "yes" : "no");
-          },
-          nullptr);
-    }
-  });
-  uv_shutdown_can_proceed.Notify(true);
+  if (IsWorkerThread()) {
+    // Run the shutdown code inline
+    uv_shutdown_can_proceed.Notify(true);
+    DestroyInLibuvThread(uv_shutdown_can_proceed);
+  } else {
+    // Run the shutdown code in the libuv thread, and wait for it to complete
+    // before finishing engine destruction.
+    RunInLibuvThread([&uv_shutdown_can_proceed](LibuvEventEngine* engine) {
+      engine->DestroyInLibuvThread(uv_shutdown_can_proceed);
+    });
+    uv_shutdown_can_proceed.Notify(true);
+  }
   thread_.Join();
   GPR_ASSERT(GPR_LIKELY(task_map_.empty()));
 }
