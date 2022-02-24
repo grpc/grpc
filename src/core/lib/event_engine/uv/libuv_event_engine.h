@@ -103,7 +103,7 @@ class LibuvEventEngine final
       return H::combine(std::move(h), handle.task_, handle.tag_);
     }
     bool operator==(const LibuvTaskHandle& handle) const {
-      return &handle == this || handle.task_ == task_ && handle.tag_ == tag_;
+      return &handle == this || (handle.task_ == task_ && handle.tag_ == tag_);
     }
 
    private:
