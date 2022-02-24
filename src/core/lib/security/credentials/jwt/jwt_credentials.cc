@@ -34,8 +34,6 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -49,21 +47,22 @@ grpc_service_account_jwt_access_credentials::
   gpr_mu_destroy(&cache_mu_);
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-grpc_service_account_jwt_access_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
-    const grpc_call_credentials::GetRequestMetadataArgs* args) {
+bool grpc_service_account_jwt_access_credentials::get_request_metadata(
+    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context context,
+    grpc_core::CredentialsMetadataArray* md_array,
+    grpc_closure* /*on_request_metadata*/, grpc_error_handle* error) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
   // Remove service name from service_url to follow the audience format
   // dictated in https://google.aip.dev/auth/4111.
-  absl::StatusOr<std::string> uri = grpc_core::RemoveServiceNameFromJwtUri(
-      grpc_core::MakeJwtServiceUrl(initial_metadata, args));
+  absl::StatusOr<std::string> uri =
+      grpc_core::RemoveServiceNameFromJwtUri(context.service_url);
   if (!uri.ok()) {
-    return grpc_core::Immediate(uri.status());
+    *error = absl_status_to_grpc_error(uri.status());
+    return true;
   }
-  // See if we can return a cached jwt.
+  /* See if we can return a cached jwt. */
   absl::optional<grpc_core::Slice> jwt_value;
   {
     gpr_mu_lock(&cache_mu_);
@@ -78,7 +77,7 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
 
   if (!jwt_value.has_value()) {
     char* jwt = nullptr;
-    // Generate a new jwt.
+    /* Generate a new jwt. */
     gpr_mu_lock(&cache_mu_);
     cached_.reset();
     jwt = grpc_jwt_encode_and_sign(&key_, uri->c_str(), jwt_lifetime_, nullptr);
@@ -92,15 +91,20 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
     gpr_mu_unlock(&cache_mu_);
   }
 
-  if (!jwt_value.has_value()) {
-    return grpc_core::Immediate(
-        absl::UnauthenticatedError("Could not generate JWT."));
+  if (jwt_value.has_value()) {
+    md_array->emplace_back(
+        grpc_core::Slice::FromStaticString(GRPC_AUTHORIZATION_METADATA_KEY),
+        std::move(*jwt_value));
+  } else {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Could not generate JWT.");
   }
+  return true;
+}
 
-  initial_metadata->Append(
-      GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
-      [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  return grpc_core::Immediate(std::move(initial_metadata));
+void grpc_service_account_jwt_access_credentials::cancel_get_request_metadata(
+    grpc_core::CredentialsMetadataArray* /*md_array*/,
+    grpc_error_handle error) {
+  GRPC_ERROR_UNREF(error);
 }
 
 grpc_service_account_jwt_access_credentials::
