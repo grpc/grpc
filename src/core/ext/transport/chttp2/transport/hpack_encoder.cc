@@ -484,6 +484,9 @@ void HPackCompressor::Framer::Encode(HttpMethodMetadata,
     case HttpMethodMetadata::ValueType::kPost:
       EmitIndexed(3);  // :method: POST
       break;
+    case HttpMethodMetadata::ValueType::kGet:
+      EmitIndexed(2);  // :method: GET
+      break;
     case HttpMethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;

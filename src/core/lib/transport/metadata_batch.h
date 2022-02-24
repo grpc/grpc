@@ -223,6 +223,7 @@ struct HttpMethodMetadata {
   static constexpr bool kRepeatable = false;
   enum ValueType {
     kPost,
+    kGet,
     kInvalid,
   };
   using MementoType = ValueType;
@@ -232,6 +233,8 @@ struct HttpMethodMetadata {
     auto value_string = value.as_string_view();
     if (value_string == "POST") {
       out = kPost;
+    } else if (value_string == "GET") {
+      out = kGet;
     } else {
       on_error("invalid value", value);
     }
@@ -244,6 +247,8 @@ struct HttpMethodMetadata {
     switch (x) {
       case kPost:
         return StaticSlice::FromStaticString("POST");
+      case kGet:
+        return StaticSlice::FromStaticString("GET");
       default:
         abort();
     }
@@ -252,6 +257,8 @@ struct HttpMethodMetadata {
     switch (content_type) {
       case kPost:
         return "POST";
+      case kGet:
+        return "GET";
       default:
         return "<discarded-invalid-value>";
     }
