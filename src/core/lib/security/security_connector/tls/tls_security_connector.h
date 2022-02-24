@@ -67,8 +67,12 @@ class TlsChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context* auth_context) override;
+  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
+                       grpc_closure* on_call_host_checked,
+                       grpc_error_handle* error) override;
+
+  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+                              grpc_error_handle error) override;
 
   tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
     MutexLock lock(&mu_);

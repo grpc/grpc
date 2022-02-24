@@ -28,16 +28,14 @@ namespace grpc_core {
 GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
 Waker::Unwakeable Waker::unwakeable_;
 
-namespace promise_detail {
-
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER TYPES
 
 // Weak handle to an Activity.
 // Handle can persist while Activity goes away.
-class FreestandingActivity::Handle final : public Wakeable {
+class Activity::Handle final : public Wakeable {
  public:
-  explicit Handle(FreestandingActivity* activity) : activity_(activity) {}
+  explicit Handle(Activity* activity) : activity_(activity) {}
 
   // Ref the Handle (not the activity).
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
@@ -59,7 +57,7 @@ class FreestandingActivity::Handle final : public Wakeable {
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.
     if (activity_ && activity_->RefIfNonzero()) {
-      FreestandingActivity* activity = activity_;
+      Activity* activity = activity_;
       mu_.Unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
@@ -87,15 +85,15 @@ class FreestandingActivity::Handle final : public Wakeable {
   // activity.
   std::atomic<size_t> refs_{2};
   Mutex mu_ ABSL_ACQUIRED_AFTER(activity_->mu_);
-  FreestandingActivity* activity_ ABSL_GUARDED_BY(mu_);
+  Activity* activity_ ABSL_GUARDED_BY(mu_);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // ACTIVITY IMPLEMENTATION
 
-bool FreestandingActivity::RefIfNonzero() { return IncrementIfNonzero(&refs_); }
+bool Activity::RefIfNonzero() { return IncrementIfNonzero(&refs_); }
 
-FreestandingActivity::Handle* FreestandingActivity::RefHandle() {
+Activity::Handle* Activity::RefHandle() {
   if (handle_ == nullptr) {
     // No handle created yet - construct it and return it.
     handle_ = new Handle(this);
@@ -107,15 +105,11 @@ FreestandingActivity::Handle* FreestandingActivity::RefHandle() {
   }
 }
 
-void FreestandingActivity::DropHandle() {
+void Activity::DropHandle() {
   handle_->DropActivity();
   handle_ = nullptr;
 }
 
-Waker FreestandingActivity::MakeNonOwningWaker() {
-  mu_.AssertHeld();
-  return Waker(RefHandle());
-}
+Waker Activity::MakeNonOwningWaker() { return Waker(RefHandle()); }
 
-}  // namespace promise_detail
 }  // namespace grpc_core

@@ -284,7 +284,7 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        kCallCredsMdKey, kCallCredsMdValue);
+        kCallCredsMdKey, kCallCredsMdValue, false);
     auto creds = std::make_shared<SecureChannelCredentials>(
         grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                   nullptr));

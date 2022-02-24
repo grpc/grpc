@@ -51,15 +51,12 @@ int grpc_ssl_cmp_target_name(absl::string_view target_name,
                              absl::string_view other_target_name,
                              absl::string_view overridden_target_name,
                              absl::string_view other_overridden_target_name);
-
-namespace grpc_core {
 /* Check the host that will be set for a call is acceptable.*/
-absl::Status SslCheckCallHost(absl::string_view host,
+bool grpc_ssl_check_call_host(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
-                              grpc_auth_context* auth_context);
-}  // namespace grpc_core
-
+                              grpc_auth_context* auth_context,
+                              grpc_error_handle* error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 
