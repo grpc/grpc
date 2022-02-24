@@ -61,6 +61,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -365,6 +366,7 @@ struct grpc_tcp {
   /* Used by the endpoint read function to distinguish the very first read call
    * from the rest */
   bool is_first_read;
+  bool has_posted_reclaimer;
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -400,7 +402,8 @@ struct grpc_tcp {
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
-  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
+  gpr_mu tb_mu;        /* Lock for access to list of traced buffers */
+  gpr_mu reclaimer_mu; /* Lock for reclaiming memory */
 
   /* grpc_endpoint_write takes an argument which if non-null means that the
    * transport layer wants the TCP layer to collect timestamps for this write.
@@ -831,6 +834,25 @@ static void tcp_do_read(grpc_tcp* tcp) {
   TCP_UNREF(tcp, "read");
 }
 
+static void post_benign_reclaimer(grpc_tcp* tcp) {
+  if (!tcp->has_posted_reclaimer) {
+    tcp->has_posted_reclaimer = true;
+    tcp->memory_owner.PostReclaimer(
+        grpc_core::ReclamationPass::kBenign,
+        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            gpr_mu_lock(&tcp->reclaimer_mu);
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+              gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
+            }
+            grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+            tcp->has_posted_reclaimer = false;
+            gpr_mu_unlock(&tcp->reclaimer_mu);
+          }
+        });
+  }
+}
+
 static void tcp_continue_read(grpc_tcp* tcp) {
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
@@ -851,6 +873,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
             grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
                              tcp->max_read_chunk_size))));
   }
+  post_benign_reclaimer(tcp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }

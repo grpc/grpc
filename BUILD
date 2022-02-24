@@ -2159,6 +2159,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
