@@ -58,11 +58,11 @@ SECONDARY_ZONE = 'us-west1-b'
 PSM_SECURITY_PREFIX = 'xds-k8s-security'  # Prefix for gke resources to delete.
 URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources to delete.
 
-KEEP_PERIOD_DAYS = flags.DEFINE_integer(
-    "keep_days",
-    default=7,
+KEEP_PERIOD_HOURS = flags.DEFINE_integer(
+    "keep_hours",
+    default=168,
     help=
-    "number of days for a resource to keep. Resources older than this will be deleted"
+    "number of hours for a resource to keep. Resources older than this will be deleted. Default is 168 (7 days)"
 )
 DRY_RUN = flags.DEFINE_bool(
     "dry_run",
@@ -109,8 +109,8 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 @functools.lru_cache()
 def get_expire_timestamp() -> datetime.datetime:
-    return datetime.datetime.now(
-        datetime.timezone.utc) - datetime.timedelta(days=KEEP_PERIOD_DAYS.value)
+    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        hours=KEEP_PERIOD_HOURS.value)
 
 
 def exec_gcloud(project: str, *cmds: List[str]) -> Json:
