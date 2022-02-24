@@ -30,9 +30,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "timer_rc",
+    testonly = True,
+    srcs = ["timer_rc_test.cc"],
+    hdrs = COMMON_HEADERS,
+    deps = [":conformance_test_base_lib"],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "dns",
     testonly = True,
     srcs = ["dns_test.cc"],
+    hdrs = COMMON_HEADERS,
+    deps = [":conformance_test_base_lib"],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "dns_rc",
+    testonly = True,
+    srcs = ["dns_rc_test.cc"],
     hdrs = COMMON_HEADERS,
     deps = [":conformance_test_base_lib"],
     alwayslink = 1,
@@ -48,6 +66,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "client_rc",
+    testonly = True,
+    srcs = ["client_rc_test.cc"],
+    hdrs = COMMON_HEADERS,
+    deps = [":conformance_test_base_lib"],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "server",
     testonly = True,
     srcs = ["server_test.cc"],
@@ -57,7 +84,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "complete",
+    name = "server_rc",
+    testonly = True,
+    srcs = ["server_rc_test.cc"],
+    hdrs = COMMON_HEADERS,
+    deps = [":conformance_test_base_lib"],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "complete_no_rc",
     testonly = 1,
     hdrs = COMMON_HEADERS,
     deps = [
