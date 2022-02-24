@@ -58,7 +58,7 @@ static NSString *const kService = @"TestService";
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"
                                           path:kUnaryCallMethod.HTTPPath
-                                        safety:GRPCCallSafetyCacheableRequest];
+                                        safety:GRPCCallSafetyDefault];
 
   GRPCCall2 *call = [[GRPCCall2 alloc] initWithRequestOptions:requestOptions
                                               responseHandler:self

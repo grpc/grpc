@@ -179,7 +179,7 @@ static NSString *const kBearerPrefix = @"Bearer ";
                    writeDone:(void (^)(void))writeDone {
   // Purposely using pointer rather than length (host.length == 0) for backwards compatibility.
   NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
-  NSAssert(safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
+  NSAssert(safety <= GRPCCallSafetyDefault, @"Invalid call safety value.");
   NSAssert(requestsWriter.state == GRXWriterStateNotStarted,
            @"The requests writer can't be already started.");
   if (!host || !path) {

@@ -82,7 +82,7 @@
                     callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0,
            @"Neither host nor path can be nil.");
-  NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
+  NSAssert(requestOptions.safety <= GRPCCallSafetyDefault, @"Invalid call safety value.");
   if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     NSLog(@"Invalid host and path.");
     return;
