@@ -1,18 +1,18 @@
-# gRPC Bazel BUILD file.
+#gRPC Bazel BUILD file.
 #
-# Copyright 2016 gRPC authors.
+#Copyright 2016 gRPC authors.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+#Licensed under the Apache License, Version 2.0(the "License");
+#you may not use this file except in compliance with the License.
+#You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#http:  // www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#Unless required by applicable law or agreed to in writing, software
+#distributed under the License is distributed on an "AS IS" BASIS,
+#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#See the License for the specific language governing permissions and
+#limitations under the License.
 
 load(
     "//bazel:grpc_build_system.bzl",
@@ -49,12 +49,12 @@ config_setting(
     values = {"define": "grpc_no_xds=true"},
 )
 
-# When gRPC is build as shared library, binder transport code might still
-# get included even when user's code does not depend on it. In that case
-# --define=grpc_no_binder=true can be used to disable binder transport
-# related code to reduce binary size.
-# For users using build system other than bazel, they can define
-# GRPC_NO_BINDER to achieve the same effect.
+#When gRPC is build as shared library, binder transport code might still
+#get included even when user's code does not depend on it. In that case
+#-- define = grpc_no_binder = true can be used to disable binder transport
+#related code to reduce binary size.
+#For users using build system other than bazel, they can define
+#GRPC_NO_BINDER to achieve the same effect.
 config_setting(
     name = "grpc_no_binder_define",
     values = {"define": "grpc_no_binder=true"},
@@ -74,10 +74,10 @@ selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
         ":grpc_no_xds_define",
-        # In addition to disabling XDS support when --define=grpc_no_xds=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
+#In addition to disabling XDS support when-- define = grpc_no_xds = true is
+#specified, we also disable it on mobile platforms where it is not
+#likely to be needed and where reducing the binary size is more
+#important.
         ":android",
         ":ios",
     ],
@@ -87,7 +87,7 @@ selects.config_setting_group(
     name = "grpc_no_binder",
     match_any = [
         ":grpc_no_binder_define",
-        # We do not need binder on ios.
+#We do not need binder on ios.
         ":ios",
     ],
 )
@@ -95,14 +95,14 @@ selects.config_setting_group(
 selects.config_setting_group(
     name = "grpc_no_rls",
     match_any = [
-        # Disable RLS support on mobile platforms where it is not likely to be
-        # needed and where reducing the binary size is more important.
+#Disable RLS support on mobile platforms where it is not likely to be
+#needed and where reducing the binary size is more important.
         ":android",
         ":ios",
     ],
 )
 
-# Fuzzers can be built as fuzzers or as tests
+#Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",
     values = {"define": "grpc_build_fuzzers=true"},
@@ -150,7 +150,7 @@ config_setting(
 
 python_config_settings()
 
-# This should be updated along with build_handwritten.yaml
+#This should be updated along with build_handwritten.yaml
 g_stands_for = "gravity"  # @unused
 
 core_version = "22.0.0"  # @unused
@@ -411,7 +411,7 @@ GRPC_XDS_TARGETS = [
     "grpc_resolver_c2p",
     "grpc_xds_server_config_fetcher",
 
-    # Not xDS-specific but currently only used by xDS.
+#Not xDS - specific but currently only used by xDS.
     "channel_creds_registry_init",
 ]
 
@@ -889,7 +889,7 @@ grpc_cc_library(
     external_deps = ["absl/utility"],
     deps = [
         "arena",
-        # TODO(ctiller): weaken this to just arena when that splits into its own target
+#TODO(ctiller) : weaken this to just arena when that splits into its own target
         "gpr_base",
     ],
 )
@@ -937,8 +937,8 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
 )
 
-# A library that vends only port_platform, so that libraries that don't need
-# anything else from gpr can still be portable!
+#A library that vends only port_platform, so that libraries that don't need
+#anything else from gpr can still be portable !
 grpc_cc_library(
     name = "gpr_platform",
     language = "c++",
@@ -1775,7 +1775,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/default_event_engine_factory.cc",
     ],
     external_deps = [
-        # TODO(hork): uv, in a subsequent PR
+#TODO(hork) : uv, in a subsequent PR
     ],
     deps = [
         "default_event_engine_factory_hdrs",
@@ -1967,8 +1967,8 @@ grpc_cc_library(
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
     ] +
-    # TODO(hork): delete the iomgr glue code when EventEngine is fully
-    # integrated, or when it becomes obvious the glue code is unnecessary.
+#TODO(hork) : delete the iomgr glue code when EventEngine is fully
+#integrated, or when it becomes obvious the glue code is unnecessary.
     [
         "src/core/lib/iomgr/event_engine/closure.cc",
         "src/core/lib/iomgr/event_engine/endpoint.cc",
@@ -2086,11 +2086,11 @@ grpc_cc_library(
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
     ] +
-    # TODO(ctiller): remove these
-    # These headers used to be vended by this target, but they have been split
-    # out into separate targets now. In order to transition downstream code, we
-    # re-export these headers from here for now, and when LSC's have completed
-    # to clean this up, we'll remove these.
+#TODO(ctiller) : remove these
+#These headers used to be vended by this target, but they have been split
+#out into separate targets now.In order to transition downstream code, we
+#re - export these headers from here for now, and when LSC's have completed
+#to clean this up, we'll remove these.
     [
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
@@ -2103,8 +2103,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/channel/channel_args.h",
     ] +
-    # TODO(hork): delete the iomgr glue code when EventEngine is fully
-    # integrated, or when it becomes obvious the glue code is unnecessary.
+#TODO(hork) : delete the iomgr glue code when EventEngine is fully
+#integrated, or when it becomes obvious the glue code is unnecessary.
     [
         "src/core/lib/iomgr/event_engine/closure.h",
         "src/core/lib/iomgr/event_engine/endpoint.h",
@@ -2212,7 +2212,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_base",
-        # standard plugins
+#standard plugins
         "census",
         "grpc_deadline_filter",
         "grpc_client_authority_filter",
@@ -4078,9 +4078,12 @@ grpc_cc_library(
         "grpc_base",
         "grpc_trace",
         "json",
+        "memory_quota",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
+        "resource_quota_trace",
         "try_seq",
         "tsi_base",
     ],
@@ -4229,7 +4232,7 @@ grpc_cc_library(
     ],
 )
 
-# This target depends on RE2 and should not be linked into grpc by default for binary-size reasons.
+#This target depends on RE2 and should not be linked into grpc by default for binary - size reasons.
 grpc_cc_library(
     name = "grpc_matchers",
     srcs = [
@@ -4251,7 +4254,9 @@ grpc_cc_library(
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+#This target pulls in a dependency on RE2 and should not be linked into grpc \
+        by default for binary -                                              \
+    size reasons.
 grpc_cc_library(
     name = "grpc_rbac_engine",
     srcs = [
@@ -4278,7 +4283,9 @@ grpc_cc_library(
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+#This target pulls in a dependency on RE2 and should not be linked into grpc \
+        by default for binary -                                              \
+    size reasons.
 grpc_cc_library(
     name = "grpc_authorization_provider",
     srcs = [
@@ -4304,7 +4311,9 @@ grpc_cc_library(
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+#This target pulls in a dependency on RE2 and should not be linked into grpc \
+        by default for binary -                                              \
+    size reasons.
 grpc_cc_library(
     name = "grpc++_authorization_provider",
     srcs = [
@@ -4323,7 +4332,9 @@ grpc_cc_library(
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+#This target pulls in a dependency on RE2 and should not be linked into grpc \
+        by default for binary -                                              \
+    size reasons.
 grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
