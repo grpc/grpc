@@ -108,7 +108,6 @@ struct secure_endpoint {
   grpc_slice write_staging_buffer = grpc_empty_slice();
   grpc_slice_buffer output_buffer;
   grpc_core::MemoryOwner memory_owner;
-  gpr_mu reclaimer_mu;
   bool has_posted_reclaimer;
 
   gpr_refcount ref;
@@ -166,19 +165,13 @@ static void post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            gpr_mu_lock(&ep->reclaimer_mu);
             if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
               gpr_log(GPR_INFO,
                       "secure endpoint: benign reclamation to free memory");
             }
-            if (ep->read_staging_buffer.data.refcounted.length > 0) {
-              grpc_slice_unref_internal(ep->read_staging_buffer);
-            }
-            if (ep->write_staging_buffer.data.refcounted.length > 0) {
-              grpc_slice_unref_internal(ep->write_staging_buffer);
-            }
+            ep->read_staging_buffer = grpc_empty_slice();
+            ep->write_staging_buffer = grpc_empty_slice();
             ep->has_posted_reclaimer = false;
-            gpr_mu_unlock(&ep->reclaimer_mu);
           }
         });
   }
