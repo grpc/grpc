@@ -262,16 +262,22 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (error != GRPC_ERROR_NONE || req->cancelled_) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
     req->NextAddress(GRPC_ERROR_REF(error));
     return;
   }
+  // Handshake completed, so we own fields in args
   grpc_channel_args_destroy(args->args);
   grpc_slice_buffer_destroy_internal(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
+  if (req->cancelled_) {
+    req->NextAddress(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HTTP request cancelled during security handshake"));
+    return;
+  }
   req->StartWrite();
 }
 
