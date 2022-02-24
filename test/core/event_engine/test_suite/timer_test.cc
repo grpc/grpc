@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+////////////////////////////////////////////////////////////////////////////////
+// DO NOT ADD NEW TESTS TO THIS FILE
+//
+// New conformance tests are added to the timer_rc_test.cc file, and
+// periodically rolled up into the main targets. See the README for details.
+////////////////////////////////////////////////////////////////////////////////
+
 #include <random>
 #include <thread>
 
