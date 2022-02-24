@@ -841,13 +841,13 @@ static void post_benign_reclaimer(grpc_tcp* tcp) {
         grpc_core::ReclamationPass::kBenign,
         [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            gpr_mu_lock(&tcp->reclaimer_mu);
             if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
               gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
             }
-            grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+            if (tcp->incoming_buffer != nullptr) {
+              grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+            }
             tcp->has_posted_reclaimer = false;
-            gpr_mu_unlock(&tcp->reclaimer_mu);
           }
         });
   }
