@@ -229,16 +229,16 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
     contents.push_back(
         absl::StrFormat("Cluster name: %s", absl::get<kClusterIndex>(action)));
   } else if (action.index() == kWeightedClustersIndex) {
-    for (const ClusterWeight& cluster_weight : weighted_clusters) {
+    auto& action_weighted_clusters = absl::get<
+        XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
+        action);
+    for (const ClusterWeight& cluster_weight : action_weighted_clusters) {
       contents.push_back(cluster_weight.ToString());
     }
   } else if (action.index() == kClusterSpecifierPluginIndex) {
     contents.push_back(
         absl::StrFormat("Cluster specifier plugin name: %s",
                         absl::get<kClusterSpecifierPluginIndex>(action)));
-  }
-  for (const ClusterWeight& cluster_weight : weighted_clusters) {
-    contents.push_back(cluster_weight.ToString());
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
@@ -677,6 +677,12 @@ grpc_error_handle RouteActionParse(
     }
   } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                  route_action)) {
+    route->action =
+        std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>(
+            {});
+    auto& action_weighted_clusters = absl::get<
+        XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
+        route->action);
     const envoy_config_route_v3_WeightedCluster* weighted_cluster =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action);
     uint32_t total_weight = 100;
@@ -723,30 +729,16 @@ grpc_error_handle RouteActionParse(
             &cluster.typed_per_filter_config);
         if (error != GRPC_ERROR_NONE) return error;
       }
-      route->weighted_clusters.emplace_back(std::move(cluster));
+      action_weighted_clusters.emplace_back(std::move(cluster));
     }
     if (total_weight != sum_of_weights) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has incorrect total weight");
     }
-    if (route->weighted_clusters.empty()) {
+    if (action_weighted_clusters.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
-    gpr_log(GPR_INFO, "donna has weights %d", route->weighted_clusters.size());
-    for (const auto& weighted_cluster : route->weighted_clusters) {
-      gpr_log(GPR_INFO, "donna old name is %s", weighted_cluster.name.c_str());
-    }
-    route->action =
-        std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>(
-            {route->weighted_clusters.begin(), route->weighted_clusters.end()});
-    auto action_weighted_clusters = absl::get<
-        XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
-        route->action);
-    for (const auto& weighted_cluster : action_weighted_clusters) {
-      gpr_log(GPR_INFO, "donna new name is %s", weighted_cluster.name.c_str());
-    }
-    gpr_log(GPR_INFO, "donna action index %d", route->action.index());
   } else if (XdsRlsEnabled() &&
              envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {

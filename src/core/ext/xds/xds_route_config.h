@@ -135,7 +135,6 @@ struct XdsRouteConfigResource {
       static constexpr size_t kClusterSpecifierPluginIndex = 2;
       absl::variant<std::string, std::vector<ClusterWeight>, std::string>
           action;
-      std::vector<ClusterWeight> weighted_clusters;
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
       // RouteAction.max_stream_duration.max_stream_duration if the former is
