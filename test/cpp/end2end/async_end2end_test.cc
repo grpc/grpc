@@ -211,7 +211,7 @@ bool plugin_has_sync_methods(std::unique_ptr<ServerBuilderPlugin>& plugin) {
 // the server. If there are sync services, UnimplementedRpc test will triger
 // the sync unknown rpc routine on the server side, rather than the async one
 // that needs to be tested here.
-class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
+class ServerBuilderSyncPluginDisabler : public grpc::ServerBuilderOption {
  public:
   void UpdateArguments(ChannelArguments* /*arg*/) override {}
 
@@ -303,8 +303,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =
-        !(GetParam().inproc) ? ::grpc::CreateCustomChannel(
-                                   server_address_.str(), channel_creds, args)
+        !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
+                                                         channel_creds, args)
                              : server_->InProcessChannel(args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -1311,8 +1311,8 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =
-      !(GetParam().inproc) ? ::grpc::CreateCustomChannel(server_address_.str(),
-                                                         channel_creds, args)
+      !(GetParam().inproc) ? grpc::CreateCustomChannel(server_address_.str(),
+                                                       channel_creds, args)
                            : server_->InProcessChannel(args);
   std::unique_ptr<grpc::testing::UnimplementedEchoService::Stub> stub;
   stub = grpc::testing::UnimplementedEchoService::NewStub(channel);
@@ -1513,7 +1513,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->Finish(&recv_status, tag(10));
     Verifier().Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
-    EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
     void* phony_tag;
@@ -1662,7 +1662,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     cli_stream->Finish(&recv_status, tag(10));
     Verifier().Expect(10, true).Verify(&cli_cq);
     EXPECT_FALSE(recv_status.ok());
-    EXPECT_EQ(::grpc::StatusCode::CANCELLED, recv_status.error_code());
+    EXPECT_EQ(grpc::StatusCode::CANCELLED, recv_status.error_code());
 
     cli_cq.Shutdown();
     void* phony_tag;

@@ -25,6 +25,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
@@ -286,12 +287,13 @@ static void start_test_under_work_serializer(void* arg) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
   res_cb_arg->result_handler = new ResultHandler();
-  grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  grpc_core::ResolverFactory* factory = grpc_core::CoreConfiguration::Get()
+                                            .resolver_registry()
+                                            .LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(res_cb_arg->uri_str);
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());

@@ -129,6 +129,8 @@ extern void resource_quota_server(grpc_end2end_test_config config);
 extern void resource_quota_server_pre_init(void);
 extern void retry(grpc_end2end_test_config config);
 extern void retry_pre_init(void);
+extern void retry_cancel_after_first_attempt_starts(grpc_end2end_test_config config);
+extern void retry_cancel_after_first_attempt_starts_pre_init(void);
 extern void retry_cancel_during_delay(grpc_end2end_test_config config);
 extern void retry_cancel_during_delay_pre_init(void);
 extern void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config);
@@ -181,6 +183,10 @@ extern void retry_throttled(grpc_end2end_test_config config);
 extern void retry_throttled_pre_init(void);
 extern void retry_too_many_attempts(grpc_end2end_test_config config);
 extern void retry_too_many_attempts_pre_init(void);
+extern void retry_unref_before_finish(grpc_end2end_test_config config);
+extern void retry_unref_before_finish_pre_init(void);
+extern void retry_unref_before_recv(grpc_end2end_test_config config);
+extern void retry_unref_before_recv_pre_init(void);
 extern void server_finishes_request(grpc_end2end_test_config config);
 extern void server_finishes_request_pre_init(void);
 extern void server_streaming(grpc_end2end_test_config config);
@@ -259,6 +265,7 @@ void grpc_end2end_tests_pre_init(void) {
   request_with_payload_pre_init();
   resource_quota_server_pre_init();
   retry_pre_init();
+  retry_cancel_after_first_attempt_starts_pre_init();
   retry_cancel_during_delay_pre_init();
   retry_cancel_with_multiple_send_batches_pre_init();
   retry_cancellation_pre_init();
@@ -285,6 +292,8 @@ void grpc_end2end_tests_pre_init(void) {
   retry_streaming_succeeds_before_replay_finished_pre_init();
   retry_throttled_pre_init();
   retry_too_many_attempts_pre_init();
+  retry_unref_before_finish_pre_init();
+  retry_unref_before_recv_pre_init();
   server_finishes_request_pre_init();
   server_streaming_pre_init();
   shutdown_finishes_calls_pre_init();
@@ -357,6 +366,7 @@ void grpc_end2end_tests(int argc, char **argv,
     request_with_payload(config);
     resource_quota_server(config);
     retry(config);
+    retry_cancel_after_first_attempt_starts(config);
     retry_cancel_during_delay(config);
     retry_cancel_with_multiple_send_batches(config);
     retry_cancellation(config);
@@ -383,6 +393,8 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_streaming_succeeds_before_replay_finished(config);
     retry_throttled(config);
     retry_too_many_attempts(config);
+    retry_unref_before_finish(config);
+    retry_unref_before_recv(config);
     server_finishes_request(config);
     server_streaming(config);
     shutdown_finishes_calls(config);
@@ -599,6 +611,10 @@ void grpc_end2end_tests(int argc, char **argv,
       retry(config);
       continue;
     }
+    if (0 == strcmp("retry_cancel_after_first_attempt_starts", argv[i])) {
+      retry_cancel_after_first_attempt_starts(config);
+      continue;
+    }
     if (0 == strcmp("retry_cancel_during_delay", argv[i])) {
       retry_cancel_during_delay(config);
       continue;
@@ -701,6 +717,14 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_too_many_attempts", argv[i])) {
       retry_too_many_attempts(config);
+      continue;
+    }
+    if (0 == strcmp("retry_unref_before_finish", argv[i])) {
+      retry_unref_before_finish(config);
+      continue;
+    }
+    if (0 == strcmp("retry_unref_before_recv", argv[i])) {
+      retry_unref_before_recv(config);
       continue;
     }
     if (0 == strcmp("server_finishes_request", argv[i])) {

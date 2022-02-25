@@ -39,10 +39,7 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 
 void grpc_client_channel_init(void) {
-  grpc_core::internal::ClientChannelServiceConfigParser::Register();
-  grpc_core::internal::RetryServiceConfigParser::Register();
   grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
-  grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_core::internal::ServerRetryThrottleMap::Init();
   grpc_core::ProxyMapperRegistry::Init();
   grpc_core::RegisterHttpProxyMapper();
@@ -54,7 +51,6 @@ void grpc_client_channel_shutdown(void) {
   grpc_core::GlobalSubchannelPool::Shutdown();
   grpc_core::ProxyMapperRegistry::Shutdown();
   grpc_core::internal::ServerRetryThrottleMap::Shutdown();
-  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
   grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
 }
 
@@ -62,6 +58,8 @@ namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   RegisterHttpConnectHandshaker(builder);
+  internal::ClientChannelServiceConfigParser::Register(builder);
+  internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {

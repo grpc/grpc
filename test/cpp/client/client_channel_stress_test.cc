@@ -45,6 +45,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -241,7 +242,7 @@ class ClientChannelStressTest {
       const std::vector<AddressData>& balancer_address_data) {
     grpc_core::Resolver::Result result;
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfig::Create(
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
         nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     grpc_core::ServerAddressList balancer_addresses =
@@ -281,8 +282,8 @@ class ClientChannelStressTest {
                     response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ = ::grpc::CreateCustomChannel(uri.str(),
-                                           InsecureChannelCredentials(), args);
+    channel_ = grpc::CreateCustomChannel(uri.str(),
+                                         InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
