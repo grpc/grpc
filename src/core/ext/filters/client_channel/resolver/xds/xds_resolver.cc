@@ -270,8 +270,8 @@ class XdsResolver : public Resolver {
     struct Route {
       struct ClusterWeightState {
         uint32_t range_end;
-        // absl::string_view cluster;
-        std::string cluster;
+        absl::string_view cluster;
+        // std::string cluster;
         RefCountedPtr<ServiceConfig> method_config;
 
         bool operator==(const ClusterWeightState& other) const;
@@ -428,7 +428,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       } else if (route_action->action.index() ==
                  XdsRouteConfigResource::Route::RouteAction::
                      kWeightedClustersIndex) {
-        auto action_weighted_clusters = absl::get<
+        auto& action_weighted_clusters = absl::get<
             XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
             route_action->action);
         uint32_t end = 0;
