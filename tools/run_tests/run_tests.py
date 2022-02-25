@@ -774,6 +774,11 @@ class PythonLanguage(object):
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
                 return (python38_config,)
+            elif platform.machine() == 'aarch64':
+                # Currently the python_debian11_default_arm64 docker image
+                # only has python3.9 installed (and that seems sufficient
+                # for arm64 testing)
+                return (python39_config,)
             else:
                 return (
                     python36_config,
