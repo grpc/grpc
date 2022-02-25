@@ -275,13 +275,13 @@ grpc_error_handle CdsResourceParse(
         const google_protobuf_Any* typed_config =
             envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
                 custom_cluster_type);
-        const upb_StringView aggregate_cluster_config_upb_StringView =
+        const upb_StringView aggregate_cluster_config_upb_stringview =
             google_protobuf_Any_value(typed_config);
         const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
             aggregate_cluster_config =
                 envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
-                    aggregate_cluster_config_upb_StringView.data,
-                    aggregate_cluster_config_upb_StringView.size,
+                    aggregate_cluster_config_upb_stringview.data,
+                    aggregate_cluster_config_upb_stringview.size,
                     context.arena);
         if (aggregate_cluster_config == nullptr) {
           errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(

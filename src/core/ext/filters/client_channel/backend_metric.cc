@@ -50,10 +50,10 @@ std::map<absl::string_view, double> ParseMap(
 
 const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
 ParseBackendMetricData(const Slice& serialized_load_report, Arena* arena) {
-  upb::Arena upb_Arena;
+  upb::Arena upb_arena;
   xds_data_orca_v3_OrcaLoadReport* msg = xds_data_orca_v3_OrcaLoadReport_parse(
       reinterpret_cast<const char*>(serialized_load_report.begin()),
-      serialized_load_report.size(), upb_Arena.ptr());
+      serialized_load_report.size(), upb_arena.ptr());
   if (msg == nullptr) return nullptr;
   auto* backend_metric_data = arena->New<
       LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
