@@ -182,6 +182,7 @@ absl::Status SslCheckCallHost(absl::string_view host,
   }
   if (status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "call host does not match SSL server name");
+    grpc_shallow_peer_destruct(&peer);
     return absl::UnauthenticatedError(
         "call host does not match SSL server name");
   }
