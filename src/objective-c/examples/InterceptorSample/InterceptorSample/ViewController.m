@@ -27,8 +27,6 @@
 #import "src/objective-c/examples/RemoteTestClient/Test.pbrpc.h"
 #endif
 
-#import "CacheInterceptor.h"
-
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
 
