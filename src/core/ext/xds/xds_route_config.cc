@@ -313,6 +313,62 @@ std::string XdsRouteConfigResource::ToString() const {
 
 namespace {
 
+grpc_error_handle ClusterSpecifierPluginParse(
+    const XdsEncodingContext& context,
+    const envoy_config_route_v3_RouteConfiguration* route_config,
+    XdsRouteConfigResource* rds_update) {
+  size_t num_cluster_specifier_plugins;
+  const envoy_config_route_v3_ClusterSpecifierPlugin* const*
+      cluster_specifier_plugin =
+          envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
+              route_config, &num_cluster_specifier_plugins);
+  for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
+    const envoy_config_core_v3_TypedExtensionConfig* extension =
+        envoy_config_route_v3_ClusterSpecifierPlugin_extension(
+            cluster_specifier_plugin[i]);
+    std::string name = UpbStringToStdString(
+        envoy_config_core_v3_TypedExtensionConfig_name(extension));
+    gpr_log(GPR_INFO, "donna here is the loop with name identifier %s",
+            name.c_str());
+    const google_protobuf_Any* any =
+        envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
+    if (any == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "could not obtrain TypedExtensionConfig for plugin config");
+    }
+    absl::string_view plugin_type =
+        UpbStringToAbsl(google_protobuf_Any_type_url(any));
+    // Look inside for type TypeStruct.
+    if (plugin_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+        plugin_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+      upb_strview any_value = google_protobuf_Any_value(any);
+      const auto* typed_struct = xds_type_v3_TypedStruct_parse(
+          any_value.data, any_value.size, context.arena);
+      if (typed_struct == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "could not parse TypedStruct from plugin config");
+      }
+      plugin_type =
+          UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
+      if (plugin_type.empty()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("no plugin config specified for plugin name ", name));
+      }
+    }
+    // Always strip off "type.googleapis.com".
+    plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
+    // Find the plugin and generate the policy.
+    auto lb_policy_config =
+        XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
+            plugin_type, google_protobuf_Any_value(any), context.arena);
+    if (lb_policy_config.ok()) {
+      rds_update->cluster_specifier_plugin_map[std::move(name)] =
+          std::move(lb_policy_config.value());
+    }
+  }
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error_handle RoutePathMatchParse(
     const envoy_config_route_v3_RouteMatch* match,
     XdsRouteConfigResource::Route* route, bool* ignore_route) {
@@ -877,56 +933,9 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     XdsRouteConfigResource* rds_update) {
   // Get the cluster spcifier plugins
   if (XdsRlsEnabled()) {
-    // donna maybe put it in spearate method
-    size_t num_cluster_specifier_plugins;
-    const envoy_config_route_v3_ClusterSpecifierPlugin* const*
-        cluster_specifier_plugin =
-            envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
-                route_config, &num_cluster_specifier_plugins);
-    for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
-      const envoy_config_core_v3_TypedExtensionConfig* extension =
-          envoy_config_route_v3_ClusterSpecifierPlugin_extension(
-              cluster_specifier_plugin[i]);
-      std::string name = UpbStringToStdString(
-          envoy_config_core_v3_TypedExtensionConfig_name(extension));
-      gpr_log(GPR_INFO, "donna here is the loop with name identifier %s",
-              name.c_str());
-      const google_protobuf_Any* any =
-          envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
-      if (any == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "could not obtrain TypedExtensionConfig for plugin config");
-      }
-      absl::string_view plugin_type =
-          UpbStringToAbsl(google_protobuf_Any_type_url(any));
-      // Look inside for type TypeStruct.
-      if (plugin_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
-          plugin_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
-        upb_strview any_value = google_protobuf_Any_value(any);
-        const auto* typed_struct = xds_type_v3_TypedStruct_parse(
-            any_value.data, any_value.size, context.arena);
-        if (typed_struct == nullptr) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "could not parse TypedStruct from plugin config");
-        }
-        plugin_type =
-            UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-        if (plugin_type.empty()) {
-          return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-              "no plugin config specified for plugin name ", name));
-        }
-      }
-      // Always strip off "type.googleapis.com".
-      plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
-      // Find the plugin and generate the policy.
-      auto lb_policy_config =
-          XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
-              plugin_type, google_protobuf_Any_value(any), context.arena);
-      if (lb_policy_config.ok()) {
-        rds_update->cluster_specifier_plugin_map[std::move(name)] =
-            std::move(lb_policy_config.value());
-      }
-    }
+    grpc_error_handle error =
+        ClusterSpecifierPluginParse(context, route_config, rds_update);
+    if (error != GRPC_ERROR_NONE) return error;
   }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
