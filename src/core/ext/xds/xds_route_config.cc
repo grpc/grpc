@@ -758,9 +758,6 @@ grpc_error_handle RouteActionParse(
     route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
                               kClusterSpecifierPluginIndex>(
         std::move(plugin_name));
-    gpr_log(GPR_INFO,
-            "donna found plugin in RouteAction, don't forget to double check "
-            "unused plugins");
   } else {
     // No cluster or weighted_clusters or plugin found in RouteAction, ignore
     // this route.
@@ -985,6 +982,12 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No route found in the virtual host.");
     }
+    // Build a set of cluster_specifier_plugin configured to make sure each is
+    // actually referenced by a route action.
+    std::set<absl::string_view> cluster_specifier_plugins;
+    for (auto& plugin : rds_update->cluster_specifier_plugin_map) {
+      cluster_specifier_plugins.emplace(plugin.first);
+    }
     // Loop over the whole list of routes
     for (size_t j = 0; j < num_routes; ++j) {
       const envoy_config_route_v3_RouteMatch* match =
@@ -1021,6 +1024,14 @@ grpc_error_handle XdsRouteConfigResource::Parse(
             retry_policy != nullptr) {
           route_action.retry_policy = virtual_host_retry_policy;
         }
+        // Mark off plugins used in route action.
+        if (route_action.action.index() ==
+            XdsRouteConfigResource::Route::RouteAction::
+                kClusterSpecifierPluginIndex) {
+          cluster_specifier_plugins.erase(
+              absl::get<XdsRouteConfigResource::Route::RouteAction::
+                            kClusterSpecifierPluginIndex>(route_action.action));
+        }
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {
         route.action
@@ -1041,6 +1052,12 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     }
     if (vhost.routes.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
+    }
+    // For plugins not used in route action, delete from the update to prevent
+    // further use.
+    for (auto& unused_plugin : cluster_specifier_plugins) {
+      rds_update->cluster_specifier_plugin_map.erase(
+          std::string(unused_plugin));
     }
   }
   return GRPC_ERROR_NONE;
