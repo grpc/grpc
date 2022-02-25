@@ -49,9 +49,5 @@ void ClientReactor::InternalScheduleOnDone(grpc::Status s) {
   grpc_core::Executor::Run(&arg->closure, GRPC_ERROR_NONE);
 }
 
-bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {
-  return grpc_call_is_trailers_only(call);
-}
-
 }  // namespace internal
 }  // namespace grpc

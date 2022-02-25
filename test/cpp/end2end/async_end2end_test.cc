@@ -1332,8 +1332,8 @@ TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   EXPECT_EQ("", recv_status.error_message());
 }
 
-// Test a trailers-only response due to client cancellation
-TEST_P(AsyncEnd2endTest, TrailersOnlyResponse) {
+// Test that client cancellation also causes recv initial metadata op to fail.
+TEST_P(AsyncEnd2endTest, FailRecvInitialMetadataUponCancellation) {
   ResetStub();
 
   EchoResponse recv_response;
