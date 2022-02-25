@@ -1733,6 +1733,7 @@ libs:
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
@@ -2487,6 +2488,7 @@ libs:
   - src/core/tsi/transport_security_grpc.cc
   deps:
   - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
@@ -4987,7 +4989,6 @@ targets:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
-  - absl/container:flat_hash_set
   - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
@@ -6639,7 +6640,7 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: libuv_event_engine
+- name: libuv_event_engine_test
   gtest: true
   build: test
   language: c++

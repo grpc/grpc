@@ -5178,7 +5178,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "libuv_event_engine",
+    "name": "libuv_event_engine_test",
     "platforms": [
       "linux",
       "mac",
