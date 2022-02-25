@@ -100,8 +100,10 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
-  // \a type is used to downcast grpc_channel_credentials objects.
-  // Implementations should make sure to use unique types.
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance for every creds instance of that creds
+  // implementation.
   explicit grpc_channel_credentials(const char* type) : type_(type) {}
   ~grpc_channel_credentials() override = default;
 
@@ -189,8 +191,10 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
-  // \a type is used to downcast grpc_call_credentials objects. Implementations
-  // should make sure to use unique types.
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance for every creds instance of that creds
+  // implementation.
   explicit grpc_call_credentials(
       const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
