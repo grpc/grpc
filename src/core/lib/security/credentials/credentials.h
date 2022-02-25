@@ -100,6 +100,8 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
+  // \a type is used to downcast grpc_channel_credentials objects.
+  // Implementations should make sure to use unique types.
   explicit grpc_channel_credentials(const char* type) : type_(type) {}
   ~grpc_channel_credentials() override = default;
 
@@ -140,7 +142,9 @@ struct grpc_channel_credentials
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_channel_credentials types using the same name.
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
@@ -185,6 +189,8 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
+  // \a type is used to downcast grpc_call_credentials objects. Implementations
+  // should make sure to use unique types.
   explicit grpc_call_credentials(
       const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
@@ -217,7 +223,9 @@ struct grpc_call_credentials
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_call_credentials types using the same name.
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
