@@ -23,6 +23,7 @@ from framework import xds_url_map_testcase
 from framework.infrastructure import traffic_director
 from framework.rpc import grpc_channelz
 from framework.test_app import client_app
+from framework.helpers import skips
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
@@ -31,7 +32,6 @@ GcpResourceManager = xds_url_map_testcase.GcpResourceManager
 DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
-TestConfig = xds_url_map_testcase.TestConfig
 XdsTestClient = client_app.XdsTestClient
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,7 @@ _ChannelzChannelState = grpc_channelz.ChannelState
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def is_supported(config: TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang in ['cpp', 'java']:
             return config.version_ge('v1.40.x')
         if config.client_lang in ['go']:

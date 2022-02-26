@@ -29,6 +29,7 @@ from framework import xds_flags
 from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
 from framework.helpers import retryers
+from framework.helpers import skips
 import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
@@ -78,11 +79,24 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     td: TrafficDirectorManager
     config_scope: str
 
+    @staticmethod
+    def isSupported(config: skips.TestConfig) -> bool:
+        """Overrided by the test class to decide if the config is supported.
+
+        Returns:
+          A bool indicates if the given config is supported.
+        """
+        return True
+
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in
         the class.
         """
+        # Raises unittest.SkipTest if given client/server/version does not
+        # support current test case.
+        skips.evaluate_test_config(cls.isSupported)
+
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
