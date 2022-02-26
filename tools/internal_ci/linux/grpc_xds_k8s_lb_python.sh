@@ -102,6 +102,7 @@ run_test() {
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --server_image="${SERVER_IMAGE_NAME}" \
+    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
 }
 
@@ -129,7 +130,7 @@ run_test() {
 main() {
   local script_dir
   script_dir="$(dirname "$0")"
-  
+
   # Source the test driver from the master branch.
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
