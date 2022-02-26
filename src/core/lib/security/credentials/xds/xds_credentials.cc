@@ -106,7 +106,7 @@ int XdsCertificateVerifier::CompareImpl(
     const grpc_tls_certificate_verifier* other) const {
   auto* o = static_cast<const XdsCertificateVerifier*>(other);
   int r = QsortCompare(xds_certificate_provider_, o->xds_certificate_provider_);
-  if(r != 0) return r;
+  if (r != 0) return r;
   return cluster_name_.compare(o->cluster_name_);
 }
 

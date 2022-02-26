@@ -95,7 +95,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
 // HostNameCertificateVerifier
 //
 
-const char HostNameCertificateVerifier::kType[] = "external";
+const char HostNameCertificateVerifier::kType[] = "hostname";
 
 HostNameCertificateVerifier::HostNameCertificateVerifier()
     : grpc_tls_certificate_verifier(kType) {}

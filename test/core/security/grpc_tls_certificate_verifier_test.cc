@@ -251,7 +251,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {
             "UNAUTHENTICATED: Hostname Verification Check failed.");
 }
 
-TEST(GrpcTlsCertificateVerifierTest, ComparingDifferentObjectTypesFails) {
+TEST_F(GrpcTlsCertificateVerifierTest, ComparingDifferentObjectTypesFails) {
   grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
                                                      nullptr};
   ExternalCertificateVerifier external_verifier(&verifier);
@@ -260,7 +260,7 @@ TEST(GrpcTlsCertificateVerifierTest, ComparingDifferentObjectTypesFails) {
   EXPECT_NE(hostname_certificate_verifier.Compare(&external_verifier), 0);
 }
 
-TEST(GrpcTlsCertificateVerifierTest, HostNameCertificateVerifier) {
+TEST_F(GrpcTlsCertificateVerifierTest, HostNameCertificateVerifier) {
   HostNameCertificateVerifier hostname_certificate_verifier_1;
   HostNameCertificateVerifier hostname_certificate_verifier_2;
   EXPECT_EQ(
@@ -271,7 +271,7 @@ TEST(GrpcTlsCertificateVerifierTest, HostNameCertificateVerifier) {
       0);
 }
 
-TEST(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierSuccess) {
+TEST_F(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierSuccess) {
   grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
                                                      nullptr};
   ExternalCertificateVerifier external_verifier_1(&verifier);
@@ -280,7 +280,7 @@ TEST(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierSuccess) {
   EXPECT_EQ(external_verifier_2.Compare(&external_verifier_1), 0);
 }
 
-TEST(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierFailure) {
+TEST_F(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierFailure) {
   grpc_tls_certificate_verifier_external verifier_1 = {nullptr, nullptr,
                                                        nullptr, nullptr};
   ExternalCertificateVerifier external_verifier_1(&verifier_1);
