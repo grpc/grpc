@@ -355,9 +355,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if cls.skip_reason is None:
-            # Clean up related resources for the client
-            cls.test_client_runner.cleanup(force=True, force_namespace=True)
         cls.finished_test_cases.add(cls.__name__)
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
@@ -387,9 +384,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             super().run(result)
 
     def test_client_config(self):
-        if self.skip_reason:
-            logging.info('Skipping: %s', self.skip_reason)
-            self.skipTest(self.skip_reason)
         retryer = retryers.constant_retryer(
             wait_fixed=datetime.timedelta(
                 seconds=_URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC),
@@ -405,9 +399,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
                     self._xds_json_config))
 
     def test_rpc_distribution(self):
-        if self.skip_reason:
-            logging.info('Skipping: %s', self.skip_reason)
-            self.skipTest(self.skip_reason)
         self.rpc_distribution_validate(self.test_client)
 
     @staticmethod
