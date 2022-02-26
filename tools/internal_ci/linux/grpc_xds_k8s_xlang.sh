@@ -54,6 +54,7 @@ run_test() {
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${server_image_name}" \
     --client_image="${client_image_name}" \
+    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs
