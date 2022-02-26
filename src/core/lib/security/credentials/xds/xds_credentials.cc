@@ -105,12 +105,9 @@ void XdsCertificateVerifier::Cancel(
 int XdsCertificateVerifier::CompareImpl(
     const grpc_tls_certificate_verifier* other) const {
   auto* o = static_cast<const XdsCertificateVerifier*>(other);
-  if (xds_certificate_provider_ == o->xds_certificate_provider_ &&
-      cluster_name_ == o->cluster_name_) {
-    return 0;
-  }
-  return QsortCompare(static_cast<const grpc_tls_certificate_verifier*>(this),
-                      other);
+  int r = QsortCompare(xds_certificate_provider_, o->xds_certificate_provider_);
+  if(r != 0) return r;
+  return cluster_name_.compare(o->cluster_name_);
 }
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
