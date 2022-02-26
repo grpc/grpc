@@ -135,7 +135,9 @@ struct grpc_tls_credentials_options
             (verifier_ != nullptr && other.verifier_ != nullptr &&
              verifier_->Compare(other.verifier_.get()) == 0)) &&
            check_call_host_ == other.check_call_host_ &&
-           provider_ == other.provider_ &&
+           (provider_ == other.provider_ ||
+            (provider_ != nullptr && other.provider_ != nullptr &&
+             provider_->cmp(other.provider_.get()) == 0)) &&
            watch_root_cert_ == other.watch_root_cert_ &&
            root_cert_name_ == other.root_cert_name_ &&
            watch_identity_pair_ == other.watch_identity_pair_ &&

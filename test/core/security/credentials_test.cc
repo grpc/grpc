@@ -3736,6 +3736,11 @@ TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
   grpc_channel_credentials_release(tls_creds_2);
 }
 
+TEST(CredentialsTest, TestTlsCredentialsNoNewMembersAdded) {
+  gpr_log(GPR_ERROR, "%lu", sizeof(grpc_tls_credentials_options));
+  ASSERT_EQ(sizeof(grpc_tls_credentials_options), 288);
+}
+
 TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
   auto* insecure_creds = grpc_insecure_credentials_create();
   auto* xds_creds_1 = grpc_xds_credentials_create(insecure_creds);
