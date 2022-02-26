@@ -96,7 +96,6 @@ void PollingResolver::OnRequestComplete(Result result) {
 }
 
 void PollingResolver::OnRequestCompleteLocked(Result result) {
-  GPR_ASSERT(request_ != nullptr);
   request_.reset();
   if (shutdown_) return;
   if (result.service_config.ok() && result.addresses.ok()) {
