@@ -495,21 +495,4 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
   return error_for_fd(*newfd, resolved_addr);
 }
 
-uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
-
-uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
-
-uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
-
-uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
-
-int grpc_inet_pton(int af, const char* src, void* dst) {
-  return inet_pton(af, src, dst);
-}
-
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  GPR_ASSERT(size <= (socklen_t)-1);
-  return inet_ntop(af, src, dst, static_cast<socklen_t>(size));
-}
-
 #endif

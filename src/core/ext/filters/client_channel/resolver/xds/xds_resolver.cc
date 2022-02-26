@@ -35,9 +35,11 @@
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -541,7 +543,8 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    *method_config = ServiceConfig::Create(result.args, json.c_str(), &error);
+    *method_config =
+        ServiceConfigImpl::Create(result.args, json.c_str(), &error);
   }
   grpc_channel_args_destroy(result.args);
   return error;
@@ -894,7 +897,7 @@ void XdsResolver::OnResourceDoesNotExist() {
   current_virtual_host_.routes.clear();
   Result result;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  result.service_config = ServiceConfig::Create(args_, "{}", &error);
+  result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
   result.args = grpc_channel_args_copy(args_);
   result_handler_->ReportResult(std::move(result));
@@ -929,7 +932,7 @@ XdsResolver::CreateServiceConfig() {
   std::string json = absl::StrJoin(config_parts, "");
   grpc_error_handle error = GRPC_ERROR_NONE;
   absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
-      ServiceConfig::Create(args_, json.c_str(), &error);
+      ServiceConfigImpl::Create(args_, json.c_str(), &error);
   if (error != GRPC_ERROR_NONE) {
     result = grpc_error_to_absl_status(error);
     GRPC_ERROR_UNREF(error);
@@ -953,7 +956,7 @@ void XdsResolver::GenerateResult() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
             result.service_config.ok()
-                ? (*result.service_config)->json_string().c_str()
+                ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
   grpc_arg new_args[] = {
@@ -988,6 +991,8 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 
 class XdsResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "xds"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (uri.path().empty() || uri.path().back() == '/') {
       gpr_log(GPR_ERROR,
@@ -1005,17 +1010,13 @@ class XdsResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<XdsResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "xds"; }
 };
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_xds_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::XdsResolverFactory>());
+void RegisterXdsResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<XdsResolverFactory>());
 }
 
-void grpc_resolver_xds_shutdown() {}
+}  // namespace grpc_core

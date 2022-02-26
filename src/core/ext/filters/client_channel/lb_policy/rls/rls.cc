@@ -55,6 +55,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -68,6 +69,7 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -2345,7 +2347,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   // Parse lookupService.
   if (ParseJsonObjectField(json, "lookupService",
                            &route_lookup_config.lookup_service, &error_list)) {
-    if (!ResolverRegistry::IsValidTarget(route_lookup_config.lookup_service)) {
+    if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+            route_lookup_config.lookup_service)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:lookupService error:must be valid gRPC target URI"));
     }
@@ -2476,7 +2479,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       Json rls_channel_service_config_json(
           *rls_channel_service_config_json_obj);
       rls_channel_service_config = rls_channel_service_config_json.Dump();
-      auto service_config = MakeRefCounted<ServiceConfig>(
+      auto service_config = MakeRefCounted<ServiceConfigImpl>(
           /*args=*/nullptr, rls_channel_service_config,
           std::move(rls_channel_service_config_json), &child_error);
       if (child_error != GRPC_ERROR_NONE) {

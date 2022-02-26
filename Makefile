@@ -1502,6 +1502,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/resolve_address.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/sockaddr_utils_posix.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
@@ -1607,7 +1608,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config.cc \
+    src/core/lib/service_config/service_config_impl.cc \
     src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -1990,6 +1991,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/resolve_address.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/sockaddr_utils_posix.cc \
     src/core/lib/iomgr/socket_factory_posix.cc \
     src/core/lib/iomgr/socket_mutator.cc \
     src/core/lib/iomgr/socket_utils_common_posix.cc \
@@ -2054,7 +2056,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config.cc \
+    src/core/lib/service_config/service_config_impl.cc \
     src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \

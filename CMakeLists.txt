@@ -632,7 +632,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c bin_encoder_test)
   add_dependencies(buildtests_c buffer_list_test)
   add_dependencies(buildtests_c channel_args_test)
-  add_dependencies(buildtests_c channel_create_test)
   add_dependencies(buildtests_c channel_stack_test)
   add_dependencies(buildtests_c check_gcp_environment_linux_test)
   add_dependencies(buildtests_c check_gcp_environment_windows_test)
@@ -1165,6 +1164,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   test/core/end2end/tests/retry_cancellation.cc
@@ -1191,9 +1191,6 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   test/core/end2end/tests/retry_unref_before_finish.cc
   test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
@@ -1313,6 +1310,7 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   test/core/end2end/tests/retry_cancellation.cc
@@ -1339,9 +1337,6 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   test/core/end2end/tests/retry_throttled.cc
   test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   test/core/end2end/tests/retry_unref_before_finish.cc
   test/core/end2end/tests/retry_unref_before_recv.cc
   test/core/end2end/tests/server_finishes_request.cc
@@ -2059,6 +2054,7 @@ add_library(grpc
   src/core/lib/iomgr/resolve_address.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
   src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -2164,7 +2160,7 @@ add_library(grpc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config.cc
+  src/core/lib/service_config/service_config_impl.cc
   src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2378,7 +2374,6 @@ add_library(grpc_test_util
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
-  test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
@@ -2447,7 +2442,6 @@ add_library(grpc_test_util_unsecure
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
-  test/core/util/memory_counters.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
   test/core/util/passthru_endpoint.cc
@@ -2700,6 +2694,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/resolve_address.cc
   src/core/lib/iomgr/resolve_address_posix.cc
   src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_factory_posix.cc
   src/core/lib/iomgr/socket_mutator.cc
   src/core/lib/iomgr/socket_utils_common_posix.cc
@@ -2764,7 +2759,7 @@ add_library(grpc_unsecure
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config.cc
+  src/core/lib/service_config/service_config_impl.cc
   src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -4831,33 +4826,6 @@ target_include_directories(channel_args_test
 )
 
 target_link_libraries(channel_args_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(channel_create_test
-  test/core/surface/channel_create_test.cc
-)
-
-target_include_directories(channel_create_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -9652,23 +9620,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(core_configuration_test
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_args_preconditioning.cc
-  src/core/lib/channel/handshaker_registry.cc
-  src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/trace.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_stack_type.cc
   test/core/config/core_configuration_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -9696,7 +9647,7 @@ target_include_directories(core_configuration_test
 target_link_libraries(core_configuration_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  grpc
 )
 
 
@@ -16942,7 +16893,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
-    test/core/util/memory_counters.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
     test/core/util/passthru_endpoint.cc
