@@ -26,6 +26,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -46,10 +47,43 @@
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance for every creds instance of that creds
+  // implementation.
+  explicit grpc_tls_certificate_provider(const char* type) : type_(type) {}
+
   virtual grpc_pollset_set* interested_parties() const { return nullptr; }
 
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
   distributor() const = 0;
+
+  // Compares this grpc_tls_certificate_provider object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two channel
+  // credentials as effectively the same. This method is used to compare
+  // `grpc_tls_certificate_provider` objects when they are present in
+  // channel_args. One important usage of this is when channel args are used in
+  // SubchannelKey, which leads to a useful property that allows subchannels to
+  // be reused when two different `grpc_tls_certificate_provider` objects are
+  // used but they compare as equal (assuming other channel args match).
+  int cmp(const grpc_tls_certificate_provider* other) const {
+    GPR_ASSERT(other != nullptr);
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_tls_certificate_provider types using the same
+    // name.
+    int r = grpc_core::QsortCompare(type(), other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
+  }
+
+  const char* type() const { return type_; }
+
+ private:
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  virtual int cmp_impl(const grpc_tls_certificate_provider* other) const = 0;
+
+  const char* type_;
 };
 
 namespace grpc_core {
@@ -73,6 +107,15 @@ class StaticDataCertificateProvider final
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
+
+  static const char kType[];
+
+  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
   PemKeyCertPairList pem_key_cert_pairs_;
@@ -103,6 +146,15 @@ class FileWatcherCertificateProvider final
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
+
+  static const char kType[];
+
+  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   // Force an update from the file system regardless of the interval.
   void ForceUpdate();
   // Read the root certificates from files and update the distributor.

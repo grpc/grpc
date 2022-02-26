@@ -251,6 +251,46 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {
             "UNAUTHENTICATED: Hostname Verification Check failed.");
 }
 
+TEST(GrpcTlsCertificateVerifierTest, ComparingDifferentObjectTypesFails) {
+  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
+                                                     nullptr};
+  ExternalCertificateVerifier external_verifier(&verifier);
+  HostNameCertificateVerifier hostname_certificate_verifier;
+  EXPECT_NE(external_verifier.Compare(&hostname_certificate_verifier), 0);
+  EXPECT_NE(hostname_certificate_verifier.Compare(&external_verifier), 0);
+}
+
+TEST(GrpcTlsCertificateVerifierTest, HostNameCertificateVerifier) {
+  HostNameCertificateVerifier hostname_certificate_verifier_1;
+  HostNameCertificateVerifier hostname_certificate_verifier_2;
+  EXPECT_EQ(
+      hostname_certificate_verifier_1.Compare(&hostname_certificate_verifier_2),
+      0);
+  EXPECT_EQ(
+      hostname_certificate_verifier_2.Compare(&hostname_certificate_verifier_1),
+      0);
+}
+
+TEST(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierSuccess) {
+  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
+                                                     nullptr};
+  ExternalCertificateVerifier external_verifier_1(&verifier);
+  ExternalCertificateVerifier external_verifier_2(&verifier);
+  EXPECT_EQ(external_verifier_1.Compare(&external_verifier_2), 0);
+  EXPECT_EQ(external_verifier_2.Compare(&external_verifier_1), 0);
+}
+
+TEST(GrpcTlsCertificateVerifierTest, ExternalCertificateVerifierFailure) {
+  grpc_tls_certificate_verifier_external verifier_1 = {nullptr, nullptr,
+                                                       nullptr, nullptr};
+  ExternalCertificateVerifier external_verifier_1(&verifier_1);
+  grpc_tls_certificate_verifier_external verifier_2 = {nullptr, nullptr,
+                                                       nullptr, nullptr};
+  ExternalCertificateVerifier external_verifier_2(&verifier_2);
+  EXPECT_NE(external_verifier_1.Compare(&external_verifier_2), 0);
+  EXPECT_NE(external_verifier_2.Compare(&external_verifier_1), 0);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

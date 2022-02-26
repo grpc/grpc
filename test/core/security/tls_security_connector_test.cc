@@ -114,13 +114,20 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
  public:
   explicit TlsTestCertificateProvider(
       RefCountedPtr<grpc_tls_certificate_distributor> distributor)
-      : distributor_(std::move(distributor)) {}
+      : grpc_tls_certificate_provider("tls_test"),
+        distributor_(std::move(distributor)) {}
   ~TlsTestCertificateProvider() override {}
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
 
  private:
+  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 };
 

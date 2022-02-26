@@ -3693,69 +3693,6 @@ TEST(CredentialsTest, TestXdsCredentialsCompareFailure) {
   grpc_channel_credentials_release(xds_creds_2);
 }
 
-TEST(TlsCertificateVerifierTest, ComparingDifferentObjectTypesFails) {
-  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
-                                                     nullptr};
-  ExternalCertificateVerifier external_verifier(&verifier);
-  HostNameCertificateVerifier hostname_certificate_verifier;
-  EXPECT_NE(external_verifier.cmp(&hostname_certificate_verifier), 0);
-  EXPECT_NE(hostname_certificate_verifier.cmp(&external_verifier), 0);
-}
-
-TEST(TlsCertificateVerifierTest, HostNameCertificateVerifier) {
-  HostNameCertificateVerifier hostname_certificate_verifier_1;
-  HostNameCertificateVerifier hostname_certificate_verifier_2;
-  EXPECT_EQ(
-      hostname_certificate_verifier_1.cmp(&hostname_certificate_verifier_2), 0);
-  EXPECT_EQ(
-      hostname_certificate_verifier_2.cmp(&hostname_certificate_verifier_1), 0);
-}
-
-TEST(TlsCertificateVerifierTest, ExternalCertificateVerifierSuccess) {
-  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
-                                                     nullptr};
-  ExternalCertificateVerifier external_verifier_1(&verifier);
-  ExternalCertificateVerifier external_verifier_2(&verifier);
-  EXPECT_EQ(external_verifier_1.cmp(&external_verifier_2), 0);
-  EXPECT_EQ(external_verifier_2.cmp(&external_verifier_1), 0);
-}
-
-TEST(TlsCertificateVerifierTest, ExternalCertificateVerifierFailure) {
-  grpc_tls_certificate_verifier_external verifier_1 = {nullptr, nullptr,
-                                                       nullptr, nullptr};
-  ExternalCertificateVerifier external_verifier_1(&verifier_1);
-  grpc_tls_certificate_verifier_external verifier_2 = {nullptr, nullptr,
-                                                       nullptr, nullptr};
-  ExternalCertificateVerifier external_verifier_2(&verifier_2);
-  EXPECT_NE(external_verifier_1.cmp(&external_verifier_2), 0);
-  EXPECT_NE(external_verifier_2.cmp(&external_verifier_1), 0);
-}
-
-TEST(TlsCertificateVerifierTest, XdsCertificateVerifierSuccess) {
-  XdsCertificateVerifier verifier_1(nullptr, "");
-  XdsCertificateVerifier verifier_2(nullptr, "");
-  EXPECT_EQ(verifier_1.cmp(&verifier_2), 0);
-  EXPECT_EQ(verifier_2.cmp(&verifier_1), 0);
-}
-
-TEST(TlsCertificateVerifierTest,
-     XdsCertificateVerifierFailureDifferentCertificateProviders) {
-  XdsCertificateVerifier verifier_1(MakeRefCounted<XdsCertificateProvider>(),
-                                    "");
-  XdsCertificateVerifier verifier_2(MakeRefCounted<XdsCertificateProvider>(),
-                                    "");
-  EXPECT_NE(verifier_1.cmp(&verifier_2), 0);
-  EXPECT_NE(verifier_2.cmp(&verifier_1), 0);
-}
-
-TEST(TlsCertificateVerifierTest,
-     XdsCertificateVerifierFailureDifferentClusterNames) {
-  XdsCertificateVerifier verifier_1(nullptr, "cluster1");
-  XdsCertificateVerifier verifier_2(nullptr, "cluster2");
-  EXPECT_NE(verifier_1.cmp(&verifier_2), 0);
-  EXPECT_NE(verifier_2.cmp(&verifier_1), 0);
-}
-
 }  // namespace
 }  // namespace grpc_core
 

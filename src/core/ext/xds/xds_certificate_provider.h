@@ -124,6 +124,14 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     bool require_client_certificate_ = false;
   };
 
+  static const char kType[];
+
+  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,
                            bool identity_being_watched);
 

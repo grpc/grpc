@@ -30,13 +30,15 @@
 
 namespace grpc_core {
 
-namespace {
-const char kTlsCertificateVerifierTypeExternal[] = "external";
-}  // namespace
+//
+// ExternalCertificateVerifier
+//
+
+const char ExternalCertificateVerifier::kType[] = "external";
 
 ExternalCertificateVerifier::ExternalCertificateVerifier(
     grpc_tls_certificate_verifier_external* external_verifier)
-    : grpc_tls_certificate_verifier(kTlsCertificateVerifierTypeExternal),
+    : grpc_tls_certificate_verifier(kType),
       external_verifier_(external_verifier) {}
 
 bool ExternalCertificateVerifier::Verify(
@@ -89,12 +91,15 @@ void ExternalCertificateVerifier::OnVerifyDone(
   }
 }
 
-namespace {
-const char kTlsCertificateVerifierTypeHostName[] = "hostname";
-}  // namespace
+//
+// HostNameCertificateVerifier
+//
+
+const char HostNameCertificateVerifier::kType[] = "external";
 
 HostNameCertificateVerifier::HostNameCertificateVerifier()
-    : grpc_tls_certificate_verifier(kTlsCertificateVerifierTypeHostName) {}
+    : grpc_tls_certificate_verifier(kType) {}
+
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {

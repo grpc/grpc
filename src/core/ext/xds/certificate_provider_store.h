@@ -66,7 +66,8 @@ class CertificateProviderStore
     CertificateProviderWrapper(
         RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,
         RefCountedPtr<CertificateProviderStore> store, absl::string_view key)
-        : certificate_provider_(std::move(certificate_provider)),
+        : grpc_tls_certificate_provider(kType),
+          certificate_provider_(std::move(certificate_provider)),
           store_(std::move(store)),
           key_(key) {}
 
@@ -83,9 +84,17 @@ class CertificateProviderStore
       return certificate_provider_->interested_parties();
     }
 
+    int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+      // TODO(yashykt): Maybe do something better here.
+      return grpc_core::QsortCompare(
+          static_cast<const grpc_tls_certificate_provider*>(this), other);
+    }
+
     absl::string_view key() const { return key_; }
 
    private:
+    static const char kType[];
+
     RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
     RefCountedPtr<CertificateProviderStore> store_;
     absl::string_view key_;

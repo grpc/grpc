@@ -42,7 +42,9 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
   void Cancel(grpc_tls_custom_verification_check_request*) override;
 
  private:
-  int cmp_impl(const grpc_tls_certificate_verifier* other) const override;
+  static const char kType[];
+
+  int CompareImpl(const grpc_tls_certificate_verifier* other) const override;
 
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
   std::string cluster_name_;

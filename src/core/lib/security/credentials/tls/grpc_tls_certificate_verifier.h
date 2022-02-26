@@ -38,6 +38,10 @@
 struct grpc_tls_certificate_verifier
     : public grpc_core::RefCounted<grpc_tls_certificate_verifier> {
  public:
+  // The pointer value \a type is used to uniquely identify a verifier
+  // implementation for down-casting purposes. Every verifier implementation
+  // should use a unique string instance for every verifier instance of that
+  // verifier implementation.
   explicit grpc_tls_certificate_verifier(const char* type) : type_(type) {}
 
   ~grpc_tls_certificate_verifier() override = default;
@@ -57,19 +61,20 @@ struct grpc_tls_certificate_verifier
   // Compares this grpc_tls_certificate_verifier object with \a other.
   // If this method returns 0, it means that gRPC can treat the two channel
   // credentials as effectively the same.
-  int cmp(const grpc_tls_certificate_verifier* other) const {
+  int Compare(const grpc_tls_certificate_verifier* other) const {
     GPR_ASSERT(other != nullptr);
     int r = strcmp(type(), other->type());
     if (r != 0) return r;
-    return cmp_impl(other);
+    return CompareImpl(other);
   }
 
   const char* type() const { return type_; }
 
  private:
-  // Implementation for `cmp` method intended to be overridden by subclasses.
-  // Only invoked if `type()` and `other->type()` compare equal as strings.
-  virtual int cmp_impl(const grpc_tls_certificate_verifier* other) const = 0;
+  // Implementation for `Compare` method intended to be overridden by
+  // subclasses. Only invoked if `type()` and `other->type()` compare equal as
+  // strings.
+  virtual int CompareImpl(const grpc_tls_certificate_verifier* other) const = 0;
 
   const char* type_;
 };
@@ -98,7 +103,9 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
   }
 
  private:
-  int cmp_impl(const grpc_tls_certificate_verifier* other) const override {
+  static const char kType[];
+
+  int CompareImpl(const grpc_tls_certificate_verifier* other) const override {
     const auto* o = static_cast<const ExternalCertificateVerifier*>(other);
     return QsortCompare(external_verifier_, o->external_verifier_);
   }
@@ -127,7 +134,9 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
  private:
-  int cmp_impl(
+  static const char kType[];
+
+  int CompareImpl(
       const grpc_tls_certificate_verifier* /* other */) const override {
     // No differentiating factor between different HostNameCertificateVerifier
     // objects.

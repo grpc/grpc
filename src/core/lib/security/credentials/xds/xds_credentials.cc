@@ -61,18 +61,18 @@ bool XdsVerifySubjectAlternativeNames(
   return false;
 }
 
-const char kTlsCertificateVerifierTypeXds[] = "xds";
-
 }  // namespace
 
 //
 // XdsCertificateVerifier
 //
 
+const char XdsCertificateVerifier::kType[] = "xds";
+
 XdsCertificateVerifier::XdsCertificateVerifier(
     RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
     std::string cluster_name)
-    : grpc_tls_certificate_verifier(kTlsCertificateVerifierTypeXds),
+    : grpc_tls_certificate_verifier(kType),
       xds_certificate_provider_(std::move(xds_certificate_provider)),
       cluster_name_(std::move(cluster_name)) {}
 
@@ -102,7 +102,7 @@ bool XdsCertificateVerifier::Verify(
 void XdsCertificateVerifier::Cancel(
     grpc_tls_custom_verification_check_request*) {}
 
-int XdsCertificateVerifier::cmp_impl(
+int XdsCertificateVerifier::CompareImpl(
     const grpc_tls_certificate_verifier* other) const {
   auto* o = static_cast<const XdsCertificateVerifier*>(other);
   if (xds_certificate_provider_ == o->xds_certificate_provider_ &&

@@ -133,7 +133,7 @@ struct grpc_tls_credentials_options
            max_tls_version_ == other.max_tls_version_ &&
            (verifier_ == other.verifier_ ||
             (verifier_ != nullptr && other.verifier_ != nullptr &&
-             verifier_->cmp(other.verifier_.get()) == 0)) &&
+             verifier_->Compare(other.verifier_.get()) == 0)) &&
            check_call_host_ == other.check_call_host_ &&
            provider_ == other.provider_ &&
            watch_root_cert_ == other.watch_root_cert_ &&

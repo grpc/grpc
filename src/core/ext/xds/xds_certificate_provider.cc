@@ -253,8 +253,11 @@ void XdsCertificateProvider::ClusterCertificateState::WatchStatusCallback(
 // XdsCertificateProvider
 //
 
+const char XdsCertificateProvider::kType[] = "xds";
+
 XdsCertificateProvider::XdsCertificateProvider()
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+    : grpc_tls_certificate_provider(kType),
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   distributor_->SetWatchStatusCallback(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }

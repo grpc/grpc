@@ -355,7 +355,8 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   using CertDataMap = std::map<std::string /*cert_name */, CertData>;
 
   explicit FakeCertificateProvider(CertDataMap cert_data_map)
-      : distributor_(
+      : grpc_tls_certificate_provider("fake"),
+        distributor_(
             grpc_core::MakeRefCounted<grpc_tls_certificate_distributor>()),
         cert_data_map_(std::move(cert_data_map)) {
     distributor_->SetWatchStatusCallback([this](std::string cert_name,
@@ -395,6 +396,12 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   }
 
  private:
+  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   CertDataMap cert_data_map_;
 };

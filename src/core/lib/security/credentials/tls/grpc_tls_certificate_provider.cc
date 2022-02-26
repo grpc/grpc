@@ -30,9 +30,12 @@
 
 namespace grpc_core {
 
+const char StaticDataCertificateProvider::kType[] = "static";
+
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+    : grpc_tls_certificate_provider(kType),
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
@@ -94,10 +97,13 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 }  // namespace
 
+const char FileWatcherCertificateProvider::kType[] = "file";
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, unsigned int refresh_interval_sec)
-    : private_key_path_(std::move(private_key_path)),
+    : grpc_tls_certificate_provider(kType),
+      private_key_path_(std::move(private_key_path)),
       identity_certificate_path_(std::move(identity_certificate_path)),
       root_cert_path_(std::move(root_cert_path)),
       refresh_interval_sec_(refresh_interval_sec),
