@@ -20,8 +20,8 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_url_map_testcase
-from framework.test_app import client_app
 from framework.helpers import skips
+from framework.test_app import client_app
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
