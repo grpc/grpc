@@ -261,7 +261,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   while (pending_request != nullptr) {
     if (status == GRPC_CREDENTIALS_OK) {
       pending_request->md->Append(
-          GRPC_AUTHORIZATION_METADATA_KEY, std::move(*access_token_value),
+          GRPC_AUTHORIZATION_METADATA_KEY, access_token_value->Ref(),
           [](absl::string_view, const grpc_core::Slice&) { abort(); });
       pending_request->result = std::move(pending_request->md);
     } else {
