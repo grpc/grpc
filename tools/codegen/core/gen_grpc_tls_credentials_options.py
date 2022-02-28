@@ -18,9 +18,9 @@
 # Should be executed from grpc's root directory.
 
 from __future__ import print_function
-from dataclasses import dataclass
 
 import collections
+from dataclasses import dataclass
 import sys
 
 

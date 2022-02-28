@@ -128,8 +128,8 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
 
   int cmp_impl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_tls_certificate_provider*>(this), other);
+    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
+                        other);
   }
 
   void WatchStatusCallback(std::string cert_name, bool root_being_watched,
