@@ -39,14 +39,11 @@ PollingResolver::PollingResolver(ResolverArgs args,
       work_serializer_(std::move(args.work_serializer)),
       result_handler_(std::move(args.result_handler)),
       tracer_(tracer),
-      interested_parties_(grpc_pollset_set_create()),
+      interested_parties_(args.pollset_set),
       min_time_between_resolutions_(min_time_between_resolutions),
       backoff_(backoff_options) {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO, "[polling resolver %p] created", this);
-  }
-  if (args.pollset_set != nullptr) {
-    grpc_pollset_set_add_pollset_set(interested_parties_, args.pollset_set);
   }
 }
 
@@ -55,7 +52,6 @@ PollingResolver::~PollingResolver() {
     gpr_log(GPR_INFO, "[polling resolver %p] destroying", this);
   }
   grpc_channel_args_destroy(channel_args_);
-  grpc_pollset_set_destroy(interested_parties_);
 }
 
 void PollingResolver::StartLocked() { MaybeStartResolvingLocked(); }
