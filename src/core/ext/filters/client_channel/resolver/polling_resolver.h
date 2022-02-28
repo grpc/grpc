@@ -38,7 +38,7 @@ class PollingResolver : public Resolver {
  public:
   PollingResolver(ResolverArgs args, const grpc_channel_args* channel_args,
                   grpc_millis min_time_between_resolutions,
-                  BackOff::Options backoff_options);
+                  BackOff::Options backoff_options, TraceFlag* tracer);
   ~PollingResolver() override;
 
   void StartLocked() override;
@@ -80,6 +80,7 @@ class PollingResolver : public Resolver {
   const grpc_channel_args* channel_args_ = nullptr;
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
+  TraceFlag* tracer_;
   /// pollset_set to drive the name resolution process
   grpc_pollset_set* interested_parties_ = nullptr;
   /// are we shutting down?

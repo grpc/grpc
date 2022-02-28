@@ -64,8 +64,8 @@ NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
                                    1000)
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
-}
+              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000),
+          /*tracer=*/nullptr) {}
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
   gpr_log(GPR_DEBUG, "Start resolving.");

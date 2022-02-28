@@ -125,7 +125,8 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
                                    1000)
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
+              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000),
+          &grpc_trace_cares_resolver),
       request_service_config_(!grpc_channel_args_find_bool(
           channel_args, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, true)),
       enable_srv_queries_(grpc_channel_args_find_bool(
