@@ -10,10 +10,10 @@
 #include "xds/core/v3/collection_entry.upbdefs.h"
 #include "xds/core/v3/collection_entry.upb.h"
 
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init xds_core_v3_resource_locator_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_resource_locator_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[598] = {'\n', '\"', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'c', 'o', 'l', 'l', 'e', 'c', 't', 'i', 'o', 'n', '_', 
 'e', 'n', 't', 'r', 'y', '.', 'p', 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', 
 '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'a', 'n', 'y', '.', 'p', 'r', 'o', 't', 
@@ -40,7 +40,7 @@ static const char descriptor[598] = {'\n', '\"', 'x', 'd', 's', '/', 'c', 'o', '
 'c', 'o', 'r', 'e', '/', 'v', '3', '\322', '\306', '\244', '\341', '\006', '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[5] = {
+static _upb_DefPool_Init *deps[5] = {
   &google_protobuf_any_proto_upbdefinit,
   &xds_annotations_v3_status_proto_upbdefinit,
   &xds_core_v3_resource_locator_proto_upbdefinit,
@@ -48,9 +48,9 @@ static upb_def_init *deps[5] = {
   NULL
 };
 
-upb_def_init xds_core_v3_collection_entry_proto_upbdefinit = {
+_upb_DefPool_Init xds_core_v3_collection_entry_proto_upbdefinit = {
   deps,
   &xds_core_v3_collection_entry_proto_upb_file_layout,
   "xds/core/v3/collection_entry.proto",
-  UPB_STRVIEW_INIT(descriptor, 598)
+  UPB_STRINGVIEW_INIT(descriptor, 598)
 };

@@ -10,9 +10,9 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[678] = {'\n', 'K', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 't', 'r', 'a', 'n', 's', 'p', 
 'o', 'r', 't', '_', 's', 'o', 'c', 'k', 'e', 't', 's', '/', 't', 'l', 's', '/', 'v', '3', '/', 't', 'l', 's', '_', 's', 'p', 
 'i', 'f', 'f', 'e', '_', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'o', 'r', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 
@@ -43,16 +43,16 @@ static const char descriptor[678] = {'\n', 'K', 'e', 'n', 'v', 'o', 'y', '/', 'e
 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_extensions_transport_sockets_tls_v3_tls_spiffe_validator_config_proto_upbdefinit = {
+_upb_DefPool_Init envoy_extensions_transport_sockets_tls_v3_tls_spiffe_validator_config_proto_upbdefinit = {
   deps,
   &envoy_extensions_transport_sockets_tls_v3_tls_spiffe_validator_config_proto_upb_file_layout,
   "envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto",
-  UPB_STRVIEW_INIT(descriptor, 678)
+  UPB_STRINGVIEW_INIT(descriptor, 678)
 };

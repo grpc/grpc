@@ -41,8 +41,6 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_NEW_EXTENSION(grpc,
     src/core/ext/filters/census/grpc_context.cc \
-    src/core/ext/filters/channel_idle/channel_idle_filter.cc \
-    src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/client_channel/backend_metric.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -99,6 +97,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
+    src/core/ext/filters/client_idle/client_idle_filter.cc \
+    src/core/ext/filters/client_idle/idle_filter_state.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/service_config_parser.cc \
@@ -108,6 +108,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/message_compress/message_decompress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
@@ -669,7 +670,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config.cc \
+    src/core/lib/service_config/service_config_impl.cc \
     src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -1138,6 +1139,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/util/pcre.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
+    third_party/upb/third_party/utf8_range/naive.c \
+    third_party/upb/third_party/utf8_range/range2-neon.c \
+    third_party/upb/third_party/utf8_range/range2-sse.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/decode_fast.c \
     third_party/upb/upb/def.c \
@@ -1155,7 +1159,6 @@ if test "$PHP_GRPC" != "no"; then
     -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.45.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/health)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy)
@@ -1175,12 +1178,14 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/google_c2p)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_idle)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/fault_injection)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/message_compress)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/max_age)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
@@ -1401,5 +1406,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/third_party/utf8_range)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

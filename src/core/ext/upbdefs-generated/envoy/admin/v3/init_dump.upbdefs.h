@@ -19,16 +19,16 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_admin_v3_init_dump_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_admin_v3_init_dump_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_UnreadyTargetsDumps_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_init_dump_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.UnreadyTargetsDumps");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_UnreadyTargetsDumps_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_init_dump_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.UnreadyTargetsDumps");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_init_dump_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.UnreadyTargetsDumps.UnreadyTargetsDump");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_init_dump_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.UnreadyTargetsDumps.UnreadyTargetsDump");
 }
 
 #ifdef __cplusplus

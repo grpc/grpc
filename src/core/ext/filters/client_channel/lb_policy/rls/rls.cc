@@ -69,6 +69,7 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1799,17 +1800,18 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
   grpc_lookup_v1_RouteLookupRequest* req =
       grpc_lookup_v1_RouteLookupRequest_new(arena.ptr());
   grpc_lookup_v1_RouteLookupRequest_set_target_type(
-      req, upb_strview_make(kGrpc, sizeof(kGrpc) - 1));
+      req, upb_StringView_FromDataAndSize(kGrpc, sizeof(kGrpc) - 1));
   for (const auto& kv : key_.key_map) {
     grpc_lookup_v1_RouteLookupRequest_key_map_set(
-        req, upb_strview_make(kv.first.data(), kv.first.size()),
-        upb_strview_make(kv.second.data(), kv.second.size()), arena.ptr());
+        req, upb_StringView_FromDataAndSize(kv.first.data(), kv.first.size()),
+        upb_StringView_FromDataAndSize(kv.second.data(), kv.second.size()),
+        arena.ptr());
   }
   grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
   if (!stale_header_data_.empty()) {
     grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(
-        req,
-        upb_strview_make(stale_header_data_.data(), stale_header_data_.size()));
+        req, upb_StringView_FromDataAndSize(stale_header_data_.data(),
+                                            stale_header_data_.size()));
   }
   size_t len;
   char* buf =
@@ -1837,7 +1839,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
     return response_info;
   }
   size_t num_targets;
-  const upb_strview* targets_strview =
+  const upb_StringView* targets_strview =
       grpc_lookup_v1_RouteLookupResponse_targets(response, &num_targets);
   if (num_targets == 0) {
     response_info.status =
@@ -1849,7 +1851,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
     response_info.targets.emplace_back(targets_strview[i].data,
                                        targets_strview[i].size);
   }
-  upb_strview header_data_strview =
+  upb_StringView header_data_strview =
       grpc_lookup_v1_RouteLookupResponse_header_data(response);
   response_info.header_data =
       std::string(header_data_strview.data, header_data_strview.size);
@@ -2478,7 +2480,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       Json rls_channel_service_config_json(
           *rls_channel_service_config_json_obj);
       rls_channel_service_config = rls_channel_service_config_json.Dump();
-      auto service_config = MakeRefCounted<ServiceConfig>(
+      auto service_config = MakeRefCounted<ServiceConfigImpl>(
           /*args=*/nullptr, rls_channel_service_config,
           std::move(rls_channel_service_config_json), &child_error);
       if (child_error != GRPC_ERROR_NONE) {

@@ -50,7 +50,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
@@ -531,8 +531,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses =
         CreateLbAddressesFromAddressDataList(backend_address_data);
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config =
-        grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
+        nullptr, service_config_json, &error);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     grpc_core::ServerAddressList balancer_addresses =
         CreateLbAddressesFromAddressDataList(balancer_address_data);
