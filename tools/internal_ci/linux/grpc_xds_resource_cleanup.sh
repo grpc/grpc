@@ -43,11 +43,10 @@ python3 -m bin.cleanup.cleanup \
 # reduced to 6.
 activate_gke_cluster GKE_CLUSTER_PSM_BASIC
 gcloud_get_cluster_credentials
-python3 -m bin.cleanup.cleanup \
+python3 -m bin.cleanup.namespace \
     --project=grpc-testing \
     --network=default-vpc \
     --keep_hours=6 \
-    --td_resource_prefixes='not-existed-prefix' \
     --kube_context="${KUBE_CONTEXT}" \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
@@ -57,11 +56,10 @@ python3 -m bin.cleanup.cleanup \
 # reduced to 6.
 activate_gke_cluster GKE_CLUSTER_PSM_LB
 gcloud_get_cluster_credentials
-python3 -m bin.cleanup.cleanup \
+python3 -m bin.cleanup.namespace \
     --project=grpc-testing \
     --network=default-vpc \
     --keep_hours=6 \
-    --td_resource_prefixes='not-existed-prefix' \
     --kube_context="${KUBE_CONTEXT}" \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'

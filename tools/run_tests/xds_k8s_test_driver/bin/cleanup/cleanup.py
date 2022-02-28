@@ -308,6 +308,28 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
             logging.info('----- Skipped [resource is within expiry date]')
 
 
+def find_and_remove_leaked_k8s_resources(dry_run, project, network, gcp_service_account):
+    k8s_resource_rules = [
+        # items in each tuple, in order
+        # - regex to match
+        # - prefix of the resources
+        # - function to delete the resource
+    ]
+    for prefix in CLIENT_PREFIXES.value:
+        k8s_resource_rules.append(
+            (f'{prefix}-client-(.*)', prefix, cleanup_client),)
+    for prefix in SERVER_PREFIXES.value:
+        k8s_resource_rules.append(
+            (f'{prefix}-server-(.*)', prefix, cleanup_server),)
+
+    # Delete leaked k8s namespaces, those usually mean there are leaked testing
+    # client/servers from the gke framework.
+    k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
+    nss = k8s_api_manager.core.list_namespace()
+    delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
+                         k8s_api_manager, gcp_service_account, nss.items)
+
+
 def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
@@ -359,26 +381,7 @@ def main(argv):
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedInstanceTemplates)
 
-    k8s_resource_rules = [
-        # items in each tuple, in order
-        # - regex to match
-        # - prefix of the resources
-        # - function to delete the resource
-    ]
-    for prefix in CLIENT_PREFIXES.value:
-        k8s_resource_rules.append(
-            (f'{prefix}-client-(.*)', prefix, cleanup_client),)
-    for prefix in SERVER_PREFIXES.value:
-        k8s_resource_rules.append(
-            (f'{prefix}-server-(.*)', prefix, cleanup_server),)
-
-    # Delete leaked k8s namespaces, those usually mean there are leaked testing
-    # client/servers from the gke framework.
-    k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    nss = k8s_api_manager.core.list_namespace()
-    delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
-                         k8s_api_manager, gcp_service_account, nss.items)
-
+    find_and_remove_leaked_k8s_resources(dry_run, project, network, gcp_service_account)
 
 if __name__ == '__main__':
     app.run(main)
