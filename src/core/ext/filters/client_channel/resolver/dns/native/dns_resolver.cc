@@ -74,7 +74,8 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
       name_to_resolve(), kDefaultSecurePort, interested_parties(),
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
   dns_request->Start();
-  return dns_request;
+  // Explicit type conversion to work around issue with older compilers.
+  return OrphanablePtr<Orphanable>(dns_request.release());
 }
 
 void NativeClientChannelDNSResolver::OnResolved(
