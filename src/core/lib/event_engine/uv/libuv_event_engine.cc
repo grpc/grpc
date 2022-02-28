@@ -377,7 +377,6 @@ bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
 }
 
 void LibuvEventEngine::EraseTask(LibuvTaskHandle handle) {
-  GPR_ASSERT(GPR_LIKELY(task_set_.contains(handle)));
   task_set_.erase(handle);
   delete handle.Task();
 }
