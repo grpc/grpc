@@ -37,3 +37,31 @@ python3 -m bin.cleanup.cleanup \
     --kube_context="${KUBE_CONTEXT}" \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
+
+# The BASIC cluster is used by url-map tests. Only cleaning the GKE client
+# namespaces, which won't provide much value in debugging. The keep hours is
+# reduced to 6.
+activate_gke_cluster GKE_CLUSTER_PSM_BASIC
+gcloud_get_cluster_credentials
+python3 -m bin.cleanup.cleanup \
+    --project=grpc-testing \
+    --network=default-vpc \
+    --keep_hours=6 \
+    --td_resource_prefixes='not-existed-prefix' \
+    --kube_context="${KUBE_CONTEXT}" \
+    --resource_prefix='required-but-does-not-matter' \
+    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
+
+# The PSM_LB cluster is used by k8s_lb tests. Only cleaning the GKE client
+# namespaces, which won't provide much value in debugging. The keep hours is
+# reduced to 6.
+activate_gke_cluster GKE_CLUSTER_PSM_LB
+gcloud_get_cluster_credentials
+python3 -m bin.cleanup.cleanup \
+    --project=grpc-testing \
+    --network=default-vpc \
+    --keep_hours=6 \
+    --td_resource_prefixes='not-existed-prefix' \
+    --kube_context="${KUBE_CONTEXT}" \
+    --resource_prefix='required-but-does-not-matter' \
+    --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
