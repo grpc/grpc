@@ -331,6 +331,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "grpc_tls_credentials_options_comparator_test",
+    srcs = ["grpc_tls_credentials_options_comparator_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "grpc_tls_certificate_distributor_test",
     srcs = ["grpc_tls_certificate_distributor_test.cc"],
     external_deps = ["gtest"],

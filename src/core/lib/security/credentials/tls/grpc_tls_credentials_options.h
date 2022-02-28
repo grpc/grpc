@@ -55,8 +55,9 @@ struct grpc_tls_credentials_options
   // Returns the distributor from certificate_provider_ if it is set, nullptr
   // otherwise.
   grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr)
+    if (certificate_provider_ != nullptr) {
       return certificate_provider_->distributor().get();
+}
     return nullptr;
   }
   bool watch_root_cert() const { return watch_root_cert_; }

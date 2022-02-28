@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generator script for src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
+# Generator script for src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h and test/core/security/grpc_tls_credentials_options_comparator_test.cc
 # Should be executed from grpc's root directory.
 
 from __future__ import print_function
@@ -23,13 +23,14 @@ from dataclasses import dataclass
 import collections
 import sys
 
-# import perfection
-
 
 @dataclass
 class DataMember:
     name: str
     type: str
+    test_name: str
+    test_value_1: str
+    test_value_2: str
     default_initializer: str = ''
     getter_comment: str = ''
     special_getter_return_type: str = ''
@@ -42,16 +43,28 @@ class DataMember:
 _DATA_MEMBERS = [
     DataMember(name='cert_request_type',
                type='grpc_ssl_client_certificate_request_type',
-               default_initializer='GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE'),
+               default_initializer='GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE',
+               test_name="DifferentCertRequestType",
+               test_value_1="GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE",
+               test_value_2="GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY"),
     DataMember(name='verify_server_cert',
                type='bool',
-               default_initializer='true'),
+               default_initializer='true',
+               test_name="DifferentVerifyServerCert",
+               test_value_1="false",
+               test_value_2="true"),
     DataMember(name='min_tls_version',
                type='grpc_tls_version',
-               default_initializer='grpc_tls_version::TLS1_2'),
+               default_initializer='grpc_tls_version::TLS1_2',
+               test_name="DifferentMinTlsVersion",
+               test_value_1="grpc_tls_version::TLS1_2",
+               test_value_2="grpc_tls_version::TLS1_3"),
     DataMember(name='max_tls_version',
                type='grpc_tls_version',
-               default_initializer='grpc_tls_version::TLS1_3'),
+               default_initializer='grpc_tls_version::TLS1_3',
+               test_name="DifferentMaxTlsVersion",
+               test_value_1="grpc_tls_version::TLS1_2",
+               test_value_2="grpc_tls_version::TLS1_3"),
     DataMember(
         name='certificate_verifier',
         type='grpc_core::RefCountedPtr<grpc_tls_certificate_verifier>',
@@ -60,9 +73,16 @@ _DATA_MEMBERS = [
   }""",
         setter_move_semantics=True,
         special_comparator=
-        '(certificate_verifier_ == other.certificate_verifier_ || (certificate_verifier_ != nullptr && other.certificate_verifier_ != nullptr && certificate_verifier_->Compare(other.certificate_verifier_.get()) == 0))'
-    ),
-    DataMember(name='check_call_host', type='bool', default_initializer='true'),
+        '(certificate_verifier_ == other.certificate_verifier_ || (certificate_verifier_ != nullptr && other.certificate_verifier_ != nullptr && certificate_verifier_->Compare(other.certificate_verifier_.get()) == 0))',
+        test_name="DifferentCertificateVerifier",
+        test_value_1="MakeRefCounted<HostNameCertificateVerifier>()",
+        test_value_2="MakeRefCounted<XdsCertificateVerifier>(nullptr, \"\")"),
+    DataMember(name='check_call_host',
+               type='bool',
+               default_initializer='true',
+               test_name="DifferentCheckCallHost",
+               test_value_1="false",
+               test_value_2="true"),
     DataMember(
         name='certificate_provider',
         type='grpc_core::RefCountedPtr<grpc_tls_certificate_provider>',
@@ -70,52 +90,73 @@ _DATA_MEMBERS = [
         'Returns the distributor from certificate_provider_ if it is set, nullptr otherwise.',
         override_getter=
         """grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr) return certificate_provider_->distributor().get();
+    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
     return nullptr;
   }""",
         setter_move_semantics=True,
         special_comparator=
-        '(certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->cmp(other.certificate_provider_.get()) == 0))'
+        '(certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->cmp(other.certificate_provider_.get()) == 0))',
+        test_name="DifferentCertificateProvider",
+        test_value_1=
+        "MakeRefCounted<StaticDataCertificateProvider>(\"root_cert_1\", PemKeyCertPairList())",
+        test_value_2=
+        "MakeRefCounted<StaticDataCertificateProvider>(\"root_cert_2\", PemKeyCertPairList())"
     ),
     DataMember(
         name='watch_root_cert',
         type='bool',
         default_initializer='false',
         setter_comment=
-        'If need to watch the updates of root certificates with name |root_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the root certificates are not needed.'
-    ),
+        'If need to watch the updates of root certificates with name |root_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the root certificates are not needed.',
+        test_name="DifferentWatchRootCert",
+        test_value_1="false",
+        test_value_2="true"),
     DataMember(
         name='root_cert_name',
         type='std::string',
         special_getter_return_type='const std::string&',
         setter_comment=
         'Sets the name of root certificates being watched, if |set_watch_root_cert| is called. If not set, an empty string will be used as the name.',
-        setter_move_semantics=True),
+        setter_move_semantics=True,
+        test_name="DifferentRootCertName",
+        test_value_1="\"root_cert_name_1\"",
+        test_value_2="\"root_cert_name_2\""),
     DataMember(
         name='watch_identity_pair',
         type='bool',
         default_initializer='false',
         setter_comment=
-        'If need to watch the updates of identity certificates with name |identity_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the identity key-cert pairs are not needed.'
-    ),
+        'If need to watch the updates of identity certificates with name |identity_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the identity key-cert pairs are not needed.',
+        test_name="DifferentWatchIdentityPair",
+        test_value_1="false",
+        test_value_2="true"),
     DataMember(
         name='identity_cert_name',
         type='std::string',
         special_getter_return_type='const std::string&',
         setter_comment=
         'Sets the name of identity key-cert pairs being watched, if |set_watch_identity_pair| is called. If not set, an empty string will be used as the name.',
-        setter_move_semantics=True),
+        setter_move_semantics=True,
+        test_name="DifferentIdentityCertName",
+        test_value_1="\"identity_cert_name_1\"",
+        test_value_2="\"identity_cert_name_2\""),
     DataMember(name='tls_session_key_log_file_path',
                type='std::string',
                special_getter_return_type='const std::string&',
-               setter_move_semantics=True),
+               setter_move_semantics=True,
+               test_name="DifferentTlsSessionKeyLogFilePath",
+               test_value_1="\"file_path_1\"",
+               test_value_2="\"file_path_2\""),
     DataMember(
         name='crl_directory',
         type='std::string',
         special_getter_return_type='const std::string&',
         setter_comment=
         ' gRPC will enforce CRLs on all handshakes from all hashed CRL files inside of the crl_directory. If not set, an empty string will be used, which will not enable CRL checking. Only supported for OpenSSL version > 1.1.',
-        setter_move_semantics=True)
+        setter_move_semantics=True,
+        test_name="DifferentCrlDirectory",
+        test_value_1="\"crl_directory_1\"",
+        test_value_2="\"crl_directory_2\"")
 ]
 
 
@@ -147,6 +188,7 @@ def put_copyright(f, year):
           file=f)
 
 
+# Generate src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
 H = open('src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h',
          'w')
 put_copyright(H, '2018')
@@ -158,15 +200,15 @@ print(
 
 #include <grpc/support/port_platform.h>
 
-#include \"absl/container/inlined_vector.h\"
+#include "absl/container/inlined_vector.h"
 
 #include <grpc/grpc_security.h>
 
-#include \"src/core/lib/gprpp/ref_counted.h"
-#include \"src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h\"
-#include \"src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h\"
-#include \"src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h\"
-#include \"src/core/lib/security/security_connector/ssl_utils.h\"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 
 // Contains configurable options specified by callers to configure their certain
 // security features supported in TLS.
@@ -245,3 +287,56 @@ print("""};
       file=H)
 
 H.close()
+
+# Generate test/core/security/grpc_tls_credentials_options_comparator_test.cc
+T = open('test/core/security/grpc_tls_credentials_options_comparator_test.cc',
+         'w')
+put_copyright(T, '2022')
+put_comment(
+    T, 'Generated by tools/codegen/core/gen_grpc_tls_credentials_options.py')
+print("""
+#include <grpc/support/port_platform.h>
+
+#include <string>
+
+#include <gmock/gmock.h>
+
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "test/core/util/test_config.h"
+
+namespace grpc_core {
+namespace {
+""",
+      file=T)
+
+# Generate negative test for each negative member
+for data_member in _DATA_MEMBERS:
+    print("""TEST(TlsCredentialsOptionsComparatorTest, %s) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_%s(%s);
+  options_2->set_%s(%s);
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}""" % (data_member.test_name, data_member.name, data_member.test_value_1,
+        data_member.name, data_member.test_value_2),
+          file=T)
+
+# Print out file ending
+print("""
+} // namespace
+} // namespace grpc_core
+
+int main(int argc, char** argv) {
+  testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
+}""",
+      file=T)
+T.close()

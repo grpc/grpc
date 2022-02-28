@@ -6137,6 +6137,15 @@ targets:
   - test/core/security/grpc_tls_certificate_verifier_test.cc
   deps:
   - grpc_test_util
+- name: grpc_tls_credentials_options_comparator_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_tls_credentials_options_comparator_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
