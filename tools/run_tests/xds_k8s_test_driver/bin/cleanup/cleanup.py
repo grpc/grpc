@@ -308,7 +308,8 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
             logging.info('----- Skipped [resource is within expiry date]')
 
 
-def find_and_remove_leaked_k8s_resources(dry_run, project, network, gcp_service_account):
+def find_and_remove_leaked_k8s_resources(dry_run, project, network,
+                                         gcp_service_account):
     k8s_resource_rules = [
         # items in each tuple, in order
         # - regex to match
@@ -381,7 +382,9 @@ def main(argv):
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedInstanceTemplates)
 
-    find_and_remove_leaked_k8s_resources(dry_run, project, network, gcp_service_account)
+    find_and_remove_leaked_k8s_resources(dry_run, project, network,
+                                         gcp_service_account)
+
 
 if __name__ == '__main__':
     app.run(main)

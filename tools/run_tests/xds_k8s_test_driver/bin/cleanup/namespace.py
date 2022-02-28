@@ -19,6 +19,7 @@ from bin.cleanup import cleanup
 from framework import xds_flags
 from framework import xds_k8s_flags
 
+
 def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
@@ -29,7 +30,8 @@ def main(argv):
     gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
     dry_run: bool = cleanup.DRY_RUN.value
 
-    cleanup.find_and_remove_leaked_k8s_resources(dry_run, project, network, gcp_service_account)
+    cleanup.find_and_remove_leaked_k8s_resources(dry_run, project, network,
+                                                 gcp_service_account)
 
 
 if __name__ == '__main__':
