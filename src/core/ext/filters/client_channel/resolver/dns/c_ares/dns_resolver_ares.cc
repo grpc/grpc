@@ -63,11 +63,12 @@ class AresClientChannelDNSResolver : public PollingResolver {
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
-  class AresRequestWrapper : public Orphanable {
+  class AresRequestWrapper : public InternallyRefCounted<AresRequestWrapper> {
    public:
     explicit AresRequestWrapper(
         RefCountedPtr<AresClientChannelDNSResolver> resolver)
         : resolver_(std::move(resolver)) {
+      Ref(DEBUG_LOCATION, "OnResolved").release();
       GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, nullptr);
       request_.reset(grpc_dns_lookup_ares(
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
@@ -84,7 +85,10 @@ class AresClientChannelDNSResolver : public PollingResolver {
       resolver_.reset(DEBUG_LOCATION, "dns-resolving");
     }
 
-    void Orphan() override { grpc_cancel_ares_request(request_.get()); }
+    void Orphan() override {
+      grpc_cancel_ares_request(request_.get());
+      Unref(DEBUG_LOCATION, "Orphan");
+    }
 
    private:
     static void OnResolved(void* arg, grpc_error_handle error);
@@ -288,7 +292,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
   result.args = grpc_channel_args_copy_and_add(
       resolver_->channel_args(), new_args.data(), new_args.size());
   resolver_->OnRequestComplete(std::move(result));
-  delete this;
+  Unref(DEBUG_LOCATION, "OnResolved");
 }
 
 //
