@@ -42,12 +42,16 @@ python3 -m bin.cleanup.cleanup \
 # namespaces, which won't provide much value in debugging. The keep hours is
 # reduced to 6.
 activate_gke_cluster GKE_CLUSTER_PSM_BASIC
-gcloud_get_cluster_credentials
+# Invoking the get-crednetials directly, because the
+# gcloud_get_cluster_credentials re-sets readonly Bash variables, which is nice
+# safety mechanism to keep.
+gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" --zone "${GKE_CLUSTER_ZONE}"
+TARGET_KUBE_CONTEXT="$(kubectl config current-context)"
 python3 -m bin.cleanup.namespace \
     --project=grpc-testing \
     --network=default-vpc \
     --keep_hours=6 \
-    --kube_context="${KUBE_CONTEXT}" \
+    --kube_context="${TARGET_KUBE_CONTEXT}" \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
 
@@ -55,11 +59,12 @@ python3 -m bin.cleanup.namespace \
 # namespaces, which won't provide much value in debugging. The keep hours is
 # reduced to 6.
 activate_gke_cluster GKE_CLUSTER_PSM_LB
-gcloud_get_cluster_credentials
+gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" --zone "${GKE_CLUSTER_ZONE}"
+TARGET_KUBE_CONTEXT="$(kubectl config current-context)"
 python3 -m bin.cleanup.namespace \
     --project=grpc-testing \
     --network=default-vpc \
     --keep_hours=6 \
-    --kube_context="${KUBE_CONTEXT}" \
+    --kube_context="${TARGET_KUBE_CONTEXT}" \
     --resource_prefix='required-but-does-not-matter' \
     --td_bootstrap_image='required-but-does-not-matter' --server_image='required-but-does-not-matter' --client_image='required-but-does-not-matter'
