@@ -214,8 +214,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/ext/filters/channel_idle/idle_filter_state.h',
-                      'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -256,6 +255,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
+                      'src/core/ext/filters/client_idle/idle_filter_state.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                       'src/core/ext/filters/fault_injection/service_config_parser.h',
@@ -264,6 +264,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                       'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
+                      'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/rbac/rbac_filter.h',
                       'src/core/ext/filters/rbac/rbac_service_config_parser.h',
@@ -857,6 +858,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/util/json_util.h',
                       'src/core/lib/service_config/service_config.h',
                       'src/core/lib/service_config/service_config_call_data.h',
+                      'src/core/lib/service_config/service_config_impl.h',
                       'src/core/lib/service_config/service_config_parser.h',
                       'src/core/lib/slice/b64.h',
                       'src/core/lib/slice/percent_encoding.h',
@@ -1026,8 +1028,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb_internal.h',
                       'third_party/xxhash/xxhash.h'
 
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/idle_filter_state.h',
-                              'src/core/ext/filters/client_channel/backend_metric.h',
+    ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -1068,6 +1069,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_interface.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
+                              'src/core/ext/filters/client_idle/idle_filter_state.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                               'src/core/ext/filters/fault_injection/service_config_parser.h',
@@ -1076,6 +1078,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                               'src/core/ext/filters/http/message_compress/message_decompress_filter.h',
                               'src/core/ext/filters/http/server/http_server_filter.h',
+                              'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/rbac/rbac_filter.h',
                               'src/core/ext/filters/rbac/rbac_service_config_parser.h',
@@ -1651,6 +1654,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/util/json_util.h',
                               'src/core/lib/service_config/service_config.h',
                               'src/core/lib/service_config/service_config_call_data.h',
+                              'src/core/lib/service_config/service_config_impl.h',
                               'src/core/lib/service_config/service_config_parser.h',
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',

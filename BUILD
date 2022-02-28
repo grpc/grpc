@@ -978,6 +978,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_resolver",
         "handshaker_registry",
+        "service_config_parser",
     ],
 )
 
@@ -2219,7 +2220,8 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
-        "grpc_channel_idle_filter",
+        "grpc_client_idle_filter",
+        "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
@@ -2235,17 +2237,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_service_config",
-    srcs = [
-        "src/core/lib/service_config/service_config.cc",
-        "src/core/lib/service_config/service_config_parser.cc",
-    ],
     hdrs = [
         "src/core/lib/service_config/service_config.h",
         "src/core/lib/service_config/service_config_call_data.h",
-        "src/core/lib/service_config/service_config_parser.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/strings",
     ],
     language = "c++",
@@ -2253,7 +2249,51 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
+        "service_config_parser",
         "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_service_config_impl",
+    srcs = [
+        "src/core/lib/service_config/service_config_impl.cc",
+    ],
+    hdrs = [
+        "src/core/lib/service_config/service_config_impl.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "config",
+        "error",
+        "gpr_base",
+        "grpc_service_config",
+        "json",
+        "service_config_parser",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "service_config_parser",
+    srcs = [
+        "src/core/lib/service_config/service_config_parser.cc",
+    ],
+    hdrs = [
+        "src/core/lib/service_config/service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "error",
+        "gpr_base",
+        "json",
     ],
 )
 
@@ -2414,6 +2454,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_resolver",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "handshaker_registry",
         "httpcli",
@@ -2467,10 +2508,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
-        "src/core/ext/filters/channel_idle/idle_filter_state.cc",
+        "src/core/ext/filters/client_idle/idle_filter_state.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/channel_idle/idle_filter_state.h",
+        "src/core/ext/filters/client_idle/idle_filter_state.h",
     ],
     language = "c++",
     deps = [
@@ -2479,9 +2520,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_channel_idle_filter",
+    name = "grpc_client_idle_filter",
     srcs = [
-        "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
+        "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     deps = [
         "capture",
@@ -2493,6 +2534,22 @@ grpc_cc_library(
         "loop",
         "sleep",
         "try_seq",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_max_age_filter",
+    srcs = [
+        "src/core/ext/filters/max_age/max_age_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/max_age/max_age_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
     ],
 )
 
@@ -2728,6 +2785,7 @@ grpc_cc_library(
         "grpc_fake_credentials",
         "grpc_resolver",
         "grpc_security_base",
+        "grpc_service_config_impl",
         "json",
         "json_util",
         "orphanable",
@@ -2902,6 +2960,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
+        "grpc_service_config_impl",
         "grpc_sockaddr",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
@@ -3402,6 +3461,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_sockaddr",
         "iomgr_port",
         "json",
@@ -3498,6 +3558,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver",
+        "grpc_service_config_impl",
         "grpc_xds_client",
     ],
 )
@@ -4592,6 +4653,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_health_upb",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
@@ -4624,6 +4686,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_insecure_credentials",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",
