@@ -69,8 +69,8 @@ go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 pushd ..
 git clone https://github.com/grpc/test-infra.git
 cd test-infra
-# Tools are built from a known good version.
-git checkout --detach v1.0.0
+# Tools are built from HEAD.
+git checkout --detach
 make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
