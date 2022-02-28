@@ -174,19 +174,6 @@ XdsCredentials::create_security_connector(
           MakeRefCounted<XdsCertificateVerifier>(xds_certificate_provider,
                                                  std::move(cluster_name)));
       tls_credentials_options->set_check_call_host(false);
-      // TODO(yashkt): Creating a new TlsCreds object each time we create a
-      // security connector means that the security connector's cmp() method
-      // returns unequal for each instance, which means that every time an LB
-      // policy updates, all the subchannels will be recreated.  This is
-      // going to lead to a lot of connection churn.  Instead, we should
-      // either (a) change the TLS security connector's cmp() method to be
-      // smarter somehow, so that it compares unequal only when the
-      // tls_credentials_options have changed, or (b) cache the TlsCreds
-      // objects in the XdsCredentials object so that we can reuse the
-      // same one when creating new security connectors, swapping out the
-      // TlsCreds object only when the tls_credentials_options change.
-      // Option (a) would probably be better, although it may require some
-      // structural changes to the security connector API.
       auto tls_credentials =
           MakeRefCounted<TlsCredentials>(std::move(tls_credentials_options));
       return tls_credentials->create_security_connector(
