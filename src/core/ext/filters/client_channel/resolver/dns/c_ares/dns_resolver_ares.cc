@@ -236,6 +236,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
 
 void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
     grpc_error_handle error) {
+  GRPC_CARES_TRACE_LOG("resolver:%p OnResolved()", this);
   Result result;
   absl::InlinedVector<grpc_arg, 1> new_args;
   // TODO(roth): Change logic to be able to report failures for addresses
@@ -287,6 +288,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
   result.args = grpc_channel_args_copy_and_add(
       resolver_->channel_args(), new_args.data(), new_args.size());
   resolver_->OnRequestComplete(std::move(result));
+  delete this;
 }
 
 //
