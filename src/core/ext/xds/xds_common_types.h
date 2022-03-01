@@ -101,9 +101,9 @@ struct CommonTlsContext {
       CommonTlsContext* common_tls_context);
 };
 
-grpc_error_handle ExtractHttpFilterTypeName(const XdsEncodingContext& context,
-                                            const google_protobuf_Any* any,
-                                            absl::string_view* filter_type);
+grpc_error_handle ExtractExtensionTypeName(const XdsEncodingContext& context,
+                                           const google_protobuf_Any* any,
+                                           absl::string_view* extension_type);
 
 }  // namespace grpc_core
 

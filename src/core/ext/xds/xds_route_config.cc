@@ -334,27 +334,10 @@ grpc_error_handle ClusterSpecifierPluginParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "could not obtrain TypedExtensionConfig for plugin config");
     }
-    absl::string_view plugin_type =
-        UpbStringToAbsl(google_protobuf_Any_type_url(any));
-    // Look inside for type TypeStruct.
-    if (plugin_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
-        plugin_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
-      upb_StringView any_value = google_protobuf_Any_value(any);
-      const auto* typed_struct = xds_type_v3_TypedStruct_parse(
-          any_value.data, any_value.size, context.arena);
-      if (typed_struct == nullptr) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "could not parse TypedStruct from plugin config");
-      }
-      plugin_type =
-          UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-      if (plugin_type.empty()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("no plugin config specified for plugin name ", name));
-      }
-    }
-    // Always strip off "type.googleapis.com".
-    plugin_type = absl::StripPrefix(plugin_type, "type.googleapis.com/");
+    absl::string_view plugin_type;
+    grpc_error_handle error =
+        ExtractExtensionTypeName(context, any, &plugin_type);
+    if (error != GRPC_ERROR_NONE) return error;
     // Find the plugin and generate the policy.
     auto lb_policy_config =
         XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
@@ -603,7 +586,7 @@ grpc_error_handle ParseTypedPerFilterConfig(
       }
     }
     grpc_error_handle error =
-        ExtractHttpFilterTypeName(context, any, &filter_type);
+        ExtractExtensionTypeName(context, any, &filter_type);
     if (error != GRPC_ERROR_NONE) return error;
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
@@ -1032,7 +1015,8 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         // Mark off plugins used in route action.
         std::string* cluster_specifier_action =
             absl::get_if<XdsRouteConfigResource::Route::RouteAction::
-                             kClusterSpecifierPluginIndex>(&route_action.action);
+                             kClusterSpecifierPluginIndex>(
+                &route_action.action);
         if (cluster_specifier_action != nullptr) {
           cluster_specifier_plugins.erase(*cluster_specifier_action);
         }

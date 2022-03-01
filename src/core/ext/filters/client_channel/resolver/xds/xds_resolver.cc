@@ -434,8 +434,6 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
             route_action->action);
         uint32_t end = 0;
         for (const auto& weighted_cluster : action_weighted_clusters) {
-          gpr_log(GPR_INFO, "donna new name is %s",
-                  weighted_cluster.name.c_str());
           Route::ClusterWeightState cluster_weight_state;
           *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
                                       &cluster_weight_state.method_config);
@@ -673,7 +671,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     cluster_name =
         absl::StrCat("cluster:", entry.weighted_cluster_state[index].cluster);
     method_config = entry.weighted_cluster_state[index].method_config;
-    gpr_log(GPR_INFO, "donna cluster name is %s", cluster_name.c_str());
   } else if (route_action->action.index() ==
              XdsRouteConfigResource::Route::RouteAction::
                  kClusterSpecifierPluginIndex) {

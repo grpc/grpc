@@ -331,7 +331,7 @@ grpc_error_handle HttpConnectionManagerParse(
       }
       absl::string_view filter_type;
       grpc_error_handle error =
-          ExtractHttpFilterTypeName(context, any, &filter_type);
+          ExtractExtensionTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
