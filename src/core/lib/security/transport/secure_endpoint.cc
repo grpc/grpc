@@ -44,6 +44,7 @@
 #define STAGING_BUFFER_SIZE 8192
 
 static void on_read(void* user_data, grpc_error_handle error);
+static void benign_reclaimer_locked(void* arg, grpc_error_handle error);
 
 namespace {
 struct secure_endpoint {
@@ -58,6 +59,7 @@ struct secure_endpoint {
         zero_copy_protector(zero_copy_protector) {
     base.vtable = vtable;
     gpr_mu_init(&protector_mu);
+    gpr_mu_init(&reclamation_mu);
     GRPC_CLOSURE_INIT(&on_read, ::on_read, this, grpc_schedule_on_exec_ctx);
     grpc_slice_buffer_init(&source_buffer);
     grpc_slice_buffer_init(&leftover_bytes);
@@ -71,6 +73,7 @@ struct secure_endpoint {
             ->memory_quota()
             ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
                                              ":client_transport"));
+    self_reservation = memory_owner.MakeReservation(sizeof(this));
     read_staging_buffer =
         memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
     write_staging_buffer =
@@ -79,6 +82,8 @@ struct secure_endpoint {
   }
 
   ~secure_endpoint() {
+    gpr_log(GPR_ERROR, "destroying endpoint %p", this);
+    memory_owner.Reset();
     grpc_endpoint_destroy(wrapped_ep);
     tsi_frame_protector_destroy(protector);
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
@@ -86,8 +91,11 @@ struct secure_endpoint {
     grpc_slice_buffer_destroy_internal(&leftover_bytes);
     grpc_slice_unref_internal(read_staging_buffer);
     grpc_slice_unref_internal(write_staging_buffer);
+
     grpc_slice_buffer_destroy_internal(&output_buffer);
+    read_buffer = nullptr;
     gpr_mu_destroy(&protector_mu);
+    gpr_mu_destroy(&reclamation_mu);
   }
 
   grpc_endpoint base;
@@ -95,10 +103,12 @@ struct secure_endpoint {
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
   gpr_mu protector_mu;
+  gpr_mu reclamation_mu;
   /* saved upper level callbacks and user_data. */
   grpc_closure* read_cb = nullptr;
   grpc_closure* write_cb = nullptr;
   grpc_closure on_read;
+  grpc_closure benign_reclaimer_locked;
   grpc_slice_buffer* read_buffer = nullptr;
   grpc_slice_buffer source_buffer;
   /* saved handshaker leftover data to unprotect. */
@@ -106,9 +116,13 @@ struct secure_endpoint {
   /* buffers for read and write */
   grpc_slice read_staging_buffer = grpc_empty_slice();
   grpc_slice write_staging_buffer = grpc_empty_slice();
+  // grpc_slice read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
+  // grpc_slice write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   grpc_slice_buffer output_buffer;
   grpc_core::MemoryOwner memory_owner;
-  bool has_posted_reclaimer;
+  grpc_core::MemoryAllocator::Reservation self_reservation;
+  grpc_core::ReclamationSweep active_reclamation;
+  bool has_posted_reclaimer = false;
 
   gpr_refcount ref;
 };
@@ -158,20 +172,41 @@ static void secure_endpoint_unref(secure_endpoint* ep) {
 static void secure_endpoint_ref(secure_endpoint* ep) { gpr_ref(&ep->ref); }
 #endif
 
+static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
+  secure_endpoint* ep = static_cast<secure_endpoint*>(arg);
+  // gpr_mu_lock(&ep->reclamation_mu);
+  gpr_log(GPR_ERROR, "calling benign reclamation on endpoint %p with lock %p", ep, &ep->reclamation_mu);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO,
+            "secure endpoint: benign reclamation to free memory");
+  }
+  if(error == GRPC_ERROR_NONE) {
+    ep->read_staging_buffer = grpc_empty_slice();
+    ep->write_staging_buffer = grpc_empty_slice();
+    // grpc_slice_unref_internal(ep->read_staging_buffer);
+    // grpc_slice_unref_internal(ep->write_staging_buffer);
+    // gpr_mu_unlock(&ep->reclamation_mu);
+  }
+  ep->has_posted_reclaimer = false;
+  if(error != GRPC_ERROR_CANCELLED) {
+    ep->active_reclamation.Finish();
+  }
+  SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
+}
 static void post_reclaimer(secure_endpoint* ep) {
   if (!ep->has_posted_reclaimer) {
+    gpr_log(GPR_ERROR, "posting benign reclamation on endpoint %p", ep);
+    SECURE_ENDPOINT_REF(ep, "benign_reclaimer");
     ep->has_posted_reclaimer = true;
     ep->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-              gpr_log(GPR_INFO,
-                      "secure endpoint: benign reclamation to free memory");
-            }
-            ep->read_staging_buffer = grpc_empty_slice();
-            ep->write_staging_buffer = grpc_empty_slice();
-            ep->has_posted_reclaimer = false;
+              GRPC_CLOSURE_INIT(&ep->benign_reclaimer_locked, benign_reclaimer_locked, ep, grpc_schedule_on_exec_ctx);
+              ep->active_reclamation = std::move(*sweep);
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION, &ep->benign_reclaimer_locked, GRPC_ERROR_NONE);
+          } else {
+            SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
           }
         });
   }
@@ -179,9 +214,12 @@ static void post_reclaimer(secure_endpoint* ep) {
 
 static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
                                       uint8_t** end) {
-  grpc_slice_buffer_add(ep->read_buffer, ep->read_staging_buffer);
+  grpc_slice_buffer_add_indexed(ep->read_buffer, ep->read_staging_buffer);
+  // ep->read_staging_buffer = grpc_empty_slice();
+  // grpc_slice_unref_internal(ep->read_staging_buffer);
   ep->read_staging_buffer =
       ep->memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+  // ep->read_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   post_reclaimer(ep);
   *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
@@ -307,9 +345,11 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
                                        uint8_t** end) {
-  grpc_slice_buffer_add(&ep->output_buffer, ep->write_staging_buffer);
+  grpc_slice_buffer_add_indexed(&ep->output_buffer, ep->write_staging_buffer);
+  // ep->write_staging_buffer = grpc_empty_slice();
   ep->write_staging_buffer =
       ep->memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+  // ep->write_staging_buffer = GRPC_SLICE_MALLOC(STAGING_BUFFER_SIZE);
   post_reclaimer(ep);
   *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
@@ -415,6 +455,7 @@ static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
+  ep->memory_owner.Reset();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
