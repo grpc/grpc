@@ -25,18 +25,8 @@
 namespace grpc_core {
 
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
-  RefCountedPtr<GlobalSubchannelPool>* p =
-      instance_.load(std::memory_order_acquire);
-  if (p == nullptr) {
-    p = new RefCountedPtr<GlobalSubchannelPool>(new GlobalSubchannelPool());
-    RefCountedPtr<GlobalSubchannelPool>* expect = nullptr;
-    if (!instance_.compare_exchange_strong(expect, p, std::memory_order_acq_rel,
-                                           std::memory_order_acquire)) {
-      delete p;
-      p = expect;
-    }
-  }
-  return *p;
+  static GlobalSubchannelPool* p = new GlobalSubchannelPool();
+  return p->Ref();
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
@@ -50,9 +40,6 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   subchannel_map_[key] = constructed.get();
   return constructed;
 }
-
-std::atomic<RefCountedPtr<GlobalSubchannelPool>*>
-    GlobalSubchannelPool::instance_{nullptr};
 
 void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
                                                 Subchannel* subchannel) {

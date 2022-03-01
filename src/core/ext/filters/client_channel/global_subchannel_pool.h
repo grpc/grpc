@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
 #include <map>
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
@@ -49,10 +48,6 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
  private:
   GlobalSubchannelPool() {}
   ~GlobalSubchannelPool() override {}
-
-  // The singleton instance. (It's a pointer to RefCountedPtr so that this
-  // non-local static object can be trivially destructible.)
-  static std::atomic<RefCountedPtr<GlobalSubchannelPool>*> instance_;
 
   // A map from subchannel key to subchannel.
   std::map<SubchannelKey, Subchannel*> subchannel_map_ ABSL_GUARDED_BY(mu_);
