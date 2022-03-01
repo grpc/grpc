@@ -30,8 +30,8 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   if (p == nullptr) {
     p = new RefCountedPtr<GlobalSubchannelPool>(new GlobalSubchannelPool());
     RefCountedPtr<GlobalSubchannelPool>* expect = nullptr;
-    if (!instance_.compare_exchange_strong(expect, p, std::memory_order_release,
-                                           std::memory_order_acq_rel)) {
+    if (!instance_.compare_exchange_strong(expect, p, std::memory_order_acq_rel,
+                                           std::memory_order_acquire)) {
       delete p;
       p = expect;
     }
