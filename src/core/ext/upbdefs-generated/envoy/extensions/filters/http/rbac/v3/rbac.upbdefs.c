@@ -10,9 +10,9 @@
 #include "envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.upb.h"
 
-extern upb_def_init envoy_config_rbac_v3_rbac_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_rbac_v3_rbac_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[725] = {'\n', '0', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'h', 't', 't', 'p', '/', 'r', 'b', 'a', 'c', '/', 'v', '3', '/', 'r', 'b', 'a', 'c', '.', 'p', 'r', 'o', 't', 'o', 
 '\022', '%', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 'l', 't', 'e', 'r', 
@@ -44,16 +44,16 @@ static const char descriptor[725] = {'\n', '0', 'e', 'n', 'v', 'o', 'y', '/', 'e
 'v', '3', ';', 'r', 'b', 'a', 'c', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &envoy_config_rbac_v3_rbac_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit = {
+_upb_DefPool_Init envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit = {
   deps,
   &envoy_extensions_filters_http_rbac_v3_rbac_proto_upb_file_layout,
   "envoy/extensions/filters/http/rbac/v3/rbac.proto",
-  UPB_STRVIEW_INIT(descriptor, 725)
+  UPB_STRINGVIEW_INIT(descriptor, 725)
 };

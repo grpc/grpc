@@ -39,13 +39,13 @@ PluginRegistryMap* g_plugin_registry = nullptr;
 }  // namespace
 
 void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
-    upb_symtab* symtab) const {
+    upb_DefPool* symtab) const {
   grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
 }
 
 absl::StatusOr<std::string>
 XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
-    upb_strview serialized_plugin_config, upb_arena* arena) const {
+    upb_StringView serialized_plugin_config, upb_Arena* arena) const {
   const auto* specifier = grpc_lookup_v1_RouteLookupClusterSpecifier_parse(
       serialized_plugin_config.data, serialized_plugin_config.size, arena);
   if (specifier == nullptr) {
@@ -108,7 +108,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
           UpbStringToStdString(grpc_lookup_v1_NameMatcher_key(headers[k]));
       size_t num_header_names;
       Json::Array header_names_result;
-      upb_strview const* header_names =
+      upb_StringView const* header_names =
           grpc_lookup_v1_NameMatcher_names(headers[k], &num_header_names);
       for (size_t l = 0; l < num_header_names; ++l) {
         header_names_result.emplace_back(UpbStringToStdString(header_names[l]));
@@ -121,7 +121,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     builder_result["header"] = std::move(keybuilder_headers_array_result);
     // parse constant keys
     Json::Object const_keys_map_result;
-    size_t const_key_it = UPB_MAP_BEGIN;
+    size_t const_key_it = kUpb_Map_Begin;
     while (true) {
       const auto* const_key_entry =
           grpc_lookup_v1_GrpcKeyBuilder_constant_keys_next(keybuilders[i],
@@ -193,7 +193,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
 const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
     "grpc.lookup.v1.RouteLookupClusterSpecifier";
 
-void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_symtab* symtab) {
+void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_DefPool* symtab) {
   for (const auto& p : *g_plugin_registry) {
     p.second->PopulateSymtab(symtab);
   }
@@ -207,8 +207,8 @@ void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
 
 absl::StatusOr<std::string>
 XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
-    absl::string_view proto_type_name, upb_strview serialized_plugin_config,
-    upb_arena* arena) {
+    absl::string_view proto_type_name, upb_StringView serialized_plugin_config,
+    upb_Arena* arena) {
   auto it = g_plugin_registry->find(proto_type_name);
   if (it == g_plugin_registry->end()) {
     return absl::InvalidArgumentError(

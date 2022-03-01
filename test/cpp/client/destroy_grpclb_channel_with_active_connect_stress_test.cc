@@ -44,6 +44,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -68,7 +69,7 @@ void TryConnectAndDestroy() {
   addresses.emplace_back(address.addr, address.len, nullptr);
   grpc_core::Resolver::Result lb_address_result;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  lb_address_result.service_config = grpc_core::ServiceConfig::Create(
+  lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(
       nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);

@@ -85,7 +85,7 @@ class XdsResourceType {
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
   // Any fields in textproto printing (internal b/178821188).
-  virtual void InitUpbSymtab(upb_symtab* symtab) const = 0;
+  virtual void InitUpbSymtab(upb_DefPool* symtab) const = 0;
 
   // Convenience method for checking if resource_type matches this type.
   // Checks against both type_url() and v2_type_url().

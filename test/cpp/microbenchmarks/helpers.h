@@ -29,7 +29,6 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "test/core/util/memory_counters.h"
 
 class LibraryInitializer {
  public:
@@ -68,7 +67,6 @@ class TrackCounters {
       gpr_atm_no_barrier_load(&gpr_counter_atm_add);
   const size_t now_calls_at_start_ =
       gpr_atm_no_barrier_load(&gpr_now_call_count);
-  grpc_memory_counters counters_at_start_ = grpc_memory_counters_snapshot();
 #endif
 };
 

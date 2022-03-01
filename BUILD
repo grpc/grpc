@@ -970,12 +970,15 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/config/core_configuration.h",
     ],
+    visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
         "gpr_base",
+        "grpc_resolver",
         "handshaker_registry",
+        "service_config_parser",
     ],
 )
 
@@ -1715,6 +1718,8 @@ grpc_cc_library(
     name = "grpc_sockaddr",
     srcs = [
         "src/core/lib/event_engine/sockaddr.cc",
+        "src/core/lib/iomgr/sockaddr_utils_posix.cc",
+        "src/core/lib/iomgr/socket_utils_windows.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/sockaddr.h",
@@ -1724,7 +1729,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils.h",
     ],
     deps = [
-        "gpr_platform",
+        "gpr_base",
         "iomgr_port",
     ],
 )
@@ -1901,7 +1906,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils_common_posix.cc",
         "src/core/lib/iomgr/socket_utils_linux.cc",
         "src/core/lib/iomgr/socket_utils_posix.cc",
-        "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/tcp_client.cc",
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
@@ -2233,17 +2237,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_service_config",
-    srcs = [
-        "src/core/lib/service_config/service_config.cc",
-        "src/core/lib/service_config/service_config_parser.cc",
-    ],
     hdrs = [
         "src/core/lib/service_config/service_config.h",
         "src/core/lib/service_config/service_config_call_data.h",
-        "src/core/lib/service_config/service_config_parser.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/strings",
     ],
     language = "c++",
@@ -2251,7 +2249,51 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "json",
+        "service_config_parser",
         "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_service_config_impl",
+    srcs = [
+        "src/core/lib/service_config/service_config_impl.cc",
+    ],
+    hdrs = [
+        "src/core/lib/service_config/service_config_impl.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "config",
+        "error",
+        "gpr_base",
+        "grpc_service_config",
+        "json",
+        "service_config_parser",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
+    name = "service_config_parser",
+    srcs = [
+        "src/core/lib/service_config/service_config_parser.cc",
+    ],
+    hdrs = [
+        "src/core/lib/service_config/service_config_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "error",
+        "gpr_base",
+        "json",
     ],
 )
 
@@ -2289,6 +2331,7 @@ grpc_cc_library(
         "src/core/lib/resolver/resolver_registry.h",
     ],
     external_deps = [
+        "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -2411,6 +2454,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_resolver",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "handshaker_registry",
         "httpcli",
@@ -2731,6 +2775,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -2740,6 +2785,7 @@ grpc_cc_library(
         "grpc_fake_credentials",
         "grpc_resolver",
         "grpc_security_base",
+        "grpc_service_config_impl",
         "json",
         "json_util",
         "orphanable",
@@ -2918,6 +2964,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
+        "grpc_service_config_impl",
         "grpc_sockaddr",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
@@ -3017,6 +3064,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3373,6 +3421,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3407,6 +3456,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr_base",
         "grpc_base",
@@ -3415,6 +3465,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_sockaddr",
         "iomgr_port",
         "json",
@@ -3433,6 +3484,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3452,6 +3504,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3472,6 +3525,7 @@ grpc_cc_library(
         "@grpc:grpc_resolver_fake",
     ],
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
@@ -3502,11 +3556,13 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver",
+        "grpc_service_config_impl",
         "grpc_xds_client",
     ],
 )
@@ -4601,6 +4657,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_health_upb",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "ref_counted",
@@ -4633,6 +4690,7 @@ grpc_cc_library(
         "grpc_health_upb",
         "grpc_insecure_credentials",
         "grpc_service_config",
+        "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",

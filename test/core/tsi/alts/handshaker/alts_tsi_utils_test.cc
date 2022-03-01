@@ -43,7 +43,7 @@ static void deserialize_response_test() {
   upb::Arena arena;
   grpc_gcp_HandshakerResp* resp = grpc_gcp_HandshakerResp_new(arena.ptr());
   grpc_gcp_HandshakerResp_set_out_frames(
-      resp, upb_strview_makez(ALTS_TSI_UTILS_TEST_OUT_FRAME));
+      resp, upb_StringView_FromString(ALTS_TSI_UTILS_TEST_OUT_FRAME));
   size_t buf_len;
   char* buf = grpc_gcp_HandshakerResp_serialize(resp, arena.ptr(), &buf_len);
   grpc_slice slice = grpc_slice_from_copied_buffer(buf, buf_len);

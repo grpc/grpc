@@ -10,11 +10,11 @@
 #include "envoy/config/trace/v3/dynamic_ot.upbdefs.h"
 #include "envoy/config/trace/v3/dynamic_ot.upb.h"
 
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[561] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 'd', 
 'y', 'n', 'a', 'm', 'i', 'c', '_', 'o', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 
 'n', 'f', 'i', 'g', '.', 't', 'r', 'a', 'c', 'e', '.', 'v', '3', '\032', '\034', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 
@@ -40,7 +40,7 @@ static const char descriptor[561] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 'c
 '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[6] = {
+static _upb_DefPool_Init *deps[6] = {
   &google_protobuf_struct_proto_upbdefinit,
   &udpa_annotations_migrate_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
@@ -49,9 +49,9 @@ static upb_def_init *deps[6] = {
   NULL
 };
 
-upb_def_init envoy_config_trace_v3_dynamic_ot_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_trace_v3_dynamic_ot_proto_upbdefinit = {
   deps,
   &envoy_config_trace_v3_dynamic_ot_proto_upb_file_layout,
   "envoy/config/trace/v3/dynamic_ot.proto",
-  UPB_STRVIEW_INIT(descriptor, 561)
+  UPB_STRINGVIEW_INIT(descriptor, 561)
 };

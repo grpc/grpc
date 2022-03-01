@@ -54,7 +54,7 @@ struct GrpcLbResponse {
 };
 
 // Creates a serialized grpclb request.
-grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_arena* arena);
+grpc_slice GrpcLbRequestCreate(const char* lb_service_name, upb_Arena* arena);
 
 // Creates a serialized grpclb load report request.
 grpc_slice GrpcLbLoadReportRequestCreate(
@@ -62,11 +62,11 @@ grpc_slice GrpcLbLoadReportRequestCreate(
     int64_t num_calls_finished_with_client_failed_to_send,
     int64_t num_calls_finished_known_received,
     const GrpcLbClientStats::DroppedCallCounts* drop_token_counts,
-    upb_arena* arena);
+    upb_Arena* arena);
 
 // Deserialize a grpclb response.
 bool GrpcLbResponseParse(const grpc_slice& serialized_response,
-                         upb_arena* arena, GrpcLbResponse* result);
+                         upb_Arena* arena, GrpcLbResponse* result);
 
 }  // namespace grpc_core
 

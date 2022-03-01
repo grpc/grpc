@@ -477,17 +477,17 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
         supported_on_servers_(supported_on_servers),
         is_terminal_filter_(is_terminal_filter) {}
 
-  void PopulateSymtab(upb_symtab* /* symtab */) const override {}
+  void PopulateSymtab(upb_DefPool* /* symtab */) const override {}
 
   absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
-  GenerateFilterConfig(upb_strview /* serialized_filter_config */,
-                       upb_arena* /* arena */) const override {
+  GenerateFilterConfig(upb_StringView /* serialized_filter_config */,
+                       upb_Arena* /* arena */) const override {
     return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
   }
 
   absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
-  GenerateFilterConfigOverride(upb_strview /*serialized_filter_config*/,
-                               upb_arena* /*arena*/) const override {
+  GenerateFilterConfigOverride(upb_StringView /*serialized_filter_config*/,
+                               upb_Arena* /*arena*/) const override {
     return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
   }
 

@@ -129,6 +129,8 @@ extern void resource_quota_server(grpc_end2end_test_config config);
 extern void resource_quota_server_pre_init(void);
 extern void retry(grpc_end2end_test_config config);
 extern void retry_pre_init(void);
+extern void retry_cancel_after_first_attempt_starts(grpc_end2end_test_config config);
+extern void retry_cancel_after_first_attempt_starts_pre_init(void);
 extern void retry_cancel_during_delay(grpc_end2end_test_config config);
 extern void retry_cancel_during_delay_pre_init(void);
 extern void retry_cancel_with_multiple_send_batches(grpc_end2end_test_config config);
@@ -269,6 +271,7 @@ void grpc_end2end_tests_pre_init(void) {
   request_with_payload_pre_init();
   resource_quota_server_pre_init();
   retry_pre_init();
+  retry_cancel_after_first_attempt_starts_pre_init();
   retry_cancel_during_delay_pre_init();
   retry_cancel_with_multiple_send_batches_pre_init();
   retry_cancellation_pre_init();
@@ -372,6 +375,7 @@ void grpc_end2end_tests(int argc, char **argv,
     request_with_payload(config);
     resource_quota_server(config);
     retry(config);
+    retry_cancel_after_first_attempt_starts(config);
     retry_cancel_during_delay(config);
     retry_cancel_with_multiple_send_batches(config);
     retry_cancellation(config);
@@ -617,6 +621,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry", argv[i])) {
       retry(config);
+      continue;
+    }
+    if (0 == strcmp("retry_cancel_after_first_attempt_starts", argv[i])) {
+      retry_cancel_after_first_attempt_starts(config);
       continue;
     }
     if (0 == strcmp("retry_cancel_during_delay", argv[i])) {
