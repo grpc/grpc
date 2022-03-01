@@ -143,8 +143,8 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
 #endif
   }
   if (err != 0 && err != ETIMEDOUT && err != EAGAIN) {
-    gpr_log(GPR_ERROR, "pthread_cond_timedwait (%" PRId64 "d %d): %s",
-            abs_deadline.tv_sec, abs_deadline.tv_nsec, strerror(err));
+    gpr_log(GPR_ERROR, "pthread_cond_timedwait (%" PRId64 "d %d): %d",
+            abs_deadline.tv_sec, abs_deadline.tv_nsec, err);
     abort();
   }
   GPR_ASSERT(err == 0 || err == ETIMEDOUT || err == EAGAIN);
