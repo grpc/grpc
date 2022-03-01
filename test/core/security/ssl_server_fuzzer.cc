@@ -89,7 +89,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(nullptr);
     GPR_ASSERT(sc != nullptr);
-    grpc_millis deadline = GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now();
+    grpc_core::Timestamp deadline =
+        grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now();
 
     struct handshake_state state;
     state.done_callback_called = false;

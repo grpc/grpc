@@ -487,7 +487,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() +
-                      GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS,
+                      Duration::Milliseconds(
+                          GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS),
                   &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }
