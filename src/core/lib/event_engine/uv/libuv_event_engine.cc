@@ -63,8 +63,8 @@ LibuvEventEngine::LibuvTask::LibuvTask(LibuvEventEngine* engine,
 
 void LibuvEventEngine::LibuvTask::Start(LibuvEventEngine* engine,
                                         uint64_t timeout) {
-  uv_update_time(&engine->loop_);
-  uv_timer_init(&engine->loop_, &timer_);
+  uv_update_time(&engine->uv_state_->loop);
+  uv_timer_init(&engine->uv_state_->loop, &timer_);
   uv_timer_start(
       &timer_,
       [](uv_timer_t* timer) {
@@ -125,37 +125,37 @@ LibuvEventEngine::LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine:%p created", this);
   }
+  uv_state_ = new UvState();
   thread_ = grpc_core::Thread(
       "uv loop",
       [](void* arg) {
         LibuvEventEngine* engine = reinterpret_cast<LibuvEventEngine*>(arg);
         engine->RunThread();
       },
-      this, &success);
+      this, &success, grpc_core::Thread::Options().set_joinable(false));
   thread_.Start();
   GPR_ASSERT(GPR_LIKELY(success));
   // This promise will be set to true once the thread has fully started and is
   // operational, so let's wait on it.
-  success = ready_.Wait();
+  success = uv_state_->ready.Wait();
   GPR_ASSERT(GPR_LIKELY(success));
 }
 
 void LibuvEventEngine::DestroyInLibuvThread(
-    Promise<bool>& uv_shutdown_can_proceed) {
+    grpc_event_engine::experimental::Promise<bool>& destruction_done) {
   GPR_ASSERT(IsWorkerThread());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
             "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
             this);
   }
-  GPR_ASSERT(uv_shutdown_can_proceed.Wait());
   // Shutting down at this point is essentially just this unref call here.
   // After it, the libuv loop will continue working until it has no more
   // events to monitor. It means that scheduling new work becomes essentially
   // undefined behavior, which is in line with our surface API contracts,
   // which stipulate the same thing.
-  uv_unref(reinterpret_cast<uv_handle_t*>(&kicker_));
-  uv_close(reinterpret_cast<uv_handle_t*>(&kicker_), nullptr);
+  uv_unref(reinterpret_cast<uv_handle_t*>(&uv_state_->kicker));
+  uv_close(reinterpret_cast<uv_handle_t*>(&uv_state_->kicker), nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_set_.size=%zu", this,
             task_set_.size());
@@ -166,7 +166,7 @@ void LibuvEventEngine::DestroyInLibuvThread(
     // purpose: debugging. This can tell us if there's lingering handles
     // that are still going to hold up the loop at this point.
     uv_walk(
-        &loop_,
+        &uv_state_->loop,
         [](uv_handle_t* handle, /*arg=*/void*) {
           uv_handle_type type = uv_handle_get_type(handle);
           const char* name = uv_handle_type_name(type);
@@ -176,26 +176,24 @@ void LibuvEventEngine::DestroyInLibuvThread(
         },
         nullptr);
   }
+  destruction_done.Notify(true);
 }
 
 LibuvEventEngine::~LibuvEventEngine() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::~LibuvEventEngine", this);
   }
-  Promise<bool> uv_shutdown_can_proceed;
+  grpc_event_engine::experimental::Promise<bool> destruction_done;
   if (IsWorkerThread()) {
     // Run the shutdown code inline
-    uv_shutdown_can_proceed.Notify(true);
-    DestroyInLibuvThread(uv_shutdown_can_proceed);
+    DestroyInLibuvThread(destruction_done);
   } else {
-    // Run the shutdown code in the libuv thread, and wait for it to complete
-    // before finishing engine destruction.
-    RunInLibuvThread([&uv_shutdown_can_proceed](LibuvEventEngine* engine) {
-      engine->DestroyInLibuvThread(uv_shutdown_can_proceed);
+    // Run the shutdown code in the libuv thread
+    RunInLibuvThread([&destruction_done](LibuvEventEngine* engine) {
+      engine->DestroyInLibuvThread(destruction_done);
     });
-    uv_shutdown_can_proceed.Notify(true);
   }
-  thread_.Join();
+  destruction_done.Wait();
   GPR_ASSERT(GPR_LIKELY(task_set_.empty()));
 }
 
@@ -213,7 +211,7 @@ void LibuvEventEngine::RunInLibuvThread(SchedulingRequest::functor&& f) {
             request);
   }
   scheduling_request_queue_.Push(request);
-  uv_async_send(&kicker_);
+  uv_async_send(&uv_state_->kicker);
 }
 
 void LibuvEventEngine::RunInLibuvThread(std::unique_ptr<LibuvTask> task,
@@ -224,7 +222,7 @@ void LibuvEventEngine::RunInLibuvThread(std::unique_ptr<LibuvTask> task,
             this, request);
   }
   scheduling_request_queue_.Push(request);
-  uv_async_send(&kicker_);
+  uv_async_send(&uv_state_->kicker);
 }
 
 // This is the callback that libuv will call on its thread once the
@@ -264,12 +262,14 @@ void LibuvEventEngine::RunThread() {
   sigaddset(&set, SIGPIPE);
   pthread_sigmask(SIG_BLOCK, &set, nullptr);
 #endif
-
+  // Pointer will outlive the EventEngine that created it, for deferred
+  // destruction of the uv state.
+  UvState* uv_state = uv_state_;
   // Setting up the loop.
   worker_thread_id_ = gpr_thd_currentid();
-  int r = uv_loop_init(&loop_);
-  loop_.data = this;
-  r |= uv_async_init(&loop_, &kicker_, [](uv_async_t* async) {
+  int r = uv_loop_init(&uv_state->loop);
+  uv_state->loop.data = this;
+  r |= uv_async_init(&uv_state->loop, &uv_state->kicker, [](uv_async_t* async) {
     LibuvEventEngine* engine =
         reinterpret_cast<LibuvEventEngine*>(async->loop->data);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -283,10 +283,10 @@ void LibuvEventEngine::RunThread() {
       gpr_log(GPR_ERROR, "LibuvEventEngine@%p::Thread, failed to start: %i",
               this, r);
     }
-    ready_.Notify(false);
+    uv_state->ready.Notify(false);
     return;
   }
-  ready_.Notify(true);
+  uv_state->ready.Notify(true);
 
   // The meat of running our event loop. We need the various exec contexts,
   // because some of the callbacks we will call will depend on them
@@ -304,7 +304,7 @@ void LibuvEventEngine::RunThread() {
   // there's no more events to process, which is even more graceful.
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx ctx;
-  while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
+  while (uv_run(&uv_state->loop, UV_RUN_ONCE) != 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_ERROR,
               "LibuvEventEngine@%p::Thread, uv_run requests a "
@@ -316,7 +316,8 @@ void LibuvEventEngine::RunThread() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Thread, shutting down", this);
   }
-  GPR_ASSERT(GPR_LIKELY(uv_loop_close(&loop_) != UV_EBUSY));
+  GPR_ASSERT(GPR_LIKELY(uv_loop_close(&uv_state->loop) != UV_EBUSY));
+  delete uv_state;
 }
 
 void LibuvEventEngine::Run(std::function<void()> fn) {
@@ -345,7 +346,7 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
   }
   EventEngine::TaskHandle handle = task->Handle();
   RunInLibuvThread(std::move(task), timeout);
-  uv_async_send(&kicker_);
+  uv_async_send(&uv_state_->kicker);
   return handle;
 }
 

@@ -195,6 +195,14 @@ class LibuvEventEngine final
     intptr_t tag_;
   };
 
+  struct UvState {
+    uv_loop_t loop;
+    uv_async_t kicker;
+    // This should be set only once to true by the thread when it's done setting
+    // itself up.
+    grpc_event_engine::experimental::Promise<bool> ready;
+  };
+
   // The main logic in the uv event loop
   void RunThread();
   // Schedules one lambda to be executed on the libuv thread. Our libuv loop
@@ -205,16 +213,13 @@ class LibuvEventEngine final
   // ownership of the LibuvTask to the engine.
   void RunInLibuvThread(std::unique_ptr<LibuvTask> task, uint64_t timeout);
   void Kicker();
-  uv_loop_t* GetLoop() { return &loop_; }
+  uv_loop_t* GetLoop() { return &uv_state_->loop; }
   // Destructor logic that must be executed in the libuv thread before the
   // engine can be destroyed (from any thread).
-  void DestroyInLibuvThread(Promise<bool>& uv_shutdown_can_proceed);
+  void DestroyInLibuvThread(
+      grpc_event_engine::experimental::Promise<bool>& destruction_done);
 
-  uv_loop_t loop_;
-  uv_async_t kicker_;
-  // This should be set only once to true by the thread when it's done setting
-  // itself up.
-  grpc_event_engine::experimental::Promise<bool> ready_;
+  UvState* uv_state_;
   grpc_core::Thread thread_;
   grpc_core::MultiProducerSingleConsumerQueue scheduling_request_queue_;
 
