@@ -22,6 +22,8 @@
     !defined(GPR_CUSTOM_SYNC)
 
 #include <errno.h>
+#include <inttypes.h>
+#include <stdint.h>
 #include <time.h>
 
 #include <grpc/support/alloc.h>
