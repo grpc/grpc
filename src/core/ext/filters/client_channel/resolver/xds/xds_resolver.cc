@@ -273,7 +273,6 @@ class XdsResolver : public Resolver {
       struct ClusterWeightState {
         uint32_t range_end;
         absl::string_view cluster;
-        // std::string cluster;
         RefCountedPtr<ServiceConfig> method_config;
 
         bool operator==(const ClusterWeightState& other) const;
@@ -955,7 +954,7 @@ XdsResolver::CreateServiceConfig() {
     if (absl::ConsumePrefix(&child_name, "cluster_specifier_plugin:")) {
       clusters.push_back(absl::StrFormat(
           "      \"%s\":{\n"
-          "        \"childPolicy\": \"%s\"\n"
+          "        \"childPolicy\": %s\n"
           "       }",
           cluster.first,
           cluster_specifier_plugin_map_[std::string(child_name)]));

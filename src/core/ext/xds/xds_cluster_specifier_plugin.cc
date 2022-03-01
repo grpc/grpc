@@ -29,14 +29,8 @@
 
 namespace grpc_core {
 
-namespace {
-
-using PluginRegistryMap =
-    std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
-
-PluginRegistryMap* g_plugin_registry = nullptr;
-
-}  // namespace
+const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
+    "grpc.lookup.v1.RouteLookupClusterSpecifier";
 
 void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
     upb_DefPool* symtab) const {
@@ -190,8 +184,14 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   return Json(policies).Dump();
 }
 
-const char* kXdsRouteLookupClusterSpecifierPluginConfigName =
-    "grpc.lookup.v1.RouteLookupClusterSpecifier";
+namespace {
+
+using PluginRegistryMap =
+    std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
+
+PluginRegistryMap* g_plugin_registry = nullptr;
+
+}  // namespace
 
 void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_DefPool* symtab) {
   for (const auto& p : *g_plugin_registry) {
