@@ -50,7 +50,45 @@ void LoadScalar::LoadInto(const Json& json, void* dst,
 
 bool LoadNumber::IsNumber() const { return true; }
 
+void LoadDuration::LoadInto(const std::string& value, void* dst,
+                            ErrorList* errors) const {
+  size_t len = value.size();
+  if (value[len - 1] != 's') {
+    errors->AddError("Not a duration (no s suffix)");
+    return;
+  }
+  absl::string_view buf(value, len - 1);  // Remove trailing 's'.
+  auto decimal_point = buf.find('.');
+  int nanos = 0;
+  if (decimal_point != absl::string_view::npos) {
+    absl::string_view after_decimal = buf.substr(decimal_point + 1);
+    buf = buf.substr(0, decimal_point);
+    if (!absl::SimpleAtoi(after_decimal, &nanos)) {
+      errors->AddError("Not a duration (not an number of nanoseconds)");
+      return;
+    }
+    if (after_decimal.length() > 9) {
+      // We don't accept greater precision than nanos.
+      errors->AddError("Not a duration (too many digits after decimal)");
+      return;
+    }
+    for (int i = 0; i < (9 - num_digits); ++i) {
+      nanos *= 10;
+    }
+  }
+  int seconds =
+      decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
+  if (seconds == -1) return false;
+  *duration = Duration::FromSecondsAndNanoseconds(seconds, nanos);
+  return true;
+}
+
 bool LoadString::IsNumber() const { return false; }
+
+void LoadString::LoadInto(const std::string& value, void* dst,
+                          ErrorList* errors) {
+  *static_cast<std::string*>(dst) = value;
+}
 
 void LoadVector::LoadInto(const Json& json, void* dst,
                           ErrorList* errors) const {

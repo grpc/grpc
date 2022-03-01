@@ -26,7 +26,7 @@ T Parse(const std::string& json, ErrorList* errors) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto parsed = Json::Parse(json, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE)
-      << " parsing: " << json << "  error: " << grpc_error_string(error);
+      << " parsing: " << json << "  error: " << grpc_error_std_string(error);
   return LoadFromJson<T>(parsed, errors);
 }
 
@@ -35,6 +35,7 @@ struct TestStruct1 {
   int32_t b = 1;
   uint32_t c = 2;
   std::string x;
+  Duration d;
 
   static const JsonLoaderInterface* JsonLoader() {
     static const auto loader = JsonObjectLoader<TestStruct1>()
@@ -42,6 +43,7 @@ struct TestStruct1 {
                                    .OptionalField("b", &TestStruct1::b)
                                    .OptionalField("c", &TestStruct1::c)
                                    .Field("x", &TestStruct1::x)
+                                   .OptionalField("d", &TestStruct1::d)
                                    .Finish();
     return &loader;
   }

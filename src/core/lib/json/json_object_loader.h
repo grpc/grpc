@@ -27,6 +27,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 
 // Provides a means to load JSON objects into C++ objects, with the aim of
@@ -119,6 +120,14 @@ class LoadNumber : public LoadScalar {
   bool IsNumber() const override;
 };
 
+// Load a duration
+class LoadDuration : public LoadScalar {
+ private:
+  bool IsNumber() const override;
+  void LoadInto(const std::string& json, void* dst,
+                ErrorList* errors) const override;
+};
+
 // Load a number of type T.
 template <typename T>
 class TypedLoadNumber : public LoadNumber {
@@ -135,6 +144,8 @@ class TypedLoadNumber : public LoadNumber {
 class LoadString : public LoadScalar {
  private:
   bool IsNumber() const override;
+  void LoadInto(const std::string& value, void* dst,
+                ErrorList* errors) const override;
 };
 
 // Load a vector of some type.
@@ -183,13 +194,7 @@ class AutoLoader<int64_t> final : public TypedLoadNumber<int64_t> {};
 template <>
 class AutoLoader<uint64_t> final : public TypedLoadNumber<uint64_t> {};
 template <>
-class AutoLoader<std::string> final : public LoadString {
- private:
-  void LoadInto(const std::string& value, void* dst,
-                ErrorList* errors) const override {
-    *static_cast<std::string*>(dst) = value;
-  }
-};
+class AutoLoader<std::string> final : public LoadString {};
 
 // Specializations of AutoLoader for vectors.
 template <typename T>
