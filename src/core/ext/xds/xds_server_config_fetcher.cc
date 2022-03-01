@@ -37,6 +37,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
@@ -1121,7 +1122,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             "}");
         grpc_error_handle error = GRPC_ERROR_NONE;
         config_selector_route.method_config =
-            ServiceConfig::Create(result.args, json.c_str(), &error);
+            ServiceConfigImpl::Create(result.args, json.c_str(), &error);
         GPR_ASSERT(error == GRPC_ERROR_NONE);
       }
       grpc_channel_args_destroy(result.args);

@@ -46,6 +46,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -497,13 +498,12 @@ class CheckingResultHandler : public ResultHandler {
     if (!result.service_config.ok()) {
       CheckServiceConfigResultLocked(nullptr, result.service_config.status(),
                                      args);
+    } else if (*result.service_config == nullptr) {
+      CheckServiceConfigResultLocked(nullptr, absl::OkStatus(), args);
     } else {
-      const char* service_config_json =
-          *result.service_config == nullptr
-              ? nullptr
-              : (*result.service_config)->json_string().c_str();
-      CheckServiceConfigResultLocked(service_config_json, absl::OkStatus(),
-                                     args);
+      CheckServiceConfigResultLocked(
+          std::string((*result.service_config)->json_string()).c_str(),
+          absl::OkStatus(), args);
     }
     if (args->expected_service_config_string.empty()) {
       CheckLBPolicyResultLocked(result.args, args);
@@ -640,7 +640,7 @@ void RunResolvesRelevantRecordsTest(
   }
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(
+      grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);

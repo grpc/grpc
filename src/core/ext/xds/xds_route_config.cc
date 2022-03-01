@@ -484,10 +484,10 @@ template <typename ParentType, typename EntryType>
 grpc_error_handle ParseTypedPerFilterConfig(
     const XdsEncodingContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
-    upb_strview (*key_func)(const EntryType*),
+    upb_StringView (*key_func)(const EntryType*),
     const google_protobuf_Any* (*value_func)(const EntryType*),
     XdsRouteConfigResource::TypedPerFilterConfig* typed_per_filter_config) {
-  size_t filter_it = UPB_MAP_BEGIN;
+  size_t filter_it = kUpb_Map_Begin;
   while (true) {
     const auto* filter_entry = entry_func(parent, &filter_it);
     if (filter_entry == nullptr) break;
@@ -506,7 +506,7 @@ grpc_error_handle ParseTypedPerFilterConfig(
     bool is_optional = false;
     if (filter_type ==
         "type.googleapis.com/envoy.config.route.v3.FilterConfig") {
-      upb_strview any_value = google_protobuf_Any_value(any);
+      upb_StringView any_value = google_protobuf_Any_value(any);
       const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
           any_value.data, any_value.size, context.arena);
       if (filter_config == nullptr) {
@@ -819,7 +819,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         rds_update->virtual_hosts.back();
     // Parse domains.
     size_t domain_size;
-    upb_strview const* domains = envoy_config_route_v3_VirtualHost_domains(
+    upb_StringView const* domains = envoy_config_route_v3_VirtualHost_domains(
         virtual_hosts[i], &domain_size);
     for (size_t j = 0; j < domain_size; ++j) {
       std::string domain_pattern = UpbStringToStdString(domains[j]);
@@ -933,10 +933,10 @@ void MaybeLogRouteConfiguration(
     const envoy_config_route_v3_RouteConfiguration* route_config) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", context.client,
             buf);
   }

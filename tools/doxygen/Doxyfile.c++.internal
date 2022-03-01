@@ -1959,6 +1959,7 @@ src/core/lib/gpr/useful.h \
 src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
+src/core/lib/gprpp/capture.h \
 src/core/lib/gprpp/chunked_vector.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
@@ -2111,6 +2112,7 @@ src/core/lib/iomgr/resolve_address_windows.h \
 src/core/lib/iomgr/resolved_address.h \
 src/core/lib/iomgr/sockaddr.h \
 src/core/lib/iomgr/sockaddr_posix.h \
+src/core/lib/iomgr/sockaddr_utils_posix.cc \
 src/core/lib/iomgr/sockaddr_windows.h \
 src/core/lib/iomgr/socket_factory_posix.cc \
 src/core/lib/iomgr/socket_factory_posix.h \
@@ -2190,6 +2192,9 @@ src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
+src/core/lib/promise/sleep.cc \
+src/core/lib/promise/sleep.h \
+src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
 src/core/lib/resolver/resolver_factory.h \
@@ -2320,9 +2325,10 @@ src/core/lib/security/transport/tsi_error.cc \
 src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/json_util.cc \
 src/core/lib/security/util/json_util.h \
-src/core/lib/service_config/service_config.cc \
 src/core/lib/service_config/service_config.h \
 src/core/lib/service_config/service_config_call_data.h \
+src/core/lib/service_config/service_config_impl.cc \
+src/core/lib/service_config/service_config_impl.h \
 src/core/lib/service_config/service_config_parser.cc \
 src/core/lib/service_config/service_config_parser.h \
 src/core/lib/slice/b64.cc \

@@ -187,12 +187,12 @@ void PopulateBuildVersion(const XdsEncodingContext& context,
                           envoy_config_core_v3_Node* node_msg,
                           const std::string& build_version) {
   std::string encoded_build_version = EncodeStringField(5, build_version);
-  // TODO(roth): This should use upb_msg_addunknown(), but that API is
+  // TODO(roth): This should use upb_Message_AddUnknown(), but that API is
   // broken in the current version of upb, so we're using the internal
   // API for now.  Change this once we upgrade to a version of upb that
   // fixes this bug.
-  _upb_msg_addunknown(node_msg, encoded_build_version.data(),
-                      encoded_build_version.size(), context.arena);
+  _upb_Message_AddUnknown(node_msg, encoded_build_version.data(),
+                          encoded_build_version.size(), context.arena);
 }
 
 void PopulateNode(const XdsEncodingContext& context,
@@ -241,7 +241,8 @@ void PopulateNode(const XdsEncodingContext& context,
   envoy_config_core_v3_Node_set_user_agent_version(
       node_msg, StdStringToUpbString(user_agent_version));
   envoy_config_core_v3_Node_add_client_features(
-      node_msg, upb_strview_makez("envoy.lb.does_not_support_overprovisioning"),
+      node_msg,
+      upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
       context.arena);
 }
 
@@ -250,10 +251,10 @@ void MaybeLogDiscoveryRequest(
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
             context.client, buf);
   }
@@ -313,7 +314,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
     // Error description comes from the error that was passed in.
     error_string_storage = grpc_error_std_string(error);
-    upb_strview error_description = StdStringToUpbString(error_string_storage);
+    upb_StringView error_description =
+        StdStringToUpbString(error_string_storage);
     google_rpc_Status_set_message(error_detail, error_description);
     GRPC_ERROR_UNREF(error);
   }
@@ -341,10 +343,10 @@ void MaybeLogDiscoveryResponse(
     const envoy_service_discovery_v3_DiscoveryResponse* response) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
             buf);
   }
@@ -409,10 +411,10 @@ void MaybeLogLrsRequest(
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
             context.client, buf);
   }
@@ -449,7 +451,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
-      node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
+      node_msg,
+      upb_StringView_FromString("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
   MaybeLogLrsRequest(context, request);
   return SerializeLrsRequest(context, request);
@@ -597,7 +600,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
   } else {
     // Store the cluster names.
     size_t size;
-    const upb_strview* clusters =
+    const upb_StringView* clusters =
         envoy_service_load_stats_v3_LoadStatsResponse_clusters(decoded_response,
                                                                &size);
     for (size_t i = 0; i < size; ++i) {

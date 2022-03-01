@@ -277,13 +277,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid identity");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview peer_service_account =
+  upb_StringView peer_service_account =
       grpc_gcp_Identity_service_account(identity);
   if (peer_service_account.size == 0) {
     gpr_log(GPR_ERROR, "Invalid peer service account");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview key_data = grpc_gcp_HandshakerResult_key_data(hresult);
+  upb_StringView key_data = grpc_gcp_HandshakerResult_key_data(hresult);
   if (key_data.size < kAltsAes128GcmRekeyKeyLength) {
     gpr_log(GPR_ERROR, "Bad key length");
     return TSI_FAILED_PRECONDITION;
@@ -294,13 +294,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Peer does not set RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview application_protocol =
+  upb_StringView application_protocol =
       grpc_gcp_HandshakerResult_application_protocol(hresult);
   if (application_protocol.size == 0) {
     gpr_log(GPR_ERROR, "Invalid application protocol");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview record_protocol =
+  upb_StringView record_protocol =
       grpc_gcp_HandshakerResult_record_protocol(hresult);
   if (record_protocol.size == 0) {
     gpr_log(GPR_ERROR, "Invalid record protocol");
@@ -312,7 +312,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid local identity");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview local_service_account =
+  upb_StringView local_service_account =
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
@@ -351,14 +351,14 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   if (grpc_gcp_Identity_has_attributes(identity)) {
-    size_t iter = UPB_MAP_BEGIN;
+    size_t iter = kUpb_Map_Begin;
     grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
         grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
     while (peer_attributes_entry != nullptr) {
-      upb_strview key = grpc_gcp_Identity_AttributesEntry_key(
+      upb_StringView key = grpc_gcp_Identity_AttributesEntry_key(
           const_cast<grpc_gcp_Identity_AttributesEntry*>(
               peer_attributes_entry));
-      upb_strview val = grpc_gcp_Identity_AttributesEntry_value(
+      upb_StringView val = grpc_gcp_Identity_AttributesEntry_value(
           const_cast<grpc_gcp_Identity_AttributesEntry*>(
               peer_attributes_entry));
       grpc_gcp_AltsContext_peer_attributes_set(context, key, val,

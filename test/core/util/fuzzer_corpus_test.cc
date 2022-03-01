@@ -36,7 +36,6 @@
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern bool squelch;
-extern bool leak_check;
 
 ABSL_FLAG(std::string, file, "", "Use this file as test data");
 ABSL_FLAG(std::string, directory, "", "Use this directory as test data");
@@ -51,7 +50,6 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   gpr_log(GPR_INFO, "Example file: %s", GetParam().c_str());
   grpc_slice buffer;
   squelch = false;
-  leak_check = false;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(GetParam().c_str(), 0, &buffer)));
   size_t length = GRPC_SLICE_LENGTH(buffer);

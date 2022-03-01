@@ -193,7 +193,7 @@ void EncodeRequest(const std::string& service_name,
       grpc_health_v1_HealthCheckRequest_new(arena.ptr());
   grpc_health_v1_HealthCheckRequest_set_service(
       request_struct,
-      upb_strview_make(service_name.data(), service_name.size()));
+      upb_StringView_FromDataAndSize(service_name.data(), service_name.size()));
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckRequest_serialize(
       request_struct, arena.ptr(), &buf_length);

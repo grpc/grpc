@@ -24,6 +24,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_core::Timestamp
@@ -81,6 +82,8 @@ class ClientChannelMethodParsedConfig
 
 class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
@@ -90,7 +93,10 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "client_channel"; }
 };
 
 }  // namespace internal

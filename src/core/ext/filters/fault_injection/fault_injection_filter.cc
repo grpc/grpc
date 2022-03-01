@@ -69,6 +69,9 @@ class ChannelData {
   static void Destroy(grpc_channel_element* elem);
 
   int index() const { return index_; }
+  size_t service_config_parser_index() const {
+    return service_config_parser_index_;
+  }
 
  private:
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -76,6 +79,7 @@ class ChannelData {
 
   // The relative index of instances of the same filter.
   int index_;
+  const size_t service_config_parser_index_;
 };
 
 class CallData {
@@ -170,8 +174,10 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
 
 ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args)
-    : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
-                                                       elem)) {}
+    : index_(
+          grpc_channel_stack_filter_instance_number(args->channel_stack, elem)),
+      service_config_parser_index_(
+          FaultInjectionServiceConfigParser::ParserIndex()) {}
 
 // CallData::ResumeBatchCanceller
 
@@ -294,7 +300,7 @@ CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
       args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
-          FaultInjectionServiceConfigParser::ParserIndex()));
+          chand->service_config_parser_index()));
   if (method_params != nullptr) {
     fi_policy_ = method_params->fault_injection_policy(chand->index());
   }
@@ -485,10 +491,8 @@ extern const grpc_channel_filter FaultInjectionFilterVtable = {
     "fault_injection_filter",
 };
 
-void FaultInjectionFilterInit(void) {
-  FaultInjectionServiceConfigParser::Register();
+void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
+  FaultInjectionServiceConfigParser::Register(builder);
 }
-
-void FaultInjectionFilterShutdown(void) {}
 
 }  // namespace grpc_core

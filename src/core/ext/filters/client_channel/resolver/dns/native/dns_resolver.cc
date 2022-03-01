@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -297,6 +298,8 @@ void NativeClientChannelDNSResolver::StartResolvingLocked() {
 
 class NativeClientChannelDNSResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "dns"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
@@ -313,32 +316,24 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<NativeClientChannelDNSResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "dns"; }
 };
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_dns_native_init() {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (gpr_stricmp(resolver.get(), "native") == 0) {
+void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder) {
+  static const char* const resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver).release();
+  if (gpr_stricmp(resolver, "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
-    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        absl::make_unique<grpc_core::NativeClientChannelDNSResolverFactory>());
+    builder->resolver_registry()->RegisterResolverFactory(
+        absl::make_unique<NativeClientChannelDNSResolverFactory>());
   } else {
-    grpc_core::ResolverRegistry::Builder::InitRegistry();
-    grpc_core::ResolverFactory* existing_factory =
-        grpc_core::ResolverRegistry::LookupResolverFactory("dns");
-    if (existing_factory == nullptr) {
+    if (!builder->resolver_registry()->HasResolverFactory("dns")) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
-      grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-          absl::make_unique<
-              grpc_core::NativeClientChannelDNSResolverFactory>());
+      builder->resolver_registry()->RegisterResolverFactory(
+          absl::make_unique<NativeClientChannelDNSResolverFactory>());
     }
   }
 }
 
-void grpc_resolver_dns_native_shutdown() {}
+}  // namespace grpc_core

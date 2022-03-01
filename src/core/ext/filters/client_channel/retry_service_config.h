@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -78,6 +79,8 @@ class RetryMethodConfig : public ServiceConfigParser::ParsedConfig {
 
 class RetryServiceConfigParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
@@ -87,7 +90,10 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "retry"; }
 };
 
 }  // namespace internal
