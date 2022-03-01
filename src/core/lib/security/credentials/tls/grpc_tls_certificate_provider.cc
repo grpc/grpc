@@ -30,7 +30,7 @@
 
 namespace grpc_core {
 
-const char StaticDataCertificateProvider::kType[] = "static";
+const char StaticDataCertificateProvider::kType[] = "static_data";
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
@@ -97,7 +97,7 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 }  // namespace
 
-const char FileWatcherCertificateProvider::kType[] = "file";
+const char FileWatcherCertificateProvider::kType[] = "file_watcher";
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
