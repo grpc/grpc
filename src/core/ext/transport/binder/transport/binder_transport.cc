@@ -36,12 +36,10 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 #ifndef NDEBUG
@@ -124,7 +122,12 @@ static void AssignMetadata(grpc_metadata_batch* mb,
                            const grpc_binder::Metadata& md) {
   mb->Clear();
   for (auto& p : md) {
-    mb->Append(p.first, grpc_slice_from_cpp_string(p.second));
+    mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second),
+               [&](absl::string_view error, const grpc_core::Slice&) {
+                 gpr_log(
+                     GPR_DEBUG, "Failed to parse metadata: %s",
+                     absl::StrCat("key=", p.first, " error=", error).c_str());
+               });
   }
 }
 
@@ -168,10 +171,10 @@ static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
   bool has_authority = false;
   bool has_path = false;
   for (const auto& kv : metadata) {
-    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_AUTHORITY)) {
+    if (kv.first == ":authority") {
       has_authority = true;
     }
-    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_PATH)) {
+    if (kv.first == ":path") {
       has_path = true;
     }
   }
@@ -289,14 +292,9 @@ static void recv_trailing_metadata_locked(void* arg,
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
         gpr_log(GPR_INFO, "status = %d", args->status);
-        grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
-            gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
-        glm->md = grpc_get_reffed_status_elem(args->status);
-        GPR_ASSERT(gbs->recv_trailing_metadata->LinkTail(glm) ==
-                   GRPC_ERROR_NONE);
-        gpr_log(GPR_INFO, "trailing_metadata = %p",
-                gbs->recv_trailing_metadata);
-        gpr_log(GPR_INFO, "glm = %p", glm);
+        gbs->recv_trailing_metadata->Set(
+            grpc_core::GrpcStatusMetadata(),
+            static_cast<grpc_status_code>(args->status));
       }
       return GRPC_ERROR_NONE;
     }();
@@ -318,6 +316,52 @@ static void recv_trailing_metadata_locked(void* arg,
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "recv_trailing_metadata");
 }
+
+namespace grpc_binder {
+namespace {
+
+class MetadataEncoder {
+ public:
+  MetadataEncoder(bool is_client, Transaction* tx, Metadata* init_md)
+      : is_client_(is_client), tx_(tx), init_md_(init_md) {}
+
+  void Encode(const grpc_core::Slice& key_slice,
+              const grpc_core::Slice& value_slice) {
+    absl::string_view key = key_slice.as_string_view();
+    absl::string_view value = value_slice.as_string_view();
+    init_md_->emplace_back(std::string(key), std::string(value));
+  }
+
+  void Encode(grpc_core::HttpPathMetadata, const grpc_core::Slice& value) {
+    // TODO(b/192208403): Figure out if it is correct to simply drop '/'
+    // prefix and treat it as rpc method name
+    GPR_ASSERT(value[0] == '/');
+    std::string path = std::string(value.as_string_view().substr(1));
+
+    // Only client send method ref.
+    GPR_ASSERT(is_client_);
+    tx_->SetMethodRef(path);
+  }
+
+  void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {
+    gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
+    tx_->SetStatus(status);
+  }
+
+  template <typename Trait>
+  void Encode(Trait, const typename Trait::ValueType& value) {
+    init_md_->emplace_back(std::string(Trait::key()),
+                           std::string(Trait::Encode(value).as_string_view()));
+  }
+
+ private:
+  const bool is_client_;
+  Transaction* const tx_;
+  Metadata* const init_md_;
+};
+
+}  // namespace
+}  // namespace grpc_binder
 
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error*/) {
@@ -386,25 +430,8 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    batch->ForEach([&](grpc_mdelem md) {
-      absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
-      absl::string_view value =
-          grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
-      gpr_log(GPR_INFO, "send initial metatday key-value %s",
-              absl::StrCat(key, " ", value).c_str());
-      if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-        // TODO(b/192208403): Figure out if it is correct to simply drop '/'
-        // prefix and treat it as rpc method name
-        GPR_ASSERT(value[0] == '/');
-        std::string path = std::string(value).substr(1);
-
-        // Only client send method ref.
-        GPR_ASSERT(gbt->is_client);
-        tx.SetMethodRef(path);
-      } else {
-        init_md.emplace_back(std::string(key), std::string(value));
-      }
-    });
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx, &init_md);
+    batch->Encode(&encoder);
     tx.SetPrefix(init_md);
   }
   if (op->send_message) {
@@ -426,7 +453,6 @@ static void perform_stream_op_locked(void* stream_op,
       message_data += std::string(reinterpret_cast<char*>(p), len);
       grpc_slice_unref_internal(message_slice);
     }
-    gpr_log(GPR_INFO, "message_data = %s", message_data.c_str());
     tx.SetData(message_data);
     // TODO(b/192369787): Are we supposed to reset here to avoid
     // use-after-free issue in call.cc?
@@ -438,23 +464,10 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    batch->ForEach([&](grpc_mdelem md) {
-      // Client will not send trailing metadata.
-      GPR_ASSERT(!gbt->is_client);
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx,
+                                         &trailing_metadata);
+    batch->Encode(&encoder);
 
-      if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS)) {
-        int status = grpc_get_status_code_from_metadata(md);
-        gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
-        tx.SetStatus(status);
-      } else {
-        absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
-        absl::string_view value =
-            grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
-        gpr_log(GPR_INFO, "send trailing metatday key-value %s",
-                absl::StrCat(key, " ", value).c_str());
-        trailing_metadata.emplace_back(std::string(key), std::string(value));
-      }
-    });
     // TODO(mingcl): Will we ever has key-value pair here? According to
     // wireformat client suffix data is always empty.
     tx.SetSuffix(trailing_metadata);
@@ -676,6 +689,7 @@ static grpc_endpoint* get_endpoint(grpc_transport*) {
 static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
                                              "binder",
                                              init_stream,
+                                             nullptr,
                                              set_pollset,
                                              set_pollset_set,
                                              perform_stream_op,

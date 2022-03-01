@@ -164,18 +164,6 @@ grpc_cc_test(
     deps = [":helpers"],
 )
 
-grpc_cc_test(
-    name = "bm_error",
-    srcs = ["bm_error.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
 grpc_cc_library(
     name = "fullstack_streaming_ping_pong_h",
     testonly = 1,
@@ -249,18 +237,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_metadata",
-    srcs = ["bm_metadata.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
     args = grpc_benchmark_args(),
@@ -294,18 +270,6 @@ grpc_cc_test(
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
     ],
-)
-
-grpc_cc_test(
-    name = "bm_timer",
-    srcs = ["bm_timer.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [":helpers"],
 )
 
 grpc_cc_test(

@@ -19,8 +19,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/service_config/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 extern const grpc_channel_filter grpc_message_size_filter;
 
@@ -41,7 +42,8 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
   const message_size_limits& limits() const { return limits_; }
 
   static const MessageSizeParsedConfig* GetFromCallContext(
-      const grpc_call_context_element* context);
+      const grpc_call_context_element* context,
+      size_t service_config_parser_index);
 
  private:
   message_size_limits limits_;
@@ -49,13 +51,18 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
 
 class MessageSizeParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
 
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
 
   static size_t ParserIndex();
+
+ private:
+  static absl::string_view parser_name() { return "message_size"; }
 };
 
 int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args);

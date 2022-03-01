@@ -51,7 +51,9 @@
 /*
  * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
  */
+#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
 // #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+#endif
 
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
@@ -132,9 +134,7 @@
 #if __ANDROID_API__ < 21
 #error "Requires Android API v21 and above"
 #endif
-#if (__ANDROID_API__) >= 23
 #define GPR_SUPPORT_BINDER_TRANSPORT 1
-#endif
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.

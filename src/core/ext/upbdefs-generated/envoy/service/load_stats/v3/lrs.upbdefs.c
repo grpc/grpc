@@ -10,12 +10,12 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-static const char descriptor[958] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+static const char descriptor[1040] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 
 's', '/', 'v', '3', '/', 'l', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\033', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 
 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', 
 '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 'o', 't', 
@@ -50,13 +50,16 @@ static const char descriptor[958] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's
 'a', 'd', '_', 's', 't', 'a', 't', 's', '.', 'v', '3', '.', 'L', 'o', 'a', 'd', 'S', 't', 'a', 't', 's', 'R', 'e', 'q', 'u', 
 'e', 's', 't', '\032', '.', '.', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 
 's', 't', 'a', 't', 's', '.', 'v', '3', '.', 'L', 'o', 'a', 'd', 'S', 't', 'a', 't', 's', 'R', 'e', 's', 'p', 'o', 'n', 's', 
-'e', '\"', '\000', '(', '\001', '0', '\001', 'B', 'B', '\n', ')', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 
-'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', '.', 
-'v', '3', 'B', '\010', 'L', 'r', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\210', '\001', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 
-'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'e', '\"', '\000', '(', '\001', '0', '\001', 'B', '\223', '\001', '\n', ')', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', 
+'.', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', 
+'.', 'v', '3', 'B', '\010', 'L', 'r', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'O', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 
+'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 
+'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 
+'s', 't', 'a', 't', 's', '/', 'v', '3', ';', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', 'v', '3', '\210', '\001', '\001', '\272', 
+'\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[6] = {
+static _upb_DefPool_Init *deps[6] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_endpoint_v3_load_report_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
@@ -65,9 +68,9 @@ static upb_def_init *deps[6] = {
   NULL
 };
 
-upb_def_init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
+_upb_DefPool_Init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
   deps,
   &envoy_service_load_stats_v3_lrs_proto_upb_file_layout,
   "envoy/service/load_stats/v3/lrs.proto",
-  UPB_STRVIEW_INIT(descriptor, 958)
+  UPB_STRINGVIEW_INIT(descriptor, 1040)
 };

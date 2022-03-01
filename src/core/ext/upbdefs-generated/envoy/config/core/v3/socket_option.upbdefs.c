@@ -10,10 +10,10 @@
 #include "envoy/config/core/v3/socket_option.upbdefs.h"
 #include "envoy/config/core/v3/socket_option.upb.h"
 
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[590] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's', 'o', 
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[659] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's', 'o', 
 'c', 'k', 'e', 't', '_', 'o', 'p', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 
 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 
 't', 'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '!', 'u', 'd', 'p', 
@@ -33,22 +33,25 @@ static const char descriptor[590] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c
 '\017', '\n', '\013', 'S', 'T', 'A', 'T', 'E', '_', 'B', 'O', 'U', 'N', 'D', '\020', '\001', '\022', '\023', '\n', '\017', 'S', 'T', 'A', 'T', 'E', 
 '_', 'L', 'I', 'S', 'T', 'E', 'N', 'I', 'N', 'G', '\020', '\002', ':', '%', '\232', '\305', '\210', '\036', ' ', '\n', '\036', 'e', 'n', 'v', 'o', 
 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'o', 'r', 'e', '.', 'S', 'o', 'c', 'k', 'e', 't', 'O', 'p', 't', 'i', 'o', 
-'n', 'B', '\014', '\n', '\005', 'v', 'a', 'l', 'u', 'e', '\022', '\003', '\370', 'B', '\001', 'B', 'A', '\n', '\"', 'i', 'o', '.', 'e', 'n', 'v', 
-'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', 
-'.', 'v', '3', 'B', '\021', 'S', 'o', 'c', 'k', 'e', 't', 'O', 'p', 't', 'i', 'o', 'n', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', 
-'\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'n', 'B', '\014', '\n', '\005', 'v', 'a', 'l', 'u', 'e', '\022', '\003', '\370', 'B', '\001', 'B', '\205', '\001', '\n', '\"', 'i', 'o', '.', 'e', 'n', 
+'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 
+'e', '.', 'v', '3', 'B', '\021', 'S', 'o', 'c', 'k', 'e', 't', 'O', 'p', 't', 'i', 'o', 'n', 'P', 'r', 'o', 't', 'o', 'P', '\001', 
+'Z', 'B', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 
+'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 
+'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', ';', 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', 
+'\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_config_core_v3_socket_option_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_core_v3_socket_option_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_socket_option_proto_upb_file_layout,
   "envoy/config/core/v3/socket_option.proto",
-  UPB_STRVIEW_INIT(descriptor, 590)
+  UPB_STRINGVIEW_INIT(descriptor, 659)
 };

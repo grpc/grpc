@@ -306,6 +306,7 @@ grpc_cc_test(
     deps = [
         "//:chunked_vector",
         "//:gpr_base",
+        "//:resource_quota",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -320,6 +321,19 @@ grpc_proto_fuzzer(
     uses_polling = False,
     deps = [
         "//:chunked_vector",
+        "//:resource_quota",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_test",
+    srcs = ["time_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:time",
+        "//test/core/util:grpc_suppressions",
     ],
 )

@@ -853,8 +853,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "sdk_authz_end2end_test",
-    srcs = ["sdk_authz_end2end_test.cc"],
+    name = "grpc_authz_end2end_test",
+    srcs = ["grpc_authz_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
@@ -864,6 +871,30 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_authorization_provider",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "tls_key_export_test",
+    srcs = ["tls_key_export_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server0.key",
+        "//src/core/tsi/test_creds:server0.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",

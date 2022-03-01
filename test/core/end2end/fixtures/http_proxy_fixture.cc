@@ -62,7 +62,7 @@ struct grpc_end2end_http_proxy {
   std::string proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
-  grpc_channel_args* channel_args;
+  const grpc_channel_args* channel_args;
   gpr_mu* mu;
   std::vector<grpc_pollset*> pollset;
   gpr_refcount users;
@@ -520,29 +520,28 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     }
   }
   // Resolve address.
-  grpc_resolved_addresses* resolved_addresses = nullptr;
-  error = grpc_blocking_resolve_address(conn->http_request.path, "80",
-                                        &resolved_addresses);
-  if (error != GRPC_ERROR_NONE) {
+  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+      grpc_core::GetDNSResolver()->ResolveNameBlocking(conn->http_request.path,
+                                                       "80");
+  if (!addresses_or.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup",
                             GRPC_ERROR_REF(error));
-    GRPC_ERROR_UNREF(error);
     return;
   }
-  GPR_ASSERT(resolved_addresses->naddrs >= 1);
+  GPR_ASSERT(!addresses_or->empty());
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
-  const grpc_millis deadline =
-      grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
+  const grpc_core::Timestamp deadline =
+      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
-  grpc_channel_args* args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(nullptr);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, args,
-                          &resolved_addresses->addrs[0], deadline);
+                          conn->pollset_set, args, &(*addresses_or)[0],
+                          deadline);
   grpc_channel_args_destroy(args);
-  grpc_resolved_addresses_destroy(resolved_addresses);
 }
 
 static void on_read_request_done(void* arg, grpc_error_handle error) {
@@ -594,17 +593,17 @@ static void thread_main(void* arg) {
     gpr_ref(&proxy->users);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(proxy->mu);
-    GRPC_LOG_IF_ERROR(
-        "grpc_pollset_work",
-        grpc_pollset_work(proxy->pollset[0], &worker,
-                          grpc_core::ExecCtx::Get()->Now() + GPR_MS_PER_SEC));
+    GRPC_LOG_IF_ERROR("grpc_pollset_work",
+                      grpc_pollset_work(proxy->pollset[0], &worker,
+                                        grpc_core::ExecCtx::Get()->Now() +
+                                            grpc_core::Duration::Seconds(1)));
     gpr_mu_unlock(proxy->mu);
     grpc_core::ExecCtx::Get()->Flush();
   } while (!gpr_unref(&proxy->users));
 }
 
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
-    grpc_channel_args* args) {
+    const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
   grpc_end2end_http_proxy* proxy = new grpc_end2end_http_proxy();
   // Construct proxy address.
@@ -612,7 +611,9 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
   gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
   // Create TCP server.
-  proxy->channel_args = grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  proxy->channel_args = grpc_core::CoreConfiguration::Get()
+                            .channel_args_preconditioning()
+                            .PreconditionChannelArgs(args);
   grpc_error_handle error =
       grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);

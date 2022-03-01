@@ -21,14 +21,32 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/impl/codegen/compression_types.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/slice/slice.h"
 
-/// Filter responsible for setting the authority header, if not already set. It
-/// uses the value of the GRPC_ARG_DEFAULT_AUTHORITY channel arg if the initial
-/// metadata doesn't already contain an authority value.
+namespace grpc_core {
 
-extern const grpc_channel_filter grpc_client_authority_filter;
+class ClientAuthorityFilter final : public ChannelFilter {
+ public:
+  static absl::StatusOr<ClientAuthorityFilter> Create(
+      const grpc_channel_args* args, ChannelFilter::Args);
+
+  // Construct a promise for one call.
+  ArenaPromise<TrailingMetadata> MakeCallPromise(
+      ClientInitialMetadata initial_metadata,
+      NextPromiseFactory next_promise_factory) override;
+
+ private:
+  explicit ClientAuthorityFilter(Slice default_authority)
+      : default_authority_(std::move(default_authority)) {}
+  Slice default_authority_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_AUTHORITY_FILTER_H */

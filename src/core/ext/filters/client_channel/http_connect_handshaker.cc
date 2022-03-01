@@ -30,7 +30,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -331,18 +331,15 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
           proxy_name.c_str());
   // Construct HTTP CONNECT request.
-  grpc_httpcli_request request;
-  request.host = server_name;
-  request.ssl_host_override = nullptr;
-  request.http.method = const_cast<char*>("CONNECT");
-  request.http.path = server_name;
-  request.http.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
-  request.http.hdrs = headers;
-  request.http.hdr_count = num_headers;
-  request.http.body_length = 0;
-  request.http.body = nullptr;
-  request.handshaker = &grpc_httpcli_plaintext;
-  grpc_slice request_slice = grpc_httpcli_format_connect_request(&request);
+  grpc_http_request request;
+  request.method = const_cast<char*>("CONNECT");
+  request.version = GRPC_HTTP_HTTP10;  // Set by OnReadDone
+  request.hdrs = headers;
+  request.hdr_count = num_headers;
+  request.body_length = 0;
+  request.body = nullptr;
+  grpc_slice request_slice =
+      grpc_httpcli_format_connect_request(&request, server_name, server_name);
   grpc_slice_buffer_add(&write_buffer_, request_slice);
   // Clean up.
   gpr_free(headers);

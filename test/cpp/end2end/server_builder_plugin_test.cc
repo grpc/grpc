@@ -126,7 +126,7 @@ std::unique_ptr<ServerBuilderPlugin> CreateTestServerBuilderPlugin() {
 // Force AddServerBuilderPlugin() to be called at static initialization time.
 struct StaticTestPluginInitializer {
   StaticTestPluginInitializer() {
-    ::grpc::ServerBuilder::InternalAddPluginFactory(
+    grpc::ServerBuilder::InternalAddPluginFactory(
         &CreateTestServerBuilderPlugin);
   }
 } static_plugin_initializer_test_;

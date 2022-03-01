@@ -62,8 +62,14 @@ def _matrix_job_logfilename(shortname_for_multi_target):
     # for the corresponding 'sponge_log.xml' report.
     # the shortname_for_multi_target component must be set to match the sponge_log.xml location
     # because the top-level render_junit_xml_report is called with multi_target=True
-    return '%s/%s/%s' % (_MATRIX_REPORT_NAME, shortname_for_multi_target,
-                         'sponge_log.log')
+    sponge_log_name = '%s/%s/%s' % (
+        _MATRIX_REPORT_NAME, shortname_for_multi_target, 'sponge_log.log')
+    # env variable can be used to override the base location for the reports
+    # so we need to match that behavior here too
+    base_dir = os.getenv('GRPC_TEST_REPORT_BASE_DIR', None)
+    if base_dir:
+        sponge_log_name = os.path.join(base_dir, sponge_log_name)
+    return sponge_log_name
 
 
 def _docker_jobspec(name,
@@ -76,7 +82,7 @@ def _docker_jobspec(name,
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = 'run_tests_%s' % name
     test_job = jobset.JobSpec(cmdline=[
-        'python', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
+        'python3', 'tools/run_tests/run_tests.py', '--use_docker', '-t', '-j',
         str(inner_jobs), '-x',
         'run_tests/%s' % _report_filename(name), '--report_suite_name',
         '%s' % _safe_report_name(name)
@@ -102,11 +108,15 @@ def _workspace_jobspec(name,
     shortname = 'run_tests_%s' % name
     env = {'WORKSPACE_NAME': workspace_name}
     env.update(runtests_envs)
+    # if report base dir is set, we don't need to ".." to come out of the workspace dir
+    report_dir_prefix = '' if os.getenv('GRPC_TEST_REPORT_BASE_DIR',
+                                        None) else '../'
     test_job = jobset.JobSpec(cmdline=[
         'bash', 'tools/run_tests/helper_scripts/run_tests_in_workspace.sh',
         '-t', '-j',
         str(inner_jobs), '-x',
-        '../run_tests/%s' % _report_filename(name), '--report_suite_name',
+        '%srun_tests/%s' %
+        (report_dir_prefix, _report_filename(name)), '--report_suite_name',
         '%s' % _safe_report_name(name)
     ] + runtests_args,
                               environ=env,
@@ -191,20 +201,10 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    # C# tests on .NET desktop/mono
+    # C# tests (both on .NET desktop/mono and .NET core)
     test_jobs += _generate_jobs(languages=['csharp'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                labels=['basictests', 'multilang'],
-                                extra_args=extra_args +
-                                ['--report_multi_target'],
-                                inner_jobs=inner_jobs)
-    # C# tests on .NET core
-    test_jobs += _generate_jobs(languages=['csharp'],
-                                configs=['dbg', 'opt'],
-                                platforms=['linux', 'macos', 'windows'],
-                                arch='default',
-                                compiler='coreclr',
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
@@ -213,7 +213,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['opt'],
                                 platforms=['linux', 'macos', 'windows'],
-                                iomgr_platforms=['native', 'gevent', 'asyncio'],
+                                iomgr_platforms=['native'],
                                 labels=['basictests', 'multilang'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
@@ -230,7 +230,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
-    test_jobs += _generate_jobs(languages=['grpc-node', 'ruby', 'php7'],
+    test_jobs += _generate_jobs(languages=['ruby', 'php7'],
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
@@ -266,8 +266,8 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.9', 'gcc5.3', 'gcc8.3', 'gcc8.3_openssl102', 'gcc11',
-            'gcc_musl', 'clang4', 'clang12'
+            'gcc5', 'gcc10.2_openssl102', 'gcc11', 'gcc_musl', 'clang4',
+            'clang13'
     ]:
         test_jobs += _generate_jobs(languages=['c', 'c++'],
                                     configs=['dbg'],
@@ -285,6 +285,17 @@ def _create_portability_test_jobs(extra_args=[],
                                 platforms=['windows'],
                                 arch='x64',
                                 compiler='default',
+                                labels=['portability', 'corelang'],
+                                extra_args=extra_args,
+                                inner_jobs=inner_jobs)
+
+    # portability C on Windows with the "Visual Studio" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
+    test_jobs += _generate_jobs(languages=['c'],
+                                configs=['dbg'],
+                                platforms=['windows'],
+                                arch='default',
+                                compiler='cmake_vs2015',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args,
                                 inner_jobs=inner_jobs)
@@ -307,19 +318,9 @@ def _create_portability_test_jobs(extra_args=[],
                                 configs=['dbg'],
                                 platforms=['windows'],
                                 arch='x64',
-                                compiler='cmake_vs2017',
+                                compiler='cmake_ninja_vs2017',
                                 labels=['portability', 'corelang'],
                                 extra_args=extra_args + ['--build_only'],
-                                inner_jobs=inner_jobs,
-                                timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
-
-    # C and C++ with the c-ares DNS resolver on Linux
-    test_jobs += _generate_jobs(languages=['c', 'c++'],
-                                configs=['dbg'],
-                                platforms=['linux'],
-                                labels=['portability', 'corelang'],
-                                extra_args=extra_args,
-                                extra_envs={'GRPC_DNS_RESOLVER': 'ares'},
                                 inner_jobs=inner_jobs,
                                 timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 

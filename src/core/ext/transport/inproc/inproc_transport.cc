@@ -46,12 +46,6 @@
   } while (0)
 
 namespace {
-grpc_slice g_empty_slice;
-grpc_slice g_fake_path_key;
-grpc_slice g_fake_path_value;
-grpc_slice g_fake_auth_key;
-grpc_slice g_fake_auth_value;
-
 struct inproc_stream;
 bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error);
 void maybe_process_ops_locked(inproc_stream* s, grpc_error_handle error);
@@ -237,7 +231,8 @@ struct inproc_stream {
   grpc_metadata_batch write_buffer_initial_md{arena};
   bool write_buffer_initial_md_filled = false;
   uint32_t write_buffer_initial_md_flags = 0;
-  grpc_millis write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp write_buffer_deadline =
+      grpc_core::Timestamp::InfFuture();
   grpc_metadata_batch write_buffer_trailing_md{arena};
   bool write_buffer_trailing_md_filled = false;
   grpc_error_handle write_buffer_cancel_error = GRPC_ERROR_NONE;
@@ -271,7 +266,7 @@ struct inproc_stream {
   grpc_error_handle cancel_self_error = GRPC_ERROR_NONE;
   grpc_error_handle cancel_other_error = GRPC_ERROR_NONE;
 
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   bool listed = true;
   struct inproc_stream* stream_list_prev;
@@ -280,13 +275,10 @@ struct inproc_stream {
 
 void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
                   bool is_initial) {
-  md_batch->ForEach([=](grpc_mdelem md) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_INFO, "INPROC:%s:%s: %s: %s", is_initial ? "HDR" : "TRL",
-            is_client ? "CLI" : "SVR", key, value);
-    gpr_free(key);
-    gpr_free(value);
+  std::string prefix = absl::StrCat(
+      "INPROC:", is_initial ? "HDR:" : "TRL:", is_client ? "CLI:" : "SVR:");
+  md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
+    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
   });
 }
 
@@ -296,24 +288,19 @@ class CopySink {
  public:
   explicit CopySink(grpc_metadata_batch* dst) : dst_(dst) {}
 
-  void Encode(grpc_mdelem md) {
-    // Differently to grpc_metadata_batch_copy, we always copy slices here so
-    // that we don't need to deal with the plethora of edge cases in that world.
-    // TODO(ctiller): revisit this when deleting mdelem.
-    md = grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(md)),
-                                 grpc_slice_copy(GRPC_MDVALUE(md)));
-    // Error unused in non-debug builds.
-    grpc_error_handle GRPC_UNUSED error = dst_->Append(md);
-    // The only way that Append() can fail is if
-    // there's a duplicate entry for a callout.  However, that can't be
-    // the case here, because we would not have been allowed to create
-    // a source batch that had that kind of conflict.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+    dst_->Append(key.as_string_view(), value.AsOwned(),
+                 [](absl::string_view, const grpc_core::Slice&) {});
   }
 
   template <class T, class V>
   void Encode(T trait, V value) {
     dst_->Set(trait, value);
+  }
+
+  template <class T>
+  void Encode(T trait, const grpc_core::Slice& value) {
+    dst_->Set(trait, value.AsOwned());
   }
 
  private:
@@ -457,14 +444,10 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
       // If this is a server, provide initial metadata with a path and authority
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md(s->arena);
-      grpc_linked_mdelem* path_md =
-          static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*path_md)));
-      path_md->md = grpc_mdelem_from_slices(g_fake_path_key, g_fake_path_value);
-      GPR_ASSERT(fake_md.LinkTail(path_md) == GRPC_ERROR_NONE);
-      grpc_linked_mdelem* auth_md =
-          static_cast<grpc_linked_mdelem*>(s->arena->Alloc(sizeof(*auth_md)));
-      auth_md->md = grpc_mdelem_from_slices(g_fake_auth_key, g_fake_auth_value);
-      GPR_ASSERT(fake_md.LinkTail(auth_md) == GRPC_ERROR_NONE);
+      fake_md.Set(grpc_core::HttpPathMetadata(),
+                  grpc_core::Slice::FromStaticString("/"));
+      fake_md.Set(grpc_core::HttpAuthorityMetadata(),
+                  grpc_core::Slice::FromStaticString("inproc-fail"));
 
       (void)fill_in_metadata(
           s, &fake_md, 0,
@@ -723,7 +706,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
               .recv_initial_metadata,
           s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
           nullptr);
-      if (s->deadline != GRPC_MILLIS_INF_FUTURE) {
+      if (s->deadline != grpc_core::Timestamp::InfFuture()) {
         s->recv_initial_md_op->payload->recv_initial_metadata
             .recv_initial_metadata->Set(grpc_core::GrpcTimeoutMetadata(),
                                         s->deadline);
@@ -1026,12 +1009,12 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
               dest, destflags, destfilled);
         }
         if (s->t->is_client) {
-          grpc_millis* dl =
+          grpc_core::Timestamp* dl =
               (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
           *dl = std::min(
               *dl, op->payload->send_initial_metadata.send_initial_metadata
                        ->get(grpc_core::GrpcTimeoutMetadata())
-                       .value_or(GRPC_MILLIS_INF_FUTURE));
+                       .value_or(grpc_core::Timestamp::InfFuture()));
           s->initial_md_sent = true;
         }
       }
@@ -1230,9 +1213,11 @@ void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
 grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
 
 const grpc_transport_vtable inproc_vtable = {
-    sizeof(inproc_stream), "inproc",        init_stream,
-    set_pollset,           set_pollset_set, perform_stream_op,
-    perform_transport_op,  destroy_stream,  destroy_transport,
+    sizeof(inproc_stream), "inproc",
+    init_stream,           nullptr,
+    set_pollset,           set_pollset_set,
+    perform_stream_op,     perform_transport_op,
+    destroy_stream,        destroy_transport,
     get_endpoint};
 
 /*******************************************************************************
@@ -1255,28 +1240,8 @@ void inproc_transports_create(grpc_transport** server_transport,
 }
 }  // namespace
 
-/*******************************************************************************
- * GLOBAL INIT AND DESTROY
- */
-void grpc_inproc_transport_init(void) {
-  grpc_core::ExecCtx exec_ctx;
-  g_empty_slice = grpc_core::ExternallyManagedSlice();
-
-  grpc_slice key_tmp = grpc_slice_from_static_string(":path");
-  g_fake_path_key = grpc_slice_intern(key_tmp);
-  grpc_slice_unref_internal(key_tmp);
-
-  g_fake_path_value = grpc_slice_from_static_string("/");
-
-  grpc_slice auth_tmp = grpc_slice_from_static_string(":authority");
-  g_fake_auth_key = grpc_slice_intern(auth_tmp);
-  grpc_slice_unref_internal(auth_tmp);
-
-  g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
-}
-
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
-                                         grpc_channel_args* args,
+                                         const grpc_channel_args* args,
                                          void* /*reserved*/) {
   GRPC_API_TRACE("grpc_inproc_channel_create(server=%p, args=%p)", 2,
                  (server, args));
@@ -1297,8 +1262,9 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   default_authority_arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
   default_authority_arg.value.string = const_cast<char*>("inproc.authority");
   args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
-  grpc_channel_args* client_args =
-      grpc_core::EnsureResourceQuotaInChannelArgs(args);
+  const grpc_channel_args* client_args = grpc_core::CoreConfiguration::Get()
+                                             .channel_args_preconditioning()
+                                             .PreconditionChannelArgs(args);
   grpc_channel_args_destroy(args);
   grpc_transport* server_transport;
   grpc_transport* client_transport;
@@ -1310,9 +1276,9 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error == GRPC_ERROR_NONE) {
-    channel =
-        grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, &error);
+    channel = grpc_channel_create_internal("inproc", client_args,
+                                           GRPC_CLIENT_DIRECT_CHANNEL,
+                                           client_transport, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
@@ -1323,7 +1289,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
         status = static_cast<grpc_status_code>(integer);
       }
       GRPC_ERROR_UNREF(error);
-      // client_transport was destroyed when grpc_channel_create saw an error.
+      // client_transport was destroyed when grpc_channel_create_internal saw an
+      // error.
       grpc_transport_destroy(server_transport);
       channel = grpc_lame_client_channel_create(
           nullptr, status, "Failed to create client channel");
@@ -1351,13 +1318,4 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   // Now finish scheduled operations
 
   return channel;
-}
-
-void grpc_inproc_transport_shutdown(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_unref_internal(g_empty_slice);
-  grpc_slice_unref_internal(g_fake_path_key);
-  grpc_slice_unref_internal(g_fake_path_value);
-  grpc_slice_unref_internal(g_fake_auth_key);
-  grpc_slice_unref_internal(g_fake_auth_value);
 }

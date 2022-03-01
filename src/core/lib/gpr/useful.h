@@ -106,6 +106,24 @@ constexpr size_t HashPointer(T* p, size_t range) {
          range;
 }
 
+// Compute a+b.
+// If the result is greater than INT64_MAX, return INT64_MAX.
+// If the result is less than INT64_MIN, return INT64_MIN.
+inline int64_t SaturatingAdd(int64_t a, int64_t b) {
+  if (a > 0) {
+    if (b > INT64_MAX - a) {
+      return INT64_MAX;
+    }
+  } else if (b < INT64_MIN - a) {
+    return INT64_MIN;
+  }
+  return a + b;
+}
+
+inline uint32_t MixHash32(uint32_t a, uint32_t b) {
+  return RotateLeft(a, 2u) ^ b;
+}
+
 }  // namespace grpc_core
 
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))

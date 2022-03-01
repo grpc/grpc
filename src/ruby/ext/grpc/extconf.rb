@@ -60,7 +60,7 @@ end
 
 ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\"" '
-ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.43.0.dev\"" '
+ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.45.0.dev\"" '
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -69,9 +69,16 @@ ENV['BUILDDIR'] = output_dir
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
-  nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
+  nproc = Etc.nprocessors if Etc.respond_to? :nprocessors
+  nproc_override = ENV['GRPC_RUBY_BUILD_PROCS']
+  unless nproc_override.nil? or nproc_override.size == 0
+    nproc = nproc_override
+    puts "Overriding make parallelism to #{nproc}"
+  end
   make = bsd ? 'gmake' : 'make'
-  system("#{make} -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q=")
+  cmd = "#{make} -j#{nproc} -C #{grpc_root} #{grpc_lib_dir}/libgrpc.a CONFIG=#{grpc_config} Q="
+  puts "Building grpc native library: #{cmd}"
+  system(cmd)
   exit 1 unless $? == 0
 end
 

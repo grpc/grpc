@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -175,8 +176,8 @@ class Server : public InternallyRefCounted<Server>,
     RegisteredMethod* server_registered_method = nullptr;
     uint32_t flags;
     bool has_host;
-    ExternallyManagedSlice method;
-    ExternallyManagedSlice host;
+    Slice method;
+    Slice host;
   };
 
   class RequestMatcherInterface;
@@ -292,9 +293,9 @@ class Server : public InternallyRefCounted<Server>,
 
     std::atomic<CallState> state_{CallState::NOT_STARTED};
 
-    absl::optional<grpc_slice> path_;
-    absl::optional<grpc_slice> host_;
-    grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+    absl::optional<Slice> path_;
+    absl::optional<Slice> host_;
+    Timestamp deadline_ = Timestamp::InfFuture();
 
     grpc_completion_queue* cq_new_ = nullptr;
 
@@ -463,7 +464,8 @@ class Server : public InternallyRefCounted<Server>,
 
 struct grpc_server_config_fetcher {
  public:
-  class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
+  class ConnectionManager
+      : public grpc_core::DualRefCounted<ConnectionManager> {
    public:
     // Ownership of \a args is transfered.
     virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(

@@ -21,6 +21,10 @@ export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
+
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade wheel
 
@@ -90,7 +94,7 @@ ${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
 GRPCIO_TAR_GZ=${GRPCIO_TAR_GZ_LIST[0]}
-GRPCIO_STRIPPED_TAR_GZ=$(mktemp -t "XXXXXXXXXX.tar.gz")
+GRPCIO_STRIPPED_TAR_GZ=$(mktemp -t "TAR_GZ_XXXXXXXXXX")
 
 clean_non_source_files() {
 ( cd "$1"

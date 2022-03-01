@@ -22,22 +22,13 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/support/config.h>
-
-// TODO(yihuazhang): remove the forward declaration here and include
-// <grpc/grpc_security.h> directly once the insecure builds are cleaned up.
-typedef struct grpc_tls_server_authorization_check_arg
-    grpc_tls_server_authorization_check_arg;
-typedef struct grpc_tls_server_authorization_check_config
-    grpc_tls_server_authorization_check_config;
-typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
-typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
-typedef struct grpc_tls_certificate_verifier grpc_tls_certificate_verifier;
 
 namespace grpc {
 namespace experimental {
@@ -83,6 +74,15 @@ class TlsCredentialsOptions {
   //
   // @param identity_cert_name the name of identity key-cert pairs being set.
   void set_identity_cert_name(const std::string& identity_cert_name);
+  // Sets the Tls session key logging configuration. If not set, tls
+  // session key logging is disabled. Note that this should be used only for
+  // debugging purposes. It should never be used in a production environment
+  // due to security concerns.
+  //
+  // @param tls_session_key_log_file_path: Path where tls session keys would
+  // be logged.
+  void set_tls_session_key_log_file_path(
+      const std::string& tls_session_key_log_file_path);
   // Sets the certificate verifier used to perform post-handshake peer identity
   // checks.
   void set_certificate_verifier(
@@ -96,6 +96,13 @@ class TlsCredentialsOptions {
   // We will perform such checks by default. This should be disabled if
   // verifiers other than the host name verifier is used.
   void set_check_call_host(bool check_call_host);
+
+  // TODO(zhenlian): This is an experimental API is likely to change in the
+  // future. Before de-experiementalizing, verify the API is up to date.
+  // If set, gRPC will read all hashed x.509 CRL files in the directory and
+  // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
+  // version > 1.1.
+  void set_crl_directory(const std::string& path);
 
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.

@@ -36,10 +36,10 @@ RESOURCE_SUFFIX = flags.DEFINE_string(
 NETWORK = flags.DEFINE_string("network",
                               default="default",
                               help="GCP Network ID")
-ROUTER_SCOPE = flags.DEFINE_string(
+CONFIG_SCOPE = flags.DEFINE_string(
     "config_scope",
     default=None,
-    help="Scope specified in router if using AppNet APIs")
+    help="Scope specified in mesh if using AppNet APIs")
 COMPUTE_API_VERSION = flags.DEFINE_string(
     "compute_api_version",
     default='v1',
@@ -122,6 +122,11 @@ TESTING_VERSION = flags.DEFINE_string(
     "testing_version",
     default="master",
     help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
+
+FORCE_CLEANUP = flags.DEFINE_bool(
+    "force_cleanup",
+    default=False,
+    help="Force resource cleanup, even if not created by this test run")
 
 flags.adopt_module_key_flags(highlighter)
 

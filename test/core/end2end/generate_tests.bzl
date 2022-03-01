@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Generates the appropriate build.json data for all the end2end tests."""
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
@@ -109,8 +108,16 @@ END2END_FIXTURES = {
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
     ),
-    "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
-    "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_ipv4": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_local_ipv6": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
     "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
     "h2_uds": _fixture_options(
         dns_resolver = False,
@@ -145,7 +152,11 @@ END2END_NOSEC_FIXTURES = {
         supports_msvc = False,
     ),
     "h2_full": _fixture_options(secure = False),
-    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
+    "h2_full+pipe": _fixture_options(
+        secure = False,
+        _platforms = ["linux"],
+        supports_msvc = False,
+    ),
     "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
     "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
     "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
@@ -255,6 +266,7 @@ END2END_TESTS = {
     "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
+    "grpc_authz": _test_options(secure = True),
     "hpack_size": _test_options(
         proxyable = False,
         traceable = False,
@@ -296,10 +308,14 @@ END2END_TESTS = {
         short_name = "retry_cancel3",
         needs_client_channel = True,
     ),
-    "retry_disabled": _test_options(needs_client_channel = True),
-    "retry_exceeds_buffer_size_in_delay": _test_options(
+    "retry_cancel_after_first_attempt_starts": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel4",
         needs_client_channel = True,
     ),
+    "retry_disabled": _test_options(needs_client_channel = True),
+    "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
@@ -321,9 +337,7 @@ END2END_TESTS = {
         # See b/151617965
         short_name = "retry_non_retriable_status2",
     ),
-    "retry_per_attempt_recv_timeout": _test_options(
-        needs_client_channel = True,
-    ),
+    "retry_per_attempt_recv_timeout": _test_options(needs_client_channel = True),
     "retry_per_attempt_recv_timeout_on_last_attempt": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
@@ -332,12 +346,9 @@ END2END_TESTS = {
     ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),
-    "retry_recv_trailing_metadata_error": _test_options(
-        needs_client_channel = True,
-    ),
-    "retry_send_initial_metadata_refs": _test_options(
-        needs_client_channel = True,
-    ),
+    "retry_recv_message_replay": _test_options(needs_client_channel = True),
+    "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True),
+    "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True),
     "retry_send_op_fails": _test_options(needs_client_channel = True),
     "retry_server_pushback_delay": _test_options(needs_client_channel = True),
     "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
@@ -351,7 +362,19 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
-    "sdk_authz": _test_options(secure = True),
+    "retry_transparent_goaway": _test_options(needs_client_channel = True),
+    "retry_transparent_not_sent_on_wire": _test_options(
+        needs_client_channel = True,
+    ),
+    "retry_transparent_max_concurrent_streams": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_transparent_mcs",
+    ),
+    "retry_unref_before_finish": _test_options(needs_client_channel = True),
+    "retry_unref_before_recv": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
@@ -361,13 +384,6 @@ END2END_TESTS = {
     "simple_metadata": _test_options(),
     "simple_request": _test_options(),
     "streaming_error_response": _test_options(),
-    "stream_compression_compressed_payload": _test_options(
-        proxyable = False,
-        exclude_inproc = True,
-        exclude_1byte = True,
-    ),
-    "stream_compression_payload": _test_options(exclude_inproc = True, exclude_1byte = True),
-    "stream_compression_ping_pong_streaming": _test_options(exclude_inproc = True),
     "trailing_metadata": _test_options(),
     "authority_not_supported": _test_options(),
     "filter_latency": _test_options(),
@@ -427,10 +443,8 @@ def grpc_end2end_tests():
     """Instantiates the gRPC end2end tests."""
     grpc_cc_library(
         name = "end2end_tests",
-        srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] + [
-            "tests/%s.cc" % t
-            for t in sorted(END2END_TESTS.keys())
-        ],
+        srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] +
+               ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
         hdrs = [
             "tests/cancel_test_helpers.h",
             "end2end_tests.h",
@@ -445,6 +459,7 @@ def grpc_end2end_tests():
             ":local_util",
             "//test/core/util:test_lb_policies",
             "//:grpc_authorization_provider",
+            "//test/core/compression:args_utils",
         ],
     )
 
@@ -464,6 +479,7 @@ def grpc_end2end_tests():
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
+                "//test/core/compression:args_utils",
             ],
             tags = _platform_support_tags(fopt),
         )
@@ -525,6 +541,7 @@ def grpc_end2end_nosec_tests():
             ":proxy",
             ":local_util",
             "//test/core/util:test_lb_policies",
+            "//test/core/compression:args_utils",
         ],
     )
 
@@ -546,6 +563,7 @@ def grpc_end2end_nosec_tests():
                 "//test/core/util:grpc_test_util_unsecure",
                 "//:grpc_unsecure",
                 "//:gpr",
+                "//test/core/compression:args_utils",
             ],
             tags = _platform_support_tags(fopt),
         )
@@ -573,7 +591,8 @@ def grpc_end2end_nosec_tests():
                 if poller in topt.exclude_pollers:
                     continue
                 native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" % (f, test_short_name, poller),
+                    name = "%s_nosec_test@%s@poller=%s" %
+                           (f, test_short_name, poller),
                     data = [":%s_nosec_test" % f],
                     srcs = ["end2end_test.sh"],
                     args = [

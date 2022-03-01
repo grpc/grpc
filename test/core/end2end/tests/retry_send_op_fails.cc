@@ -34,7 +34,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -246,10 +245,11 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   // Make sure the "grpc-previous-rpc-attempts" header was sent in the retry.
   bool found_retry_header = false;
   for (size_t i = 0; i < request_metadata_recv.count; ++i) {
-    if (grpc_slice_eq(request_metadata_recv.metadata[i].key,
-                      GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS)) {
-      GPR_ASSERT(
-          grpc_slice_eq(request_metadata_recv.metadata[i].value, GRPC_MDSTR_1));
+    if (grpc_slice_eq(
+            request_metadata_recv.metadata[i].key,
+            grpc_slice_from_static_string("grpc-previous-rpc-attempts"))) {
+      GPR_ASSERT(grpc_slice_eq(request_metadata_recv.metadata[i].value,
+                               grpc_slice_from_static_string("1")));
       found_retry_header = true;
       break;
     }
@@ -277,14 +277,14 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
 
 namespace {
 
-// A filter that, for the first call it sees, will fail the batch
-// containing send_initial_metadata and then fail the call with status
-// ABORTED.  All subsequent calls are allowed through without failures.
-class FailFirstSendOpFilter {
+// A filter that, for the first call it sees, will fail all batches except
+// for cancellations, so that the call fails with status ABORTED.
+// All subsequent calls are allowed through without failures.
+class FailFirstCallFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
- public:
+ private:
   class CallData {
    public:
     static grpc_error_handle Init(grpc_call_element* elem,
@@ -302,7 +302,7 @@ class FailFirstSendOpFilter {
 
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-      auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
+      auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
       auto* calld = static_cast<CallData*>(elem->call_data);
       if (!chand->seen_first_) {
         chand->seen_first_ = true;
@@ -312,7 +312,7 @@ class FailFirstSendOpFilter {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
             grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "FailFirstSendOpFilter failing batch"),
+                                   "FailFirstCallFilter failing batch"),
                                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
@@ -330,30 +330,31 @@ class FailFirstSendOpFilter {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* /*args*/) {
-    new (elem->channel_data) FailFirstSendOpFilter();
+    new (elem->channel_data) FailFirstCallFilter();
     return GRPC_ERROR_NONE;
   }
 
   static void Destroy(grpc_channel_element* elem) {
-    auto* chand = static_cast<FailFirstSendOpFilter*>(elem->channel_data);
-    chand->~FailFirstSendOpFilter();
+    auto* chand = static_cast<FailFirstCallFilter*>(elem->channel_data);
+    chand->~FailFirstCallFilter();
   }
 
   bool seen_first_ = false;
 };
 
-grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
+grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
-    sizeof(FailFirstSendOpFilter),
+    sizeof(FailFirstCallFilter),
     Init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstSendOpFilter",
+    "FailFirstCallFilter",
 };
 
 }  // namespace
@@ -364,18 +365,18 @@ void retry_send_op_fails(grpc_end2end_test_config config) {
       [](grpc_core::CoreConfiguration::Builder* builder) {
         grpc_core::BuildCoreConfiguration(builder);
         builder->channel_init()->RegisterStage(
-            GRPC_CLIENT_SUBCHANNEL, 0, [](grpc_channel_stack_builder* builder) {
+            GRPC_CLIENT_SUBCHANNEL, 0,
+            [](grpc_core::ChannelStackBuilder* builder) {
               // Skip on proxy (which explicitly disables retries).
-              const grpc_channel_args* args =
-                  grpc_channel_stack_builder_get_channel_arguments(builder);
+              const grpc_channel_args* args = builder->channel_args();
               if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES,
                                                true)) {
                 return true;
               }
               // Install filter.
-              return grpc_channel_stack_builder_prepend_filter(
-                  builder, &FailFirstSendOpFilter::kFilterVtable, nullptr,
-                  nullptr);
+              builder->PrependFilter(&FailFirstCallFilter::kFilterVtable,
+                                     nullptr);
+              return true;
             });
       },
       [config] { test_retry_send_op_fails(config); });

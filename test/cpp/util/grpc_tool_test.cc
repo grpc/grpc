@@ -173,7 +173,7 @@ size_t ArraySize(T& a) {
           static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))));
 }
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
@@ -937,10 +937,11 @@ TEST_F(GrpcToolTest, CallCommandWithTimeoutDeadlineUpperBound) {
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
 
+  std::string output = output_stream.str();
+
   // Expected output: "message: "true""
   // deadline not greater than timeout + current time
-  EXPECT_TRUE(nullptr !=
-              strstr(output_stream.str().c_str(), "message: \"true\""));
+  EXPECT_TRUE(nullptr != strstr(output.c_str(), "message: \"true\"")) << output;
   ShutdownServer();
 }
 
@@ -1348,6 +1349,6 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   return RUN_ALL_TESTS();
 }

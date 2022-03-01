@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -649,31 +648,6 @@ class HPackParser::Input {
 // management characteristics
 class HPackParser::String {
  public:
-  // Helper to specify a string should be internalized
-  struct Intern {};
-  // Helper to specify a string should be externalized
-  struct Extern {};
-
- private:
-  // Forward declare take functions... we'll need them in the public interface
-  UnmanagedMemorySlice Take(Extern);
-  ManagedMemorySlice Take(Intern);
-
- public:
-  // If a String is a Slice then unref
-  ~String() {
-    if (auto* p = absl::get_if<grpc_slice>(&value_)) {
-      grpc_slice_unref_internal(*p);
-    }
-  }
-
-  // Take the value and leave this empty
-  // Use Intern/Extern to choose memory management
-  template <typename T>
-  auto Take() -> decltype(this->Take(T())) {
-    return Take(T());
-  }
-
   String(const String&) = delete;
   String& operator=(const String&) = delete;
   String(String&& other) noexcept : value_(std::move(other.value_)) {
@@ -683,6 +657,23 @@ class HPackParser::String {
     value_ = std::move(other.value_);
     other.value_ = absl::Span<const uint8_t>();
     return *this;
+  }
+
+  // Take the value and leave this empty
+  Slice Take();
+
+  // Return a reference to the value as a string view
+  absl::string_view string_view() const {
+    if (auto* p = absl::get_if<Slice>(&value_)) {
+      return p->as_string_view();
+    } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+      return absl::string_view(reinterpret_cast<const char*>(p->data()),
+                               p->size());
+    } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+      return absl::string_view(reinterpret_cast<const char*>(p->data()),
+                               p->size());
+    }
+    GPR_UNREACHABLE_CODE(return absl::string_view());
   }
 
   // Parse a non-binary string
@@ -758,18 +749,7 @@ class HPackParser::String {
   explicit String(std::vector<uint8_t> v) : value_(std::move(v)) {}
   explicit String(absl::Span<const uint8_t> v) : value_(v) {}
   String(grpc_slice_refcount* r, const uint8_t* begin, const uint8_t* end)
-      : value_(MakeSlice(r, begin, end)) {}
-
-  // Given a refcount and a byte range, make a slice
-  static grpc_slice MakeSlice(grpc_slice_refcount* r, const uint8_t* begin,
-                              const uint8_t* end) {
-    grpc_slice out;
-    out.refcount = r;
-    r->Ref();
-    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
-    out.data.refcounted.length = end - begin;
-    return out;
-  }
+      : value_(Slice::FromRefcountAndBytes(r, begin, end)) {}
 
   // Parse some huffman encoded bytes, using output(uint8_t b) to emit each
   // decoded byte.
@@ -826,19 +806,17 @@ class HPackParser::String {
   // Turn base64 encoded bytes into not base64 encoded bytes.
   // Only takes input to set an error on failure.
   static absl::optional<String> Unbase64(Input* input, String s) {
-    auto v = Match(
-        s.value_,
-        [](const grpc_slice& slice) {
-          return Unbase64Loop(GRPC_SLICE_START_PTR(slice),
-                              GRPC_SLICE_END_PTR(slice));
-        },
-        [](absl::Span<const uint8_t> span) {
-          return Unbase64Loop(span.begin(), span.end());
-        },
-        [](const std::vector<uint8_t>& vec) {
-          return Unbase64Loop(vec.data(), vec.data() + vec.size());
-        });
-    if (!v.has_value()) {
+    absl::optional<std::vector<uint8_t>> result;
+    if (auto* p = absl::get_if<Slice>(&s.value_)) {
+      result = Unbase64Loop(p->begin(), p->end());
+    }
+    if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&s.value_)) {
+      result = Unbase64Loop(p->begin(), p->end());
+    }
+    if (auto* p = absl::get_if<std::vector<uint8_t>>(&s.value_)) {
+      result = Unbase64Loop(p->data(), p->data() + p->size());
+    }
+    if (!result.has_value()) {
       return input->MaybeSetErrorAndReturn(
           [] {
             return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -846,7 +824,7 @@ class HPackParser::String {
           },
           absl::optional<String>());
     }
-    return String(std::move(*v));
+    return String(std::move(*result));
   }
 
   // Main loop for Unbase64
@@ -931,8 +909,7 @@ class HPackParser::String {
     GPR_UNREACHABLE_CODE(return out;);
   }
 
-  absl::variant<grpc_slice, absl::Span<const uint8_t>, std::vector<uint8_t>>
-      value_;
+  absl::variant<Slice, absl::Span<const uint8_t>, std::vector<uint8_t>> value_;
 };
 
 // Parser parses one key/value pair from a byte stream.
@@ -970,13 +947,11 @@ class HPackParser::Parser {
       case 1:
         switch (cur & 0xf) {
           case 0:  // literal key
-            return FinishHeaderOmitFromTable(ParseLiteralKey<String::Extern>());
+            return FinishHeaderOmitFromTable(ParseLiteralKey());
           case 0xf:  // varint encoded key index
-            return FinishHeaderOmitFromTable(
-                ParseVarIdxKey<String::Extern>(0xf));
+            return FinishHeaderOmitFromTable(ParseVarIdxKey(0xf));
           default:  // inline encoded key index
-            return FinishHeaderOmitFromTable(
-                ParseIdxKey<String::Extern>(cur & 0xf));
+            return FinishHeaderOmitFromTable(ParseIdxKey(cur & 0xf));
         }
         // Update max table size.
         // First byte format: 001xxxxx
@@ -1003,23 +978,20 @@ class HPackParser::Parser {
       case 4:
         if (cur == 0x40) {
           // literal key
-          return FinishHeaderAndAddToTable(ParseLiteralKey<String::Intern>());
+          return FinishHeaderAndAddToTable(ParseLiteralKey());
         }
         ABSL_FALLTHROUGH_INTENDED;
       case 5:
       case 6:
         // inline encoded key index
-        return FinishHeaderAndAddToTable(
-            ParseIdxKey<String::Intern>(cur & 0x3f));
+        return FinishHeaderAndAddToTable(ParseIdxKey(cur & 0x3f));
       case 7:
         if (cur == 0x7f) {
           // varint encoded key index
-          return FinishHeaderAndAddToTable(
-              ParseVarIdxKey<String::Intern>(0x3f));
+          return FinishHeaderAndAddToTable(ParseVarIdxKey(0x3f));
         } else {
           // inline encoded key index
-          return FinishHeaderAndAddToTable(
-              ParseIdxKey<String::Intern>(cur & 0x3f));
+          return FinishHeaderAndAddToTable(ParseIdxKey(cur & 0x3f));
         }
         // Indexed Header Field Representation
         // First byte format: 1xxxxxxx
@@ -1084,11 +1056,7 @@ class HPackParser::Parser {
       return HandleMetadataSizeLimitExceeded(md);
     }
 
-    grpc_error_handle err = metadata_buffer_->Set(md);
-    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
-      input_->SetError(err);
-      return false;
-    }
+    metadata_buffer_->Set(md);
     return true;
   }
 
@@ -1125,22 +1093,25 @@ class HPackParser::Parser {
   }
 
   // Parse a string encoded key and a string encoded value
-  template <typename TakeValueType>
   absl::optional<HPackTable::Memento> ParseLiteralKey() {
     auto key = String::Parse(input_);
     if (!key.has_value()) return {};
-    auto key_slice = key->Take<String::Intern>();
-    auto value =
-        ParseValueString(grpc_is_refcounted_slice_binary_header(key_slice));
+    auto value = ParseValueString(absl::EndsWith(key->string_view(), "-bin"));
     if (GPR_UNLIKELY(!value.has_value())) {
-      grpc_slice_unref_internal(key_slice);
       return {};
     }
-    return grpc_metadata_batch::Parse(key_slice, value->Take<TakeValueType>());
+    auto key_string = key->string_view();
+    auto value_slice = value->Take();
+    const auto transport_size = key_string.size() + value_slice.size() +
+                                hpack_constants::kEntryOverhead;
+    return grpc_metadata_batch::Parse(
+        key->string_view(), std::move(value_slice), transport_size,
+        [key_string](absl::string_view error, const Slice& value) {
+          ReportMetadataParseError(key_string, error, value.as_string_view());
+        });
   }
 
   // Parse an index encoded key and a string encoded value
-  template <typename TakeValueType>
   absl::optional<HPackTable::Memento> ParseIdxKey(uint32_t index) {
     const auto* elem = table_->Lookup(index);
     if (GPR_UNLIKELY(elem == nullptr)) {
@@ -1149,15 +1120,17 @@ class HPackParser::Parser {
     }
     auto value = ParseValueString(elem->is_binary_header());
     if (GPR_UNLIKELY(!value.has_value())) return {};
-    return elem->WithNewValue(value->Take<TakeValueType>());
+    return elem->WithNewValue(
+        value->Take(), [=](absl::string_view error, const Slice& value) {
+          ReportMetadataParseError(elem->key(), error, value.as_string_view());
+        });
   }
 
   // Parse a varint index encoded key and a string encoded value
-  template <typename TakeValueType>
   absl::optional<HPackTable::Memento> ParseVarIdxKey(uint32_t offset) {
     auto index = input_->ParseVarint(offset);
     if (GPR_UNLIKELY(!index.has_value())) return {};
-    return ParseIdxKey<TakeValueType>(*index);
+    return ParseIdxKey(*index);
   }
 
   // Parse a string, figuring out if it's binary or not by the key name.
@@ -1225,6 +1198,7 @@ class HPackParser::Parser {
             " vs. %" PRIu32
             "). GRPC_ARG_MAX_METADATA_SIZE can be set to increase this limit.",
             *frame_length_, metadata_size_limit_);
+    if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
     return input_->MaybeSetErrorAndReturn(
         [] {
           return grpc_error_set_int(
@@ -1233,6 +1207,14 @@ class HPackParser::Parser {
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
         },
         false);
+  }
+
+  static void ReportMetadataParseError(absl::string_view key,
+                                       absl::string_view error,
+                                       absl::string_view value) {
+    gpr_log(
+        GPR_ERROR, "Error parsing metadata: %s",
+        absl::StrCat("error=", error, " key=", key, " value=", value).c_str());
   }
 
   Input* const input_;
@@ -1244,48 +1226,15 @@ class HPackParser::Parser {
   const LogInfo log_info_;
 };
 
-UnmanagedMemorySlice HPackParser::String::Take(Extern) {
-  auto s = Match(
-      value_,
-      [](const grpc_slice& slice) {
-        // TODO(ctiller): Think about this before submission.
-        GPR_DEBUG_ASSERT(!grpc_slice_is_interned(slice));
-        auto out_slice = grpc_slice_copy(slice);
-        grpc_slice_unref_internal(slice);
-        return static_cast<const UnmanagedMemorySlice&>(out_slice);
-      },
-      [](absl::Span<const uint8_t> span) {
-        return UnmanagedMemorySlice(
-            reinterpret_cast<char*>(const_cast<uint8_t*>(span.begin())),
-            span.size());
-      },
-      [](const std::vector<uint8_t>& v) {
-        return UnmanagedMemorySlice(reinterpret_cast<const char*>(v.data()),
-                                    v.size());
-      });
-  value_ = absl::Span<const uint8_t>();
-  return s;
-}
-
-ManagedMemorySlice HPackParser::String::Take(Intern) {
-  auto s = Match(
-      value_,
-      [](const grpc_slice& slice) {
-        ManagedMemorySlice s(&slice);
-        grpc_slice_unref_internal(slice);
-        return s;
-      },
-      [](absl::Span<const uint8_t> span) {
-        return ManagedMemorySlice(
-            reinterpret_cast<char*>(const_cast<uint8_t*>(span.data())),
-            span.size());
-      },
-      [](const std::vector<uint8_t>& v) {
-        return ManagedMemorySlice(reinterpret_cast<const char*>(v.data()),
-                                  v.size());
-      });
-  value_ = absl::Span<const uint8_t>();
-  return s;
+Slice HPackParser::String::Take() {
+  if (auto* p = absl::get_if<Slice>(&value_)) {
+    return p->Copy();
+  } else if (auto* p = absl::get_if<absl::Span<const uint8_t>>(&value_)) {
+    return Slice::FromCopiedBuffer(*p);
+  } else if (auto* p = absl::get_if<std::vector<uint8_t>>(&value_)) {
+    return Slice::FromCopiedBuffer(*p);
+  }
+  GPR_UNREACHABLE_CODE(return Slice());
 }
 
 /* PUBLIC INTERFACE */
@@ -1382,25 +1331,6 @@ static void force_client_rst_stream(void* sp, grpc_error_handle /*error*/) {
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
 
-static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
-                                        grpc_chttp2_stream* s,
-                                        grpc_metadata_batch* initial_metadata) {
-  if (initial_metadata->legacy_index()->named.content_encoding == nullptr ||
-      grpc_stream_compression_method_parse(
-          GRPC_MDVALUE(
-              initial_metadata->legacy_index()->named.content_encoding->md),
-          false, &s->stream_decompression_method) == 0) {
-    s->stream_decompression_method =
-        GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
-  }
-
-  if (s->stream_decompression_method !=
-      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-    s->stream_decompression_ctx = nullptr;
-    grpc_slice_buffer_init(&s->decompressed_data_buffer);
-  }
-}
-
 grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   grpc_chttp2_transport* t,
                                                   grpc_chttp2_stream* s,
@@ -1423,11 +1353,6 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
         if (s->header_frames_received == 2) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Too many trailer frames");
-        }
-        /* Process stream compression md element if it exists */
-        if (s->header_frames_received ==
-            0) { /* Only acts on initial metadata */
-          parse_stream_compression_md(t, s, &s->initial_metadata_buffer);
         }
         s->published_metadata[s->header_frames_received] =
             GRPC_METADATA_PUBLISHED_FROM_WIRE;

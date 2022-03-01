@@ -18,12 +18,13 @@
 
 #include <random>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 namespace grpc_core {
@@ -52,19 +53,15 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     static void OnHttpRequestDone(void* arg, grpc_error_handle error);
 
-    // Calls OnDone() if not already called.  Releases a ref.
-    void MaybeCallOnDone(grpc_error_handle error);
-
     // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
                         grpc_error_handle error) = 0;
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
-    grpc_httpcli_context context_;
-    grpc_httpcli_response response_;
+    OrphanablePtr<HttpRequest> http_request_;
+    grpc_http_response response_;
     grpc_closure on_done_;
-    std::atomic<bool> on_done_called_{false};
   };
 
   // A metadata server query to get the zone.
@@ -95,10 +92,13 @@ class GoogleCloud2ProdResolver : public Resolver {
   void IPv6QueryDone(bool ipv6_supported);
   void StartXdsResolver();
 
+  ResourceQuotaRefPtr resource_quota_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   grpc_polling_entity pollent_;
   bool using_dns_ = false;
   OrphanablePtr<Resolver> child_resolver_;
+  std::string metadata_server_name_ = "metadata.google.internal.";
+  bool shutdown_ = false;
 
   OrphanablePtr<ZoneQuery> zone_query_;
   absl::optional<std::string> zone_;
@@ -115,58 +115,50 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
     RefCountedPtr<GoogleCloud2ProdResolver> resolver, const char* path,
     grpc_polling_entity* pollent)
     : resolver_(std::move(resolver)) {
-  grpc_httpcli_context_init(&context_);
   // Start HTTP request.
   GRPC_CLOSURE_INIT(&on_done_, OnHttpRequestDone, this, nullptr);
   Ref().release();  // Ref held by callback.
-  grpc_httpcli_request request;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
+  grpc_http_request request;
+  memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                              const_cast<char*>("Google")};
-  request.host = const_cast<char*>("metadata.google.internal");
-  request.http.path = const_cast<char*>(path);
-  request.http.hdr_count = 1;
-  request.http.hdrs = &header;
-  // TODO(ctiller): share the quota from whomever instantiates this!
-  grpc_httpcli_get(&context_, pollent, ResourceQuota::Default(), &request,
-                   ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                   &on_done_, &response_);
+  request.hdr_count = 1;
+  request.hdrs = &header;
+  auto uri = URI::Create("http", resolver_->metadata_server_name_, path,
+                         {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());  // params are hardcoded
+  grpc_arg resource_quota_arg = grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
+      resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
+  grpc_channel_args args = {1, &resource_quota_arg};
+  http_request_ = HttpRequest::Get(
+      std::move(*uri), &args, pollent, &request,
+      ExecCtx::Get()->Now() + Duration::Seconds(10),  // 10s timeout
+      &on_done_, &response_,
+      RefCountedPtr<grpc_channel_credentials>(
+          grpc_insecure_credentials_create()));
+  http_request_->Start();
 }
 
 GoogleCloud2ProdResolver::MetadataQuery::~MetadataQuery() {
-  grpc_httpcli_context_destroy(&context_);
   grpc_http_response_destroy(&response_);
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::Orphan() {
-  // TODO(roth): Once the HTTP client library supports cancellation,
-  // use that here.
-  MaybeCallOnDone(GRPC_ERROR_CANCELLED);
+  http_request_.reset();
+  Unref();
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<MetadataQuery*>(arg);
-  self->MaybeCallOnDone(GRPC_ERROR_REF(error));
-}
-
-void GoogleCloud2ProdResolver::MetadataQuery::MaybeCallOnDone(
-    grpc_error_handle error) {
-  bool expected = false;
-  if (!on_done_called_.compare_exchange_strong(expected, true,
-                                               std::memory_order_relaxed,
-                                               std::memory_order_relaxed)) {
-    // We've already called OnDone(), so just clean up.
-    GRPC_ERROR_UNREF(error);
-    Unref();
-    return;
-  }
   // Hop back into WorkSerializer to call OnDone().
   // Note: We implicitly pass our ref to the callback here.
-  resolver_->work_serializer_->Run(
-      [this, error]() {
-        OnDone(resolver_.get(), &response_, error);
-        Unref();
+  (void)GRPC_ERROR_REF(error);
+  self->resolver_->work_serializer_->Run(
+      [self, error]() {
+        self->OnDone(self->resolver_.get(), &self->response_, error);
+        self->Unref();
       },
       DEBUG_LOCATION);
 }
@@ -184,22 +176,31 @@ GoogleCloud2ProdResolver::ZoneQuery::ZoneQuery(
 void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
     grpc_error_handle error) {
+  absl::StatusOr<std::string> zone;
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "error fetching zone from metadata server: %s",
-            grpc_error_std_string(error).c_str());
-  }
-  std::string zone;
-  if (error == GRPC_ERROR_NONE && response->status == 200) {
+    zone = absl::UnknownError(
+        absl::StrCat("error fetching zone from metadata server: ",
+                     grpc_error_std_string(error)));
+  } else if (response->status != 200) {
+    zone = absl::UnknownError(absl::StrFormat(
+        "zone query received non-200 status: %d", response->status));
+  } else {
     absl::string_view body(response->body, response->body_length);
     size_t i = body.find_last_of('/');
     if (i == body.npos) {
-      gpr_log(GPR_ERROR, "could not parse zone from metadata server: %s",
-              std::string(body).c_str());
+      zone = absl::UnknownError(
+          absl::StrCat("could not parse zone from metadata server: ", body));
     } else {
       zone = std::string(body.substr(i + 1));
     }
   }
-  resolver->ZoneQueryDone(std::move(zone));
+  if (!zone.ok()) {
+    gpr_log(GPR_ERROR, "zone query failed: %s",
+            zone.status().ToString().c_str());
+    resolver->ZoneQueryDone("");
+  } else {
+    resolver->ZoneQueryDone(std::move(*zone));
+  }
   GRPC_ERROR_UNREF(error);
 }
 
@@ -230,12 +231,18 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
 //
 
 GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
-    : work_serializer_(std::move(args.work_serializer)),
+    : resource_quota_(ResourceQuotaFromChannelArgs(args.args)),
+      work_serializer_(std::move(args.work_serializer)),
       pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)) {
   absl::string_view name_to_resolve = absl::StripPrefix(args.uri.path(), "/");
   // If we're not running on GCP, we can't use DirectPath, so delegate
   // to the DNS resolver.
-  if (!grpc_alts_is_running_on_gcp() ||
+  bool test_only_pretend_running_on_gcp = grpc_channel_args_find_bool(
+      args.args, "grpc.testing.google_c2p_resolver_pretend_running_on_gcp",
+      false);
+  bool running_on_gcp =
+      test_only_pretend_running_on_gcp || grpc_alts_is_running_on_gcp();
+  if (!running_on_gcp ||
       // If the client is already using xDS, we can't use it here, because
       // they may be talking to a completely different xDS server than we
       // want to.
@@ -243,14 +250,24 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP")) != nullptr ||
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG")) != nullptr) {
     using_dns_ = true;
-    child_resolver_ = ResolverRegistry::CreateResolver(
-        absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
-        args.pollset_set, work_serializer_, std::move(args.result_handler));
+    child_resolver_ =
+        CoreConfiguration::Get().resolver_registry().CreateResolver(
+            absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
+            args.pollset_set, work_serializer_, std::move(args.result_handler));
     GPR_ASSERT(child_resolver_ != nullptr);
     return;
   }
+  // Maybe override metadata server name for testing
+  const char* test_only_metadata_server_override =
+      grpc_channel_args_find_string(
+          args.args,
+          "grpc.testing.google_c2p_resolver_metadata_server_override");
+  if (test_only_metadata_server_override != nullptr &&
+      strlen(test_only_metadata_server_override) > 0) {
+    metadata_server_name_ = std::string(test_only_metadata_server_override);
+  }
   // Create xds resolver.
-  child_resolver_ = ResolverRegistry::CreateResolver(
+  child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       absl::StrCat("xds:", name_to_resolve).c_str(), args.args,
       args.pollset_set, work_serializer_, std::move(args.result_handler));
   GPR_ASSERT(child_resolver_ != nullptr);
@@ -279,6 +296,7 @@ void GoogleCloud2ProdResolver::ResetBackoffLocked() {
 }
 
 void GoogleCloud2ProdResolver::ShutdownLocked() {
+  shutdown_ = true;
   zone_query_.reset();
   ipv6_query_.reset();
   child_resolver_.reset();
@@ -297,6 +315,9 @@ void GoogleCloud2ProdResolver::IPv6QueryDone(bool ipv6_supported) {
 }
 
 void GoogleCloud2ProdResolver::StartXdsResolver() {
+  if (shutdown_) {
+    return;
+  }
   // Construct bootstrap JSON.
   std::random_device rd;
   std::mt19937 mt(rd());
@@ -349,6 +370,12 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
 
 class GoogleCloud2ProdResolverFactory : public ResolverFactory {
  public:
+  // TODO(roth): Remove experimental suffix once this code is proven stable,
+  // and update the scheme in google_c2p_resolver_test.cc when doing so.
+  absl::string_view scheme() const override {
+    return "google-c2p-experimental";
+  }
+
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
@@ -361,23 +388,13 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<GoogleCloud2ProdResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "google-c2p"; }
 };
 
 }  // namespace
 
-void GoogleCloud2ProdResolverInit() {
-  // TODO(roth): Remove env var protection once this code is proven stable.
-  UniquePtr<char> value(gpr_getenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER"));
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value.get(), &parsed_value);
-  if (parse_succeeded && parsed_value) {
-    ResolverRegistry::Builder::RegisterResolverFactory(
-        absl::make_unique<GoogleCloud2ProdResolverFactory>());
-  }
+void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<GoogleCloud2ProdResolverFactory>());
 }
-
-void GoogleCloud2ProdResolverShutdown() {}
 
 }  // namespace grpc_core

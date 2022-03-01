@@ -87,6 +87,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -116,6 +117,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_authorization_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
@@ -239,7 +241,6 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_linux_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
@@ -252,7 +253,6 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_windows_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
@@ -265,7 +265,6 @@ grpc_cc_test(
     srcs = ["grpc_alts_credentials_options_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -281,8 +280,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base",
         "//:grpc_secure",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -307,8 +304,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -477,6 +472,21 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_authorization_provider",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channel_creds_registry_test",
+    srcs = ["channel_creds_registry_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
 )

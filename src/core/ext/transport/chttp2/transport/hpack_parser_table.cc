@@ -28,11 +28,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
@@ -141,6 +141,99 @@ grpc_error_handle HPackTable::Add(Memento md) {
   // update accounting values
   num_entries_++;
   return GRPC_ERROR_NONE;
+}
+
+namespace {
+struct StaticTableEntry {
+  const char* key;
+  const char* value;
+};
+
+const StaticTableEntry kStaticTable[hpack_constants::kLastStaticEntry] = {
+    {":authority", ""},
+    {":method", "GET"},
+    {":method", "POST"},
+    {":path", "/"},
+    {":path", "/index.html"},
+    {":scheme", "http"},
+    {":scheme", "https"},
+    {":status", "200"},
+    {":status", "204"},
+    {":status", "206"},
+    {":status", "304"},
+    {":status", "400"},
+    {":status", "404"},
+    {":status", "500"},
+    {"accept-charset", ""},
+    {"accept-encoding", "gzip, deflate"},
+    {"accept-language", ""},
+    {"accept-ranges", ""},
+    {"accept", ""},
+    {"access-control-allow-origin", ""},
+    {"age", ""},
+    {"allow", ""},
+    {"authorization", ""},
+    {"cache-control", ""},
+    {"content-disposition", ""},
+    {"content-encoding", ""},
+    {"content-language", ""},
+    {"content-length", ""},
+    {"content-location", ""},
+    {"content-range", ""},
+    {"content-type", ""},
+    {"cookie", ""},
+    {"date", ""},
+    {"etag", ""},
+    {"expect", ""},
+    {"expires", ""},
+    {"from", ""},
+    {"host", ""},
+    {"if-match", ""},
+    {"if-modified-since", ""},
+    {"if-none-match", ""},
+    {"if-range", ""},
+    {"if-unmodified-since", ""},
+    {"last-modified", ""},
+    {"link", ""},
+    {"location", ""},
+    {"max-forwards", ""},
+    {"proxy-authenticate", ""},
+    {"proxy-authorization", ""},
+    {"range", ""},
+    {"referer", ""},
+    {"refresh", ""},
+    {"retry-after", ""},
+    {"server", ""},
+    {"set-cookie", ""},
+    {"strict-transport-security", ""},
+    {"transfer-encoding", ""},
+    {"user-agent", ""},
+    {"vary", ""},
+    {"via", ""},
+    {"www-authenticate", ""},
+};
+
+GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
+  auto sm = kStaticTable[i];
+  return grpc_metadata_batch::Parse(
+      sm.key, Slice::FromStaticString(sm.value),
+      strlen(sm.key) + strlen(sm.value) + hpack_constants::kEntryOverhead,
+      [](absl::string_view, const Slice&) {
+        abort();  // not expecting to see this
+      });
+}
+
+}  // namespace
+
+const HPackTable::StaticMementos& HPackTable::GetStaticMementos() {
+  static const StaticMementos* const static_mementos = new StaticMementos();
+  return *static_mementos;
+}
+
+HPackTable::StaticMementos::StaticMementos() {
+  for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
+    memento[i] = MakeMemento(i);
+  }
 }
 
 }  // namespace grpc_core

@@ -30,12 +30,16 @@
 
 /* -- Composite channel credentials. -- */
 
+namespace grpc_core {
+extern const char kCredentialsTypeComposite[];
+}
+
 class grpc_composite_channel_credentials : public grpc_channel_credentials {
  public:
   grpc_composite_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds)
-      : grpc_channel_credentials(channel_creds->type()),
+      : grpc_channel_credentials(grpc_core::kCredentialsTypeComposite),
         inner_creds_(std::move(channel_creds)),
         call_creds_(std::move(call_creds)) {}
 
@@ -63,6 +67,13 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_call_credentials* mutable_call_creds() { return call_creds_.get(); }
 
  private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    auto* o = static_cast<const grpc_composite_channel_credentials*>(other);
+    int r = inner_creds_->cmp(o->inner_creds_.get());
+    if (r != 0) return r;
+    return call_creds_->cmp(o->call_creds_.get());
+  }
+
   grpc_core::RefCountedPtr<grpc_channel_credentials> inner_creds_;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds_;
 };
@@ -79,14 +90,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
       grpc_core::RefCountedPtr<grpc_call_credentials> creds2);
   ~grpc_composite_call_credentials() override = default;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_credentials_mdelem_array* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;
@@ -96,6 +102,12 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   std::string debug_string() override;
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
   grpc_security_level min_security_level_;

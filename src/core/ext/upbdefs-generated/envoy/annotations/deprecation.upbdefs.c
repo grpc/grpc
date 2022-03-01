@@ -10,8 +10,8 @@
 #include "envoy/annotations/deprecation.upbdefs.h"
 #include "envoy/annotations/deprecation.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
-static const char descriptor[490] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'd', 'e', 'p', 'r', 'e', 
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
+static const char descriptor[550] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'd', 'e', 'p', 'r', 'e', 
 'c', 'a', 't', 'i', 'o', 'n', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'n', 'n', 'o', 't', 
 'a', 't', 'i', 'o', 'n', 's', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 
 'e', 's', 'c', 'r', 'i', 'p', 't', 'o', 'r', '.', 'p', 'r', 'o', 't', 'o', ':', 'T', '\n', '\025', 'd', 'i', 's', 'a', 'l', 'l', 
@@ -30,17 +30,19 @@ static const char descriptor[490] = {'\n', '#', 'e', 'n', 'v', 'o', 'y', '/', 'a
 'i', 'o', 'n', '_', 'e', 'n', 'u', 'm', '\022', '!', '.', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 
 'f', '.', 'E', 'n', 'u', 'm', 'V', 'a', 'l', 'u', 'e', 'O', 'p', 't', 'i', 'o', 'n', 's', '\030', '\301', '\276', '\263', 'V', ' ', '\001', 
 '(', '\t', 'R', '\034', 'd', 'e', 'p', 'r', 'e', 'c', 'a', 't', 'e', 'd', 'A', 't', 'M', 'i', 'n', 'o', 'r', 'V', 'e', 'r', 's', 
-'i', 'o', 'n', 'E', 'n', 'u', 'm', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'i', 'o', 'n', 'E', 'n', 'u', 'm', 'B', ':', 'Z', '8', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 
+'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 
+'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_annotations_deprecation_proto_upbdefinit = {
+_upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit = {
   deps,
   &envoy_annotations_deprecation_proto_upb_file_layout,
   "envoy/annotations/deprecation.proto",
-  UPB_STRVIEW_INIT(descriptor, 490)
+  UPB_STRINGVIEW_INIT(descriptor, 550)
 };

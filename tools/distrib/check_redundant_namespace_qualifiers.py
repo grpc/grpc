@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -62,6 +62,14 @@ def find_closing_mustache(contents, initial_depth):
     return None
 
 
+def is_a_define_statement(match, body):
+    """See if the matching line begins with #define"""
+    # This does not yet help with multi-line defines
+    m = re.search(r"^#define.*{}$".format(match.group(0)), body[:match.end()],
+                  re.MULTILINE)
+    return m is not None
+
+
 def update_file(contents, namespaces):
     """Scan the contents of a file, and for top-level namespaces in namespaces remove redundant usages."""
     output = ''
@@ -87,8 +95,11 @@ def update_file(contents, namespaces):
                 m = re.search(r'\b' + namespace + r'::\b', body)
                 if not m:
                     break
-                # But ignore instances of '::namespace::' -- these are usually meant to be there.
+                # Ignore instances of '::namespace::' -- these are usually meant to be there.
                 if m.start() >= 2 and body[m.start() - 2:].startswith('::'):
+                    output += body[:m.end()]
+                # Ignore #defines, since they may be used anywhere
+                elif is_a_define_statement(m, body):
                     output += body[:m.end()]
                 else:
                     output += body[:m.start()]

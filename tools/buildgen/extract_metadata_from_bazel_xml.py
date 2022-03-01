@@ -94,8 +94,13 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_clazz = rule_dict['class']
             rule_name = rule_dict['name']
             if rule_clazz in [
-                    'cc_library', 'cc_binary', 'cc_test', 'cc_proto_library',
-                    'proto_library'
+                    'cc_library',
+                    'cc_binary',
+                    'cc_test',
+                    'cc_proto_library',
+                    'proto_library',
+                    'upb_proto_library',
+                    'upb_proto_reflection_library',
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -319,7 +324,6 @@ def _compute_transitive_metadata(
                     _extract_public_headers(bazel_rules[dep]))
                 collapsed_headers.update(
                     _extract_nonpublic_headers(bazel_rules[dep]))
-
     # This item is a "visited" flag
     bazel_rule['_PROCESSING_DONE'] = True
     # Following items are described in the docstinrg.
@@ -374,6 +378,78 @@ def update_test_metadata_with_transitive_metadata(
         if '//external:gtest' in bazel_rule['_TRANSITIVE_DEPS']:
             lib_dict['gtest'] = True
             lib_dict['language'] = 'c++'
+
+
+def _get_transitive_protos(bazel_rules, t):
+    que = [
+        t,
+    ]
+    visited = set()
+    ret = []
+    while que:
+        name = que.pop(0)
+        rule = bazel_rules.get(name, None)
+        if rule:
+            for dep in rule['deps']:
+                if dep not in visited:
+                    visited.add(dep)
+                    que.append(dep)
+            for src in rule['srcs']:
+                if src.endswith('.proto'):
+                    ret.append(src)
+    return list(set(ret))
+
+
+def _expand_upb_proto_library_rules(bazel_rules):
+    # Expand the .proto files from UPB proto library rules into the pre-generated
+    # upb.h and upb.c files.
+    GEN_UPB_ROOT = '//:src/core/ext/upb-generated/'
+    GEN_UPBDEFS_ROOT = '//:src/core/ext/upbdefs-generated/'
+    EXTERNAL_LINKS = [('@com_google_protobuf//', ':src/'),
+                      ('@com_google_googleapis//', ''),
+                      ('@com_github_cncf_udpa//', ''),
+                      ('@com_envoyproxy_protoc_gen_validate//', ''),
+                      ('@envoy_api//', ''), ('@opencensus_proto//', '')]
+    for name, bazel_rule in bazel_rules.items():
+        gen_func = bazel_rule.get('generator_function', None)
+        if gen_func in ('grpc_upb_proto_library',
+                        'grpc_upb_proto_reflection_library'):
+            # get proto dependency
+            deps = bazel_rule['deps']
+            if len(deps) != 1:
+                raise Exception(
+                    'upb rule "{0}" should have 1 proto dependency but has "{1}"'
+                    .format(name, deps))
+            # deps is not properly fetched from bazel query for upb_proto_library target
+            # so add the upb dependency manually
+            bazel_rule['deps'] = [
+                '//external:upb_lib', '//external:upb_lib_descriptor',
+                '//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me'
+            ]
+            # populate the upb_proto_library rule with pre-generated upb headers
+            # and sources using proto_rule
+            protos = _get_transitive_protos(bazel_rules, deps[0])
+            if len(protos) == 0:
+                raise Exception(
+                    'upb rule "{0}" should have at least one proto file.'.
+                    format(name))
+            srcs = []
+            hdrs = []
+            for proto_src in protos:
+                for external_link in EXTERNAL_LINKS:
+                    if proto_src.startswith(external_link[0]):
+                        proto_src = proto_src[len(external_link[0]) +
+                                              len(external_link[1]):]
+                        break
+                if proto_src.startswith('@'):
+                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                proto_src = _extract_source_file_path(proto_src)
+                ext = '.upb' if gen_func == 'grpc_upb_proto_library' else '.upbdefs'
+                root = GEN_UPB_ROOT if gen_func == 'grpc_upb_proto_library' else GEN_UPBDEFS_ROOT
+                srcs.append(root + proto_src.replace('.proto', ext + '.c'))
+                hdrs.append(root + proto_src.replace('.proto', ext + '.h'))
+            bazel_rule['srcs'] = srcs
+            bazel_rule['hdrs'] = hdrs
 
 
 def _generate_build_metadata(build_extra_metadata: BuildDict,
@@ -581,6 +657,9 @@ def _generate_build_extra_metadata_for_tests(
             # currently we hand-list fuzzers instead of generating them automatically
             # because there's no way to obtain maxlen property from bazel BUILD file.
             print(('skipping fuzzer ' + test))
+            continue
+
+        if 'bazel_only' in bazel_tags:
             continue
 
         # if any tags that restrict platform compatibility are present,
@@ -907,6 +986,11 @@ bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
         _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query)))
+
+# Step 1.5: The sources for UPB protos are pre-generated, so we want
+# to expand the UPB proto library bazel rules into the generated
+# .upb.h and .upb.c files.
+_expand_upb_proto_library_rules(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests

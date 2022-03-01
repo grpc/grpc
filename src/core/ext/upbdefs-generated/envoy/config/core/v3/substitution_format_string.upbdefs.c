@@ -10,13 +10,13 @@
 #include "envoy/config/core/v3/substitution_format_string.upbdefs.h"
 #include "envoy/config/core/v3/substitution_format_string.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[757] = {'\n', '5', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's', 'u', 
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_extension_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[826] = {'\n', '5', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 's', 'u', 
 'b', 's', 't', 'i', 't', 'u', 't', 'i', 'o', 'n', '_', 'f', 'o', 'r', 'm', 'a', 't', '_', 's', 't', 'r', 'i', 'n', 'g', '.', 
 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 
 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 
@@ -42,14 +42,17 @@ static const char descriptor[757] = {'\n', '5', 'e', 'n', 'v', 'o', 'y', '/', 'c
 'T', 'y', 'p', 'e', '\022', 'J', '\n', '\n', 'f', 'o', 'r', 'm', 'a', 't', 't', 'e', 'r', 's', '\030', '\006', ' ', '\003', '(', '\013', '2', 
 '*', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '.', 'T', 'y', 
 'p', 'e', 'd', 'E', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 'C', 'o', 'n', 'f', 'i', 'g', 'R', '\n', 'f', 'o', 'r', 'm', 'a', 
-'t', 't', 'e', 'r', 's', 'B', '\r', '\n', '\006', 'f', 'o', 'r', 'm', 'a', 't', '\022', '\003', '\370', 'B', '\001', 'B', 'M', '\n', '\"', 'i', 
-'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', 
-'.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\035', 'S', 'u', 'b', 's', 't', 'i', 't', 'u', 't', 'i', 'o', 'n', 'F', 'o', 'r', 
-'m', 'a', 't', 'S', 't', 'r', 'i', 'n', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', 
-'\006', 'p', 'r', 'o', 't', 'o', '3', 
+'t', 't', 'e', 'r', 's', 'B', '\r', '\n', '\006', 'f', 'o', 'r', 'm', 'a', 't', '\022', '\003', '\370', 'B', '\001', 'B', '\221', '\001', '\n', '\"', 
+'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 
+'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', 'B', '\035', 'S', 'u', 'b', 's', 't', 'i', 't', 'u', 't', 'i', 'o', 'n', 'F', 'o', 
+'r', 'm', 'a', 't', 'S', 't', 'r', 'i', 'n', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'B', 'g', 'i', 't', 'h', 'u', 'b', 
+'.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 
+'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', 
+'/', 'v', '3', ';', 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', 
+'3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_core_v3_extension_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
@@ -59,9 +62,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_config_core_v3_substitution_format_string_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_core_v3_substitution_format_string_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_substitution_format_string_proto_upb_file_layout,
   "envoy/config/core/v3/substitution_format_string.proto",
-  UPB_STRVIEW_INIT(descriptor, 757)
+  UPB_STRINGVIEW_INIT(descriptor, 826)
 };

@@ -122,7 +122,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
-                      const ServerAddressList& addresses,
+                      const absl::StatusOr<ServerAddressList>& addresses,
                       const grpc_channel_args* args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -441,7 +441,8 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const ServerAddressList& addresses, const grpc_channel_args* args) {
+    const absl::StatusOr<ServerAddressList>& addresses,
+    const grpc_channel_args* args) {
   if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -486,7 +487,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() +
-                      GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS,
+                      Duration::Milliseconds(
+                          GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS),
                   &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }

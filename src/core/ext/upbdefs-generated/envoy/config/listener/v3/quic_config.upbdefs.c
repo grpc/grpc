@@ -10,15 +10,15 @@
 #include "envoy/config/listener/v3/quic_config.upbdefs.h"
 #include "envoy/config/listener/v3/quic_config.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_protocol_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[1107] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_extension_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_protocol_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[1184] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'q', 'u', 'i', 'c', '_', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 
 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 
 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 'p', 'r', 
@@ -59,13 +59,16 @@ static const char descriptor[1107] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', '
 'n', 's', 'i', 'o', 'n', 'C', 'o', 'n', 'f', 'i', 'g', 'R', '\021', 'p', 'r', 'o', 'o', 'f', 'S', 'o', 'u', 'r', 'c', 'e', 'C', 
 'o', 'n', 'f', 'i', 'g', ':', '0', '\232', '\305', '\210', '\036', '+', '\n', ')', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', 
 '2', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'Q', 'u', 'i', 'c', 'P', 'r', 'o', 't', 'o', 'c', 'o', 'l', 'O', 'p', 
-'t', 'i', 'o', 'n', 's', 'B', 'C', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 
-'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', 'B', '\017', 'Q', 
-'u', 'i', 'c', 'C', 'o', 'n', 'f', 'i', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', 
-'\006', 'p', 'r', 'o', 't', 'o', '3', 
+'t', 'i', 'o', 'n', 's', 'B', '\217', '\001', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 
+'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', 'B', '\017', 
+'Q', 'u', 'i', 'c', 'C', 'o', 'n', 'f', 'i', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'J', 'g', 'i', 't', 'h', 'u', 'b', 
+'.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 
+'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 
+'e', 'n', 'e', 'r', '/', 'v', '3', ';', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', 
+'\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[9] = {
+static _upb_DefPool_Init *deps[9] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_core_v3_extension_proto_upbdefinit,
   &envoy_config_core_v3_protocol_proto_upbdefinit,
@@ -77,9 +80,9 @@ static upb_def_init *deps[9] = {
   NULL
 };
 
-upb_def_init envoy_config_listener_v3_quic_config_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_listener_v3_quic_config_proto_upbdefinit = {
   deps,
   &envoy_config_listener_v3_quic_config_proto_upb_file_layout,
   "envoy/config/listener/v3/quic_config.proto",
-  UPB_STRVIEW_INIT(descriptor, 1107)
+  UPB_STRINGVIEW_INIT(descriptor, 1184)
 };

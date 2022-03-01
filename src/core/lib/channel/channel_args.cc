@@ -23,15 +23,14 @@
 #include <limits.h>
 #include <string.h>
 
+#include <map>
 #include <vector>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -71,22 +70,6 @@ grpc_channel_args* grpc_channel_args_copy_and_remove(
     size_t num_to_remove) {
   return grpc_channel_args_copy_and_add_and_remove(src, to_remove,
                                                    num_to_remove, nullptr, 0);
-}
-
-grpc_channel_args* grpc_channel_args_remove_grpc_internal(
-    const grpc_channel_args* src) {
-  if (src == nullptr) return nullptr;
-  // Create result.
-  grpc_channel_args* dst =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  dst->args =
-      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
-  dst->num_args = 0;
-  for (size_t i = 0; i < src->num_args; ++i) {
-    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
-    dst->args[dst->num_args++] = copy_arg(&src->args[i]);
-  }
-  return dst;
 }
 
 static bool should_remove_arg(const grpc_arg* arg, const char** to_remove,
@@ -384,6 +367,82 @@ std::string grpc_channel_args_string(const grpc_channel_args* args) {
   }
   return absl::StrJoin(arg_strings, ", ");
 }
+
+namespace grpc_core {
+const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
+  if (src == nullptr) return nullptr;
+  // Create result.
+  grpc_channel_args* dst =
+      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
+  dst->args =
+      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
+  dst->num_args = 0;
+  for (size_t i = 0; i < src->num_args; ++i) {
+    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
+    dst->args[dst->num_args++] = copy_arg(&src->args[i]);
+  }
+  return dst;
+}
+
+const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
+  if (src == nullptr) return nullptr;
+  std::map<absl::string_view, const grpc_arg*> values;
+  std::map<absl::string_view, std::vector<std::string>> concatenated_values;
+  for (size_t i = 0; i < src->num_args; i++) {
+    absl::string_view key = src->args[i].key;
+    // User-agent strings were traditionally multi-valued and concatenated.
+    // We preserve this behavior for backwards compatibility.
+    if (key == GRPC_ARG_PRIMARY_USER_AGENT_STRING ||
+        key == GRPC_ARG_SECONDARY_USER_AGENT_STRING) {
+      if (src->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                std::string(key).c_str());
+      } else {
+        concatenated_values[key].push_back(src->args[i].value.string);
+      }
+      continue;
+    }
+    auto it = values.find(key);
+    if (it == values.end()) {
+      values[key] = &src->args[i];
+    } else {
+      // Traditional grpc_channel_args_find behavior was to pick the first
+      // value.
+      // For compatibility with existing users, we will do the same here.
+    }
+  }
+  if (values.size() + concatenated_values.size() == src->num_args) {
+    return grpc_channel_args_copy(src);
+  }
+  // Concatenate the concatenated values.
+  std::map<absl::string_view, std::string> concatenated_values_str;
+  for (const auto& concatenated_value : concatenated_values) {
+    concatenated_values_str[concatenated_value.first] =
+        absl::StrJoin(concatenated_value.second, " ");
+  }
+  // Create the result
+  std::vector<grpc_arg> argv;
+  argv.reserve(values.size());
+  for (const auto& a : values) {
+    argv.push_back(*a.second);
+  }
+  for (const auto& a : concatenated_values_str) {
+    argv.push_back(
+        grpc_channel_arg_string_create(const_cast<char*>(a.first.data()),
+                                       const_cast<char*>(a.second.c_str())));
+  }
+  grpc_channel_args args = {argv.size(), argv.data()};
+  // Log that we're mutating things
+  gpr_log(GPR_INFO,
+          "Uniquification pass on channel args is mutating them: {%s} is being "
+          "changed to {%s}",
+          grpc_channel_args_string(src).c_str(),
+          grpc_channel_args_string(&args).c_str());
+  // Return the result (note we need to copy because we're borrowing the args
+  // from src still!)
+  return grpc_channel_args_copy(&args);
+}
+}  // namespace grpc_core
 
 namespace {
 grpc_channel_args_client_channel_creation_mutator g_mutator = nullptr;

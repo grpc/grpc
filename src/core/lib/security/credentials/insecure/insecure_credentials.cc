@@ -18,19 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
 namespace grpc_core {
 namespace {
 
-constexpr char kCredentialsTypeInsecure[] = "insecure";
-
 class InsecureCredentials final : public grpc_channel_credentials {
  public:
-  InsecureCredentials() : grpc_channel_credentials(kCredentialsTypeInsecure) {}
+  InsecureCredentials()
+      : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_INSECURE) {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds,
@@ -39,12 +36,18 @@ class InsecureCredentials final : public grpc_channel_credentials {
     return MakeRefCounted<InsecureChannelSecurityConnector>(
         Ref(), std::move(call_creds));
   }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
+    // All insecure credentials objects should compare equal.
+    return 0;
+  }
 };
 
 class InsecureServerCredentials final : public grpc_server_credentials {
  public:
   InsecureServerCredentials()
-      : grpc_server_credentials(kCredentialsTypeInsecure) {}
+      : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_INSECURE) {}
 
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
       const grpc_channel_args* /* args */) override {
@@ -56,7 +59,10 @@ class InsecureServerCredentials final : public grpc_server_credentials {
 }  // namespace grpc_core
 
 grpc_channel_credentials* grpc_insecure_credentials_create() {
-  return new grpc_core::InsecureCredentials();
+  // Create a singleton object for InsecureCredentials so that channels to the
+  // same target with InsecureCredentials can reuse the subchannels.
+  static auto* creds = new grpc_core::InsecureCredentials();
+  return creds->Ref().release();
 }
 
 grpc_server_credentials* grpc_insecure_server_credentials_create() {

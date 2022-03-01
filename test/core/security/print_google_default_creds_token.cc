@@ -37,7 +37,7 @@ typedef struct {
   grpc_polling_entity pops;
   bool is_done;
 
-  grpc_credentials_mdelem_array md_array;
+  grpc_core::CredentialsMetadataArray md_array;
   grpc_closure on_request_metadata;
 } synchronizer;
 
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
-                              GRPC_MILLIS_INF_FUTURE)))
+                              grpc_core::Timestamp::InfFuture())))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();

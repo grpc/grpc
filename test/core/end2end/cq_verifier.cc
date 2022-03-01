@@ -166,13 +166,13 @@ int raw_byte_buffer_eq_slice(grpc_byte_buffer* rbb, grpc_slice b) {
 }
 
 int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
+  if (bb == nullptr) return 0;
   if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
-    GPR_ASSERT(grpc_msg_decompress(
-        grpc_compression_algorithm_to_message_compression_algorithm(
-            bb->data.raw.compression),
-        &bb->data.raw.slice_buffer, &decompressed_buffer));
+    GPR_ASSERT(grpc_msg_decompress(bb->data.raw.compression,
+                                   &bb->data.raw.slice_buffer,
+                                   &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
         decompressed_buffer.slices, decompressed_buffer.count);
     int ret_val = raw_byte_buffer_eq_slice(rbb, b);
@@ -285,7 +285,7 @@ void cq_verify(cq_verifier* v, int timeout_sec) {
 
 void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
   gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 

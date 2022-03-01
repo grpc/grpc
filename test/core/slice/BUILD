@@ -82,24 +82,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:slice",
+        "//test/core/util:build",
         "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "slice_intern_test",
-    srcs = ["slice_intern_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
     ],
 )
 

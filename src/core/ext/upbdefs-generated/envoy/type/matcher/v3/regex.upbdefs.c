@@ -10,12 +10,12 @@
 #include "envoy/type/matcher/v3/regex.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[822] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'r', 
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[895] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'r', 
 'e', 'g', 'e', 'x', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 
 't', 'c', 'h', 'e', 'r', '.', 'v', '3', '\032', '\036', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', 
 '/', 'w', 'r', 'a', 'p', 'p', 'e', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\032', '#', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 
@@ -45,12 +45,15 @@ static const char descriptor[822] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 't
 'i', 't', 'u', 't', 'i', 'o', 'n', '\030', '\002', ' ', '\001', '(', '\t', 'R', '\014', 's', 'u', 'b', 's', 't', 'i', 't', 'u', 't', 'i', 
 'o', 'n', ':', '1', '\232', '\305', '\210', '\036', ',', '\n', '*', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 
 'c', 'h', 'e', 'r', '.', 'R', 'e', 'g', 'e', 'x', 'M', 'a', 't', 'c', 'h', 'A', 'n', 'd', 'S', 'u', 'b', 's', 't', 'i', 't', 
-'u', 't', 'e', 'B', ';', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 
-'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 'e', 'r', '.', 'v', '3', 'B', '\n', 'R', 'e', 'g', 'e', 'x', 'P', 
-'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'u', 't', 'e', 'B', '\203', '\001', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 
+'o', 'y', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 'e', 'r', '.', 'v', '3', 'B', '\n', 'R', 'e', 'g', 'e', 'x', 
+'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'F', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 
+'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 
+'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', ';', 'm', 'a', 't', 'c', 'h', 
+'e', 'r', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[6] = {
+static _upb_DefPool_Init *deps[6] = {
   &google_protobuf_wrappers_proto_upbdefinit,
   &envoy_annotations_deprecation_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
@@ -59,9 +62,9 @@ static upb_def_init *deps[6] = {
   NULL
 };
 
-upb_def_init envoy_type_matcher_v3_regex_proto_upbdefinit = {
+_upb_DefPool_Init envoy_type_matcher_v3_regex_proto_upbdefinit = {
   deps,
   &envoy_type_matcher_v3_regex_proto_upb_file_layout,
   "envoy/type/matcher/v3/regex.proto",
-  UPB_STRVIEW_INIT(descriptor, 822)
+  UPB_STRINGVIEW_INIT(descriptor, 895)
 };

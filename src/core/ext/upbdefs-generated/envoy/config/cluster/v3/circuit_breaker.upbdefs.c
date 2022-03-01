@@ -10,13 +10,13 @@
 #include "envoy/config/cluster/v3/circuit_breaker.upbdefs.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[1364] = {'\n', '-', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[1439] = {'\n', '-', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
 '/', 'c', 'i', 'r', 'c', 'u', 'i', 't', '_', 'b', 'r', 'e', 'a', 'k', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 
 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', '\037', 'e', 
 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 's', 'e', '.', 
@@ -67,13 +67,16 @@ static const char descriptor[1364] = {'\n', '-', 'e', 'n', 'v', 'o', 'y', '/', '
 'i', '.', 'v', '2', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'C', 'i', 'r', 'c', 'u', 'i', 't', 'B', 'r', 'e', 'a', 'k', 
 'e', 'r', 's', '.', 'T', 'h', 'r', 'e', 's', 'h', 'o', 'l', 'd', 's', ':', '+', '\232', '\305', '\210', '\036', '&', '\n', '$', 'e', 'n', 
 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 'v', '2', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'C', 'i', 'r', 'c', 'u', 'i', 
-'t', 'B', 'r', 'e', 'a', 'k', 'e', 'r', 's', 'B', 'F', '\n', '%', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 
-'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', 
-'B', '\023', 'C', 'i', 'r', 'c', 'u', 'i', 't', 'B', 'r', 'e', 'a', 'k', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', 
+'t', 'B', 'r', 'e', 'a', 'k', 'e', 'r', 's', 'B', '\220', '\001', '\n', '%', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 
+'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', 
+'3', 'B', '\023', 'C', 'i', 'r', 'c', 'u', 'i', 't', 'B', 'r', 'e', 'a', 'k', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 
+'H', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', 
+'-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 
+'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', ';', 'c', 'l', 'u', 's', 't', 'e', 'r', 'v', '3', '\272', '\200', 
 '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_type_v3_percent_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
@@ -83,9 +86,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit = {
   deps,
   &envoy_config_cluster_v3_circuit_breaker_proto_upb_file_layout,
   "envoy/config/cluster/v3/circuit_breaker.proto",
-  UPB_STRVIEW_INIT(descriptor, 1364)
+  UPB_STRINGVIEW_INIT(descriptor, 1439)
 };

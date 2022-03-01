@@ -35,7 +35,8 @@ struct Chttp2InsecureFullstackFixtureData {
 };
 
 grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
-    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
+    const grpc_channel_args* /*client_args*/,
+    const grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   Chttp2InsecureFullstackFixtureData* ffd =
@@ -50,12 +51,11 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
 }
 
 void Chttp2InitClientInsecureFullstack(grpc_end2end_test_fixture* f,
-                                       grpc_channel_args* client_args) {
+                                       const grpc_channel_args* client_args) {
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
@@ -69,7 +69,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
 }
 
 void Chttp2InitServerInsecureFullstack(grpc_end2end_test_fixture* f,
-                                       grpc_channel_args* server_args) {
+                                       const grpc_channel_args* server_args) {
   Chttp2InsecureFullstackFixtureData* ffd =
       static_cast<Chttp2InsecureFullstackFixtureData*>(f->fixture_data);
   if (f->server) {
@@ -86,8 +86,8 @@ void Chttp2InitServerInsecureFullstack(grpc_end2end_test_fixture* f,
     grpc_server_credentials_set_auth_metadata_processor(server_creds,
                                                         processor);
   }
-  GPR_ASSERT(grpc_server_add_secure_http2_port(
-      f->server, ffd->localaddr.c_str(), server_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }

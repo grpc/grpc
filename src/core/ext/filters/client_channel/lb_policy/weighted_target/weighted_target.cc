@@ -48,7 +48,7 @@ constexpr char kWeightedTarget[] = "weighted_target_experimental";
 
 // How long we keep a child around for after it has been removed from
 // the config.
-constexpr int kChildRetentionIntervalMs = 15 * 60 * 1000;
+constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 
 // Config for weighted_target LB policy.
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
@@ -123,7 +123,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
-                      ServerAddressList addresses,
+                      absl::StatusOr<ServerAddressList> addresses,
                       const grpc_channel_args* args);
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -296,13 +296,18 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Update all children.
-  HierarchicalAddressMap address_map =
+  absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
-    targets_[name]->UpdateLocked(config, std::move(address_map[name]),
-                                 args.args);
+    absl::StatusOr<ServerAddressList> addresses;
+    if (address_map.ok()) {
+      addresses = std::move((*address_map)[name]);
+    } else {
+      addresses = address_map.status();
+    }
+    targets_[name]->UpdateLocked(config, std::move(addresses), args.args);
   }
   UpdateStateLocked();
 }
@@ -473,7 +478,8 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    ServerAddressList addresses, const grpc_channel_args* args) {
+    absl::StatusOr<ServerAddressList> addresses,
+    const grpc_channel_args* args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
@@ -558,7 +564,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
   delayed_removal_timer_callback_pending_ = true;
   grpc_timer_init(&delayed_removal_timer_,
-                  ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
+                  ExecCtx::Get()->Now() + kChildRetentionInterval,
                   &on_delayed_removal_timer_);
 }
 

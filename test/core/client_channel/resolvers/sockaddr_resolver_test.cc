@@ -18,30 +18,28 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
-
-  void ReturnError(grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {}
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -64,7 +62,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
 static void test_fails(grpc_core::ResolverFactory* factory,
                        const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -87,10 +85,12 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  grpc_core::ResolverFactory* ipv4 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
-  grpc_core::ResolverFactory* ipv6 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
+  grpc_core::ResolverFactory* ipv4 = grpc_core::CoreConfiguration::Get()
+                                         .resolver_registry()
+                                         .LookupResolverFactory("ipv4");
+  grpc_core::ResolverFactory* ipv6 = grpc_core::CoreConfiguration::Get()
+                                         .resolver_registry()
+                                         .LookupResolverFactory("ipv6");
 
   test_fails(ipv4, "ipv4:10.2.1.1");
   test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
@@ -107,10 +107,13 @@ int main(int argc, char** argv) {
   test_fails(ipv6, "ipv6:www.google.com");
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  grpc_core::ResolverFactory* uds =
-      grpc_core::ResolverRegistry::LookupResolverFactory("unix");
+  grpc_core::ResolverFactory* uds = grpc_core::CoreConfiguration::Get()
+                                        .resolver_registry()
+                                        .LookupResolverFactory("unix");
   grpc_core::ResolverFactory* uds_abstract =
-      grpc_core::ResolverRegistry::LookupResolverFactory("unix-abstract");
+      grpc_core::CoreConfiguration::Get()
+          .resolver_registry()
+          .LookupResolverFactory("unix-abstract");
 
   test_succeeds(uds, "unix:///tmp/sockaddr_resolver_test");
   test_succeeds(uds_abstract, "unix-abstract:sockaddr_resolver_test");

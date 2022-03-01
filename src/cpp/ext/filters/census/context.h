@@ -126,15 +126,12 @@ uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info);
 // Returns a string representation of the StatusCode enum.
 absl::string_view StatusCodeToString(grpc_status_code code);
 
-inline absl::string_view GetMethod(const grpc_slice* path) {
-  if (GRPC_SLICE_IS_EMPTY(*path)) {
+inline absl::string_view GetMethod(const grpc_core::Slice& path) {
+  if (path.empty()) {
     return "";
   }
   // Check for leading '/' and trim it if present.
-  return absl::StripPrefix(absl::string_view(reinterpret_cast<const char*>(
-                                                 GRPC_SLICE_START_PTR(*path)),
-                                             GRPC_SLICE_LENGTH(*path)),
-                           "/");
+  return absl::StripPrefix(path.as_string_view(), "/");
 }
 
 }  // namespace grpc

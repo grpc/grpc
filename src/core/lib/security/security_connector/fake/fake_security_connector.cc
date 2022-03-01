@@ -29,13 +29,12 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
-#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -107,10 +106,8 @@ class grpc_fake_channel_security_connector final
         tsi_create_fake_handshaker(/*is_client=*/true), this, args));
   }
 
-  bool check_call_host(absl::string_view host,
-                       grpc_auth_context* /*auth_context*/,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* /*error*/) override {
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context*) override {
     absl::string_view authority_hostname;
     absl::string_view authority_ignored_port;
     absl::string_view target_hostname;
@@ -136,12 +133,7 @@ class grpc_fake_channel_security_connector final
               target_);
       abort();
     }
-    return true;
-  }
-
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
+    return grpc_core::ImmediateOkStatus();
   }
 
   char* target() const { return target_; }

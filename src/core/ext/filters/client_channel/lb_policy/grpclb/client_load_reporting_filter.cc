@@ -102,14 +102,10 @@ static void clr_start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     // Grab client stats object from metadata.
     auto client_stats_md =
-        batch->payload->send_initial_metadata.send_initial_metadata->Remove(
-            grpc_slice_from_static_string(
-                grpc_core::kGrpcLbClientStatsMetadataKey));
+        batch->payload->send_initial_metadata.send_initial_metadata->Take(
+            grpc_core::GrpcLbClientStatsMetadata());
     if (client_stats_md.has_value()) {
-      grpc_core::GrpcLbClientStats* client_stats =
-          const_cast<grpc_core::GrpcLbClientStats*>(
-              reinterpret_cast<const grpc_core::GrpcLbClientStats*>(
-                  GRPC_SLICE_START_PTR(*client_stats_md)));
+      grpc_core::GrpcLbClientStats* client_stats = *client_stats_md;
       if (client_stats != nullptr) {
         calld->client_stats.reset(client_stats);
         // Intercept completion.
@@ -136,6 +132,7 @@ static void clr_start_transport_stream_op_batch(
 
 const grpc_channel_filter grpc_client_load_reporting_filter = {
     clr_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(call_data),
     clr_init_call_elem,

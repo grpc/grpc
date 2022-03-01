@@ -26,9 +26,14 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/util/parse_hexstring.h"
 #include "test/core/util/slice_splitter.h"
 #include "test/core/util/test_config.h"
+
+static auto* g_memory_allocator = new grpc_core::MemoryAllocator(
+    grpc_core::ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+        "test"));
 
 struct TestInput {
   const char* input;
@@ -67,7 +72,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
 
   void TestVector(grpc_slice_split_mode mode, const char* hexstring,
                   std::string expect) {
-    auto arena = grpc_core::MakeScopedArena(1024);
+    auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
     grpc_core::ExecCtx exec_ctx;
     grpc_slice input = parse_hexstring(hexstring);
     grpc_slice* slices;
@@ -110,15 +115,15 @@ class ParseTest : public ::testing::TestWithParam<Test> {
    public:
     std::string result() { return out_; }
 
-    void Encode(grpc_mdelem elem) {
-      out_.append(absl::StrCat(
-          grpc_core::StringViewFromSlice(GRPC_MDKEY(elem)), ": ",
-          grpc_core::StringViewFromSlice(GRPC_MDVALUE(elem)), "\n"));
+    void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+      out_.append(absl::StrCat(key.as_string_view(), ": ",
+                               value.as_string_view(), "\n"));
     }
 
     template <typename T, typename V>
-    void Encode(T, V) {
-      abort();  // not implemented
+    void Encode(T, const V& v) {
+      out_.append(
+          absl::StrCat(T::key(), ": ", T::Encode(v).as_string_view(), "\n"));
     }
 
    private:
@@ -164,24 +169,24 @@ INSTANTIATE_TEST_SUITE_P(
                  /* D.3.1 */
                  {"8286 8441 0f77 7777 2e65 7861 6d70 6c65"
                   "2e63 6f6d",
-                  ":method: GET\n"
-                  ":scheme: http\n"
-                  ":path: /\n"
-                  ":authority: www.example.com\n"},
-                 /* D.3.2 */
-                 {"8286 84be 5808 6e6f 2d63 6163 6865",
-                  ":method: GET\n"
-                  ":scheme: http\n"
                   ":path: /\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"},
+                 /* D.3.2 */
+                 {"8286 84be 5808 6e6f 2d63 6163 6865",
+                  ":path: /\n"
+                  ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"
                   "cache-control: no-cache\n"},
                  /* D.3.3 */
                  {"8287 85bf 400a 6375 7374 6f6d 2d6b 6579"
                   "0c63 7573 746f 6d2d 7661 6c75 65",
-                  ":method: GET\n"
-                  ":scheme: https\n"
                   ":path: /index.html\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: https\n"
                   "custom-key: custom-value\n"},
              }},
         Test{{},
@@ -189,24 +194,24 @@ INSTANTIATE_TEST_SUITE_P(
                  /* D.4.1 */
                  {"8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
                   "ff",
-                  ":method: GET\n"
-                  ":scheme: http\n"
-                  ":path: /\n"
-                  ":authority: www.example.com\n"},
-                 /* D.4.2 */
-                 {"8286 84be 5886 a8eb 1064 9cbf",
-                  ":method: GET\n"
-                  ":scheme: http\n"
                   ":path: /\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"},
+                 /* D.4.2 */
+                 {"8286 84be 5886 a8eb 1064 9cbf",
+                  ":path: /\n"
+                  ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: http\n"
                   "cache-control: no-cache\n"},
                  /* D.4.3 */
                  {"8287 85bf 4088 25a8 49e9 5ba9 7d7f 8925"
                   "a849 e95b b8e8 b4bf",
-                  ":method: GET\n"
-                  ":scheme: https\n"
                   ":path: /index.html\n"
                   ":authority: www.example.com\n"
+                  ":method: GET\n"
+                  ":scheme: https\n"
                   "custom-key: custom-value\n"},
              }},
         Test{{256},

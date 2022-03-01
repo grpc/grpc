@@ -49,35 +49,32 @@ const char* kXdsChannelStackModifierChannelArgName =
 
 }  // namespace
 
-bool XdsChannelStackModifier::ModifyChannelStack(
-    grpc_channel_stack_builder* builder) {
+bool XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder* builder) {
   // Insert the filters after the census filter if present.
-  grpc_channel_stack_builder_iterator* it =
-      grpc_channel_stack_builder_create_iterator_at_first(builder);
-  while (grpc_channel_stack_builder_move_next(it)) {
-    if (grpc_channel_stack_builder_iterator_is_end(it)) break;
-    const char* filter_name_at_it =
-        grpc_channel_stack_builder_iterator_filter_name(it);
+  auto it = builder->mutable_stack()->begin();
+  while (it != builder->mutable_stack()->end()) {
+    const char* filter_name_at_it = it->filter->name;
     if (strcmp("census_server", filter_name_at_it) == 0 ||
         strcmp("opencensus_server", filter_name_at_it) == 0) {
       break;
     }
+    ++it;
   }
-  if (grpc_channel_stack_builder_iterator_is_end(it)) {
+  if (it == builder->mutable_stack()->end()) {
     // No census filter found. Reset iterator to the beginning. This will result
     // in prepending the list of xDS HTTP filters to the current stack. Note
     // that this stage is run before the stage that adds the top server filter,
     // resulting in these filters being finally placed after the `server`
     // filter.
-    grpc_channel_stack_builder_iterator_destroy(it);
-    it = grpc_channel_stack_builder_create_iterator_at_first(builder);
+    it = builder->mutable_stack()->begin();
+  } else {
+    ++it;
   }
-  GPR_ASSERT(grpc_channel_stack_builder_move_next(it));
   for (const grpc_channel_filter* filter : filters_) {
-    GPR_ASSERT(grpc_channel_stack_builder_add_filter_before(it, filter, nullptr,
-                                                            nullptr));
+    it = builder->mutable_stack()->insert(
+        it, ChannelStackBuilder::StackEntry{filter, nullptr});
+    ++it;
   }
-  grpc_channel_stack_builder_iterator_destroy(it);
   return true;
 }
 
@@ -98,10 +95,10 @@ XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
 
 void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](grpc_channel_stack_builder* builder) {
+      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
         RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier =
             XdsChannelStackModifier::GetFromChannelArgs(
-                *grpc_channel_stack_builder_get_channel_arguments(builder));
+                *builder->channel_args());
         if (channel_stack_modifier != nullptr) {
           return channel_stack_modifier->ModifyChannelStack(builder);
         }

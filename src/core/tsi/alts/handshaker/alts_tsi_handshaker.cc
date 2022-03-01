@@ -26,6 +26,7 @@
 
 #include "upb/upb.hpp"
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -276,13 +277,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid identity");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview peer_service_account =
+  upb_StringView peer_service_account =
       grpc_gcp_Identity_service_account(identity);
   if (peer_service_account.size == 0) {
     gpr_log(GPR_ERROR, "Invalid peer service account");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview key_data = grpc_gcp_HandshakerResult_key_data(hresult);
+  upb_StringView key_data = grpc_gcp_HandshakerResult_key_data(hresult);
   if (key_data.size < kAltsAes128GcmRekeyKeyLength) {
     gpr_log(GPR_ERROR, "Bad key length");
     return TSI_FAILED_PRECONDITION;
@@ -293,13 +294,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Peer does not set RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview application_protocol =
+  upb_StringView application_protocol =
       grpc_gcp_HandshakerResult_application_protocol(hresult);
   if (application_protocol.size == 0) {
     gpr_log(GPR_ERROR, "Invalid application protocol");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview record_protocol =
+  upb_StringView record_protocol =
       grpc_gcp_HandshakerResult_record_protocol(hresult);
   if (record_protocol.size == 0) {
     gpr_log(GPR_ERROR, "Invalid record protocol");
@@ -311,7 +312,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid local identity");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview local_service_account =
+  upb_StringView local_service_account =
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
@@ -350,14 +351,14 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   if (grpc_gcp_Identity_has_attributes(identity)) {
-    size_t iter = UPB_MAP_BEGIN;
+    size_t iter = kUpb_Map_Begin;
     grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
         grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
     while (peer_attributes_entry != nullptr) {
-      upb_strview key = grpc_gcp_Identity_AttributesEntry_key(
+      upb_StringView key = grpc_gcp_Identity_AttributesEntry_key(
           const_cast<grpc_gcp_Identity_AttributesEntry*>(
               peer_attributes_entry));
-      upb_strview val = grpc_gcp_Identity_AttributesEntry_value(
+      upb_StringView val = grpc_gcp_Identity_AttributesEntry_value(
           const_cast<grpc_gcp_Identity_AttributesEntry*>(
               peer_attributes_entry));
       grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
@@ -497,8 +498,15 @@ static void alts_tsi_handshaker_create_channel(
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
   GPR_ASSERT(handshaker->channel == nullptr);
-  handshaker->channel = grpc_insecure_channel_create(
-      next_args->handshaker->handshaker_service_url, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  // Disable retries so that we quickly get a signal when the
+  // handshake server is not reachable.
+  grpc_arg disable_retries_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0);
+  grpc_channel_args args = {1, &disable_retries_arg};
+  handshaker->channel = grpc_channel_create(
+      next_args->handshaker->handshaker_service_url, creds, &args);
+  grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(
           handshaker, next_args->received_bytes.get(),
