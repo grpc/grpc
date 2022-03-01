@@ -648,6 +648,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
   absl::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
     absl::optional<uint64_t> new_hash;
+    std::string new_hash_string;
     switch (hash_policy.type) {
       case XdsRouteConfigResource::Route::RouteAction::HashPolicy::HEADER:
         new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
@@ -655,6 +656,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       case XdsRouteConfigResource::Route::RouteAction::HashPolicy::CHANNEL_ID:
         new_hash =
             static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver_.get()));
+        new_hash_string = absl::StrCat(new_hash.value());
+        new_hash = XXH64(new_hash_string.c_str(), new_hash_string.size(), 0);
         break;
       default:
         GPR_ASSERT(0);
