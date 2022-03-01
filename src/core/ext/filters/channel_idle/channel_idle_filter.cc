@@ -109,7 +109,7 @@ MaxAgeConfig GetMaxAgeConfig(const grpc_channel_args* args) {
   const double max_age = multiplier * args_max_age;
   /* GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
      will not be cast to int implicitly before the comparison. */
-  return MaxAgeConfig{Duration::FromSecondsAsDouble(max_age * 1000.0),
+  return MaxAgeConfig{Duration::FromSecondsAsDouble(max_age / 1000.0),
                       args_max_idle == INT_MAX
                           ? Duration::Infinity()
                           : Duration::Milliseconds(args_max_idle),
