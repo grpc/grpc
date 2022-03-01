@@ -730,12 +730,8 @@ grpc_error_handle RouteActionParse(
             std::move(cluster_name));
   } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                  route_action)) {
-    route->action =
-        std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>(
-            {});
-    auto& action_weighted_clusters = absl::get<
-        XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
-        route->action);
+    std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
+        action_weighted_clusters;
     const envoy_config_route_v3_WeightedCluster* weighted_cluster =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action);
     uint32_t total_weight = 100;
@@ -792,6 +788,9 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
+    route->action =
+        std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>(
+            std::move(action_weighted_clusters));
   } else if (XdsRlsEnabled() &&
              envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {
@@ -1031,12 +1030,11 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           route_action.retry_policy = virtual_host_retry_policy;
         }
         // Mark off plugins used in route action.
-        if (route_action.action.index() ==
-            XdsRouteConfigResource::Route::RouteAction::
-                kClusterSpecifierPluginIndex) {
-          cluster_specifier_plugins.erase(
-              absl::get<XdsRouteConfigResource::Route::RouteAction::
-                            kClusterSpecifierPluginIndex>(route_action.action));
+        std::string* cluster_specifier_action =
+            absl::get_if<XdsRouteConfigResource::Route::RouteAction::
+                             kClusterSpecifierPluginIndex>(&route_action.action);
+        if (cluster_specifier_action != nullptr) {
+          cluster_specifier_plugins.erase(*cluster_specifier_action);
         }
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {

@@ -128,8 +128,6 @@ struct XdsRouteConfigResource {
       absl::optional<RetryPolicy> retry_policy;
 
       // Action for this route.
-      // TODO(roth): When we can use absl::variant<>, consider using that
-      // here, to enforce the fact that only one of the two fields can be set.
       static constexpr size_t kClusterIndex = 0;
       static constexpr size_t kWeightedClustersIndex = 1;
       static constexpr size_t kClusterSpecifierPluginIndex = 2;
