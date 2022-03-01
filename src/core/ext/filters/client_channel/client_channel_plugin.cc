@@ -42,12 +42,10 @@ void grpc_client_channel_init(void) {
   grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
   grpc_core::ProxyMapperRegistry::Init();
   grpc_core::RegisterHttpProxyMapper();
-  grpc_core::GlobalSubchannelPool::Init();
   grpc_client_channel_global_init_backup_polling();
 }
 
 void grpc_client_channel_shutdown(void) {
-  grpc_core::GlobalSubchannelPool::Shutdown();
   grpc_core::ProxyMapperRegistry::Shutdown();
   grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
 }
