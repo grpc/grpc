@@ -67,6 +67,7 @@ class Timestamp {
 
   // Construct a Timestamp from a gpr_cycle_counter.
   static Timestamp FromCycleCounterRoundUp(gpr_cycle_counter c);
+  static Timestamp FromCycleCounterRoundDown(gpr_cycle_counter c);
 
   static constexpr Timestamp FromMillisecondsAfterProcessEpoch(int64_t millis) {
     return Timestamp(millis);

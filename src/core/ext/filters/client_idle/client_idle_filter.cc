@@ -84,7 +84,7 @@ class ClientIdleFilter : public ChannelFilter {
 
  private:
   ClientIdleFilter(grpc_channel_stack* channel_stack,
-                   grpc_millis client_idle_timeout)
+                   Duration client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
 

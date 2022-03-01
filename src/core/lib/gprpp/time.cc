@@ -145,6 +145,11 @@ Timestamp Timestamp::FromCycleCounterRoundUp(gpr_cycle_counter c) {
       TimespanToMillisRoundUp(gpr_cycle_counter_sub(c, StartCycleCounter())));
 }
 
+Timestamp Timestamp::FromCycleCounterRoundDown(gpr_cycle_counter c) {
+  return Timestamp::FromMillisecondsAfterProcessEpoch(
+      TimespanToMillisRoundDown(gpr_cycle_counter_sub(c, StartCycleCounter())));
+}
+
 gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
   return MillisecondsAsTimespec(millis_, clock_type);
 }
