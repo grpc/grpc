@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_impl.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -121,8 +122,9 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     const char* name,
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
-  grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  grpc_core::ResolverFactory* factory = grpc_core::CoreConfiguration::Get()
+                                            .resolver_registry()
+                                            .LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(name);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());

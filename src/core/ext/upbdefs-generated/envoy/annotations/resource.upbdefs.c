@@ -10,7 +10,7 @@
 #include "envoy/annotations/resource.upbdefs.h"
 #include "envoy/annotations/resource.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 static const char descriptor[300] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'r', 'e', 's', 'o', 'u', 
 'r', 'c', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\021', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 
 'o', 'n', 's', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 'e', 's', 'c', 
@@ -25,14 +25,14 @@ static const char descriptor[300] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a
 'e', 'n', 'v', 'o', 'y', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_annotations_resource_proto_upbdefinit = {
+_upb_DefPool_Init envoy_annotations_resource_proto_upbdefinit = {
   deps,
   &envoy_annotations_resource_proto_upb_file_layout,
   "envoy/annotations/resource.proto",
-  UPB_STRVIEW_INIT(descriptor, 300)
+  UPB_STRINGVIEW_INIT(descriptor, 300)
 };

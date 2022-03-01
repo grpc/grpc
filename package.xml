@@ -230,7 +230,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_decoder.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/bin_encoder.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/chttp2_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/context_list.cc" role="src" />
@@ -961,6 +960,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/capture.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/construct_destruct.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/cpp_impl_of.h" role="src" />
@@ -1113,6 +1113,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolved_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.h" role="src" />
@@ -1192,6 +1193,9 @@
     <file baseinstalldir="/" name="src/core/lib/promise/promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/race.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/seq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/sleep.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/sleep.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resolver/resolver_factory.h" role="src" />
@@ -1322,9 +1326,10 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_impl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/b64.cc" role="src" />
@@ -2323,6 +2328,10 @@
     <file baseinstalldir="/" name="third_party/re2/util/test.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/naive.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-neon.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-sse.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode_fast.c" role="src" />

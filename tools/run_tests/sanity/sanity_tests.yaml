@@ -42,4 +42,4 @@
 - script: tools/distrib/check_boringssl_prefix_symbol.sh
 - script: tools/run_tests/sanity/build_banned_constructs.sh
 - script: tools/distrib/check_redundant_namespace_qualifiers.py
-
+- script: tools/distrib/check_namespace_qualification.py

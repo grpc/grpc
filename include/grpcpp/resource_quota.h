@@ -31,7 +31,7 @@ namespace grpc {
 /// or a client channel (via \a ChannelArguments).
 /// gRPC will attempt to keep memory and threads used by all attached entities
 /// below the ResourceQuota bound.
-class ResourceQuota final : private ::grpc::GrpcLibraryCodegen {
+class ResourceQuota final : private grpc::GrpcLibraryCodegen {
  public:
   /// \param name - a unique name for this ResourceQuota.
   explicit ResourceQuota(const std::string& name);

@@ -54,6 +54,7 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -213,7 +214,7 @@ class FakeResolverResponseGeneratorWrapper {
     }
     if (service_config_json != nullptr) {
       grpc_error_handle error = GRPC_ERROR_NONE;
-      result.service_config = grpc_core::ServiceConfig::Create(
+      result.service_config = grpc_core::ServiceConfigImpl::Create(
           nullptr, service_config_json, &error);
       GPR_ASSERT(*result.service_config != nullptr);
     }
@@ -307,7 +308,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator.Get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(

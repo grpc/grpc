@@ -51,7 +51,7 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
 }
 
 InteropServerContextInspector::InteropServerContextInspector(
-    const ::grpc::ServerContext& context)
+    const grpc::ServerContext& context)
     : context_(context) {}
 
 grpc_compression_algorithm

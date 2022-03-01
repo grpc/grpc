@@ -10,14 +10,14 @@
 #include "envoy/admin/v3/clusters.upbdefs.h"
 #include "envoy/admin/v3/clusters.upb.h"
 
-extern upb_def_init envoy_admin_v3_metrics_proto_upbdefinit;
-extern upb_def_init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_health_check_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_admin_v3_metrics_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_health_check_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[2157] = {'\n', '\035', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 'v', '3', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', 's', 
 '.', 'p', 'r', 'o', 't', 'o', '\022', '\016', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'd', 'm', 'i', 'n', '.', 'v', '3', '\032', '\034', 'e', 
 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 'v', '3', '/', 'm', 'e', 't', 'r', 'i', 'c', 's', '.', 'p', 'r', 'o', 
@@ -107,7 +107,7 @@ static const char descriptor[2157] = {'\n', '\035', 'e', 'n', 'v', 'o', 'y', '/'
 '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[9] = {
+static _upb_DefPool_Init *deps[9] = {
   &envoy_admin_v3_metrics_proto_upbdefinit,
   &envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit,
   &envoy_config_core_v3_address_proto_upbdefinit,
@@ -119,9 +119,9 @@ static upb_def_init *deps[9] = {
   NULL
 };
 
-upb_def_init envoy_admin_v3_clusters_proto_upbdefinit = {
+_upb_DefPool_Init envoy_admin_v3_clusters_proto_upbdefinit = {
   deps,
   &envoy_admin_v3_clusters_proto_upb_file_layout,
   "envoy/admin/v3/clusters.proto",
-  UPB_STRVIEW_INIT(descriptor, 2157)
+  UPB_STRINGVIEW_INIT(descriptor, 2157)
 };

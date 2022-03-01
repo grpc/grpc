@@ -69,8 +69,8 @@ uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
   return 100;
 }
 
-absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
-                                            upb_arena* arena) {
+absl::StatusOr<Json> ParseHttpFaultIntoJson(
+    upb_StringView serialized_http_fault, upb_Arena* arena) {
   auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
       serialized_http_fault.data, serialized_http_fault.size, arena);
   if (http_fault == nullptr) {
@@ -174,13 +174,13 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
 
 }  // namespace
 
-void XdsHttpFaultFilter::PopulateSymtab(upb_symtab* symtab) const {
+void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
-                                         upb_arena* arena) const {
+XdsHttpFaultFilter::GenerateFilterConfig(
+    upb_StringView serialized_filter_config, upb_Arena* arena) const {
   absl::StatusOr<Json> parse_result =
       ParseHttpFaultIntoJson(serialized_filter_config, arena);
   if (!parse_result.ok()) {
@@ -191,7 +191,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
-    upb_strview serialized_filter_config, upb_arena* arena) const {
+    upb_StringView serialized_filter_config, upb_Arena* arena) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
   return GenerateFilterConfig(serialized_filter_config, arena);

@@ -31,14 +31,14 @@ std::map<absl::string_view, double> ParseMap(
     xds_data_orca_v3_OrcaLoadReport* msg,
     const EntryType* (*entry_func)(const xds_data_orca_v3_OrcaLoadReport*,
                                    size_t*),
-    upb_strview (*key_func)(const EntryType*),
+    upb_StringView (*key_func)(const EntryType*),
     double (*value_func)(const EntryType*), Arena* arena) {
   std::map<absl::string_view, double> result;
-  size_t i = UPB_MAP_BEGIN;
+  size_t i = kUpb_Map_Begin;
   while (true) {
     const auto* entry = entry_func(msg, &i);
     if (entry == nullptr) break;
-    upb_strview key_view = key_func(entry);
+    upb_StringView key_view = key_func(entry);
     char* key = static_cast<char*>(arena->Alloc(key_view.size));
     memcpy(key, key_view.data, key_view.size);
     result[absl::string_view(key, key_view.size)] = value_func(entry);

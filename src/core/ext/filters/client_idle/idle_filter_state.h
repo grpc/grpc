@@ -29,8 +29,8 @@ class IdleFilterState {
   explicit IdleFilterState(bool start_timer);
   ~IdleFilterState() = default;
 
-  IdleFilterState(const IdleFilterState&);
-  IdleFilterState& operator=(const IdleFilterState&);
+  IdleFilterState(const IdleFilterState&) = delete;
+  IdleFilterState& operator=(const IdleFilterState&) = delete;
 
   // Increment the number of calls in progress.
   void IncreaseCallCount();
