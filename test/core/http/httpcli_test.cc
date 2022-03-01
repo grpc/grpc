@@ -500,7 +500,7 @@ TEST_F(HttpRequestTest,
               grpc_insecure_credentials_create()));
   grpc_core::HttpRequest::TestOnlySetOnHandshakeDoneIntercept(CancelRequest);
   http_request->Start();
-  http_request.release();  // request will be orphaned by CancelRequest
+  (void)http_request.release();  // request will be orphaned by CancelRequest
   exec_ctx.Flush();
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
