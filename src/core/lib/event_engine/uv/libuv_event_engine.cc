@@ -37,57 +37,26 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 namespace grpc_event_engine {
 namespace experimental {
 
-namespace {
-
-struct SchedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
+struct LibuvEventEngine::SchedulingRequest
+    : grpc_core::MultiProducerSingleConsumerQueue::Node {
   typedef std::function<void(LibuvEventEngine*)> functor;
   explicit SchedulingRequest(functor&& f) : f(std::move(f)) {}
+  SchedulingRequest(std::unique_ptr<LibuvTask> task, uint64_t timeout)
+      : task(std::move(task)), timeout(timeout) {}
   functor f;
-};
-
-}  // namespace
-
-////////////////////////////////////////////////////////////////////////////////
-/// The LibuvTask class is used for Run and RunAt from LibuvEventEngine, and
-/// is allocated internally for the returned TaskHandle.
-///
-/// Its API is used solely by the Run and RunAt functions, while in the libuv
-/// loop thread.
-////////////////////////////////////////////////////////////////////////////////
-class LibuvEventEngine::LibuvTask {
- public:
-  LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn);
-  /// Executes the held \a fn_ and removes itself from EventEngine's
-  /// accounting. Must be called from within the libuv thread.
-  void Start(LibuvEventEngine* engine, uint64_t timeout);
-  /// Cancel this task.
-  /// The promise meanings are the same as in \a EventEngine::Cancel.
-  /// Must be called from within the libuv thread.
-  /// Precondition: the EventEngine must be tracking this task.
-  void Cancel(Promise<bool>& will_be_cancelled);
-  LibuvTaskHandle Handle() { return handle_; }
-
- private:
-  /// A callback passed to uv_close to erase the timer from the EventEngine
-  static void Erase(uv_handle_t* handle);
-  /// A callback passed to uv_close to coordinate running the task then
-  /// erasing the timer from the EventEngine. This helps avoid race conditions
-  /// where the timer handle is open after the function is run and the
-  /// EventEngine is being destroyed.
-  static void RunAndErase(uv_handle_t* handle);
-
-  std::function<void()> fn_;
-  uv_timer_t timer_;
-  const LibuvTaskHandle handle_;
+  std::unique_ptr<LibuvEventEngine::LibuvTask> task;
+  uint64_t timeout = 0;
+  // TODO(hork): this is two Node types bundled together. Either add an enum
+  // flag, or use different Node variants on an interface and decide which is
+  // correct in the kicker.
 };
 
 LibuvEventEngine::LibuvTask::LibuvTask(LibuvEventEngine* engine,
                                        std::function<void()>&& fn)
-    : fn_(std::move(fn)),
-      handle_(LibuvTaskHandle(this, engine->task_key_.fetch_add(1))) {
+    : fn_(std::move(fn)), handle_tag_(engine->task_key_.fetch_add(1)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, created task: key = %s", this,
-            handle_.ToString().c_str());
+            ToString().c_str());
   }
   timer_.data = this;
 }
@@ -103,7 +72,7 @@ void LibuvEventEngine::LibuvTask::Start(LibuvEventEngine* engine,
         LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
           gpr_log(GPR_DEBUG, "LibuvTask@%p, triggered: key = %s", task,
-                  task->Handle().ToString().c_str());
+                  task->ToString().c_str());
         }
         // TODO(hork): Timer callbacks will be delayed by one iteration of the
         // uv_loop to avoid race conditions around EventEngine destruction.
@@ -119,7 +88,7 @@ void LibuvEventEngine::LibuvTask::Start(LibuvEventEngine* engine,
 void LibuvEventEngine::LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, cancelled: key = %s", this,
-            Handle().ToString().c_str());
+            ToString().c_str());
   }
   if (uv_is_closing(reinterpret_cast<uv_handle_t*>(&timer_)) != 0) {
     will_be_cancelled.Notify(false);
@@ -135,7 +104,7 @@ void LibuvEventEngine::LibuvTask::Erase(uv_handle_t* uv_handle) {
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   LibuvEventEngine* engine =
       reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
-  engine->EraseTask(task->Handle());
+  engine->task_set_.erase(task->Handle());
 }
 
 void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
@@ -144,7 +113,10 @@ void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
   std::function<void()> fn = std::move(task->fn_);
   LibuvEventEngine* engine =
       reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
-  engine->EraseTask(task->Handle());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "LibuvTask@%p, executing", task->ToString().c_str());
+  }
+  engine->task_set_.erase(task->Handle());
   fn();
 }
 
@@ -188,7 +160,7 @@ void LibuvEventEngine::DestroyInLibuvThread(
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_set_.size=%zu", this,
             task_set_.size());
     for (const LibuvTaskHandle& handle : task_set_) {
-      gpr_log(GPR_DEBUG, " - %s", handle.ToString().c_str());
+      gpr_log(GPR_DEBUG, " - %s", handle.Task()->ToString().c_str());
     }
     // This is an unstable API from libuv that we use for its intended
     // purpose: debugging. This can tell us if there's lingering handles
@@ -236,10 +208,22 @@ LibuvEventEngine::~LibuvEventEngine() {
 void LibuvEventEngine::RunInLibuvThread(SchedulingRequest::functor&& f) {
   SchedulingRequest* request = new SchedulingRequest(std::move(f));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_ERROR, "LibuvEventEngine@%p::RunInLibuvThread, created %p",
+    gpr_log(GPR_ERROR,
+            "LibuvEventEngine@%p::RunInLibuvThread functor, created %p", this,
+            request);
+  }
+  scheduling_request_queue_.Push(request);
+  uv_async_send(&kicker_);
+}
+
+void LibuvEventEngine::RunInLibuvThread(std::unique_ptr<LibuvTask> task,
+                                        uint64_t timeout) {
+  SchedulingRequest* request = new SchedulingRequest(std::move(task), timeout);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_ERROR, "LibuvEventEngine@%p::RunInLibuvThread task, created %p",
             this, request);
   }
-  queue_.Push(request);
+  scheduling_request_queue_.Push(request);
   uv_async_send(&kicker_);
 }
 
@@ -248,17 +232,23 @@ void LibuvEventEngine::RunInLibuvThread(SchedulingRequest::functor&& f) {
 // to be called once per loop iteration, even if we sent the event multiple
 // times, so we have to process as many events from the queue as possible.
 void LibuvEventEngine::Kicker() {
-  bool empty = false;
-  while (!empty) {
-    SchedulingRequest* node =
-        reinterpret_cast<SchedulingRequest*>(queue_.PopAndCheckEnd(&empty));
-    if (node == nullptr) continue;
-    SchedulingRequest::functor f = std::move(node->f);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_ERROR, "LibuvEventEngine@%p::Kicker, got %p", this, node);
+  bool empty_schedule_queue = false;
+  while (!empty_schedule_queue) {
+    SchedulingRequest* node = reinterpret_cast<SchedulingRequest*>(
+        scheduling_request_queue_.PopAndCheckEnd(&empty_schedule_queue));
+    // TODO(hork): use the type system
+    if (node != nullptr) {
+      if (node->task == nullptr) {
+        SchedulingRequest::functor f = std::move(node->f);
+        delete node;
+        f(this);
+      } else {
+        auto weak_task = node->task.get();
+        task_set_.emplace(std::move(node->task));
+        weak_task->Start(this, node->timeout);
+        delete node;
+      }
     }
-    delete node;
-    f(this);
   }
 }
 
@@ -335,7 +325,7 @@ void LibuvEventEngine::Run(std::function<void()> fn) {
 
 EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
                                                 std::function<void()> fn) {
-  LibuvTask* task = new LibuvTask(this, std::move(fn));
+  auto task = absl::make_unique<LibuvTask>(this, std::move(fn));
   // To avoid a thread race if task erasure happens before this method returns.
   absl::Time now = absl::Now();
   uint64_t timeout;
@@ -350,35 +340,35 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
               absl::ToUnixMillis(now) + 1;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG,
-            "LibuvTask@%p::RunAt, scheduled, timeout=%" PRIu64 ", key = %s",
-            task, timeout, task->Handle().ToString().c_str());
+    gpr_log(GPR_DEBUG, "LibuvTask@%p::RunAt, scheduled, timeout=%" PRIu64,
+            task->ToString().c_str(), timeout);
   }
-  RunInLibuvThread([task, timeout](LibuvEventEngine* engine) {
-    engine->task_set_.insert(task->Handle());
-    task->Start(engine, timeout);
-  });
-  return task->Handle().ToEventEngineTaskHandle();
+  EventEngine::TaskHandle handle = task->Handle();
+  RunInLibuvThread(std::move(task), timeout);
+  uv_async_send(&kicker_);
+  return handle;
 }
 
 bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
   Promise<bool> will_be_cancelled;
-  LibuvTaskHandle libuv_handle =
-      LibuvTaskHandle::CreateFromEngineTaskHandle(handle);
-  RunInLibuvThread(
-      [&libuv_handle, &will_be_cancelled](LibuvEventEngine* engine) {
-        if (!engine->task_set_.contains(libuv_handle)) {
-          will_be_cancelled.Notify(false);
-          return;
-        }
-        libuv_handle.Task()->Cancel(will_be_cancelled);
-      });
+  RunInLibuvThread([&handle, &will_be_cancelled](LibuvEventEngine* engine) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, attempting %s", engine,
+              LibuvTaskHandle::Accessor::Task(handle)->ToString().c_str());
+    }
+    if (!engine->task_set_.contains(handle)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, %s not found", engine,
+                LibuvTaskHandle::Accessor::Task(handle)->ToString().c_str());
+      }
+      will_be_cancelled.Notify(false);
+      return;
+    }
+    gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, cancelling %s", engine,
+            LibuvTaskHandle::Accessor::Task(handle)->ToString().c_str());
+    LibuvTaskHandle::Accessor::Task(handle)->Cancel(will_be_cancelled);
+  });
   return will_be_cancelled.Wait();
-}
-
-void LibuvEventEngine::EraseTask(LibuvTaskHandle handle) {
-  task_set_.erase(handle);
-  delete handle.Task();
 }
 
 std::unique_ptr<EventEngine> LibuvEventEngine::Create() {

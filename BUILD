@@ -1778,8 +1778,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/promise.h",
     ],
     external_deps = [
-        "absl/strings:str_format",
         "absl/container:flat_hash_set",
+        "absl/strings:str_format",
         "uv",
     ],
     deps = [
