@@ -170,17 +170,17 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
       grpc_lookup_v1_RouteLookupConfig_default_target(plugin_config));
   // Construct the config
   Json::Object rls_policy;
-  rls_policy["routeLookupConfig"] = result;
+  rls_policy["routeLookupConfig"] = std::move(result);
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json();
   Json::Array child_policy;
-  child_policy.emplace_back(cds_policy);
-  rls_policy["childPolicy"] = child_policy;
+  child_policy.emplace_back(std::move(cds_policy));
+  rls_policy["childPolicy"] = std::move(child_policy);
   rls_policy["childPolicyConfigTargetFieldName"] = "cluster";
   Json::Object policy;
-  policy["rls_experimental"] = rls_policy;
+  policy["rls_experimental"] = std::move(rls_policy);
   Json::Array policies;
-  policies.emplace_back(policy);
+  policies.emplace_back(std::move(policy));
   return Json(policies).Dump();
 }
 

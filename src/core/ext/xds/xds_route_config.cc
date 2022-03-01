@@ -229,9 +229,7 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
     contents.push_back(
         absl::StrFormat("Cluster name: %s", absl::get<kClusterIndex>(action)));
   } else if (action.index() == kWeightedClustersIndex) {
-    auto& action_weighted_clusters = absl::get<
-        XdsRouteConfigResource::Route::RouteAction::kWeightedClustersIndex>(
-        action);
+    auto& action_weighted_clusters = absl::get<kWeightedClustersIndex>(action);
     for (const ClusterWeight& cluster_weight : action_weighted_clusters) {
       contents.push_back(cluster_weight.ToString());
     }
@@ -721,16 +719,15 @@ grpc_error_handle RouteActionParse(
       envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action)) {
-    route->action
-        .emplace<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
-            UpbStringToStdString(
-                envoy_config_route_v3_RouteAction_cluster(route_action)));
-    if (absl::get<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
-            route->action)
-            .empty()) {
+    std::string cluster_name = UpbStringToStdString(
+        envoy_config_route_v3_RouteAction_cluster(route_action));
+    if (cluster_name.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster name.");
     }
+    route->action
+        .emplace<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
+            std::move(cluster_name));
   } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                  route_action)) {
     route->action =
