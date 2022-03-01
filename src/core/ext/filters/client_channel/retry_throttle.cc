@@ -127,7 +127,6 @@ ServerRetryThrottleMap* ServerRetryThrottleMap::Get() {
 RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
     const std::string& server_name, intptr_t max_milli_tokens,
     intptr_t milli_token_ratio) {
-  RefCountedPtr<ServerRetryThrottleData> result;
   MutexLock lock(&mu_);
   auto it = map_.find(server_name);
   ServerRetryThrottleData* throttle_data =
