@@ -172,8 +172,10 @@ class RetryFilter {
     }
     std::string server_name(absl::StripPrefix(uri->path(), "/"));
     // Get throttling config for server_name.
-    retry_throttle_data_ = internal::ServerRetryThrottleMap::GetDataForServer(
-        server_name, config->max_milli_tokens(), config->milli_token_ratio());
+    retry_throttle_data_ =
+        internal::ServerRetryThrottleMap::Get()->GetDataForServer(
+            server_name, config->max_milli_tokens(),
+            config->milli_token_ratio());
   }
 
   const RetryMethodConfig* GetRetryPolicy(
