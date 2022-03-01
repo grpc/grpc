@@ -53,6 +53,7 @@ namespace {
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
+void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
 }  // namespace
 
@@ -110,6 +111,11 @@ void HttpRequest::SetOverride(grpc_httpcli_get_override get,
                               grpc_httpcli_post_override post) {
   g_get_override = get;
   g_post_override = post;
+}
+
+void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
+    void (*intercept)(HttpRequest* req)) {
+  g_test_only_on_handshake_done_intercept = intercept;
 }
 
 HttpRequest::HttpRequest(
@@ -260,6 +266,11 @@ void HttpRequest::StartWrite() {
 void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
+  if (g_test_only_on_handshake_done_intercept != nullptr) {
+    // Run this testing intercept before the lock so that it has a chance to
+    // do things like calling Orphan on the request
+    g_test_only_on_handshake_done_intercept(req.get());
+  }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
   if (error != GRPC_ERROR_NONE) {
