@@ -107,7 +107,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
  protected:
   virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
                             grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                            grpc_millis deadline) = 0;
+                            grpc_core::Timestamp deadline) = 0;
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {
@@ -141,7 +141,7 @@ class grpc_google_refresh_token_credentials final
  protected:
   void fetch_oauth2(grpc_credentials_metadata_request* req,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    grpc_millis deadline) override;
+                    grpc_core::Timestamp deadline) override;
 
  private:
   grpc_auth_refresh_token refresh_token_;
@@ -186,7 +186,8 @@ grpc_refresh_token_credentials_create_from_auth_refresh_token(
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response,
-    absl::optional<grpc_core::Slice>* token_value, grpc_millis* token_lifetime);
+    absl::optional<grpc_core::Slice>* token_value,
+    grpc_core::Duration* token_lifetime);
 
 namespace grpc_core {
 // Exposed for testing only. This function validates the options, ensuring that

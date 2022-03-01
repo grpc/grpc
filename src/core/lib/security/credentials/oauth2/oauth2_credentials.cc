@@ -136,7 +136,7 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const grpc_http_response* response,
     absl::optional<grpc_core::Slice>* token_value,
-    grpc_millis* token_lifetime) {
+    grpc_core::Duration* token_lifetime) {
   char* null_terminated_body = nullptr;
   grpc_credentials_status status = GRPC_CREDENTIALS_OK;
   Json json;
@@ -203,7 +203,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
       goto end;
     }
     expires_in = it->second.string_value().c_str();
-    *token_lifetime = strtol(expires_in, nullptr, 10) * GPR_MS_PER_SEC;
+    *token_lifetime =
+        grpc_core::Duration::Seconds(strtol(expires_in, nullptr, 10));
     *token_value = grpc_core::Slice::FromCopiedString(
         absl::StrCat(token_type, " ", access_token));
     status = GRPC_CREDENTIALS_OK;
@@ -228,7 +229,7 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
     grpc_credentials_metadata_request* r, grpc_error_handle error) {
   absl::optional<grpc_core::Slice> access_token_value;
-  grpc_millis token_lifetime = 0;
+  grpc_core::Duration token_lifetime;
   grpc_credentials_status status =
       error == GRPC_ERROR_NONE
           ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
@@ -242,11 +243,10 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   } else {
     access_token_value_ = absl::nullopt;
   }
-  token_expiration_ =
-      status == GRPC_CREDENTIALS_OK
-          ? gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(token_lifetime, GPR_TIMESPAN))
-          : gpr_inf_past(GPR_CLOCK_MONOTONIC);
+  token_expiration_ = status == GRPC_CREDENTIALS_OK
+                          ? gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                         token_lifetime.as_timespec())
+                          : gpr_inf_past(GPR_CLOCK_MONOTONIC);
   grpc_oauth2_pending_get_request_metadata* pending_request = pending_requests_;
   pending_requests_ = nullptr;
   gpr_mu_unlock(&mu_);
@@ -278,8 +278,8 @@ bool grpc_oauth2_token_fetcher_credentials::get_request_metadata(
     grpc_core::CredentialsMetadataArray* md_array,
     grpc_closure* on_request_metadata, grpc_error_handle* /*error*/) {
   // Check if we can use the cached token.
-  grpc_millis refresh_threshold =
-      GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS * GPR_MS_PER_SEC;
+  grpc_core::Duration refresh_threshold =
+      grpc_core::Duration::Seconds(GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS);
   absl::optional<grpc_core::Slice> cached_access_token_value;
   gpr_mu_lock(&mu_);
   if (access_token_value_.has_value() &&
@@ -378,7 +378,7 @@ class grpc_compute_engine_token_fetcher_credentials
   void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
-                    grpc_millis deadline) override {
+                    grpc_core::Timestamp deadline) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -438,7 +438,7 @@ grpc_google_refresh_token_credentials::
 void grpc_google_refresh_token_credentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
-    grpc_millis deadline) {
+    grpc_core::Timestamp deadline) {
   grpc_http_header header = {
       const_cast<char*>("Content-Type"),
       const_cast<char*>("application/x-www-form-urlencoded")};
@@ -563,7 +563,7 @@ class StsTokenFetcherCredentials
   void fetch_oauth2(grpc_credentials_metadata_request* metadata_req,
                     grpc_polling_entity* pollent,
                     grpc_iomgr_cb_func response_cb,
-                    grpc_millis deadline) override {
+                    Timestamp deadline) override {
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
     grpc_error_handle err = FillBody(&request.body, &request.body_length);

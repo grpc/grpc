@@ -170,7 +170,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     }
   }
   // Parse timeout.
-  grpc_millis timeout = 0;
+  Duration timeout;
   ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
                                  &error_list, false);
   // Return result.

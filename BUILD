@@ -1665,6 +1665,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "time",
+    srcs = [
+        "src/core/lib/gprpp/time.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/time.h",
+    ],
+    deps = [
+        "gpr",
+        "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
     name = "exec_ctx",
     srcs = [
         "src/core/lib/iomgr/combiner.cc",
@@ -1683,6 +1697,7 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "gpr_tls",
+        "time",
         "useful",
     ],
 )
@@ -2161,6 +2176,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "table",
+        "time",
         "uri_parser",
         "useful",
     ],
@@ -2466,6 +2482,7 @@ grpc_cc_library(
         "server_address",
         "slice",
         "sockaddr_utils",
+        "time",
         "uri_parser",
         "useful",
         "xds_orca_upb",

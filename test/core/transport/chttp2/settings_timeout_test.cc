@@ -127,11 +127,10 @@ class Client {
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            addresses_or->data(), ExecCtx::Get()->Now() + 1000);
+                            addresses_or->data(),
+                            ExecCtx::Get()->Now() + Duration::Seconds(1));
     grpc_channel_args_destroy(args);
-    ASSERT_TRUE(PollUntilDone(
-        &state,
-        grpc_timespec_to_millis_round_up(gpr_inf_future(GPR_CLOCK_MONOTONIC))));
+    ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(pollset_set);
     grpc_endpoint_add_to_pollset(endpoint_, pollset_);
@@ -146,7 +145,7 @@ class Client {
     bool retval = true;
     // Use a deadline of 3 seconds, which is a lot more than we should
     // need for a 1-second timeout, but this helps avoid flakes.
-    grpc_millis deadline = ExecCtx::Get()->Now() + 3000;
+    Timestamp deadline = ExecCtx::Get()->Now() + Duration::Seconds(3);
     while (true) {
       EventState state;
       grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
@@ -206,13 +205,14 @@ class Client {
   };
 
   // Returns true if done, or false if deadline exceeded.
-  bool PollUntilDone(EventState* state, grpc_millis deadline) {
+  bool PollUntilDone(EventState* state, Timestamp deadline) {
     while (true) {
       grpc_pollset_worker* worker = nullptr;
       gpr_mu_lock(mu_);
-      GRPC_LOG_IF_ERROR(
-          "grpc_pollset_work",
-          grpc_pollset_work(pollset_, &worker, ExecCtx::Get()->Now() + 100));
+      GRPC_LOG_IF_ERROR("grpc_pollset_work",
+                        grpc_pollset_work(pollset_, &worker,
+                                          ExecCtx::Get()->Now() +
+                                              Duration::Milliseconds(100)));
       // Flushes any work scheduled before or during polling.
       ExecCtx::Get()->Flush();
       gpr_mu_unlock(mu_);

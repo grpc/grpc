@@ -595,29 +595,21 @@ grpc_error_handle RetryPolicyParse(
           "RouteAction RetryPolicy RetryBackoff missing base interval."));
     } else {
       retry_to_return.retry_back_off.base_interval =
-          Duration::Parse(base_interval);
+          ParseDuration(base_interval);
     }
     const google_protobuf_Duration* max_interval =
         envoy_config_route_v3_RetryPolicy_RetryBackOff_max_interval(backoff);
     Duration max;
     if (max_interval != nullptr) {
-      max = Duration::Parse(max_interval);
+      max = ParseDuration(max_interval);
     } else {
-      // if max interval is not set, it is 10x the base, if the value in nanos
-      // can yield another second, adjust the value in seconds accordingly.
-      max.seconds = retry_to_return.retry_back_off.base_interval.seconds * 10;
-      max.nanos = retry_to_return.retry_back_off.base_interval.nanos * 10;
-      if (max.nanos > 1000000000) {
-        max.seconds += max.nanos / 1000000000;
-        max.nanos = max.nanos % 1000000000;
-      }
+      // if max interval is not set, it is 10x the base.
+      max = 10 * retry_to_return.retry_back_off.base_interval;
     }
     retry_to_return.retry_back_off.max_interval = max;
   } else {
-    retry_to_return.retry_back_off.base_interval.seconds = 0;
-    retry_to_return.retry_back_off.base_interval.nanos = 25000000;
-    retry_to_return.retry_back_off.max_interval.seconds = 0;
-    retry_to_return.retry_back_off.max_interval.nanos = 250000000;
+    retry_to_return.retry_back_off.base_interval = Duration::Milliseconds(25);
+    retry_to_return.retry_back_off.max_interval = Duration::Milliseconds(250);
   }
   if (errors.empty()) {
     *retry = retry_to_return;
@@ -718,7 +710,7 @@ grpc_error_handle RouteActionParse(
                 max_stream_duration);
       }
       if (duration != nullptr) {
-        route->max_stream_duration = Duration::Parse(duration);
+        route->max_stream_duration = ParseDuration(duration);
       }
     }
   }

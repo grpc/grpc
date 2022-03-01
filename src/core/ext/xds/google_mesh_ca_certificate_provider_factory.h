@@ -52,11 +52,11 @@ class GoogleMeshCaCertificateProviderFactory
 
     const StsConfig& sts_config() const { return sts_config_; }
 
-    grpc_millis timeout() const { return timeout_; }
+    Duration timeout() const { return timeout_; }
 
-    grpc_millis certificate_lifetime() const { return certificate_lifetime_; }
+    Duration certificate_lifetime() const { return certificate_lifetime_; }
 
-    grpc_millis renewal_grace_period() const { return renewal_grace_period_; }
+    Duration renewal_grace_period() const { return renewal_grace_period_; }
 
     uint32_t key_size() const { return key_size_; }
 
@@ -80,9 +80,9 @@ class GoogleMeshCaCertificateProviderFactory
 
     std::string endpoint_;
     StsConfig sts_config_;
-    grpc_millis timeout_;
-    grpc_millis certificate_lifetime_;
-    grpc_millis renewal_grace_period_;
+    Duration timeout_;
+    Duration certificate_lifetime_;
+    Duration renewal_grace_period_;
     uint32_t key_size_;
     std::string location_;
   };

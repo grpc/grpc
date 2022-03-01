@@ -477,6 +477,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/gprpp/status_helper.cc',
     'src/core/lib/gprpp/thd_posix.cc',
     'src/core/lib/gprpp/thd_windows.cc',
+    'src/core/lib/gprpp/time.cc',
     'src/core/lib/gprpp/time_util.cc',
     'src/core/lib/http/format_request.cc',
     'src/core/lib/http/httpcli.cc',
