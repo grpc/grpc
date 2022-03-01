@@ -18,9 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "global_subchannel_pool.h"
-
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
