@@ -64,7 +64,7 @@ The following are the **Opaque** structures exposed by Polling Engine interface 
     > **NOTE**: There is no `grpc_pollset_remove_fd`. This is because calling `grpc_fd_orphan()` will effectively remove the fd from all the pollsets it’s a part of
 
 - **grpc_pollset_work**
-  - Signature: `grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_millis deadline)`
+  - Signature: `grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_core::Timestamp deadline)`
     > **NOTE**: `grpc_pollset_work()` requires the pollset mutex to be locked before calling it. Shortly after calling `grpc_pollset_work()`, the function populates the `*worker` pointer (among other things) and releases the mutex. Once `grpc_pollset_work()` returns, the `*worker` pointer is **invalid** and should not be used anymore. See the code in `completion_queue.cc` to see how this is used.
   - Poll the fds in the pollset for events AND return when ANY of the following is true:
     - Deadline expired

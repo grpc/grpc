@@ -41,8 +41,7 @@ class InsecureChannelSecurityConnector
   InsecureChannelSecurityConnector(
       RefCountedPtr<grpc_channel_credentials> channel_creds,
       RefCountedPtr<grpc_call_credentials> request_metadata_creds)
-      : grpc_channel_security_connector(/* url_scheme */ nullptr,
-                                        std::move(channel_creds),
+      : grpc_channel_security_connector("", std::move(channel_creds),
                                         std::move(request_metadata_creds)) {}
 
   ArenaPromise<absl::Status> CheckCallHost(
@@ -68,7 +67,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
  public:
   explicit InsecureServerSecurityConnector(
       RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(nullptr /* url_scheme */,
+      : grpc_server_security_connector("" /* url_scheme */,
                                        std::move(server_creds)) {}
 
   void add_handshakers(const grpc_channel_args* args,

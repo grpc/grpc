@@ -30,6 +30,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
@@ -39,8 +40,8 @@
 
 namespace {
 
-grpc_millis NSecondsTime(int seconds) {
-  return grpc_timespec_to_millis_round_up(
+grpc_core::Timestamp NSecondsTime(int seconds) {
+  return grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 

@@ -10,13 +10,13 @@
 #include "envoy/config/trace/v3/xray.upbdefs.h"
 #include "envoy/config/trace/v3/xray.upb.h"
 
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[906] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 'x', 
 'r', 'a', 'y', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 't', 
 'r', 'a', 'c', 'e', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 
@@ -56,7 +56,7 @@ static const char descriptor[906] = {'\n', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'c
 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[8] = {
+static _upb_DefPool_Init *deps[8] = {
   &envoy_config_core_v3_address_proto_upbdefinit,
   &envoy_config_core_v3_base_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
@@ -67,9 +67,9 @@ static upb_def_init *deps[8] = {
   NULL
 };
 
-upb_def_init envoy_config_trace_v3_xray_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_trace_v3_xray_proto_upbdefinit = {
   deps,
   &envoy_config_trace_v3_xray_proto_upb_file_layout,
   "envoy/config/trace/v3/xray.proto",
-  UPB_STRVIEW_INIT(descriptor, 906)
+  UPB_STRINGVIEW_INIT(descriptor, 906)
 };

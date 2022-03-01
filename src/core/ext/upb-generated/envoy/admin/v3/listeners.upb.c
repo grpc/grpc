@@ -15,44 +15,46 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_admin_v3_Listeners_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_admin_v3_Listeners_submsgs[1] = {
   {.submsg = &envoy_admin_v3_ListenerStatus_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_Listeners__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_Listeners__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_Listeners_msginit = {
+const upb_MiniTable envoy_admin_v3_Listeners_msginit = {
   &envoy_admin_v3_Listeners_submsgs[0],
   &envoy_admin_v3_Listeners__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_admin_v3_ListenerStatus_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_admin_v3_ListenerStatus_submsgs[1] = {
   {.submsg = &envoy_config_core_v3_Address_msginit},
 };
 
-static const upb_msglayout_field envoy_admin_v3_ListenerStatus__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_admin_v3_ListenerStatus__fields[2] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_admin_v3_ListenerStatus_msginit = {
+const upb_MiniTable envoy_admin_v3_ListenerStatus_msginit = {
   &envoy_admin_v3_ListenerStatus_submsgs[0],
   &envoy_admin_v3_ListenerStatus__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[2] = {
+static const upb_MiniTable *messages_layout[2] = {
   &envoy_admin_v3_Listeners_msginit,
   &envoy_admin_v3_ListenerStatus_msginit,
 };
 
-const upb_msglayout_file envoy_admin_v3_listeners_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_admin_v3_listeners_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   2,
+  0,
   0,
 };
 

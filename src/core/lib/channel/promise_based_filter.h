@@ -120,7 +120,7 @@ class BaseCallData : public Activity, private Wakeable {
 
   grpc_call_element* elem() const { return elem_; }
   CallCombiner* call_combiner() const { return call_combiner_; }
-  grpc_millis deadline() const { return deadline_; }
+  Timestamp deadline() const { return deadline_; }
   grpc_call_stack* call_stack() const { return call_stack_; }
 
  private:
@@ -134,7 +134,7 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_element* const elem_;
   Arena* const arena_;
   CallCombiner* const call_combiner_;
-  const grpc_millis deadline_;
+  const Timestamp deadline_;
   grpc_call_context_element* const context_;
   grpc_polling_entity* pollent_ = nullptr;
 };
