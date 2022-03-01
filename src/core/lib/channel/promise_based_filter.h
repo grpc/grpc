@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -77,19 +78,34 @@ enum class FilterEndpoint {
 namespace promise_filter_detail {
 
 // Call data shared between all implementations of promise-based filters.
-class BaseCallData {
+class BaseCallData : public Activity, private Wakeable {
  public:
   BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args)
-      : elem_(elem),
+      : call_stack_(args->call_stack),
+        elem_(elem),
         arena_(args->arena),
         call_combiner_(args->call_combiner),
-        deadline_(args->deadline) {}
+        deadline_(args->deadline),
+        context_(args->context) {}
+
+  void set_pollent(grpc_polling_entity* pollent) { pollent_ = pollent; }
+
+  // Activity implementation (partial).
+  void Orphan() final;
+  Waker MakeNonOwningWaker() final;
+  Waker MakeOwningWaker() final;
 
  protected:
-  class ScopedContext : public promise_detail::Context<Arena> {
+  class ScopedContext
+      : public promise_detail::Context<Arena>,
+        public promise_detail::Context<grpc_call_context_element>,
+        public promise_detail::Context<grpc_polling_entity> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
-        : promise_detail::Context<Arena>(call_data->arena_) {}
+        : promise_detail::Context<Arena>(call_data->arena_),
+          promise_detail::Context<grpc_call_context_element>(
+              call_data->context_),
+          promise_detail::Context<grpc_polling_entity>(call_data->pollent_) {}
   };
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
@@ -105,12 +121,22 @@ class BaseCallData {
   grpc_call_element* elem() const { return elem_; }
   CallCombiner* call_combiner() const { return call_combiner_; }
   Timestamp deadline() const { return deadline_; }
+  grpc_call_stack* call_stack() const { return call_stack_; }
 
  private:
+  // Wakeable implementation.
+  void Wakeup() final;
+  void Drop() final;
+
+  virtual void OnWakeup() = 0;
+
+  grpc_call_stack* const call_stack_;
   grpc_call_element* const elem_;
   Arena* const arena_;
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
+  grpc_call_context_element* const context_;
+  grpc_polling_entity* pollent_ = nullptr;
 };
 
 // Specific call data per channel filter.
@@ -130,9 +156,15 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
                       grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() {
+  ~CallData() override {
     GPR_ASSERT(!is_polling_);
     GRPC_ERROR_UNREF(cancelled_error_);
+  }
+
+  // Activity implementation.
+  void ForceImmediateRepoll() final {
+    GPR_ASSERT(is_polling_);
+    repoll_ = true;
   }
 
   // Handle one grpc_transport_stream_op_batch
@@ -235,9 +267,23 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
       if (recv_trailing_state_ == RecvTrailingState::kQueued) {
         recv_trailing_state_ = RecvTrailingState::kCancelled;
       }
-      grpc_transport_stream_op_batch_finish_with_failure(
-          absl::exchange(send_initial_metadata_batch_, nullptr),
-          GRPC_ERROR_REF(cancelled_error_), call_combiner());
+      struct FailBatch : public grpc_closure {
+        grpc_transport_stream_op_batch* batch;
+        CallCombiner* call_combiner;
+      };
+      auto fail = [](void* p, grpc_error_handle error) {
+        auto* f = static_cast<FailBatch*>(p);
+        grpc_transport_stream_op_batch_finish_with_failure(
+            f->batch, GRPC_ERROR_REF(error), f->call_combiner);
+        delete f;
+      };
+      auto* b = new FailBatch();
+      GRPC_CLOSURE_INIT(b, fail, b, nullptr);
+      b->batch = absl::exchange(send_initial_metadata_batch_, nullptr);
+      b->call_combiner = call_combiner();
+      GRPC_CALL_COMBINER_START(call_combiner(), b,
+                               GRPC_ERROR_REF(cancelled_error_),
+                               "cancel pending batch");
     } else {
       send_initial_state_ = SendInitialState::kCancelled;
     }
@@ -250,12 +296,15 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
     ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
 
     // Construct the promise.
-    promise_ = filter->MakeCallPromise(
-        WrapMetadata(send_initial_metadata_batch_->payload
-                         ->send_initial_metadata.send_initial_metadata),
-        [this](ClientInitialMetadata initial_metadata) {
-          return MakeNextPromise(std::move(initial_metadata));
-        });
+    {
+      ScopedActivity activity(this);
+      promise_ = filter->MakeCallPromise(
+          WrapMetadata(send_initial_metadata_batch_->payload
+                           ->send_initial_metadata.send_initial_metadata),
+          [this](ClientInitialMetadata initial_metadata) {
+            return MakeNextPromise(std::move(initial_metadata));
+          });
+    }
     // Poll once.
     WakeInsideCombiner();
   }
@@ -366,24 +415,75 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
     GPR_ASSERT(!is_polling_);
     grpc_closure* call_closure = nullptr;
     is_polling_ = true;
+    grpc_error_handle cancel_send_initial_metadata_error = GRPC_ERROR_NONE;
+    grpc_transport_stream_op_batch* forward_batch = nullptr;
     switch (send_initial_state_) {
       case SendInitialState::kQueued:
       case SendInitialState::kForwarded: {
         // Poll the promise once since we're waiting for it.
-        Poll<TrailingMetadata> poll = promise_();
+        Poll<TrailingMetadata> poll;
+        {
+          ScopedActivity activity(this);
+          poll = promise_();
+        }
         if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
-          GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kComplete);
-          GPR_ASSERT(recv_trailing_metadata_ == UnwrapMetadata(std::move(*r)));
-          recv_trailing_state_ = RecvTrailingState::kResponded;
-          call_closure =
-              absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
+          promise_ = ArenaPromise<TrailingMetadata>();
+          auto* md = UnwrapMetadata(std::move(*r));
+          bool destroy_md = true;
+          switch (recv_trailing_state_) {
+            case RecvTrailingState::kComplete:
+              if (recv_trailing_metadata_ != md) {
+                *recv_trailing_metadata_ = std::move(*md);
+              } else {
+                destroy_md = false;
+              }
+              recv_trailing_state_ = RecvTrailingState::kResponded;
+              call_closure = absl::exchange(
+                  original_recv_trailing_metadata_ready_, nullptr);
+              break;
+            case RecvTrailingState::kQueued:
+            case RecvTrailingState::kForwarded: {
+              GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
+                         GRPC_STATUS_OK);
+              grpc_error_handle error = grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      "early return from promise based filter"),
+                  GRPC_ERROR_INT_GRPC_STATUS,
+                  *md->get_pointer(GrpcStatusMetadata()));
+              if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
+                error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                           message->as_string_view());
+              }
+              if (recv_trailing_state_ == RecvTrailingState::kQueued) {
+                GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
+                send_initial_state_ = SendInitialState::kCancelled;
+                cancel_send_initial_metadata_error = error;
+              } else {
+                call_combiner()->Cancel(GRPC_ERROR_REF(error));
+                forward_batch =
+                    grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+                        [](void*, grpc_error_handle) {}, nullptr, nullptr));
+                forward_batch->cancel_stream = true;
+                forward_batch->payload->cancel_stream.cancel_error = error;
+              }
+              recv_trailing_state_ = RecvTrailingState::kCancelled;
+            } break;
+            case RecvTrailingState::kInitial:
+              abort();  // unimplemented
+            case RecvTrailingState::kResponded:
+            case RecvTrailingState::kCancelled:
+              abort();  // unreachable
+          }
+          if (destroy_md) {
+            md->~grpc_metadata_batch();
+          }
         }
       } break;
       case SendInitialState::kInitial:
       case SendInitialState::kCancelled:
-        // If we get a response without sending anything, we just propagate that
-        // up. (note: that situation isn't possible once we finish the promise
-        // transition).
+        // If we get a response without sending anything, we just propagate
+        // that up. (note: that situation isn't possible once we finish the
+        // promise transition).
         if (recv_trailing_state_ == RecvTrailingState::kComplete) {
           recv_trailing_state_ = RecvTrailingState::kResponded;
           call_closure =
@@ -391,14 +491,64 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
         }
         break;
     }
+    GRPC_CALL_STACK_REF(call_stack(), "finish_poll");
     is_polling_ = false;
+    bool in_combiner = true;
+    bool repoll = absl::exchange(repoll_, false);
+    if (forward_batch != nullptr) {
+      GPR_ASSERT(in_combiner);
+      in_combiner = false;
+      forward_send_initial_metadata_ = false;
+      grpc_call_next_op(elem(), forward_batch);
+    }
+    if (cancel_send_initial_metadata_error != GRPC_ERROR_NONE) {
+      GPR_ASSERT(in_combiner);
+      forward_send_initial_metadata_ = false;
+      in_combiner = false;
+      grpc_transport_stream_op_batch_finish_with_failure(
+          absl::exchange(send_initial_metadata_batch_, nullptr),
+          cancel_send_initial_metadata_error, call_combiner());
+    }
     if (absl::exchange(forward_send_initial_metadata_, false)) {
+      GPR_ASSERT(in_combiner);
+      in_combiner = false;
       grpc_call_next_op(elem(),
                         absl::exchange(send_initial_metadata_batch_, nullptr));
     }
     if (call_closure != nullptr) {
+      GPR_ASSERT(in_combiner);
+      in_combiner = false;
       Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_NONE);
     }
+    if (repoll) {
+      if (in_combiner) {
+        WakeInsideCombiner();
+      } else {
+        struct NextPoll : public grpc_closure {
+          grpc_call_stack* call_stack;
+          CallData* call_data;
+        };
+        auto run = [](void* p, grpc_error_handle) {
+          auto* next_poll = static_cast<NextPoll*>(p);
+          next_poll->call_data->WakeInsideCombiner();
+          GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
+          delete next_poll;
+        };
+        auto* p = new NextPoll;
+        GRPC_CALL_STACK_REF(call_stack(), "re-poll");
+        GRPC_CLOSURE_INIT(p, run, p, nullptr);
+        GRPC_CALL_COMBINER_START(call_combiner(), p, GRPC_ERROR_NONE,
+                                 "re-poll");
+      }
+    } else if (in_combiner) {
+      GRPC_CALL_COMBINER_STOP(call_combiner(), "poll paused");
+    }
+    GRPC_CALL_STACK_UNREF(call_stack(), "finish_poll");
+  }
+
+  void OnWakeup() override {
+    ScopedContext context(this);
+    WakeInsideCombiner();
   }
 
   // Contained promise
@@ -419,6 +569,8 @@ class CallData<ChannelFilter, FilterEndpoint::kClient> : public BaseCallData {
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
   // Whether we're currently polling the promise.
   bool is_polling_ = false;
+  // Should we repoll after completing polling?
+  bool repoll_ = false;
   // Whether we should forward send initial metadata after polling?
   bool forward_send_initial_metadata_ = false;
 };
@@ -434,18 +586,21 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
                       grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() {
+  ~CallData() override {
     GPR_ASSERT(!is_polling_);
     GRPC_ERROR_UNREF(cancelled_error_);
   }
+
+  // Activity implementation.
+  void ForceImmediateRepoll() final { abort(); }  // Not implemented.
 
   // Handle one grpc_transport_stream_op_batch
   void StartBatch(grpc_transport_stream_op_batch* batch) {
     // Fake out the activity based context.
     ScopedContext context(this);
 
-    // If this is a cancel stream, cancel anything we have pending and propagate
-    // the cancellation.
+    // If this is a cancel stream, cancel anything we have pending and
+    // propagate the cancellation.
     if (batch->cancel_stream) {
       GPR_ASSERT(!batch->send_initial_metadata &&
                  !batch->send_trailing_metadata && !batch->send_message &&
@@ -535,9 +690,23 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
     promise_ = ArenaPromise<TrailingMetadata>();
     if (send_trailing_state_ == SendTrailingState::kQueued) {
       send_trailing_state_ = SendTrailingState::kCancelled;
-      grpc_transport_stream_op_batch_finish_with_failure(
-          absl::exchange(send_trailing_metadata_batch_, nullptr),
-          GRPC_ERROR_REF(cancelled_error_), call_combiner());
+      struct FailBatch : public grpc_closure {
+        grpc_transport_stream_op_batch* batch;
+        CallCombiner* call_combiner;
+      };
+      auto fail = [](void* p, grpc_error_handle error) {
+        auto* f = static_cast<FailBatch*>(p);
+        grpc_transport_stream_op_batch_finish_with_failure(
+            f->batch, GRPC_ERROR_REF(error), f->call_combiner);
+        delete f;
+      };
+      auto* b = new FailBatch();
+      GRPC_CLOSURE_INIT(b, fail, b, nullptr);
+      b->batch = absl::exchange(send_trailing_metadata_batch_, nullptr);
+      b->call_combiner = call_combiner();
+      GRPC_CALL_COMBINER_START(call_combiner(), b,
+                               GRPC_ERROR_REF(cancelled_error_),
+                               "cancel pending batch");
     } else {
       send_trailing_state_ = SendTrailingState::kCancelled;
     }
@@ -623,7 +792,11 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
     bool forward_send_trailing_metadata = false;
     is_polling_ = true;
     if (recv_initial_state_ == RecvInitialState::kComplete) {
-      Poll<TrailingMetadata> poll = promise_();
+      Poll<TrailingMetadata> poll;
+      {
+        ScopedActivity activity(this);
+        poll = promise_();
+      }
       if (auto* r = absl::get_if<TrailingMetadata>(&poll)) {
         auto* md = UnwrapMetadata(std::move(*r));
         bool destroy_md = true;
@@ -672,6 +845,8 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public BaseCallData {
                         absl::exchange(send_trailing_metadata_batch_, nullptr));
     }
   }
+
+  void OnWakeup() override { abort(); }  // not implemented
 
   // Contained promise
   ArenaPromise<TrailingMetadata> promise_;
@@ -737,7 +912,9 @@ MakePromiseBasedFilter(const char* name) {
         return GRPC_ERROR_NONE;
       },
       // set_pollset_or_pollset_set
-      grpc_call_stack_ignore_set_pollset_or_pollset_set,
+      [](grpc_call_element* elem, grpc_polling_entity* pollent) {
+        static_cast<CallData*>(elem->call_data)->set_pollent(pollent);
+      },
       // destroy_call_elem
       [](grpc_call_element* elem, const grpc_call_final_info*, grpc_closure*) {
         static_cast<CallData*>(elem->call_data)->~CallData();
