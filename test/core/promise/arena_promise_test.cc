@@ -44,6 +44,14 @@ TEST(ArenaPromiseTest, DestructionWorks) {
   EXPECT_EQ(q(), Poll<int>(42));
 }
 
+TEST(ArenaPromiseTest, MoveAssignmentWorks) {
+  auto arena = MakeScopedArena(1024, g_memory_allocator);
+  promise_detail::Context<Arena> context(arena.get());
+  auto x = std::make_shared<int>(42);
+  auto p = ArenaPromise<int>([x] { return Poll<int>(*x); });
+  p = ArenaPromise<int>();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

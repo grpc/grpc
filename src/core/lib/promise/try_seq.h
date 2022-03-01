@@ -41,6 +41,11 @@ struct TrySeqTraitsWithSfinae {
       -> decltype(next->Once(std::forward<T>(value))) {
     return next->Once(std::forward<T>(value));
   }
+  template <typename F, typename Elem>
+  static auto CallSeqFactory(F& f, Elem&& elem, T&& value)
+      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
+    return f(std::forward<Elem>(elem), std::forward<T>(value));
+  }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(T prior, RunNext run_next) {
     return run_next(std::move(prior));
@@ -55,6 +60,11 @@ struct TrySeqTraitsWithSfinae<absl::StatusOr<T>> {
   static auto CallFactory(Next* next, absl::StatusOr<T>&& status)
       -> decltype(next->Once(std::move(*status))) {
     return next->Once(std::move(*status));
+  }
+  template <typename F, typename Elem>
+  static auto CallSeqFactory(F& f, Elem&& elem, absl::StatusOr<T> value)
+      -> decltype(f(std::forward<Elem>(elem), std::move(*value))) {
+    return f(std::forward<Elem>(elem), std::move(*value));
   }
   template <typename Result, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(absl::StatusOr<T> prior,
@@ -107,6 +117,23 @@ using TrySeq = BasicSeq<TrySeqTraits, Fs...>;
 template <typename... Functors>
 promise_detail::TrySeq<Functors...> TrySeq(Functors... functors) {
   return promise_detail::TrySeq<Functors...>(std::move(functors)...);
+}
+
+// Try a sequence of operations of unknown length.
+// Asynchronously:
+//   for (element in (begin, end)) {
+//     auto r = wait_for factory(element, argument);
+//     if (!r.ok()) return r;
+//     argument = *r;
+//   }
+//   return argument;
+template <typename Iter, typename Factory, typename Argument>
+promise_detail::BasicSeqIter<promise_detail::TrySeqTraits, Factory, Argument,
+                             Iter>
+TrySeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+  return promise_detail::BasicSeqIter<promise_detail::TrySeqTraits, Factory,
+                                      Argument, Iter>(
+      begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core
