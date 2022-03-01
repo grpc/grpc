@@ -10,13 +10,13 @@
 #include "envoy/config/trace/v3/trace.upbdefs.h"
 #include "envoy/config/trace/v3/trace.upb.h"
 
-extern upb_def_init envoy_config_trace_v3_datadog_proto_upbdefinit;
-extern upb_def_init envoy_config_trace_v3_dynamic_ot_proto_upbdefinit;
-extern upb_def_init envoy_config_trace_v3_http_tracer_proto_upbdefinit;
-extern upb_def_init envoy_config_trace_v3_lightstep_proto_upbdefinit;
-extern upb_def_init envoy_config_trace_v3_opencensus_proto_upbdefinit;
-extern upb_def_init envoy_config_trace_v3_service_proto_upbdefinit;
-extern upb_def_init envoy_config_trace_v3_zipkin_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_datadog_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_dynamic_ot_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_http_tracer_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_lightstep_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_opencensus_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_service_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_trace_v3_zipkin_proto_upbdefinit;
 static const char descriptor[473] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 't', 
 'r', 'a', 'c', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 
 't', 'r', 'a', 'c', 'e', '.', 'v', '3', '\032', '#', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 
@@ -38,7 +38,7 @@ static const char descriptor[473] = {'\n', '!', 'e', 'n', 'v', 'o', 'y', '/', 'c
 '3', 'P', '\000', 'P', '\001', 'P', '\002', 'P', '\003', 'P', '\004', 'P', '\005', 'P', '\006', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[8] = {
+static _upb_DefPool_Init *deps[8] = {
   &envoy_config_trace_v3_datadog_proto_upbdefinit,
   &envoy_config_trace_v3_dynamic_ot_proto_upbdefinit,
   &envoy_config_trace_v3_http_tracer_proto_upbdefinit,
@@ -49,9 +49,9 @@ static upb_def_init *deps[8] = {
   NULL
 };
 
-upb_def_init envoy_config_trace_v3_trace_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_trace_v3_trace_proto_upbdefinit = {
   deps,
   &envoy_config_trace_v3_trace_proto_upb_file_layout,
   "envoy/config/trace/v3/trace.proto",
-  UPB_STRVIEW_INIT(descriptor, 473)
+  UPB_STRINGVIEW_INIT(descriptor, 473)
 };

@@ -54,12 +54,14 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 
 namespace {
 
-grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
-  return std::max(
+Duration GetClientIdleTimeout(const grpc_channel_args* args) {
+  auto millis = std::max(
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
           {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}),
       MIN_IDLE_TIMEOUT_MS);
+  if (millis == INT_MAX) return Duration::Infinity();
+  return Duration::Milliseconds(millis);
 }
 
 class ClientIdleFilter : public ChannelFilter {
@@ -82,7 +84,7 @@ class ClientIdleFilter : public ChannelFilter {
 
  private:
   ClientIdleFilter(grpc_channel_stack* channel_stack,
-                   grpc_millis client_idle_timeout)
+                   Duration client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
 
@@ -99,7 +101,7 @@ class ClientIdleFilter : public ChannelFilter {
 
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
-  grpc_millis client_idle_timeout_;
+  Duration client_idle_timeout_;
   std::shared_ptr<IdleFilterState> idle_filter_state_{
       std::make_shared<IdleFilterState>(false)};
 
@@ -190,7 +192,7 @@ void RegisterClientIdleFilter(CoreConfiguration::Builder* builder) {
       [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            GetClientIdleTimeout(channel_args) != INT_MAX) {
+            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
           builder->PrependFilter(&grpc_client_idle_filter, nullptr);
         }
         return true;

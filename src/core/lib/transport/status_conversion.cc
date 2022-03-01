@@ -39,8 +39,8 @@ grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
   }
 }
 
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
-                                                 grpc_millis deadline) {
+grpc_status_code grpc_http2_error_to_grpc_status(
+    grpc_http2_error_code error, grpc_core::Timestamp deadline) {
   switch (error) {
     case GRPC_HTTP2_NO_ERROR:
       /* should never be received */

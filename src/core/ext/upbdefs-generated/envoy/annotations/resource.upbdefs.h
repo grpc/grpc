@@ -19,11 +19,11 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_annotations_resource_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_resource_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_annotations_ResourceAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_annotations_resource_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.annotations.ResourceAnnotation");
+UPB_INLINE const upb_MessageDef *envoy_annotations_ResourceAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_annotations_resource_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.annotations.ResourceAnnotation");
 }
 
 #ifdef __cplusplus

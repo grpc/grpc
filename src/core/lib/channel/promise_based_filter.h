@@ -104,13 +104,13 @@ class BaseCallData {
 
   grpc_call_element* elem() const { return elem_; }
   CallCombiner* call_combiner() const { return call_combiner_; }
-  grpc_millis deadline() const { return deadline_; }
+  Timestamp deadline() const { return deadline_; }
 
  private:
   grpc_call_element* const elem_;
   Arena* const arena_;
   CallCombiner* const call_combiner_;
-  const grpc_millis deadline_;
+  const Timestamp deadline_;
 };
 
 // Specific call data per channel filter.

@@ -99,7 +99,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&request.pops),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+                              &worker, grpc_core::Timestamp::InfFuture()))) {
       request.is_done = true;
     }
   }
