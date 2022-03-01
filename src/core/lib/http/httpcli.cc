@@ -53,6 +53,7 @@ namespace {
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
+void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
 }  // namespace
 
@@ -110,6 +111,11 @@ void HttpRequest::SetOverride(grpc_httpcli_get_override get,
                               grpc_httpcli_post_override post) {
   g_get_override = get;
   g_post_override = post;
+}
+
+void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
+    void (*intercept)(HttpRequest* req)) {
+  g_test_only_on_handshake_done_intercept = intercept;
 }
 
 HttpRequest::HttpRequest(
@@ -260,18 +266,29 @@ void HttpRequest::StartWrite() {
 void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
+  if (g_test_only_on_handshake_done_intercept != nullptr) {
+    // Run this testing intercept before the lock so that it has a chance to
+    // do things like calling Orphan on the request
+    g_test_only_on_handshake_done_intercept(req.get());
+  }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (error != GRPC_ERROR_NONE || req->cancelled_) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
     req->NextAddress(GRPC_ERROR_REF(error));
     return;
   }
+  // Handshake completed, so we own fields in args
   grpc_channel_args_destroy(args->args);
   grpc_slice_buffer_destroy_internal(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
+  if (req->cancelled_) {
+    req->NextAddress(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HTTP request cancelled during security handshake"));
+    return;
+  }
   req->StartWrite();
 }
 
