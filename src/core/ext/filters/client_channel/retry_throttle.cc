@@ -23,7 +23,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include <atomic>
 #include <map>
 #include <string>
 
@@ -120,21 +119,9 @@ void ServerRetryThrottleData::RecordSuccess() {
 // ServerRetryThrottleMap
 //
 
-std::atomic<ServerRetryThrottleMap*> ServerRetryThrottleMap::instance_{nullptr};
-
 ServerRetryThrottleMap* ServerRetryThrottleMap::Get() {
-  ServerRetryThrottleMap* p = instance_.load(std::memory_order_acquire);
-  if (p == nullptr) {
-    p = new ServerRetryThrottleMap();
-    ServerRetryThrottleMap* expected = nullptr;
-    if (!instance_.compare_exchange_strong(expected, p,
-                                           std::memory_order_acq_rel,
-                                           std::memory_order_acquire)) {
-      delete p;
-      p = expected;
-    }
-  }
-  return p;
+  static ServerRetryThrottleMap* m = new ServerRetryThrottleMap();
+  return m;
 }
 
 RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(

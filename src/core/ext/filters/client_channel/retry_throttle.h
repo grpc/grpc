@@ -75,8 +75,6 @@ class ServerRetryThrottleMap {
   using StringToDataMap =
       std::map<std::string, RefCountedPtr<ServerRetryThrottleData>>;
 
-  static std::atomic<ServerRetryThrottleMap*> instance_;
-
   Mutex mu_;
   StringToDataMap map_ ABSL_GUARDED_BY(mu_);
 };
