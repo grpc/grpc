@@ -28,27 +28,22 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
 
-bool grpc_google_iam_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_core::CredentialsMetadataArray* md_array,
-    grpc_closure* /*on_request_metadata*/, grpc_error_handle* /*error*/) {
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_google_iam_credentials::GetRequestMetadata(
+    grpc_core::ClientInitialMetadata initial_metadata,
+    const grpc_call_credentials::GetRequestMetadataArgs*) {
   if (token_.has_value()) {
-    md_array->emplace_back(grpc_core::Slice::FromStaticString(
-                               GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
-                           token_->Ref());
+    initial_metadata->Append(
+        GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY, token_->Ref(),
+        [](absl::string_view, const grpc_core::Slice&) { abort(); });
   }
-  md_array->emplace_back(grpc_core::Slice::FromStaticString(
-                             GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY),
-                         authority_selector_.Ref());
-  return true;
-}
-
-void grpc_google_iam_credentials::cancel_get_request_metadata(
-    grpc_core::CredentialsMetadataArray* /*md_array*/,
-    grpc_error_handle error) {
-  GRPC_ERROR_UNREF(error);
+  initial_metadata->Append(
+      GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, authority_selector_.Ref(),
+      [](absl::string_view, const grpc_core::Slice&) { abort(); });
+  return grpc_core::Immediate(std::move(initial_metadata));
 }
 
 grpc_google_iam_credentials::grpc_google_iam_credentials(
