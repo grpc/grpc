@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <cinttypes>
+#include <functional>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
