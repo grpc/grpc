@@ -18,33 +18,26 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "global_subchannel_pool.h"
 
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
 
-#define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_AFTER_ATTEMPTS 100
-#define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS 10
-
-void GlobalSubchannelPool::Init() {
-  instance_ = new RefCountedPtr<GlobalSubchannelPool>(
-      MakeRefCounted<GlobalSubchannelPool>());
-}
-
-void GlobalSubchannelPool::Shutdown() {
-  // To ensure Init() was called before.
-  GPR_ASSERT(instance_ != nullptr);
-  // To ensure Shutdown() was not called before.
-  GPR_ASSERT(*instance_ != nullptr);
-  instance_->reset();
-  delete instance_;
-}
-
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
-  GPR_ASSERT(instance_ != nullptr);
-  GPR_ASSERT(*instance_ != nullptr);
-  return *instance_;
+  RefCountedPtr<GlobalSubchannelPool>* p =
+      instance_.load(std::memory_order_acquire);
+  if (p == nullptr) {
+    p = new RefCountedPtr<GlobalSubchannelPool>(new GlobalSubchannelPool());
+    RefCountedPtr<GlobalSubchannelPool>* expect = nullptr;
+    if (!instance_.compare_exchange_strong(expect, p, std::memory_order_release,
+                                           std::memory_order_acq_rel)) {
+      delete p;
+      p = expect;
+    }
+  }
+  return *p;
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
@@ -59,7 +52,8 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   return constructed;
 }
 
-RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
+std::atomic<RefCountedPtr<GlobalSubchannelPool>*>
+    GlobalSubchannelPool::instance_{nullptr};
 
 void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
                                                 Subchannel* subchannel) {
