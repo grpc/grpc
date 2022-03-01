@@ -43,12 +43,12 @@
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(const grpc_http_request* request,
                                          const char* host, const char* path,
-                                         grpc_millis deadline,
+                                         grpc_core::Timestamp deadline,
                                          grpc_closure* on_complete,
                                          grpc_http_response* response);
 typedef int (*grpc_httpcli_post_override)(
     const grpc_http_request* request, const char* host, const char* path,
-    const char* body_bytes, size_t body_size, grpc_millis deadline,
+    const char* body_bytes, size_t body_size, grpc_core::Timestamp deadline,
     grpc_closure* on_complete, grpc_http_response* response);
 
 namespace grpc_core {
@@ -81,7 +81,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   //   are removed.
   static OrphanablePtr<HttpRequest> Get(
       URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
-      const grpc_http_request* request, grpc_millis deadline,
+      const grpc_http_request* request, Timestamp deadline,
       grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
@@ -107,13 +107,13 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   // Does not support ?var1=val1&var2=val2 in the path.
   static OrphanablePtr<HttpRequest> Post(
       URI uri, const grpc_channel_args* args, grpc_polling_entity* pollent,
-      const grpc_http_request* request, grpc_millis deadline,
+      const grpc_http_request* request, Timestamp deadline,
       grpc_closure* on_done, grpc_http_response* response,
       RefCountedPtr<grpc_channel_credentials> channel_creds)
       GRPC_MUST_USE_RESULT;
 
   HttpRequest(URI uri, const grpc_slice& request_text,
-              grpc_http_response* response, grpc_millis deadline,
+              grpc_http_response* response, Timestamp deadline,
               const grpc_channel_args* channel_args, grpc_closure* on_done,
               grpc_polling_entity* pollent, const char* name,
               absl::optional<std::function<void()>> test_only_generate_response,
@@ -185,7 +185,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   const URI uri_;
   const grpc_slice request_text_;
-  const grpc_millis deadline_;
+  const Timestamp deadline_;
   const grpc_channel_args* channel_args_;
   RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_closure on_read_;

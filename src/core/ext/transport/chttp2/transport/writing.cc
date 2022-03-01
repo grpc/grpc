@@ -77,15 +77,16 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   // in a loop while draining the currently-held combiner. Also see
   // https://github.com/grpc/grpc/issues/26079.
   grpc_core::ExecCtx::Get()->InvalidateNow();
-  grpc_millis now = grpc_core::ExecCtx::Get()->Now();
+  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
 
-  grpc_millis next_allowed_ping_interval =
+  grpc_core::Duration next_allowed_ping_interval =
       (t->keepalive_permit_without_calls == 0 &&
        grpc_chttp2_stream_map_size(&t->stream_map) == 0)
-          ? 7200 * GPR_MS_PER_SEC
-          : (GPR_MS_PER_SEC); /* A second is added to deal with network delays
-                                 and timing imprecision */
-  grpc_millis next_allowed_ping =
+          ? grpc_core::Duration::Hours(2)
+          : grpc_core::Duration::Seconds(
+                1); /* A second is added to deal with network delays and timing
+                       imprecision */
+  grpc_core::Timestamp next_allowed_ping =
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
   if (next_allowed_ping > now) {
@@ -93,12 +94,14 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO,
-              "%s: Ping delayed [%s]: not enough time elapsed since last ping. "
-              " Last ping %f: Next ping %f: Now %f",
-              t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
-              static_cast<double>(t->ping_state.last_ping_sent_time),
-              static_cast<double>(next_allowed_ping), static_cast<double>(now));
+      gpr_log(
+          GPR_INFO,
+          "%s: Ping delayed [%s]: not enough time elapsed since last ping. "
+          " Last ping %" PRId64 ": Next ping %" PRId64 ": Now %" PRId64,
+          t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
+          t->ping_state.last_ping_sent_time.milliseconds_after_process_epoch(),
+          next_allowed_ping.milliseconds_after_process_epoch(),
+          now.milliseconds_after_process_epoch());
     }
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;

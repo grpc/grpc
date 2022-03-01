@@ -403,7 +403,7 @@ class RetryFilter::CallData {
 
     // Returns true if the call should be retried.
     bool ShouldRetry(absl::optional<grpc_status_code> status,
-                     absl::optional<grpc_millis> server_pushback_ms);
+                     absl::optional<Duration> server_pushback_ms);
 
     // Abandons the call attempt.  Unrefs any deferred batches.
     void Abandon();
@@ -513,8 +513,8 @@ class RetryFilter::CallData {
   void RetryCommit(CallAttempt* call_attempt);
 
   // Starts a timer to retry after appropriate back-off.
-  // If server_pushback_ms is nullopt, retry_backoff_ is used.
-  void StartRetryTimer(absl::optional<grpc_millis> server_pushback_ms);
+  // If server_pushback is nullopt, retry_backoff_ is used.
+  void StartRetryTimer(absl::optional<Duration> server_pushback);
 
   static void OnRetryTimer(void* arg, grpc_error_handle error);
   static void OnRetryTimerLocked(void* arg, grpc_error_handle error);
@@ -536,7 +536,7 @@ class RetryFilter::CallData {
   BackOff retry_backoff_;
 
   grpc_slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
@@ -691,7 +691,7 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
   // If per_attempt_recv_timeout is set, start a timer.
   if (calld->retry_policy_ != nullptr &&
       calld->retry_policy_->per_attempt_recv_timeout().has_value()) {
-    grpc_millis per_attempt_recv_deadline =
+    Timestamp per_attempt_recv_deadline =
         ExecCtx::Get()->Now() +
         *calld->retry_policy_->per_attempt_recv_timeout();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -699,7 +699,7 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
               "chand=%p calld=%p attempt=%p: per-attempt timeout in %" PRId64
               " ms",
               calld->chand_, calld, this,
-              *calld->retry_policy_->per_attempt_recv_timeout());
+              calld->retry_policy_->per_attempt_recv_timeout()->millis());
     }
     // Schedule retry after computed delay.
     GRPC_CLOSURE_INIT(&on_per_attempt_recv_timer_, OnPerAttemptRecvTimer, this,
@@ -1088,7 +1088,7 @@ void RetryFilter::CallData::CallAttempt::CancelFromSurface(
 
 bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     absl::optional<grpc_status_code> status,
-    absl::optional<grpc_millis> server_pushback_ms) {
+    absl::optional<Duration> server_pushback) {
   // If no retry policy, don't retry.
   if (calld_->retry_policy_ == nullptr) return false;
   // Check status.
@@ -1151,8 +1151,8 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
     return false;
   }
   // Check server push-back.
-  if (server_pushback_ms.has_value()) {
-    if (*server_pushback_ms < 0) {
+  if (server_pushback.has_value()) {
+    if (*server_pushback < Duration::Zero()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p attempt=%p: not retrying due to server "
@@ -1166,7 +1166,7 @@ bool RetryFilter::CallData::CallAttempt::ShouldRetry(
             GPR_INFO,
             "chand=%p calld=%p attempt=%p: server push-back: retry in %" PRIu64
             " ms",
-            calld_->chand_, calld_, this, *server_pushback_ms);
+            calld_->chand_, calld_, this, server_pushback->millis());
       }
     }
   }
@@ -1257,7 +1257,7 @@ void RetryFilter::CallData::CallAttempt::OnPerAttemptRecvTimerLocked(
       // Mark current attempt as abandoned.
       call_attempt->Abandon();
       // We are retrying.  Start backoff timer.
-      calld->StartRetryTimer(/*server_pushback_ms=*/absl::nullopt);
+      calld->StartRetryTimer(/*server_pushback=*/absl::nullopt);
     } else {
       // Not retrying, so commit the call.
       calld->RetryCommit(call_attempt);
@@ -1553,12 +1553,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
 
 namespace {
 
-// Sets *status, *server_pushback_ms, and *is_lb_drop based on md_batch
+// Sets *status, *server_pushback, and *is_lb_drop based on md_batch
 // and error.
 void GetCallStatus(
-    grpc_millis deadline, grpc_metadata_batch* md_batch,
-    grpc_error_handle error, grpc_status_code* status,
-    absl::optional<grpc_millis>* server_pushback_ms, bool* is_lb_drop,
+    Timestamp deadline, grpc_metadata_batch* md_batch, grpc_error_handle error,
+    grpc_status_code* status, absl::optional<Duration>* server_pushback,
+    bool* is_lb_drop,
     absl::optional<GrpcStreamNetworkState::ValueType>* stream_network_state) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
@@ -1570,7 +1570,7 @@ void GetCallStatus(
   } else {
     *status = *md_batch->get(GrpcStatusMetadata());
   }
-  *server_pushback_ms = md_batch->get(GrpcRetryPushbackMsMetadata());
+  *server_pushback = md_batch->get(GrpcRetryPushbackMsMetadata());
   *stream_network_state = md_batch->get(GrpcStreamNetworkState());
   GRPC_ERROR_UNREF(error);
 }
@@ -1702,22 +1702,21 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   call_attempt->MaybeCancelPerAttemptRecvTimer();
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
-  absl::optional<grpc_millis> server_pushback_ms;
+  absl::optional<Duration> server_pushback;
   bool is_lb_drop = false;
   absl::optional<GrpcStreamNetworkState::ValueType> stream_network_state;
   grpc_metadata_batch* md_batch =
       batch_data->batch_.payload->recv_trailing_metadata.recv_trailing_metadata;
   GetCallStatus(calld->deadline_, md_batch, GRPC_ERROR_REF(error), &status,
-                &server_pushback_ms, &is_lb_drop, &stream_network_state);
+                &server_pushback, &is_lb_drop, &stream_network_state);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p attempt=%p: call finished, status=%s "
-            "server_pushback_ms=%s is_lb_drop=%d stream_network_state=%s",
+            "server_pushback=%s is_lb_drop=%d stream_network_state=%s",
             calld->chand_, calld, call_attempt,
             grpc_status_code_to_string(status),
-            server_pushback_ms.has_value()
-                ? absl::StrCat(*server_pushback_ms).c_str()
-                : "N/A",
+            server_pushback.has_value() ? server_pushback->ToString().c_str()
+                                        : "N/A",
             is_lb_drop,
             stream_network_state.has_value()
                 ? absl::StrCat(*stream_network_state).c_str()
@@ -1741,7 +1740,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
     }
     // If not transparently retrying, check for configurable retry.
     if (retry == kNoRetry &&
-        call_attempt->ShouldRetry(status, server_pushback_ms)) {
+        call_attempt->ShouldRetry(status, server_pushback)) {
       retry = kConfigurableRetry;
     }
     // If we're retrying, do so.
@@ -1761,7 +1760,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
       if (retry == kTransparentRetry) {
         calld->AddClosureToStartTransparentRetry(&closures);
       } else {
-        calld->StartRetryTimer(server_pushback_ms);
+        calld->StartRetryTimer(server_pushback);
       }
       // Record that this attempt has been abandoned.
       call_attempt->Abandon();
@@ -2117,14 +2116,15 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(retry_policy_ == nullptr
-                                       ? 0
+                                       ? Duration::Zero()
                                        : retry_policy_->initial_backoff())
               .set_multiplier(retry_policy_ == nullptr
                                   ? 0
                                   : retry_policy_->backoff_multiplier())
               .set_jitter(RETRY_BACKOFF_JITTER)
-              .set_max_backoff(
-                  retry_policy_ == nullptr ? 0 : retry_policy_->max_backoff())),
+              .set_max_backoff(retry_policy_ == nullptr
+                                   ? Duration::Zero()
+                                   : retry_policy_->max_backoff())),
       path_(grpc_slice_ref_internal(args.path)),
       deadline_(args.deadline),
       arena_(args.arena),
@@ -2554,14 +2554,14 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
 }
 
 void RetryFilter::CallData::StartRetryTimer(
-    absl::optional<grpc_millis> server_pushback_ms) {
+    absl::optional<Duration> server_pushback) {
   // Reset call attempt.
   call_attempt_.reset(DEBUG_LOCATION, "StartRetryTimer");
   // Compute backoff delay.
-  grpc_millis next_attempt_time;
-  if (server_pushback_ms.has_value()) {
-    GPR_ASSERT(*server_pushback_ms >= 0);
-    next_attempt_time = ExecCtx::Get()->Now() + *server_pushback_ms;
+  Timestamp next_attempt_time;
+  if (server_pushback.has_value()) {
+    GPR_ASSERT(*server_pushback >= Duration::Zero());
+    next_attempt_time = ExecCtx::Get()->Now() + *server_pushback;
     retry_backoff_.Reset();
   } else {
     next_attempt_time = retry_backoff_.NextAttemptTime();
@@ -2569,7 +2569,7 @@ void RetryFilter::CallData::StartRetryTimer(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: retrying failed call in %" PRId64 " ms", chand_,
-            this, next_attempt_time - ExecCtx::Get()->Now());
+            this, (next_attempt_time - ExecCtx::Get()->Now()).millis());
   }
   // Schedule retry after computed delay.
   GRPC_CLOSURE_INIT(&retry_closure_, OnRetryTimer, this, nullptr);

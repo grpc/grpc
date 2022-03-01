@@ -49,7 +49,7 @@ struct GrpcLbServer {
 
 struct GrpcLbResponse {
   enum { INITIAL, SERVERLIST, FALLBACK } type;
-  grpc_millis client_stats_report_interval = 0;
+  Duration client_stats_report_interval;
   std::vector<GrpcLbServer> serverlist;
 };
 

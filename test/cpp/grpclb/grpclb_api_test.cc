@@ -95,7 +95,8 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
       grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
   grpc_slice_unref(encoded_slice);
   EXPECT_EQ(resp.type, resp.INITIAL);
-  EXPECT_EQ(resp.client_stats_report_interval, 123456);
+  EXPECT_EQ(resp.client_stats_report_interval,
+            grpc_core::Duration::Milliseconds(123456));
   EXPECT_EQ(resp.serverlist.size(), 0);
 }
 

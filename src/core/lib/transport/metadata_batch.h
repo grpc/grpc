@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 
+#include <cstdint>
 #include <limits>
 
 #include "absl/strings/escaping.h"
@@ -47,7 +48,7 @@
 namespace grpc_core {
 
 // grpc-timeout metadata trait.
-// ValueType is defined as grpc_millis - an absolute timestamp (i.e. a
+// ValueType is defined as Timestamp - an absolute timestamp (i.e. a
 // deadline!), that is converted to a duration by transports before being
 // sent.
 // TODO(ctiller): Move this elsewhere. During the transition we need to be able
@@ -55,27 +56,27 @@ namespace grpc_core {
 // should not need to.
 struct GrpcTimeoutMetadata {
   static constexpr bool kRepeatable = false;
-  using ValueType = grpc_millis;
-  using MementoType = grpc_millis;
+  using ValueType = Timestamp;
+  using MementoType = Duration;
   static absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error) {
     auto timeout = ParseTimeout(value);
     if (!timeout.has_value()) {
       on_error("invalid value", value);
-      return GRPC_MILLIS_INF_FUTURE;
+      return Duration::Infinity();
     }
     return *timeout;
   }
   static ValueType MementoToValue(MementoType timeout) {
-    if (timeout == GRPC_MILLIS_INF_FUTURE) {
-      return GRPC_MILLIS_INF_FUTURE;
+    if (timeout == Duration::Infinity()) {
+      return Timestamp::InfFuture();
     }
     return ExecCtx::Get()->Now() + timeout;
   }
   static Slice Encode(ValueType x) {
     return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
   }
-  static MementoType DisplayValue(MementoType x) { return x; }
+  static std::string DisplayValue(MementoType x) { return x.ToString(); }
 };
 
 // TE metadata trait.
@@ -153,7 +154,7 @@ struct ContentTypeMetadata {
       case kApplicationGrpc:
         return StaticSlice::FromStaticString("application/grpc");
       case kInvalid:
-        abort();
+        return StaticSlice::FromStaticString("application/grpc+unknown");
     }
     GPR_UNREACHABLE_CODE(
         return StaticSlice::FromStaticString("unrepresentable value"));
@@ -432,10 +433,22 @@ struct GrpcPreviousRpcAttemptsMetadata
 };
 
 // grpc-retry-pushback-ms metadata trait.
-struct GrpcRetryPushbackMsMetadata
-    : public SimpleIntBasedMetadata<grpc_millis, GRPC_MILLIS_INF_PAST> {
+struct GrpcRetryPushbackMsMetadata {
   static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
+  using ValueType = Duration;
+  using MementoType = Duration;
+  static ValueType MementoToValue(MementoType x) { return x; }
+  static Slice Encode(Duration x) { return Slice::FromInt64(x.millis()); }
+  static int64_t DisplayValue(Duration x) { return x.millis(); }
+  static Duration ParseMemento(Slice value, MetadataParseErrorFn on_error) {
+    int64_t out;
+    if (!absl::SimpleAtoi(value.as_string_view(), &out)) {
+      on_error("not an integer", value);
+      return Duration::NegativeInfinity();
+    }
+    return Duration::Milliseconds(out);
+  }
 };
 
 // :status metadata trait.
@@ -745,10 +758,29 @@ class GetStringValueHelper {
 // Sink for key value logs
 using LogFn = absl::FunctionRef<void(absl::string_view, absl::string_view)>;
 
+template <typename T>
+struct AdaptDisplayValueToLog {
+  static std::string ToString(const T& value) { return absl::StrCat(value); }
+};
+
+template <>
+struct AdaptDisplayValueToLog<Slice> {
+  static std::string ToString(Slice value) {
+    return std::string(value.as_string_view());
+  }
+};
+
+template <>
+struct AdaptDisplayValueToLog<StaticSlice> {
+  static absl::string_view ToString(StaticSlice value) {
+    return value.as_string_view();
+  }
+};
+
 template <typename T, typename U, typename V>
 GPR_ATTRIBUTE_NOINLINE void LogKeyValueTo(absl::string_view key, const T& value,
                                           V (*display_value)(U), LogFn log_fn) {
-  log_fn(key, absl::StrCat(display_value(value)));
+  log_fn(key, AdaptDisplayValueToLog<V>::ToString(display_value(value)));
 }
 
 // Generate a strong type for metadata values per trait.
@@ -775,7 +807,7 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == false &&
     encoder->Encode(Which(), value);
   }
   void LogTo(LogFn log_fn) const {
-    LogKeyValueTo(Which::key(), value, Which::DisplayValue, log_fn);
+    LogKeyValueTo(Which::key(), value, Which::Encode, log_fn);
   }
   using StorageType = typename Which::ValueType;
   GPR_NO_UNIQUE_ADDRESS StorageType value;
@@ -831,7 +863,7 @@ struct Value<Which, absl::enable_if_t<Which::kRepeatable == true &&
   }
   void LogTo(LogFn log_fn) const {
     for (const auto& v : value) {
-      LogKeyValueTo(Which::key(), v, Which::DisplayValue, log_fn);
+      LogKeyValueTo(Which::key(), v, Which::Encode, log_fn);
     }
   }
   using StorageType = absl::InlinedVector<typename Which::ValueType, 1>;
