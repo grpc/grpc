@@ -308,6 +308,12 @@ END2END_TESTS = {
         short_name = "retry_cancel3",
         needs_client_channel = True,
     ),
+    "retry_cancel_after_first_attempt_starts": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel4",
+        needs_client_channel = True,
+    ),
     "retry_disabled": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
@@ -356,6 +362,17 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
+    "retry_transparent_goaway": _test_options(needs_client_channel = True),
+    "retry_transparent_not_sent_on_wire": _test_options(
+        needs_client_channel = True,
+    ),
+    "retry_transparent_max_concurrent_streams": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_transparent_mcs",
+    ),
     "retry_unref_before_finish": _test_options(needs_client_channel = True),
     "retry_unref_before_recv": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),

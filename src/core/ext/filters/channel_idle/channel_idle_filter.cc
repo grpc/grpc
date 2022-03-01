@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include <atomic>
+#include <limits>
 
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -66,22 +67,23 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 
 namespace {
 
-grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
-  return std::max(
+Duration GetClientIdleTimeout(const grpc_channel_args* args) {
+  int ms = std::max(
       grpc_channel_arg_get_integer(
           grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
           {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}),
       MIN_IDLE_TIMEOUT_MS);
+  return ms == INT_MAX ? Duration::Infinity() : Duration::Milliseconds(ms);
 }
 
 struct MaxAgeConfig {
-  grpc_millis max_connection_age;
-  grpc_millis max_connection_idle;
-  grpc_millis max_connection_age_grace;
+  Duration max_connection_age;
+  Duration max_connection_idle;
+  Duration max_connection_age_grace;
 
   bool enable() const {
-    return max_connection_age != GRPC_MILLIS_INF_FUTURE ||
-           max_connection_idle != GRPC_MILLIS_INF_FUTURE;
+    return max_connection_age != Duration::Infinity() ||
+           max_connection_idle != Duration::Infinity();
   }
 };
 
@@ -107,13 +109,11 @@ MaxAgeConfig GetMaxAgeConfig(const grpc_channel_args* args) {
   const double max_age = multiplier * args_max_age;
   /* GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
      will not be cast to int implicitly before the comparison. */
-  return MaxAgeConfig{
-      args_max_age == INT_MAX ||
-              max_age > (static_cast<double>(GRPC_MILLIS_INF_FUTURE)) - 0.5
-          ? GRPC_MILLIS_INF_FUTURE
-          : static_cast<grpc_millis>(args_max_age),
-      args_max_idle == INT_MAX ? GRPC_MILLIS_INF_FUTURE : args_max_idle,
-      args_max_age_grace};
+  return MaxAgeConfig{Duration::FromSecondsAsDouble(max_age * 1000.0),
+                      args_max_idle == INT_MAX
+                          ? Duration::Infinity()
+                          : Duration::Milliseconds(args_max_idle),
+                      Duration::Milliseconds(args_max_age_grace)};
 }
 
 class ChannelIdleFilter : public ChannelFilter {
@@ -134,7 +134,7 @@ class ChannelIdleFilter : public ChannelFilter {
 
  protected:
   ChannelIdleFilter(grpc_channel_stack* channel_stack,
-                    grpc_millis client_idle_timeout)
+                    Duration client_idle_timeout)
       : channel_stack_(channel_stack),
         client_idle_timeout_(client_idle_timeout) {}
 
@@ -157,7 +157,7 @@ class ChannelIdleFilter : public ChannelFilter {
 
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
-  grpc_millis client_idle_timeout_;
+  Duration client_idle_timeout_;
   std::shared_ptr<IdleFilterState> idle_filter_state_{
       std::make_shared<IdleFilterState>(false)};
 
@@ -206,8 +206,8 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   void Shutdown() override;
 
   ActivityPtr max_age_activity_;
-  grpc_millis max_connection_age_;
-  grpc_millis max_connection_age_grace_;
+  Duration max_connection_age_;
+  Duration max_connection_age_grace_;
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
@@ -257,7 +257,7 @@ void MaxAgeFilter::Start() {
   auto channel_stack = this->channel_stack()->Ref();
 
   // Start the max age timer
-  if (max_connection_age_ != GRPC_MILLIS_INF_FUTURE) {
+  if (max_connection_age_ != Duration::Infinity()) {
     max_age_activity_ = MakeActivity(
         TrySeq(
             // First sleep until the max connection age
@@ -380,7 +380,7 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            GetClientIdleTimeout(channel_args) != INT_MAX) {
+            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
           builder->PrependFilter(&grpc_client_idle_filter, nullptr);
         }
         return true;

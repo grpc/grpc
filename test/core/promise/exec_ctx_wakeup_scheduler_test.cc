@@ -59,8 +59,5 @@ TEST(ExecCtxWakeupSchedulerTest, Works) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::ExecCtx::GlobalInit();
-  int r = RUN_ALL_TESTS();
-  grpc_core::ExecCtx::GlobalShutdown();
-  return r;
+  return RUN_ALL_TESTS();
 }

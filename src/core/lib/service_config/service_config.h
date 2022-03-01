@@ -20,8 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <unordered_map>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/string_util.h>
@@ -63,63 +62,19 @@ namespace grpc_core {
 // interface requied to be exposed as part of the resolver API.
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
-  /// Creates a new service config from parsing \a json_string.
-  /// Returns null on parse error.
-  static RefCountedPtr<ServiceConfig> Create(const grpc_channel_args* args,
-                                             absl::string_view json_string,
-                                             grpc_error_handle* error);
-
-  ServiceConfig(const grpc_channel_args* args, std::string json_string,
-                Json json, grpc_error_handle* error);
-  ~ServiceConfig() override;
-
-  const std::string& json_string() const { return json_string_; }
+  virtual absl::string_view json_string() const = 0;
 
   /// Retrieves the global parsed config at index \a index. The
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
-  ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(size_t index) {
-    GPR_DEBUG_ASSERT(index < parsed_global_configs_.size());
-    return parsed_global_configs_[index].get();
-  }
+  virtual ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
+      size_t index) = 0;
 
   /// Retrieves the vector of parsed configs for the method identified
   /// by \a path.  The lifetime of the returned vector and contained objects
   /// is tied to the lifetime of the ServiceConfig object.
-  const ServiceConfigParser::ParsedConfigVector* GetMethodParsedConfigVector(
-      const grpc_slice& path) const;
-
- private:
-  // Helper functions for parsing the method configs.
-  grpc_error_handle ParsePerMethodParams(const grpc_channel_args* args);
-  grpc_error_handle ParseJsonMethodConfig(const grpc_channel_args* args,
-                                          const Json& json);
-
-  // Returns a path string for the JSON name object specified by json.
-  // Sets *error on error.
-  static std::string ParseJsonMethodName(const Json& json,
-                                         grpc_error_handle* error);
-
-  std::string json_string_;
-  Json json_;
-
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfig>,
-                      ServiceConfigParser::kNumPreallocatedParsers>
-      parsed_global_configs_;
-  // A map from the method name to the parsed config vector. Note that we are
-  // using a raw pointer and not a unique pointer so that we can use the same
-  // vector for multiple names.
-  std::unordered_map<grpc_slice, const ServiceConfigParser::ParsedConfigVector*,
-                     SliceHash>
-      parsed_method_configs_map_;
-  // Default method config.
-  const ServiceConfigParser::ParsedConfigVector* default_method_config_vector_ =
-      nullptr;
-  // Storage for all the vectors that are being used in
-  // parsed_method_configs_table_.
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>,
-                      32>
-      parsed_method_config_vectors_storage_;
+  virtual const ServiceConfigParser::ParsedConfigVector*
+  GetMethodParsedConfigVector(const grpc_slice& path) const = 0;
 };
 
 }  // namespace grpc_core

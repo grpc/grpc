@@ -16,6 +16,8 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <atomic>
+
 #include <grpc/support/log.h>
 
 namespace grpc_core {
@@ -37,6 +39,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       channel_init_(builder->channel_init_.Build()),
       handshaker_registry_(builder->handshaker_registry_.Build()),
       channel_creds_registry_(builder->channel_creds_registry_.Build()),
+      service_config_parser_(builder->service_config_parser_.Build()),
       resolver_registry_(builder->resolver_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {

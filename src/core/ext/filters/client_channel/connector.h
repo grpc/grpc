@@ -38,7 +38,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     // Set of pollsets interested in this connection.
     grpc_pollset_set* interested_parties;
     // Deadline for connection.
-    grpc_millis deadline;
+    Timestamp deadline;
     // Channel args to be passed to handshakers and transport.
     const grpc_channel_args* channel_args;
   };

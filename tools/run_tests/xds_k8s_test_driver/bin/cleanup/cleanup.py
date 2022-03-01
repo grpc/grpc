@@ -35,6 +35,7 @@ from typing import Any, List
 
 from absl import app
 from absl import flags
+import dateutil
 
 from framework import xds_flags
 from framework import xds_k8s_flags
@@ -49,7 +50,6 @@ Json = Any
 KubernetesClientRunner = client_app.KubernetesClientRunner
 KubernetesServerRunner = server_app.KubernetesServerRunner
 
-KEEP_PERIOD = datetime.timedelta(days=7)
 GCLOUD = os.environ.get('GCLOUD', 'gcloud')
 GCLOUD_CMD_TIMEOUT_S = datetime.timedelta(seconds=5).total_seconds()
 ZONE = 'us-central1-a'
@@ -58,6 +58,12 @@ SECONDARY_ZONE = 'us-west1-b'
 PSM_SECURITY_PREFIX = 'xds-k8s-security'  # Prefix for gke resources to delete.
 URL_MAP_TEST_PREFIX = 'interop-psm-url-map'  # Prefix for url-map test resources to delete.
 
+KEEP_PERIOD_HOURS = flags.DEFINE_integer(
+    "keep_hours",
+    default=168,
+    help=
+    "number of hours for a resource to keep. Resources older than this will be deleted. Default is 168 (7 days)"
+)
 DRY_RUN = flags.DEFINE_bool(
     "dry_run",
     default=False,
@@ -103,7 +109,8 @@ def is_marked_as_keep_gke(suffix: str) -> bool:
 
 @functools.lru_cache()
 def get_expire_timestamp() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc) - KEEP_PERIOD
+    return datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        hours=KEEP_PERIOD_HOURS.value)
 
 
 def exec_gcloud(project: str, *cmds: List[str]) -> Json:
@@ -301,6 +308,29 @@ def delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
             logging.info('----- Skipped [resource is within expiry date]')
 
 
+def find_and_remove_leaked_k8s_resources(dry_run, project, network,
+                                         gcp_service_account):
+    k8s_resource_rules = [
+        # items in each tuple, in order
+        # - regex to match
+        # - prefix of the resources
+        # - function to delete the resource
+    ]
+    for prefix in CLIENT_PREFIXES.value:
+        k8s_resource_rules.append(
+            (f'{prefix}-client-(.*)', prefix, cleanup_client),)
+    for prefix in SERVER_PREFIXES.value:
+        k8s_resource_rules.append(
+            (f'{prefix}-server-(.*)', prefix, cleanup_server),)
+
+    # Delete leaked k8s namespaces, those usually mean there are leaked testing
+    # client/servers from the gke framework.
+    k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
+    nss = k8s_api_manager.core.list_namespace()
+    delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
+                         k8s_api_manager, gcp_service_account, nss.items)
+
+
 def main(argv):
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
@@ -337,7 +367,7 @@ def main(argv):
     compute = gcp.compute.ComputeV1(gcp.api.GcpApiManager(), project)
     leakedHealthChecks = []
     for item in compute.list_health_check()['items']:
-        if datetime.datetime.fromisoformat(
+        if dateutil.parser.isoparse(
                 item['creationTimestamp']) <= get_expire_timestamp():
             leakedHealthChecks.append(item)
 
@@ -352,25 +382,8 @@ def main(argv):
     delete_leaked_td_resources(dry_run, td_resource_rules, project, network,
                                leakedInstanceTemplates)
 
-    k8s_resource_rules = [
-        # items in each tuple, in order
-        # - regex to match
-        # - prefix of the resources
-        # - function to delete the resource
-    ]
-    for prefix in CLIENT_PREFIXES.value:
-        k8s_resource_rules.append(
-            (f'{prefix}-client-(.*)', prefix, cleanup_client),)
-    for prefix in SERVER_PREFIXES.value:
-        k8s_resource_rules.append(
-            (f'{prefix}-server-(.*)', prefix, cleanup_server),)
-
-    # Delete leaked k8s namespaces, those usually mean there are leaked testing
-    # client/servers from the gke framework.
-    k8s_api_manager = k8s.KubernetesApiManager(xds_k8s_flags.KUBE_CONTEXT.value)
-    nss = k8s_api_manager.core.list_namespace()
-    delete_k8s_resources(dry_run, k8s_resource_rules, project, network,
-                         k8s_api_manager, gcp_service_account, nss.items)
+    find_and_remove_leaked_k8s_resources(dry_run, project, network,
+                                         gcp_service_account)
 
 
 if __name__ == '__main__':

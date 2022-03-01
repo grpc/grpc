@@ -52,7 +52,7 @@ activate_gke_cluster() {
     GKE_CLUSTER_PSM_BASIC)
       GKE_CLUSTER_NAME="interop-test-psm-basic"
       GKE_CLUSTER_ZONE="us-central1-c"
-      ;;      
+      ;;
     *)
       echo "Unknown GKE cluster: ${1}"
       exit 1
@@ -413,7 +413,7 @@ kokoro_setup_test_driver() {
 #   TEST_XML_OUTPUT_DIR: Populated with the path to test xUnit XML report
 #   GIT_ORIGIN_URL: Populated with the origin URL of git repo used for the build
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
-#   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built  
+#   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
 #   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   The path to the folder containing the build script

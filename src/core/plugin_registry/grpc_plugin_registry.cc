@@ -41,24 +41,16 @@ void grpc_lb_policy_round_robin_init(void);
 void grpc_lb_policy_round_robin_shutdown(void);
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-void grpc_message_size_filter_init(void);
-void grpc_message_size_filter_shutdown(void);
 namespace grpc_core {
-void FaultInjectionFilterInit(void);
-void FaultInjectionFilterShutdown(void);
 void GrpcLbPolicyRingHashInit(void);
 void GrpcLbPolicyRingHashShutdown(void);
 #ifndef GRPC_NO_RLS
 void RlsLbPluginInit();
 void RlsLbPluginShutdown();
 #endif  // !GRPC_NO_RLS
-void ServiceConfigParserInit(void);
-void ServiceConfigParserShutdown(void);
 }  // namespace grpc_core
 
 void grpc_register_built_in_plugins(void) {
-  grpc_register_plugin(grpc_core::ServiceConfigParserInit,
-                       grpc_core::ServiceConfigParserShutdown);
   grpc_register_plugin(grpc_client_channel_init, grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
@@ -78,10 +70,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::GrpcLbPolicyRingHashShutdown);
   grpc_register_plugin(grpc_resolver_dns_ares_init,
                        grpc_resolver_dns_ares_shutdown);
-  grpc_register_plugin(grpc_message_size_filter_init,
-                       grpc_message_size_filter_shutdown);
-  grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
-                       grpc_core::FaultInjectionFilterShutdown);
   grpc_register_extra_plugins();
 }
 
@@ -103,6 +91,7 @@ extern void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder);
 extern void RegisterExtraFilters(CoreConfiguration::Builder* builder);
 extern void RegisterResourceQuota(CoreConfiguration::Builder* builder);
+extern void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder);
 extern void RegisterNativeDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterAresDnsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterSockaddrResolver(CoreConfiguration::Builder* builder);
@@ -122,6 +111,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);
+  FaultInjectionFilterRegister(builder);
   RegisterAresDnsResolver(builder);
   RegisterNativeDnsResolver(builder);
   RegisterSockaddrResolver(builder);
