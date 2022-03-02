@@ -2096,6 +2096,7 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
+  src/core/lib/json/json_object_loader.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
@@ -2739,6 +2740,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/iomgr/work_serializer.cc
+  src/core/lib/json/json_object_loader.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
@@ -12380,7 +12382,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(json_object_loader_test
-  src/core/lib/json/json_object_loader.cc
   test/core/json/json_object_loader_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
