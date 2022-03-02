@@ -449,7 +449,7 @@ class ClientChannel::LoadBalancedCall
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
   Slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;

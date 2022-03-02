@@ -15,24 +15,26 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field envoy_type_v3_HttpStatus__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_type_v3_HttpStatus__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_type_v3_HttpStatus_msginit = {
+const upb_MiniTable envoy_type_v3_HttpStatus_msginit = {
   NULL,
   &envoy_type_v3_HttpStatus__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_type_v3_HttpStatus_msginit,
 };
 
-const upb_msglayout_file envoy_type_v3_http_status_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_type_v3_http_status_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

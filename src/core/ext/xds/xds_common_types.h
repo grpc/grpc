@@ -32,26 +32,11 @@
 
 namespace grpc_core {
 
-struct Duration {
-  int64_t seconds = 0;
-  int32_t nanos = 0;
-
-  Duration() = default;
-
-  bool operator==(const Duration& other) const {
-    return seconds == other.seconds && nanos == other.nanos;
-  }
-  std::string ToString() const {
-    return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
-  }
-
-  static Duration Parse(const google_protobuf_Duration* proto_duration) {
-    Duration duration;
-    duration.seconds = google_protobuf_Duration_seconds(proto_duration);
-    duration.nanos = google_protobuf_Duration_nanos(proto_duration);
-    return duration;
-  }
-};
+inline Duration ParseDuration(const google_protobuf_Duration* proto_duration) {
+  return Duration::FromSecondsAndNanoseconds(
+      google_protobuf_Duration_seconds(proto_duration),
+      google_protobuf_Duration_nanos(proto_duration));
+}
 
 struct CommonTlsContext {
   struct CertificateProviderPluginInstance {
