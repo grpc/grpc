@@ -490,7 +490,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
         abort();  // unreachable
         break;
       case SendTrailingState::kCancelled:
-        abort();  // unimplemented
+        grpc_transport_stream_op_batch_finish_with_failure(
+            batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
         break;
     }
     return;
