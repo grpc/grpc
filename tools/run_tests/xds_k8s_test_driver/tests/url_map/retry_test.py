@@ -19,8 +19,8 @@ from absl import flags
 from absl.testing import absltest
 import grpc
 
-from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -31,7 +31,6 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 XdsTestClient = client_app.XdsTestClient
 ExpectedResult = xds_url_map_testcase.ExpectedResult
-TestConfig = xds_url_map_testcase.TestConfig
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -67,7 +66,7 @@ def _build_retry_route_rule(retryConditions, num_retries):
 class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def is_supported(config: TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang in ['cpp', 'java', 'python']:
             return config.version_ge('v1.40.x')
         elif config.client_lang == 'go':
@@ -110,7 +109,7 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
-    def is_supported(config: TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang in ['cpp', 'java', 'python']:
             return config.version_ge('v1.40.x')
         elif config.client_lang == 'go':
