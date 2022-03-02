@@ -77,7 +77,7 @@ then
   set +x
   source $HOME/.rvm/scripts/rvm
 
-  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
+  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0 3.1.0; do
     echo "Installing ruby-${RUBY_VERSION}"
     time rvm install "ruby-${RUBY_VERSION}"
   done;

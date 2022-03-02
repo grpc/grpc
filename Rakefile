@@ -29,6 +29,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32',
+    'x64-mingw-ucrt',
     'x86_64-linux', 'x86-linux',
     'x86_64-darwin', 'arm64-darwin',
     'universal-darwin'
