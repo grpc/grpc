@@ -141,7 +141,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.1.1', '3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+  ruby_cc_versions = ['3.1.0', '3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
   selected_plat = "#{args[:plat]}"
 
   if RUBY_PLATFORM =~ /darwin/
@@ -195,7 +195,7 @@ task 'gem:native', [:plat] do |t, args|
     windows_platforms.each do |plat|
       # x64-mingw-ucrt only supports 3.1+ whereas 'x64-mingw32' only supports up to 3.0
       versions = if plat == 'x64-mingw-ucrt'
-        '3.1.1'
+        '3.1.0'
       elsif plat == 'x64-mingw32'
         ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
       else
