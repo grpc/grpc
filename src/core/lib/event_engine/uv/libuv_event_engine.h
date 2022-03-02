@@ -165,7 +165,7 @@ class LibuvEventEngine final
     };
     // (Con|De)struction
     LibuvTaskHandle() = delete;
-    LibuvTaskHandle(std::unique_ptr<LibuvTask> task)
+    explicit LibuvTaskHandle(std::unique_ptr<LibuvTask> task)
         : task_(std::move(task)), tag_(task_->handle_tag_) {}
     LibuvTaskHandle(const LibuvTaskHandle&) = delete;
     LibuvTaskHandle& operator=(const LibuvTaskHandle&) = delete;
