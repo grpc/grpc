@@ -273,18 +273,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_timer",
-    srcs = ["bm_timer.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
     name = "bm_pollset",
     srcs = ["bm_pollset.cc"],
     args = grpc_benchmark_args(),

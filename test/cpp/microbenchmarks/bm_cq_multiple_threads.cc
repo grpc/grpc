@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -72,8 +73,8 @@ static void cq_done_cb(void* /*done_arg*/, grpc_cq_completion* cq_completion) {
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
 static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
-                                      grpc_millis deadline) {
-  if (deadline == 0) {
+                                      grpc_core::Timestamp deadline) {
+  if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
     gpr_log(GPR_DEBUG, "no-op");
     return GRPC_ERROR_NONE;
   }

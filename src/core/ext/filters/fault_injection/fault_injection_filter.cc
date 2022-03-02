@@ -357,12 +357,13 @@ void CallData::DecideWhetherToInjectFaults(
       }
     }
     if (!fi_policy_->delay_header.empty() &&
-        (copied_policy == nullptr || copied_policy->delay == 0)) {
+        (copied_policy == nullptr ||
+         copied_policy->delay == Duration::Zero())) {
       auto value =
           initial_metadata->GetStringValue(fi_policy_->delay_header, &buffer);
       if (value.has_value()) {
         maybe_copy_policy_func();
-        copied_policy->delay = static_cast<grpc_millis>(
+        copied_policy->delay = Duration::Milliseconds(
             std::max(AsInt<int64_t>(*value).value_or(0), int64_t(0)));
       }
     }
@@ -379,7 +380,7 @@ void CallData::DecideWhetherToInjectFaults(
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
   }
   // Roll the dice
-  delay_request_ = fi_policy_->delay != 0 &&
+  delay_request_ = fi_policy_->delay != Duration::Zero() &&
                    UnderFraction(fi_policy_->delay_percentage_numerator,
                                  fi_policy_->delay_percentage_denominator);
   abort_request_ = fi_policy_->abort_code != GRPC_STATUS_OK &&
@@ -423,7 +424,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
-  grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
+  Timestamp resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);

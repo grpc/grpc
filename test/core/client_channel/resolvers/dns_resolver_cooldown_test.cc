@@ -20,6 +20,7 @@
 #include <functional>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -27,6 +28,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -72,14 +74,16 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     auto result = g_default_dns_resolver->ResolveName(
         name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;
-    static grpc_millis last_resolution_time = 0;
-    if (last_resolution_time == 0) {
-      last_resolution_time =
-          grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+    static grpc_core::Timestamp last_resolution_time =
+        grpc_core::Timestamp::ProcessEpoch();
+    if (last_resolution_time == grpc_core::Timestamp::ProcessEpoch()) {
+      last_resolution_time = grpc_core::Timestamp::FromTimespecRoundUp(
+          gpr_now(GPR_CLOCK_MONOTONIC));
     } else {
-      grpc_millis now =
-          grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-      GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
+      auto now = grpc_core::Timestamp::FromTimespecRoundUp(
+          gpr_now(GPR_CLOCK_MONOTONIC));
+      GPR_ASSERT(now - last_resolution_time >=
+                 grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
       last_resolution_time = now;
     }
     // For correct time diff comparisons, make sure that any subsequent calls
@@ -110,20 +114,19 @@ static grpc_ares_request* test_dns_lookup_ares(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
       addresses, balancer_addresses, service_config_json, query_timeout_ms);
   ++g_resolution_count;
-  static grpc_millis last_resolution_time = 0;
-  grpc_millis now =
-      grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+  static auto last_resolution_time = grpc_core::Timestamp::ProcessEpoch();
+  auto now =
+      grpc_core::Timestamp::FromTimespecRoundUp(gpr_now(GPR_CLOCK_MONOTONIC));
   gpr_log(GPR_DEBUG,
           "last_resolution_time:%" PRId64 " now:%" PRId64
           " min_time_between:%d",
-          last_resolution_time, now, kMinResolutionPeriodMs);
-  if (last_resolution_time == 0) {
-    last_resolution_time =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-  } else {
-    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
-    last_resolution_time = now;
+          last_resolution_time.milliseconds_after_process_epoch(),
+          now.milliseconds_after_process_epoch(), kMinResolutionPeriodMs);
+  if (last_resolution_time != grpc_core::Timestamp::ProcessEpoch()) {
+    GPR_ASSERT(now - last_resolution_time >=
+               grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
   }
+  last_resolution_time = now;
   // For correct time diff comparisons, make sure that any subsequent calls
   // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
   // which is earlier than that returned by the call(s) to
@@ -165,22 +168,22 @@ static void iomgr_args_finish(iomgr_args* args) {
   gpr_free(args->pollset);
 }
 
-static grpc_millis n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
+static grpc_core::Timestamp n_sec_deadline(int seconds) {
+  return grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void poll_pollset_until_request_done(iomgr_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  grpc_core::Timestamp deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;
     }
-    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
-    GPR_ASSERT(time_left >= 0);
+    grpc_core::Duration time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
+    GPR_ASSERT(time_left >= grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,

@@ -139,7 +139,8 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_slice_allocator* slice_allocator,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
-                 const grpc_resolved_address* addr, grpc_millis deadline) {
+                 const grpc_resolved_address* addr,
+                 grpc_core::Timestamp deadline) {
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
           grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
@@ -150,8 +151,8 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
       absl::make_unique<WrappedInternalSliceAllocator>(slice_allocator);
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
-  absl::Time ee_deadline = grpc_core::ToAbslTime(
-      grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
+  absl::Time ee_deadline =
+      grpc_core::ToAbslTime(deadline.as_timespec(GPR_CLOCK_MONOTONIC));
   ChannelArgsEndpointConfig endpoint_config(channel_args);
   absl::Status connected = GetDefaultEventEngine()->Connect(
       ee_on_connect, ra, endpoint_config, std::move(ee_slice_allocator),
