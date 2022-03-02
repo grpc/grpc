@@ -32,9 +32,9 @@ std::atomic<int64_t> g_process_epoch_seconds;
 std::atomic<gpr_cycle_counter> g_process_epoch_cycles;
 
 GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
-  gpr_cycle_counter cycles_start;
-  gpr_cycle_counter cycles_end;
-  int64_t process_epoch_seconds;
+  gpr_cycle_counter cycles_start = 0;
+  gpr_cycle_counter cycles_end = 0;
+  int64_t process_epoch_seconds = 0;
 
   // Check the current time... if we end up with zero, try again after 100ms.
   // If it doesn't advance after sleeping for 1100ms, crash the process.
