@@ -181,11 +181,11 @@ class LibuvEventEngine final
     LibuvTask* Task() { return task_.get(); }
     const LibuvTask* Task() const { return task_.get(); }
     // Equality
-    constexpr bool operator==(const LibuvTaskHandle& handle) const {
+    bool operator==(const LibuvTaskHandle& handle) const {
       return &handle == this ||
              (handle.task_.get() == task_.get() && handle.tag_ == tag_);
     }
-    constexpr bool operator==(const EventEngine::TaskHandle& handle) const {
+    bool operator==(const EventEngine::TaskHandle& handle) const {
       return Accessor::Task(handle) == task_.get() &&
              Accessor::Tag(handle) == tag_;
     }
