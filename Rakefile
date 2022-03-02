@@ -141,7 +141,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+  ruby_cc_versions = ['3.1.1', '3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
   selected_plat = "#{args[:plat]}"
 
   if RUBY_PLATFORM =~ /darwin/
@@ -168,7 +168,7 @@ task 'gem:native', [:plat] do |t, args|
     prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
     prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-    supported_windows_platforms = ['x86-mingw32', 'x64-mingw32']
+    supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
     supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin']
     supported_platforms = supported_windows_platforms + supported_unix_platforms
 
@@ -193,13 +193,21 @@ task 'gem:native', [:plat] do |t, args|
     Rake::Task['dlls'].execute(plat: windows_platforms)
 
     windows_platforms.each do |plat|
+      # x64-mingw-ucrt only supports 3.1+ whereas 'x64-mingw32' only supports up to 3.0
+      versions = if plat == 'x64-mingw-ucrt'
+        '3.1.1'
+      elsif plat == 'x64-mingw32'
+        ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+      else
+        ruby_cc_versions
+      end
       run_rake_compiler(plat, <<~EOT)
         #{prepare_ccache_cmd} && \
         gem update --system --no-document && \
         bundle && \
         bundle exec rake clean && \
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
-          RUBY_CC_VERSION=#{ruby_cc_versions} \
+          RUBY_CC_VERSION=#{versions} \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config} \
           GRPC_RUBY_BUILD_PROCS=#{nproc_override}
