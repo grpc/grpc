@@ -117,15 +117,16 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
     ResolverArgs args, const grpc_channel_args* channel_args)
     : PollingResolver(
           std::move(args), channel_args,
-          grpc_channel_args_find_integer(
+          Duration::Milliseconds(grpc_channel_args_find_integer(
               channel_args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
-              {1000 * 30, 0, INT_MAX}),
+              {1000 * 30, 0, INT_MAX})),
           BackOff::Options()
-              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
-                                   1000)
+              .set_initial_backoff(Duration::Milliseconds(
+                  GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000),
+              .set_max_backoff(Duration::Milliseconds(
+                  GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
           &grpc_trace_cares_resolver),
       request_service_config_(!grpc_channel_args_find_bool(
           channel_args, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, true)),

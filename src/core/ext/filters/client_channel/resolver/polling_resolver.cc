@@ -30,7 +30,7 @@ namespace grpc_core {
 
 PollingResolver::PollingResolver(ResolverArgs args,
                                  const grpc_channel_args* channel_args,
-                                 grpc_millis min_time_between_resolutions,
+                                 Duration min_time_between_resolutions,
                                  BackOff::Options backoff_options,
                                  TraceFlag* tracer)
     : authority_(args.uri.authority()),
@@ -132,14 +132,14 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
       // in a loop while draining the currently-held WorkSerializer.
       // Also see https://github.com/grpc/grpc/issues/26079.
       ExecCtx::Get()->InvalidateNow();
-      grpc_millis next_try = backoff_.NextAttemptTime();
-      grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+      Timestamp next_try = backoff_.NextAttemptTime();
+      Duration timeout = next_try - ExecCtx::Get()->Now();
       GPR_ASSERT(!have_next_resolution_timer_);
       have_next_resolution_timer_ = true;
       if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-        if (timeout > 0) {
+        if (timeout > Duration::Zero()) {
           gpr_log(GPR_INFO, "[polling resolver %p] retrying in %" PRId64 " ms",
-                  this, timeout);
+                  this, timeout.millis());
         } else {
           gpr_log(GPR_INFO, "[polling resolver %p] retrying immediately", this);
         }
@@ -157,30 +157,31 @@ void PollingResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
-  if (last_resolution_timestamp_ >= 0) {
+  if (last_resolution_timestamp_.has_value()) {
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    const grpc_millis earliest_next_resolution =
-        last_resolution_timestamp_ + min_time_between_resolutions_;
-    const grpc_millis ms_until_next_resolution =
+    const Timestamp earliest_next_resolution =
+        *last_resolution_timestamp_ + min_time_between_resolutions_;
+    const Duration time_until_next_resolution =
         earliest_next_resolution - ExecCtx::Get()->Now();
-    if (ms_until_next_resolution > 0) {
+    if (time_until_next_resolution > Duration::Zero()) {
       if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-        const grpc_millis last_resolution_ago =
-            ExecCtx::Get()->Now() - last_resolution_timestamp_;
+        const Duration last_resolution_ago =
+            ExecCtx::Get()->Now() - *last_resolution_timestamp_;
         gpr_log(GPR_INFO,
                 "[polling resolver %p] in cooldown from last resolution "
                 "(from %" PRId64 " ms ago); will resolve again in %" PRId64
                 " ms",
-                this, last_resolution_ago, ms_until_next_resolution);
+                this, last_resolution_ago.millis(),
+                time_until_next_resolution.millis());
       }
       have_next_resolution_timer_ = true;
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
       GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this, nullptr);
       grpc_timer_init(&next_resolution_timer_,
-                      ExecCtx::Get()->Now() + ms_until_next_resolution,
+                      ExecCtx::Get()->Now() + time_until_next_resolution,
                       &on_next_resolution_);
       return;
     }

@@ -86,7 +86,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   grpc_pollset_worker* worker = nullptr;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = grpc_timespec_to_millis_round_up(
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_milliseconds_to_deadline(milliseconds));
   gpr_mu_lock(server->mu);
   GRPC_LOG_IF_ERROR("pollset_work",

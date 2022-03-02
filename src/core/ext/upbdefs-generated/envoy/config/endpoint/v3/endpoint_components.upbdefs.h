@@ -19,36 +19,36 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_Endpoint_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.Endpoint");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_Endpoint_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.Endpoint");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.Endpoint.HealthCheckConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.Endpoint.HealthCheckConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LbEndpoint_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LbEndpoint");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_LbEndpoint_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.LbEndpoint");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LedsClusterLocalityConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LedsClusterLocalityConfig");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_LedsClusterLocalityConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.LedsClusterLocalityConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LocalityLbEndpoints_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LocalityLbEndpoints");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_LocalityLbEndpoints_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.LocalityLbEndpoints");
 }
 
-UPB_INLINE const upb_msgdef *envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.config.endpoint.v3.LocalityLbEndpoints.LbEndpointList");
+UPB_INLINE const upb_MessageDef *envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_endpoint_v3_endpoint_components_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.endpoint.v3.LocalityLbEndpoints.LbEndpointList");
 }
 
 #ifdef __cplusplus

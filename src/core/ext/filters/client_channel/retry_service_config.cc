@@ -158,9 +158,9 @@ namespace {
 
 grpc_error_handle ParseRetryPolicy(
     const grpc_channel_args* args, const Json& json, int* max_attempts,
-    grpc_millis* initial_backoff, grpc_millis* max_backoff,
-    float* backoff_multiplier, StatusCodeSet* retryable_status_codes,
-    absl::optional<grpc_millis>* per_attempt_recv_timeout) {
+    Duration* initial_backoff, Duration* max_backoff, float* backoff_multiplier,
+    StatusCodeSet* retryable_status_codes,
+    absl::optional<Duration>* per_attempt_recv_timeout) {
   if (json.type() != Json::Type::OBJECT) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:retryPolicy error:should be of type object");
@@ -192,14 +192,14 @@ grpc_error_handle ParseRetryPolicy(
   // Parse initialBackoff.
   if (ParseJsonObjectFieldAsDuration(json.object_value(), "initialBackoff",
                                      initial_backoff, &error_list) &&
-      *initial_backoff == 0) {
+      *initial_backoff == Duration::Zero()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:initialBackoff error:must be greater than 0"));
   }
   // Parse maxBackoff.
   if (ParseJsonObjectFieldAsDuration(json.object_value(), "maxBackoff",
                                      max_backoff, &error_list) &&
-      *max_backoff == 0) {
+      *max_backoff == Duration::Zero()) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:maxBackoff error:must be greater than 0"));
   }
@@ -253,7 +253,7 @@ grpc_error_handle ParseRetryPolicy(
                                   false)) {
     it = json.object_value().find("perAttemptRecvTimeout");
     if (it != json.object_value().end()) {
-      grpc_millis per_attempt_recv_timeout_value;
+      Duration per_attempt_recv_timeout_value;
       if (!ParseDurationFromJson(it->second, &per_attempt_recv_timeout_value)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:perAttemptRecvTimeout error:type must be STRING of the "
@@ -262,7 +262,7 @@ grpc_error_handle ParseRetryPolicy(
         *per_attempt_recv_timeout = per_attempt_recv_timeout_value;
         // TODO(roth): As part of implementing hedging, relax this check such
         // that we allow a value of 0 if a hedging policy is specified.
-        if (per_attempt_recv_timeout_value == 0) {
+        if (per_attempt_recv_timeout_value == Duration::Zero()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:perAttemptRecvTimeout error:must be greater than 0"));
         }
@@ -296,11 +296,11 @@ RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
   auto it = json.object_value().find("retryPolicy");
   if (it == json.object_value().end()) return nullptr;
   int max_attempts = 0;
-  grpc_millis initial_backoff = 0;
-  grpc_millis max_backoff = 0;
+  Duration initial_backoff;
+  Duration max_backoff;
   float backoff_multiplier = 0;
   StatusCodeSet retryable_status_codes;
-  absl::optional<grpc_millis> per_attempt_recv_timeout;
+  absl::optional<Duration> per_attempt_recv_timeout;
   *error = ParseRetryPolicy(args, it->second, &max_attempts, &initial_backoff,
                             &max_backoff, &backoff_multiplier,
                             &retryable_status_codes, &per_attempt_recv_timeout);

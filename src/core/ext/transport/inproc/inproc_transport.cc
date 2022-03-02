@@ -231,7 +231,8 @@ struct inproc_stream {
   grpc_metadata_batch write_buffer_initial_md{arena};
   bool write_buffer_initial_md_filled = false;
   uint32_t write_buffer_initial_md_flags = 0;
-  grpc_millis write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp write_buffer_deadline =
+      grpc_core::Timestamp::InfFuture();
   grpc_metadata_batch write_buffer_trailing_md{arena};
   bool write_buffer_trailing_md_filled = false;
   grpc_error_handle write_buffer_cancel_error = GRPC_ERROR_NONE;
@@ -265,7 +266,7 @@ struct inproc_stream {
   grpc_error_handle cancel_self_error = GRPC_ERROR_NONE;
   grpc_error_handle cancel_other_error = GRPC_ERROR_NONE;
 
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   bool listed = true;
   struct inproc_stream* stream_list_prev;
@@ -705,7 +706,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
               .recv_initial_metadata,
           s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
           nullptr);
-      if (s->deadline != GRPC_MILLIS_INF_FUTURE) {
+      if (s->deadline != grpc_core::Timestamp::InfFuture()) {
         s->recv_initial_md_op->payload->recv_initial_metadata
             .recv_initial_metadata->Set(grpc_core::GrpcTimeoutMetadata(),
                                         s->deadline);
@@ -1008,12 +1009,12 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
               dest, destflags, destfilled);
         }
         if (s->t->is_client) {
-          grpc_millis* dl =
+          grpc_core::Timestamp* dl =
               (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
           *dl = std::min(
               *dl, op->payload->send_initial_metadata.send_initial_metadata
                        ->get(grpc_core::GrpcTimeoutMetadata())
-                       .value_or(GRPC_MILLIS_INF_FUTURE));
+                       .value_or(grpc_core::Timestamp::InfFuture()));
           s->initial_md_sent = true;
         }
       }

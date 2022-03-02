@@ -10,12 +10,12 @@
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_rpc_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_rpc_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[2286] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', 
 '/', 'v', '3', '/', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', '.', 'p', 'r', 'o', 't', 'o', '\022', '\032', 'e', 'n', 'v', 'o', 
 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 'd', 'i', 's', 'c', 'o', 'v', 'e', 'r', 'y', '.', 'v', '3', '\032', '\037', 'e', 
@@ -110,7 +110,7 @@ static const char descriptor[2286] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', '
 '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &google_protobuf_any_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
@@ -120,9 +120,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_service_discovery_v3_discovery_proto_upbdefinit = {
+_upb_DefPool_Init envoy_service_discovery_v3_discovery_proto_upbdefinit = {
   deps,
   &envoy_service_discovery_v3_discovery_proto_upb_file_layout,
   "envoy/service/discovery/v3/discovery.proto",
-  UPB_STRVIEW_INIT(descriptor, 2286)
+  UPB_STRINGVIEW_INIT(descriptor, 2286)
 };

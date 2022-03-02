@@ -21,6 +21,8 @@
 
 #include <memory>
 
+#include "absl/types/optional.h"
+
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -37,7 +39,7 @@ namespace grpc_core {
 class PollingResolver : public Resolver {
  public:
   PollingResolver(ResolverArgs args, const grpc_channel_args* channel_args,
-                  grpc_millis min_time_between_resolutions,
+                  Duration min_time_between_resolutions,
                   BackOff::Options backoff_options, TraceFlag* tracer);
   ~PollingResolver() override;
 
@@ -92,9 +94,9 @@ class PollingResolver : public Resolver {
   grpc_timer next_resolution_timer_;
   grpc_closure on_next_resolution_;
   /// min time between DNS requests
-  grpc_millis min_time_between_resolutions_;
+  Duration min_time_between_resolutions_;
   /// timestamp of last DNS request
-  grpc_millis last_resolution_timestamp_ = -1;
+  absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
 };

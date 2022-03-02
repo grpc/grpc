@@ -10,8 +10,8 @@
 #include "xds/annotations/v3/security.upbdefs.h"
 #include "xds/annotations/v3/security.upb.h"
 
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 static const char descriptor[468] = {'\n', '!', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 'e', 'c', 'u', 
 'r', 'i', 't', 'y', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'x', 'd', 's', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 
 'n', 's', '.', 'v', '3', '\032', '\037', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', 
@@ -33,15 +33,15 @@ static const char descriptor[468] = {'\n', '!', 'x', 'd', 's', '/', 'a', 'n', 'n
 'v', '3', '\322', '\306', '\244', '\341', '\006', '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[3] = {
+static _upb_DefPool_Init *deps[3] = {
   &xds_annotations_v3_status_proto_upbdefinit,
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_annotations_v3_security_proto_upbdefinit = {
+_upb_DefPool_Init xds_annotations_v3_security_proto_upbdefinit = {
   deps,
   &xds_annotations_v3_security_proto_upb_file_layout,
   "xds/annotations/v3/security.proto",
-  UPB_STRVIEW_INIT(descriptor, 468)
+  UPB_STRINGVIEW_INIT(descriptor, 468)
 };
