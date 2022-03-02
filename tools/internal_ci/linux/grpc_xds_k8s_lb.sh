@@ -95,6 +95,11 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
+  # testing_version is used by the framework to determine the supported PSM
+  # features. It's captured from Kokoro job name of the Core repo, which takes
+  # 2 forms:
+  #   grpc/core/master/linux/...
+  #   grpc/core/v1.42.x/branch/linux/...
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
@@ -137,8 +142,8 @@ main() {
   local script_dir
   script_dir="$(dirname "$0")"
 
-  # Source the test driver from the master branch.
-  echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
+  # Source the test captured from the master branch.
+  echo "Sourcing test driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
   activate_gke_cluster GKE_CLUSTER_PSM_LB

@@ -114,6 +114,12 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
+
+  # testing_version is used by the framework to determine the supported PSM
+  # features. It's captured from Kokoro job name of the Core repo, which takes
+  # 2 forms:
+  #   grpc/core/master/linux/...
+  #   grpc/core/v1.42.x/branch/linux/...
   set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
