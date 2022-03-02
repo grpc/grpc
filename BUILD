@@ -3568,6 +3568,7 @@ grpc_cc_library(
     external_deps = [
         "xxhash",
         "re2",
+        "absl/random",
         "absl/strings",
     ],
     language = "c++",
