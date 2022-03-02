@@ -31,8 +31,11 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 struct grpc_http_response;
 
@@ -130,9 +133,28 @@ struct grpc_channel_credentials
     return args;
   }
 
+  // Compares this grpc_channel_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two channel
+  // credentials as effectively the same. This method is used to compare
+  // `grpc_channel_credentials` objects when they are present in channel_args.
+  // One important usage of this is when channel args are used in SubchannelKey,
+  // which leads to a useful property that allows subchannels to be reused when
+  // two different `grpc_channel_credentials` objects are used but they compare
+  // as equal (assuming other channel args match).
+  int cmp(const grpc_channel_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = strcmp(type(), other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
+  }
+
   const char* type() const { return type_; }
 
  private:
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
+
   const char* type_;
 };
 
@@ -166,6 +188,16 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
+  // TODO(roth): Consider whether security connector actually needs to
+  // be part of this interface.  Currently, it is here only for the
+  // url_scheme() method, which we might be able to instead add as an
+  // auth context property.
+  struct GetRequestMetadataArgs {
+    grpc_core::RefCountedPtr<grpc_channel_security_connector>
+        security_connector;
+    grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  };
+
   explicit grpc_call_credentials(
       const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
@@ -173,24 +205,23 @@ struct grpc_call_credentials
 
   ~grpc_call_credentials() override = default;
 
-  // Returns true if completed synchronously, in which case \a error will
-  // be set to indicate the result.  Otherwise, \a on_request_metadata will
-  // be invoked asynchronously when complete.  \a md_array will be populated
-  // with the resulting metadata once complete.
-  virtual bool get_request_metadata(
-      grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_closure* on_request_metadata, grpc_error_handle* error) = 0;
-
-  // Cancels a pending asynchronous operation started by
-  // grpc_call_credentials_get_request_metadata() with the corresponding
-  // value of \a md_array.
-  virtual void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) = 0;
+  virtual grpc_core::ArenaPromise<
+      absl::StatusOr<grpc_core::ClientInitialMetadata>>
+  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+                     const GetRequestMetadataArgs* args) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
+  }
+
+  // Compares this grpc_call_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two call
+  // credentials as effectively the same..
+  int cmp(const grpc_call_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = strcmp(type(), other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
   }
 
   virtual std::string debug_string() {
@@ -200,6 +231,10 @@ struct grpc_call_credentials
   const char* type() const { return type_; }
 
  private:
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
+
   const char* type_;
   const grpc_security_level min_security_level_;
 };
@@ -207,7 +242,7 @@ struct grpc_call_credentials
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
 grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value, bool is_async);
+    const char* md_key, const char* md_value);
 
 /* --- grpc_server_credentials. --- */
 

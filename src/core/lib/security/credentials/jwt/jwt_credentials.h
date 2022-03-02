@@ -38,15 +38,9 @@ class grpc_service_account_jwt_access_credentials
                                               gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
-  bool get_request_metadata(grpc_polling_entity* pollent,
-                            grpc_auth_metadata_context context,
-                            grpc_core::CredentialsMetadataArray* md_array,
-                            grpc_closure* on_request_metadata,
-                            grpc_error_handle* error) override;
-
-  void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) override;
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
   const grpc_auth_json_key& key() const { return key_; }
@@ -59,6 +53,12 @@ class grpc_service_account_jwt_access_credentials
   };
 
  private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_call_credentials*>(this), other);
+  }
+
   // Have a simple cache for now with just 1 entry. We could have a map based on
   // the service_url for a more sophisticated one.
   gpr_mu cache_mu_;

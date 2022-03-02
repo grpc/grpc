@@ -43,6 +43,13 @@ def if_not_windows(a):
         "//conditions:default": a,
     })
 
+def if_windows(a):
+    return select({
+        "//:windows": a,
+        "//:windows_msvc": a,
+        "//conditions:default": [],
+    })
+
 def if_mac(a):
     return select({
         "//:mac_x86_64": a,
@@ -153,7 +160,7 @@ def grpc_cc_library(
         copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
-    linkopts = if_not_windows(["-pthread"])
+    linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
 
@@ -300,7 +307,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "data": data,
         "deps": deps + _get_external_deps(external_deps),
         "copts": GRPC_DEFAULT_COPTS + copts,
-        "linkopts": if_not_windows(["-pthread"]),
+        "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,

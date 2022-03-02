@@ -22,63 +22,75 @@ extern "C" {
 
 struct envoy_type_http_v3_Cookie;
 typedef struct envoy_type_http_v3_Cookie envoy_type_http_v3_Cookie;
-extern const upb_msglayout envoy_type_http_v3_Cookie_msginit;
+extern const upb_MiniTable envoy_type_http_v3_Cookie_msginit;
 struct google_protobuf_Duration;
-extern const upb_msglayout google_protobuf_Duration_msginit;
+extern const upb_MiniTable google_protobuf_Duration_msginit;
+
 
 
 /* envoy.type.http.v3.Cookie */
 
-UPB_INLINE envoy_type_http_v3_Cookie *envoy_type_http_v3_Cookie_new(upb_arena *arena) {
-  return (envoy_type_http_v3_Cookie *)_upb_msg_new(&envoy_type_http_v3_Cookie_msginit, arena);
+UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_new(upb_Arena* arena) {
+  return (envoy_type_http_v3_Cookie*)_upb_Message_New(&envoy_type_http_v3_Cookie_msginit, arena);
 }
-UPB_INLINE envoy_type_http_v3_Cookie *envoy_type_http_v3_Cookie_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_type_http_v3_Cookie *ret = envoy_type_http_v3_Cookie_new(arena);
+UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_type_http_v3_Cookie* ret = envoy_type_http_v3_Cookie_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_type_http_v3_Cookie_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_type_http_v3_Cookie *envoy_type_http_v3_Cookie_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_type_http_v3_Cookie *ret = envoy_type_http_v3_Cookie_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_type_http_v3_Cookie_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_type_http_v3_Cookie_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_type_http_v3_Cookie_serialize(const envoy_type_http_v3_Cookie *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_type_http_v3_Cookie_msginit, arena, len);
+UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_type_http_v3_Cookie* ret = envoy_type_http_v3_Cookie_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_type_http_v3_Cookie_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_type_http_v3_Cookie_serialize(const envoy_type_http_v3_Cookie* msg, upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, 0, arena, len);
+}
+UPB_INLINE char* envoy_type_http_v3_Cookie_serialize_ex(const envoy_type_http_v3_Cookie* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, options, arena, len);
+}
+UPB_INLINE upb_StringView envoy_type_http_v3_Cookie_name(const envoy_type_http_v3_Cookie* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
+UPB_INLINE bool envoy_type_http_v3_Cookie_has_ttl(const envoy_type_http_v3_Cookie *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_type_http_v3_Cookie_ttl(const envoy_type_http_v3_Cookie* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_Duration*);
+}
+UPB_INLINE upb_StringView envoy_type_http_v3_Cookie_path(const envoy_type_http_v3_Cookie* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView);
 }
 
-UPB_INLINE upb_strview envoy_type_http_v3_Cookie_name(const envoy_type_http_v3_Cookie *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
-UPB_INLINE bool envoy_type_http_v3_Cookie_has_ttl(const envoy_type_http_v3_Cookie *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_Duration* envoy_type_http_v3_Cookie_ttl(const envoy_type_http_v3_Cookie *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_Duration*); }
-UPB_INLINE upb_strview envoy_type_http_v3_Cookie_path(const envoy_type_http_v3_Cookie *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
-
-UPB_INLINE void envoy_type_http_v3_Cookie_set_name(envoy_type_http_v3_Cookie *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
+UPB_INLINE void envoy_type_http_v3_Cookie_set_name(envoy_type_http_v3_Cookie *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 UPB_INLINE void envoy_type_http_v3_Cookie_set_ttl(envoy_type_http_v3_Cookie *msg, struct google_protobuf_Duration* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_protobuf_Duration*) = value;
 }
-UPB_INLINE struct google_protobuf_Duration* envoy_type_http_v3_Cookie_mutable_ttl(envoy_type_http_v3_Cookie *msg, upb_arena *arena) {
+UPB_INLINE struct google_protobuf_Duration* envoy_type_http_v3_Cookie_mutable_ttl(envoy_type_http_v3_Cookie *msg, upb_Arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_type_http_v3_Cookie_ttl(msg);
   if (sub == NULL) {
-    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_type_http_v3_Cookie_set_ttl(msg, sub);
   }
   return sub;
 }
-UPB_INLINE void envoy_type_http_v3_Cookie_set_path(envoy_type_http_v3_Cookie *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
+UPB_INLINE void envoy_type_http_v3_Cookie_set_path(envoy_type_http_v3_Cookie *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = value;
 }
 
-extern const upb_msglayout_file envoy_type_http_v3_cookie_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_type_http_v3_cookie_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

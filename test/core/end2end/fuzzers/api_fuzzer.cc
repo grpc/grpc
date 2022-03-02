@@ -124,7 +124,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     void Start() override {
       Ref().release();  // ref held by timer callback
       grpc_timer_init(
-          &timer_, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+          &timer_,
+          grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
 
@@ -188,7 +189,8 @@ grpc_ares_request* my_dns_lookup_ares(
   r->on_done = on_done;
   r->addresses = addresses;
   grpc_timer_init(
-      &r->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+      &r->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
   return nullptr;
 }
@@ -253,7 +255,8 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
   fc->ep = ep;
   fc->deadline = deadline;
   grpc_timer_init(
-      &fc->timer, GPR_MS_PER_SEC + grpc_core::ExecCtx::Get()->Now(),
+      &fc->timer,
+      grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
@@ -261,9 +264,8 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
                                   grpc_pollset_set* /*interested_parties*/,
                                   const grpc_channel_args* /*channel_args*/,
                                   const grpc_resolved_address* /*addr*/,
-                                  grpc_millis deadline) {
-  sched_connect(closure, ep,
-                grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
+                                  grpc_core::Timestamp deadline) {
+  sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
 }
 
 grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
@@ -273,7 +275,7 @@ grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
 
 class Validator {
  public:
-  explicit Validator(std::function<void(bool)> impl) : impl_(impl) {}
+  explicit Validator(std::function<void(bool)> impl) : impl_(std::move(impl)) {}
 
   virtual ~Validator() {}
   void Run(bool success) {
@@ -304,7 +306,8 @@ static Validator* ValidateConnectivityWatch(gpr_timespec deadline,
                                             int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
-      GPR_ASSERT(gpr_time_cmp(gpr_now(deadline.clock_type), deadline) >= 0);
+      auto now = gpr_now(deadline.clock_type);
+      GPR_ASSERT(gpr_time_cmp(now, deadline) >= 0);
     }
     --*counter;
   });
@@ -340,16 +343,6 @@ class Call : public std::enable_shared_from_this<Call> {
   void Shutdown() {
     if (call_ != nullptr) {
       grpc_call_cancel(call_, nullptr);
-      if (type_ == CallType::CLIENT && !started_recv_status_on_client_) {
-        uint8_t has_ops = 0;
-        grpc_op op = MakeRecvStatusOnClientOp(&has_ops);
-        auto* v = FinishedBatchValidator(has_ops);
-        grpc_call_error error =
-            grpc_call_start_batch(call_, &op, 1, v, nullptr);
-        if (error != GRPC_CALL_OK) {
-          v->Run(false);
-        }
-      }
       type_ = CallType::TOMBSTONED;
     }
   }
@@ -491,9 +484,12 @@ class Call : public std::enable_shared_from_this<Call> {
         }
         break;
       case api_fuzzer::BatchOp::kReceiveStatusOnClient:
-        op = MakeRecvStatusOnClientOp(batch_ops);
-        unwinders->push_back(
-            [this]() { started_recv_status_on_client_ = false; });
+        op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+        op.data.recv_status_on_client.status = &status_;
+        op.data.recv_status_on_client.trailing_metadata =
+            &recv_trailing_metadata_;
+        op.data.recv_status_on_client.status_details = &recv_status_details_;
+        *batch_ops |= 1 << GRPC_OP_RECV_STATUS_ON_CLIENT;
         break;
       case api_fuzzer::BatchOp::kReceiveCloseOnServer:
         op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -545,18 +541,6 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
  private:
-  grpc_op MakeRecvStatusOnClientOp(uint8_t* batch_ops) {
-    grpc_op op;
-    memset(&op, 0, sizeof(op));
-    op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op.data.recv_status_on_client.status = &status_;
-    op.data.recv_status_on_client.trailing_metadata = &recv_trailing_metadata_;
-    op.data.recv_status_on_client.status_details = &recv_status_details_;
-    *batch_ops |= 1 << GRPC_OP_RECV_STATUS_ON_CLIENT;
-    started_recv_status_on_client_ = true;
-    return op;
-  }
-
   CallType type_;
   grpc_call* call_ = nullptr;
   grpc_byte_buffer* recv_message_ = nullptr;
@@ -572,9 +556,8 @@ class Call : public std::enable_shared_from_this<Call> {
   bool enqueued_recv_initial_metadata_ = false;
   grpc_call_details call_details_{};
   grpc_byte_buffer* send_message_ = nullptr;
-  bool pending_recv_message_op_ = false;
-  bool started_recv_status_on_client_ = false;
   bool call_closed_ = false;
+  bool pending_recv_message_op_ = false;
 
   std::vector<void*> free_pointers_;
   std::vector<grpc_slice> unref_slices_;
@@ -775,6 +758,8 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
+  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+  grpc_core::TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);

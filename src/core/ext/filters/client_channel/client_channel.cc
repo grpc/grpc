@@ -63,8 +63,8 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/channel.h"
@@ -190,7 +190,7 @@ class ClientChannel::CallData {
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
@@ -373,7 +373,7 @@ class DynamicTerminationFilter::CallData {
   ~CallData() { grpc_slice_unref_internal(path_); }
 
   grpc_slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
@@ -1036,6 +1036,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
       channelz_node_(GetChannelzNode(args->channel_args)),
       interested_parties_(grpc_pollset_set_create()),
+      service_config_parser_index_(
+          internal::ClientChannelServiceConfigParser::ParserIndex()),
       work_serializer_(std::make_shared<WorkSerializer>()),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(args->channel_args)) {
@@ -1058,7 +1060,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   if (service_config_json == nullptr) service_config_json = "{}";
   *error = GRPC_ERROR_NONE;
   default_service_config_ =
-      ServiceConfig::Create(args->channel_args, service_config_json, error);
+      ServiceConfigImpl::Create(args->channel_args, service_config_json, error);
   if (*error != GRPC_ERROR_NONE) {
     default_service_config_.reset();
     return;
@@ -1083,7 +1085,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   }
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
-  if (!ResolverRegistry::IsValidTarget(uri_to_resolve_)) {
+  if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+          uri_to_resolve_)) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("the target uri is not valid: ", uri_to_resolve_));
     return;
@@ -1102,7 +1105,9 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   const char* default_authority =
       grpc_channel_args_find_string(channel_args_, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority == nullptr) {
-    default_authority_ = ResolverRegistry::GetDefaultAuthority(server_uri);
+    default_authority_ =
+        CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+            server_uri);
   } else {
     default_authority_ = default_authority;
   }
@@ -1275,7 +1280,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
-                internal::ClientChannelServiceConfigParser::ParserIndex()));
+                service_config_parser_index_));
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);
@@ -1435,21 +1440,19 @@ void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
 
 void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
-    RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name) {
-  UniquePtr<char> service_config_json(
-      gpr_strdup(service_config->json_string().c_str()));
+    RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name) {
+  std::string service_config_json(service_config->json_string());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p: resolver returned updated service config: \"%s\"", this,
-            service_config_json.get());
+            service_config_json.c_str());
   }
   // Save service config.
   saved_service_config_ = std::move(service_config);
   // Swap out the data used by GetChannelInfo().
-  UniquePtr<char> lb_policy_name_owned(gpr_strdup(lb_policy_name));
   {
     MutexLock lock(&info_mu_);
-    info_lb_policy_name_ = std::move(lb_policy_name_owned);
+    info_lb_policy_name_ = std::move(lb_policy_name);
     info_service_config_json_ = std::move(service_config_json);
   }
   // Save config selector.
@@ -1539,7 +1542,7 @@ void ClientChannel::CreateResolverLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
   }
-  resolver_ = ResolverRegistry::CreateResolver(
+  resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       uri_to_resolve_.c_str(), channel_args_, interested_parties_,
       work_serializer_, absl::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
@@ -1781,11 +1784,11 @@ void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
   ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   MutexLock lock(&chand->info_mu_);
   if (info->lb_policy_name != nullptr) {
-    *info->lb_policy_name = gpr_strdup(chand->info_lb_policy_name_.get());
+    *info->lb_policy_name = gpr_strdup(chand->info_lb_policy_name_.c_str());
   }
   if (info->service_config_json != nullptr) {
     *info->service_config_json =
-        gpr_strdup(chand->info_service_config_json_.get());
+        gpr_strdup(chand->info_service_config_json_.c_str());
   }
 }
 
@@ -1859,7 +1862,7 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
     : deadline_state_(elem, args,
                       GPR_LIKELY(chand.deadline_checking_enabled_)
                           ? args.deadline
-                          : GRPC_MILLIS_INF_FUTURE),
+                          : Timestamp::InfFuture()),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
@@ -2220,13 +2223,14 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // Apply our own method params to the call.
     auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
-            internal::ClientChannelServiceConfigParser::ParserIndex()));
+            chand->service_config_parser_index_));
     if (method_params != nullptr) {
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.
-      if (chand->deadline_checking_enabled_ && method_params->timeout() != 0) {
-        const grpc_millis per_method_deadline =
-            grpc_cycle_counter_to_millis_round_up(call_start_time_) +
+      if (chand->deadline_checking_enabled_ &&
+          method_params->timeout() != Duration::Zero()) {
+        const Timestamp per_method_deadline =
+            Timestamp::FromCycleCounterRoundUp(call_start_time_) +
             method_params->timeout();
         if (per_method_deadline < deadline_) {
           deadline_ = per_method_deadline;
@@ -2468,7 +2472,8 @@ class ClientChannel::LoadBalancedCall::Metadata
                         std::string(value_slice.as_string_view()));
     }
 
-    void Encode(GrpcTimeoutMetadata, grpc_millis) {}
+    void Encode(GrpcTimeoutMetadata,
+                const typename GrpcTimeoutMetadata::ValueType&) {}
     void Encode(HttpPathMetadata, const Slice&) {}
     void Encode(HttpMethodMetadata,
                 const typename HttpMethodMetadata::ValueType&) {}

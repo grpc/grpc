@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/port.h"
@@ -117,7 +118,8 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(mu);
   for (auto _ : state) {
-    GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, 0));
+    GRPC_ERROR_UNREF(
+        grpc_pollset_work(ps, nullptr, grpc_core::Timestamp::ProcessEpoch()));
   }
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
@@ -235,7 +237,8 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd_notify_on_read(wakeup, continue_closure);
   gpr_mu_lock(mu);
   while (!done) {
-    GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, GRPC_MILLIS_INF_FUTURE));
+    GRPC_ERROR_UNREF(
+        grpc_pollset_work(ps, nullptr, grpc_core::Timestamp::InfFuture()));
   }
   grpc_fd_orphan(wakeup, nullptr, nullptr, "done");
   wakeup_fd.read_fd = 0;
@@ -262,7 +265,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

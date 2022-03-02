@@ -187,12 +187,12 @@ void PopulateBuildVersion(const XdsEncodingContext& context,
                           envoy_config_core_v3_Node* node_msg,
                           const std::string& build_version) {
   std::string encoded_build_version = EncodeStringField(5, build_version);
-  // TODO(roth): This should use upb_msg_addunknown(), but that API is
+  // TODO(roth): This should use upb_Message_AddUnknown(), but that API is
   // broken in the current version of upb, so we're using the internal
   // API for now.  Change this once we upgrade to a version of upb that
   // fixes this bug.
-  _upb_msg_addunknown(node_msg, encoded_build_version.data(),
-                      encoded_build_version.size(), context.arena);
+  _upb_Message_AddUnknown(node_msg, encoded_build_version.data(),
+                          encoded_build_version.size(), context.arena);
 }
 
 void PopulateNode(const XdsEncodingContext& context,
@@ -241,7 +241,8 @@ void PopulateNode(const XdsEncodingContext& context,
   envoy_config_core_v3_Node_set_user_agent_version(
       node_msg, StdStringToUpbString(user_agent_version));
   envoy_config_core_v3_Node_add_client_features(
-      node_msg, upb_strview_makez("envoy.lb.does_not_support_overprovisioning"),
+      node_msg,
+      upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
       context.arena);
 }
 
@@ -250,10 +251,10 @@ void MaybeLogDiscoveryRequest(
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
             context.client, buf);
   }
@@ -313,7 +314,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
     // Error description comes from the error that was passed in.
     error_string_storage = grpc_error_std_string(error);
-    upb_strview error_description = StdStringToUpbString(error_string_storage);
+    upb_StringView error_description =
+        StdStringToUpbString(error_string_storage);
     google_rpc_Status_set_message(error_detail, error_description);
     GRPC_ERROR_UNREF(error);
   }
@@ -341,10 +343,10 @@ void MaybeLogDiscoveryResponse(
     const envoy_service_discovery_v3_DiscoveryResponse* response) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
             buf);
   }
@@ -409,10 +411,10 @@ void MaybeLogLrsRequest(
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
             context.client, buf);
   }
@@ -449,7 +451,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   PopulateNode(context, node_, build_version_, user_agent_name_,
                user_agent_version_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
-      node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
+      node_msg,
+      upb_StringView_FromString("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
   MaybeLogLrsRequest(context, request);
   return SerializeLrsRequest(context, request);
@@ -565,8 +568,7 @@ grpc_slice XdsApi::CreateLrsRequest(
     envoy_config_endpoint_v3_ClusterStats_set_total_dropped_requests(
         cluster_stats, total_dropped_requests);
     // Set real load report interval.
-    gpr_timespec timespec =
-        grpc_millis_to_timespec(load_report.load_report_interval, GPR_TIMESPAN);
+    gpr_timespec timespec = load_report.load_report_interval.as_timespec();
     google_protobuf_Duration* load_report_interval =
         envoy_config_endpoint_v3_ClusterStats_mutable_load_report_interval(
             cluster_stats, arena.ptr());
@@ -577,10 +579,10 @@ grpc_slice XdsApi::CreateLrsRequest(
   return SerializeLrsRequest(context, request);
 }
 
-grpc_error_handle XdsApi::ParseLrsResponse(
-    const grpc_slice& encoded_response, bool* send_all_clusters,
-    std::set<std::string>* cluster_names,
-    grpc_millis* load_reporting_interval) {
+grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
+                                           bool* send_all_clusters,
+                                           std::set<std::string>* cluster_names,
+                                           Duration* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =
@@ -598,7 +600,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(
   } else {
     // Store the cluster names.
     size_t size;
-    const upb_strview* clusters =
+    const upb_StringView* clusters =
         envoy_service_load_stats_v3_LoadStatsResponse_clusters(decoded_response,
                                                                &size);
     for (size_t i = 0; i < size; ++i) {
@@ -609,21 +611,19 @@ grpc_error_handle XdsApi::ParseLrsResponse(
   const google_protobuf_Duration* load_reporting_interval_duration =
       envoy_service_load_stats_v3_LoadStatsResponse_load_reporting_interval(
           decoded_response);
-  gpr_timespec timespec{
+  *load_reporting_interval = Duration::FromSecondsAndNanoseconds(
       google_protobuf_Duration_seconds(load_reporting_interval_duration),
-      google_protobuf_Duration_nanos(load_reporting_interval_duration),
-      GPR_TIMESPAN};
-  *load_reporting_interval = gpr_time_to_millis(timespec);
+      google_protobuf_Duration_nanos(load_reporting_interval_duration));
   return GRPC_ERROR_NONE;
 }
 
 namespace {
 
-google_protobuf_Timestamp* GrpcMillisToTimestamp(
-    const XdsEncodingContext& context, grpc_millis value) {
+google_protobuf_Timestamp* EncodeTimestamp(const XdsEncodingContext& context,
+                                           Timestamp value) {
   google_protobuf_Timestamp* timestamp =
       google_protobuf_Timestamp_new(context.arena);
-  gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_REALTIME);
+  gpr_timespec timespec = value.as_timespec(GPR_CLOCK_REALTIME);
   google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
   google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
   return timestamp;
@@ -674,7 +674,7 @@ std::string XdsApi::AssembleClientConfig(
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(
             entry, StdStringToUpbString(metadata.version));
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(
-            entry, GrpcMillisToTimestamp(context, metadata.update_time));
+            entry, EncodeTimestamp(context, metadata.update_time));
         auto* any_field =
             envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
                 entry, context.arena);
@@ -694,7 +694,7 @@ std::string XdsApi::AssembleClientConfig(
             StdStringToUpbString(metadata.failed_version));
         envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
             update_failure_state,
-            GrpcMillisToTimestamp(context, metadata.failed_update_time));
+            EncodeTimestamp(context, metadata.failed_update_time));
         envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
             entry, update_failure_state);
       }

@@ -10,20 +10,20 @@
 #include "envoy/config/core/v3/base.upbdefs.h"
 #include "envoy/config/core/v3/base.upb.h"
 
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_backoff_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_http_uri_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_semantic_version_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init xds_core_v3_context_params_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_backoff_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_http_uri_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_semantic_version_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_context_params_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[5358] = {'\n', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'b', 'a', 
 's', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 
 'r', 'e', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 
@@ -241,7 +241,7 @@ static const char descriptor[5358] = {'\n', '\037', 'e', 'n', 'v', 'o', 'y', '/'
 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[15] = {
+static _upb_DefPool_Init *deps[15] = {
   &envoy_config_core_v3_address_proto_upbdefinit,
   &envoy_config_core_v3_backoff_proto_upbdefinit,
   &envoy_config_core_v3_http_uri_proto_upbdefinit,
@@ -259,9 +259,9 @@ static upb_def_init *deps[15] = {
   NULL
 };
 
-upb_def_init envoy_config_core_v3_base_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_base_proto_upb_file_layout,
   "envoy/config/core/v3/base.proto",
-  UPB_STRVIEW_INIT(descriptor, 5358)
+  UPB_STRINGVIEW_INIT(descriptor, 5358)
 };

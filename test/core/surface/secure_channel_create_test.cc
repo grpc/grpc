@@ -22,6 +22,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -29,8 +30,6 @@
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
-  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
-  grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
   grpc_channel* chan = grpc_channel_create("blah://blah", creds, nullptr);
@@ -69,7 +68,13 @@ int main(int argc, char** argv) {
   grpc_init();
   test_security_connector_already_in_arg();
   test_null_creds();
-  test_unknown_scheme_target();
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        // Avoid default prefix
+        builder->resolver_registry()->Reset();
+      },
+      []() { test_unknown_scheme_target(); });
   grpc_shutdown();
   return 0;
 }
