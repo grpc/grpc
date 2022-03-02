@@ -106,14 +106,15 @@ MaxAgeConfig GetMaxAgeConfig(const grpc_channel_args* args) {
   const double multiplier =
       rand() * MAX_CONNECTION_AGE_JITTER * 2.0 / RAND_MAX + 1.0 -
       MAX_CONNECTION_AGE_JITTER;
-  const double max_age = multiplier * args_max_age;
   /* GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
      will not be cast to int implicitly before the comparison. */
-  return MaxAgeConfig{Duration::FromSecondsAsDouble(max_age / 1000.0),
-                      args_max_idle == INT_MAX
-                          ? Duration::Infinity()
-                          : Duration::Milliseconds(args_max_idle),
-                      Duration::Milliseconds(args_max_age_grace)};
+  return MaxAgeConfig{
+      args_max_age == INT_MAX
+          ? Duration::Infinity()
+          : Duration::FromSecondsAsDouble(multiplier * args_max_age / 1000.0),
+      args_max_idle == INT_MAX ? Duration::Infinity()
+                               : Duration::Milliseconds(args_max_idle),
+      Duration::Milliseconds(args_max_age_grace)};
 }
 
 class ChannelIdleFilter : public ChannelFilter {
@@ -389,7 +390,8 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
-        if (GetMaxAgeConfig(channel_args).enable()) {
+        if (!grpc_channel_args_want_minimal_stack(channel_args) &&
+            GetMaxAgeConfig(channel_args).enable()) {
           builder->PrependFilter(
               &grpc_max_age_filter,
               [](grpc_channel_stack*, grpc_channel_element* elem) {
