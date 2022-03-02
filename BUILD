@@ -3443,6 +3443,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver",
         "grpc_resolver_dns_selection",
+        "grpc_trace",
         "polling_resolver",
         "server_address",
     ],

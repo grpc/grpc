@@ -24,6 +24,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -40,10 +41,13 @@ namespace grpc_core {
 
 namespace {
 
+TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
+
 class NativeClientChannelDNSResolver : public PollingResolver {
  public:
   NativeClientChannelDNSResolver(ResolverArgs args,
                                  const grpc_channel_args* channel_args);
+  ~NativeClientChannelDNSResolver() override;
 
   OrphanablePtr<Orphanable> StartRequest() override;
 
@@ -65,14 +69,27 @@ NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
               .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(GRPC_DNS_RECONNECT_JITTER)
               .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000),
-          /*tracer=*/nullptr) {}
+          &grpc_trace_dns_resolver) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+    gpr_log(GPR_DEBUG, "[dns_resolver=%p] created", this);
+  }
+}
+
+NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+    gpr_log(GPR_DEBUG, "[dns_resolver=%p] destroyed", this);
+  }
+}
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
-  gpr_log(GPR_DEBUG, "Start resolving.");
-  Ref(DEBUG_LOCATION, "dns-resolving").release();
+  Ref(DEBUG_LOCATION, "dns_request").release();
   auto dns_request = GetDNSResolver()->ResolveName(
       name_to_resolve(), kDefaultSecurePort, interested_parties(),
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+    gpr_log(GPR_DEBUG, "[dns_resolver=%p] starting request=%p", this,
+            dns_request.get());
+  }
   dns_request->Start();
   // Explicit type conversion to work around issue with older compilers.
   return OrphanablePtr<Orphanable>(dns_request.release());
@@ -80,6 +97,10 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
 
 void NativeClientChannelDNSResolver::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+    gpr_log(GPR_DEBUG, "[dns_resolver=%p] request complete, status=\"%s\"",
+            this, addresses_or.status().ToString().c_str());
+  }
   // Convert result from iomgr DNS API into Resolver::Result.
   Result result;
   if (addresses_or.ok()) {
@@ -95,6 +116,7 @@ void NativeClientChannelDNSResolver::OnResolved(
   }
   result.args = grpc_channel_args_copy(channel_args());
   OnRequestComplete(std::move(result));
+  Unref(DEBUG_LOCATION, "dns_request");
 }
 
 //
