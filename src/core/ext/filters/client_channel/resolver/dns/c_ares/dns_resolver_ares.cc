@@ -635,6 +635,7 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
 
 void grpc_resolver_dns_ares_init() {
   if (grpc_core::UseAresDnsResolver()) {
+    abort();
     address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {

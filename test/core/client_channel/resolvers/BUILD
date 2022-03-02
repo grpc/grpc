@@ -35,9 +35,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "dns_resolver_connectivity_using_ares_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
-    args = [
-        "--resolver=ares",
-    ],
+    env = {
+        "GRPC_DNS_RESOLVER": "ares",
+    },
     language = "C++",
     deps = [
         "//:gpr",
@@ -49,9 +49,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "dns_resolver_connectivity_using_native_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
-    args = [
-        "--resolver=native",
-    ],
+    env = {
+        "GRPC_DNS_RESOLVER": "native",
+    },
     language = "C++",
     deps = [
         "//:gpr",
