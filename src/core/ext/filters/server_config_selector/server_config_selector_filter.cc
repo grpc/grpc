@@ -39,10 +39,16 @@ class ServerConfigSelectorFilter {
   }
 
  private:
+  struct State {
+    Mutex mu_;
+    absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+        config_selector_ ABSL_GUARDED_BY(mu_);
+  };
   class ServerConfigSelectorWatcher
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
    public:
-    explicit ServerConfigSelectorWatcher(ChannelData* chand) : chand_(chand) {}
+    explicit ServerConfigSelectorWatcher(ServerConfigSelectorFilter* chand)
+        : chand_(chand) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
       MutexLock lock(&chand_->mu_);
@@ -59,9 +65,6 @@ class ServerConfigSelectorFilter {
   ~ServerConfigSelectorFilter();
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
-  Mutex mu_;
-  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-      config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
@@ -69,8 +72,7 @@ absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
       ServerConfigSelectorProvider::GetFromChannelArgs(*args);
   if (server_config_selector_provider == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "No ServerConfigSelectorProvider object found");
+    return absl::UnknownError("No ServerConfigSelectorProvider object found");
   }
   return ServerConfigSelectorFilter(std::move(server_config_selector_provider));
 }
