@@ -497,13 +497,12 @@ class CheckingResultHandler : public ResultHandler {
     if (!result.service_config.ok()) {
       CheckServiceConfigResultLocked(nullptr, result.service_config.status(),
                                      args);
+    } else if (*result.service_config == nullptr) {
+      CheckServiceConfigResultLocked(nullptr, absl::OkStatus(), args);
     } else {
-      const char* service_config_json =
-          *result.service_config == nullptr
-              ? nullptr
-              : (*result.service_config)->json_string().c_str();
-      CheckServiceConfigResultLocked(service_config_json, absl::OkStatus(),
-                                     args);
+      CheckServiceConfigResultLocked(
+          std::string((*result.service_config)->json_string()).c_str(),
+          absl::OkStatus(), args);
     }
     if (args->expected_service_config_string.empty()) {
       CheckLBPolicyResultLocked(result.args, args);

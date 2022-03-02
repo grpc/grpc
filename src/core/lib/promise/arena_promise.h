@@ -69,7 +69,7 @@ class CallableImpl final : public ImplInterface<T> {
  public:
   explicit CallableImpl(Callable&& callable) : callable_(std::move(callable)) {}
   // Forward polls to the callable object.
-  Poll<T> PollOnce() override { return poll_cast<T>(callable_()); }
+  Poll<T> PollOnce() override { return callable_(); }
   // Destroy destructs the callable object.
   void Destroy() override { this->~CallableImpl(); }
 
@@ -152,8 +152,7 @@ class ArenaPromise {
   template <typename Callable,
             typename Ignored =
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
-  // NOLINTNEXTLINE(google-explicit-constructor)
-  ArenaPromise(Callable&& callable)
+  explicit ArenaPromise(Callable&& callable)
       : impl_(arena_promise_detail::MakeImplForCallable<T>(
             std::forward<Callable>(callable))) {}
 
@@ -165,7 +164,6 @@ class ArenaPromise {
     other.impl_ = arena_promise_detail::NullImpl<T>::Get();
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
-    impl_->Destroy();
     impl_ = other.impl_;
     other.impl_ = arena_promise_detail::NullImpl<T>::Get();
     return *this;
