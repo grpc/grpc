@@ -176,7 +176,11 @@ void LibuvEventEngine::DestroyInLibuvThread(
         },
         nullptr);
   }
-  destruction_done.Notify(true);
+  RunInLibuvThread([&destruction_done](LibuvEventEngine* engine) {
+    // ensure all other closures are executed in this loop before proceeding to
+    // destruction
+    destruction_done.Notify(true);
+  });
 }
 
 LibuvEventEngine::~LibuvEventEngine() {
@@ -365,8 +369,10 @@ bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
       will_be_cancelled.Notify(false);
       return;
     }
-    gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, cancelling %s", engine,
-            LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, cancelling %s", engine,
+              LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
+    }
     LibuvTask::Handle::Accessor::Task(handle)->Cancel(will_be_cancelled);
   });
   return will_be_cancelled.Wait();
