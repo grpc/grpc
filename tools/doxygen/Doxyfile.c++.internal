@@ -2168,6 +2168,8 @@ src/core/lib/iomgr/wakeup_fd_posix.h \
 src/core/lib/iomgr/work_serializer.cc \
 src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
+src/core/lib/json/json_object_loader.cc \
+src/core/lib/json/json_object_loader.h \
 src/core/lib/json/json_reader.cc \
 src/core/lib/json/json_util.cc \
 src/core/lib/json/json_util.h \

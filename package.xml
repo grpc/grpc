@@ -1169,6 +1169,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_object_loader.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/json/json_object_loader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.h" role="src" />
