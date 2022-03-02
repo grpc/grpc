@@ -104,7 +104,7 @@ void LibuvEventEngine::LibuvTask::Erase(uv_handle_t* uv_handle) {
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   LibuvEventEngine* engine =
       reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
-  engine->task_set_.erase(task->Handle());
+  engine->task_set_.erase(task->GetHandle());
 }
 
 void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
@@ -116,7 +116,7 @@ void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, executing", task->ToString().c_str());
   }
-  engine->task_set_.erase(task->Handle());
+  engine->task_set_.erase(task->GetHandle());
   fn();
 }
 
@@ -159,7 +159,7 @@ void LibuvEventEngine::DestroyInLibuvThread(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_set_.size=%zu", this,
             task_set_.size());
-    for (const LibuvTaskHandle& handle : task_set_) {
+    for (const LibuvTask::Handle& handle : task_set_) {
       gpr_log(GPR_DEBUG, " - %s", handle.Task()->ToString().c_str());
     }
     // This is an unstable API from libuv that we use for its intended
@@ -344,7 +344,7 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
     gpr_log(GPR_DEBUG, "LibuvTask@%p::RunAt, scheduled, timeout=%" PRIu64,
             task->ToString().c_str(), timeout);
   }
-  EventEngine::TaskHandle handle = task->Handle();
+  EventEngine::TaskHandle handle = task->GetHandle();
   RunInLibuvThread(std::move(task), timeout);
   uv_async_send(&uv_state_->kicker);
   return handle;
@@ -355,19 +355,19 @@ bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
   RunInLibuvThread([&handle, &will_be_cancelled](LibuvEventEngine* engine) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, attempting %s", engine,
-              LibuvTaskHandle::Accessor::Task(handle)->ToString().c_str());
+              LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
     }
     if (!engine->task_set_.contains(handle)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, %s not found", engine,
-                LibuvTaskHandle::Accessor::Task(handle)->ToString().c_str());
+                LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
       }
       will_be_cancelled.Notify(false);
       return;
     }
     gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, cancelling %s", engine,
-            LibuvTaskHandle::Accessor::Task(handle)->ToString().c_str());
-    LibuvTaskHandle::Accessor::Task(handle)->Cancel(will_be_cancelled);
+            LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
+    LibuvTask::Handle::Accessor::Task(handle)->Cancel(will_be_cancelled);
   });
   return will_be_cancelled.Wait();
 }

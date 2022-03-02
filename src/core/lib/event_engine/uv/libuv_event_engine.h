@@ -39,8 +39,7 @@ namespace experimental {
 ////////////////////////////////////////////////////////////////////////////////
 /// The LibUV Event Engine itself. It implements an EventEngine class.
 ////////////////////////////////////////////////////////////////////////////////
-class LibuvEventEngine final
-    : public grpc_event_engine::experimental::EventEngine {
+class LibuvEventEngine final : public EventEngine {
  public:
   /// Default EventEngine factory method
   static std::unique_ptr<EventEngine> Create();
@@ -72,17 +71,95 @@ class LibuvEventEngine final
   }
 
  private:
-  ////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
   /// The LibuvTask class is used for Run and RunAt from LibuvEventEngine, and
   /// is allocated internally for the returned TaskHandle.
   ///
   /// Its API is used solely by the Run and RunAt functions, while in the libuv
   /// loop thread.
-  ////////////////////////////////////////////////////////////////////////////////
-  class LibuvTaskHandle;
+  //////////////////////////////////////////////////////////////////////////////
   struct SchedulingRequest;
   class LibuvTask {
    public:
+    ////////////////////////////////////////////////////////////////////////////
+    /// A LibuvEventEngine-specific TaskHandle.
+    ///
+    /// This enables conversion to and from EventEngine::TaskHandles, and hides
+    /// details of intptr_t key meanings. This type is copyable and movable.
+    /// Destruction does not delete the underlying task.
+    ////////////////////////////////////////////////////////////////////////////
+    class Handle {
+     public:
+      // Accessor functions for EventEngine::TaskHandles
+      class Accessor {
+       public:
+        static LibuvTask* Task(const EventEngine::TaskHandle& handle) {
+          return reinterpret_cast<LibuvTask*>(handle.keys[0]);
+        }
+        static intptr_t Tag(const EventEngine::TaskHandle& handle) {
+          return handle.keys[1];
+        }
+      };
+      // Custom hashing for EventEngine::TaskHandle comparison in absl
+      // containers.
+      using HashType = std::pair<const LibuvTask*, const intptr_t>;
+      struct Comparator {
+        struct Hash {
+          using is_transparent = void;
+          size_t operator()(const Handle& handle) const {
+            return absl::Hash<HashType>()({handle.task_.get(), handle.tag_});
+          }
+          size_t operator()(const EventEngine::TaskHandle& handle) const {
+            return absl::Hash<HashType>()(
+                {Accessor::Task(handle), Accessor::Tag(handle)});
+          }
+        };
+        struct Eq {
+          using is_transparent = void;
+          bool operator()(const Handle& lhs, const Handle& rhs) const {
+            return lhs == rhs;
+          }
+          bool operator()(const Handle& lhs,
+                          const EventEngine::TaskHandle& rhs) const {
+            return lhs == rhs;
+          }
+          bool operator()(const EventEngine::TaskHandle& lhs,
+                          const Handle& rhs) const {
+            return rhs == lhs;
+          }
+        };
+      };
+      // (Con|De)struction
+      explicit Handle(std::unique_ptr<LibuvTask> task)
+          : task_(std::move(task)), tag_(task_->handle_tag_) {}
+      Handle(const Handle&) = delete;
+      Handle& operator=(const Handle&) = delete;
+      Handle(Handle&& other) noexcept
+          : task_(std::move(other.task_)), tag_(other.tag_) {}
+      Handle& operator=(Handle&& other) noexcept {
+        std::swap(task_, other.task_);
+        std::swap(tag_, other.tag_);
+        return *this;
+      }
+      ~Handle() = default;
+      // Members
+      LibuvTask* Task() { return task_.get(); }
+      const LibuvTask* Task() const { return task_.get(); }
+      // Equality
+      bool operator==(const Handle& handle) const {
+        return &handle == this ||
+               (handle.task_.get() == task_.get() && handle.tag_ == tag_);
+      }
+      bool operator==(const EventEngine::TaskHandle& handle) const {
+        return Accessor::Task(handle) == task_.get() &&
+               Accessor::Tag(handle) == tag_;
+      }
+
+     private:
+      std::unique_ptr<LibuvTask> task_;
+      intptr_t tag_;
+    };
+
     LibuvTask(LibuvEventEngine* engine, std::function<void()>&& fn);
     /// Executes the held \a fn_ and removes itself from EventEngine's
     /// accounting. Must be called from within the libuv thread.
@@ -92,7 +169,7 @@ class LibuvEventEngine final
     /// Must be called from within the libuv thread.
     /// Precondition: the EventEngine must be tracking this task.
     void Cancel(Promise<bool>& will_be_cancelled);
-    EventEngine::TaskHandle Handle() {
+    EventEngine::TaskHandle GetHandle() {
       return {reinterpret_cast<intptr_t>(this), handle_tag_};
     }
     std::string ToString() const {
@@ -111,88 +188,6 @@ class LibuvEventEngine final
     std::function<void()> fn_;
     uv_timer_t timer_;
     intptr_t handle_tag_;
-
-    friend class LibuvEventEngine::LibuvTaskHandle;
-  };
-
-  ////////////////////////////////////////////////////////////////////////////////
-  /// A LibuvEventEngine-specific TaskHandle.
-  ///
-  /// This enables conversion to and from EventEngine::TaskHandles, and hides
-  /// details of intptr_t key meanings. This type is copyable and movable.
-  /// Destruction does not delete the underlying task.
-  ////////////////////////////////////////////////////////////////////////////////
-  class LibuvTaskHandle {
-   public:
-    // Accessor methods for EventEngine::TaskHandles
-    class Accessor {
-     public:
-      static LibuvTask* Task(const EventEngine::TaskHandle& handle) {
-        return reinterpret_cast<LibuvTask*>(handle.keys[0]);
-      }
-      static intptr_t Tag(const EventEngine::TaskHandle& handle) {
-        return handle.keys[1];
-      }
-    };
-    // Custom hashing for EventEngine::TaskHandle comparison in absl containers.
-    using HashType = std::pair<const LibuvTask*, const intptr_t>;
-    struct Comparator {
-      struct Hash {
-        using is_transparent = void;
-        size_t operator()(const LibuvTaskHandle& handle) const {
-          return absl::Hash<HashType>()({handle.task_.get(), handle.tag_});
-        }
-        size_t operator()(const EventEngine::TaskHandle& handle) const {
-          return absl::Hash<HashType>()(
-              {Accessor::Task(handle), Accessor::Tag(handle)});
-        }
-      };
-      struct Eq {
-        using is_transparent = void;
-        bool operator()(const LibuvTaskHandle& lhs,
-                        const LibuvTaskHandle& rhs) const {
-          return lhs == rhs;
-        }
-        bool operator()(const LibuvTaskHandle& lhs,
-                        const EventEngine::TaskHandle& rhs) const {
-          return lhs == rhs;
-        }
-        bool operator()(const EventEngine::TaskHandle& lhs,
-                        const LibuvTaskHandle& rhs) const {
-          return rhs == lhs;
-        }
-      };
-    };
-    // (Con|De)struction
-    LibuvTaskHandle() = delete;
-    explicit LibuvTaskHandle(std::unique_ptr<LibuvTask> task)
-        : task_(std::move(task)), tag_(task_->handle_tag_) {}
-    LibuvTaskHandle(const LibuvTaskHandle&) = delete;
-    LibuvTaskHandle& operator=(const LibuvTaskHandle&) = delete;
-    LibuvTaskHandle(LibuvTaskHandle&& other) noexcept
-        : task_(std::move(other.task_)), tag_(other.tag_) {}
-    LibuvTaskHandle& operator=(LibuvTaskHandle&& other) noexcept {
-      std::swap(task_, other.task_);
-      std::swap(tag_, other.tag_);
-      return *this;
-    }
-    ~LibuvTaskHandle() = default;
-    // Members
-    LibuvTask* Task() { return task_.get(); }
-    const LibuvTask* Task() const { return task_.get(); }
-    // Equality
-    bool operator==(const LibuvTaskHandle& handle) const {
-      return &handle == this ||
-             (handle.task_.get() == task_.get() && handle.tag_ == tag_);
-    }
-    bool operator==(const EventEngine::TaskHandle& handle) const {
-      return Accessor::Task(handle) == task_.get() &&
-             Accessor::Tag(handle) == tag_;
-    }
-
-   private:
-    std::unique_ptr<LibuvTask> task_;
-    intptr_t tag_;
   };
 
   struct UvState {
@@ -200,7 +195,7 @@ class LibuvEventEngine final
     uv_async_t kicker;
     // This should be set only once to true by the thread when it's done setting
     // itself up.
-    grpc_event_engine::experimental::Promise<bool> ready;
+    Promise<bool> ready;
   };
 
   // The main logic in the uv event loop
@@ -216,8 +211,7 @@ class LibuvEventEngine final
   uv_loop_t* GetLoop() { return &uv_state_->loop; }
   // Destructor logic that must be executed in the libuv thread before the
   // engine can be destroyed (from any thread).
-  void DestroyInLibuvThread(
-      grpc_event_engine::experimental::Promise<bool>& destruction_done);
+  void DestroyInLibuvThread(Promise<bool>& destruction_done);
 
   UvState* uv_state_;
   grpc_core::Thread thread_;
@@ -227,8 +221,8 @@ class LibuvEventEngine final
   // simple counter mechanism, with the assumption that if it ever rolls over,
   // the colliding tasks will have long been completed.
   std::atomic<intptr_t> task_key_;
-  absl::flat_hash_set<LibuvTaskHandle, LibuvTaskHandle::Comparator::Hash,
-                      LibuvTaskHandle::Comparator::Eq>
+  absl::flat_hash_set<LibuvTask::Handle, LibuvTask::Handle::Comparator::Hash,
+                      LibuvTask::Handle::Comparator::Eq>
       task_set_;
 
   // Hopefully temporary until we can solve shutdown from the main grpc code.
