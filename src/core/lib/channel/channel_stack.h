@@ -83,7 +83,7 @@ struct grpc_call_element_args {
   grpc_call_context_element* context;
   const grpc_slice& path;
   gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
-  grpc_millis deadline;
+  grpc_core::Timestamp deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
 };

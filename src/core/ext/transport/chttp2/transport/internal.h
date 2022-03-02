@@ -118,16 +118,16 @@ struct grpc_chttp2_ping_queue {
 struct grpc_chttp2_repeated_ping_policy {
   int max_pings_without_data;
   int max_ping_strikes;
-  grpc_millis min_recv_ping_interval_without_data;
+  grpc_core::Duration min_recv_ping_interval_without_data;
 };
 struct grpc_chttp2_repeated_ping_state {
-  grpc_millis last_ping_sent_time;
+  grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 };
 struct grpc_chttp2_server_ping_recv_state {
-  grpc_millis last_ping_recv_time;
+  grpc_core::Timestamp last_ping_recv_time;
   int ping_strikes;
 };
 /* deframer state for the overall http2 stream of bytes */
@@ -477,9 +477,9 @@ struct grpc_chttp2_transport {
   /** watchdog to kill the transport when waiting for the keepalive ping */
   grpc_timer keepalive_watchdog_timer;
   /** time duration in between pings */
-  grpc_millis keepalive_time;
+  grpc_core::Duration keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
-  grpc_millis keepalive_timeout;
+  grpc_core::Duration keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
   /** If start_keepalive_ping_locked has been called */
@@ -609,7 +609,7 @@ struct grpc_chttp2_stream {
       GRPC_ERROR_NONE;              /* protected by t combiner */
   bool received_last_frame = false; /* protected by t combiner */
 
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
   grpc_error_handle forced_close_error = GRPC_ERROR_NONE;

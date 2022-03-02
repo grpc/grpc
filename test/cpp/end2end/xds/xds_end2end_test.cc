@@ -72,6 +72,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -517,8 +518,9 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
 // clock API. It's unclear if they are using the same syscall, but we do know
 // GPR round the number at millisecond-level. This creates a 1ms difference,
 // which could cause flake.
-grpc_millis NowFromCycleCounter() {
-  return grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
+grpc_core::Timestamp NowFromCycleCounter() {
+  return grpc_core::Timestamp::FromTimespecRoundDown(
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 // Returns the number of RPCs needed to pass error_tolerance at 99.99994%
@@ -1887,7 +1889,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   struct ConcurrentRpc {
     ClientContext context;
     Status status;
-    grpc_millis elapsed_time;
+    grpc_core::Duration elapsed_time;
     EchoResponse response;
   };
 
@@ -1905,7 +1907,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     for (size_t i = 0; i < num_rpcs; i++) {
       ConcurrentRpc* rpc = &rpcs[i];
       rpc_options.SetupRpc(&rpc->context, &request);
-      grpc_millis t0 = NowFromCycleCounter();
+      grpc_core::Timestamp t0 = NowFromCycleCounter();
       stub->async()->Echo(&rpc->context, &request, &rpc->response,
                           [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
                             rpc->status = s;
@@ -3450,10 +3452,11 @@ using LdsRdsTest = BasicTest;
 
 MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
   gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
-  grpc_millis cycle_time = grpc_cycle_counter_to_millis_round_down(cycle_now);
-  grpc_millis time_spec =
-      grpc_timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_millis now = arg + time_spec - cycle_time;
+  grpc_core::Timestamp cycle_time =
+      grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);
+  grpc_core::Timestamp time_spec =
+      grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_core::Timestamp now = arg + (time_spec - cycle_time);
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
   ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
@@ -4828,42 +4831,51 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
                                    new_route_config);
   // Test grpc_timeout_header_max of 1.5 seconds applied
-  grpc_millis t0 = NowFromCycleCounter();
-  grpc_millis t1 =
-      t0 + kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis;
-  grpc_millis t2 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  grpc_core::Timestamp t0 = NowFromCycleCounter();
+  grpc_core::Timestamp t1 =
+      t0 + grpc_core::Duration::Seconds(kTimeoutGrpcTimeoutHeaderMaxSecond) +
+      grpc_core::Duration::Milliseconds(kTimeoutMillis);
+  grpc_core::Timestamp t2 =
+      t0 + grpc_core::Duration::Seconds(kTimeoutMaxStreamDurationSecond) +
+      grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_rpc_service(SERVICE_ECHO1)
-                  .set_rpc_method(METHOD_ECHO1)
-                  .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_rpc_options(RpcOptions()
+                               .set_rpc_service(SERVICE_ECHO1)
+                               .set_rpc_method(METHOD_ECHO1)
+                               .set_wait_for_ready(true)
+                               .set_timeout_ms(grpc_core::Duration::Seconds(
+                                                   kTimeoutApplicationSecond)
+                                                   .millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
-  t1 = t0 + kTimeoutMaxStreamDurationSecond * 1000 + kTimeoutMillis;
-  t2 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
+  t1 = t0 + grpc_core::Duration::Seconds(kTimeoutMaxStreamDurationSecond) +
+       grpc_core::Duration::Milliseconds(kTimeoutMillis);
+  t2 = t0 + grpc_core::Duration::Seconds(kTimeoutHttpMaxStreamDurationSecond) +
+       grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_rpc_service(SERVICE_ECHO2)
-                  .set_rpc_method(METHOD_ECHO2)
-                  .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
+          .set_rpc_options(RpcOptions()
+                               .set_rpc_service(SERVICE_ECHO2)
+                               .set_rpc_method(METHOD_ECHO2)
+                               .set_wait_for_ready(true)
+                               .set_timeout_ms(grpc_core::Duration::Seconds(
+                                                   kTimeoutApplicationSecond)
+                                                   .millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
-  t1 = t0 + kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis;
-  t2 = t0 + kTimeoutApplicationSecond * 1000 + kTimeoutMillis;
+  t1 = t0 + grpc_core::Duration::Seconds(kTimeoutHttpMaxStreamDurationSecond) +
+       grpc_core::Duration::Milliseconds(kTimeoutMillis);
+  t2 = t0 + grpc_core::Duration::Seconds(kTimeoutApplicationSecond) +
+       grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              kTimeoutApplicationSecond * 1000))
+              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
 }
@@ -4994,7 +5006,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              kTimeoutApplicationSecond * 1000))
+              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
@@ -5014,7 +5026,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   CheckRpcSendFailure(
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              kTimeoutApplicationSecond * 1000))
+              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
@@ -9422,7 +9434,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
     streaming_rpcs[i].stream->Read(&response);
     EXPECT_EQ(request.message(), response.message());
   }
-  grpc_millis update_time = NowFromCycleCounter();
+  grpc_core::Timestamp update_time = NowFromCycleCounter();
   // Update the resource.
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   // Wait for the updated resource to take effect.
@@ -9433,7 +9445,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
     // Wait for the drain grace time to expire
     EXPECT_FALSE(streaming_rpcs[i].stream->Read(&response));
     // Make sure that the drain grace interval is honored.
-    EXPECT_GE(NowFromCycleCounter() - update_time, kDrainGraceTimeMs);
+    EXPECT_GE(NowFromCycleCounter() - update_time,
+              grpc_core::Duration::Milliseconds(kDrainGraceTimeMs));
     auto status = streaming_rpcs[i].stream->Finish();
     EXPECT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE)
         << status.error_code() << ", " << status.error_message() << ", "
@@ -12678,7 +12691,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
+    EXPECT_GE(rpc.elapsed_time,
+              grpc_core::Duration::Seconds(kFixedDelaySeconds));
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
@@ -12739,7 +12753,8 @@ TEST_P(FaultInjectionTest,
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
+    EXPECT_GE(rpc.elapsed_time,
+              grpc_core::Duration::Seconds(kFixedDelaySeconds));
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;

@@ -175,8 +175,8 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     creds->set_min_tls_version(ffd->tls_version);
     creds->set_max_tls_version(ffd->tls_version);
   }
-  grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
-      "authorization", oauth2_md, true /* is_async */);
+  grpc_call_credentials* oauth2_creds =
+      grpc_md_only_test_credentials_create("authorization", oauth2_md);
   grpc_channel_credentials* ssl_oauth2_creds =
       grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds,
                                                 nullptr);

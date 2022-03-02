@@ -41,16 +41,11 @@ class InsecureChannelSecurityConnector
   InsecureChannelSecurityConnector(
       RefCountedPtr<grpc_channel_credentials> channel_creds,
       RefCountedPtr<grpc_call_credentials> request_metadata_creds)
-      : grpc_channel_security_connector(/* url_scheme */ nullptr,
-                                        std::move(channel_creds),
+      : grpc_channel_security_connector("", std::move(channel_creds),
                                         std::move(request_metadata_creds)) {}
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
-                       grpc_error_handle* error) override;
-
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error_handle error) override;
+  ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /* interested_parties */,
@@ -72,7 +67,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
  public:
   explicit InsecureServerSecurityConnector(
       RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(nullptr /* url_scheme */,
+      : grpc_server_security_connector("" /* url_scheme */,
                                        std::move(server_creds)) {}
 
   void add_handshakers(const grpc_channel_args* args,

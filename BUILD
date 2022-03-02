@@ -1099,6 +1099,7 @@ grpc_cc_library(
     name = "promise",
     external_deps = [
         "absl/types:optional",
+        "absl/status",
     ],
     language = "c++",
     public_hdrs = [
@@ -1313,6 +1314,7 @@ grpc_cc_library(
         "context",
         "gpr_base",
         "gpr_codegen",
+        "orphanable",
         "poll",
         "promise_factory",
         "promise_status",
@@ -1665,6 +1667,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "time",
+    srcs = [
+        "src/core/lib/gprpp/time.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/time.h",
+    ],
+    deps = [
+        "gpr",
+        "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
     name = "exec_ctx",
     srcs = [
         "src/core/lib/iomgr/combiner.cc",
@@ -1683,6 +1699,7 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "gpr_tls",
+        "time",
         "useful",
     ],
 )
@@ -1851,6 +1868,7 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
+        "src/core/lib/channel/promise_based_filter.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
         "src/core/lib/compression/compression_internal.cc",
@@ -2161,6 +2179,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "table",
+        "time",
         "uri_parser",
         "useful",
     ],
@@ -2466,6 +2485,7 @@ grpc_cc_library(
         "server_address",
         "slice",
         "sockaddr_utils",
+        "time",
         "uri_parser",
         "useful",
         "xds_orca_upb",
@@ -3682,6 +3702,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "promise",
         "ref_counted_ptr",
         "tsi_fake_credentials",
     ],
@@ -3700,6 +3721,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc_security_base",
+        "promise",
         "ref_counted_ptr",
         "tsi_local_credentials",
     ],
@@ -3742,6 +3764,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_security_base",
         "grpc_sockaddr",
+        "promise",
         "ref_counted_ptr",
         "sockaddr_utils",
         "tsi_local_credentials",
@@ -3771,6 +3794,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "promise",
         "ref_counted_ptr",
         "tsi_alts_credentials",
         "tsi_base",
@@ -3798,6 +3822,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
+        "promise",
         "ref_counted_ptr",
         "tsi_base",
         "tsi_ssl_credentials",
@@ -3866,6 +3891,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
+        "promise",
         "tsi_base",
         "tsi_ssl_credentials",
     ],
@@ -3888,6 +3914,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "promise",
         "ref_counted_ptr",
     ],
 )
@@ -3919,6 +3946,7 @@ grpc_cc_library(
         "httpcli",
         "httpcli_ssl_credentials",
         "json",
+        "promise",
         "ref_counted",
         "ref_counted_ptr",
         "tsi_ssl_types",
@@ -3938,9 +3966,11 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/status",
     ],
     language = "c++",
     deps = [
+        "capture",
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
@@ -3949,6 +3979,7 @@ grpc_cc_library(
         "httpcli",
         "httpcli_ssl_credentials",
         "json",
+        "promise",
         "ref_counted_ptr",
         "uri_parser",
     ],
@@ -4007,6 +4038,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "promise",
         "ref_counted_ptr",
         "tsi_ssl_credentials",
     ],
@@ -4042,6 +4074,7 @@ grpc_cc_library(
         "httpcli",
         "httpcli_ssl_credentials",
         "json",
+        "promise",
         "ref_counted",
         "ref_counted_ptr",
         "slice",
@@ -4068,6 +4101,7 @@ grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
         "src/core/lib/security/context/security_context.cc",
+        "src/core/lib/security/credentials/call_creds_util.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
         "src/core/lib/security/credentials/credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
@@ -4080,6 +4114,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/security/context/security_context.h",
+        "src/core/lib/security/credentials/call_creds_util.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
         "src/core/lib/security/credentials/credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
@@ -4099,13 +4134,16 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "arena",
+        "arena_promise",
         "config",
         "gpr_base",
         "grpc_base",
         "grpc_trace",
         "json",
+        "promise",
         "ref_counted",
         "ref_counted_ptr",
+        "try_seq",
         "tsi_base",
     ],
 )

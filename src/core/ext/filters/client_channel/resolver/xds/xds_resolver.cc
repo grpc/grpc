@@ -476,17 +476,18 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   if (route_action.retry_policy.has_value() &&
       !route_action.retry_policy->retry_on.Empty()) {
     std::vector<std::string> retry_parts;
+    const auto base_interval =
+        route_action.retry_policy->retry_back_off.base_interval.as_timespec();
+    const auto max_interval =
+        route_action.retry_policy->retry_back_off.max_interval.as_timespec();
     retry_parts.push_back(absl::StrFormat(
         "\"retryPolicy\": {\n"
         "      \"maxAttempts\": %d,\n"
         "      \"initialBackoff\": \"%d.%09ds\",\n"
         "      \"maxBackoff\": \"%d.%09ds\",\n"
         "      \"backoffMultiplier\": 2,\n",
-        route_action.retry_policy->num_retries + 1,
-        route_action.retry_policy->retry_back_off.base_interval.seconds,
-        route_action.retry_policy->retry_back_off.base_interval.nanos,
-        route_action.retry_policy->retry_back_off.max_interval.seconds,
-        route_action.retry_policy->retry_back_off.max_interval.nanos));
+        route_action.retry_policy->num_retries + 1, base_interval.tv_sec,
+        base_interval.tv_nsec, max_interval.tv_sec, max_interval.tv_nsec));
     std::vector<std::string> code_parts;
     if (route_action.retry_policy->retry_on.Contains(GRPC_STATUS_CANCELLED)) {
       code_parts.push_back("        \"CANCELLED\"");
@@ -513,12 +514,10 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
   }
   // Set timeout.
   if (route_action.max_stream_duration.has_value() &&
-      (route_action.max_stream_duration->seconds != 0 ||
-       route_action.max_stream_duration->nanos != 0)) {
-    fields.emplace_back(
-        absl::StrFormat("    \"timeout\": \"%d.%09ds\"",
-                        route_action.max_stream_duration->seconds,
-                        route_action.max_stream_duration->nanos));
+      (route_action.max_stream_duration != Duration::Zero())) {
+    gpr_timespec ts = route_action.max_stream_duration->as_timespec();
+    fields.emplace_back(absl::StrFormat("    \"timeout\": \"%d.%09ds\"",
+                                        ts.tv_sec, ts.tv_nsec));
   }
   // Handle xDS HTTP filters.
   XdsRouting::GeneratePerHttpFilterConfigsResult result =
