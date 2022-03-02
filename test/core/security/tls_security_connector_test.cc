@@ -520,7 +520,7 @@ TEST_F(TlsSecurityConnectorTest,
       credential->create_security_connector(nullptr, kTargetName, nullptr,
                                             nullptr);
   grpc_call_credentials* call_creds =
-      grpc_md_only_test_credentials_create("", "", true);
+      grpc_md_only_test_credentials_create("", "");
   RefCountedPtr<grpc_channel_security_connector> other_connector =
       credential->create_security_connector(
           RefCountedPtr<grpc_call_credentials>(call_creds), kTargetName,

@@ -24,27 +24,9 @@
 
 namespace grpc_core {
 
-#define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_AFTER_ATTEMPTS 100
-#define GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS 10
-
-void GlobalSubchannelPool::Init() {
-  instance_ = new RefCountedPtr<GlobalSubchannelPool>(
-      MakeRefCounted<GlobalSubchannelPool>());
-}
-
-void GlobalSubchannelPool::Shutdown() {
-  // To ensure Init() was called before.
-  GPR_ASSERT(instance_ != nullptr);
-  // To ensure Shutdown() was not called before.
-  GPR_ASSERT(*instance_ != nullptr);
-  instance_->reset();
-  delete instance_;
-}
-
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
-  GPR_ASSERT(instance_ != nullptr);
-  GPR_ASSERT(*instance_ != nullptr);
-  return *instance_;
+  static GlobalSubchannelPool* p = new GlobalSubchannelPool();
+  return p->Ref();
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
@@ -58,8 +40,6 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
   subchannel_map_[key] = constructed.get();
   return constructed;
 }
-
-RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
 void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
                                                 Subchannel* subchannel) {

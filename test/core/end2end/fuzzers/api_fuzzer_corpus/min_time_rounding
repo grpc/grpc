@@ -1,0 +1,15 @@
+actions {
+  create_channel {
+    channel_actions {}
+  }
+}
+actions {
+  advance_time : 2
+} 
+actions {
+  watch_connectivity : 1
+} 
+actions {
+  poll_cq {}
+}
+

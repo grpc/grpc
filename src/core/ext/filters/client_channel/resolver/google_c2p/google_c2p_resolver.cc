@@ -131,12 +131,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
       resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
-  http_request_ =
-      HttpRequest::Get(std::move(*uri), &args, pollent, &request,
-                       ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                       &on_done_, &response_,
-                       RefCountedPtr<grpc_channel_credentials>(
-                           grpc_insecure_credentials_create()));
+  http_request_ = HttpRequest::Get(
+      std::move(*uri), &args, pollent, &request,
+      ExecCtx::Get()->Now() + Duration::Seconds(10),  // 10s timeout
+      &on_done_, &response_,
+      RefCountedPtr<grpc_channel_credentials>(
+          grpc_insecure_credentials_create()));
   http_request_->Start();
 }
 

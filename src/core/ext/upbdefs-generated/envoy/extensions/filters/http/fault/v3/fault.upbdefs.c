@@ -10,13 +10,13 @@
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 
-extern upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit;
-extern upb_def_init envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_route_v3_route_components_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[1973] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'f', 'i', 'l', 't', 'e', 'r', 
 's', '/', 'h', 't', 't', 'p', '/', 'f', 'a', 'u', 'l', 't', '/', 'v', '3', '/', 'f', 'a', 'u', 'l', 't', '.', 'p', 'r', 'o', 
 't', 'o', '\022', '&', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'f', 'i', 'l', 't', 
@@ -98,7 +98,7 @@ static const char descriptor[1973] = {'\n', '2', 'e', 'n', 'v', 'o', 'y', '/', '
 'f', 'a', 'u', 'l', 't', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[8] = {
+static _upb_DefPool_Init *deps[8] = {
   &envoy_config_route_v3_route_components_proto_upbdefinit,
   &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit,
   &envoy_type_v3_percent_proto_upbdefinit,
@@ -109,9 +109,9 @@ static upb_def_init *deps[8] = {
   NULL
 };
 
-upb_def_init envoy_extensions_filters_http_fault_v3_fault_proto_upbdefinit = {
+_upb_DefPool_Init envoy_extensions_filters_http_fault_v3_fault_proto_upbdefinit = {
   deps,
   &envoy_extensions_filters_http_fault_v3_fault_proto_upb_file_layout,
   "envoy/extensions/filters/http/fault/v3/fault.proto",
-  UPB_STRVIEW_INIT(descriptor, 1973)
+  UPB_STRINGVIEW_INIT(descriptor, 1973)
 };

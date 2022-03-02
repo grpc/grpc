@@ -107,7 +107,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
       grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
           nullptr);
   grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
+                          grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 
   /* await the connection */
@@ -164,7 +164,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
       grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
           nullptr);
   grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
-                          GRPC_MILLIS_INF_FUTURE);
+                          grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 
   grpc_core::ExecCtx::Get()->Flush();

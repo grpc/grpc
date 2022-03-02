@@ -10,10 +10,10 @@
 #include "xds/type/matcher/v3/matcher.upbdefs.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init xds_core_v3_extension_proto_upbdefinit;
-extern upb_def_init xds_type_matcher_v3_string_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_extension_proto_upbdefinit;
+extern _upb_DefPool_Init xds_type_matcher_v3_string_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[2335] = {'\n', '!', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'm', 'a', 't', 
 'c', 'h', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\023', 'x', 'd', 's', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 
 'h', 'e', 'r', '.', 'v', '3', '\032', '\037', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', 
@@ -110,7 +110,7 @@ static const char descriptor[2335] = {'\n', '!', 'x', 'd', 's', '/', 't', 'y', '
 'v', '3', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[5] = {
+static _upb_DefPool_Init *deps[5] = {
   &xds_annotations_v3_status_proto_upbdefinit,
   &xds_core_v3_extension_proto_upbdefinit,
   &xds_type_matcher_v3_string_proto_upbdefinit,
@@ -118,9 +118,9 @@ static upb_def_init *deps[5] = {
   NULL
 };
 
-upb_def_init xds_type_matcher_v3_matcher_proto_upbdefinit = {
+_upb_DefPool_Init xds_type_matcher_v3_matcher_proto_upbdefinit = {
   deps,
   &xds_type_matcher_v3_matcher_proto_upb_file_layout,
   "xds/type/matcher/v3/matcher.proto",
-  UPB_STRVIEW_INIT(descriptor, 2335)
+  UPB_STRINGVIEW_INIT(descriptor, 2335)
 };

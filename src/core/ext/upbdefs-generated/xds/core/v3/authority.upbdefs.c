@@ -10,8 +10,8 @@
 #include "xds/core/v3/authority.upbdefs.h"
 #include "xds/core/v3/authority.upb.h"
 
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[238] = {'\n', '\033', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'a', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\037', 'x', 'd', 's', '/', 'a', 'n', 
 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 'r', 'o', 't', 'o', 
@@ -24,15 +24,15 @@ static const char descriptor[238] = {'\n', '\033', 'x', 'd', 's', '/', 'c', 'o',
 '\341', '\006', '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[3] = {
+static _upb_DefPool_Init *deps[3] = {
   &xds_annotations_v3_status_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_core_v3_authority_proto_upbdefinit = {
+_upb_DefPool_Init xds_core_v3_authority_proto_upbdefinit = {
   deps,
   &xds_core_v3_authority_proto_upb_file_layout,
   "xds/core/v3/authority.proto",
-  UPB_STRVIEW_INIT(descriptor, 238)
+  UPB_STRINGVIEW_INIT(descriptor, 238)
 };

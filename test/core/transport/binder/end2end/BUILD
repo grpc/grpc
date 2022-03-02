@@ -79,6 +79,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = [
+        # Known race between stream creation and cancellation
+        "notsan",
+    ],
     deps = [
         ":end2end_binder_channel",
         ":fake_binder",

@@ -10,9 +10,9 @@
 #include "google/api/expr/v1alpha1/checked.upbdefs.h"
 #include "google/api/expr/v1alpha1/checked.upb.h"
 
-extern upb_def_init google_api_expr_v1alpha1_syntax_proto_upbdefinit;
-extern upb_def_init google_protobuf_empty_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init google_api_expr_v1alpha1_syntax_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_empty_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 static const char descriptor[3089] = {'\n', '&', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'a', 'p', 'i', '/', 'e', 'x', 'p', 'r', '/', 'v', '1', 'a', 'l', 'p', 'h', 'a', 
 '1', '/', 'c', 'h', 'e', 'c', 'k', 'e', 'd', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'a', 
 'p', 'i', '.', 'e', 'x', 'p', 'r', '.', 'v', '1', 'a', 'l', 'p', 'h', 'a', '1', '\032', '%', 'g', 'o', 'o', 'g', 'l', 'e', '/', 
@@ -139,16 +139,16 @@ static const char descriptor[3089] = {'\n', '&', 'g', 'o', 'o', 'g', 'l', 'e', '
 'x', 'p', 'r', '\370', '\001', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &google_api_expr_v1alpha1_syntax_proto_upbdefinit,
   &google_protobuf_empty_proto_upbdefinit,
   &google_protobuf_struct_proto_upbdefinit,
   NULL
 };
 
-upb_def_init google_api_expr_v1alpha1_checked_proto_upbdefinit = {
+_upb_DefPool_Init google_api_expr_v1alpha1_checked_proto_upbdefinit = {
   deps,
   &google_api_expr_v1alpha1_checked_proto_upb_file_layout,
   "google/api/expr/v1alpha1/checked.proto",
-  UPB_STRVIEW_INIT(descriptor, 3089)
+  UPB_STRINGVIEW_INIT(descriptor, 3089)
 };

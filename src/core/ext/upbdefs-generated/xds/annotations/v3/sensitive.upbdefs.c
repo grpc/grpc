@@ -10,7 +10,7 @@
 #include "xds/annotations/v3/sensitive.upbdefs.h"
 #include "xds/annotations/v3/sensitive.upb.h"
 
-extern upb_def_init google_protobuf_descriptor_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 static const char descriptor[207] = {'\n', '\"', 'x', 'd', 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 'e', 'n', 's', 
 'i', 't', 'i', 'v', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\022', 'x', 'd', 's', '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 
 'o', 'n', 's', '.', 'v', '3', '\032', ' ', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 'd', 
@@ -22,14 +22,14 @@ static const char descriptor[207] = {'\n', '\"', 'x', 'd', 's', '/', 'a', 'n', '
 '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &google_protobuf_descriptor_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_annotations_v3_sensitive_proto_upbdefinit = {
+_upb_DefPool_Init xds_annotations_v3_sensitive_proto_upbdefinit = {
   deps,
   &xds_annotations_v3_sensitive_proto_upb_file_layout,
   "xds/annotations/v3/sensitive.proto",
-  UPB_STRVIEW_INIT(descriptor, 207)
+  UPB_STRINGVIEW_INIT(descriptor, 207)
 };
