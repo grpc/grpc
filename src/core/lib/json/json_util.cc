@@ -20,6 +20,8 @@
 
 #include "src/core/lib/json/json_util.h"
 
+#include "json_object_loader.h"
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
@@ -27,32 +29,11 @@
 namespace grpc_core {
 
 bool ParseDurationFromJson(const Json& field, Duration* duration) {
-  if (field.type() != Json::Type::STRING) return false;
-  size_t len = field.string_value().size();
-  if (field.string_value()[len - 1] != 's') return false;
-  UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
-  *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
-  char* decimal_point = strchr(buf.get(), '.');
-  int nanos = 0;
-  if (decimal_point != nullptr) {
-    *decimal_point = '\0';
-    nanos = gpr_parse_nonnegative_int(decimal_point + 1);
-    if (nanos == -1) {
-      return false;
-    }
-    int num_digits = static_cast<int>(strlen(decimal_point + 1));
-    if (num_digits > 9) {  // We don't accept greater precision than nanos.
-      return false;
-    }
-    for (int i = 0; i < (9 - num_digits); ++i) {
-      nanos *= 10;
-    }
-  }
-  int seconds =
-      decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
-  if (seconds == -1) return false;
-  *duration = Duration::FromSecondsAndNanoseconds(seconds, nanos);
-  return true;
+  json_detail::LoadDuration loader;
+  ErrorList errors;
+  static_cast<json_detail::LoaderInterface&>(loader).LoadInto(field, duration,
+                                                              &errors);
+  return errors.ok();
 }
 
 bool ExtractJsonBool(const Json& json, absl::string_view field_name,

@@ -5074,6 +5074,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "json",
+        "json_object_loader",
     ],
 )
 

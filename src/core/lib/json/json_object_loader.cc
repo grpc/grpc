@@ -16,7 +16,9 @@
 
 #include "src/core/lib/json/json_object_loader.h"
 
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
+#include "json_object_loader.h"
 
 namespace grpc_core {
 
@@ -50,6 +52,8 @@ void LoadScalar::LoadInto(const Json& json, void* dst,
 
 bool LoadNumber::IsNumber() const { return true; }
 
+bool LoadDuration::IsNumber() const { return false; }
+
 void LoadDuration::LoadInto(const std::string& value, void* dst,
                             ErrorList* errors) const {
   size_t len = value.size();
@@ -57,7 +61,9 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
     errors->AddError("Not a duration (no s suffix)");
     return;
   }
-  absl::string_view buf(value, len - 1);  // Remove trailing 's'.
+  absl::string_view buf(value);
+  buf = absl::StripAsciiWhitespace(
+      buf.substr(0, len - 1));  // Remove trailing 's'.
   auto decimal_point = buf.find('.');
   int nanos = 0;
   if (decimal_point != absl::string_view::npos) {
@@ -72,21 +78,23 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
       errors->AddError("Not a duration (too many digits after decimal)");
       return;
     }
-    for (int i = 0; i < (9 - num_digits); ++i) {
+    for (int i = 0; i < (9 - after_decimal.length()); ++i) {
       nanos *= 10;
     }
   }
-  int seconds =
-      decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
-  if (seconds == -1) return false;
-  *duration = Duration::FromSecondsAndNanoseconds(seconds, nanos);
-  return true;
+  int seconds;
+  if (!absl::SimpleAtoi(buf, &seconds)) {
+    errors->AddError("Not a duration (not an number of seconds)");
+    return;
+  }
+  *static_cast<Duration*>(dst) =
+      Duration::FromSecondsAndNanoseconds(seconds, nanos);
 }
 
 bool LoadString::IsNumber() const { return false; }
 
 void LoadString::LoadInto(const std::string& value, void* dst,
-                          ErrorList* errors) {
+                          ErrorList* errors) const {
   *static_cast<std::string*>(dst) = value;
 }
 

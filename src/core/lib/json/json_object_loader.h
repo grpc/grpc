@@ -70,6 +70,9 @@ class ErrorList {
   // Return the list of errors.
   const std::vector<std::string>& errors() const { return errors_; }
 
+  // Return true if there are no errors.
+  bool ok() const { return errors_.empty(); }
+
  private:
   std::vector<std::string> errors_;
   std::vector<std::string> fields_;
@@ -193,6 +196,8 @@ template <>
 class AutoLoader<int64_t> final : public TypedLoadNumber<int64_t> {};
 template <>
 class AutoLoader<uint64_t> final : public TypedLoadNumber<uint64_t> {};
+template <>
+class AutoLoader<Duration> final : public LoadDuration {};
 template <>
 class AutoLoader<std::string> final : public LoadString {};
 

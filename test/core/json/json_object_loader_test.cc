@@ -78,12 +78,13 @@ struct TestStruct3 {
 TEST(JsonObjectLoaderTest, LoadTestStruct1) {
   {
     ErrorList errors;
-    auto s =
-        Parse<TestStruct1>("{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\"}", &errors);
+    auto s = Parse<TestStruct1>(
+        "{\"a\":1,\"b\":2,\"c\":3,\"x\":\"foo\",\"d\":\"1.3s\"}", &errors);
     EXPECT_EQ(s.a, 1);
     EXPECT_EQ(s.b, 2);
     EXPECT_EQ(s.c, 3);
     EXPECT_EQ(s.x, "foo");
+    EXPECT_EQ(s.d, Duration::Milliseconds(1300));
     EXPECT_EQ(errors.errors().size(), 0);
   }
   {
