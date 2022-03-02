@@ -128,6 +128,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   static void SetOverride(grpc_httpcli_get_override get,
                           grpc_httpcli_post_override post);
 
+  static void TestOnlySetOnHandshakeDoneIntercept(
+      void (*intercept)(HttpRequest* req));
+
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
