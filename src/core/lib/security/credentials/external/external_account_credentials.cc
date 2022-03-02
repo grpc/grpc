@@ -239,7 +239,7 @@ std::string ExternalAccountCredentials::debug_string() {
 void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
-    grpc_millis deadline) {
+    Timestamp deadline) {
   GPR_ASSERT(ctx_ == nullptr);
   ctx_ = new HTTPRequestContext(pollent, deadline);
   metadata_req_ = metadata_req;

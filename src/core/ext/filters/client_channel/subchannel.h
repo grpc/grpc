@@ -76,7 +76,7 @@ class SubchannelCall {
     grpc_polling_entity* pollent;
     Slice path;
     gpr_cycle_counter start_time;
-    grpc_millis deadline;
+    Timestamp deadline;
     Arena* arena;
     grpc_call_context_element* context;
     CallCombiner* call_combiner;
@@ -129,7 +129,7 @@ class SubchannelCall {
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ = nullptr;
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
-  grpc_millis deadline_;
+  Timestamp deadline_;
 };
 
 // A subchannel that knows how to connect to exactly one target address. It
@@ -360,10 +360,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
 
+  // Minimum connect timeout - must be located before backoff_.
+  Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
-  grpc_millis next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
-  grpc_millis min_connect_timeout_ms_ ABSL_GUARDED_BY(mu_);
+  Timestamp next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
   bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
 
   // Retry alarm.

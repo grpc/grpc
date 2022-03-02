@@ -182,7 +182,6 @@ void grpc_init(void) {
     grpc_stats_init();
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
-    grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
@@ -218,7 +217,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }
-  grpc_core::ExecCtx::GlobalShutdown();
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   g_shutting_down_cv->SignalAll();
