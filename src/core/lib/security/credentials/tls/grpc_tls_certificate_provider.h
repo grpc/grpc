@@ -48,9 +48,9 @@ struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
   // The pointer value \a type is used to uniquely identify a creds
-  // implementation for down-casting purposes. Every creds implementation should
-  // use a unique string instance for every creds instance of that creds
-  // implementation.
+  // implementation for down-casting purposes. Every provider implementation
+  // should use a unique string instance, which should be returned by all
+  // instances of that provider implementation.
   explicit grpc_tls_certificate_provider(const char* type) : type_(type) {}
 
   virtual grpc_pollset_set* interested_parties() const { return nullptr; }
@@ -59,29 +59,30 @@ struct grpc_tls_certificate_provider
   distributor() const = 0;
 
   // Compares this grpc_tls_certificate_provider object with \a other.
-  // If this method returns 0, it means that gRPC can treat the two channel
-  // credentials as effectively the same. This method is used to compare
+  // If this method returns 0, it means that gRPC can treat the two certificate
+  // providers as effectively the same. This method is used to compare
   // `grpc_tls_certificate_provider` objects when they are present in
   // channel_args. One important usage of this is when channel args are used in
   // SubchannelKey, which leads to a useful property that allows subchannels to
   // be reused when two different `grpc_tls_certificate_provider` objects are
   // used but they compare as equal (assuming other channel args match).
-  int cmp(const grpc_tls_certificate_provider* other) const {
+  int Compare(const grpc_tls_certificate_provider* other) const {
     GPR_ASSERT(other != nullptr);
     // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
     // against different grpc_tls_certificate_provider types using the same
     // name.
     int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
-    return cmp_impl(other);
+    return CompareImpl(other);
   }
 
   const char* type() const { return type_; }
 
  private:
-  // Implementation for `cmp` method intended to be overridden by subclasses.
-  // Only invoked if `type()` and `other->type()` compare equal as strings.
-  virtual int cmp_impl(const grpc_tls_certificate_provider* other) const = 0;
+  // Implementation for `Compare` method intended to be overridden by
+  // subclasses. Only invoked if `type()` and `other->type()` compare equal as
+  // strings.
+  virtual int CompareImpl(const grpc_tls_certificate_provider* other) const = 0;
 
   const char* type_;
 };
@@ -110,7 +111,7 @@ class StaticDataCertificateProvider final
 
   static const char kType[];
 
-  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);
@@ -149,7 +150,7 @@ class FileWatcherCertificateProvider final
 
   static const char kType[];
 
-  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);

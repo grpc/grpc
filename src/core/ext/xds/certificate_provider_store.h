@@ -84,8 +84,9 @@ class CertificateProviderStore
       return certificate_provider_->interested_parties();
     }
 
-    int cmp_impl(const grpc_tls_certificate_provider* other) const override {
-      // TODO(yashykt): Maybe do something better here.
+    int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+      // TODO(yashykt): This should probably delegate to the `Compare` method of
+      // the wrapped certificate_provider_ object.
       return QsortCompare(
           static_cast<const grpc_tls_certificate_provider*>(this), other);
     }

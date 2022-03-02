@@ -38,6 +38,8 @@ class TlsCredentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
+  const char* type() const override { return GRPC_CREDENTIALS_TYPE_TLS; }
+
   grpc_tls_credentials_options* options() const { return options_.get(); }
 
  private:

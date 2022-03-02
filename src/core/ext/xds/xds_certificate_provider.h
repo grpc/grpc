@@ -126,7 +126,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
 
   static const char kType[];
 
-  int cmp_impl(const grpc_tls_certificate_provider* other) const override {
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);

@@ -53,11 +53,20 @@ typedef enum {
   "FakeTransportSecurity"
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
 #define GRPC_CREDENTIALS_TYPE_INSECURE "insecure"
+#define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
+#define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
+#define GRPC_CREDENTIALS_TYPE_LOCAL "Local"
+#define GRPC_CREDENTIALS_TYPE_TLS "Tls"
+#define GRPC_CREDENTIALS_TYPE_HTTP_REQUEST_SSL "HttpRequestSSL"
 
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
+#define GRPC_CALL_CREDENTIALS_TYPE_GOOGLE_REFRESH_TOKEN "GoogleRefreshToken"
+#define GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN "AccessToken"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
+#define GRPC_CALL_CREDENTIALS_TYPE_PLUGIN "Plugin"
+#define GRPC_CALL_CREDENTIALS_TYPE_MD_ONLY_TEST "MdOnlyTest"
 
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
@@ -103,9 +112,6 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
-  explicit grpc_channel_credentials(const char* type) : type_(type) {}
-  ~grpc_channel_credentials() override = default;
-
   // Creates a security connector for the channel. May also create new channel
   // args for the channel to be used in place of the passed in const args if
   // returned non NULL. In that case the caller is responsible for destroying
@@ -148,14 +154,12 @@ struct grpc_channel_credentials
     return cmp_impl(other);
   }
 
-  const char* type() const { return type_; }
+  virtual const char* type() const = 0;
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
   // Only invoked if `type()` and `other->type()` compare equal as strings.
   virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
-
-  const char* type_;
 };
 
 // TODO(roth): Once we eliminate insecure builds, find a better way to
@@ -199,9 +203,8 @@ struct grpc_call_credentials
   };
 
   explicit grpc_call_credentials(
-      const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
-      : type_(type), min_security_level_(min_security_level) {}
+      : min_security_level_(min_security_level) {}
 
   ~grpc_call_credentials() override = default;
 
@@ -228,14 +231,13 @@ struct grpc_call_credentials
     return "grpc_call_credentials did not provide debug string";
   }
 
-  const char* type() const { return type_; }
+  virtual const char* type() const = 0;
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
   // Only invoked if `type()` and `other->type()` compare equal as strings.
   virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
 
-  const char* type_;
   const grpc_security_level min_security_level_;
 };
 

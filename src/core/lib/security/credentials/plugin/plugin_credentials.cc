@@ -197,7 +197,7 @@ grpc_plugin_credentials::GetRequestMetadata(
 grpc_plugin_credentials::grpc_plugin_credentials(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level)
-    : grpc_call_credentials(plugin.type, min_security_level), plugin_(plugin) {}
+    : grpc_call_credentials(min_security_level), plugin_(plugin) {}
 
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,

@@ -39,6 +39,8 @@ class grpc_alts_credentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
+  const char* type() const override { return GRPC_CREDENTIALS_TYPE_ALTS; }
+
   const grpc_alts_credentials_options* options() const { return options_; }
   grpc_alts_credentials_options* mutable_options() { return options_; }
   const char* handshaker_service_url() const { return handshaker_service_url_; }

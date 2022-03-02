@@ -37,10 +37,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
 
-namespace grpc_core {
-const char kCredentialsTypeComposite[] = "composite";
-}  // namespace grpc_core
-
 /* -- Composite call credentials. -- */
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
@@ -89,8 +85,7 @@ void grpc_composite_call_credentials::push_to_inner(
 
 grpc_composite_call_credentials::grpc_composite_call_credentials(
     grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds2)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds2) {
   const bool creds1_is_composite =
       strcmp(creds1->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
   const bool creds2_is_composite =

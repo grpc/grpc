@@ -39,6 +39,8 @@ class grpc_local_credentials final : public grpc_channel_credentials {
 
   grpc_local_connect_type connect_type() const { return connect_type_; }
 
+  const char* type() const override { return GRPC_CREDENTIALS_TYPE_LOCAL; }
+
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here

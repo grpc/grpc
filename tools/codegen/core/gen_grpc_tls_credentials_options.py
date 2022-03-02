@@ -95,7 +95,7 @@ _DATA_MEMBERS = [
   }""",
         setter_move_semantics=True,
         special_comparator=
-        '(certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->cmp(other.certificate_provider_.get()) == 0))',
+        '(certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->Compare(other.certificate_provider_.get()) == 0))',
         test_name="DifferentCertificateProvider",
         test_value_1=
         "MakeRefCounted<StaticDataCertificateProvider>(\"root_cert_1\", PemKeyCertPairList())",

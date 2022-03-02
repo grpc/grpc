@@ -145,8 +145,8 @@ struct grpc_tls_credentials_options
            (certificate_provider_ == other.certificate_provider_ ||
             (certificate_provider_ != nullptr &&
              other.certificate_provider_ != nullptr &&
-             certificate_provider_->cmp(other.certificate_provider_.get()) ==
-                 0)) &&
+             certificate_provider_->Compare(
+                 other.certificate_provider_.get()) == 0)) &&
            watch_root_cert_ == other.watch_root_cert_ &&
            root_cert_name_ == other.root_cert_name_ &&
            watch_identity_pair_ == other.watch_identity_pair_ &&

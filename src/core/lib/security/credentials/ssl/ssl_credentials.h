@@ -37,6 +37,10 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
+  const char* type() const override {
+    return GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
+  }
+
   // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
   // version should be done for testing purposes only.
   void set_min_tls_version(grpc_tls_version min_tls_version);

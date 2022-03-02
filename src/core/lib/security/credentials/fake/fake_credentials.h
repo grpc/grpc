@@ -60,8 +60,7 @@ const char* grpc_fake_transport_get_expected_targets(
 class grpc_md_only_test_credentials : public grpc_call_credentials {
  public:
   grpc_md_only_test_credentials(const char* md_key, const char* md_value)
-      : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
-                              GRPC_SECURITY_NONE),
+      : grpc_call_credentials(GRPC_SECURITY_NONE),
         key_(grpc_core::Slice::FromCopiedString(md_key)),
         value_(grpc_core::Slice::FromCopiedString(md_value)) {}
 
@@ -69,7 +68,11 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
   GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
                      const GetRequestMetadataArgs* args) override;
 
-  std::string debug_string() override { return "MD only Test Credentials"; };
+  std::string debug_string() override { return "MD only Test Credentials"; }
+
+  const char* type() const override {
+    return GRPC_CALL_CREDENTIALS_TYPE_MD_ONLY_TEST;
+  }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

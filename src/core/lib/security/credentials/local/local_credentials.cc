@@ -27,8 +27,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
-#define GRPC_CREDENTIALS_TYPE_LOCAL "Local"
-
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
@@ -46,8 +44,7 @@ grpc_local_server_credentials::create_security_connector(
 
 grpc_local_credentials::grpc_local_credentials(
     grpc_local_connect_type connect_type)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_LOCAL),
-      connect_type_(connect_type) {}
+    : connect_type_(connect_type) {}
 
 grpc_channel_credentials* grpc_local_credentials_create(
     grpc_local_connect_type connect_type) {

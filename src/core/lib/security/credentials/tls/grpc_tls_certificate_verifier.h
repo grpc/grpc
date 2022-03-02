@@ -40,8 +40,8 @@ struct grpc_tls_certificate_verifier
  public:
   // The pointer value \a type is used to uniquely identify a verifier
   // implementation for down-casting purposes. Every verifier implementation
-  // should use a unique string instance for every verifier instance of that
-  // verifier implementation.
+  // should use a unique string instance, which should be returned by all
+  // instances of that verifier implementation.
   explicit grpc_tls_certificate_verifier(const char* type) : type_(type) {}
 
   ~grpc_tls_certificate_verifier() override = default;
@@ -59,8 +59,8 @@ struct grpc_tls_certificate_verifier
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
 
   // Compares this grpc_tls_certificate_verifier object with \a other.
-  // If this method returns 0, it means that gRPC can treat the two channel
-  // credentials as effectively the same.
+  // If this method returns 0, it means that gRPC can treat the two certificate
+  // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
     GPR_ASSERT(other != nullptr);
     int r = strcmp(type(), other->type());

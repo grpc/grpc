@@ -26,9 +26,6 @@ namespace {
 
 class InsecureCredentials final : public grpc_channel_credentials {
  public:
-  InsecureCredentials()
-      : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_INSECURE) {}
-
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds,
       const char* /* target_name */, const grpc_channel_args* /* args */,
@@ -36,6 +33,8 @@ class InsecureCredentials final : public grpc_channel_credentials {
     return MakeRefCounted<InsecureChannelSecurityConnector>(
         Ref(), std::move(call_creds));
   }
+
+  const char* type() const override { return GRPC_CREDENTIALS_TYPE_INSECURE; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {

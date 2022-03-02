@@ -37,11 +37,6 @@
 namespace {
 class grpc_fake_channel_credentials final : public grpc_channel_credentials {
  public:
-  grpc_fake_channel_credentials()
-      : grpc_channel_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_channel_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -49,6 +44,10 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
       grpc_channel_args** /*new_args*/) override {
     return grpc_fake_channel_security_connector_create(
         this->Ref(), std::move(call_creds), target, args);
+  }
+
+  const char* type() const override {
+    return GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   }
 
  private:

@@ -56,12 +56,13 @@ class XdsCredentials final : public grpc_channel_credentials {
  public:
   explicit XdsCredentials(
       RefCountedPtr<grpc_channel_credentials> fallback_credentials)
-      : grpc_channel_credentials(kCredentialsTypeXds),
-        fallback_credentials_(std::move(fallback_credentials)) {}
+      : fallback_credentials_(std::move(fallback_credentials)) {}
 
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
       const grpc_channel_args* args, grpc_channel_args** new_args) override;
+
+  const char* type() const override { return kCredentialsTypeXds; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {

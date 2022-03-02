@@ -570,7 +570,8 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
                                                  "authorization: Bearer blah");
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
-  GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
+  GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN) ==
+             0);
   /* Check security level. */
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -581,20 +582,19 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
 namespace {
 class check_channel_oauth2 final : public grpc_channel_credentials {
  public:
-  check_channel_oauth2() : grpc_channel_credentials("mock") {}
-  ~check_channel_oauth2() override = default;
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* /*target*/, const grpc_channel_args* /*args*/,
       grpc_channel_args** /*new_args*/) override {
-    GPR_ASSERT(strcmp(type(), "mock") == 0);
+    GPR_ASSERT(strcmp(type(), "check_channel_oauth2") == 0);
     GPR_ASSERT(call_creds != nullptr);
-    GPR_ASSERT(strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) ==
-               0);
+    GPR_ASSERT(strcmp(call_creds->type(),
+                      GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN) == 0);
     return nullptr;
   }
+
+  const char* type() const override { return "check_channel_oauth2"; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -655,8 +655,8 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
   GPR_ASSERT(creds_list.size() == 2);
-  GPR_ASSERT(strcmp(creds_list[0]->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) ==
-             0);
+  GPR_ASSERT(strcmp(creds_list[0]->type(),
+                    GRPC_CALL_CREDENTIALS_TYPE_MD_ONLY_TEST) == 0);
   GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
              0);
   state->RunRequestMetadataTest(composite_creds, kTestUrlScheme, kTestAuthority,
@@ -667,26 +667,27 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
 namespace {
 class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
  public:
-  check_channel_oauth2_google_iam() : grpc_channel_credentials("mock") {}
-  ~check_channel_oauth2_google_iam() override = default;
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* /*target*/, const grpc_channel_args* /*args*/,
       grpc_channel_args** /*new_args*/) override {
-    GPR_ASSERT(strcmp(type(), "mock") == 0);
+    GPR_ASSERT(strcmp(type(), "check_channel_oauth2_google_iam") == 0);
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(
         strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
     const grpc_composite_call_credentials::CallCredentialsList& creds_list =
         static_cast<const grpc_composite_call_credentials*>(call_creds.get())
             ->inner();
-    GPR_ASSERT(
-        strcmp(creds_list[0]->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
+    GPR_ASSERT(strcmp(creds_list[0]->type(),
+                      GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN) == 0);
     GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
                0);
     return nullptr;
+  }
+
+  const char* type() const override {
+    return "check_channel_oauth2_google_iam";
   }
 
  private:
@@ -1794,8 +1795,6 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
 
 struct fake_call_creds : public grpc_call_credentials {
  public:
-  fake_call_creds() : grpc_call_credentials("fake") {}
-
   grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
   GetRequestMetadata(
       grpc_core::ClientInitialMetadata initial_metadata,
@@ -1805,6 +1804,8 @@ struct fake_call_creds : public grpc_call_credentials {
         [](absl::string_view, const grpc_core::Slice&) { abort(); });
     return grpc_core::Immediate(std::move(initial_metadata));
   }
+
+  const char* type() const override { return "fake"; }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {
