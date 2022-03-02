@@ -271,7 +271,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
+def grpc_cc_test(name, srcs = [], deps = [], env = {}, external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -304,6 +304,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     args = {
         "srcs": srcs,
         "args": args,
+        "env": env,
         "data": data,
         "deps": deps + _get_external_deps(external_deps),
         "copts": GRPC_DEFAULT_COPTS + copts,
