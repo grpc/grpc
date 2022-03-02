@@ -21,7 +21,7 @@ from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
-from framework.helpers import retryers
+from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.rpc import grpc_channelz
 from framework.test_app import server_app
@@ -43,6 +43,12 @@ _RPC_COUNT = 100
 
 
 class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @staticmethod
+    def isSupported(config: skips.TestConfig) -> bool:
+        if config.client_lang in ['cpp', 'java', 'python', 'go']:
+            return config.version_ge('v1.40.x')
+        return False
 
     def test_affinity(self) -> None:
 
