@@ -149,11 +149,17 @@ struct grpc_channel_credentials
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_channel_credentials types using the same name.
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
 
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
   virtual const char* type() const = 0;
 
  private:
@@ -202,6 +208,10 @@ struct grpc_call_credentials
     grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   };
 
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
   explicit grpc_call_credentials(
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
       : min_security_level_(min_security_level) {}
@@ -222,7 +232,9 @@ struct grpc_call_credentials
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_call_credentials types using the same name.
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
@@ -231,6 +243,10 @@ struct grpc_call_credentials
     return "grpc_call_credentials did not provide debug string";
   }
 
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
   virtual const char* type() const = 0;
 
  private:

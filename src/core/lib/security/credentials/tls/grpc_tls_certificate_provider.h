@@ -47,12 +47,6 @@
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  // The pointer value \a type is used to uniquely identify a creds
-  // implementation for down-casting purposes. Every provider implementation
-  // should use a unique string instance, which should be returned by all
-  // instances of that provider implementation.
-  explicit grpc_tls_certificate_provider(const char* type) : type_(type) {}
-
   virtual grpc_pollset_set* interested_parties() const { return nullptr; }
 
   virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
@@ -76,15 +70,17 @@ struct grpc_tls_certificate_provider
     return CompareImpl(other);
   }
 
-  const char* type() const { return type_; }
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every provider implementation
+  // should use a unique string instance, which should be returned by all
+  // instances of that provider implementation.
+  virtual const char* type() const = 0;
 
  private:
   // Implementation for `Compare` method intended to be overridden by
   // subclasses. Only invoked if `type()` and `other->type()` compare equal as
   // strings.
   virtual int CompareImpl(const grpc_tls_certificate_provider* other) const = 0;
-
-  const char* type_;
 };
 
 namespace grpc_core {
@@ -103,13 +99,13 @@ class StaticDataCertificateProvider final
     return distributor_;
   }
 
+  const char* type() const override { return "static_data"; }
+
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
-
-  static const char kType[];
 
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.
@@ -142,13 +138,13 @@ class FileWatcherCertificateProvider final
     return distributor_;
   }
 
+  const char* type() const override { return "file_watcher"; }
+
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
   };
-
-  static const char kType[];
 
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.

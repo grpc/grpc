@@ -72,8 +72,7 @@ const char XdsCertificateVerifier::kType[] = "xds";
 XdsCertificateVerifier::XdsCertificateVerifier(
     RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
     std::string cluster_name)
-    : grpc_tls_certificate_verifier(kType),
-      xds_certificate_provider_(std::move(xds_certificate_provider)),
+    : xds_certificate_provider_(std::move(xds_certificate_provider)),
       cluster_name_(std::move(cluster_name)) {}
 
 bool XdsCertificateVerifier::Verify(

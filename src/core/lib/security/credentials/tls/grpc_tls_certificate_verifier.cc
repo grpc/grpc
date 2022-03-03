@@ -34,12 +34,9 @@ namespace grpc_core {
 // ExternalCertificateVerifier
 //
 
-const char ExternalCertificateVerifier::kType[] = "external";
-
 ExternalCertificateVerifier::ExternalCertificateVerifier(
     grpc_tls_certificate_verifier_external* external_verifier)
-    : grpc_tls_certificate_verifier(kType),
-      external_verifier_(external_verifier) {}
+    : external_verifier_(external_verifier) {}
 
 bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
@@ -94,11 +91,6 @@ void ExternalCertificateVerifier::OnVerifyDone(
 //
 // HostNameCertificateVerifier
 //
-
-const char HostNameCertificateVerifier::kType[] = "hostname";
-
-HostNameCertificateVerifier::HostNameCertificateVerifier()
-    : grpc_tls_certificate_verifier(kType) {}
 
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,

@@ -39,6 +39,8 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
+  const char* type() const override { return "xds"; }
+
   bool ProvidesRootCerts(const std::string& cert_name);
   void UpdateRootCertNameAndDistributor(
       const std::string& cert_name, absl::string_view root_cert_name,
@@ -123,8 +125,6 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
         identity_cert_watcher_ = nullptr;
     bool require_client_certificate_ = false;
   };
-
-  static const char kType[];
 
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
     // TODO(yashykt): Maybe do something better here.

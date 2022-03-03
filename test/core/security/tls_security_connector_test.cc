@@ -114,12 +114,13 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
  public:
   explicit TlsTestCertificateProvider(
       RefCountedPtr<grpc_tls_certificate_distributor> distributor)
-      : grpc_tls_certificate_provider("tls_test"),
-        distributor_(std::move(distributor)) {}
+      : distributor_(std::move(distributor)) {}
   ~TlsTestCertificateProvider() override {}
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
+
+  const char* type() const override { return "tls_test"; }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {

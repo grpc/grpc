@@ -38,12 +38,6 @@
 struct grpc_tls_certificate_verifier
     : public grpc_core::RefCounted<grpc_tls_certificate_verifier> {
  public:
-  // The pointer value \a type is used to uniquely identify a verifier
-  // implementation for down-casting purposes. Every verifier implementation
-  // should use a unique string instance, which should be returned by all
-  // instances of that verifier implementation.
-  explicit grpc_tls_certificate_verifier(const char* type) : type_(type) {}
-
   ~grpc_tls_certificate_verifier() override = default;
   // Verifies the specific request. It can be processed in sync or async mode.
   // If the caller want it to be processed asynchronously, return false
@@ -68,15 +62,17 @@ struct grpc_tls_certificate_verifier
     return CompareImpl(other);
   }
 
-  const char* type() const { return type_; }
+  // The pointer value \a type is used to uniquely identify a verifier
+  // implementation for down-casting purposes. Every verifier implementation
+  // should use a unique string instance, which should be returned by all
+  // instances of that verifier implementation.
+  virtual const char* type() const = 0;
 
  private:
   // Implementation for `Compare` method intended to be overridden by
   // subclasses. Only invoked if `type()` and `other->type()` compare equal as
   // strings.
   virtual int CompareImpl(const grpc_tls_certificate_verifier* other) const = 0;
-
-  const char* type_;
 };
 
 namespace grpc_core {
@@ -102,9 +98,9 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
     external_verifier_->cancel(external_verifier_->user_data, request);
   }
 
- private:
-  static const char kType[];
+  const char* type() const override { return "external"; }
 
+ private:
   int CompareImpl(const grpc_tls_certificate_verifier* other) const override {
     const auto* o = static_cast<const ExternalCertificateVerifier*>(other);
     return QsortCompare(external_verifier_, o->external_verifier_);
@@ -127,15 +123,14 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
 // An internal verifier that will perform hostname verification check.
 class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
-  HostNameCertificateVerifier();
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)> callback,
               absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
- private:
-  static const char kType[];
+  const char* type() const override { return "hostname"; }
 
+ private:
   int CompareImpl(
       const grpc_tls_certificate_verifier* /* other */) const override {
     // No differentiating factor between different HostNameCertificateVerifier

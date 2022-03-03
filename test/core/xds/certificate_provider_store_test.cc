@@ -38,13 +38,13 @@ class CertificateProviderStoreTest : public ::testing::Test {
 
 class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
-  FakeCertificateProvider() : grpc_tls_certificate_provider("fake") {}
-
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     // never called
     GPR_ASSERT(0);
     return nullptr;
   }
+
+  const char* type() const override { return "fake"; }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
