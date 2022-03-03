@@ -30,15 +30,15 @@ TEST(CallFinalizationTest, Works) {
   TestContext<Arena> context(arena.get());
   CallFinalization finalization;
   auto p = std::make_shared<int>(42);
-  finalization.Add([&evidence, p](const grpc_call_final_info& final_info) {
-    evidence += absl::StrCat("FIRST", final_info.error_string, *p, "\n");
+  finalization.Add([&evidence, p](const grpc_call_final_info* final_info) {
+    evidence += absl::StrCat("FIRST", final_info->error_string, *p, "\n");
   });
-  finalization.Add([&evidence, p](const grpc_call_final_info& final_info) {
-    evidence += absl::StrCat("SECOND", final_info.error_string, *p, "\n");
+  finalization.Add([&evidence, p](const grpc_call_final_info* final_info) {
+    evidence += absl::StrCat("SECOND", final_info->error_string, *p, "\n");
   });
   grpc_call_final_info final_info{};
   final_info.error_string = "123";
-  finalization.Run(final_info);
+  finalization.Run(&final_info);
   EXPECT_EQ(evidence, "SECOND12342\nFIRST12342\n");
 }
 

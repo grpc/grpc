@@ -51,7 +51,7 @@ then
   # add a suffix to the nuget's version
   # to avoid confusing the package with a full nuget package.
   # NOTE: adding the suffix must be done AFTER expand_dev_version.sh has run.
-  sed -ibak "s/<\/GrpcCsharpVersion>/.singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
+  sed -ibak "s/<\/GrpcCsharpVersion>/-singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
 fi
 
 dotnet restore Grpc.sln
