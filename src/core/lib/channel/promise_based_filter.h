@@ -37,9 +37,19 @@
 
 namespace grpc_core {
 
+// Call finalization context.
+// Sometimes a filter needs to perform some operation after the last byte of
+// data is flushed to the wire. This context is used to perform that
+// finalization.
+// Filters can register a finalizer by calling Add().
+// The finalizer will be called before the call is destroyed but after
+// the top level promise is completed.
 class CallFinalization {
  public:
   // Add a step to the finalization context.
+  // Takes a callable with a signature compatible with:
+  // (const grpc_call_final_info&) -> void.
+  // Finalizers are run in the reverse order they are added.
   template <typename F>
   void Add(F&& t) {
     first_ =
@@ -51,6 +61,7 @@ class CallFinalization {
   }
 
  private:
+  // Base class for finalizer implementations.
   class Finalizer {
    public:
     virtual void Run(const grpc_call_final_info& final_info) = 0;
@@ -58,6 +69,7 @@ class CallFinalization {
    protected:
     ~Finalizer() {}
   };
+  // Specialization for callable objects.
   template <typename F>
   class FuncFinalizer final : public Finalizer {
    public:
@@ -75,6 +87,7 @@ class CallFinalization {
     Finalizer* next_;
     F f_;
   };
+  // The first finalizer in the chain.
   Finalizer* first_ = nullptr;
 };
 
