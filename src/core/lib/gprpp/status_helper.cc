@@ -20,6 +20,8 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <type_traits>
+
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
