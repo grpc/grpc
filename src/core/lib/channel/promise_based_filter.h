@@ -26,6 +26,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -36,63 +37,6 @@
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
-
-// Call finalization context.
-// Sometimes a filter needs to perform some operation after the last byte of
-// data is flushed to the wire. This context is used to perform that
-// finalization.
-// Filters can register a finalizer by calling Add().
-// The finalizer will be called before the call is destroyed but after
-// the top level promise is completed.
-class CallFinalization {
- public:
-  // Add a step to the finalization context.
-  // Takes a callable with a signature compatible with:
-  // (const grpc_call_final_info&) -> void.
-  // Finalizers are run in the reverse order they are added.
-  template <typename F>
-  void Add(F&& t) {
-    first_ =
-        GetContext<Arena>()->New<FuncFinalizer<F>>(std::forward<F>(t), first_);
-  }
-
-  void Run(const grpc_call_final_info& final_info) {
-    if (Finalizer* f = absl::exchange(first_, nullptr)) f->Run(final_info);
-  }
-
- private:
-  // Base class for finalizer implementations.
-  class Finalizer {
-   public:
-    virtual void Run(const grpc_call_final_info& final_info) = 0;
-
-   protected:
-    ~Finalizer() {}
-  };
-  // Specialization for callable objects.
-  template <typename F>
-  class FuncFinalizer final : public Finalizer {
-   public:
-    FuncFinalizer(F&& f, Finalizer* next)
-        : next_(next), f_(std::forward<F>(f)) {}
-
-    void Run(const grpc_call_final_info& final_info) override {
-      f_(final_info);
-      Finalizer* next = next_;
-      this->~FuncFinalizer();
-      if (next != nullptr) next->Run(final_info);
-    }
-
-   private:
-    Finalizer* next_;
-    F f_;
-  };
-  // The first finalizer in the chain.
-  Finalizer* first_ = nullptr;
-};
-
-template <>
-struct ContextType<CallFinalization> {};
 
 class ChannelFilter {
  public:
