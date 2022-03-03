@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 
 namespace grpc_core {
 
