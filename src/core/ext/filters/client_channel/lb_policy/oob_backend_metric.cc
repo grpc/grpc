@@ -28,12 +28,13 @@ constexpr char kProducerType[] = "orca";
 
 class OrcaWatcher;
 
+// This producer is registered with a subchannel.  It creates a
+// streaming ORCA call and reports the resulting backend metrics to all
+// registered watchers.
 class OrcaProducer : public Subchannel::DataProducerInterface {
  public:
-  OrcaProducer(RefCountedPtr<Subchannel> subchannel,
-               std::shared_ptr<WorkSerializer> work_serializer)
-      : subchannel_(std::move(subchannel)),
-        work_serializer_(std::move(work_serializer)) {
+  OrcaProducer(RefCountedPtr<Subchannel> subchannel)
+      : subchannel_(std::move(subchannel)) {
     subchannel_->AddDataProducer(this);
   }
 
@@ -51,10 +52,12 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
 
  private:
   RefCountedPtr<Subchannel> subchannel_;
-  std::shared_ptr<WorkSerializer> work_serializer_;
+  Mutex mu_;
   // TODO(roth): Use std::set<> instead once we can use C++14 heterogenous
   // map lookups.
-  std::map<OrcaWatcher*, WeakRefCountedPtr<OrcaWatcher>> watcher_map_;
+  std::map<OrcaWatcher*, WeakRefCountedPtr<OrcaWatcher>> watcher_map_
+      ABSL_GUARDED_BY(mu_);
+// FIXME  OrphanablePtr<OrcaCall> call_ ABSL_GUARDED_BY(mu_);
 };
 
 // This watcher is returned to the LB policy and added to the
@@ -72,14 +75,14 @@ class OrcaWatcher : public SubchannelInterface::DataWatcherInterface {
   void SetSubchannel(
       Subchannel* subchannel,
       std::shared_ptr<WorkSerializer> work_serializer) override {
+    work_serializer_ = std::move(work_serializer);
     // Check if our producer is already registered with the subchannel.
     // If not, create a new one, which will register itself with the subchannel.
     auto* p =
         static_cast<OrcaProducer*>(subchannel->GetDataProducer(kProducerType));
     if (p != nullptr) producer_ = p->RefIfNonZero();
     if (producer_ == nullptr) {
-      producer_ = MakeRefCounted<OrcaProducer>(subchannel->Ref(),
-                                               std::move(work_serializer));
+      producer_ = MakeRefCounted<OrcaProducer>(subchannel->Ref());
     }
     // Register ourself with the producer.
     producer_->AddWatcher(WeakRef());
@@ -90,6 +93,7 @@ class OrcaWatcher : public SubchannelInterface::DataWatcherInterface {
  private:
   Duration report_interval_;
   std::unique_ptr<OobBackendMetricWatcher> watcher_;
+  std::shared_ptr<WorkSerializer> work_serializer_;
   RefCountedPtr<OrcaProducer> producer_;
 };
 

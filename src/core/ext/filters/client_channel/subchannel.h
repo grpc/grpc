@@ -212,6 +212,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // will have an affect when the subchannel creates a new ConnectedSubchannel.
   void ThrottleKeepaliveTime(int new_keepalive_time) ABSL_LOCKS_EXCLUDED(mu_);
 
+  grpc_pollset_set* pollset_set() const { return pollset_set_; }
+
   const grpc_channel_args* channel_args() const { return args_; }
 
   channelz::SubchannelNode* channelz_node();
