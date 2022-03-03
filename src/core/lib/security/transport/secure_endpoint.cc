@@ -44,7 +44,6 @@
 #define STAGING_BUFFER_SIZE 8192
 
 static void on_read(void* user_data, grpc_error_handle error);
-static void benign_reclaimer_locked(void* arg, grpc_error_handle error);
 
 namespace {
 struct secure_endpoint {
@@ -82,7 +81,6 @@ struct secure_endpoint {
   }
 
   ~secure_endpoint() {
-    gpr_log(GPR_ERROR, "destroying endpoint %p", this);
     grpc_endpoint_destroy(wrapped_ep);
     tsi_frame_protector_destroy(protector);
     tsi_zero_copy_grpc_protector_destroy(zero_copy_protector);
@@ -171,24 +169,6 @@ static void secure_endpoint_unref(secure_endpoint* ep) {
 static void secure_endpoint_ref(secure_endpoint* ep) { gpr_ref(&ep->ref); }
 #endif
 
-static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
-  secure_endpoint* ep = static_cast<secure_endpoint*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO,
-            "secure endpoint: benign reclamation to free memory");
-  }
-  if(error == GRPC_ERROR_NONE) {
-    grpc_slice_unref_internal(ep->read_staging_buffer);
-    grpc_slice_unref_internal(ep->write_staging_buffer);
-    ep->read_staging_buffer = grpc_empty_slice();
-    ep->write_staging_buffer = grpc_empty_slice();
-  }
-  ep->has_posted_reclaimer = false;
-  if(error != GRPC_ERROR_CANCELLED) {
-    ep->active_reclamation.Finish();
-  }
-  SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
-}
 static void post_reclaimer(secure_endpoint* ep) {
   if (!ep->has_posted_reclaimer) {
     SECURE_ENDPOINT_REF(ep, "benign_reclaimer");
@@ -197,12 +177,17 @@ static void post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-              GRPC_CLOSURE_INIT(&ep->benign_reclaimer_locked, benign_reclaimer_locked, ep, grpc_schedule_on_exec_ctx);
-              ep->active_reclamation = std::move(*sweep);
-              grpc_core::ExecCtx::Run(DEBUG_LOCATION, &ep->benign_reclaimer_locked, GRPC_ERROR_NONE);
-          } else {
-            SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+              gpr_log(GPR_INFO,
+                      "secure endpoint: benign reclamation to free memory");
+            }
+            grpc_slice_unref_internal(ep->read_staging_buffer);
+            grpc_slice_unref_internal(ep->write_staging_buffer);
+            ep->read_staging_buffer = grpc_empty_slice();
+            ep->write_staging_buffer = grpc_empty_slice();
+            ep->has_posted_reclaimer = false;
           }
+          SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
         });
   }
 }

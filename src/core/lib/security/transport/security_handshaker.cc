@@ -106,7 +106,6 @@ class SecurityHandshaker : public Handshaker {
   grpc_closure on_peer_checked_;
   RefCountedPtr<grpc_auth_context> auth_context_;
   tsi_handshaker_result* handshaker_result_ = nullptr;
-  const grpc_channel_args* channel_args_ = nullptr;
   size_t max_frame_size_ = 0;
 };
 
@@ -118,7 +117,6 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
       handshake_buffer_size_(GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE),
       handshake_buffer_(
           static_cast<uint8_t*>(gpr_malloc(handshake_buffer_size_))),
-      channel_args_(args),
       max_frame_size_(grpc_channel_args_find_integer(
           args, GRPC_ARG_TSI_MAX_FRAME_SIZE,
           {0, 0, std::numeric_limits<int>::max()})) {
@@ -298,12 +296,12 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, &slice,
-          channel_args_, 1);
+          args_->args, 1);
       grpc_slice_unref_internal(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, args_->endpoint, nullptr,
-          channel_args_, 0);
+          args_->args, 0);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
