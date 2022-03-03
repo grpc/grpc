@@ -210,17 +210,18 @@ ServerLoadReportingFilter::MakeCallPromise(
         }
         grpc_core::GetContext<grpc_core::CallFinalization>()->Add(
             [this, client_ip_and_lr_token,
-             target_host](const grpc_call_final_info& final_info) {
+             target_host](const grpc_call_final_info* final_info) {
+              if (final_info == nullptr) return;
               opencensus::stats::Record(
                   {{::grpc::load_reporter::MeasureEndCount(), 1},
                    {::grpc::load_reporter::MeasureEndBytesSent(),
-                    final_info.stats.transport_stream_stats.outgoing
+                    final_info->stats.transport_stream_stats.outgoing
                         .data_bytes},
                    {::grpc::load_reporter::MeasureEndBytesReceived(),
-                    final_info.stats.transport_stream_stats.incoming
+                    final_info->stats.transport_stream_stats.incoming
                         .data_bytes},
                    {::grpc::load_reporter::MeasureEndLatencyMs(),
-                    gpr_time_to_millis(final_info.stats.latency)}},
+                    gpr_time_to_millis(final_info->stats.latency)}},
                   {{::grpc::load_reporter::TagKeyToken(),
                     {client_ip_and_lr_token.data(),
                      client_ip_and_lr_token.length()}},
@@ -229,7 +230,7 @@ ServerLoadReportingFilter::MakeCallPromise(
                    {::grpc::load_reporter::TagKeyUserId(),
                     {peer_identity_.data(), peer_identity_.length()}},
                    {::grpc::load_reporter::TagKeyStatus(),
-                    GetStatusTagForStatus(final_info.final_status)}});
+                    GetStatusTagForStatus(final_info->final_status)}});
             });
         return grpc_core::Immediate(std::move(trailing_metadata));
       }));
