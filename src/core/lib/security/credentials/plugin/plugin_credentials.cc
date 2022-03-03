@@ -65,8 +65,10 @@ grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
     const grpc_metadata* md, size_t num_md, grpc_status_code status,
     const char* error_details) {
   if (status != GRPC_STATUS_OK) {
-    return absl::UnavailableError(absl::StrCat(
-        "Getting metadata from plugin failed with error: ", error_details));
+    return absl::Status(
+        static_cast<absl::StatusCode>(status),
+        absl::StrCat("Getting metadata from plugin failed with error: ",
+                     error_details));
   } else {
     bool seen_illegal_header = false;
     for (size_t i = 0; i < num_md; ++i) {
