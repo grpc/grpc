@@ -31,10 +31,55 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
+
+class CallFinalization {
+ public:
+  // Add a step to the finalization context.
+  template <typename F>
+  void Add(F&& t) {
+    first_ =
+        GetContext<Arena>()->New<FuncFinalizer<F>>(std::forward<F>(t), first_);
+  }
+
+  void Run(const grpc_call_final_info& final_info) {
+    if (Finalizer* f = absl::exchange(first_, nullptr)) f->Run(final_info);
+  }
+
+ private:
+  class Finalizer {
+   public:
+    virtual void Run(const grpc_call_final_info& final_info) = 0;
+
+   protected:
+    ~Finalizer() {}
+  };
+  template <typename F>
+  class FuncFinalizer final : public Finalizer {
+   public:
+    FuncFinalizer(F&& f, Finalizer* next)
+        : next_(next), f_(std::forward<F>(f)) {}
+
+    void Run(const grpc_call_final_info& final_info) override {
+      f_(final_info);
+      Finalizer* next = next_;
+      this->~FuncFinalizer();
+      if (next != nullptr) next->Run(final_info);
+    }
+
+   private:
+    Finalizer* next_;
+    F f_;
+  };
+  Finalizer* first_ = nullptr;
+};
+
+template <>
+struct ContextType<CallFinalization> {};
 
 class ChannelFilter {
  public:
@@ -95,17 +140,24 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
+  void Finalize(const grpc_call_final_info& final_info) {
+    finalization_.Run(final_info);
+  }
+
  protected:
   class ScopedContext
       : public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
-        public promise_detail::Context<grpc_polling_entity> {
+        public promise_detail::Context<grpc_polling_entity>,
+        public promise_detail::Context<CallFinalization> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
           promise_detail::Context<grpc_call_context_element>(
               call_data->context_),
-          promise_detail::Context<grpc_polling_entity>(call_data->pollent_) {}
+          promise_detail::Context<grpc_polling_entity>(call_data->pollent_),
+          promise_detail::Context<CallFinalization>(&call_data->finalization_) {
+    }
   };
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
@@ -135,6 +187,7 @@ class BaseCallData : public Activity, private Wakeable {
   Arena* const arena_;
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
+  CallFinalization finalization_;
   grpc_call_context_element* const context_;
   grpc_polling_entity* pollent_ = nullptr;
 };
@@ -380,8 +433,11 @@ MakePromiseBasedFilter(const char* name) {
         static_cast<CallData*>(elem->call_data)->set_pollent(pollent);
       },
       // destroy_call_elem
-      [](grpc_call_element* elem, const grpc_call_final_info*, grpc_closure*) {
-        static_cast<CallData*>(elem->call_data)->~CallData();
+      [](grpc_call_element* elem, const grpc_call_final_info* final_info,
+         grpc_closure*) {
+        auto* cd = static_cast<CallData*>(elem->call_data);
+        if (final_info == nullptr) cd->Finalize(*final_info);
+        cd->~CallData();
       },
       // sizeof_channel_data
       sizeof(F),
