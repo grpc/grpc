@@ -51,6 +51,8 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_filter.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -528,6 +530,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
+  void AddDataWatcher(
+      RefCountedPtr<DataWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+    watcher->SetSubchannel(subchannel_.get(), chand_->work_serializer_);
+    data_watchers_.push_back(std::move(watcher));
+  }
+
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
   }
@@ -667,6 +676,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
+      ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::vector<RefCountedPtr<DataWatcherInterface>> data_watchers_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 

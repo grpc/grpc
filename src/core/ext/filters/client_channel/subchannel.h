@@ -183,6 +183,20 @@ class Subchannel : public DualRefCounted<Subchannel> {
         ABSL_GUARDED_BY(&mu_);
   };
 
+  // A base class for producers of subchannel-specific data.
+  // Implementations will typically add their own methods as needed.
+  class DataProducerInterface : public DualRefCounted<DataProducerInterface> {
+   public:
+    // A unique identifier for this implementation.
+    // Only one producer may be registered under a given type name on a
+    // given subchannel at any given time.
+    // Note that we use the pointer address instead of the string
+    // contents for uniqueness; all instances for a given implementation
+    // are expected to return the same string *instance*, not just the
+    // same string contents.
+    virtual const char* type() = 0;
+  };
+
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
@@ -244,6 +258,17 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Tears down any existing connection, and arranges for destruction
   void Orphan() override ABSL_LOCKS_EXCLUDED(mu_);
+
+  // Access to data producer map.
+  // We do not hold refs to the data producer; the implementation is
+  // expected to register itself upon construction and remove itself
+  // upon destruction.
+  void AddDataProducer(DataProducerInterface* data_producer)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  void RemoveDataProducer(DataProducerInterface* data_producer)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  DataProducerInterface* GetDataProducer(const char* type)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
@@ -359,6 +384,10 @@ class Subchannel : public DualRefCounted<Subchannel> {
   ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
+
+  // Data provider map.
+  std::map<const char* /*type*/, DataProducerInterface*> data_producer_map_
+      ABSL_GUARDED_BY(mu_);
 
   // Minimum connect timeout - must be located before backoff_.
   Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);

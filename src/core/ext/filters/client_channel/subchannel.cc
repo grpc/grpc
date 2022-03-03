@@ -818,6 +818,29 @@ void Subchannel::Orphan() {
   health_watcher_map_.ShutdownLocked();
 }
 
+void Subchannel::AddDataProducer(DataProducerInterface* data_producer) {
+  MutexLock lock(&mu_);
+  auto& entry = data_producer_map_[data_producer->type()];
+  GPR_ASSERT(entry == nullptr);
+  entry = data_producer;
+}
+
+void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
+  MutexLock lock(&mu_);
+  auto it = data_producer_map_.find(data_producer->type());
+  GPR_ASSERT(it != data_producer_map_.end());
+  GPR_ASSERT(it->second == data_producer);
+  data_producer_map_.erase(it);
+}
+
+Subchannel::DataProducerInterface* Subchannel::GetDataProducer(
+    const char* type) {
+  MutexLock lock(&mu_);
+  auto it = data_producer_map_.find(type);
+  if (it == data_producer_map_.end()) return nullptr;
+  return it->second;
+}
+
 namespace {
 
 // Returns a string indicating the subchannel's connectivity state change to
