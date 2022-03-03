@@ -42,7 +42,7 @@ class CallFinalization {
         GetContext<Arena>()->New<FuncFinalizer<F>>(std::forward<F>(t), first_);
   }
 
-  void Run(const grpc_call_final_info& final_info) {
+  void Run(const grpc_call_final_info* final_info) {
     if (Finalizer* f = absl::exchange(first_, nullptr)) f->Run(final_info);
   }
 
@@ -51,7 +51,7 @@ class CallFinalization {
   class Finalizer {
    public:
     // Run the finalizer and call the destructor of this Finalizer.
-    virtual void Run(const grpc_call_final_info& final_info) = 0;
+    virtual void Run(const grpc_call_final_info* final_info) = 0;
 
    protected:
     ~Finalizer() {}
@@ -63,7 +63,7 @@ class CallFinalization {
     FuncFinalizer(F&& f, Finalizer* next)
         : next_(next), f_(std::forward<F>(f)) {}
 
-    void Run(const grpc_call_final_info& final_info) override {
+    void Run(const grpc_call_final_info* final_info) override {
       f_(final_info);
       Finalizer* next = next_;
       this->~FuncFinalizer();

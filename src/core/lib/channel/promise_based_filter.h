@@ -97,7 +97,7 @@ class BaseCallData : public Activity, private Wakeable {
   Waker MakeNonOwningWaker() final;
   Waker MakeOwningWaker() final;
 
-  void Finalize(const grpc_call_final_info& final_info) {
+  void Finalize(const grpc_call_final_info* final_info) {
     finalization_.Run(final_info);
   }
 
@@ -393,7 +393,7 @@ MakePromiseBasedFilter(const char* name) {
       [](grpc_call_element* elem, const grpc_call_final_info* final_info,
          grpc_closure*) {
         auto* cd = static_cast<CallData*>(elem->call_data);
-        if (final_info == nullptr) cd->Finalize(*final_info);
+        cd->Finalize(final_info);
         cd->~CallData();
       },
       // sizeof_channel_data
