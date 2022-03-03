@@ -100,12 +100,18 @@ class LoaderInterface {
   // If errors occur, add them to error_list.
   virtual void LoadInto(const Json& json, void* dst,
                         ErrorList* errors) const = 0;
+
+ protected:
+  ~LoaderInterface() {}
 };
 
 // Loads a scalar (string or number).
 class LoadScalar : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+
+ protected:
+  ~LoadScalar() {}
 
  private:
   // true if we're loading a number, false if we're loading a string.
