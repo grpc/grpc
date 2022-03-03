@@ -31,6 +31,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "test_context",
+    testonly = True,
+    hdrs = ["test_context.h"],
+    external_deps = ["gtest"],
+    visibility = ["//test/core:__subpackages__"],
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
 grpc_cc_test(
     name = "poll_test",
     srcs = ["poll_test.cc"],
@@ -74,6 +86,7 @@ grpc_cc_test(
     language = "c++",
     uses_polling = False,
     deps = [
+        ":test_context",
         "//:arena_promise",
         "//:resource_quota",
         "//test/core/util:grpc_suppressions",
