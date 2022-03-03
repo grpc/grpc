@@ -259,7 +259,7 @@ for i in range(len(_DATA_MEMBERS)):
         operator_equal_content += _DATA_MEMBERS[i].special_comparator
     else:
         operator_equal_content += _DATA_MEMBERS[
-            i].name + " == other." + _DATA_MEMBERS[i].name
+            i].name + "_ == other." + _DATA_MEMBERS[i].name + "_"
     if (i != len(_DATA_MEMBERS) - 1):
         operator_equal_content += ' &&\n'
 print(operator_equal_content + ";\n  }", file=H)
