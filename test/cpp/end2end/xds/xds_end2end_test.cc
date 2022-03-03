@@ -2439,6 +2439,17 @@ TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   WaitForBackend(1);
 }
 
+// TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
+//   // Stop the balancer, and verify that RPCs fail with an error message
+//   // that references the ADS stream error.
+//   gpr_log(GPR_ERROR, "apolcyn begin test");
+//   balancer_->Shutdown();
+//   gpr_log(GPR_ERROR, "apolcyn shutdown balancer done");
+//   auto status = SendRpc();
+//   gpr_log(GPR_ERROR, "apolcyn send RPC got error: code=%d message=%s",
+//   status.error_code(), status.error_message().c_str());
+// }
+
 using GlobalXdsClientTest = BasicTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {

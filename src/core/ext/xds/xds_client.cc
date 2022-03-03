@@ -1316,8 +1316,14 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceivedLocked(
     // Try to restart the call.
     parent_->OnCallFinishedLocked();
     // Send error to all watchers.
-    xds_client()->NotifyOnErrorLocked(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("xds call failed"));
+    char* status_details = grpc_slice_to_c_string(status_details_);
+    xds_client()->NotifyOnErrorLocked(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("xDS server %s: ADS call status received status=%d, "
+                     "details='%s', error='%s'",
+                     chand()->server_.server_uri.c_str(), status_code_,
+                     status_details, grpc_error_std_string(error).c_str())
+            .c_str()));
+    gpr_free(status_details);
   }
   GRPC_ERROR_UNREF(error);
 }
