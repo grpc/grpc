@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/promise/test_context.h"
 
 namespace grpc_core {
 
@@ -26,7 +27,7 @@ static auto* g_memory_allocator = new MemoryAllocator(
 TEST(CallFinalizationTest, Works) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   std::string evidence;
-  promise_detail::Context<Arena> context(arena.get());
+  TestContext<Arena> context(arena.get());
   CallFinalization finalization;
   auto p = std::make_shared<int>(42);
   finalization.Add([&evidence, p](const grpc_call_final_info& final_info) {
