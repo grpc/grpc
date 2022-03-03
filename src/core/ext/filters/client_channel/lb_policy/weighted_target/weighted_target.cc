@@ -48,7 +48,7 @@ constexpr char kWeightedTarget[] = "weighted_target_experimental";
 
 // How long we keep a child around for after it has been removed from
 // the config.
-constexpr int kChildRetentionIntervalMs = 15 * 60 * 1000;
+constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 
 // Config for weighted_target LB policy.
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
@@ -564,7 +564,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
   delayed_removal_timer_callback_pending_ = true;
   grpc_timer_init(&delayed_removal_timer_,
-                  ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
+                  ExecCtx::Get()->Now() + kChildRetentionInterval,
                   &on_delayed_removal_timer_);
 }
 

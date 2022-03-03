@@ -33,6 +33,7 @@ grpc_cc_binary(
         "absl/flags:parse",
     ],
     tags = [
+        "bazel_only",
         "no_mac",
         "no_windows",
     ],
@@ -53,6 +54,7 @@ grpc_cc_binary(
         "absl/flags:parse",
     ],
     tags = [
+        "bazel_only",
         "no_mac",
         "no_windows",
     ],
@@ -78,6 +80,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = [
+        "bazel_only",
         "no_mac",
         "no_windows",
     ],

@@ -45,18 +45,15 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-size_t g_client_channel_service_config_parser_index;
-}
-
 size_t ClientChannelServiceConfigParser::ParserIndex() {
-  return g_client_channel_service_config_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
-void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index =
-      ServiceConfigParser::RegisterParser(
-          absl::make_unique<ClientChannelServiceConfigParser>());
+void ClientChannelServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
+      absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -173,7 +170,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     }
   }
   // Parse timeout.
-  grpc_millis timeout = 0;
+  Duration timeout;
   ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
                                  &error_list, false);
   // Return result.

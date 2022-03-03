@@ -15,9 +15,11 @@
 
 #include "upb/port_def.inc"
 
-const upb_msglayout_file envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_extensions_transport_sockets_tls_v3_cert_proto_upb_file_layout = {
   NULL,
   NULL,
+  NULL,
+  0,
   0,
   0,
 };

@@ -131,12 +131,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
       resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
-  http_request_ =
-      HttpRequest::Get(std::move(*uri), &args, pollent, &request,
-                       ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                       &on_done_, &response_,
-                       RefCountedPtr<grpc_channel_credentials>(
-                           grpc_insecure_credentials_create()));
+  http_request_ = HttpRequest::Get(
+      std::move(*uri), &args, pollent, &request,
+      ExecCtx::Get()->Now() + Duration::Seconds(10),  // 10s timeout
+      &on_done_, &response_,
+      RefCountedPtr<grpc_channel_credentials>(
+          grpc_insecure_credentials_create()));
   http_request_->Start();
 }
 
@@ -250,9 +250,10 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP")) != nullptr ||
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG")) != nullptr) {
     using_dns_ = true;
-    child_resolver_ = ResolverRegistry::CreateResolver(
-        absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
-        args.pollset_set, work_serializer_, std::move(args.result_handler));
+    child_resolver_ =
+        CoreConfiguration::Get().resolver_registry().CreateResolver(
+            absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
+            args.pollset_set, work_serializer_, std::move(args.result_handler));
     GPR_ASSERT(child_resolver_ != nullptr);
     return;
   }
@@ -266,7 +267,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     metadata_server_name_ = std::string(test_only_metadata_server_override);
   }
   // Create xds resolver.
-  child_resolver_ = ResolverRegistry::CreateResolver(
+  child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       absl::StrCat("xds:", name_to_resolve).c_str(), args.args,
       args.pollset_set, work_serializer_, std::move(args.result_handler));
   GPR_ASSERT(child_resolver_ != nullptr);
@@ -369,6 +370,12 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
 
 class GoogleCloud2ProdResolverFactory : public ResolverFactory {
  public:
+  // TODO(roth): Remove experimental suffix once this code is proven stable,
+  // and update the scheme in google_c2p_resolver_test.cc when doing so.
+  absl::string_view scheme() const override {
+    return "google-c2p-experimental";
+  }
+
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
@@ -381,19 +388,13 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<GoogleCloud2ProdResolver>(std::move(args));
   }
-
-  // TODO(roth): Remove experimental suffix once this code is proven stable,
-  // and update the scheme in google_c2p_resolver_test.cc when doing so.
-  const char* scheme() const override { return "google-c2p-experimental"; }
 };
 
 }  // namespace
 
-void GoogleCloud2ProdResolverInit() {
-  ResolverRegistry::Builder::RegisterResolverFactory(
+void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<GoogleCloud2ProdResolverFactory>());
 }
-
-void GoogleCloud2ProdResolverShutdown() {}
 
 }  // namespace grpc_core

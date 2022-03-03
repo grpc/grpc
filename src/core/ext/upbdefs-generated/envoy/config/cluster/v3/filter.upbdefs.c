@@ -10,10 +10,10 @@
 #include "envoy/config/cluster/v3/filter.upbdefs.h"
 #include "envoy/config/cluster/v3/filter.upb.h"
 
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[461] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
 '/', 'f', 'i', 'l', 't', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 
 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', '\031', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 
@@ -35,7 +35,7 @@ static const char descriptor[461] = {'\n', '$', 'e', 'n', 'v', 'o', 'y', '/', 'c
 '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[5] = {
+static _upb_DefPool_Init *deps[5] = {
   &google_protobuf_any_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
@@ -43,9 +43,9 @@ static upb_def_init *deps[5] = {
   NULL
 };
 
-upb_def_init envoy_config_cluster_v3_filter_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_cluster_v3_filter_proto_upbdefinit = {
   deps,
   &envoy_config_cluster_v3_filter_proto_upb_file_layout,
   "envoy/config/cluster/v3/filter.proto",
-  UPB_STRVIEW_INIT(descriptor, 461)
+  UPB_STRINGVIEW_INIT(descriptor, 461)
 };

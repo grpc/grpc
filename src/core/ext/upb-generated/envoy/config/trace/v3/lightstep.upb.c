@@ -18,31 +18,33 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_config_trace_v3_LightstepConfig_submsgs[1] = {
+static const upb_MiniTable_Sub envoy_config_trace_v3_LightstepConfig_submsgs[1] = {
   {.submsg = &envoy_config_core_v3_DataSource_msginit},
 };
 
-static const upb_msglayout_field envoy_config_trace_v3_LightstepConfig__fields[4] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(24, 48), 0, 0, 14, _UPB_MODE_ARRAY | _UPB_MODE_IS_PACKED | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_config_trace_v3_LightstepConfig__fields[4] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(24, 48), 0, 0, 5, kUpb_FieldMode_Array | upb_LabelFlags_IsPacked | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(20, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_trace_v3_LightstepConfig_msginit = {
+const upb_MiniTable envoy_config_trace_v3_LightstepConfig_msginit = {
   &envoy_config_trace_v3_LightstepConfig_submsgs[0],
   &envoy_config_trace_v3_LightstepConfig__fields[0],
-  UPB_SIZE(32, 64), 4, _UPB_MSGEXT_NONE, 4, 255,
+  UPB_SIZE(32, 64), 4, upb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_trace_v3_LightstepConfig_msginit,
 };
 
-const upb_msglayout_file envoy_config_trace_v3_lightstep_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_config_trace_v3_lightstep_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

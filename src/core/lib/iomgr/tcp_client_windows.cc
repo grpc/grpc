@@ -125,7 +125,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
-                        grpc_millis deadline) {
+                        grpc_core::Timestamp deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;

@@ -45,12 +45,18 @@ namespace {
 class ChannelData {
  public:
   explicit ChannelData(const grpc_channel_element_args* args)
-      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args->channel_args)) {}
+      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args->channel_args)),
+        message_size_service_config_parser_index_(
+            MessageSizeParser::ParserIndex()) {}
 
   int max_recv_size() const { return max_recv_size_; }
+  size_t message_size_service_config_parser_index() const {
+    return message_size_service_config_parser_index_;
+  }
 
  private:
   int max_recv_size_;
+  const size_t message_size_service_config_parser_index_;
 };
 
 class CallData {
@@ -73,7 +79,8 @@ class CallData {
                       OnRecvTrailingMetadataReady, this,
                       grpc_schedule_on_exec_ctx);
     const MessageSizeParsedConfig* limits =
-        MessageSizeParsedConfig::GetFromCallContext(args.context);
+        MessageSizeParsedConfig::GetFromCallContext(
+            args.context, chand->message_size_service_config_parser_index());
     if (limits != nullptr && limits->limits().max_recv_size >= 0 &&
         (limits->limits().max_recv_size < max_recv_message_length_ ||
          max_recv_message_length_ < 0)) {
