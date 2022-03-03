@@ -3287,6 +3287,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr",
         "grpc++_base",
@@ -3294,6 +3295,7 @@ grpc_cc_library(
         "grpc_lb_policy_grpclb",
         "grpc_security_base",
         "grpc_sockaddr",
+        "seq",
         "slice",
         "uri_parser",
     ],
