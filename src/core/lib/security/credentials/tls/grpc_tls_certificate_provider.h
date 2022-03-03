@@ -35,6 +35,12 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
+// Known grpc_tls_certificate_provider implementation types
+#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_STATIC_DATA "StaticData"
+#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_FILE_WATCHER "FileWatcher"
+#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_XDS "Xds"
+#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_WRAPPER "Wrapper"
+
 // Interface for a grpc_tls_certificate_provider that handles the process to
 // fetch credentials and validation contexts. Implementations are free to rely
 // on local or remote sources to fetch the latest secrets, and free to share any
@@ -99,7 +105,9 @@ class StaticDataCertificateProvider final
     return distributor_;
   }
 
-  const char* type() const override { return "static_data"; }
+  const char* type() const override {
+    return GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_STATIC_DATA;
+  }
 
  private:
   struct WatcherInfo {
@@ -138,7 +146,9 @@ class FileWatcherCertificateProvider final
     return distributor_;
   }
 
-  const char* type() const override { return "file_watcher"; }
+  const char* type() const override {
+    return GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_FILE_WATCHER;
+  }
 
  private:
   struct WatcherInfo {

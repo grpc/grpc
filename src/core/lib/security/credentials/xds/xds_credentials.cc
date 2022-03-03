@@ -29,7 +29,7 @@
 
 namespace grpc_core {
 
-const char kCredentialsTypeXds[] = "Xds";
+const char kCredentialsTypeXds[] = GRPC_CREDENTIALS_TYPE_XDS;
 
 namespace {
 

@@ -41,7 +41,9 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
               absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request*) override;
 
-  const char* type() const override { return kType; }
+  const char* type() const override {
+    return GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_XDS;
+  }
 
  private:
   static const char kType[];
