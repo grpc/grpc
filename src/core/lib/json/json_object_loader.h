@@ -102,7 +102,7 @@ class LoaderInterface {
                         ErrorList* errors) const = 0;
 
  protected:
-  ~LoaderInterface() {}
+  ~LoaderInterface() = default;
 };
 
 // Loads a scalar (string or number).
@@ -111,7 +111,7 @@ class LoadScalar : public LoaderInterface {
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
  protected:
-  ~LoadScalar() {}
+  ~LoadScalar() = default;
 
  private:
   // true if we're loading a number, false if we're loading a string.
@@ -125,12 +125,18 @@ class LoadScalar : public LoaderInterface {
 
 // Load a number.
 class LoadNumber : public LoadScalar {
+ protected:
+  ~LoadNumber() = default;
+
  private:
   bool IsNumber() const override;
 };
 
 // Load a duration
 class LoadDuration : public LoadScalar {
+ protected:
+  ~LoadDuration() = default;
+
  private:
   bool IsNumber() const override;
   void LoadInto(const std::string& json, void* dst,
@@ -140,6 +146,9 @@ class LoadDuration : public LoadScalar {
 // Load a number of type T.
 template <typename T>
 class TypedLoadNumber : public LoadNumber {
+ protected:
+  ~TypedLoadNumber() = default;
+
  private:
   void LoadInto(const std::string& value, void* dst,
                 ErrorList* errors) const override {
@@ -151,6 +160,9 @@ class TypedLoadNumber : public LoadNumber {
 
 // Load a string.
 class LoadString : public LoadScalar {
+ protected:
+  ~LoadString() = default;
+
  private:
   bool IsNumber() const override;
   void LoadInto(const std::string& value, void* dst,
@@ -162,6 +174,9 @@ class LoadVector : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
 
+ protected:
+  ~LoadVector() = default;
+
  private:
   virtual void LoadOne(const Json& json, void* dst,
                        ErrorList* errors) const = 0;
@@ -171,6 +186,9 @@ class LoadVector : public LoaderInterface {
 class LoadMap : public LoaderInterface {
  public:
   void LoadInto(const Json& json, void* dst, ErrorList* errors) const override;
+
+ protected:
+  ~LoadMap() = default;
 
  private:
   virtual void LoadOne(const Json& json, const std::string& name, void* dst,

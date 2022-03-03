@@ -28,7 +28,7 @@
 namespace grpc_core {
 
 bool ParseDurationFromJson(const Json& field, Duration* duration) {
-  json_detail::LoadDuration loader;
+  json_detail::AutoLoader<Duration> loader;
   ErrorList errors;
   static_cast<json_detail::LoaderInterface&>(loader).LoadInto(field, duration,
                                                               &errors);

@@ -79,7 +79,7 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
       errors->AddError("Not a duration (too many digits after decimal)");
       return;
     }
-    for (int i = 0; i < (9 - after_decimal.length()); ++i) {
+    for (size_t i = 0; i < (9 - after_decimal.length()); ++i) {
       nanos *= 10;
     }
   }
@@ -95,7 +95,7 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
 bool LoadString::IsNumber() const { return false; }
 
 void LoadString::LoadInto(const std::string& value, void* dst,
-                          ErrorList* errors) const {
+                          ErrorList*) const {
   *static_cast<std::string*>(dst) = value;
 }
 
