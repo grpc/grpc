@@ -176,7 +176,7 @@ void LibuvEventEngine::DestroyInLibuvThread(
         },
         nullptr);
   }
-  RunInLibuvThread([&destruction_done](LibuvEventEngine* engine) {
+  RunInLibuvThread([&destruction_done](LibuvEventEngine* /* engine */) {
     // ensure all other closures are executed in this loop before proceeding to
     // destruction
     destruction_done.Notify(true);
