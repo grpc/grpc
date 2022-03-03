@@ -1189,6 +1189,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/work_serializer.cc )
   s.files += %w( src/core/lib/iomgr/work_serializer.h )
   s.files += %w( src/core/lib/json/json.h )
+  s.files += %w( src/core/lib/json/json_object_loader.cc )
+  s.files += %w( src/core/lib/json/json_object_loader.h )
   s.files += %w( src/core/lib/json/json_reader.cc )
   s.files += %w( src/core/lib/json/json_util.cc )
   s.files += %w( src/core/lib/json/json_util.h )

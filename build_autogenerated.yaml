@@ -930,6 +930,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
@@ -1595,6 +1596,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/iomgr/work_serializer.cc
+  - src/core/lib/json/json_object_loader.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -2099,6 +2101,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.h
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
+  - src/core/lib/json/json_object_loader.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
@@ -2418,6 +2421,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/iomgr/work_serializer.cc
+  - src/core/lib/json/json_object_loader.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -6417,10 +6421,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/json/json_object_loader.h
+  headers: []
   src:
-  - src/core/lib/json/json_object_loader.cc
   - test/core/json/json_object_loader_test.cc
   deps:
   - grpc_test_util

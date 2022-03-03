@@ -18,7 +18,8 @@
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
-#include "json_object_loader.h"
+
+#include "src/core/lib/json/json_object_loader.h"
 
 namespace grpc_core {
 
