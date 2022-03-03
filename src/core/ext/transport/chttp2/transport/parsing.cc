@@ -111,12 +111,11 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       while (cur != end && t->deframe_state != GRPC_DTS_FH_0) {
         if (*cur != GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state]) {
           return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-              "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
+              "Connect string mismatch: expected (%d) got (%d) "
               "at byte %d",
-              GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
               static_cast<int>(static_cast<uint8_t>(
                   GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
-              *cur, static_cast<int>(*cur), t->deframe_state));
+              static_cast<int>(*cur), t->deframe_state));
         }
         ++cur;
         // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)
