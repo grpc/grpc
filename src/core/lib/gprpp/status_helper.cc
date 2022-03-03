@@ -218,9 +218,15 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
+  static_assert(std::is_trivially_copyable<absl::Time>::value,
+                "absl::Time needs to be able to be memcopied");
+  // This is required not to get uninitialized padding of absl::Time.
+  alignas(absl::Time) char buf[sizeof(time)] = {
+      0,
+  };
+  new (buf) absl::Time(time);
   status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&time), sizeof(time))));
+                     absl::Cord(absl::string_view(buf, sizeof(time))));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
