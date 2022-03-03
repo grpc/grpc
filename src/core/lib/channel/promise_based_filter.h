@@ -26,6 +26,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"

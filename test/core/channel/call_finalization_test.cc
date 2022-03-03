@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/arena_promise.h"
-
-#include <memory>
+#include "src/core/lib/channel/call_finalization.h"
 
 #include <gtest/gtest.h>
 
@@ -26,31 +24,22 @@ namespace grpc_core {
 static auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
-TEST(ArenaPromiseTest, AllocatedWorks) {
+TEST(CallFinalizationTest, Works) {
   auto arena = MakeScopedArena(1024, g_memory_allocator);
+  std::string evidence;
   TestContext<Arena> context(arena.get());
-  int x = 42;
-  ArenaPromise<int> p([x] { return Poll<int>(x); });
-  EXPECT_EQ(p(), Poll<int>(42));
-  p = ArenaPromise<int>([] { return Poll<int>(43); });
-  EXPECT_EQ(p(), Poll<int>(43));
-}
-
-TEST(ArenaPromiseTest, DestructionWorks) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
-  TestContext<Arena> context(arena.get());
-  auto x = std::make_shared<int>(42);
-  auto p = ArenaPromise<int>([x] { return Poll<int>(*x); });
-  ArenaPromise<int> q(std::move(p));
-  EXPECT_EQ(q(), Poll<int>(42));
-}
-
-TEST(ArenaPromiseTest, MoveAssignmentWorks) {
-  auto arena = MakeScopedArena(1024, g_memory_allocator);
-  TestContext<Arena> context(arena.get());
-  auto x = std::make_shared<int>(42);
-  auto p = ArenaPromise<int>([x] { return Poll<int>(*x); });
-  p = ArenaPromise<int>();
+  CallFinalization finalization;
+  auto p = std::make_shared<int>(42);
+  finalization.Add([&evidence, p](const grpc_call_final_info& final_info) {
+    evidence += absl::StrCat("FIRST", final_info.error_string, *p, "\n");
+  });
+  finalization.Add([&evidence, p](const grpc_call_final_info& final_info) {
+    evidence += absl::StrCat("SECOND", final_info.error_string, *p, "\n");
+  });
+  grpc_call_final_info final_info{};
+  final_info.error_string = "123";
+  finalization.Run(final_info);
+  EXPECT_EQ(evidence, "SECOND12342\nFIRST12342\n");
 }
 
 }  // namespace grpc_core
