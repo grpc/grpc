@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
+#define GRPC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
@@ -79,3 +82,5 @@ template <>
 struct ContextType<CallFinalization> {};
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
