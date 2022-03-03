@@ -38,50 +38,6 @@
 
 namespace grpc_core {
 
-class CallFinalization {
- public:
-  // Add a step to the finalization context.
-  template <typename F>
-  void Add(F&& t) {
-    first_ =
-        GetContext<Arena>()->New<FuncFinalizer<F>>(std::forward<F>(t), first_);
-  }
-
-  void Run(const grpc_call_final_info& final_info) {
-    if (Finalizer* f = absl::exchange(first_, nullptr)) f->Run(final_info);
-  }
-
- private:
-  class Finalizer {
-   public:
-    virtual void Run(const grpc_call_final_info& final_info) = 0;
-
-   protected:
-    ~Finalizer() {}
-  };
-  template <typename F>
-  class FuncFinalizer final : public Finalizer {
-   public:
-    FuncFinalizer(F&& f, Finalizer* next)
-        : next_(next), f_(std::forward<F>(f)) {}
-
-    void Run(const grpc_call_final_info& final_info) override {
-      f_(final_info);
-      Finalizer* next = next_;
-      this->~FuncFinalizer();
-      if (next != nullptr) next->Run(final_info);
-    }
-
-   private:
-    Finalizer* next_;
-    F f_;
-  };
-  Finalizer* first_ = nullptr;
-};
-
-template <>
-struct ContextType<CallFinalization> {};
-
 class ChannelFilter {
  public:
   class Args {
