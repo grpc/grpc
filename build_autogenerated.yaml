@@ -816,6 +816,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
@@ -1986,6 +1987,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
@@ -4569,6 +4571,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - test/core/promise/test_context.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4860,6 +4863,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: call_finalization_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/promise/test_context.h
+  src:
+  - test/core/channel/call_finalization_test.cc
+  deps:
+  - grpc_test_util
 - name: cancel_ares_query_test
   gtest: true
   build: test
@@ -5127,7 +5140,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/promise/test_context.h
   src:
   - test/core/filters/client_authority_filter_test.cc
   deps:
