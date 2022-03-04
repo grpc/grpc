@@ -241,8 +241,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       {
         grpc_core::MutexLock lock(&parent_->ads_mu_);
         if (parent_->forced_ads_failure_.has_value()) {
-          gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources forcing early failure with status code: %d, message: %s",
-                  this, parent_->forced_ads_failure_.value().error_code(), parent_->forced_ads_failure_.value().error_message().c_str());
+          gpr_log(GPR_INFO,
+                  "ADS[%p]: StreamAggregatedResources forcing early failure "
+                  "with status code: %d, message: %s",
+                  this, parent_->forced_ads_failure_.value().error_code(),
+                  parent_->forced_ads_failure_.value().error_message().c_str());
           return parent_->forced_ads_failure_.value();
         }
       }
