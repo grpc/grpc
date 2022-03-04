@@ -10483,6 +10483,77 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPolicies) {
           grpc::StatusCode::PERMISSION_DENIED);
 }
 
+TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("POST");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // All RPCs use POST method by default
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
+  // this should be modified to test that they are NOT accepted with this rule.
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("GET");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Test that an RPC with a POST method gets rejected
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting GET requests in the future, this
+  // should be modified to test that they are accepted with this rule.
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_permissions()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("PUT");
+  policy.add_principals()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Test that an RPC with a POST method gets rejected
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting PUT requests in the future, this
+  // should be modified to test that they are accepted with this rule.
+}
+
 TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
   RBAC rbac;
   auto* rules = rbac.mutable_rules();
@@ -10714,6 +10785,77 @@ TEST_P(XdsRbacTestWithActionPermutations, OrRulePermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("POST");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // All RPCs use POST method by default
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
+  // this should be modified to test that they are NOT accepted with this rule.
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("GET");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Test that an RPC with a POST method gets rejected
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting GET requests in the future, this
+  // should be modified to test that they are accepted with this rule.
+}
+
+TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
+  RBAC rbac;
+  auto* rules = rbac.mutable_rules();
+  rules->set_action(GetParam().rbac_action());
+  Policy policy;
+  auto* header = policy.add_principals()->mutable_header();
+  header->set_name(":method");
+  header->set_exact_match("PUT");
+  policy.add_permissions()->set_any(true);
+  (*rules->mutable_policies())["policy"] = policy;
+  SetServerRbacPolicy(rbac);
+  backends_[0]->Start();
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
+  // Test that an RPC with a POST method gets rejected
+  SendRpc(
+      [this]() { return CreateInsecureChannel(); }, {}, {},
+      /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting PUT requests in the future, this
+  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
