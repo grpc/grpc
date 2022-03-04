@@ -21,8 +21,28 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 
-/* Processes metadata on the client side for HTTP2 transports */
-extern const grpc_channel_filter grpc_http_client_filter;
+namespace grpc_core {
+
+class HttpClientFilter : public ChannelFilter {
+ public:
+  static const grpc_channel_filter kFilter;
+
+  absl::StatusOr<HttpClientFilter> Create(const grpc_channel_args* args,
+                                          ChannelFilter::Args filter_args);
+
+  // Construct a promise for one call.
+  ArenaPromise<TrailingMetadata> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+
+ private:
+  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent);
+
+  HttpSchemeMetadata::ValueType scheme_;
+  Slice user_agent_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_CLIENT_HTTP_CLIENT_FILTER_H */
