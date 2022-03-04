@@ -495,11 +495,10 @@ class XdsClient::ChannelState::StateWatcher
                 parent_->xds_client(), parent_->server_.server_uri.c_str(),
                 status.ToString().c_str());
         parent_->xds_client_->NotifyOnErrorLocked(
-            GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrCat(
                     "xds channel in TRANSIENT_FAILURE, connectivity error: ",
-                    status.ToString())
-                    .c_str()));
+                    status.ToString())));
       }
     }
     parent_->xds_client()->work_serializer_.DrainQueue();
