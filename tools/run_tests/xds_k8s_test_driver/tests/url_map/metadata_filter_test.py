@@ -207,7 +207,6 @@ class TestMetadataFilterMatchMultipleRules(
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
         self.assertNumEndpoints(xds_config, 2)
-        self.assertEqual(len(xds_config.rds['virtualHosts'][0]['routes']), 2)
         logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
