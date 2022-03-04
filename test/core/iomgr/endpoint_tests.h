@@ -29,7 +29,6 @@ typedef struct grpc_endpoint_test_fixture grpc_endpoint_test_fixture;
 struct grpc_endpoint_test_fixture {
   grpc_endpoint* client_ep;
   grpc_endpoint* server_ep;
-  grpc_channel_args channel_args;
 };
 
 struct grpc_endpoint_test_config {
