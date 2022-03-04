@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.45.0-dev")
-set(gRPC_CORE_VERSION     "22.0.0")
-set(gRPC_CORE_SOVERSION   "22")
+set(gRPC_CORE_VERSION     "23.0.0")
+set(gRPC_CORE_SOVERSION   "23")
 set(gRPC_CPP_VERSION      "1.45.0-dev")
 set(gRPC_CPP_SOVERSION    "1.45")
 set(gRPC_CSHARP_VERSION   "2.45.0-dev")
@@ -1143,7 +1143,6 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/graceful_server_shutdown.cc
   test/core/end2end/tests/high_initial_seqno.cc
   test/core/end2end/tests/hpack_size.cc
-  test/core/end2end/tests/idempotent_request.cc
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
@@ -1200,7 +1199,6 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
-  test/core/end2end/tests/simple_cacheable_request.cc
   test/core/end2end/tests/simple_delayed_request.cc
   test/core/end2end/tests/simple_metadata.cc
   test/core/end2end/tests/simple_request.cc
@@ -1292,7 +1290,6 @@ add_library(end2end_tests
   test/core/end2end/tests/grpc_authz.cc
   test/core/end2end/tests/high_initial_seqno.cc
   test/core/end2end/tests/hpack_size.cc
-  test/core/end2end/tests/idempotent_request.cc
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
@@ -1349,7 +1346,6 @@ add_library(end2end_tests
   test/core/end2end/tests/server_streaming.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
-  test/core/end2end/tests/simple_cacheable_request.cc
   test/core/end2end/tests/simple_delayed_request.cc
   test/core/end2end/tests/simple_metadata.cc
   test/core/end2end/tests/simple_request.cc
