@@ -91,11 +91,11 @@ void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO,
             "[polling resolver %p] re-resolution timer fired: error=\"%s\", "
-            "request_=%p",
-            this, grpc_error_std_string(error).c_str(), request_.get());
+            "shutdown_=%d",
+            this, grpc_error_std_string(error).c_str(), shutdown_);
   }
   have_next_resolution_timer_ = false;
-  if (error == GRPC_ERROR_NONE && request_ == nullptr) {
+  if (error == GRPC_ERROR_NONE && !shutdown_) {
     StartResolvingLocked();
   }
   Unref(DEBUG_LOCATION, "retry-timer");
