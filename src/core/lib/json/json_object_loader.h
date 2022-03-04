@@ -139,7 +139,7 @@ class LoadDuration : public LoadScalar {
 
  private:
   bool IsNumber() const override;
-  void LoadInto(const std::string& json, void* dst,
+  void LoadInto(const std::string& value, void* dst,
                 ErrorList* errors) const override;
 };
 
