@@ -2447,11 +2447,9 @@ TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
   gpr_log(GPR_INFO,
           "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
           status.error_code(), status.error_message().c_str());
-  // TODO(roth): should the XDS stream error be re-packaged into an UNAVAILABLE
-  // error? Currently, they are re-packaged into UNKNOWN errors. The following
-  // check could be ran if so:
-  //   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr(kErrorMessage + "something"));
 }
 
 using GlobalXdsClientTest = BasicTest;
