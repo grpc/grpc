@@ -82,6 +82,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
     }
 
     ~AresRequestWrapper() override {
+      gpr_free(service_config_json_);
       resolver_.reset(DEBUG_LOCATION, "dns-resolving");
     }
 
@@ -106,11 +107,11 @@ class AresClientChannelDNSResolver : public PollingResolver {
   ~AresClientChannelDNSResolver() override;
 
   /// whether to request the service config
-  bool request_service_config_;
+  const bool request_service_config_;
   // whether or not to enable SRV DNS queries
-  bool enable_srv_queries_;
+  const bool enable_srv_queries_;
   // timeout in milliseconds for active DNS queries
-  int query_timeout_ms_;
+  const int query_timeout_ms_;
 };
 
 AresClientChannelDNSResolver::AresClientChannelDNSResolver(
@@ -257,7 +258,6 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
       grpc_error_handle service_config_error = GRPC_ERROR_NONE;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
-      gpr_free(service_config_json_);
       RefCountedPtr<ServiceConfig> service_config;
       if (service_config_error == GRPC_ERROR_NONE &&
           !service_config_string.empty()) {
