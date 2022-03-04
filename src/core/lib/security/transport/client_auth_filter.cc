@@ -152,7 +152,7 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
   return TrySeq(
       creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
       Capture(
-          [](ClientInitialMetadata new_metadata, CallArgs* rest_of_args) {
+          [](CallArgs* rest_of_args, ClientInitialMetadata new_metadata) {
             rest_of_args->client_initial_metadata = std::move(new_metadata);
             return Immediate<absl::StatusOr<CallArgs>>(
                 absl::StatusOr<CallArgs>(std::move(*rest_of_args)));

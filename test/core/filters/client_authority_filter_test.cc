@@ -70,9 +70,13 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   promise_detail::Context<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
-      [&](ClientInitialMetadata initial_metadata) {
-        EXPECT_EQ(initial_metadata->get_pointer(HttpAuthorityMetadata())
+      CallArgs{
+          ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
+          nullptr,
+      },
+      [&](CallArgs call_args) {
+        EXPECT_EQ(call_args.client_initial_metadata
+                      ->get_pointer(HttpAuthorityMetadata())
                       ->as_string_view(),
                   "foo.test.google.au");
         seen = true;
@@ -98,9 +102,13 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   promise_detail::Context<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
-      [&](ClientInitialMetadata initial_metadata) {
-        EXPECT_EQ(initial_metadata->get_pointer(HttpAuthorityMetadata())
+      CallArgs{
+          ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
+          nullptr,
+      },
+      [&](CallArgs call_args) {
+        EXPECT_EQ(call_args.client_initial_metadata
+                      ->get_pointer(HttpAuthorityMetadata())
                       ->as_string_view(),
                   "bar.test.google.au");
         seen = true;
