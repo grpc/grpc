@@ -224,6 +224,8 @@ void StatusSetTime(absl::Status* status, StatusTimeProperty key,
   // Abseil has a workaround for MSVC 2015 which prevents absl::Time
   // from being is_trivially_copyable but it's still safe to be
   // memcopied.
+#elif defined(__GNUG__) && __GNUC__ < 5
+  // GCC versions < 5 do not support std::is_trivially_copyable
 #else
   static_assert(std::is_trivially_copyable<absl::Time>::value,
                 "absl::Time needs to be able to be memcopied");
