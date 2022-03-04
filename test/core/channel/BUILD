@@ -129,3 +129,18 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "call_finalization_test",
+    srcs = ["call_finalization_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/promise:test_context",
+        "//test/core/util:grpc_test_util",
+    ],
+)
