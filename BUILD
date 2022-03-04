@@ -2423,6 +2423,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
+        "src/core/ext/filters/client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backend_metric.h",
@@ -2451,6 +2452,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
+        "src/core/ext/filters/client_channel/subchannel_stream_client.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",

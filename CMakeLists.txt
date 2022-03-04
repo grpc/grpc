@@ -1636,6 +1636,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2562,6 +2563,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
