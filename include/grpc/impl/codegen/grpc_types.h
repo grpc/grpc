@@ -384,11 +384,10 @@ typedef struct {
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
 /** Enables retry functionality.  Defaults to true.  When enabled,
-    configurable retries are enabled when they are configured via the
-    service config.  For details, see:
+    transparent retries will be performed as appropriate, and configurable
+    retries are enabled when they are configured via the service config.
+    For details, see:
       https://github.com/grpc/proposal/blob/master/A6-client-retries.md
-    NOTE: Transparent retries are not yet implemented.  When they are
-          implemented, they will also be enabled by this arg.
     NOTE: Hedging functionality is not yet implemented, so those
           fields in the service config will currently be ignored.  See
           also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below.

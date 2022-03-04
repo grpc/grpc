@@ -465,6 +465,49 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   exec_ctx.Flush();
 }
 
+void CancelRequest(grpc_core::HttpRequest* req) {
+  gpr_log(
+      GPR_INFO,
+      "test only HttpRequest::OnHandshakeDone intercept orphaning request: %p",
+      req);
+  req->Orphan();
+}
+
+// This exercises the code paths that happen when we cancel an HTTP request
+// before the security handshake callback runs, but after that callback has
+// already been scheduled with a success result. This case is interesting
+// because the current security handshake API transfers ownership of output
+// arguments to the caller only if the handshake is successful, rendering
+// this code path as something that only occurs with just the right timing.
+TEST_F(HttpRequestTest,
+       CancelDuringSecurityHandshakeButHandshakeStillSucceeds) {
+  RequestState request_state(this);
+  grpc_http_request req;
+  grpc_core::ExecCtx exec_ctx;
+  std::string host = absl::StrFormat("localhost:%d", g_server_port);
+  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
+  memset(&req, 0, sizeof(req));
+  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
+                                    "" /* fragment */);
+  GPR_ASSERT(uri.ok());
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
+      grpc_core::HttpRequest::Get(
+          std::move(*uri), nullptr /* channel args */, pops(), &req,
+          NSecondsTime(15),
+          GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
+                              grpc_schedule_on_exec_ctx),
+          &request_state.response,
+          grpc_core::RefCountedPtr<grpc_channel_credentials>(
+              grpc_insecure_credentials_create()));
+  grpc_core::HttpRequest::TestOnlySetOnHandshakeDoneIntercept(CancelRequest);
+  http_request->Start();
+  (void)http_request.release();  // request will be orphaned by CancelRequest
+  exec_ctx.Flush();
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
+  grpc_core::HttpRequest::TestOnlySetOnHandshakeDoneIntercept(nullptr);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
