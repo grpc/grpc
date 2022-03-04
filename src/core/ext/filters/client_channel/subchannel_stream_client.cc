@@ -171,8 +171,8 @@ SubchannelStreamClient::CallState::CallState(
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient destroying CallState %p",
-            subchannel_stream_client_->tracer_,
-            subchannel_stream_client_.get(), this);
+            subchannel_stream_client_->tracer_, subchannel_stream_client_.get(),
+            this);
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
     if (context_[i].destroy != nullptr) {
@@ -496,8 +496,8 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   MutexLock lock(&self->subchannel_stream_client_->mu_);
   if (self->subchannel_stream_client_->event_handler_ != nullptr) {
     self->subchannel_stream_client_->event_handler_
-        ->RecvTrailingMetadataReadyLocked(
-            self->subchannel_stream_client_.get(), status);
+        ->RecvTrailingMetadataReadyLocked(self->subchannel_stream_client_.get(),
+                                          status);
   }
   // For status UNIMPLEMENTED, give up and assume always healthy.
   self->CallEndedLocked(/*retry=*/status != GRPC_STATUS_UNIMPLEMENTED);

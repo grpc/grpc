@@ -91,9 +91,8 @@ class HealthStreamEventHandler
     grpc_health_v1_HealthCheckRequest* request_struct =
         grpc_health_v1_HealthCheckRequest_new(arena.ptr());
     grpc_health_v1_HealthCheckRequest_set_service(
-        request_struct,
-        upb_StringView_FromDataAndSize(service_name_.data(),
-                                       service_name_.size()));
+        request_struct, upb_StringView_FromDataAndSize(service_name_.data(),
+                                                       service_name_.size()));
     size_t buf_length;
     char* buf = grpc_health_v1_HealthCheckRequest_serialize(
         request_struct, arena.ptr(), &buf_length);
@@ -140,10 +139,9 @@ class HealthStreamEventHandler
       gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s",
               client, ConnectivityStateName(state), reason);
     }
-    watcher_->Notify(state,
-                     state == GRPC_CHANNEL_TRANSIENT_FAILURE
-                         ? absl::UnavailableError(reason)
-                         : absl::Status());
+    watcher_->Notify(state, state == GRPC_CHANNEL_TRANSIENT_FAILURE
+                                ? absl::UnavailableError(reason)
+                                : absl::Status());
   }
 
   std::string service_name_;
@@ -161,9 +159,9 @@ OrphanablePtr<SubchannelStreamClient> MakeHealthCheckClient(
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   return MakeOrphanable<SubchannelStreamClient>(
       std::move(connected_subchannel), interested_parties,
-      absl::make_unique<HealthStreamEventHandler>(
-          std::move(service_name), std::move(channelz_node),
-          std::move(watcher)),
+      absl::make_unique<HealthStreamEventHandler>(std::move(service_name),
+                                                  std::move(channelz_node),
+                                                  std::move(watcher)),
       GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)
           ? "HealthCheckClient"
           : nullptr);

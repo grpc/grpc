@@ -77,8 +77,8 @@ class SubchannelStreamClient
                                         char* message, size_t size)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_) = 0;
     // Called when a stream fails.
-    virtual void RecvTrailingMetadataReadyLocked(
-        SubchannelStreamClient* client, grpc_status_code status)
+    virtual void RecvTrailingMetadataReadyLocked(SubchannelStreamClient* client,
+                                                 grpc_status_code status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_) = 0;
   };
 
