@@ -4136,6 +4136,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "capture",
         "config",
         "gpr_base",
         "grpc_base",
