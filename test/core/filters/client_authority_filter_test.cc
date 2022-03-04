@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/promise/test_context.h"
 
 namespace grpc_core {
 namespace {
@@ -68,7 +69,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   bool seen = false;
   // TODO(ctiller): use Activity here, once it's ready.
-  promise_detail::Context<Arena> context(arena.get());
+  TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
       CallArgs{
           ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
@@ -100,7 +101,7 @@ TEST(ClientAuthorityFilterTest,
                              Slice::FromStaticString("bar.test.google.au"));
   bool seen = false;
   // TODO(ctiller): use Activity here, once it's ready.
-  promise_detail::Context<Arena> context(arena.get());
+  TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
       CallArgs{
           ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
