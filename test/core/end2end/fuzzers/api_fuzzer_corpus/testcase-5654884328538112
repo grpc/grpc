@@ -1,0 +1,522 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "dns:server"
+    channel_args {
+      key: "grpc.default_compression_algorithm"
+      i: 2
+    }
+    channel_actions {
+      add_n_bytes_writable: 1320
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      wait_ms: 20
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 532
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 1000
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 532
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 16394
+      add_n_bytes_readable: 1886680168
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 8640
+    }
+    channel_actions {
+      add_n_bytes_writable: 134217738
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 91
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 10
+      add_n_bytes_readable: 10
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 176093659156
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 1000
+      wait_ms: 1000
+    }
+    channel_actions {
+      add_n_bytes_writable: 20
+      add_n_bytes_readable: 20
+      wait_ms: 1000
+    }
+  }
+}
+actions {
+  create_call {
+    propagation_mask: 536870912
+    method {
+      value: "/voo"
+    }
+    timeout: 1000000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      receive_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  get_target {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 9997630
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 16960
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000178
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  advance_time: 5208000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000178
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000178
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+        message {
+          value: "`"
+        }
+      }
+      flags: 2147483648
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000178
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 16960
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  watch_connectivity: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  ping {
+  }
+}
+actions {
+  watch_connectivity: 1000000
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  watch_connectivity: 16960
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000178
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_message {
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_message {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 1000178
+}
+actions {
+  create_server {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_status_on_client {
+      }
+    }
+  }
+}
+actions {
+  change_active_call {
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      receive_status_on_client {
+      }
+    }
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  destroy_call {
+  }
+}
+actions {
+  get_peer {
+  }
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  advance_time: 1000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+}
