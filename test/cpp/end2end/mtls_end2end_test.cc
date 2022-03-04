@@ -207,9 +207,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
       }
     }
     // Build the server and add listening ports.
-    if (GetParam().num_listening_ports() > 0) {
+    /*if (GetParam().num_listening_ports() > 0) {
       ports_.resize(GetParam().num_listening_ports(), 0);
-    }
+    }*/
     TlsServerCredentialsOptions server_creds_options(
         server_certificate_provider);
     server_creds_options.set_cert_request_type(
@@ -226,7 +226,9 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     endpoint_info_.resize(GetParam().num_listening_ports());
     for (int i = 0; i < GetParam().num_listening_ports(); ++i) {
       endpoint_info_.push_back(EndPointInfo());
-      builder.AddListeningPort("0.0.0.0:0", server_credentials, &ports_[i]);
+      builder.AddListeningPort("0.0.0.0:0", server_credentials,
+                               &endpoint_info_[i].port);
+      // builder.AddListeningPort("0.0.0.0:0", server_credentials, &ports_[i]);
     }
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
@@ -303,8 +305,12 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
     auto channel_credentials =
         ::grpc::experimental::TlsCredentials(channel_creds_options);
     for (int i = 0; i < GetParam().num_listening_ports(); i++) {
-      ASSERT_NE(0, ports_[i]);
-      endpoint_info_[i].server_address = absl::StrCat("localhost:", ports_[i]);
+      ASSERT_NE(0, endpoint_info_[i].port);
+      endpoint_info_[i].server_address =
+          absl::StrCat("localhost:", endpoint_info_[i].port);
+      // ASSERT_NE(0, ports_[i]);
+      // endpoint_info_[i].server_address = absl::StrCat("localhost:",
+      // ports_[i]);
       stubs_.push_back(EchoTestService::NewStub(::grpc::CreateCustomChannel(
           endpoint_info_[i].server_address, channel_credentials, args)));
     }
@@ -318,9 +324,10 @@ class AdvancedTlsEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   void RunServerLoop() { server_->Wait(); }
 
   struct EndPointInfo {
+    int port = 0;
     std::string server_address;
   };
-  std::vector<int> ports_;
+  // std::vector<int> ports_;
   std::vector<EndPointInfo> endpoint_info_;
   std::vector<std::unique_ptr<EchoTestService::Stub>> stubs_;
   EchoServer service_;
