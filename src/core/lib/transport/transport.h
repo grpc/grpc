@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -112,8 +113,18 @@ inline bool IsStatusOk(const TrailingMetadata& m) {
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
 
+// Server initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ServerInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+
+struct CallArgs {
+  ClientInitialMetadata client_initial_metadata;
+  Latch<ServerInitialMetadata>* server_initial_metadata;
+};
+
 using NextPromiseFactory =
-    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+    std::function<ArenaPromise<TrailingMetadata>(CallArgs)>;
+
 }  // namespace grpc_core
 
 /* forward declarations */

@@ -176,10 +176,11 @@ void ClientCallData::StartPromise() {
   {
     ScopedActivity activity(this);
     promise_ = filter->MakeCallPromise(
-        WrapMetadata(send_initial_metadata_batch_->payload
-                         ->send_initial_metadata.send_initial_metadata),
-        [this](ClientInitialMetadata initial_metadata) {
-          return MakeNextPromise(std::move(initial_metadata));
+        CallArgs{
+            WrapMetadata(send_initial_metadata_batch_->payload
+                             ->send_initial_metadata.send_initial_metadata)},
+        [this](CallArgs call_args) {
+          return MakeNextPromise(std::move(call_args));
         });
   }
   // Poll once.
@@ -204,10 +205,11 @@ void ClientCallData::HookRecvTrailingMetadata(
 //   - put the modified initial metadata into the batch to be sent down.
 //   - return a wrapper around PollTrailingMetadata as the promise.
 ArenaPromise<TrailingMetadata> ClientCallData::MakeNextPromise(
-    ClientInitialMetadata initial_metadata) {
+    CallArgs call_args) {
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
   send_initial_metadata_batch_->payload->send_initial_metadata
-      .send_initial_metadata = UnwrapMetadata(std::move(initial_metadata));
+      .send_initial_metadata =
+      UnwrapMetadata(std::move(call_args.client_initial_metadata));
   return ArenaPromise<TrailingMetadata>(
       [this]() { return PollTrailingMetadata(); });
 }
@@ -543,9 +545,9 @@ void ServerCallData::Cancel(grpc_error_handle error) {
 //   - put the modified initial metadata into the batch being sent up.
 //   - return a wrapper around PollTrailingMetadata as the promise.
 ArenaPromise<TrailingMetadata> ServerCallData::MakeNextPromise(
-    ClientInitialMetadata initial_metadata) {
+    CallArgs call_args) {
   GPR_ASSERT(recv_initial_state_ == RecvInitialState::kComplete);
-  GPR_ASSERT(UnwrapMetadata(std::move(initial_metadata)) ==
+  GPR_ASSERT(UnwrapMetadata(std::move(call_args.client_initial_metadata)) ==
              recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
   return ArenaPromise<TrailingMetadata>(
@@ -595,9 +597,9 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
   promise_ = filter->MakeCallPromise(
-      WrapMetadata(recv_initial_metadata_),
-      [this](ClientInitialMetadata initial_metadata) {
-        return MakeNextPromise(std::move(initial_metadata));
+      CallArgs{WrapMetadata(recv_initial_metadata_), nullptr},
+      [this](CallArgs call_args) {
+        return MakeNextPromise(std::move(call_args));
       });
   // Poll once.
   bool own_error = false;

@@ -31,8 +31,7 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
       const grpc_channel_args* args, ChannelFilter::Args);
 
   ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) override;
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
   GrpcServerAuthzFilter(

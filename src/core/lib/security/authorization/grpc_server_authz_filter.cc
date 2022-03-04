@@ -93,13 +93,12 @@ bool GrpcServerAuthzFilter::IsAuthorized(
 }
 
 ArenaPromise<TrailingMetadata> GrpcServerAuthzFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
-  if (!IsAuthorized(initial_metadata)) {
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  if (!IsAuthorized(call_args.client_initial_metadata)) {
     return ArenaPromise<TrailingMetadata>(Immediate(TrailingMetadata(
         absl::PermissionDeniedError("Unauthorized RPC request rejected."))));
   }
-  return next_promise_factory(std::move(initial_metadata));
+  return next_promise_factory(std::move(call_args));
 }
 
 const grpc_channel_filter GrpcServerAuthzFilter::kFilterVtable =

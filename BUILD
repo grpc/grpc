@@ -2168,6 +2168,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_port",
         "json",
+        "latch",
         "memory_quota",
         "orphanable",
         "promise",

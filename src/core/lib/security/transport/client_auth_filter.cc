@@ -152,8 +152,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
 }
 
 ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto* legacy_ctx = GetContext<grpc_call_context_element>();
   if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {
     legacy_ctx[GRPC_CONTEXT_SECURITY].value =
@@ -166,9 +165,10 @@ ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
       legacy_ctx[GRPC_CONTEXT_SECURITY].value)
       ->auth_context = args_.auth_context;
 
-  auto* host = initial_metadata->get_pointer(HttpAuthorityMetadata());
+  auto* host =
+      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
   if (host == nullptr) {
-    return next_promise_factory(std::move(initial_metadata));
+    return next_promise_factory(std::move(call_args));
   }
   return TrySeq(args_.security_connector->CheckCallHost(
                     host->as_string_view(), args_.auth_context.get()),
