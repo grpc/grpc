@@ -178,7 +178,8 @@ void ClientCallData::StartPromise() {
     promise_ = filter->MakeCallPromise(
         CallArgs{
             WrapMetadata(send_initial_metadata_batch_->payload
-                             ->send_initial_metadata.send_initial_metadata)},
+                             ->send_initial_metadata.send_initial_metadata),
+            nullptr},
         [this](CallArgs call_args) {
           return MakeNextPromise(std::move(call_args));
         });
