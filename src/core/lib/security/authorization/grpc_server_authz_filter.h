@@ -30,7 +30,7 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
   static absl::StatusOr<GrpcServerAuthzFilter> Create(
       const grpc_channel_args* args, ChannelFilter::Args);
 
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
+  ArenaPromise<ServerMetadata> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
@@ -38,7 +38,7 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
       RefCountedPtr<grpc_auth_context> auth_context, grpc_endpoint* endpoint,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
 
-  bool IsAuthorized(const ClientInitialMetadata& initial_metadata);
+  bool IsAuthorized(const ClientMetadata& initial_metadata);
 
   RefCountedPtr<grpc_auth_context> auth_context_;
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;

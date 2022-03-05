@@ -115,7 +115,7 @@ using ClientMetadata = MetadataHandle<grpc_metadata_batch>;
 
 // Server initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+using ServerMetadata = MetadataHandle<grpc_metadata_batch>;
 
 struct CallArgs {
   ClientMetadata client_initial_metadata;

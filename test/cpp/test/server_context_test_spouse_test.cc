@@ -73,7 +73,7 @@ TEST(ServerContextTestSpouseTest, InitialMetadata) {
   ASSERT_EQ(metadata, spouse.GetInitialMetadata());
 }
 
-TEST(ServerContextTestSpouseTest, TrailingMetadata) {
+TEST(ServerContextTestSpouseTest, ServerMetadata) {
   ServerContext context;
   ServerContextTestSpouse spouse(&context);
   std::multimap<std::string, std::string> metadata;

@@ -97,9 +97,9 @@ const char* grpc_fake_transport_get_expected_targets(
 
 /* -- Metadata-only test credentials. -- */
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadata>>
 grpc_md_only_test_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadata initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   initial_metadata->Append(
       key_.as_string_view(), value_.Ref(),

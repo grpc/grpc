@@ -57,10 +57,9 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       [creds, &initial_metadata, &get_request_metadata_args]() {
         return grpc_core::Map(
             creds->GetRequestMetadata(
-                grpc_core::ClientInitialMetadata::TestOnlyWrap(
-                    &initial_metadata),
+                grpc_core::ClientMetadata::TestOnlyWrap(&initial_metadata),
                 &get_request_metadata_args),
-            [](const absl::StatusOr<grpc_core::ClientInitialMetadata>& s) {
+            [](const absl::StatusOr<grpc_core::ClientMetadata>& s) {
               return s.status();
             });
       },

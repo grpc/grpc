@@ -122,7 +122,7 @@ struct grpc_channel_filter {
        - allocation of memory for call data
      There is an on-going migration to move all filters to providing this, and
      then to drop start_transport_stream_op_batch. */
-  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
+  grpc_core::ArenaPromise<grpc_core::ServerMetadata> (*make_call_promise)(
       grpc_channel_element* elem, grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory);
   /* Called to handle channel level operations - e.g. new calls, or transport
