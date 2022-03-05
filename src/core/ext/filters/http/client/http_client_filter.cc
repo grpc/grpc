@@ -52,8 +52,7 @@ absl::Status CheckServerMetadata(const ServerMetadata& b) {
      * should prefer the gRPC status code, as mentioned in
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
      */
-    const grpc_status_code* grpc_status =
-        b->get_pointer(GrpcStatusMetadata());
+    const grpc_status_code* grpc_status = b->get_pointer(GrpcStatusMetadata());
     if (grpc_status != nullptr || *status == 200) {
       b->Remove(HttpStatusMetadata());
     } else {
@@ -63,26 +62,21 @@ absl::Status CheckServerMetadata(const ServerMetadata& b) {
     }
   }
 
-  if (Slice* grpc_message =
-          b->get_pointer(GrpcMessageMetadata())) {
-    *grpc_message =
-        PermissivePercentDecodeSlice(std::move(*grpc_message));
+  if (Slice* grpc_message = b->get_pointer(GrpcMessageMetadata())) {
+    *grpc_message = PermissivePercentDecodeSlice(std::move(*grpc_message));
   }
 
   b->Remove(ContentTypeMetadata());
   return absl::OkStatus();
 }
 
-HttpSchemeMetadata::ValueType SchemeFromArgs(
-    const grpc_channel_args* args) {
+HttpSchemeMetadata::ValueType SchemeFromArgs(const grpc_channel_args* args) {
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&
           0 == strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME)) {
-        HttpSchemeMetadata::ValueType scheme =
-            HttpSchemeMetadata::Parse(
-                args->args[i].value.string,
-                [](absl::string_view, const Slice&) {});
+        HttpSchemeMetadata::ValueType scheme = HttpSchemeMetadata::Parse(
+            args->args[i].value.string, [](absl::string_view, const Slice&) {});
         if (scheme != HttpSchemeMetadata::kInvalid) return scheme;
       }
     }
@@ -91,7 +85,7 @@ HttpSchemeMetadata::ValueType SchemeFromArgs(
 }
 
 Slice UserAgentFromArgs(const grpc_channel_args* args,
-                                   const char* transport_name) {
+                        const char* transport_name) {
   std::vector<std::string> user_agent_fields;
 
   for (size_t i = 0; args && i < args->num_args; i++) {
@@ -128,12 +122,10 @@ Slice UserAgentFromArgs(const grpc_channel_args* args,
 ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto& md = call_args.client_initial_metadata;
-  md->Set(HttpMethodMetadata(),
-          HttpMethodMetadata::kPost);
+  md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
   md->Set(HttpSchemeMetadata(), scheme_);
   md->Set(TeMetadata(), TeMetadata::kTrailers);
-  md->Set(ContentTypeMetadata(),
-          ContentTypeMetadata::kApplicationGrpc);
+  md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
   md->Set(UserAgentMetadata(), user_agent_.Ref());
 
   auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
