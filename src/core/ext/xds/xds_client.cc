@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_cluster.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
@@ -2332,6 +2333,7 @@ std::string XdsClient::DumpClientConfigBinary() {
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
+  XdsClusterSpecifierPluginRegistry::Init();
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does
@@ -2342,6 +2344,7 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   delete g_mu;
   g_mu = nullptr;
   XdsHttpFilterRegistry::Shutdown();
+  XdsClusterSpecifierPluginRegistry::Shutdown();
 }
 
 namespace {

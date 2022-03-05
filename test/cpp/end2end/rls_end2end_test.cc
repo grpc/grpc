@@ -481,7 +481,7 @@ class RlsEnd2endTest : public ::testing::Test {
       return absl::StrCat(
           "{"
           "  \"loadBalancingConfig\":[{"
-          "    \"rls\":{",
+          "    \"rls_experimental\":{",
           absl::StrJoin(rls_config_parts, ","),
           "    }"
           "  }]"

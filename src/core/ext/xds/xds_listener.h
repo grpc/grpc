@@ -31,6 +31,7 @@
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -212,6 +213,7 @@ class XdsListenerResourceType
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
         symtab);
     XdsHttpFilterRegistry::PopulateSymtab(symtab);
+    XdsClusterSpecifierPluginRegistry::PopulateSymtab(symtab);
   }
 };
 

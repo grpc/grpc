@@ -60,7 +60,6 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
       grpc_lookup_v1_RouteLookupConfig_grpc_keybuilders(plugin_config,
                                                         &num_keybuilders);
   for (size_t i = 0; i < num_keybuilders; ++i) {
-    gpr_log(GPR_INFO, "donna for each key builder");
     Json::Object builder_result;
     // parse array of names
     size_t num_names;
@@ -68,7 +67,6 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     const grpc_lookup_v1_GrpcKeyBuilder_Name* const* names =
         grpc_lookup_v1_GrpcKeyBuilder_names(keybuilders[i], &num_names);
     for (size_t j = 0; j < num_names; ++j) {
-      gpr_log(GPR_INFO, "donna for each key builder name");
       Json::Object name_result;
       name_result["service"] = UpbStringToStdString(
           grpc_lookup_v1_GrpcKeyBuilder_Name_service(names[j]));
@@ -96,7 +94,6 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     const grpc_lookup_v1_NameMatcher* const* headers =
         grpc_lookup_v1_GrpcKeyBuilder_headers(keybuilders[i], &num_headers);
     for (size_t k = 0; k < num_headers; ++k) {
-      gpr_log(GPR_INFO, "donna for each key builder header");
       Json::Object header_result;
       header_result["key"] =
           UpbStringToStdString(grpc_lookup_v1_NameMatcher_key(headers[k]));
@@ -172,7 +169,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   Json::Object rls_policy;
   rls_policy["routeLookupConfig"] = std::move(result);
   Json::Object cds_policy;
-  cds_policy["cds_experimental"] = Json();
+  cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;
   child_policy.emplace_back(std::move(cds_policy));
   rls_policy["childPolicy"] = std::move(child_policy);
@@ -187,7 +184,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
 namespace {
 
 using PluginRegistryMap =
-    std::map<absl::string_view, XdsClusterSpecifierPluginImpl*>;
+    std::map<absl::string_view, std::unique_ptr<XdsClusterSpecifierPluginImpl>>;
 
 PluginRegistryMap* g_plugin_registry = nullptr;
 
@@ -202,7 +199,7 @@ void XdsClusterSpecifierPluginRegistry::PopulateSymtab(upb_DefPool* symtab) {
 void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
     std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
     absl::string_view config_proto_type_name) {
-  (*g_plugin_registry)[config_proto_type_name] = plugin.get();
+  (*g_plugin_registry)[config_proto_type_name] = std::move(plugin);
 }
 
 absl::StatusOr<std::string>

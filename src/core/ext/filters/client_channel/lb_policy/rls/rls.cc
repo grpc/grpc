@@ -83,7 +83,7 @@ TraceFlag grpc_lb_rls_trace(false, "rls_lb");
 
 namespace {
 
-const char* kRls = "rls";
+const char* kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
@@ -2541,7 +2541,6 @@ bool RlsEnabled() {
 }  //  namespace
 
 void RlsLbPluginInit() {
-  if (!RlsEnabled()) return;
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<RlsLbFactory>());
 }

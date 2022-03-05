@@ -80,6 +80,8 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
+#include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
+#include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
@@ -96,6 +98,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/rls_config.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
@@ -135,6 +138,7 @@ using ::envoy::config::rbac::v3::RBAC_Action;
 using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
 using ::envoy::config::rbac::v3::RBAC_Action_DENY;
 using ::envoy::config::rbac::v3::RBAC_Action_LOG;
+using ::envoy::config::route::v3::ClusterSpecifierPlugin;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
@@ -153,6 +157,10 @@ using ClientStats = LrsServiceImpl::ClientStats;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
+using ::grpc::lookup::v1::RouteLookupConfig;
+using ::grpc::lookup::v1::RouteLookupRequest;
+using ::grpc::lookup::v1::RouteLookupResponse;
 
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
@@ -176,6 +184,98 @@ constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
+
+constexpr char kTestKey[] = "test_key";
+constexpr char kTestValue[] = "test_value";
+
+using RlsService =
+    CountedService<grpc::lookup::v1::RouteLookupService::Service>;
+class RlsServiceImpl : public RlsService {
+ public:
+  grpc::Status RouteLookup(grpc::ServerContext* context,
+                           const RouteLookupRequest* request,
+                           RouteLookupResponse* response) override {
+    gpr_log(GPR_INFO, "RLS: Received request: %s",
+            request->DebugString().c_str());
+    // RLS server should see call creds.
+    // EXPECT_THAT(context->client_metadata(),
+    //            ::testing::Contains(
+    //                ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
+    IncreaseRequestCount();
+    // EXPECT_EQ(request->target_type(), "grpc");
+    // See if we have a configured response for this request.
+    ResponseData res;
+    {
+      grpc::internal::MutexLock lock(&mu_);
+      auto it = responses_.find(*request);
+      if (it == responses_.end()) {
+        gpr_log(GPR_INFO,
+                "RLS: no matching request, returning INTERNAL, donna for "
+                "testing always return something");
+        // unmatched_requests_.push_back(*request);
+        // return Status(StatusCode::INTERNAL, "no response entry");
+        it = responses_.begin();
+      }
+      res = it->second;
+    }
+    // Configured response found, so use it.
+    if (res.response_delay > grpc_core::Duration::Zero()) {
+      gpr_sleep_until(
+          grpc_timeout_milliseconds_to_deadline(res.response_delay.millis()));
+    }
+    IncreaseResponseCount();
+    *response = res.response;
+    gpr_log(GPR_INFO, "RLS: returning configured response: %s",
+            response->DebugString().c_str());
+    return Status::OK;
+  }
+
+  void Start() {}
+
+  void Shutdown() {}
+
+  void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
+                   grpc_core::Duration response_delay = grpc_core::Duration()) {
+    grpc::internal::MutexLock lock(&mu_);
+    responses_[std::move(request)] = {std::move(response), response_delay};
+  }
+
+  void RemoveResponse(const RouteLookupRequest& request) {
+    grpc::internal::MutexLock lock(&mu_);
+    responses_.erase(request);
+  }
+
+  std::vector<RouteLookupRequest> GetUnmatchedRequests() {
+    grpc::internal::MutexLock lock(&mu_);
+    return std::move(unmatched_requests_);
+  }
+
+ private:
+  // Sorting thunk for RouteLookupRequest.
+  struct RlsRequestLessThan {
+    bool operator()(const RouteLookupRequest& req1,
+                    const RouteLookupRequest& req2) const {
+      std::map<absl::string_view, absl::string_view> key_map1(
+          req1.key_map().begin(), req1.key_map().end());
+      std::map<absl::string_view, absl::string_view> key_map2(
+          req2.key_map().begin(), req2.key_map().end());
+      if (key_map1 < key_map2) return true;
+      if (req1.reason() < req2.reason()) return true;
+      if (req1.stale_header_data() < req2.stale_header_data()) return true;
+      return false;
+    }
+  };
+
+  struct ResponseData {
+    RouteLookupResponse response;
+    grpc_core::Duration response_delay;
+  };
+
+  grpc::internal::Mutex mu_;
+  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan> responses_
+      ABSL_GUARDED_BY(&mu_);
+  std::vector<RouteLookupRequest> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
+};
 
 template <typename RpcService>
 class BackendServiceImpl
@@ -1808,10 +1908,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
               (GetParam().enable_load_reporting()
                    ? test_obj->client_load_reporting_interval_seconds_
                    : 0),
-              {kDefaultClusterName})) {}
+              {kDefaultClusterName})),
+          rls_service_(new RlsServiceImpl()) {}
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+    RlsServiceImpl* rls_service() { return rls_service_.get(); }
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
@@ -1819,22 +1921,26 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       builder->RegisterService(ads_service_->v3_rpc_service());
       builder->RegisterService(lrs_service_->v2_rpc_service());
       builder->RegisterService(lrs_service_->v3_rpc_service());
+      builder->RegisterService(rls_service_.get());
     }
 
     void StartAllServices() override {
       ads_service_->Start();
       lrs_service_->Start();
+      rls_service_->Start();
     }
 
     void ShutdownAllServices() override {
       ads_service_->Shutdown();
       lrs_service_->Shutdown();
+      rls_service_->Shutdown();
     }
 
     const char* Type() override { return "Balancer"; }
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
+    std::shared_ptr<RlsServiceImpl> rls_service_;
   };
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
@@ -1961,6 +2067,26 @@ class BasicTest : public XdsEnd2endTest {
   void SetUp() override {
     XdsEnd2endTest::SetUp();
     StartAllBackends();
+  }
+
+  static RouteLookupRequest BuildRlsRequest(
+      std::map<std::string, std::string> key,
+      RouteLookupRequest::Reason reason = RouteLookupRequest::REASON_MISS,
+      const char* stale_header_data = "") {
+    RouteLookupRequest request;
+    request.set_target_type("grpc");
+    request.mutable_key_map()->insert(key.begin(), key.end());
+    request.set_reason(reason);
+    request.set_stale_header_data(stale_header_data);
+    return request;
+  }
+
+  static RouteLookupResponse BuildRlsResponse(std::vector<std::string> targets,
+                                              const char* header_data = "") {
+    RouteLookupResponse response;
+    response.mutable_targets()->Add(targets.begin(), targets.end());
+    response.set_header_data(header_data);
+    return response;
   }
 };
 
@@ -4652,6 +4778,62 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
               ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
+}
+
+TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  const size_t kNumEchoRpcs = 5;
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Send Route Configuration.
+  RouteConfiguration new_route_config = default_route_config_;
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  WaitForAllBackends(0, 1);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  // Prepare the RLS server.
+  balancer_->rls_service()->SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      // BuildRlsResponse({absl::StrCat("ipv4:127.0.0.1:",
+      // backends_[0]->port())}));
+      BuildRlsResponse({kNewClusterName}));
+  // Change Route Configurations: use cluster specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", balancer_->port()));
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = route_lookup_config;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  WaitForAllBackends(1, 2);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
