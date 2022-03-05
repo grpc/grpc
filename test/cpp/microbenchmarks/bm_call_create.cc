@@ -616,7 +616,7 @@ typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
     ServerDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
