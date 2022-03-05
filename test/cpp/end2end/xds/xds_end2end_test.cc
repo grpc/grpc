@@ -2448,8 +2448,7 @@ TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
           "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
           status.error_code(), status.error_message().c_str());
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr(kErrorMessage + "something"));
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
 }
 
 using GlobalXdsClientTest = BasicTest;
