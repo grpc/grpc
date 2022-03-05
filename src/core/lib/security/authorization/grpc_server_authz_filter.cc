@@ -49,7 +49,7 @@ absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
 }
 
 bool GrpcServerAuthzFilter::IsAuthorized(
-    const ClientInitialMetadata& initial_metadata) {
+    const ClientMetadata& initial_metadata) {
   EvaluateArgs args(initial_metadata.get(), &per_channel_evaluate_args_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_DEBUG,
@@ -92,10 +92,10 @@ bool GrpcServerAuthzFilter::IsAuthorized(
   return false;
 }
 
-ArenaPromise<TrailingMetadata> GrpcServerAuthzFilter::MakeCallPromise(
+ArenaPromise<ServerMetadata> GrpcServerAuthzFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   if (!IsAuthorized(call_args.client_initial_metadata)) {
-    return ArenaPromise<TrailingMetadata>(Immediate(TrailingMetadata(
+    return ArenaPromise<ServerMetadata>(Immediate(ServerMetadata(
         absl::PermissionDeniedError("Unauthorized RPC request rejected."))));
   }
   return next_promise_factory(std::move(call_args));

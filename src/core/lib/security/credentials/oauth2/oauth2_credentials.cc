@@ -281,9 +281,9 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   delete r;
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadata>>
 grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadata initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   // Check if we can use the cached token.
   absl::optional<grpc_core::Slice> cached_access_token_value;
@@ -326,14 +326,13 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
                  on_oauth2_token_fetcher_http_response,
                  grpc_core::ExecCtx::Get()->Now() + refresh_threshold);
   }
-  return
-      [pending_request]()
-          -> grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>> {
-        if (!pending_request->done.load(std::memory_order_acquire)) {
-          return grpc_core::Pending{};
-        }
-        return std::move(pending_request->result);
-      };
+  return [pending_request]()
+             -> grpc_core::Poll<absl::StatusOr<grpc_core::ClientMetadata>> {
+    if (!pending_request->done.load(std::memory_order_acquire)) {
+      return grpc_core::Pending{};
+    }
+    return std::move(pending_request->result);
+  };
 }
 
 grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
@@ -696,9 +695,9 @@ grpc_call_credentials* grpc_sts_credentials_create(
 // Oauth2 Access Token credentials.
 //
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadata>>
 grpc_access_token_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadata initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, access_token_value_.Ref(),

@@ -57,7 +57,7 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
   return ClientAuthorityFilter(Slice::FromCopiedString(default_authority_str));
 }
 
-ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
+ArenaPromise<ServerMetadata> ClientAuthorityFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // If no authority is set, set the default authority.
   if (call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata()) ==
