@@ -585,6 +585,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/regex.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/rls_config.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/route.proto
 )
 protobuf_generate_grpc_cpp(
@@ -16943,6 +16946,10 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(xds_end2end_test
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -17083,6 +17090,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rls_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rls_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rls_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/rls_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
