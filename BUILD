@@ -4888,6 +4888,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc++_unsecure_reflection",
+    srcs = [
+        "src/cpp/ext/proto_server_reflection.cc",
+        "src/cpp/ext/proto_server_reflection_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/proto_server_reflection.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc++/ext/proto_server_reflection_plugin.h",
+        "include/grpcpp/ext/proto_server_reflection_plugin.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++_unsecure",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpcpp_channelz",
     srcs = [
         "src/cpp/server/channelz/channelz_service.cc",
