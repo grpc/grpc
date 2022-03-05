@@ -118,6 +118,19 @@ class CallPushPull {
 
 }  // namespace promise_detail
 
+// For promises representing calls a common pattern emerges:
+// There's a process pushing data down the stack, a process handling the main
+// call part, and a process pulling data back up the stack.
+//
+// This can reasonably be represented by the right combinations of TryJoins and
+// Maps, but since the structure is fundamental to the domain we introduce
+// this simple helper to make it easier to write the common case.
+//
+// It takes three promises: the main call, the push and the pull.
+// When polling, the push is polled first, then the main call (descending the
+// stack), then the pull (as we ascend once more).
+//
+// This strategy minimizes repolls.
 template <typename FMain, typename FPush, typename FPull>
 promise_detail::CallPushPull<FMain, FPush, FPull> CallPushPull(FMain f_main,
                                                                FPush f_push,
