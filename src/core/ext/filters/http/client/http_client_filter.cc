@@ -140,13 +140,15 @@ ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
   auto* write_latch =
       absl::exchange(call_args.server_initial_metadata, read_latch);
 
-  return WithIO(Seq(next_promise_factory(std::move(call_args)),
-                    [](ServerMetadata md) -> ServerMetadata {
-                      auto r = CheckServerMetadata(md);
-                      if (!r.ok()) return ServerMetadata(r);
-                      return md;
-                    }))
-      .Read(Seq(read_latch->Wait(), [write_latch](ServerInitialMetadata* md) {
+  return CallPushPull(
+      []() { return absl::OkStatus(); },
+      Seq(next_promise_factory(std::move(call_args)),
+          [](ServerMetadata md) -> ServerMetadata {
+            auto r = CheckServerMetadata(md);
+            if (!r.ok()) return ServerMetadata(r);
+            return md;
+          }),
+      Seq(read_latch->Wait(), [write_latch](ServerInitialMetadata* md) {
         auto r = CheckServerMetadata(*md);
         write_latch->Set(md);
         return r;
