@@ -685,7 +685,8 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
   lb_call_ = calld->CreateLoadBalancedCall(&attempt_dispatch_controller_,
                                            is_transparent_retry);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: create lb_call=%p",
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p attempt=%p: created attempt, lb_call=%p",
             calld->chand_, calld, this, lb_call_.get());
   }
   // If per_attempt_recv_timeout is set, start a timer.
@@ -921,28 +922,27 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
     // starting a recv op due to it being in the same batch with a send
     // op.  If/when we revamp the callback protocol in
     // transport_stream_op_batch, we may be able to fix this.
-    if (batch->on_complete != nullptr) {
-      if (batch->send_initial_metadata) {
-        if (started_send_initial_metadata_) continue;
-        has_send_ops = true;
+    if (batch->send_initial_metadata) {
+      if (started_send_initial_metadata_) continue;
+      has_send_ops = true;
+    }
+    if (batch->send_message) {
+      if (started_send_message_count_ ==
+          (calld_->send_messages_.size() + !pending->send_ops_cached)) {
+        continue;
       }
-      if (batch->send_message) {
-        if (completed_send_message_count_ < started_send_message_count_) {
-          continue;
-        }
-        has_send_ops = true;
+      has_send_ops = true;
+    }
+    // Note that we only start send_trailing_metadata if we have no more
+    // send_message ops to start, since we can't send down any more
+    // send_message ops after send_trailing_metadata.
+    if (batch->send_trailing_metadata) {
+      if (started_send_message_count_ + batch->send_message <
+              calld_->send_messages_.size() ||
+          started_send_trailing_metadata_) {
+        continue;
       }
-      // Note that we only start send_trailing_metadata if we have no more
-      // send_message ops to start, since we can't send down any more
-      // send_message ops after send_trailing_metadata.
-      if (batch->send_trailing_metadata) {
-        if (started_send_message_count_ + batch->send_message <
-                calld_->send_messages_.size() ||
-            started_send_trailing_metadata_) {
-          continue;
-        }
-        has_send_ops = true;
-      }
+      has_send_ops = true;
     }
     int num_callbacks = has_send_ops;  // All send ops share one callback.
     if (batch->recv_initial_metadata) {
