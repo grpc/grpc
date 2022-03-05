@@ -46,52 +46,52 @@
 namespace grpc_core {
 
 namespace {
-static absl::Status CheckServerMetadata(const ServerMetadata& b) {
-  if (auto* status = b->get_pointer(grpc_core::HttpStatusMetadata())) {
+absl::Status CheckServerMetadata(const ServerMetadata& b) {
+  if (auto* status = b->get_pointer(HttpStatusMetadata())) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
      */
     const grpc_status_code* grpc_status =
-        b->get_pointer(grpc_core::GrpcStatusMetadata());
+        b->get_pointer(GrpcStatusMetadata());
     if (grpc_status != nullptr || *status == 200) {
-      b->Remove(grpc_core::HttpStatusMetadata());
+      b->Remove(HttpStatusMetadata());
     } else {
       return absl::Status(static_cast<absl::StatusCode>(
                               grpc_http2_status_to_grpc_status(*status)),
-                          absl::StrCat(absl::StrCat("Received http2 header with status: ", *status));
+                          absl::StrCat("Received http2 header with status: ", *status);
     }
   }
 
-  if (grpc_core::Slice* grpc_message =
-          b->get_pointer(grpc_core::GrpcMessageMetadata())) {
+  if (Slice* grpc_message =
+          b->get_pointer(GrpcMessageMetadata())) {
     *grpc_message =
-        grpc_core::PermissivePercentDecodeSlice(std::move(*grpc_message));
+        PermissivePercentDecodeSlice(std::move(*grpc_message));
   }
 
-  b->Remove(grpc_core::ContentTypeMetadata());
+  b->Remove(ContentTypeMetadata());
   return absl::OkStatus();
 }
 
-static grpc_core::HttpSchemeMetadata::ValueType SchemeFromArgs(
+HttpSchemeMetadata::ValueType SchemeFromArgs(
     const grpc_channel_args* args) {
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&
           0 == strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME)) {
-        grpc_core::HttpSchemeMetadata::ValueType scheme =
-            grpc_core::HttpSchemeMetadata::Parse(
+        HttpSchemeMetadata::ValueType scheme =
+            HttpSchemeMetadata::Parse(
                 args->args[i].value.string,
-                [](absl::string_view, const grpc_core::Slice&) {});
-        if (scheme != grpc_core::HttpSchemeMetadata::kInvalid) return scheme;
+                [](absl::string_view, const Slice&) {});
+        if (scheme != HttpSchemeMetadata::kInvalid) return scheme;
       }
     }
   }
-  return grpc_core::HttpSchemeMetadata::kHttp;
+  return HttpSchemeMetadata::kHttp;
 }
 
-static grpc_core::Slice UserAgentFromArgs(const grpc_channel_args* args,
-                                          const char* transport_name) {
+Slice UserAgentFromArgs(const grpc_channel_args* args,
+                                   const char* transport_name) {
   std::vector<std::string> user_agent_fields;
 
   for (size_t i = 0; args && i < args->num_args; i++) {
@@ -121,20 +121,20 @@ static grpc_core::Slice UserAgentFromArgs(const grpc_channel_args* args,
   }
 
   std::string user_agent_string = absl::StrJoin(user_agent_fields, " ");
-  return grpc_core::Slice::FromCopiedString(user_agent_string.c_str());
+  return Slice::FromCopiedString(user_agent_string.c_str());
 }
 }  // namespace
 
 ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto& md = call_args.client_initial_metadata;
-  md->Set(grpc_core::HttpMethodMetadata(),
-          grpc_core::HttpMethodMetadata::kPost);
-  md->Set(grpc_core::HttpSchemeMetadata(), scheme_);
-  md->Set(grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-  md->Set(grpc_core::ContentTypeMetadata(),
-          grpc_core::ContentTypeMetadata::kApplicationGrpc);
-  md->Set(grpc_core::UserAgentMetadata(), user_agent_.Ref());
+  md->Set(HttpMethodMetadata(),
+          HttpMethodMetadata::kPost);
+  md->Set(HttpSchemeMetadata(), scheme_);
+  md->Set(TeMetadata(), TeMetadata::kTrailers);
+  md->Set(ContentTypeMetadata(),
+          ContentTypeMetadata::kApplicationGrpc);
+  md->Set(UserAgentMetadata(), user_agent_.Ref());
 
   auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
   auto* write_latch =
@@ -148,7 +148,7 @@ ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
             if (!r.ok()) return ServerMetadata(r);
             return md;
           }),
-      Seq(read_latch->Wait(), [write_latch](ServerInitialMetadata* md) {
+      Seq(read_latch->Wait(), [write_latch](ServerMetadata* md) {
         auto r = CheckServerMetadata(*md);
         write_latch->Set(md);
         return r;
