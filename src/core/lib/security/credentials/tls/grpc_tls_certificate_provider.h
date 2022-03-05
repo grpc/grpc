@@ -35,12 +35,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-// Known grpc_tls_certificate_provider implementation types
-#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_STATIC_DATA "StaticData"
-#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_FILE_WATCHER "FileWatcher"
-#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_XDS "Xds"
-#define GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_WRAPPER "Wrapper"
-
 // Interface for a grpc_tls_certificate_provider that handles the process to
 // fetch credentials and validation contexts. Implementations are free to rely
 // on local or remote sources to fetch the latest secrets, and free to share any
@@ -84,8 +78,8 @@ struct grpc_tls_certificate_provider
 
  private:
   // Implementation for `Compare` method intended to be overridden by
-  // subclasses. Only invoked if `type()` and `other->type()` compare equal as
-  // strings.
+  // subclasses. Only invoked if `type()` and `other->type()` point to the same
+  // string.
   virtual int CompareImpl(const grpc_tls_certificate_provider* other) const = 0;
 };
 
@@ -105,9 +99,7 @@ class StaticDataCertificateProvider final
     return distributor_;
   }
 
-  const char* type() const override {
-    return GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_STATIC_DATA;
-  }
+  const char* type() const override { return "StaticData"; }
 
  private:
   struct WatcherInfo {
@@ -146,9 +138,7 @@ class FileWatcherCertificateProvider final
     return distributor_;
   }
 
-  const char* type() const override {
-    return GRPC_TLS_CERTIFICATE_PROVIDER_TYPE_FILE_WATCHER;
-  }
+  const char* type() const override { return "FileWatcher"; }
 
  private:
   struct WatcherInfo {

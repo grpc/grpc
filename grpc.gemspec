@@ -1288,6 +1288,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/credentials/iam/iam_credentials.cc )
   s.files += %w( src/core/lib/security/credentials/iam/iam_credentials.h )
   s.files += %w( src/core/lib/security/credentials/insecure/insecure_credentials.cc )
+  s.files += %w( src/core/lib/security/credentials/insecure/insecure_credentials.h )
   s.files += %w( src/core/lib/security/credentials/jwt/json_token.cc )
   s.files += %w( src/core/lib/security/credentials/jwt/json_token.h )
   s.files += %w( src/core/lib/security/credentials/jwt/jwt_credentials.cc )

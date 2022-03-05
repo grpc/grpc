@@ -48,27 +48,6 @@ typedef enum {
 
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
-  "FakeTransportSecurity"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
-#define GRPC_CREDENTIALS_TYPE_INSECURE "insecure"
-#define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
-#define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
-#define GRPC_CREDENTIALS_TYPE_LOCAL "Local"
-#define GRPC_CREDENTIALS_TYPE_TLS "Tls"
-#define GRPC_CREDENTIALS_TYPE_HTTP_REQUEST_SSL "HttpRequestSSL"
-#define GRPC_CREDENTIALS_TYPE_XDS "Xds"
-
-#define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
-#define GRPC_CALL_CREDENTIALS_TYPE_GOOGLE_REFRESH_TOKEN "GoogleRefreshToken"
-#define GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN "AccessToken"
-#define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
-#define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
-#define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
-#define GRPC_CALL_CREDENTIALS_TYPE_PLUGIN "Plugin"
-#define GRPC_CALL_CREDENTIALS_TYPE_MD_ONLY_TEST "MdOnlyTest"
-
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
   "x-goog-iam-authorization-token"
@@ -165,7 +144,7 @@ struct grpc_channel_credentials
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
-  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  // Only invoked if `type()` and `other->type()` point to the same string.
   virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
 };
 
@@ -252,7 +231,7 @@ struct grpc_call_credentials
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
-  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  // Only invoked if `type()` and `other->type()` point to the same string.
   virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
 
   const grpc_security_level min_security_level_;
@@ -271,15 +250,13 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 struct grpc_server_credentials
     : public grpc_core::RefCounted<grpc_server_credentials> {
  public:
-  explicit grpc_server_credentials(const char* type) : type_(type) {}
-
   ~grpc_server_credentials() override { DestroyProcessor(); }
 
   // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* args) = 0;
 
-  const char* type() const { return type_; }
+  virtual const char* type() const = 0;
 
   const grpc_auth_metadata_processor& auth_metadata_processor() const {
     return processor_;
@@ -294,7 +271,6 @@ struct grpc_server_credentials
     }
   }
 
-  const char* type_;
   grpc_auth_metadata_processor processor_ =
       grpc_auth_metadata_processor();  // Zero-initialize the C struct.
 };

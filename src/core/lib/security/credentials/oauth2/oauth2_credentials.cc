@@ -347,6 +347,10 @@ std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
   return "OAuth2TokenFetcherCredentials";
 }
 
+const char* grpc_oauth2_token_fetcher_credentials::type() const {
+  return "Oauth2";
+}
+
 //
 //  Google Compute Engine credentials.
 //
@@ -470,6 +474,10 @@ std::string grpc_google_refresh_token_credentials::debug_string() {
   return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}",
                          refresh_token_.client_id,
                          grpc_oauth2_token_fetcher_credentials::debug_string());
+}
+
+const char* grpc_google_refresh_token_credentials::type() const {
+  return "GoogleRefreshToken";
 }
 
 static std::string create_loggable_refresh_token(
@@ -704,6 +712,8 @@ grpc_access_token_credentials::GetRequestMetadata(
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
   return grpc_core::Immediate(std::move(initial_metadata));
 }
+
+const char* grpc_access_token_credentials::Type() { return "AccessToken"; }
 
 grpc_access_token_credentials::grpc_access_token_credentials(
     const char* access_token)

@@ -181,9 +181,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return args;
   }
 
-  const char* type() const override {
-    return GRPC_CREDENTIALS_TYPE_HTTP_REQUEST_SSL;
-  }
+  const char* type() const override { return "HttpRequestSSL"; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {

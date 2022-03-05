@@ -1051,7 +1051,8 @@ absl::StatusOr<grpc_channel_args*> XdsServerConfigFetcher::ListenerWatcher::
   // Add XdsCertificateProvider if credentials are xDS.
   grpc_server_credentials* server_creds =
       grpc_find_server_credentials_in_args(args);
-  if (server_creds != nullptr && server_creds->type() == kCredentialsTypeXds) {
+  if (server_creds != nullptr &&
+      server_creds->type() == XdsServerCredentials::Type()) {
     absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> result =
         CreateOrGetXdsCertificateProviderFromFilterChainData(filter_chain);
     if (!result.ok()) {

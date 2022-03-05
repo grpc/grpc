@@ -41,20 +41,14 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
               absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request*) override;
 
-  const char* type() const override {
-    return GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_XDS;
-  }
+  const char* type() const override;
 
  private:
-  static const char kType[];
-
   int CompareImpl(const grpc_tls_certificate_verifier* other) const override;
 
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
   std::string cluster_name_;
 };
-
-extern const char kCredentialsTypeXds[];
 
 class XdsCredentials final : public grpc_channel_credentials {
  public:
@@ -66,7 +60,9 @@ class XdsCredentials final : public grpc_channel_credentials {
       RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
       const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
-  const char* type() const override { return kCredentialsTypeXds; }
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -81,11 +77,14 @@ class XdsServerCredentials final : public grpc_server_credentials {
  public:
   explicit XdsServerCredentials(
       RefCountedPtr<grpc_server_credentials> fallback_credentials)
-      : grpc_server_credentials(kCredentialsTypeXds),
-        fallback_credentials_(std::move(fallback_credentials)) {}
+      : fallback_credentials_(std::move(fallback_credentials)) {}
 
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
       const grpc_channel_args* /* args */) override;
+
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   RefCountedPtr<grpc_server_credentials> fallback_credentials_;

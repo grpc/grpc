@@ -115,8 +115,7 @@ int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
 
 TlsServerCredentials::TlsServerCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsServerCredentials::~TlsServerCredentials() {}
 

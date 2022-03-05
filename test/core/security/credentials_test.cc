@@ -59,6 +59,7 @@
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
@@ -562,8 +563,7 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
                                                  "authorization: Bearer blah");
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
-  GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN) ==
-             0);
+  GPR_ASSERT(strcmp(creds->type(), grpc_access_token_credentials::Type()) == 0);
   /* Check security level. */
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -580,8 +580,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
       grpc_channel_args** /*new_args*/) override {
     GPR_ASSERT(strcmp(type(), "check_channel_oauth2") == 0);
     GPR_ASSERT(call_creds != nullptr);
-    GPR_ASSERT(strcmp(call_creds->type(),
-                      GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN) == 0);
+    GPR_ASSERT(call_creds->type() == grpc_access_token_credentials::Type());
     return nullptr;
   }
 
@@ -640,16 +639,14 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
 
   oauth2_creds->Unref();
   google_iam_creds->Unref();
-  GPR_ASSERT(strcmp(composite_creds->type(),
-                    GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
+  GPR_ASSERT(composite_creds->type() ==
+             grpc_composite_call_credentials::Type());
   const grpc_composite_call_credentials::CallCredentialsList& creds_list =
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
   GPR_ASSERT(creds_list.size() == 2);
-  GPR_ASSERT(strcmp(creds_list[0]->type(),
-                    GRPC_CALL_CREDENTIALS_TYPE_MD_ONLY_TEST) == 0);
-  GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
-             0);
+  GPR_ASSERT(creds_list[0]->type() == grpc_md_only_test_credentials::Type());
+  GPR_ASSERT(creds_list[1]->type() == grpc_google_iam_credentials::Type());
   state->RunRequestMetadataTest(composite_creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   composite_creds->Unref();
@@ -664,15 +661,12 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
       grpc_channel_args** /*new_args*/) override {
     GPR_ASSERT(strcmp(type(), "check_channel_oauth2_google_iam") == 0);
     GPR_ASSERT(call_creds != nullptr);
-    GPR_ASSERT(
-        strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
+    GPR_ASSERT(call_creds->type() == grpc_composite_call_credentials::Type());
     const grpc_composite_call_credentials::CallCredentialsList& creds_list =
         static_cast<const grpc_composite_call_credentials*>(call_creds.get())
             ->inner();
-    GPR_ASSERT(strcmp(creds_list[0]->type(),
-                      GRPC_CALL_CREDENTIALS_TYPE_ACCESS_TOKEN) == 0);
-    GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
-               0);
+    GPR_ASSERT(creds_list[0]->type() == grpc_access_token_credentials::Type());
+    GPR_ASSERT(creds_list[1]->type() == grpc_google_iam_credentials::Type());
     return nullptr;
   }
 
@@ -1349,7 +1343,8 @@ char* encode_and_sign_jwt_should_not_be_called(
 grpc_service_account_jwt_access_credentials* creds_as_jwt(
     grpc_call_credentials* creds) {
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_JWT) == 0);
+  GPR_ASSERT(creds->type() ==
+             grpc_service_account_jwt_access_credentials::Type());
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 

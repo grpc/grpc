@@ -55,7 +55,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
     return inner_creds_->update_arguments(args);
   }
 
-  const char* type() const override { return GRPC_CREDENTIALS_TYPE_COMPOSITE; }
+  const char* type() const override;
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
@@ -98,9 +98,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   const CallCredentialsList& inner() const { return inner_; }
   std::string debug_string() override;
 
-  const char* type() const override {
-    return GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE;
-  }
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

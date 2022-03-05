@@ -18,43 +18,37 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
+
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
 namespace grpc_core {
-namespace {
 
-class InsecureCredentials final : public grpc_channel_credentials {
- public:
-  RefCountedPtr<grpc_channel_security_connector> create_security_connector(
-      RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* /* target_name */, const grpc_channel_args* /* args */,
-      grpc_channel_args** /* new_args */) override {
-    return MakeRefCounted<InsecureChannelSecurityConnector>(
-        Ref(), std::move(call_creds));
-  }
+RefCountedPtr<grpc_channel_security_connector>
+InsecureCredentials::create_security_connector(
+    RefCountedPtr<grpc_call_credentials> call_creds,
+    const char* /* target_name */, const grpc_channel_args* /* args */,
+    grpc_channel_args** /* new_args */) {
+  return MakeRefCounted<InsecureChannelSecurityConnector>(
+      Ref(), std::move(call_creds));
+}
 
-  const char* type() const override { return GRPC_CREDENTIALS_TYPE_INSECURE; }
+const char* InsecureCredentials::Type() { return "Insecure"; }
 
- private:
-  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
-    // All insecure credentials objects should compare equal.
-    return 0;
-  }
-};
+int InsecureCredentials::cmp_impl(
+    const grpc_channel_credentials* /* other */) const {
+  // All insecure credentials objects should compare equal.
+  return 0;
+}
 
-class InsecureServerCredentials final : public grpc_server_credentials {
- public:
-  InsecureServerCredentials()
-      : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_INSECURE) {}
+RefCountedPtr<grpc_server_security_connector>
+InsecureServerCredentials::create_security_connector(
+    const grpc_channel_args* /* args */) {
+  return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
+}
 
-  RefCountedPtr<grpc_server_security_connector> create_security_connector(
-      const grpc_channel_args* /* args */) override {
-    return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
-  }
-};
+const char* InsecureServerCredentials::Type() { return "Insecure"; }
 
-}  // namespace
 }  // namespace grpc_core
 
 grpc_channel_credentials* grpc_insecure_credentials_create() {

@@ -138,6 +138,10 @@ grpc_channel_args* grpc_google_default_channel_credentials::update_arguments(
   return updated;
 }
 
+const char* grpc_google_default_channel_credentials::type() const {
+  return "GoogleDefault";
+}
+
 static void on_metadata_server_detection_http_response(
     void* user_data, grpc_error_handle error) {
   metadata_server_detector* detector =

@@ -36,11 +36,15 @@ grpc_local_credentials::create_security_connector(
       this->Ref(), std::move(request_metadata_creds), args, target_name);
 }
 
+const char* grpc_local_credentials::type() const { return "Local"; }
+
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_credentials::create_security_connector(
     const grpc_channel_args* /* args */) {
   return grpc_local_server_security_connector_create(this->Ref());
 }
+
+const char* grpc_local_server_credentials::type() const { return "Local"; }
 
 grpc_local_credentials::grpc_local_credentials(
     grpc_local_connect_type connect_type)
@@ -53,8 +57,7 @@ grpc_channel_credentials* grpc_local_credentials_create(
 
 grpc_local_server_credentials::grpc_local_server_credentials(
     grpc_local_connect_type connect_type)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_LOCAL),
-      connect_type_(connect_type) {}
+    : connect_type_(connect_type) {}
 
 grpc_server_credentials* grpc_local_server_credentials_create(
     grpc_local_connect_type connect_type) {

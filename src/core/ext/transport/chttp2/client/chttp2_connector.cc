@@ -41,6 +41,7 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -438,7 +439,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
       (target, fd, creds, args));
   // For now, we only support insecure channel credentials.
   if (creds == nullptr ||
-      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
+      creds->type() == grpc_core::InsecureServerCredentials::Type()) {
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INTERNAL,
         "Failed to create client channel due to invalid creds");

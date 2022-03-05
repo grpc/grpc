@@ -70,9 +70,9 @@ class grpc_md_only_test_credentials : public grpc_call_credentials {
 
   std::string debug_string() override { return "MD only Test Credentials"; }
 
-  const char* type() const override {
-    return GRPC_CALL_CREDENTIALS_TYPE_MD_ONLY_TEST;
-  }
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

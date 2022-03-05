@@ -2759,9 +2759,11 @@ add_library(grpc_unsecure
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/fake/fake_credentials.cc
+  src/core/lib/security/credentials/insecure/insecure_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/tls/tls_utils.cc
   src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_linux.cc
   src/core/lib/security/security_connector/security_connector.cc
@@ -2815,6 +2817,7 @@ add_library(grpc_unsecure
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
@@ -3662,9 +3665,6 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
-  src/core/lib/security/credentials/insecure/insecure_credentials.cc
-  src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
-  src/core/tsi/local_transport_security.cc
   src/cpp/client/channel_cc.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc

@@ -36,7 +36,9 @@ class grpc_google_iam_credentials : public grpc_call_credentials {
 
   std::string debug_string() override { return debug_string_; }
 
-  const char* type() const override { return GRPC_CALL_CREDENTIALS_TYPE_IAM; }
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

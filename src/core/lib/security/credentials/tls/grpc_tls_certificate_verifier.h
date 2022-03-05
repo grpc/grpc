@@ -34,11 +34,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-// Known grpc_tls_certificate_verifier types
-#define GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_EXTERNAL "External"
-#define GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_HOSTNAME "Hostname"
-#define GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_XDS "Xds"
-
 // An abstraction of the verifier that all verifier subclasses should extend.
 struct grpc_tls_certificate_verifier
     : public grpc_core::RefCounted<grpc_tls_certificate_verifier> {
@@ -62,7 +57,7 @@ struct grpc_tls_certificate_verifier
   // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return CompareImpl(other);
   }
@@ -75,8 +70,8 @@ struct grpc_tls_certificate_verifier
 
  private:
   // Implementation for `Compare` method intended to be overridden by
-  // subclasses. Only invoked if `type()` and `other->type()` compare equal as
-  // strings.
+  // subclasses. Only invoked if `type()` and `other->type()` point to the same
+  // string.
   virtual int CompareImpl(const grpc_tls_certificate_verifier* other) const = 0;
 };
 
@@ -87,7 +82,8 @@ namespace grpc_core {
 class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
   explicit ExternalCertificateVerifier(
-      grpc_tls_certificate_verifier_external* external_verifier);
+      grpc_tls_certificate_verifier_external* external_verifier)
+      : external_verifier_(external_verifier);
 
   ~ExternalCertificateVerifier() override {
     if (external_verifier_->destruct != nullptr) {
@@ -103,9 +99,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
     external_verifier_->cancel(external_verifier_->user_data, request);
   }
 
-  const char* type() const override {
-    return GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_EXTERNAL;
-  }
+  const char* type() const override { return "External"; }
 
  private:
   int CompareImpl(const grpc_tls_certificate_verifier* other) const override {
@@ -135,9 +129,7 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
               absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
-  const char* type() const override {
-    return GRPC_TLS_CERTIFICATE_VERIFIER_TYPE_HOSTNAME;
-  }
+  const char* type() const override { return "Hostname"; }
 
  private:
   int CompareImpl(

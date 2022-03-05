@@ -37,9 +37,9 @@ class grpc_local_credentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  grpc_local_connect_type connect_type() const { return connect_type_; }
+  const char* type() const override;
 
-  const char* type() const override { return GRPC_CREDENTIALS_TYPE_LOCAL; }
+  grpc_local_connect_type connect_type() const { return connect_type_; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -59,6 +59,8 @@ class grpc_local_server_credentials final : public grpc_server_credentials {
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /* args */) override;
+
+  const char* type() const override;
 
   grpc_local_connect_type connect_type() const { return connect_type_; }
 

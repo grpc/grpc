@@ -52,7 +52,9 @@ class grpc_service_account_jwt_access_credentials
             static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
   };
 
-  const char* type() const override { return GRPC_CALL_CREDENTIALS_TYPE_JWT; }
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

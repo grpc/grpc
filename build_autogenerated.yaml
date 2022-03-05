@@ -982,6 +982,7 @@ libs:
   - src/core/lib/security/credentials/fake/fake_credentials.h
   - src/core/lib/security/credentials/google_default/google_default_credentials.h
   - src/core/lib/security/credentials/iam/iam_credentials.h
+  - src/core/lib/security/credentials/insecure/insecure_credentials.h
   - src/core/lib/security/credentials/jwt/json_token.h
   - src/core/lib/security/credentials/jwt/jwt_credentials.h
   - src/core/lib/security/credentials/jwt/jwt_verifier.h
@@ -2137,9 +2138,11 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/fake/fake_credentials.h
+  - src/core/lib/security/credentials/insecure/insecure_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/tls/tls_utils.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
   - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/security_connector.h
@@ -2188,6 +2191,7 @@ libs:
   - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
   - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
@@ -2440,9 +2444,11 @@ libs:
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/fake/fake_credentials.cc
+  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/tls/tls_utils.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
+  - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/security_connector.cc
@@ -2496,6 +2502,7 @@ libs:
   - src/core/plugin_registry/grpc_plugin_registry.cc
   - src/core/plugin_registry/grpc_plugin_registry_noextra.cc
   - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -3107,8 +3114,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   headers:
-  - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
-  - src/core/tsi/local_transport_security.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3117,9 +3122,6 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
-  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
-  - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
-  - src/core/tsi/local_transport_security.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc

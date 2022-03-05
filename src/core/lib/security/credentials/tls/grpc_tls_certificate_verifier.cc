@@ -34,10 +34,6 @@ namespace grpc_core {
 // ExternalCertificateVerifier
 //
 
-ExternalCertificateVerifier::ExternalCertificateVerifier(
-    grpc_tls_certificate_verifier_external* external_verifier)
-    : external_verifier_(external_verifier) {}
-
 bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)> callback, absl::Status* sync_status) {

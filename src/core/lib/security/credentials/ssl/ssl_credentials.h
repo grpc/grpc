@@ -37,9 +37,9 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  const char* type() const override {
-    return GRPC_CHANNEL_CREDENTIALS_TYPE_SSL;
-  }
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
   // TODO(mattstev): Plumb to wrapped languages. Until then, setting the TLS
   // version should be done for testing purposes only.
@@ -79,6 +79,10 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /* args */) override;
+
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
   bool has_cert_config_fetcher() const {
     return certificate_config_fetcher_.cb != nullptr;
