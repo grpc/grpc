@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CALL_IO_H
-#define CALL_IO_H
+#ifndef GRPC_CORE_LIB_PROMISE_CALL_PUSH_PULL_H
+#define GRPC_CORE_LIB_PROMISE_CALL_PUSH_PULL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -141,4 +141,4 @@ promise_detail::CallPushPull<FMain, FPush, FPull> CallPushPull(FMain f_main,
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_PROMISE_CALL_PUSH_PULL_H
