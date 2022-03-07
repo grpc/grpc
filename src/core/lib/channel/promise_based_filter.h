@@ -76,18 +76,17 @@ enum class FilterEndpoint {
   kServer,
 };
 
+// Flags for MakePromiseBasedFilter.
+static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
+
 namespace promise_filter_detail {
 
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
  public:
-  BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args)
-      : call_stack_(args->call_stack),
-        elem_(elem),
-        arena_(args->arena),
-        call_combiner_(args->call_combiner),
-        deadline_(args->deadline),
-        context_(args->context) {}
+  BaseCallData(grpc_call_element* elem, const grpc_call_element_args* args,
+               uint8_t flags);
+  ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) { pollent_ = pollent; }
 
@@ -130,6 +129,9 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* call_combiner() const { return call_combiner_; }
   Timestamp deadline() const { return deadline_; }
   grpc_call_stack* call_stack() const { return call_stack_; }
+  Latch<ServerMetadata*>* server_initial_metadata_latch() const {
+    return server_initial_metadata_latch_;
+  }
 
  private:
   // Wakeable implementation.
@@ -146,11 +148,13 @@ class BaseCallData : public Activity, private Wakeable {
   CallFinalization finalization_;
   grpc_call_context_element* const context_;
   grpc_polling_entity* pollent_ = nullptr;
+  Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
 };
 
 class ClientCallData : public BaseCallData {
  public:
-  ClientCallData(grpc_call_element* elem, const grpc_call_element_args* args);
+  ClientCallData(grpc_call_element* elem, const grpc_call_element_args* args,
+                 uint8_t flags);
   ~ClientCallData() override;
 
   // Activity implementation.
@@ -246,7 +250,8 @@ class ClientCallData : public BaseCallData {
 
 class ServerCallData : public BaseCallData {
  public:
-  ServerCallData(grpc_call_element* elem, const grpc_call_element_args* args);
+  ServerCallData(grpc_call_element* elem, const grpc_call_element_args* args,
+                 uint8_t flags);
   ~ServerCallData() override;
 
   // Activity implementation.
@@ -352,7 +357,7 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public ServerCallData {
 // };
 // TODO(ctiller): allow implementing get_channel_info, start_transport_op in
 // some way on ChannelFilter.
-template <typename F, FilterEndpoint kEndpoint>
+template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value, grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<F, kEndpoint>;
@@ -379,7 +384,7 @@ MakePromiseBasedFilter(const char* name) {
       sizeof(CallData),
       // init_call_elem
       [](grpc_call_element* elem, const grpc_call_element_args* args) {
-        new (elem->call_data) CallData(elem, args);
+        new (elem->call_data) CallData(elem, args, kFlags);
         return GRPC_ERROR_NONE;
       },
       // set_pollset_or_pollset_set

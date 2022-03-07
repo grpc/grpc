@@ -24,6 +24,25 @@ namespace promise_filter_detail {
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData
 
+BaseCallData::BaseCallData(grpc_call_element* elem,
+                           const grpc_call_element_args* args, uint8_t flags)
+    : call_stack_(args->call_stack),
+      elem_(elem),
+      arena_(args->arena),
+      call_combiner_(args->call_combiner),
+      deadline_(args->deadline),
+      context_(args->context) {
+  if (flags & kFilterExaminesServerInitialMetadata) {
+    server_initial_metadata_latch_ = arena_->New<Latch<ServerMetadata*>>();
+  }
+}
+
+BaseCallData::~BaseCallData() {
+  if (server_initial_metadata_latch_ != nullptr) {
+    server_initial_metadata_latch_->~Latch();
+  }
+}
+
 // We don't form ActivityPtr's to this type, and consequently don't need
 // Orphan().
 void BaseCallData::Orphan() { abort(); }
@@ -53,8 +72,9 @@ void BaseCallData::Drop() { GRPC_CALL_STACK_UNREF(call_stack_, "waker"); }
 // ClientCallData
 
 ClientCallData::ClientCallData(grpc_call_element* elem,
-                               const grpc_call_element_args* args)
-    : BaseCallData(elem, args) {
+                               const grpc_call_element_args* args,
+                               uint8_t flags)
+    : BaseCallData(elem, args, flags) {
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
@@ -86,6 +106,12 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     Cancel(batch->payload->cancel_stream.cancel_error);
     grpc_call_next_op(elem(), batch);
     return;
+  }
+
+  if (server_initial_metadata_latch() != nullptr &&
+      batch->recv_initial_metadata) {
+    server_initial_metadata_latch()->Set(
+        batch->payload->recv_initial_metadata.recv_initial_metadata);
   }
 
   // send_initial_metadata: seeing this triggers the start of the promise part
@@ -179,7 +205,7 @@ void ClientCallData::StartPromise() {
         CallArgs{
             WrapMetadata(send_initial_metadata_batch_->payload
                              ->send_initial_metadata.send_initial_metadata),
-            nullptr},
+            server_initial_metadata_latch()},
         [this](CallArgs call_args) {
           return MakeNextPromise(std::move(call_args));
         });
@@ -426,8 +452,9 @@ void ClientCallData::OnWakeup() {
 // ServerCallData
 
 ServerCallData::ServerCallData(grpc_call_element* elem,
-                               const grpc_call_element_args* args)
-    : BaseCallData(elem, args) {
+                               const grpc_call_element_args* args,
+                               uint8_t flags)
+    : BaseCallData(elem, args, flags) {
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_,
                     RecvInitialMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
@@ -589,11 +616,12 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   ScopedContext context(this);
   // Construct the promise.
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
-  promise_ = filter->MakeCallPromise(
-      CallArgs{WrapMetadata(recv_initial_metadata_), nullptr},
-      [this](CallArgs call_args) {
-        return MakeNextPromise(std::move(call_args));
-      });
+  promise_ =
+      filter->MakeCallPromise(CallArgs{WrapMetadata(recv_initial_metadata_),
+                                       server_initial_metadata_latch()},
+                              [this](CallArgs call_args) {
+                                return MakeNextPromise(std::move(call_args));
+                              });
   // Poll once.
   bool own_error = false;
   WakeInsideCombiner([&error, &own_error](grpc_error_handle new_error) {
