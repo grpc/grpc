@@ -171,11 +171,11 @@ def label_significance_on_pr(name, change, labels = _CHANGE_LABELS):
       name: The name of the label.
       value: A str in Markdown to be used as the detail information of the label.
     """
-    if change < min(list(_CHANGE_LABELS.keys())):
-        change = min(list(_CHANGE_LABELS.keys()))
-    if change > max(list(_CHANGE_LABELS.keys())):
-        change = max(list(_CHANGE_LABELS.keys()))
-    value = _CHANGE_LABELS[change]
+    if change < min(list(labels.keys())):
+        change = min(list(labels.keys()))
+    if change > max(list(labels.keys())):
+        change = max(list(labels.keys()))
+    value = labels[change]
     if 'KOKORO_GIT_COMMIT' not in os.environ:
         print('Missing KOKORO_GIT_COMMIT env var: not checking')
         return
