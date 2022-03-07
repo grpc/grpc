@@ -43,6 +43,7 @@ namespace grpc_binder {
 namespace {
 
 const int32_t kWireFormatVersion = 1;
+const char kAuthorityMetadataKey[] = ":authority";
 
 absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
   int num_header;
@@ -342,8 +343,23 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
       return initial_metadata_or_error.status();
     }
     if (!is_client_) {
+      // In BinderChannel wireformat specification, path is not encoded as part
+      // of metadata. So we extract the path and turn it into metadata here
+      // (this is what core API layer expects).
       initial_metadata_or_error->emplace_back(":path",
                                               std::string("/") + method_ref);
+      // Since authority metadata is not part of BinderChannel wireformat
+      // specification, and gRPC core API layer expects the presence of
+      // authority for message sent from client to server, we add one if
+      // missing (it will be missing if client grpc-java).
+      bool has_authority = false;
+      for (const auto& p : *initial_metadata_or_error) {
+        if (p.first == kAuthorityMetadataKey) has_authority = true;
+      }
+      if (!has_authority) {
+        initial_metadata_or_error->emplace_back(kAuthorityMetadataKey,
+                                                "binder.authority");
+      }
     }
     transport_stream_receiver_->NotifyRecvInitialMetadata(
         code, *initial_metadata_or_error);
