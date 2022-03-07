@@ -92,7 +92,8 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   // of this filter.
   if (batch->send_initial_metadata) {
     // If we're already cancelled, just terminate the batch.
-    if (send_initial_state_ == SendInitialState::kCancelled) {
+    if (send_initial_state_ == SendInitialState::kCancelled ||
+        recv_trailing_state_ == RecvTrailingState::kCancelled) {
       grpc_transport_stream_op_batch_finish_with_failure(
           batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
       return;
@@ -116,6 +117,11 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   // recv_trailing_metadata *without* send_initial_metadata: hook it so we can
   // respond to it, and push it down.
   if (batch->recv_trailing_metadata) {
+    if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
+      return;
+    }
     GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
     recv_trailing_state_ = RecvTrailingState::kForwarded;
     HookRecvTrailingMetadata(batch);
@@ -301,48 +307,41 @@ void ClientCallData::WakeInsideCombiner() {
         promise_ = ArenaPromise<TrailingMetadata>();
         auto* md = UnwrapMetadata(std::move(*r));
         bool destroy_md = true;
-        switch (recv_trailing_state_) {
-          case RecvTrailingState::kComplete:
-            if (recv_trailing_metadata_ != md) {
-              *recv_trailing_metadata_ = std::move(*md);
-            } else {
-              destroy_md = false;
-            }
-            recv_trailing_state_ = RecvTrailingState::kResponded;
-            call_closure =
-                absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
-            break;
-          case RecvTrailingState::kQueued:
-          case RecvTrailingState::kForwarded: {
-            GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
-                       GRPC_STATUS_OK);
-            grpc_error_handle error = grpc_error_set_int(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "early return from promise based filter"),
-                GRPC_ERROR_INT_GRPC_STATUS,
-                *md->get_pointer(GrpcStatusMetadata()));
-            if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
-              error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                         message->as_string_view());
-            }
-            if (recv_trailing_state_ == RecvTrailingState::kQueued) {
-              GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-              send_initial_state_ = SendInitialState::kCancelled;
-              cancel_send_initial_metadata_error = error;
-            } else {
-              call_combiner()->Cancel(GRPC_ERROR_REF(error));
-              forward_batch = grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                  [](void*, grpc_error_handle) {}, nullptr, nullptr));
-              forward_batch->cancel_stream = true;
-              forward_batch->payload->cancel_stream.cancel_error = error;
-            }
-            recv_trailing_state_ = RecvTrailingState::kCancelled;
-          } break;
-          case RecvTrailingState::kInitial:
-            abort();  // unimplemented
-          case RecvTrailingState::kResponded:
-          case RecvTrailingState::kCancelled:
-            abort();  // unreachable
+        if (recv_trailing_state_ == RecvTrailingState::kComplete) {
+          if (recv_trailing_metadata_ != md) {
+            *recv_trailing_metadata_ = std::move(*md);
+          } else {
+            destroy_md = false;
+          }
+          recv_trailing_state_ = RecvTrailingState::kResponded;
+          call_closure =
+              absl::exchange(original_recv_trailing_metadata_ready_, nullptr);
+        } else {
+          GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
+          grpc_error_handle error =
+              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                     "early return from promise based filter"),
+                                 GRPC_ERROR_INT_GRPC_STATUS,
+                                 *md->get_pointer(GrpcStatusMetadata()));
+          if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
+            error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                       message->as_string_view());
+          }
+          GRPC_ERROR_UNREF(cancelled_error_);
+          cancelled_error_ = GRPC_ERROR_REF(error);
+          if (send_initial_state_ == SendInitialState::kQueued) {
+            send_initial_state_ = SendInitialState::kCancelled;
+            cancel_send_initial_metadata_error = error;
+          } else {
+            GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial ||
+                       recv_trailing_state_ == RecvTrailingState::kForwarded);
+            call_combiner()->Cancel(GRPC_ERROR_REF(error));
+            forward_batch = grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+                [](void*, grpc_error_handle) {}, nullptr, nullptr));
+            forward_batch->cancel_stream = true;
+            forward_batch->payload->cancel_stream.cancel_error = error;
+          }
+          recv_trailing_state_ = RecvTrailingState::kCancelled;
         }
         if (destroy_md) {
           md->~grpc_metadata_batch();
