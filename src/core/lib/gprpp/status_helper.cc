@@ -20,6 +20,8 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <type_traits>
+
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -218,9 +220,23 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
+#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1910
+  // Abseil has a workaround for MSVC 2015 which prevents absl::Time
+  // from being is_trivially_copyable but it's still safe to be
+  // memcopied.
+#elif defined(__GNUG__) && __GNUC__ < 5
+  // GCC versions < 5 do not support std::is_trivially_copyable
+#else
+  static_assert(std::is_trivially_copyable<absl::Time>::value,
+                "absl::Time needs to be able to be memcopied");
+#endif
+  // This is required not to get uninitialized padding of absl::Time.
+  alignas(absl::Time) char buf[sizeof(time)] = {
+      0,
+  };
+  new (buf) absl::Time(time);
   status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&time), sizeof(time))));
+                     absl::Cord(absl::string_view(buf, sizeof(time))));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,

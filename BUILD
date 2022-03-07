@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gravity"  # @unused
 
-core_version = "22.0.0"  # @unused
+core_version = "23.0.0"  # @unused
 
 version = "1.45.0-dev"  # @unused
 
@@ -1054,6 +1054,19 @@ grpc_cc_library(
         "src/core/lib/promise/poll.h",
     ],
     deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "call_push_pull",
+    hdrs = ["src/core/lib/promise/call_push_pull.h"],
+    language = "c++",
+    deps = [
+        "bitset",
+        "construct_destruct",
+        "poll",
+        "promise_like",
+        "promise_status",
+    ],
 )
 
 grpc_cc_library(
@@ -2000,6 +2013,7 @@ grpc_cc_library(
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/backoff/backoff.h",
+        "src/core/lib/channel/call_finalization.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/promise_based_filter.h",

@@ -345,52 +345,6 @@ static const NSTimeInterval kInvertedTimeout = 2;
   [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
 }
 
-- (void)testIdempotentProtoRPC {
-  __weak XCTestExpectation *response = [self expectationWithDescription:@"Expected response."];
-  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
-
-  RMTSimpleRequest *request = [RMTSimpleRequest message];
-  request.responseSize = kSimpleDataLength;
-  request.fillUsername = YES;
-  request.fillOauthScope = YES;
-  GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
-                                          path:kUnaryCallMethod.HTTPPath
-                                        safety:GRPCCallSafetyIdempotentRequest];
-
-  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.transportType = GRPCTransportTypeInsecure;
-  GRPCCall2 *call = [[GRPCCall2 alloc]
-      initWithRequestOptions:requestOptions
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                 messageCallback:^(id message) {
-                                   NSData *data = (NSData *)message;
-                                   XCTAssertNotNil(data, @"nil value received as response.");
-                                   XCTAssertGreaterThan(data.length, 0,
-                                                        @"Empty response received.");
-                                   RMTSimpleResponse *responseProto =
-                                       [RMTSimpleResponse parseFromData:data error:NULL];
-                                   // We expect empty strings, not nil:
-                                   XCTAssertNotNil(responseProto.username,
-                                                   @"Response's username is nil.");
-                                   XCTAssertNotNil(responseProto.oauthScope,
-                                                   @"Response's OAuth scope is nil.");
-                                   [response fulfill];
-                                 }
-                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                   XCTAssertNil(error, @"Finished with unexpected error: %@",
-                                                error);
-                                   [completion fulfill];
-                                 }]
-                 callOptions:options];
-
-  [call start];
-  [call writeData:[request data]];
-  [call finish];
-
-  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
-}
-
 - (void)testTimeout {
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
