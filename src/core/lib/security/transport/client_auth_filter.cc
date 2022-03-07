@@ -152,7 +152,7 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
   return TrySeq(
       creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
       Capture(
-          [](CallArgs* rest_of_args, ClientMetadata new_metadata) {
+          [](CallArgs* rest_of_args, ClientMetadataHandle new_metadata) {
             rest_of_args->client_initial_metadata = std::move(new_metadata);
             return Immediate<absl::StatusOr<CallArgs>>(
                 absl::StatusOr<CallArgs>(std::move(*rest_of_args)));
@@ -160,7 +160,7 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
           std::move(call_args)));
 }
 
-ArenaPromise<ServerMetadata> ClientAuthFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto* legacy_ctx = GetContext<grpc_call_context_element>();
   if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {

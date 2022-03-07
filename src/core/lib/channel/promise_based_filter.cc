@@ -162,7 +162,7 @@ void ClientCallData::Cancel(grpc_error_handle error) {
   GRPC_ERROR_UNREF(cancelled_error_);
   cancelled_error_ = GRPC_ERROR_REF(error);
   // Stop running the promise.
-  promise_ = ArenaPromise<ServerMetadata>();
+  promise_ = ArenaPromise<ServerMetadataHandle>();
   // If we have an op queued, fail that op.
   // Record what we've done.
   if (send_initial_state_ == SendInitialState::kQueued) {
@@ -231,13 +231,13 @@ void ClientCallData::HookRecvTrailingMetadata(
 // Effectively:
 //   - put the modified initial metadata into the batch to be sent down.
 //   - return a wrapper around PollTrailingMetadata as the promise.
-ArenaPromise<ServerMetadata> ClientCallData::MakeNextPromise(
+ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     CallArgs call_args) {
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
   send_initial_metadata_batch_->payload->send_initial_metadata
       .send_initial_metadata =
       UnwrapMetadata(std::move(call_args.client_initial_metadata));
-  return ArenaPromise<ServerMetadata>(
+  return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
 }
 
@@ -245,7 +245,7 @@ ArenaPromise<ServerMetadata> ClientCallData::MakeNextPromise(
 // First poll: send the send_initial_metadata op down the stack.
 // All polls: await receiving the trailing metadata, then return it to the
 // application.
-Poll<ServerMetadata> ClientCallData::PollTrailingMetadata() {
+Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
   if (send_initial_state_ == SendInitialState::kQueued) {
     // First poll: pass the send_initial_metadata op down the stack.
     GPR_ASSERT(send_initial_metadata_batch_ != nullptr);
@@ -303,7 +303,7 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   WakeInsideCombiner();
 }
 
-// Given an error, fill in ServerMetadata to represent that error.
+// Given an error, fill in ServerMetadataHandle to represent that error.
 void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
                                         grpc_error_handle error) {
   grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
@@ -327,13 +327,13 @@ void ClientCallData::WakeInsideCombiner() {
     case SendInitialState::kQueued:
     case SendInitialState::kForwarded: {
       // Poll the promise once since we're waiting for it.
-      Poll<ServerMetadata> poll;
+      Poll<ServerMetadataHandle> poll;
       {
         ScopedActivity activity(this);
         poll = promise_();
       }
-      if (auto* r = absl::get_if<ServerMetadata>(&poll)) {
-        promise_ = ArenaPromise<ServerMetadata>();
+      if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+        promise_ = ArenaPromise<ServerMetadataHandle>();
         auto* md = UnwrapMetadata(std::move(*r));
         bool destroy_md = true;
         if (recv_trailing_state_ == RecvTrailingState::kComplete) {
@@ -535,7 +535,7 @@ void ServerCallData::Cancel(grpc_error_handle error) {
   GRPC_ERROR_UNREF(cancelled_error_);
   cancelled_error_ = GRPC_ERROR_REF(error);
   // Stop running the promise.
-  promise_ = ArenaPromise<ServerMetadata>();
+  promise_ = ArenaPromise<ServerMetadataHandle>();
   if (send_trailing_state_ == SendTrailingState::kQueued) {
     send_trailing_state_ = SendTrailingState::kCancelled;
     struct FailBatch : public grpc_closure {
@@ -564,20 +564,20 @@ void ServerCallData::Cancel(grpc_error_handle error) {
 // Effectively:
 //   - put the modified initial metadata into the batch being sent up.
 //   - return a wrapper around PollTrailingMetadata as the promise.
-ArenaPromise<ServerMetadata> ServerCallData::MakeNextPromise(
+ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
     CallArgs call_args) {
   GPR_ASSERT(recv_initial_state_ == RecvInitialState::kComplete);
   GPR_ASSERT(UnwrapMetadata(std::move(call_args.client_initial_metadata)) ==
              recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
-  return ArenaPromise<ServerMetadata>(
+  return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
 }
 
 // Wrapper to make it look like we're calling the next filter as a promise.
 // All polls: await sending the trailing metadata, then foward it down the
 // stack.
-Poll<ServerMetadata> ServerCallData::PollTrailingMetadata() {
+Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
   switch (send_trailing_state_) {
     case SendTrailingState::kInitial:
       return Pending{};
@@ -641,12 +641,12 @@ void ServerCallData::WakeInsideCombiner(
   bool forward_send_trailing_metadata = false;
   is_polling_ = true;
   if (recv_initial_state_ == RecvInitialState::kComplete) {
-    Poll<ServerMetadata> poll;
+    Poll<ServerMetadataHandle> poll;
     {
       ScopedActivity activity(this);
       poll = promise_();
     }
-    if (auto* r = absl::get_if<ServerMetadata>(&poll)) {
+    if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
       auto* md = UnwrapMetadata(std::move(*r));
       bool destroy_md = true;
       switch (send_trailing_state_) {

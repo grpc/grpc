@@ -72,7 +72,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
       CallArgs{
-          ClientMetadata::TestOnlyWrap(&initial_metadata_batch),
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
           nullptr,
       },
       [&](CallArgs call_args) {
@@ -81,12 +81,14 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
                       ->as_string_view(),
                   "foo.test.google.au");
         seen = true;
-        return ArenaPromise<ServerMetadata>([&]() -> Poll<ServerMetadata> {
-          return ServerMetadata::TestOnlyWrap(&trailing_metadata_batch);
-        });
+        return ArenaPromise<ServerMetadataHandle>(
+            [&]() -> Poll<ServerMetadataHandle> {
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
+            });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadata>(&result) != nullptr);
+  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
   EXPECT_TRUE(seen);
 }
 
@@ -104,7 +106,7 @@ TEST(ClientAuthorityFilterTest,
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
       CallArgs{
-          ClientMetadata::TestOnlyWrap(&initial_metadata_batch),
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
           nullptr,
       },
       [&](CallArgs call_args) {
@@ -113,12 +115,14 @@ TEST(ClientAuthorityFilterTest,
                       ->as_string_view(),
                   "bar.test.google.au");
         seen = true;
-        return ArenaPromise<ServerMetadata>([&]() -> Poll<ServerMetadata> {
-          return ServerMetadata::TestOnlyWrap(&trailing_metadata_batch);
-        });
+        return ArenaPromise<ServerMetadataHandle>(
+            [&]() -> Poll<ServerMetadataHandle> {
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
+            });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<ServerMetadata>(&result) != nullptr);
+  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
   EXPECT_TRUE(seen);
 }
 

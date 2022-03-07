@@ -49,9 +49,9 @@ grpc_service_account_jwt_access_credentials::
   gpr_mu_destroy(&cache_mu_);
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_service_account_jwt_access_credentials::GetRequestMetadata(
-    grpc_core::ClientMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);

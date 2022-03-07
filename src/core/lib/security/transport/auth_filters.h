@@ -41,7 +41,7 @@ class ClientAuthFilter final : public ChannelFilter {
                                                  ChannelFilter::Args);
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadata> MakeCallPromise(
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:

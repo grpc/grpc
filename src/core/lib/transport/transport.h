@@ -100,30 +100,32 @@ class MetadataHandle {
 
 // Server metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadata = MetadataHandle<grpc_metadata_batch>;
+using ServerMetadata = grpc_metadata_batch;
+using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
 
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
-inline bool IsStatusOk(const ServerMetadata& m) {
+inline bool IsStatusOk(const ServerMetadataHandle& m) {
   return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
          GRPC_STATUS_OK;
 }
 
 // Client initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientMetadata = MetadataHandle<grpc_metadata_batch>;
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
 
 // Server initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadata = MetadataHandle<grpc_metadata_batch>;
+using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
 
 struct CallArgs {
-  ClientMetadata client_initial_metadata;
+  ClientMetadataHandle client_initial_metadata;
   Latch<ServerMetadata*>* server_initial_metadata;
 };
 
 using NextPromiseFactory =
-    std::function<ArenaPromise<ServerMetadata>(CallArgs)>;
+    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
 
 }  // namespace grpc_core
 
