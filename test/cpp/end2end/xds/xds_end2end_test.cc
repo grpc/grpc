@@ -2439,6 +2439,18 @@ TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   WaitForBackend(1);
 }
 
+TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
+  const std::string kErrorMessage = "test forced ADS stream failure";
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  auto status = SendRpc();
+  gpr_log(GPR_INFO,
+          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
+          status.error_code(), status.error_message().c_str());
+  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+}
+
 using GlobalXdsClientTest = BasicTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
