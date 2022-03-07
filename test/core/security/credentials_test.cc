@@ -449,15 +449,15 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     md_.Set(HttpPathMetadata(), Slice::FromStaticString(path));
     activity_ = MakeActivity(
         [this, creds] {
-          return Seq(
-              creds->GetRequestMetadata(ClientMetadata::TestOnlyWrap(&md_),
-                                        &get_request_metadata_args_),
-              [this](absl::StatusOr<ClientMetadata> metadata) {
-                if (metadata.ok()) {
-                  GPR_ASSERT(metadata->get() == &md_);
-                }
-                return metadata.status();
-              });
+          return Seq(creds->GetRequestMetadata(
+                         ClientMetadataHandle::TestOnlyWrap(&md_),
+                         &get_request_metadata_args_),
+                     [this](absl::StatusOr<ClientMetadataHandle> metadata) {
+                       if (metadata.ok()) {
+                         GPR_ASSERT(metadata->get() == &md_);
+                       }
+                       return metadata.status();
+                     });
         },
         ExecCtxWakeupScheduler(),
         [self](absl::Status status) mutable {
@@ -1771,8 +1771,8 @@ struct fake_call_creds : public grpc_call_credentials {
  public:
   fake_call_creds() : grpc_call_credentials("fake") {}
 
-  ArenaPromise<absl::StatusOr<ClientMetadata>> GetRequestMetadata(
-      ClientMetadata initial_metadata,
+  ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
+      ClientMetadataHandle initial_metadata,
       const grpc_call_credentials::GetRequestMetadataArgs*) override {
     initial_metadata->Append("foo", Slice::FromStaticString("oof"),
                              [](absl::string_view, const Slice&) { abort(); });

@@ -31,9 +31,9 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_google_iam_credentials::GetRequestMetadata(
-    grpc_core::ClientMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   if (token_.has_value()) {
     initial_metadata->Append(

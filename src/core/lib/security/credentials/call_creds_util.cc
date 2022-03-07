@@ -31,7 +31,7 @@ struct ServiceUrlAndMethod {
 };
 
 ServiceUrlAndMethod MakeServiceUrlAndMethod(
-    const ClientMetadata& initial_metadata,
+    const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto service =
       initial_metadata->get_pointer(HttpPathMetadata())->as_string_view();
@@ -65,13 +65,13 @@ ServiceUrlAndMethod MakeServiceUrlAndMethod(
 }  // namespace
 
 std::string MakeJwtServiceUrl(
-    const ClientMetadata& initial_metadata,
+    const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   return MakeServiceUrlAndMethod(initial_metadata, args).service_url;
 }
 
 grpc_auth_metadata_context MakePluginAuthMetadataContext(
-    const ClientMetadata& initial_metadata,
+    const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto fields = MakeServiceUrlAndMethod(initial_metadata, args);
   grpc_auth_metadata_context ctx;

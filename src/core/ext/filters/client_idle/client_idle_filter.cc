@@ -76,7 +76,7 @@ class ClientIdleFilter : public ChannelFilter {
   ClientIdleFilter& operator=(ClientIdleFilter&&) = default;
 
   // Construct a promise for one call.
-  ArenaPromise<ServerMetadata> MakeCallPromise(
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
   bool StartTransportOp(grpc_transport_op* op) override;
@@ -115,13 +115,13 @@ absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
 }
 
 // Construct a promise for one call.
-ArenaPromise<ServerMetadata> ClientIdleFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> ClientIdleFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   using Decrementer = std::unique_ptr<ClientIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
-  return ArenaPromise<ServerMetadata>(
-      Capture([](Decrementer*, ArenaPromise<ServerMetadata>* next)
-                  -> Poll<ServerMetadata> { return (*next)(); },
+  return ArenaPromise<ServerMetadataHandle>(
+      Capture([](Decrementer*, ArenaPromise<ServerMetadataHandle>* next)
+                  -> Poll<ServerMetadataHandle> { return (*next)(); },
               Decrementer(this), next_promise_factory(std::move(call_args))));
 }
 
