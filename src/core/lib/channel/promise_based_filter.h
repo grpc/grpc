@@ -228,6 +228,8 @@ class ClientCallData : public BaseCallData {
   ArenaPromise<ServerMetadataHandle> promise_;
   // Queued batch containing at least a send_initial_metadata op.
   grpc_transport_stream_op_batch* send_initial_metadata_batch_ = nullptr;
+  // Queued batch containing at least the recv_initial_metadata op.
+  grpc_transport_stream_op_batch* recv_initial_metadata_batch_ = nullptr;
   // Pointer to where trailing metadata will be stored.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.

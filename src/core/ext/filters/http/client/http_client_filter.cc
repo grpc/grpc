@@ -46,7 +46,7 @@ const grpc_channel_filter HttpClientFilter::kFilter =
         "http_client");
 
 namespace {
-absl::Status CheckServerMetadata(const ServerMetadata& b) {
+absl::Status CheckServerMetadata(ServerMetadata* b) {
   if (auto* status = b->get_pointer(HttpStatusMetadata())) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
@@ -120,7 +120,7 @@ Slice UserAgentFromArgs(const grpc_channel_args* args,
 }
 }  // namespace
 
-ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto& md = call_args.client_initial_metadata;
   md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
@@ -135,16 +135,16 @@ ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
 
   return CallPushPull(
       Seq(next_promise_factory(std::move(call_args)),
-          [](ServerMetadata md) -> ServerMetadata {
-            auto r = CheckServerMetadata(md);
-            if (!r.ok()) return ServerMetadata(r);
+          [](ServerMetadataHandle md) -> ServerMetadataHandle {
+            auto r = CheckServerMetadata(md.get());
+            if (!r.ok()) return ServerMetadataHandle(r);
             return md;
           }),
       []() { return absl::OkStatus(); },
       Seq(read_latch->Wait(),
           [write_latch](ServerMetadata** md) -> absl::Status {
             auto r =
-                *md == nullptr ? absl::OkStatus() : CheckServerMetadata(**md);
+                *md == nullptr ? absl::OkStatus() : CheckServerMetadata(*md);
             write_latch->Set(*md);
             return r;
           }));
