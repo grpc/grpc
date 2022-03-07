@@ -25,7 +25,6 @@ endlocal
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
-set PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
