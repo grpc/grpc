@@ -51,7 +51,7 @@ _INTERESTING = {
 def _run():
     """Build with Bazel, then run, and extract interesting lines from the output."""
     subprocess.check_call([
-        'bazel', 'build', '-c', 'opt',
+        'tools/bazel', 'build', '-c', 'opt',
         'test/core/memory_usage/memory_usage_test'
     ])
     output = subprocess.check_output([
