@@ -64,13 +64,13 @@ source ~/.rvm/scripts/rvm
 echo "rvm use 3.1.0"
 rvm use 3.1.0
 set -x
-RUBY_3_0_0_TAR="${HOME}/.rake-compiler/sources/ruby-3.1.0.tar.gz"
-mkdir -p "$(dirname $RUBY_3_0_0_TAR)"
-curl -L "https://ftp.ruby-lang.org/pub/ruby/3.0/$(basename $RUBY_3_0_0_TAR)" -o "$RUBY_3_0_0_TAR"
+RUBY_3_1_0_TAR="${HOME}/.rake-compiler/sources/ruby-3.1.0.tar.gz"
+mkdir -p "$(dirname $RUBY_3_1_0_TAR)"
+curl -L "https://ftp.ruby-lang.org/pub/ruby/3.0/$(basename $RUBY_3_1_0_TAR)" -o "$RUBY_3_1_0_TAR"
 ccache -c
 ruby --version | grep 'ruby 3.1.0'
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
-bundle exec rake -f "$CROSS_RUBY" cross-ruby VERSION=3.1.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="$RUBY_3_0_0_TAR"
+bundle exec rake -f "$CROSS_RUBY" cross-ruby VERSION=3.1.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="$RUBY_3_1_0_TAR"
 echo "installed ruby 3.1.0 build targets"
 # Install ruby 3.0.0 for rake-compiler
 echo "rvm use 3.0.0"
