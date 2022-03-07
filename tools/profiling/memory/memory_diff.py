@@ -21,10 +21,10 @@ import math
 import multiprocessing
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
-import re
 
 sys.path.append(
     os.path.join(os.path.dirname(sys.argv[0]), '..', '..', 'run_tests',
@@ -43,8 +43,10 @@ argp.add_argument('-j', '--jobs', type=int, default=multiprocessing.cpu_count())
 args = argp.parse_args()
 
 _INTERESTING = {
-    'client call': (rb'client call memory usage: ([0-9\.]+) bytes per call', float),
-    'server call': (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
+    'client call':
+        (rb'client call memory usage: ([0-9\.]+) bytes per call', float),
+    'server call':
+        (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
 }
 
 
@@ -66,6 +68,7 @@ def _run():
             if m:
                 ret[key] = conversion(m.group(1))
     return ret
+
 
 cur = _run()
 new = None

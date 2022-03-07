@@ -161,7 +161,7 @@ def check_on_pr(name, summary, success=True):
           json.dumps(resp.json(), indent=2))
 
 
-def label_significance_on_pr(name, change, labels = _CHANGE_LABELS):
+def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
     """Add a label to the PR indicating the significance of the check.
 
     Requires environment variable 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' to indicate which pull request
