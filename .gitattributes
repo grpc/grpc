@@ -20,7 +20,6 @@ src/python/grpcio/grpc_core_dependencies.py linguist-generated=true
 src/ruby/ext/grpc/rb_grpc_imports.generated.h linguist-generated=true
 src/ruby/ext/grpc/rb_grpc_imports.generated.c linguist-generated=true
 test/core/end2end/end2end_tests.cc linguist-generated=true
-test/core/end2end/end2end_nosec_tests.cc linguist-generated=true
 test/core/surface/public_headers_must_be_c89.c linguist-generated=true
 tools/doxygen/Doxyfile.c++.internal linguist-generated=true
 tools/doxygen/Doxyfile.core.internal linguist-generated=true

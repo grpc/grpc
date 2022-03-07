@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Grpc.Core
@@ -35,6 +36,26 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="message">The message to be written. Cannot be null.</param>
         Task WriteAsync(T message);
+
+#if NETSTANDARD2_1_OR_GREATER
+        /// <summary>
+        /// Writes a message asynchronously. Only one write can be pending at a time.
+        /// </summary>
+        /// <param name="message">The message to be written. Cannot be null.</param>
+        /// <param name="cancellationToken">Cancellation token that can be used to cancel the operation.</param>
+        Task WriteAsync(T message, CancellationToken cancellationToken)
+        {
+            if (cancellationToken.CanBeCanceled)
+            {
+                // Note to implementors:
+                // Add a netstandard2.1 or greater target to your library and override
+                // WriteAsync(T, CancellationToken) on stream writer to use the cancellation token.
+                throw new NotSupportedException("Cancellation of stream writes is not supported by this gRPC implementation.");
+            }
+
+            return WriteAsync(message);
+        }
+#endif
 
         /// <summary>
         /// Write options that will be used for the next write.

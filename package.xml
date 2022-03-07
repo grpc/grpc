@@ -875,6 +875,7 @@
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/call_finalization.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/call_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />

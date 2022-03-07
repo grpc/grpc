@@ -496,8 +496,9 @@ class XdsClient::ChannelState::StateWatcher
                 parent_->xds_client(), parent_->server_.server_uri.c_str(),
                 status.ToString().c_str());
         parent_->xds_client_->NotifyOnErrorLocked(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "xds channel in TRANSIENT_FAILURE"));
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+                "xds channel in TRANSIENT_FAILURE, connectivity error: ",
+                status.ToString())));
       }
     }
     parent_->xds_client()->work_serializer_.DrainQueue();
@@ -1318,7 +1319,12 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceivedLocked(
     parent_->OnCallFinishedLocked();
     // Send error to all watchers.
     xds_client()->NotifyOnErrorLocked(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("xds call failed"));
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+            "xDS call failed: xDS server: %s, ADS call status code=%d, "
+            "details='%s', error='%s'",
+            chand()->server_.server_uri, status_code_,
+            StringViewFromSlice(status_details_),
+            grpc_error_std_string(error))));
   }
   GRPC_ERROR_UNREF(error);
 }
