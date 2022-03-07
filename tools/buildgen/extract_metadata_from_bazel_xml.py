@@ -875,11 +875,6 @@ _BUILD_EXTRA_METADATA = {
         'build': 'private',
         '_RENAME': 'end2end_tests'
     },
-    'test/core/end2end:end2end_nosec_tests': {
-        'language': 'c',
-        'build': 'private',
-        '_RENAME': 'end2end_nosec_tests'
-    },
 
     # benchmark support libraries
     'test/cpp/microbenchmarks:helpers': {

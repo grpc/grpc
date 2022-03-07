@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import time
 from typing import Tuple
 import unittest
 
@@ -20,8 +19,8 @@ from absl import flags
 from absl.testing import absltest
 import grpc
 
-from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -34,7 +33,6 @@ RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 ExpectedResult = xds_url_map_testcase.ExpectedResult
 XdsTestClient = client_app.XdsTestClient
 XdsUrlMapTestCase = xds_url_map_testcase.XdsUrlMapTestCase
-TestConfig = xds_url_map_testcase.TestConfig
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -82,7 +80,7 @@ class _BaseXdsTimeOutTestCase(XdsUrlMapTestCase):
 class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 
     @staticmethod
-    def is_supported(config: TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         # TODO(lidiz) either add support for rpc-behavior to other languages, or we
         # should always use Java server as backend.
         return config.server_lang == 'java'
@@ -113,7 +111,7 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
 
     @staticmethod
-    def is_supported(config: TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         return config.server_lang == 'java'
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):

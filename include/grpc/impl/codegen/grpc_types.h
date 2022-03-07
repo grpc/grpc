@@ -384,11 +384,10 @@ typedef struct {
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
 /** Enables retry functionality.  Defaults to true.  When enabled,
-    configurable retries are enabled when they are configured via the
-    service config.  For details, see:
+    transparent retries will be performed as appropriate, and configurable
+    retries are enabled when they are configured via the service config.
+    For details, see:
       https://github.com/grpc/proposal/blob/master/A6-client-retries.md
-    NOTE: Transparent retries are not yet implemented.  When they are
-          implemented, they will also be enabled by this arg.
     NOTE: Hedging functionality is not yet implemented, so those
           fields in the service config will currently be ignored.  See
           also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below.
@@ -519,12 +518,8 @@ typedef enum grpc_call_error {
 
 /** Initial metadata flags */
 /** These flags are to be passed to the `grpc_op::flags` field */
-/** Signal that the call is idempotent */
-#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
-/** Signal that the call is cacheable. GRPC is free to use GET verb */
-#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
@@ -532,12 +527,10 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK                  \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
-   GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
+#define GRPC_INITIAL_METADATA_USED_MASK                                  \
+  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET |                 \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_INITIAL_METADATA_CORKED | \
+   GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {
