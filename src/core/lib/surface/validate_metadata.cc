@@ -47,12 +47,15 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
   const uint8_t* e = GRPC_SLICE_END_PTR(slice);
   for (; p != e; p++) {
     if (!legal_bits.is_set(*p)) {
+      size_t len;
+      grpc_core::UniquePtr<char> ptr(gpr_dump_return_len(
+          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
+          GRPC_SLICE_LENGTH(slice), GPR_DUMP_HEX | GPR_DUMP_ASCII, &len));
       grpc_error_handle error = grpc_error_set_str(
           grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(err_desc),
                              GRPC_ERROR_INT_OFFSET,
                              p - GRPC_SLICE_START_PTR(slice)),
-          GRPC_ERROR_STR_RAW_BYTES,
-          grpc_dump_slice_to_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII));
+          GRPC_ERROR_STR_RAW_BYTES, absl::string_view(ptr.get(), len));
       return error;
     }
   }
@@ -76,7 +79,7 @@ class LegalHeaderKeyBits : public grpc_core::BitSet<256> {
     set('.');
   }
 };
-static GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderKeyBits
+GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderKeyBits
     g_legal_header_key_bits;
 }  // namespace
 
@@ -109,7 +112,7 @@ class LegalHeaderNonBinValueBits : public grpc_core::BitSet<256> {
     }
   }
 };
-static GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
+GRPC_VALIDATE_METADATA_CONSTEXPR_VALUE LegalHeaderNonBinValueBits
     g_legal_header_non_bin_value_bits;
 }  // namespace
 

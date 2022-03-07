@@ -21,8 +21,9 @@
 
 #include <vector>
 
-#include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
 
@@ -37,7 +38,7 @@ class FaultInjectionMethodParsedConfig
     uint32_t abort_percentage_numerator = 0;
     uint32_t abort_percentage_denominator = 100;
 
-    grpc_millis delay = 0;
+    Duration delay;
     std::string delay_header;
     std::string delay_percentage_header;
     uint32_t delay_percentage_numerator = 0;
@@ -68,8 +69,10 @@ class FaultInjectionMethodParsedConfig
   std::vector<FaultInjectionPolicy> fault_injection_policies_;
 };
 
-class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
+class FaultInjectionServiceConfigParser final
+    : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for fault injection filter.
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* args, const Json& json,
@@ -77,7 +80,10 @@ class FaultInjectionServiceConfigParser : public ServiceConfigParser::Parser {
   // Returns the parser index for FaultInjectionServiceConfigParser.
   static size_t ParserIndex();
   // Registers FaultInjectionServiceConfigParser to ServiceConfigParser.
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "fault_injection"; }
 };
 
 }  // namespace grpc_core

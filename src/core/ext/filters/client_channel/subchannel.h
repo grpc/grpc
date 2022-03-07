@@ -27,15 +27,14 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -75,9 +74,9 @@ class SubchannelCall {
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
-    grpc_slice path;
+    Slice path;
     gpr_cycle_counter start_time;
-    grpc_millis deadline;
+    Timestamp deadline;
     Arena* arena;
     grpc_call_context_element* context;
     CallCombiner* call_combiner;
@@ -130,7 +129,7 @@ class SubchannelCall {
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ = nullptr;
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
-  grpc_millis deadline_;
+  Timestamp deadline_;
 };
 
 // A subchannel that knows how to connect to exactly one target address. It
@@ -148,7 +147,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
     struct ConnectivityStateChange {
       grpc_connectivity_state state;
       absl::Status status;
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     };
 
     ~ConnectivityStateWatcherInterface() override = default;
@@ -208,10 +206,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // If health_check_service_name is non-null, the returned connectivity
   // state will be based on the state reported by the backend for that
   // service name.
-  // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name,
-      RefCountedPtr<ConnectedSubchannel>* connected_subchannel)
+      const absl::optional<std::string>& health_check_service_name)
       ABSL_LOCKS_EXCLUDED(mu_);
 
   // Starts watching the subchannel's connectivity state.
@@ -234,6 +230,12 @@ class Subchannel : public DualRefCounted<Subchannel> {
       const absl::optional<std::string>& health_check_service_name,
       ConnectivityStateWatcherInterface* watcher) ABSL_LOCKS_EXCLUDED(mu_);
 
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel()
+      ABSL_LOCKS_EXCLUDED(mu_) {
+    MutexLock lock(&mu_);
+    return connected_subchannel_;
+  }
+
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -255,7 +257,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
-    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state,
+    void NotifyLocked(grpc_connectivity_state state,
                       const absl::Status& status);
 
     void Clear() { watchers_.clear(); }
@@ -358,10 +360,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
 
+  // Minimum connect timeout - must be located before backoff_.
+  Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
-  grpc_millis next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
-  grpc_millis min_connect_timeout_ms_ ABSL_GUARDED_BY(mu_);
+  Timestamp next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
   bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
 
   // Retry alarm.

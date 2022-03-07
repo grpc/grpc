@@ -74,14 +74,6 @@
   SYSTEM = MINGW32
   endif
 
-  # Basic machine detection
-  HOST_MACHINE = $(shell uname -m)
-  ifeq ($(HOST_MACHINE),x86_64)
-  HOST_IS_X86_64 = true
-  else
-  HOST_IS_X86_64 = false
-  endif
-
   MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
   ifndef BUILDDIR
   BUILDDIR_ABSOLUTE = $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
@@ -284,7 +276,7 @@
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread ws2_32 dbghelp
+  LIBS = m pthread ws2_32 dbghelp bcrypt
   LDFLAGS += -pthread
   endif
 
@@ -409,7 +401,7 @@
 
   # Setup c-ares dependency
 
-  ifeq ($(wildcard third_party/cares/cares/ares.h),)
+  ifeq ($(wildcard third_party/cares/cares/include/ares.h),)
   HAS_EMBEDDED_CARES = false
   else
   HAS_EMBEDDED_CARES = true
@@ -427,7 +419,7 @@
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-  CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   endif
 
   # Setup address_sorting dependency
@@ -441,11 +433,6 @@
 
   GRPC_ABSEIL_DEP = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
   GRPC_ABSEIL_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libgrpc_abseil.a
-  ifeq ($(HOST_IS_X86_64),true)
-  ABSL_RANDOM_HWAES_FLAGS = -maes -msse4
-  else
-  ABSL_RANDOM_HWAES_FLAGS =
-  endif
 
   # Setup re2 dependency
 

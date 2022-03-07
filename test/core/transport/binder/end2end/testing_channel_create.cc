@@ -16,9 +16,12 @@
 
 #include <utility>
 
+#include <grpcpp/security/binder_security_policy.h>
+
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -33,7 +36,9 @@ class ServerSetupTransportHelper {
  public:
   ServerSetupTransportHelper()
       : wire_reader_(absl::make_unique<WireReaderImpl>(
-            /*transport_stream_receiver=*/nullptr, /*is_client=*/false)) {
+            /*transport_stream_receiver=*/nullptr, /*is_client=*/false,
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>())) {
     std::tie(endpoint_binder_, tx_receiver_) = NewBinderPair(
         [this](transaction_code_t tx_code, ReadableParcel* parcel, int uid) {
           return this->wire_reader_->ProcessTransaction(tx_code, parcel, uid);
@@ -75,13 +80,16 @@ CreateClientServerBindersPairForTesting() {
         ThreadArgs* args = static_cast<ThreadArgs*>(arg);
         std::unique_ptr<Binder> endpoint_binder =
             std::move(args->endpoint_binder);
-        *args->client_transport =
-            grpc_create_binder_transport_client(std::move(endpoint_binder));
+        *args->client_transport = grpc_create_binder_transport_client(
+            std::move(endpoint_binder),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>());
       },
       &args);
   client_thread.Start();
-  grpc_transport* server_transport =
-      grpc_create_binder_transport_server(helper.WaitForClientBinder());
+  grpc_transport* server_transport = grpc_create_binder_transport_server(
+      helper.WaitForClientBinder(),
+      std::make_shared<grpc::experimental::binder::UntrustedSecurityPolicy>());
   client_thread.Join();
   return std::make_pair(client_transport, server_transport);
 }
@@ -100,27 +108,30 @@ std::shared_ptr<grpc::Channel> BinderChannelForTesting(
 }  // namespace end2end_testing
 }  // namespace grpc_binder
 
-grpc_channel* grpc_binder_channel_create_for_testing(grpc_server* server,
-                                                     grpc_channel_args* args,
-                                                     void* /*reserved*/) {
+grpc_channel* grpc_binder_channel_create_for_testing(
+    grpc_server* server, const grpc_channel_args* args, void* /*reserved*/) {
   grpc_core::ExecCtx exec_ctx;
 
   grpc_arg default_authority_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
       const_cast<char*>("test.authority"));
+  args = grpc_core::CoreConfiguration::Get()
+             .channel_args_preconditioning()
+             .PreconditionChannelArgs(args);
   grpc_channel_args* client_args =
       grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
 
   grpc_transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       grpc_binder::end2end_testing::CreateClientServerBindersPairForTesting();
-  grpc_error_handle error = server->core_server->SetupTransport(
+  grpc_error_handle error = grpc_core::Server::FromC(server)->SetupTransport(
       server_transport, nullptr, args, nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_channel* channel =
-      grpc_channel_create("binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                          client_transport, nullptr, 0, &error);
+  grpc_channel* channel = grpc_channel_create_internal(
+      "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport,
+      &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
+  grpc_channel_args_destroy(args);
   grpc_channel_args_destroy(client_args);
   return channel;
 }

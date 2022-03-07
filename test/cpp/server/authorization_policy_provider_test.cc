@@ -17,22 +17,21 @@
 #include <grpcpp/security/authorization_policy_provider.h>
 
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
+
+#define VALID_POLICY_PATH_1 \
+  "test/core/security/authorization/test_policies/valid_policy_1.json"
+#define VALID_POLICY_PATH_2 \
+  "test/core/security/authorization/test_policies/valid_policy_2.json"
+#define INVALID_POLICY_PATH \
+  "test/core/security/authorization/test_policies/invalid_policy.json"
 
 namespace grpc {
 
 TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsProvider) {
-  const char* authz_policy =
-      "{"
-      "  \"name\": \"authz\","
-      "  \"allow_rules\": ["
-      "    {"
-      "      \"name\": \"allow_policy\""
-      "    }"
-      "  ]"
-      "}";
   grpc::Status status;
   auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
-      authz_policy, &status);
+      grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1), &status);
   ASSERT_NE(provider, nullptr);
   EXPECT_NE(provider->c_provider(), nullptr);
   EXPECT_TRUE(status.ok());
@@ -40,10 +39,32 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsProvider) {
 }
 
 TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsErrorStatus) {
-  const char* authz_policy = "{}";
   grpc::Status status;
   auto provider = experimental::StaticDataAuthorizationPolicyProvider::Create(
-      authz_policy, &status);
+      grpc_core::testing::GetFileContents(INVALID_POLICY_PATH), &status);
+  ASSERT_EQ(provider, nullptr);
+  EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(status.error_message(), "\"name\" field is not present.");
+}
+
+TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
+  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
+      grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
+  grpc::Status status;
+  auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
+  ASSERT_NE(provider, nullptr);
+  EXPECT_NE(provider->c_provider(), nullptr);
+  EXPECT_TRUE(status.ok());
+  EXPECT_TRUE(status.error_message().empty());
+}
+
+TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
+  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
+      grpc_core::testing::GetFileContents(INVALID_POLICY_PATH));
+  grpc::Status status;
+  auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1, &status);
   ASSERT_EQ(provider, nullptr);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::INVALID_ARGUMENT);
   EXPECT_EQ(status.error_message(), "\"name\" field is not present.");

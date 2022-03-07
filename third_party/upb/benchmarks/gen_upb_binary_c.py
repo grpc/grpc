@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
@@ -43,7 +43,7 @@ print('''
 char buf[1];
 
 int main() {{
-  upb_arena *arena = upb_arena_new();
+  upb_Arena *arena = upb_Arena_New();
   size_t size;
 '''.format(include=include))
 

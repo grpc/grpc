@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2021 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,17 @@ grpc_cc_test(
     srcs = ["endpoint_config_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "smoke_test",
+    srcs = ["smoke_test.cc"],
+    external_deps = ["gtest"],
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",

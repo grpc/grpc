@@ -23,7 +23,7 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/ext/xds/xds_api.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
@@ -42,6 +42,11 @@ class XdsCredentials final : public grpc_channel_credentials {
       const grpc_channel_args* args, grpc_channel_args** new_args) override;
 
  private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    auto* o = static_cast<const XdsCredentials*>(other);
+    return fallback_credentials_->cmp(o->fallback_credentials_.get());
+  }
+
   RefCountedPtr<grpc_channel_credentials> fallback_credentials_;
 };
 

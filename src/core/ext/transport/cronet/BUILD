@@ -19,7 +19,7 @@ load(
     "grpc_cc_library",
 )
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -62,6 +62,6 @@ grpc_cc_library(
         ":grpc_transport_cronet_client_secure",
         "//:grpc_base",
         "//:grpc_http_filters",
-        "//:grpc_transport_chttp2_client_secure",
+        "//:grpc_transport_chttp2_client_connector",
     ],
 )

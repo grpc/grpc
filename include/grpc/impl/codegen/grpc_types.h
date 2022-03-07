@@ -384,11 +384,10 @@ typedef struct {
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
 /** Enables retry functionality.  Defaults to true.  When enabled,
-    configurable retries are enabled when they are configured via the
-    service config.  For details, see:
+    transparent retries will be performed as appropriate, and configurable
+    retries are enabled when they are configured via the service config.
+    For details, see:
       https://github.com/grpc/proposal/blob/master/A6-client-retries.md
-    NOTE: Transparent retries are not yet implemented.  When they are
-          implemented, they will also be enabled by this arg.
     NOTE: Hedging functionality is not yet implemented, so those
           fields in the service config will currently be ignored.  See
           also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below.
@@ -422,10 +421,14 @@ typedef struct {
 /** If set, inhibits health checking (which may be enabled via the
  *  service config.) */
 #define GRPC_ARG_INHIBIT_HEALTH_CHECKING "grpc.inhibit_health_checking"
-/** If set, the channel's resolver is allowed to query for SRV records.
- * For example, this is useful as a way to enable the "grpclb"
- * load balancing policy. Note that this only works with the "ares"
- * DNS resolver, and isn't supported by the "native" DNS resolver. */
+/** If enabled, the channel's DNS resolver queries for SRV records.
+ *  This is useful only when using the "grpclb" load balancing policy,
+ *  as described in the following documents:
+ *   https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md
+ *   https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md
+ *   https://github.com/grpc/proposal/blob/master/A26-grpclb-selection.md
+ *  Note that this works only with the "ares" DNS resolver; it isn't supported
+ *  by the "native" DNS resolver. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
 /** If set, determines an upper bound on the number of milliseconds that the
  * c-ares based DNS resolver will wait on queries before cancelling them.
@@ -445,6 +448,12 @@ typedef struct {
     gRPC authorization check. */
 #define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
   "grpc.authorization_policy_provider"
+/** EXPERIMENTAL. Updates to a server's configuration from a config fetcher (for
+ * example, listener updates from xDS) cause all older connections to be
+ * gracefully shut down (i.e., "drained") with a grace period configured by this
+ * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
+#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
+  "grpc.experimental.server_config_change_drain_grace_time_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -509,12 +518,8 @@ typedef enum grpc_call_error {
 
 /** Initial metadata flags */
 /** These flags are to be passed to the `grpc_op::flags` field */
-/** Signal that the call is idempotent */
-#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST (0x00000010u)
 /** Signal that the call should not return UNAVAILABLE before it has started */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY (0x00000020u)
-/** Signal that the call is cacheable. GRPC is free to use GET verb */
-#define GRPC_INITIAL_METADATA_CACHEABLE_REQUEST (0x00000040u)
 /** Signal that GRPC_INITIAL_METADATA_WAIT_FOR_READY was explicitly set
     by the calling application. */
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
@@ -522,12 +527,10 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
 /** Mask of all valid flags */
-#define GRPC_INITIAL_METADATA_USED_MASK                  \
-  (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \
-   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \
-   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \
-   GRPC_INITIAL_METADATA_CORKED | GRPC_WRITE_THROUGH)
+#define GRPC_INITIAL_METADATA_USED_MASK                                  \
+  (GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET |                 \
+   GRPC_INITIAL_METADATA_WAIT_FOR_READY | GRPC_INITIAL_METADATA_CORKED | \
+   GRPC_WRITE_THROUGH)
 
 /** A single metadata element */
 typedef struct grpc_metadata {

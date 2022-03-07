@@ -19,6 +19,8 @@ from typing import Generic, Iterable, Mapping, Optional, Sequence
 import grpc
 
 from ._metadata import Metadata
+from ._typing import DoneCallbackType
+from ._typing import MetadataType
 from ._typing import RequestType
 from ._typing import ResponseType
 
@@ -132,6 +134,7 @@ class Server(abc.ABC):
         """
 
 
+# pylint: disable=too-many-public-methods
 class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     """A context object passed to method implementations."""
 
@@ -159,7 +162,8 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def send_initial_metadata(self, initial_metadata: Metadata) -> None:
+    async def send_initial_metadata(self,
+                                    initial_metadata: MetadataType) -> None:
         """Sends the initial metadata value to the client.
 
         This method need not be called by implementations if they have no
@@ -174,7 +178,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = '',
-        trailing_metadata: Metadata = tuple()) -> None:
+        trailing_metadata: MetadataType = tuple()) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
@@ -194,7 +198,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
+    def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         """Sends the trailing metadata for the RPC.
 
         This method need not be called by implementations if they have no
@@ -335,3 +339,35 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           The details string of the RPC.
         """
         raise NotImplementedError()
+
+    def add_done_callback(self, callback: DoneCallbackType) -> None:
+        """Registers a callback to be called on RPC termination.
+
+        This is an EXPERIMENTAL API.
+
+        Args:
+          callback: A callable object will be called with the servicer context
+            object as its only argument.
+        """
+
+    def cancelled(self) -> bool:
+        """Return True if the RPC is cancelled.
+
+        The RPC is cancelled when the cancellation was requested with cancel().
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          A bool indicates whether the RPC is cancelled or not.
+        """
+
+    def done(self) -> bool:
+        """Return True if the RPC is done.
+
+        An RPC is done if the RPC is completed, cancelled or aborted.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          A bool indicates if the RPC is done.
+        """

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/surface/builtins.h"
 
@@ -35,14 +35,14 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
                                          grpc_add_connected_filter);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_append_filter(
-            builder, &grpc_lame_filter, nullptr, nullptr);
+      [](ChannelStackBuilder* builder) {
+        builder->AppendFilter(&grpc_lame_filter, nullptr);
+        return true;
       });
   builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](grpc_channel_stack_builder* builder) {
-        return grpc_channel_stack_builder_prepend_filter(
-            builder, &grpc_core::Server::kServerTopFilter, nullptr, nullptr);
+      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
+        builder->PrependFilter(&Server::kServerTopFilter, nullptr);
+        return true;
       });
 }
 

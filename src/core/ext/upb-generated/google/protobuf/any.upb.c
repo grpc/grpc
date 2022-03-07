@@ -12,15 +12,28 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field google_protobuf_Any__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 0, 12, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field google_protobuf_Any__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, 0, 12, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_protobuf_Any_msginit = {
+const upb_MiniTable google_protobuf_Any_msginit = {
   NULL,
   &google_protobuf_Any__fields[0],
-  UPB_SIZE(16, 32), 2, false, 2, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[1] = {
+  &google_protobuf_Any_msginit,
+};
+
+const upb_MiniTable_File google_protobuf_any_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  1,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

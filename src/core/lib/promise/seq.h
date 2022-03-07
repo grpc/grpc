@@ -15,7 +15,9 @@
 #ifndef GRPC_CORE_LIB_PROMISE_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
+
+#include <utility>
 
 #include "absl/types/variant.h"
 
@@ -35,7 +37,11 @@ struct SeqTraits {
       -> decltype(next->Once(std::forward<T>(value))) {
     return next->Once(std::forward<T>(value));
   }
-
+  template <typename F, typename Elem>
+  static auto CallSeqFactory(F& f, Elem&& elem, T&& value)
+      -> decltype(f(std::forward<Elem>(elem), std::forward<T>(value))) {
+    return f(std::forward<Elem>(elem), std::forward<T>(value));
+  }
   template <typename Result, typename PriorResult, typename RunNext>
   static Poll<Result> CheckResultAndRunNext(PriorResult prior,
                                             RunNext run_next) {
@@ -62,6 +68,20 @@ promise_detail::Seq<Functors...> Seq(Functors... functors) {
 template <typename F>
 F Seq(F functor) {
   return functor;
+}
+
+// Execute a sequence of operations of unknown length.
+// Asynchronously:
+//   for (element in (begin, end)) {
+//     argument = wait_for factory(element, argument);
+//   }
+//   return argument;
+template <typename Iter, typename Factory, typename Argument>
+promise_detail::BasicSeqIter<promise_detail::SeqTraits, Factory, Argument, Iter>
+SeqIter(Iter begin, Iter end, Argument argument, Factory factory) {
+  return promise_detail::BasicSeqIter<promise_detail::SeqTraits, Factory,
+                                      Argument, Iter>(
+      begin, end, std::move(factory), std::move(argument));
 }
 
 }  // namespace grpc_core

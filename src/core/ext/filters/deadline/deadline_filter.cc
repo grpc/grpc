@@ -38,7 +38,7 @@ namespace grpc_core {
 // Allocated on the call arena.
 class TimerState {
  public:
-  TimerState(grpc_call_element* elem, grpc_millis deadline) : elem_(elem) {
+  TimerState(grpc_call_element* elem, Timestamp deadline) : elem_(elem) {
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(elem_->call_data);
     GRPC_CALL_STACK_REF(deadline_state->call_stack, "DeadlineTimerState");
@@ -113,8 +113,8 @@ class TimerState {
 // This is called via the call combiner, so access to deadline_state is
 // synchronized.
 static void start_timer_if_needed(grpc_call_element* elem,
-                                  grpc_millis deadline) {
-  if (deadline == GRPC_MILLIS_INF_FUTURE) return;
+                                  grpc_core::Timestamp deadline) {
+  if (deadline == grpc_core::Timestamp::InfFuture()) return;
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
   GPR_ASSERT(deadline_state->timer_state == nullptr);
@@ -157,13 +157,14 @@ static void inject_recv_trailing_metadata_ready(
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
-  start_timer_after_init_state(grpc_call_element* elem, grpc_millis deadline)
+  start_timer_after_init_state(grpc_call_element* elem,
+                               grpc_core::Timestamp deadline)
       : elem(elem), deadline(deadline) {}
   ~start_timer_after_init_state() { start_timer_if_needed(elem, deadline); }
 
   bool in_call_combiner = false;
   grpc_call_element* elem;
-  grpc_millis deadline;
+  grpc_core::Timestamp deadline;
   grpc_closure closure;
 };
 static void start_timer_after_init(void* arg, grpc_error_handle error) {
@@ -187,13 +188,13 @@ static void start_timer_after_init(void* arg, grpc_error_handle error) {
 
 grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
                                          const grpc_call_element_args& args,
-                                         grpc_millis deadline)
+                                         grpc_core::Timestamp deadline)
     : call_stack(args.call_stack),
       call_combiner(args.call_combiner),
       arena(args.arena) {
   // Deadline will always be infinite on servers, so the timer will only be
   // set on clients with a finite deadline.
-  if (deadline != GRPC_MILLIS_INF_FUTURE) {
+  if (deadline != grpc_core::Timestamp::InfFuture()) {
     // When the deadline passes, we indicate the failure by sending down
     // an op with cancel_error set.  However, we can't send down any ops
     // until after the call stack is fully initialized.  If we start the
@@ -212,7 +213,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
 grpc_deadline_state::~grpc_deadline_state() { cancel_timer_if_needed(this); }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
-                               grpc_millis new_deadline) {
+                               grpc_core::Timestamp new_deadline) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
   cancel_timer_if_needed(deadline_state);
@@ -295,7 +296,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   start_timer_if_needed(
       elem, calld->recv_initial_metadata->get(grpc_core::GrpcTimeoutMetadata())
-                .value_or(GRPC_MILLIS_INF_FUTURE));
+                .value_or(grpc_core::Timestamp::InfFuture()));
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->next_recv_initial_metadata_ready,
@@ -338,6 +339,7 @@ static void deadline_server_start_transport_stream_op_batch(
 
 const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_client_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(base_call_data),
     deadline_init_call_elem,
@@ -352,6 +354,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
 
 const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_server_start_transport_stream_op_batch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(server_call_data),
     deadline_init_call_elem,
@@ -376,11 +379,9 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
                                    const grpc_channel_filter* filter) {
     builder->channel_init()->RegisterStage(
         type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-        [filter](grpc_channel_stack_builder* builder) {
-          if (grpc_deadline_checking_enabled(
-                  grpc_channel_stack_builder_get_channel_arguments(builder))) {
-            return grpc_channel_stack_builder_prepend_filter(builder, filter,
-                                                             nullptr, nullptr);
+        [filter](ChannelStackBuilder* builder) {
+          if (grpc_deadline_checking_enabled(builder->channel_args())) {
+            builder->PrependFilter(filter, nullptr);
           }
           return true;
         });

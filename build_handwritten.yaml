@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 19.1.0
+  core_version: 23.0.0
   csharp_major_version: 2
-  g_stands_for: granola
-  protobuf_version: 3.17.3
-  version: 1.42.0-dev
+  g_stands_for: gravity
+  protobuf_version: 3.19.4
+  version: 1.45.0-dev
 targets:
 - name: check_epollexclusive
   build: tool
@@ -165,14 +165,14 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   abseil:
-    CPPFLAGS: -g $(ABSL_RANDOM_HWAES_FLAGS) -Ithird_party/abseil-cpp
+    CPPFLAGS: -g -Ithird_party/abseil-cpp
   ares:
     CFLAGS: -g
-    CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
-      $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst
-      FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
-      $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN
-      -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+    CPPFLAGS: -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
+      -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin)
+      $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst
+      Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd)
+      -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:

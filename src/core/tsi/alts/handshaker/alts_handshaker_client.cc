@@ -178,8 +178,7 @@ static void handle_response_done(alts_grpc_handshaker_client* client,
                                  const unsigned char* bytes_to_send,
                                  size_t bytes_to_send_size,
                                  tsi_handshaker_result* result) {
-  recv_message_result* p =
-      static_cast<recv_message_result*>(gpr_zalloc(sizeof(*p)));
+  recv_message_result* p = grpc_core::Zalloc<recv_message_result>();
   p->status = status;
   p->bytes_to_send = bytes_to_send;
   p->bytes_to_send_size = bytes_to_send_size;
@@ -244,7 +243,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     handle_response_done(client, TSI_DATA_CORRUPTED, nullptr, 0, nullptr);
     return;
   }
-  upb_strview out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
+  upb_StringView out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
   unsigned char* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   if (out_frames.size > 0) {
@@ -273,7 +272,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   grpc_status_code code = static_cast<grpc_status_code>(
       grpc_gcp_HandshakerStatus_code(resp_status));
   if (code != GRPC_STATUS_OK) {
-    upb_strview details = grpc_gcp_HandshakerStatus_details(resp_status);
+    upb_StringView details = grpc_gcp_HandshakerStatus_details(resp_status);
     if (details.size > 0) {
       char* error_details = static_cast<char*>(gpr_zalloc(details.size + 1));
       memcpy(error_details, details.data, details.size);
@@ -463,7 +462,7 @@ static void on_status_received(void* arg, grpc_error_handle error) {
 /* Serializes a grpc_gcp_HandshakerReq message into a buffer and returns newly
  * grpc_byte_buffer holding it. */
 static grpc_byte_buffer* get_serialized_handshaker_req(
-    grpc_gcp_HandshakerReq* req, upb_arena* arena) {
+    grpc_gcp_HandshakerReq* req, upb_Arena* arena) {
   size_t buf_length;
   char* buf = grpc_gcp_HandshakerReq_serialize(req, arena, &buf_length);
   if (buf == nullptr) {
@@ -488,19 +487,21 @@ static grpc_byte_buffer* get_serialized_start_client(
   grpc_gcp_StartClientHandshakeReq_set_handshake_security_protocol(
       start_client, grpc_gcp_ALTS);
   grpc_gcp_StartClientHandshakeReq_add_application_protocols(
-      start_client, upb_strview_makez(ALTS_APPLICATION_PROTOCOL), arena.ptr());
+      start_client, upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL),
+      arena.ptr());
   grpc_gcp_StartClientHandshakeReq_add_record_protocols(
-      start_client, upb_strview_makez(ALTS_RECORD_PROTOCOL), arena.ptr());
+      start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
+      arena.ptr());
   grpc_gcp_RpcProtocolVersions* client_version =
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
   grpc_gcp_RpcProtocolVersions_assign_from_struct(
       client_version, arena.ptr(), &client->options->rpc_versions);
   grpc_gcp_StartClientHandshakeReq_set_target_name(
-      start_client,
-      upb_strview_make(reinterpret_cast<const char*>(
-                           GRPC_SLICE_START_PTR(client->target_name)),
-                       GRPC_SLICE_LENGTH(client->target_name)));
+      start_client, upb_StringView_FromDataAndSize(
+                        reinterpret_cast<const char*>(
+                            GRPC_SLICE_START_PTR(client->target_name)),
+                        GRPC_SLICE_LENGTH(client->target_name)));
   target_service_account* ptr =
       (reinterpret_cast<grpc_alts_credentials_client_options*>(client->options))
           ->target_account_list_head;
@@ -509,7 +510,7 @@ static grpc_byte_buffer* get_serialized_start_client(
         grpc_gcp_StartClientHandshakeReq_add_target_identities(start_client,
                                                                arena.ptr());
     grpc_gcp_Identity_set_service_account(target_identity,
-                                          upb_strview_makez(ptr->data));
+                                          upb_StringView_FromString(ptr->data));
     ptr = ptr->next;
   }
   grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
@@ -552,17 +553,19 @@ static grpc_byte_buffer* get_serialized_start_server(
   grpc_gcp_StartServerHandshakeReq* start_server =
       grpc_gcp_HandshakerReq_mutable_server_start(req, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_add_application_protocols(
-      start_server, upb_strview_makez(ALTS_APPLICATION_PROTOCOL), arena.ptr());
+      start_server, upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL),
+      arena.ptr());
   grpc_gcp_ServerHandshakeParameters* value =
       grpc_gcp_ServerHandshakeParameters_new(arena.ptr());
   grpc_gcp_ServerHandshakeParameters_add_record_protocols(
-      value, upb_strview_makez(ALTS_RECORD_PROTOCOL), arena.ptr());
+      value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
   grpc_gcp_StartServerHandshakeReq_handshake_parameters_set(
       start_server, grpc_gcp_ALTS, value, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_set_in_bytes(
-      start_server, upb_strview_make(reinterpret_cast<const char*>(
-                                         GRPC_SLICE_START_PTR(*bytes_received)),
-                                     GRPC_SLICE_LENGTH(*bytes_received)));
+      start_server,
+      upb_StringView_FromDataAndSize(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(*bytes_received)),
+          GRPC_SLICE_LENGTH(*bytes_received)));
   grpc_gcp_RpcProtocolVersions* server_version =
       grpc_gcp_StartServerHandshakeReq_mutable_rpc_versions(start_server,
                                                             arena.ptr());
@@ -603,9 +606,10 @@ static grpc_byte_buffer* get_serialized_next(grpc_slice* bytes_received) {
   grpc_gcp_NextHandshakeMessageReq* next =
       grpc_gcp_HandshakerReq_mutable_next(req, arena.ptr());
   grpc_gcp_NextHandshakeMessageReq_set_in_bytes(
-      next, upb_strview_make(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(
-                                 *bytes_received),
-                             GRPC_SLICE_LENGTH(*bytes_received)));
+      next,
+      upb_StringView_FromDataAndSize(
+          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(*bytes_received),
+          GRPC_SLICE_LENGTH(*bytes_received)));
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
@@ -717,12 +721,12 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
           : grpc_channel_create_pollset_set_call(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
-                GRPC_MILLIS_INF_FUTURE, nullptr);
+                grpc_core::Timestamp::InfFuture(), nullptr);
+  grpc_slice_unref_internal(slice);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,
                     grpc_schedule_on_exec_ctx);
-  grpc_slice_unref_internal(slice);
   return &client->base;
 }
 
@@ -850,7 +854,7 @@ void alts_handshaker_client_on_status_received_for_testing(
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->handshake_status_code = status;
   client->handshake_status_details = grpc_empty_slice();
-  grpc_core::Closure::Run(DEBUG_LOCATION, &client->on_status_received, error);
+  Closure::Run(DEBUG_LOCATION, &client->on_status_received, error);
 }
 
 }  // namespace internal

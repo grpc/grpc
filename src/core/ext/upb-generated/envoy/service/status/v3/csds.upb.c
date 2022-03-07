@@ -21,100 +21,117 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_service_status_v3_ClientStatusRequest_submsgs[2] = {
-  &envoy_config_core_v3_Node_msginit,
-  &envoy_type_matcher_v3_NodeMatcher_msginit,
+static const upb_MiniTable_Sub envoy_service_status_v3_ClientStatusRequest_submsgs[2] = {
+  {.submsg = &envoy_config_core_v3_Node_msginit},
+  {.submsg = &envoy_type_matcher_v3_NodeMatcher_msginit},
 };
 
-static const upb_msglayout_field envoy_service_status_v3_ClientStatusRequest__fields[2] = {
-  {1, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY},
-  {2, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_service_status_v3_ClientStatusRequest__fields[2] = {
+  {1, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_status_v3_ClientStatusRequest_msginit = {
+const upb_MiniTable envoy_service_status_v3_ClientStatusRequest_msginit = {
   &envoy_service_status_v3_ClientStatusRequest_submsgs[0],
   &envoy_service_status_v3_ClientStatusRequest__fields[0],
-  UPB_SIZE(16, 24), 2, false, 2, 255,
+  UPB_SIZE(16, 24), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_service_status_v3_PerXdsConfig_submsgs[5] = {
-  &envoy_admin_v3_ClustersConfigDump_msginit,
-  &envoy_admin_v3_EndpointsConfigDump_msginit,
-  &envoy_admin_v3_ListenersConfigDump_msginit,
-  &envoy_admin_v3_RoutesConfigDump_msginit,
-  &envoy_admin_v3_ScopedRoutesConfigDump_msginit,
+static const upb_MiniTable_Sub envoy_service_status_v3_PerXdsConfig_submsgs[5] = {
+  {.submsg = &envoy_admin_v3_ClustersConfigDump_msginit},
+  {.submsg = &envoy_admin_v3_EndpointsConfigDump_msginit},
+  {.submsg = &envoy_admin_v3_ListenersConfigDump_msginit},
+  {.submsg = &envoy_admin_v3_RoutesConfigDump_msginit},
+  {.submsg = &envoy_admin_v3_ScopedRoutesConfigDump_msginit},
 };
 
-static const upb_msglayout_field envoy_service_status_v3_PerXdsConfig__fields[7] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 2, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 0, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 3, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 4, 11, _UPB_MODE_SCALAR},
-  {6, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 1, 11, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_service_status_v3_PerXdsConfig__fields[7] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 3, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 4, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(8, 8), UPB_SIZE(-13, -17), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(4, 4), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_status_v3_PerXdsConfig_msginit = {
+const upb_MiniTable envoy_service_status_v3_PerXdsConfig_msginit = {
   &envoy_service_status_v3_PerXdsConfig_submsgs[0],
   &envoy_service_status_v3_PerXdsConfig__fields[0],
-  UPB_SIZE(16, 24), 7, false, 7, 255,
+  UPB_SIZE(16, 24), 7, upb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
-static const upb_msglayout *const envoy_service_status_v3_ClientConfig_submsgs[3] = {
-  &envoy_config_core_v3_Node_msginit,
-  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit,
-  &envoy_service_status_v3_PerXdsConfig_msginit,
+static const upb_MiniTable_Sub envoy_service_status_v3_ClientConfig_submsgs[3] = {
+  {.submsg = &envoy_config_core_v3_Node_msginit},
+  {.submsg = &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit},
+  {.submsg = &envoy_service_status_v3_PerXdsConfig_msginit},
 };
 
-static const upb_msglayout_field envoy_service_status_v3_ClientConfig__fields[3] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 2, 11, _UPB_MODE_ARRAY},
-  {3, UPB_SIZE(12, 24), 0, 1, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_service_status_v3_ClientConfig__fields[3] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, 2, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_status_v3_ClientConfig_msginit = {
+const upb_MiniTable envoy_service_status_v3_ClientConfig_msginit = {
   &envoy_service_status_v3_ClientConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig__fields[0],
-  UPB_SIZE(16, 32), 3, false, 3, 255,
+  UPB_SIZE(16, 32), 3, upb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout *const envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[3] = {
-  &envoy_admin_v3_UpdateFailureState_msginit,
-  &google_protobuf_Any_msginit,
-  &google_protobuf_Timestamp_msginit,
+static const upb_MiniTable_Sub envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[3] = {
+  {.submsg = &envoy_admin_v3_UpdateFailureState_msginit},
+  {.submsg = &google_protobuf_Any_msginit},
+  {.submsg = &google_protobuf_Timestamp_msginit},
 };
 
-static const upb_msglayout_field envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[9] = {
-  {1, UPB_SIZE(16, 16), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(24, 32), 0, 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(32, 48), 0, 0, 9, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(40, 64), 1, 1, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(44, 72), 2, 2, 11, _UPB_MODE_SCALAR},
-  {6, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(8, 8), 0, 0, 14, _UPB_MODE_SCALAR},
-  {8, UPB_SIZE(48, 80), 3, 0, 11, _UPB_MODE_SCALAR},
-  {9, UPB_SIZE(12, 12), 0, 0, 8, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[9] = {
+  {1, UPB_SIZE(16, 16), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 32), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(32, 48), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(40, 64), 1, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(44, 72), 2, 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(4, 4), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(8, 8), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {8, UPB_SIZE(48, 80), 3, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {9, UPB_SIZE(12, 12), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit = {
+const upb_MiniTable envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit = {
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig_submsgs[0],
   &envoy_service_status_v3_ClientConfig_GenericXdsConfig__fields[0],
-  UPB_SIZE(56, 96), 9, false, 9, 255,
+  UPB_SIZE(56, 96), 9, upb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
-static const upb_msglayout *const envoy_service_status_v3_ClientStatusResponse_submsgs[1] = {
-  &envoy_service_status_v3_ClientConfig_msginit,
+static const upb_MiniTable_Sub envoy_service_status_v3_ClientStatusResponse_submsgs[1] = {
+  {.submsg = &envoy_service_status_v3_ClientConfig_msginit},
 };
 
-static const upb_msglayout_field envoy_service_status_v3_ClientStatusResponse__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_service_status_v3_ClientStatusResponse__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_status_v3_ClientStatusResponse_msginit = {
+const upb_MiniTable envoy_service_status_v3_ClientStatusResponse_msginit = {
   &envoy_service_status_v3_ClientStatusResponse_submsgs[0],
   &envoy_service_status_v3_ClientStatusResponse__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[5] = {
+  &envoy_service_status_v3_ClientStatusRequest_msginit,
+  &envoy_service_status_v3_PerXdsConfig_msginit,
+  &envoy_service_status_v3_ClientConfig_msginit,
+  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit,
+  &envoy_service_status_v3_ClientStatusResponse_msginit,
+};
+
+const upb_MiniTable_File envoy_service_status_v3_csds_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  5,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

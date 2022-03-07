@@ -19,54 +19,69 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[1] = {
-  &envoy_config_core_v3_DataSource_msginit,
+static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_DataSource_msginit},
 };
 
-static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit = {
+const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[0],
-  UPB_SIZE(8, 16), 1, false, 1, 255,
+  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[1] = {
-  &envoy_config_core_v3_ConfigSource_msginit,
+static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_ConfigSource_msginit},
 };
 
-static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[2] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit = {
+const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[0],
-  UPB_SIZE(16, 32), 2, false, 2, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[4] = {
-  &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit,
-  &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit,
+static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[4] = {
+  {.submsg = &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit},
+  {.submsg = &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit},
+  {.submsg = &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit},
+  {.submsg = &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit},
 };
 
-static const upb_msglayout_field envoy_extensions_transport_sockets_tls_v3_Secret__fields[5] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 3, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Secret__fields[5] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 3, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_extensions_transport_sockets_tls_v3_Secret_msginit = {
+const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_Secret_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_Secret__fields[0],
-  UPB_SIZE(16, 32), 5, false, 5, 255,
+  UPB_SIZE(16, 32), 5, upb_ExtMode_NonExtendable, 5, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[3] = {
+  &envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit,
+  &envoy_extensions_transport_sockets_tls_v3_Secret_msginit,
+};
+
+const upb_MiniTable_File envoy_extensions_transport_sockets_tls_v3_secret_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  3,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

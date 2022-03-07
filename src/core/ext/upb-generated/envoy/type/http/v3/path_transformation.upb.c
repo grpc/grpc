@@ -14,46 +14,62 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_type_http_v3_PathTransformation_submsgs[1] = {
-  &envoy_type_http_v3_PathTransformation_Operation_msginit,
+static const upb_MiniTable_Sub envoy_type_http_v3_PathTransformation_submsgs[1] = {
+  {.submsg = &envoy_type_http_v3_PathTransformation_Operation_msginit},
 };
 
-static const upb_msglayout_field envoy_type_http_v3_PathTransformation__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_type_http_v3_PathTransformation__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_type_http_v3_PathTransformation_msginit = {
+const upb_MiniTable envoy_type_http_v3_PathTransformation_msginit = {
   &envoy_type_http_v3_PathTransformation_submsgs[0],
   &envoy_type_http_v3_PathTransformation__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *const envoy_type_http_v3_PathTransformation_Operation_submsgs[2] = {
-  &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit,
-  &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit,
+static const upb_MiniTable_Sub envoy_type_http_v3_PathTransformation_Operation_submsgs[2] = {
+  {.submsg = &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit},
+  {.submsg = &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit},
 };
 
-static const upb_msglayout_field envoy_type_http_v3_PathTransformation_Operation__fields[2] = {
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_type_http_v3_PathTransformation_Operation__fields[2] = {
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_type_http_v3_PathTransformation_Operation_msginit = {
+const upb_MiniTable envoy_type_http_v3_PathTransformation_Operation_msginit = {
   &envoy_type_http_v3_PathTransformation_Operation_submsgs[0],
   &envoy_type_http_v3_PathTransformation_Operation__fields[0],
-  UPB_SIZE(8, 16), 2, false, 0, 255,
+  UPB_SIZE(8, 16), 2, upb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-const upb_msglayout envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit = {
+const upb_MiniTable envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 0, 255,
+  UPB_SIZE(0, 0), 0, upb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-const upb_msglayout envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit = {
+const upb_MiniTable envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 0, 255,
+  UPB_SIZE(0, 0), 0, upb_ExtMode_NonExtendable, 0, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[4] = {
+  &envoy_type_http_v3_PathTransformation_msginit,
+  &envoy_type_http_v3_PathTransformation_Operation_msginit,
+  &envoy_type_http_v3_PathTransformation_Operation_NormalizePathRFC3986_msginit,
+  &envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_msginit,
+};
+
+const upb_MiniTable_File envoy_type_http_v3_path_transformation_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  4,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

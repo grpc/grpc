@@ -68,6 +68,26 @@ class ClientTlsPolicy:
                    update_time=response['updateTime'])
 
 
+@dataclasses.dataclass(frozen=True)
+class AuthorizationPolicy:
+    url: str
+    name: str
+    update_time: str
+    create_time: str
+    action: str
+    rules: list
+
+    @classmethod
+    def from_response(cls, name: str,
+                      response: Dict[str, Any]) -> 'AuthorizationPolicy':
+        return cls(name=name,
+                   url=response['name'],
+                   create_time=response['createTime'],
+                   update_time=response['updateTime'],
+                   action=response['action'],
+                   rules=response.get('rules', []))
+
+
 class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
                            metaclass=abc.ABCMeta):
     """Base class for NetworkSecurity APIs."""
@@ -103,6 +123,7 @@ class NetworkSecurityV1Beta1(_NetworkSecurityBase):
 
     SERVER_TLS_POLICIES = 'serverTlsPolicies'
     CLIENT_TLS_POLICIES = 'clientTlsPolicies'
+    AUTHZ_POLICIES = 'authorizationPolicies'
 
     @property
     def api_version(self) -> str:
@@ -141,6 +162,23 @@ class NetworkSecurityV1Beta1(_NetworkSecurityBase):
         return self._delete_resource(
             collection=self._api_locations.clientTlsPolicies(),
             full_name=self.resource_full_name(name, self.CLIENT_TLS_POLICIES))
+
+    def create_authz_policy(self, name: str, body: dict) -> GcpResource:
+        return self._create_resource(
+            collection=self._api_locations.authorizationPolicies(),
+            body=body,
+            authorizationPolicyId=name)
+
+    def get_authz_policy(self, name: str) -> ClientTlsPolicy:
+        response = self._get_resource(
+            collection=self._api_locations.authorizationPolicies(),
+            full_name=self.resource_full_name(name, self.AUTHZ_POLICIES))
+        return ClientTlsPolicy.from_response(name, response)
+
+    def delete_authz_policy(self, name: str) -> bool:
+        return self._delete_resource(
+            collection=self._api_locations.authorizationPolicies(),
+            full_name=self.resource_full_name(name, self.AUTHZ_POLICIES))
 
 
 class NetworkSecurityV1Alpha1(NetworkSecurityV1Beta1):

@@ -21,42 +21,61 @@ load(
     "get_out_dir",
     "get_plugin_args",
     "get_proto_arguments",
+    "get_staged_proto_file",
     "includes_from_deps",
+    "is_well_known",
     "protos_from_context",
 )
 
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
 _GENERATED_GRPC_PROTO_FORMAT = "{}_pb2_grpc.py"
 
-def _generate_py_impl(context):
-    protos = protos_from_context(context)
-    includes = includes_from_deps(context.attr.deps)
+PyProtoInfo = provider(
+    "The Python outputs from the Protobuf compiler.",
+    fields = {
+        "py_info": "A PyInfo provider for the generated code.",
+        "generated_py_srcs": "The direct (not transitive) generated Python source files.",
+    },
+)
+
+def _merge_pyinfos(pyinfos):
+    return PyInfo(
+        transitive_sources = depset(transitive = [p.transitive_sources for p in pyinfos]),
+        imports = depset(transitive = [p.imports for p in pyinfos]),
+    )
+
+def _gen_py_aspect_impl(target, context):
+    # Early return for well-known protos.
+    if is_well_known(str(context.label)):
+        return [
+            PyProtoInfo(py_info = context.attr._protobuf_library[PyInfo]),
+        ]
+
+    protos = []
+    for p in target[ProtoInfo].direct_sources:
+        protos.append(get_staged_proto_file(target.label, context, p))
+
+    includes = depset(direct = protos, transitive = [target[ProtoInfo].transitive_imports])
     out_files = declare_out_files(protos, context, _GENERATED_PROTO_FORMAT)
+    generated_py_srcs = out_files
+
     tools = [context.executable._protoc]
 
     out_dir = get_out_dir(protos, context)
+
     arguments = ([
         "--python_out={}".format(out_dir.path),
     ] + [
         "--proto_path={}".format(get_include_directory(i))
-        for i in includes
+        for i in includes.to_list()
     ] + [
         "--proto_path={}".format(context.genfiles_dir.path),
     ])
-    if context.attr.plugin:
-        arguments += get_plugin_args(
-            context.executable.plugin,
-            [],
-            out_dir.path,
-            False,
-            context.attr.plugin.label.name,
-        )
-        tools.append(context.executable.plugin)
 
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
-        inputs = protos + includes,
+        inputs = protos + includes.to_list(),
         tools = tools,
         outputs = out_files,
         executable = context.executable._protoc,
@@ -66,28 +85,79 @@ def _generate_py_impl(context):
 
     imports = []
     if out_dir.import_path:
-        imports.append("%s/%s/%s" % (context.workspace_name, context.label.package, out_dir.import_path))
+        imports.append("{}/{}".format(context.workspace_name, out_dir.import_path))
 
-    return [
-        DefaultInfo(files = depset(direct = out_files)),
-        PyInfo(
-            transitive_sources = depset(),
-            imports = depset(direct = imports),
+    py_info = PyInfo(transitive_sources = depset(direct = out_files), imports = depset(direct = imports))
+    return PyProtoInfo(
+        py_info = _merge_pyinfos(
+            [
+                py_info,
+                context.attr._protobuf_library[PyInfo],
+            ] + [dep[PyProtoInfo].py_info for dep in context.rule.attr.deps],
         ),
+        generated_py_srcs = generated_py_srcs,
+    )
+
+_gen_py_aspect = aspect(
+    implementation = _gen_py_aspect_impl,
+    attr_aspects = ["deps"],
+    fragments = ["py"],
+    attrs = {
+        "_protoc": attr.label(
+            default = Label("//external:protocol_compiler"),
+            providers = ["files_to_run"],
+            executable = True,
+            cfg = "host",
+        ),
+        "_protobuf_library": attr.label(
+            default = Label("@com_google_protobuf//:protobuf_python"),
+            providers = [PyInfo],
+        ),
+    },
+)
+
+def _generate_py_impl(context):
+    if (len(context.attr.deps) != 1):
+        fail("Can only compile a single proto at a time.")
+
+    py_sources = []
+
+    # If the proto_library this rule *directly* depends on is in another
+    # package, then we generate .py files to import them in this package. This
+    # behavior is needed to allow rearranging of import paths to make Bazel
+    # outputs align with native python workflows.
+    #
+    # Note that this approach is vulnerable to protoc defining __all__ or other
+    # symbols with __ prefixes that need to be directly imported. Since these
+    # names are likely to be reserved for private APIs, the risk is minimal.
+    if context.label.package != context.attr.deps[0].label.package:
+        for py_src in context.attr.deps[0][PyProtoInfo].generated_py_srcs:
+            reimport_py_file = context.actions.declare_file(py_src.basename)
+            py_sources.append(reimport_py_file)
+            import_line = "from %s import *" % py_src.short_path.replace("/", ".")[:-len(".py")]
+            context.actions.write(reimport_py_file, import_line)
+
+    # Collect output PyInfo provider.
+    imports = [context.label.package + "/" + i for i in context.attr.imports]
+    py_info = PyInfo(transitive_sources = depset(direct = py_sources), imports = depset(direct = imports))
+    out_pyinfo = _merge_pyinfos([py_info, context.attr.deps[0][PyProtoInfo].py_info])
+
+    runfiles = context.runfiles(files = out_pyinfo.transitive_sources.to_list()).merge(context.attr._protobuf_library[DefaultInfo].data_runfiles)
+    return [
+        DefaultInfo(
+            files = out_pyinfo.transitive_sources,
+            runfiles = runfiles,
+        ),
+        out_pyinfo,
     ]
 
-_generate_pb2_src = rule(
+py_proto_library = rule(
     attrs = {
         "deps": attr.label_list(
             mandatory = True,
             allow_empty = False,
             providers = [ProtoInfo],
-        ),
-        "plugin": attr.label(
-            mandatory = False,
-            executable = True,
-            providers = ["files_to_run"],
-            cfg = "host",
+            aspects = [_gen_py_aspect],
         ),
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),
@@ -95,45 +165,14 @@ _generate_pb2_src = rule(
             executable = True,
             cfg = "host",
         ),
+        "_protobuf_library": attr.label(
+            default = Label("@com_google_protobuf//:protobuf_python"),
+            providers = [PyInfo],
+        ),
+        "imports": attr.string_list(),
     },
     implementation = _generate_py_impl,
 )
-
-def py_proto_library(
-        name,
-        deps,
-        plugin = None,
-        **kwargs):
-    """Generate python code for a protobuf.
-
-    Args:
-      name: The name of the target.
-      deps: A list of proto_library dependencies. Must contain a single element.
-      plugin: An optional custom protoc plugin to execute together with
-        generating the protobuf code.
-      **kwargs: Additional arguments to be supplied to the invocation of
-        py_library.
-    """
-    codegen_target = "_{}_codegen".format(name)
-    if len(deps) != 1:
-        fail("Can only compile a single proto at a time.")
-
-    _generate_pb2_src(
-        name = codegen_target,
-        deps = deps,
-        plugin = plugin,
-        **kwargs
-    )
-
-    native.py_library(
-        name = name,
-        srcs = [":{}".format(codegen_target)],
-        deps = [
-            "@com_google_protobuf//:protobuf_python",
-            ":{}".format(codegen_target),
-        ],
-        **kwargs
-    )
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
@@ -151,21 +190,12 @@ def _generate_pb2_grpc_src_impl(context):
         out_dir.path,
         False,
     )
-    if context.attr.plugin:
-        arguments += get_plugin_args(
-            context.executable.plugin,
-            [],
-            out_dir.path,
-            False,
-            context.attr.plugin.label.name,
-        )
-        tools.append(context.executable.plugin)
 
     arguments += [
         "--proto_path={}".format(get_include_directory(i))
         for i in includes
     ]
-    arguments += ["--proto_path={}".format(context.genfiles_dir.path)]
+    arguments.append("--proto_path={}".format(context.genfiles_dir.path))
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
@@ -177,13 +207,22 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
 
+    p = PyInfo(transitive_sources = depset(direct = out_files))
+    py_info = _merge_pyinfos(
+        [
+            p,
+            context.attr._grpc_library[PyInfo],
+        ] + [dep[PyInfo] for dep in context.attr.py_deps],
+    )
+
+    runfiles = context.runfiles(files = out_files, transitive_files = py_info.transitive_sources).merge(context.attr._grpc_library[DefaultInfo].data_runfiles)
+
     return [
-        DefaultInfo(files = depset(direct = out_files)),
-        PyInfo(
-            transitive_sources = depset(),
-            # Imports are already configured by the generated py impl
-            imports = depset(),
+        DefaultInfo(
+            files = depset(direct = out_files),
+            runfiles = runfiles,
         ),
+        py_info,
     ]
 
 _generate_pb2_grpc_src = rule(
@@ -193,13 +232,12 @@ _generate_pb2_grpc_src = rule(
             allow_empty = False,
             providers = [ProtoInfo],
         ),
-        "strip_prefixes": attr.string_list(),
-        "plugin": attr.label(
-            mandatory = False,
-            executable = True,
-            providers = ["files_to_run"],
-            cfg = "host",
+        "py_deps": attr.label_list(
+            mandatory = True,
+            allow_empty = False,
+            providers = [PyInfo],
         ),
+        "strip_prefixes": attr.string_list(),
         "_grpc_plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
@@ -212,6 +250,10 @@ _generate_pb2_grpc_src = rule(
             cfg = "host",
             default = Label("//external:protocol_compiler"),
         ),
+        "_grpc_library": attr.label(
+            default = Label("//src/python/grpcio/grpc:grpcio"),
+            providers = [PyInfo],
+        ),
     },
     implementation = _generate_pb2_grpc_src_impl,
 )
@@ -220,7 +262,6 @@ def py_grpc_library(
         name,
         srcs,
         deps,
-        plugin = None,
         strip_prefixes = [],
         **kwargs):
     """Generate python code for gRPC services defined in a protobuf.
@@ -235,12 +276,9 @@ def py_grpc_library(
         stripped from the beginning of foo_pb2 modules imported by the
         generated stubs. This is useful in combination with the `imports`
         attribute of the `py_library` rule.
-      plugin: An optional custom protoc plugin to execute together with
-        generating the gRPC code.
       **kwargs: Additional arguments to be supplied to the invocation of
         py_library.
     """
-    codegen_grpc_target = "_{}_grpc_codegen".format(name)
     if len(srcs) != 1:
         fail("Can only compile a single proto at a time.")
 
@@ -248,56 +286,9 @@ def py_grpc_library(
         fail("Deps must have length 1.")
 
     _generate_pb2_grpc_src(
-        name = codegen_grpc_target,
+        name = name,
         deps = srcs,
+        py_deps = deps,
         strip_prefixes = strip_prefixes,
-        plugin = plugin,
         **kwargs
-    )
-
-    native.py_library(
-        name = name,
-        srcs = [
-            ":{}".format(codegen_grpc_target),
-        ],
-        deps = [
-            Label("//src/python/grpcio/grpc:grpcio"),
-        ] + deps + [
-            ":{}".format(codegen_grpc_target),
-        ],
-        **kwargs
-    )
-
-def py2and3_test(
-        name,
-        py_test = native.py_test,
-        **kwargs):
-    """Runs a Python test under both Python 2 and Python 3.
-
-    Args:
-      name: The name of the test.
-      py_test: The rule to use for each test.
-      **kwargs: Keyword arguments passed directly to the underlying py_test
-        rule.
-    """
-    if "python_version" in kwargs:
-        fail("Cannot specify 'python_version' in py2and3_test.")
-
-    names = [name + suffix for suffix in (".python2", ".python3")]
-    python_versions = ["PY2", "PY3"]
-    for case_name, python_version in zip(names, python_versions):
-        py_test(
-            name = case_name,
-            python_version = python_version,
-            **kwargs
-        )
-
-    suite_kwargs = {}
-    if "visibility" in kwargs:
-        suite_kwargs["visibility"] = kwargs["visibility"]
-
-    native.test_suite(
-        name = name,
-        tests = names,
-        **suite_kwargs
     )

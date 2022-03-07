@@ -14,16 +14,29 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field envoy_type_v3_SemanticVersion__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 13, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(4, 4), 0, 0, 13, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 8), 0, 0, 13, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_type_v3_SemanticVersion__fields[3] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 13, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 4), 0, 0, 13, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 8), 0, 0, 13, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_type_v3_SemanticVersion_msginit = {
+const upb_MiniTable envoy_type_v3_SemanticVersion_msginit = {
   NULL,
   &envoy_type_v3_SemanticVersion__fields[0],
-  UPB_SIZE(16, 16), 3, false, 3, 255,
+  UPB_SIZE(16, 16), 3, upb_ExtMode_NonExtendable, 3, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[1] = {
+  &envoy_type_v3_SemanticVersion_msginit,
+};
+
+const upb_MiniTable_File envoy_type_v3_semantic_version_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  1,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

@@ -24,16 +24,18 @@
 
 #include <netinet/in.h>
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/sync.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "test/core/util/resource_user_util.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/test_config.h"
 
-// static int g_connections_complete = 0;
 static gpr_mu g_mu;
 static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = nullptr;
@@ -86,9 +88,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
-  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -103,8 +103,12 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, grpc_slice_allocator_create_unlimited(), nullptr,
-                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  const grpc_channel_args* args =
+      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
+          nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
+                          grpc_core::Timestamp::InfFuture());
+  grpc_channel_args_destroy(args);
 
   /* await the connection */
   do {
@@ -141,9 +145,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   gpr_log(GPR_DEBUG, "test_fails");
 
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
-  addr->sin_family = AF_INET;
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
 
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
@@ -158,8 +160,12 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, grpc_slice_allocator_create_unlimited(), nullptr,
-                          nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  const grpc_channel_args* args =
+      grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
+          nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
+                          grpc_core::Timestamp::InfFuture());
+  grpc_channel_args_destroy(args);
 
   grpc_core::ExecCtx::Get()->Flush();
 

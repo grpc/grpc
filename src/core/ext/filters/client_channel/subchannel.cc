@@ -26,13 +26,13 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -51,7 +51,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // Strong and weak refs.
@@ -142,14 +141,14 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
-      callstk,           /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
+      callstk,             /* call_stack */
+      nullptr,             /* server_transport_data */
+      args.context,        /* context */
+      args.path.c_slice(), /* path */
+      args.start_time,     /* start_time */
+      args.deadline,       /* deadline */
+      args.arena,          /* arena */
+      args.call_combiner   /* call_combiner */
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
@@ -189,8 +188,8 @@ RefCountedPtr<SubchannelCall> SubchannelCall::Ref() {
   return RefCountedPtr<SubchannelCall>(this);
 }
 
-RefCountedPtr<SubchannelCall> SubchannelCall::Ref(
-    const grpc_core::DebugLocation& location, const char* reason) {
+RefCountedPtr<SubchannelCall> SubchannelCall::Ref(const DebugLocation& location,
+                                                  const char* reason) {
   IncrementRefCount(location, reason);
   return RefCountedPtr<SubchannelCall>(this);
 }
@@ -248,17 +247,12 @@ void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
 namespace {
 
 // Sets *status based on the rest of the parameters.
-void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
+void GetCallStatus(grpc_status_code* status, Timestamp deadline,
                    grpc_metadata_batch* md_batch, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
-    if (md_batch->legacy_index()->named.grpc_status != nullptr) {
-      *status = grpc_get_status_code_from_metadata(
-          md_batch->legacy_index()->named.grpc_status->md);
-    } else {
-      *status = GRPC_STATUS_UNKNOWN;
-    }
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -288,8 +282,8 @@ void SubchannelCall::IncrementRefCount() {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
-void SubchannelCall::IncrementRefCount(
-    const grpc_core::DebugLocation& /*location*/, const char* reason) {
+void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
+                                       const char* reason) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
@@ -317,11 +311,12 @@ class Subchannel::ConnectedSubchannelStateWatcher
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
       case GRPC_CHANNEL_SHUTDOWN: {
         if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
-          if (grpc_trace_subchannel.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
             gpr_log(GPR_INFO,
-                    "Connected subchannel %p of subchannel %p has gone into "
+                    "subchannel %p %s: Connected subchannel %p has gone into "
                     "%s. Attempting to reconnect.",
-                    c->connected_subchannel_.get(), c,
+                    c, c->key_.ToString().c_str(),
+                    c->connected_subchannel_.get(),
                     ConnectivityStateName(new_state));
           }
           c->connected_subchannel_.reset();
@@ -361,15 +356,9 @@ class Subchannel::AsyncWatcherNotifierLocked {
  public:
   AsyncWatcherNotifierLocked(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
-      Subchannel* subchannel, grpc_connectivity_state state,
-      const absl::Status& status)
+      grpc_connectivity_state state, const absl::Status& status)
       : watcher_(std::move(watcher)) {
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    if (state == GRPC_CHANNEL_READY) {
-      connected_subchannel = subchannel->connected_subchannel_;
-    }
-    watcher_->PushConnectivityStateChange(
-        {state, status, std::move(connected_subchannel)});
+    watcher_->PushConnectivityStateChange({state, status});
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_INIT(
                      &closure_,
@@ -403,10 +392,9 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 }
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
-    Subchannel* subchannel, grpc_connectivity_state state,
-    const absl::Status& status) {
+    grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& p : watchers_) {
-    new AsyncWatcherNotifierLocked(p.second, subchannel, state, status);
+    new AsyncWatcherNotifierLocked(p.second, state, status);
   }
 }
 
@@ -444,8 +432,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, subchannel_.get(), state_,
-                                     status_);
+      new AsyncWatcherNotifierLocked(watcher, state_, status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -467,14 +454,14 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       if (state_ != GRPC_CHANNEL_CONNECTING) {
         state_ = GRPC_CHANNEL_CONNECTING;
         status_ = status;
-        watcher_list_.NotifyLocked(subchannel_.get(), state_, status);
+        watcher_list_.NotifyLocked(state_, status);
       }
       // If we've become connected, start health checking.
       StartHealthCheckingLocked();
     } else {
       state_ = state;
       status_ = status;
-      watcher_list_.NotifyLocked(subchannel_.get(), state_, status);
+      watcher_list_.NotifyLocked(state_, status);
       // We're not connected, so stop health checking.
       health_check_client_.reset();
     }
@@ -493,7 +480,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     if (new_state != GRPC_CHANNEL_SHUTDOWN && health_check_client_ != nullptr) {
       state_ = new_state;
       status_ = status;
-      watcher_list_.NotifyLocked(subchannel_.get(), new_state, status);
+      watcher_list_.NotifyLocked(new_state, status);
     }
   }
 
@@ -581,52 +568,55 @@ void Subchannel::HealthWatcherMap::ShutdownLocked() { map_.clear(); }
 
 namespace {
 
-BackOff::Options ParseArgsForBackoffValues(
-    const grpc_channel_args* args, grpc_millis* min_connect_timeout_ms) {
-  grpc_millis initial_backoff_ms =
-      GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS * 1000;
-  *min_connect_timeout_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS * 1000;
-  grpc_millis max_backoff_ms =
-      GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
+BackOff::Options ParseArgsForBackoffValues(const grpc_channel_args* args,
+                                           Duration* min_connect_timeout) {
+  Duration initial_backoff =
+      Duration::Seconds(GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS);
+  *min_connect_timeout =
+      Duration::Seconds(GRPC_SUBCHANNEL_RECONNECT_MIN_TIMEOUT_SECONDS);
+  Duration max_backoff =
+      Duration::Seconds(GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS);
   bool fixed_reconnect_backoff = false;
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(args->args[i].key,
                       "grpc.testing.fixed_reconnect_backoff_ms")) {
         fixed_reconnect_backoff = true;
-        initial_backoff_ms = *min_connect_timeout_ms = max_backoff_ms =
-            grpc_channel_arg_get_integer(
+        initial_backoff = *min_connect_timeout = max_backoff =
+            Duration::Milliseconds(grpc_channel_arg_get_integer(
                 &args->args[i],
-                {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
+                {static_cast<int>(initial_backoff.millis()), 100, INT_MAX}));
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MIN_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
-        *min_connect_timeout_ms = grpc_channel_arg_get_integer(
-            &args->args[i],
-            {static_cast<int>(*min_connect_timeout_ms), 100, INT_MAX});
+        *min_connect_timeout =
+            Duration::Milliseconds(grpc_channel_arg_get_integer(
+                &args->args[i],
+                {static_cast<int>(min_connect_timeout->millis()), 100,
+                 INT_MAX}));
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_ARG_MAX_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
-        max_backoff_ms = grpc_channel_arg_get_integer(
-            &args->args[i], {static_cast<int>(max_backoff_ms), 100, INT_MAX});
+        max_backoff = Duration::Milliseconds(grpc_channel_arg_get_integer(
+            &args->args[i],
+            {static_cast<int>(max_backoff.millis()), 100, INT_MAX}));
       } else if (0 == strcmp(args->args[i].key,
                              GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS)) {
         fixed_reconnect_backoff = false;
-        initial_backoff_ms = grpc_channel_arg_get_integer(
+        initial_backoff = Duration::Milliseconds(grpc_channel_arg_get_integer(
             &args->args[i],
-            {static_cast<int>(initial_backoff_ms), 100, INT_MAX});
+            {static_cast<int>(initial_backoff.millis()), 100, INT_MAX}));
       }
     }
   }
   return BackOff::Options()
-      .set_initial_backoff(initial_backoff_ms)
+      .set_initial_backoff(initial_backoff)
       .set_multiplier(fixed_reconnect_backoff
                           ? 1.0
                           : GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER)
       .set_jitter(fixed_reconnect_backoff ? 0.0
                                           : GRPC_SUBCHANNEL_RECONNECT_JITTER)
-      .set_max_backoff(max_backoff_ms);
+      .set_max_backoff(max_backoff);
 }
 
 }  // namespace
@@ -655,7 +645,7 @@ Subchannel::Subchannel(SubchannelKey key,
       key_(std::move(key)),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
-      backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
+      backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
@@ -731,9 +721,9 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
-    if (grpc_trace_subchannel.enabled()) {
-      gpr_log(GPR_INFO, "Subchannel=%p: Throttling keepalive time to %d", this,
-              new_keepalive_time);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+      gpr_log(GPR_INFO, "subchannel %p %s: throttling keepalive time to %d",
+              this, key_.ToString().c_str(), new_keepalive_time);
     }
     const grpc_arg arg_to_add = grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), new_keepalive_time);
@@ -750,20 +740,13 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 }
 
 grpc_connectivity_state Subchannel::CheckConnectivityState(
-    const absl::optional<std::string>& health_check_service_name,
-    RefCountedPtr<ConnectedSubchannel>* connected_subchannel) {
+    const absl::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
-  grpc_connectivity_state state;
-  if (!health_check_service_name.has_value()) {
-    state = state_;
-  } else {
-    state = health_watcher_map_.CheckConnectivityStateLocked(
+  if (health_check_service_name.has_value()) {
+    return health_watcher_map_.CheckConnectivityStateLocked(
         this, *health_check_service_name);
   }
-  if (connected_subchannel != nullptr && state == GRPC_CHANNEL_READY) {
-    *connected_subchannel = connected_subchannel_;
-  }
-  return state;
+  return state_;
 }
 
 void Subchannel::WatchConnectivityState(
@@ -777,7 +760,7 @@ void Subchannel::WatchConnectivityState(
   }
   if (!health_check_service_name.has_value()) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, this, state_, status_);
+      new AsyncWatcherNotifierLocked(watcher, state_, status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
@@ -871,7 +854,7 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
             SubchannelConnectivityStateChangeString(state)));
   }
   // Notify non-health watchers.
-  watcher_list_.NotifyLocked(this, state, status);
+  watcher_list_.NotifyLocked(state, status);
   // Notify health watchers.
   health_watcher_map_.NotifyLocked(state, status);
 }
@@ -898,13 +881,14 @@ void Subchannel::MaybeStartConnectingLocked() {
   } else {
     GPR_ASSERT(!have_retry_alarm_);
     have_retry_alarm_ = true;
-    const grpc_millis time_til_next =
+    const Duration time_til_next =
         next_attempt_deadline_ - ExecCtx::Get()->Now();
-    if (time_til_next <= 0) {
-      gpr_log(GPR_INFO, "Subchannel %p: Retry immediately", this);
+    if (time_til_next <= Duration::Zero()) {
+      gpr_log(GPR_INFO, "subchannel %p %s: Retry immediately", this,
+              key_.ToString().c_str());
     } else {
-      gpr_log(GPR_INFO, "Subchannel %p: Retry in %" PRId64 " milliseconds",
-              this, time_til_next);
+      gpr_log(GPR_INFO, "subchannel %p %s: Retry in %" PRId64 " milliseconds",
+              this, key_.ToString().c_str(), time_til_next.millis());
     }
     GRPC_CLOSURE_INIT(&on_retry_alarm_, OnRetryAlarm, this,
                       grpc_schedule_on_exec_ctx);
@@ -923,10 +907,12 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
     c->retry_immediately_ = false;
     error = GRPC_ERROR_NONE;
   } else {
-    GRPC_ERROR_REF(error);
+    (void)GRPC_ERROR_REF(error);
   }
   if (error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
+    gpr_log(GPR_INFO,
+            "subchannel %p %s: failed to connect to channel, retrying", c.get(),
+            c->key_.ToString().c_str());
     c->ContinueConnectingLocked();
     // Still connecting, keep ref around. Note that this stolen ref won't
     // be dropped without first acquiring c->mu_.
@@ -939,8 +925,7 @@ void Subchannel::ContinueConnectingLocked() {
   SubchannelConnector::Args args;
   args.address = &address_for_connect_;
   args.interested_parties = pollset_set_;
-  const grpc_millis min_deadline =
-      min_connect_timeout_ms_ + ExecCtx::Get()->Now();
+  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
   next_attempt_deadline_ = backoff_.NextAttemptTime();
   args.deadline = std::max(next_attempt_deadline_, min_deadline);
   args.channel_args = args_;
@@ -959,8 +944,8 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
         c->PublishTransportLocked()) {
       // Do nothing, transport was published.
     } else if (!c->disconnected_) {
-      gpr_log(GPR_INFO, "Connect failed: %s",
-              grpc_error_std_string(error).c_str());
+      gpr_log(GPR_INFO, "subchannel %p %s: connect failed: %s", c.get(),
+              c->key_.ToString().c_str(), grpc_error_std_string(error).c_str());
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     grpc_error_to_absl_status(error));
     }
@@ -981,24 +966,21 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
-  grpc_channel_stack_builder_set_channel_arguments(
-      builder, connecting_result_.channel_args);
-  grpc_channel_stack_builder_set_transport(builder,
-                                           connecting_result_.transport);
+  ChannelStackBuilder builder("subchannel");
+  builder.SetChannelArgs(connecting_result_.channel_args)
+      .SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(
-          builder, GRPC_CLIENT_SUBCHANNEL)) {
-    grpc_channel_stack_builder_destroy(builder);
+          &builder, GRPC_CLIENT_SUBCHANNEL)) {
     return false;
   }
   grpc_channel_stack* stk;
-  grpc_error_handle error = grpc_channel_stack_builder_finish(
-      builder, 0, 1, ConnectionDestroy, nullptr,
-      reinterpret_cast<void**>(&stk));
+  grpc_error_handle error = builder.Build(0, 1, ConnectionDestroy, nullptr,
+                                          reinterpret_cast<void**>(&stk));
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(connecting_result_.transport);
-    gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
-            grpc_error_std_string(error).c_str());
+    gpr_log(GPR_ERROR,
+            "subchannel %p %s: error initializing subchannel stack: %s", this,
+            key_.ToString().c_str(), grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
   }
@@ -1013,8 +995,10 @@ bool Subchannel::PublishTransportLocked() {
   // Publish.
   connected_subchannel_.reset(
       new ConnectedSubchannel(stk, args_, channelz_node_));
-  gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
-          connected_subchannel_.get(), this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+    gpr_log(GPR_INFO, "subchannel %p %s: new connected subchannel at %p", this,
+            key_.ToString().c_str(), connected_subchannel_.get());
+  }
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket));
   }

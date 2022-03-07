@@ -51,7 +51,7 @@ _GRPC_DEP_NAMES = [
     'build_bazel_rules_apple', 'build_bazel_apple_support', 'libuv',
     'com_googlesource_code_re2', 'bazel_gazelle', 'opencensus_proto',
     'com_envoyproxy_protoc_gen_validate', 'com_google_googleapis',
-    'com_google_libprotobuf_mutator'
+    'com_google_libprotobuf_mutator', 'com_github_cncf_udpa'
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -165,10 +165,10 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print(
         "Found discrepancies between git submodules and Bazel WORKSPACE dependencies"
     )
-    print("workspace_git_hashes: %s" % workspace_git_hashes)
-    print("git_submodule_hashes: %s" % git_submodule_hashes)
-    print("workspace_git_hashes - git_submodule_hashes: %s" %
-          (workspace_git_hashes - git_submodule_hashes))
+    print(("workspace_git_hashes: %s" % workspace_git_hashes))
+    print(("git_submodule_hashes: %s" % git_submodule_hashes))
+    print(("workspace_git_hashes - git_submodule_hashes: %s" %
+           (workspace_git_hashes - git_submodule_hashes)))
     sys.exit(1)
 
 # Also check that we can override each dependency

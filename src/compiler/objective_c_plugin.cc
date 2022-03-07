@@ -29,6 +29,9 @@
 using ::google::protobuf::compiler::objectivec::
     IsProtobufLibraryBundledProtoFile;
 using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
+#ifdef SUPPORT_OBJC_PREFIX_VALIDATION
+using ::google::protobuf::compiler::objectivec::ValidateObjCClassPrefixes;
+#endif
 using ::grpc_objective_c_generator::FrameworkImport;
 using ::grpc_objective_c_generator::LocalImport;
 using ::grpc_objective_c_generator::PreprocIfElse;
@@ -90,6 +93,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       return true;
     }
 
+#ifdef SUPPORT_OBJC_PREFIX_VALIDATION
+    // Default options will use env variables for controls.
+    if (!ValidateObjCClassPrefixes({file}, {}, error)) {
+      return false;
+    }
+#endif
+
     bool grpc_local_import = false;
     ::std::string framework;
     ::std::string pb_runtime_import_prefix;
@@ -132,6 +142,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     static const ::std::string kNonNullBegin = "NS_ASSUME_NONNULL_BEGIN\n";
     static const ::std::string kNonNullEnd = "NS_ASSUME_NONNULL_END\n";
     static const ::std::string kProtocolOnly = "GPB_GRPC_PROTOCOL_ONLY";
+    static const ::std::string kForwardDeclare =
+        "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO";
 
     ::std::string file_name =
         google::protobuf::compiler::objectivec::FilePath(file);
@@ -160,6 +172,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     {
       // Generate .pbrpc.h
+
+      ::std::string imports;
+      if (framework.empty()) {
+        imports = LocalImport(file_name + ".pbobjc.h");
+      } else {
+        imports = FrameworkImport(file_name + ".pbobjc.h", framework);
+      }
 
       ::std::string system_imports;
       if (grpc_local_import) {
@@ -200,6 +219,12 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::std::string class_declarations =
           grpc_objective_c_generator::GetAllMessageClasses(file);
 
+      ::std::string class_imports;
+      for (int i = 0; i < file->dependency_count(); i++) {
+        class_imports += ImportProtoHeaders(
+            file->dependency(i), "  ", framework, pb_runtime_import_prefix);
+      }
+
       ::std::string ng_protocols;
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor* service = file->service(i);
@@ -222,9 +247,12 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       Write(context, file_name + ".pbrpc.h",
             file_header + SystemImport("Foundation/Foundation.h") + "\n" +
+                PreprocIfNot(kForwardDeclare, imports) + "\n" +
                 PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
-                class_declarations + "\n" + forward_declarations + "\n" +
-                kNonNullBegin + "\n" + ng_protocols + protocols + "\n" +
+                class_declarations + "\n" +
+                PreprocIfNot(kForwardDeclare, class_imports) + "\n" +
+                forward_declarations + "\n" + kNonNullBegin + "\n" +
+                ng_protocols + protocols + "\n" +
                 PreprocIfNot(kProtocolOnly, interfaces) + "\n" + kNonNullEnd +
                 "\n");
     }

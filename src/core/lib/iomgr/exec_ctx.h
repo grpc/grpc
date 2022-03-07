@@ -23,6 +23,7 @@
 
 #include <limits>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -32,12 +33,8 @@
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
-
-typedef int64_t grpc_millis;
-
-#define GRPC_MILLIS_INF_FUTURE INT64_MAX
-#define GRPC_MILLIS_INF_PAST INT64_MIN
 
 /** A combiner represents a list of work to be executed later.
     Forward declared here to avoid a circular dependency with combiner.h. */
@@ -57,12 +54,6 @@ typedef struct grpc_combiner grpc_combiner;
    should not be counted by fork handlers */
 #define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
 
-gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
-grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts);
-grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts);
-grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles);
-grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles);
-
 namespace grpc_core {
 class Combiner;
 /** Execution context.
@@ -73,10 +64,10 @@ class Combiner;
  *  Generally, to create an exec_ctx instance, add the following line at the top
  *  of the public API entry point or at the start of a thread's work function :
  *
- *  grpc_core::ExecCtx exec_ctx;
+ *  ExecCtx exec_ctx;
  *
  *  Access the created ExecCtx instance using :
- *  grpc_core::ExecCtx::Get()
+ *  ExecCtx::Get()
  *
  *  Specific responsibilities (this may grow in the future):
  *  - track a list of core work that needs to be delayed until the base of the
@@ -90,7 +81,7 @@ class Combiner;
  *  - Instance of this must ALWAYS be constructed on the stack, never
  *    heap allocated.
  *  - Do not pass exec_ctx as a parameter to a function. Always access it using
- *    grpc_core::ExecCtx::Get().
+ *    ExecCtx::Get().
  *  - NOTE: In the future, the convention is likely to change to allow only one
  *          ExecCtx on a thread's stack at the same time. The TODO below
  *          discusses this plan in more detail.
@@ -108,14 +99,14 @@ class ExecCtx {
   /** Default Constructor */
 
   ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
-    grpc_core::Fork::IncExecCtxCount();
+    Fork::IncExecCtxCount();
     Set(this);
   }
 
   /** Parameterised Constructor */
   explicit ExecCtx(uintptr_t fl) : flags_(fl) {
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-      grpc_core::Fork::IncExecCtxCount();
+      Fork::IncExecCtxCount();
     }
     Set(this);
   }
@@ -126,7 +117,7 @@ class ExecCtx {
     Flush();
     Set(last_exec_ctx_);
     if (!(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-      grpc_core::Fork::DecExecCtxCount();
+      Fork::DecExecCtxCount();
     }
   }
 
@@ -189,7 +180,7 @@ class ExecCtx {
    *  otherwise refreshes the stored time, sets it valid and returns the new
    *  value.
    */
-  grpc_millis Now();
+  Timestamp Now();
 
   /** Invalidates the stored time value. A new time value will be set on calling
    *  Now().
@@ -198,25 +189,17 @@ class ExecCtx {
 
   /** To be used only by shutdown code in iomgr */
   void SetNowIomgrShutdown() {
-    now_ = GRPC_MILLIS_INF_FUTURE;
+    now_ = Timestamp::InfFuture();
     now_is_valid_ = true;
   }
 
   /** To be used only for testing.
    *  Sets the now value.
    */
-  void TestOnlySetNow(grpc_millis new_val) {
+  void TestOnlySetNow(Timestamp new_val) {
     now_ = new_val;
     now_is_valid_ = true;
   }
-
-  static void TestOnlyGlobalInit(gpr_timespec new_val);
-
-  /** Global initialization for ExecCtx. Called by iomgr. */
-  static void GlobalInit(void);
-
-  /** Global shutdown for ExecCtx. Called by iomgr. */
-  static void GlobalShutdown(void) {}
 
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
@@ -245,7 +228,7 @@ class ExecCtx {
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
   bool now_is_valid_ = false;
-  grpc_millis now_ = 0;
+  Timestamp now_;
 
   static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();
@@ -276,7 +259,7 @@ class ExecCtx {
  *  stacks of core re-entries. Instead, any application callbacks instead should
  *  not be invoked until other core work is done and other application callbacks
  *  have completed. To accomplish this, any application callback should be
- *  enqueued using grpc_core::ApplicationCallbackExecCtx::Enqueue .
+ *  enqueued using ApplicationCallbackExecCtx::Enqueue .
  *
  *  CONVENTIONS:
  *  - Instances of this must ALWAYS be constructed on the stack, never
@@ -289,8 +272,8 @@ class ExecCtx {
  *  Generally, core entry points that may trigger application-level callbacks
  *  will have the following declarations:
  *
- *  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
- *  grpc_core::ExecCtx exec_ctx;
+ *  ApplicationCallbackExecCtx callback_exec_ctx;
+ *  ExecCtx exec_ctx;
  *
  *  This ordering is important to make sure that the ApplicationCallbackExecCtx
  *  is destroyed after the ExecCtx (to prevent the re-entry problem described
@@ -320,7 +303,7 @@ class ApplicationCallbackExecCtx {
       }
       callback_exec_ctx_ = nullptr;
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags_)) {
-        grpc_core::Fork::DecExecCtxCount();
+        Fork::DecExecCtxCount();
       }
     } else {
       GPR_DEBUG_ASSERT(head_ == nullptr);
@@ -335,7 +318,7 @@ class ApplicationCallbackExecCtx {
   static void Set(ApplicationCallbackExecCtx* exec_ctx, uintptr_t flags) {
     if (Get() == nullptr) {
       if (!(GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD & flags)) {
-        grpc_core::Fork::IncExecCtxCount();
+        Fork::IncExecCtxCount();
       }
       callback_exec_ctx_ = exec_ctx;
     }
@@ -370,6 +353,7 @@ class ApplicationCallbackExecCtx {
   grpc_completion_queue_functor* tail_{nullptr};
   static GPR_THREAD_LOCAL(ApplicationCallbackExecCtx*) callback_exec_ctx_;
 };
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

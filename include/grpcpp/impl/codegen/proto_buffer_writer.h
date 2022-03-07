@@ -52,7 +52,7 @@ const int kProtoBufferWriterMaxBufferLength = 1024 * 1024;
 ///
 /// Read more about ZeroCopyOutputStream interface here:
 /// https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyOutputStream
-class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
+class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   /// Constructor for this derived class
   ///
@@ -118,6 +118,13 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   /// (only used in the last buffer). \a count must be less than or equal too
   /// the last buffer returned from next.
   void BackUp(int count) override {
+    // count == 0 is invoked by ZeroCopyOutputStream users indicating that any
+    // potential buffer obtained through a previous call to Next() is final.
+    // ZeroCopyOutputStream implementations such as streaming output can use
+    // these calls to flush any temporary buffer and flush the output. The logic
+    // below is not robust against count == 0 invocations, so directly return.
+    if (count == 0) return;
+
     /// 1. Remove the partially-used last slice from the slice buffer
     /// 2. Split it into the needed (if any) and unneeded part
     /// 3. Add the needed part back to the slice buffer

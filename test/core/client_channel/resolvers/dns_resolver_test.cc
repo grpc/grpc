@@ -18,27 +18,28 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
-  void ReturnError(grpc_error_handle /*error*/) override {}
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {}
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -57,7 +58,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
 static void test_fails(grpc_core::ResolverFactory* factory,
                        const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -80,8 +81,9 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  grpc_core::ResolverFactory* dns =
-      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  grpc_core::ResolverFactory* dns = grpc_core::CoreConfiguration::Get()
+                                        .resolver_registry()
+                                        .LookupResolverFactory("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");

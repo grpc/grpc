@@ -39,25 +39,20 @@ class InsecureChannelSecurityConnector
     : public grpc_channel_security_connector {
  public:
   InsecureChannelSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
-      : grpc_channel_security_connector(/* url_scheme */ nullptr,
-                                        std::move(channel_creds),
+      RefCountedPtr<grpc_channel_credentials> channel_creds,
+      RefCountedPtr<grpc_call_credentials> request_metadata_creds)
+      : grpc_channel_security_connector("", std::move(channel_creds),
                                         std::move(request_metadata_creds)) {}
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
-                       grpc_error_handle* error) override;
-
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error_handle error) override;
+  ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /* interested_parties */,
-                       grpc_core::HandshakeManager* handshake_manager) override;
+                       HandshakeManager* handshake_manager) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
@@ -71,16 +66,16 @@ class InsecureChannelSecurityConnector
 class InsecureServerSecurityConnector : public grpc_server_security_connector {
  public:
   explicit InsecureServerSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(nullptr /* url_scheme */,
+      RefCountedPtr<grpc_server_credentials> server_creds)
+      : grpc_server_security_connector("" /* url_scheme */,
                                        std::move(server_creds)) {}
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /* interested_parties */,
-                       grpc_core::HandshakeManager* handshake_manager) override;
+                       HandshakeManager* handshake_manager) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,

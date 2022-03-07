@@ -46,6 +46,7 @@ class ExternalAccountCredentials
     std::string quota_project_id;
     std::string client_id;
     std::string client_secret;
+    std::string workforce_pool_user_project;
   };
 
   static RefCountedPtr<ExternalAccountCredentials> Create(
@@ -60,18 +61,14 @@ class ExternalAccountCredentials
   // This is a helper struct to pass information between multiple callback based
   // asynchronous calls.
   struct HTTPRequestContext {
-    HTTPRequestContext(grpc_httpcli_context* httpcli_context,
-                       grpc_polling_entity* pollent, grpc_millis deadline)
-        : httpcli_context(httpcli_context),
-          pollent(pollent),
-          deadline(deadline) {}
+    HTTPRequestContext(grpc_polling_entity* pollent, Timestamp deadline)
+        : pollent(pollent), deadline(deadline) {}
     ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
     // Contextual parameters passed from
     // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().
-    grpc_httpcli_context* httpcli_context;
     grpc_polling_entity* pollent;
-    grpc_millis deadline;
+    Timestamp deadline;
 
     // Reusable token fetch http response and closure.
     grpc_closure closure;
@@ -91,9 +88,8 @@ class ExternalAccountCredentials
   // This method implements the common token fetch logic and it will be called
   // when grpc_oauth2_token_fetcher_credentials request a new access token.
   void fetch_oauth2(grpc_credentials_metadata_request* req,
-                    grpc_httpcli_context* httpcli_context,
                     grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                    grpc_millis deadline) override;
+                    Timestamp deadline) override;
 
   void OnRetrieveSubjectTokenInternal(absl::string_view subject_token,
                                       grpc_error_handle error);
@@ -111,6 +107,7 @@ class ExternalAccountCredentials
   Options options_;
   std::vector<std::string> scopes_;
 
+  OrphanablePtr<HttpRequest> http_request_;
   HTTPRequestContext* ctx_ = nullptr;
   grpc_credentials_metadata_request* metadata_req_ = nullptr;
   grpc_iomgr_cb_func response_cb_ = nullptr;

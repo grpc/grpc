@@ -152,12 +152,13 @@ class SuicideFunctorForAdd : public grpc_completion_queue_functor {
 // Performs the scenario of external thread(s) adding closures into pool.
 static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   static grpc_core::ThreadPool* external_add_pool = nullptr;
+  int thread_idx = state.thread_index();
   // Setup for each run of test.
-  if (state.thread_index == 0) {
+  if (thread_idx == 0) {
     const int num_threads = state.range(1);
     external_add_pool = new grpc_core::ThreadPool(num_threads);
   }
-  const int num_iterations = state.range(0) / state.threads;
+  const int num_iterations = state.range(0) / state.threads();
   while (state.KeepRunningBatch(num_iterations)) {
     BlockingCounter counter(num_iterations);
     for (int i = 0; i < num_iterations; ++i) {
@@ -167,7 +168,7 @@ static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   }
 
   // Teardown at the end of each test run.
-  if (state.thread_index == 0) {
+  if (thread_idx == 0) {
     state.SetItemsProcessed(state.range(0));
     delete external_add_pool;
   }
@@ -324,7 +325,7 @@ int main(int argc, char* argv[]) {
   grpc::testing::TestEnvironment env(argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
-  ::grpc::testing::InitTest(&argc, &argv, false);
+  grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();
   return 0;
 }

@@ -21,14 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstdint>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
-#include "src/core/ext/transport/chttp2/transport/popularity_count.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -36,48 +35,9 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-// Wrapper to take an array of mdelems and make them encodable
-class MetadataArray {
- public:
-  MetadataArray(grpc_mdelem** elems, size_t count)
-      : elems_(elems), count_(count) {}
-
-  template <typename Encoder>
-  void Encode(Encoder* encoder) const {
-    for (size_t i = 0; i < count_; i++) {
-      encoder->Encode(*elems_[i]);
-    }
-  }
-
- private:
-  grpc_mdelem** elems_;
-  size_t count_;
-};
-
-namespace metadata_detail {
-template <typename A, typename B>
-class ConcatMetadata {
- public:
-  ConcatMetadata(const A& a, const B& b) : a_(a), b_(b) {}
-
-  template <typename Encoder>
-  void Encode(Encoder* encoder) const {
-    a_.Encode(encoder);
-    b_.Encode(encoder);
-  }
-
- private:
-  const A& a_;
-  const B& b_;
-};
-}  // namespace metadata_detail
-
-template <typename A, typename B>
-metadata_detail::ConcatMetadata<A, B> ConcatMetadata(const A& a, const B& b) {
-  return metadata_detail::ConcatMetadata<A, B>(a, b);
-}
-
 class HPackCompressor {
+  class SliceIndex;
+
  public:
   HPackCompressor() = default;
   ~HPackCompressor() = default;
@@ -116,10 +76,41 @@ class HPackCompressor {
     Framer(const Framer&) = delete;
     Framer& operator=(const Framer&) = delete;
 
-    void Encode(grpc_mdelem md);
-    void Encode(GrpcTimeoutMetadata, grpc_millis deadline);
+    void Encode(const Slice& key, const Slice& value);
+    void Encode(HttpPathMetadata, const Slice& value);
+    void Encode(HttpAuthorityMetadata, const Slice& value);
+    void Encode(HttpStatusMetadata, uint32_t status);
+    void Encode(GrpcTimeoutMetadata, Timestamp deadline);
+    void Encode(TeMetadata, TeMetadata::ValueType value);
+    void Encode(ContentTypeMetadata, ContentTypeMetadata::ValueType value);
+    void Encode(HttpSchemeMetadata, HttpSchemeMetadata::ValueType value);
+    void Encode(HttpMethodMetadata, HttpMethodMetadata::ValueType method);
+    void Encode(UserAgentMetadata, const Slice& slice);
+    void Encode(GrpcStatusMetadata, grpc_status_code status);
+    void Encode(GrpcEncodingMetadata, grpc_compression_algorithm value);
+    void Encode(GrpcAcceptEncodingMetadata, CompressionAlgorithmSet value);
+    void Encode(GrpcTagsBinMetadata, const Slice& slice);
+    void Encode(GrpcTraceBinMetadata, const Slice& slice);
+    void Encode(GrpcMessageMetadata, const Slice& slice) {
+      if (slice.empty()) return;
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(
+          Slice::FromStaticString("grpc-message"), slice.Ref());
+    }
+    template <typename Which>
+    void Encode(Which, const typename Which::ValueType& value) {
+      const Slice& slice = MetadataValueAsSlice<Which>(value);
+      if (absl::EndsWith(Which::key(), "-bin")) {
+        EmitLitHdrWithBinaryStringKeyNotIdx(
+            Slice::FromStaticString(Which::key()), slice.Ref());
+      } else {
+        EmitLitHdrWithNonBinaryStringKeyNotIdx(
+            Slice::FromStaticString(Which::key()), slice.Ref());
+      }
+    }
 
    private:
+    friend class SliceIndex;
+
     struct FramePrefix {
       // index (in output_) of the header for the frame
       size_t header_idx;
@@ -134,16 +125,24 @@ class HPackCompressor {
 
     void AdvertiseTableSizeChange();
     void EmitIndexed(uint32_t index);
-    void EncodeDynamic(grpc_mdelem elem);
-    static GPR_ATTRIBUTE_NOINLINE void Log(grpc_mdelem elem);
+    void EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
+                                                Slice value_slice);
+    void EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice,
+                                             Slice value_slice);
+    void EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
+                                             Slice value_slice);
+    void EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
+                                             Slice value_slice);
+    void EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                Slice value_slice);
 
-    void EmitLitHdrIncIdx(uint32_t key_index, grpc_mdelem elem);
-    void EmitLitHdrNotIdx(uint32_t key_index, grpc_mdelem elem);
-    void EmitLitHdrWithStringKeyIncIdx(grpc_mdelem elem);
-    void EmitLitHdrWithStringKeyNotIdx(grpc_mdelem elem);
+    void EncodeAlwaysIndexed(uint32_t* index, absl::string_view key,
+                             Slice value, uint32_t transport_length);
+    void EncodeIndexedKeyWithBinaryValue(uint32_t* index, absl::string_view key,
+                                         Slice value);
 
     size_t CurrentFrameSize() const;
-    void Add(grpc_slice slice);
+    void Add(Slice slice);
     uint8_t* AddTiny(size_t len);
 
     // maximum size of a frame
@@ -153,10 +152,6 @@ class HPackCompressor {
     const bool is_end_of_stream_;
     // output stream id
     const uint32_t stream_id_;
-#ifndef NDEBUG
-    // have we seen a regular (non-colon-prefixed) header yet?
-    bool seen_regular_header_ = false;
-#endif
     grpc_slice_buffer* const output_;
     grpc_transport_one_way_stats* const stats_;
     HPackCompressor* const compressor_;
@@ -165,14 +160,7 @@ class HPackCompressor {
 
  private:
   static constexpr size_t kNumFilterValues = 64;
-
-  void AddKeyWithIndex(grpc_slice_refcount* key_ref, uint32_t new_index,
-                       uint32_t key_hash);
-  void AddElemWithIndex(grpc_mdelem elem, uint32_t new_index,
-                        uint32_t elem_hash, uint32_t key_hash);
-  void AddElem(grpc_mdelem elem, size_t elem_size, uint32_t elem_hash,
-               uint32_t key_hash);
-  void AddKey(grpc_mdelem elem, size_t elem_size, uint32_t key_hash);
+  static constexpr uint32_t kNumCachedGrpcStatusValues = 16;
 
   // maximum number of bytes we'll use for the decode table (to guard against
   // peers ooming us by setting decode table size high)
@@ -182,90 +170,48 @@ class HPackCompressor {
   bool advertise_table_size_change_ = false;
   HPackEncoderTable table_;
 
-  // filter tables for elems: this tables provides an approximate
-  // popularity count for particular hashes, and are used to determine whether
-  // a new literal should be added to the compression table or not.
-  // They track a single integer that counts how often a particular value has
-  // been seen. When that count reaches max (255), all values are halved.
-  grpc_core::PopularityCount<kNumFilterValues> filter_elems_;
-
-  class KeyElem {
+  class SliceIndex {
    public:
-    class Stored {
-     public:
-      Stored() : elem_(GRPC_MDNULL) {}
-      explicit Stored(grpc_mdelem elem) : elem_(GRPC_MDELEM_REF(elem)) {}
-      Stored(const Stored& other) : elem_(GRPC_MDELEM_REF(other.elem_)) {}
-      Stored& operator=(Stored other) {
-        std::swap(elem_, other.elem_);
-        return *this;
-      }
-      ~Stored() { GRPC_MDELEM_UNREF(elem_); }
+    void EmitTo(absl::string_view key, const Slice& value, Framer* framer);
 
-      const grpc_mdelem& elem() const { return elem_; }
-
-      bool operator==(const Stored& other) const noexcept {
-        return elem_.payload == other.elem_.payload;
-      }
-
-     private:
-      grpc_mdelem elem_;
+   private:
+    struct ValueIndex {
+      ValueIndex(Slice value, uint32_t index)
+          : value(std::move(value)), index(index) {}
+      Slice value;
+      uint32_t index;
     };
-
-    KeyElem(grpc_mdelem elem, uint32_t hash) : elem_(elem), hash_(hash) {}
-    KeyElem(const KeyElem&);
-    KeyElem& operator=(const KeyElem&);
-
-    uint32_t hash() const {
-      // TODO(ctiller): unify this with what's in the cc file when we move this
-      // code to c++
-      return hash_ >> 6;
-    }
-
-    Stored stored() const { return Stored(elem_); }
-
-    bool operator==(const Stored& stored) const noexcept {
-      return elem_.payload == stored.elem().payload;
-    }
-
-   private:
-    grpc_mdelem elem_;
-    uint32_t hash_;
+    std::vector<ValueIndex> values_;
   };
 
-  class KeySliceRef {
-   public:
-    using Stored = grpc_core::RefCountedPtr<grpc_slice_refcount>;
-
-    KeySliceRef(grpc_slice_refcount* ref, uint32_t hash)
-        : ref_(ref), hash_(hash) {}
-    KeySliceRef(const KeySliceRef&) = delete;
-    KeySliceRef& operator=(const KeySliceRef&) = delete;
-
-    uint32_t hash() const {
-      // TODO(ctiller): unify this with what's in the cc file when we move this
-      // code to c++
-      return hash_ >> 6;
-    }
-
-    Stored stored() const {
-      ref_->Ref();
-      return Stored(ref_);
-    }
-
-    bool operator==(const Stored& stored) const noexcept {
-      return ref_ == stored.get();
-    }
-
-   private:
-    grpc_slice_refcount* ref_;
-    uint32_t hash_;
+  struct PreviousTimeout {
+    Timeout timeout;
+    uint32_t index;
   };
 
-  // entry tables for keys & elems: these tables track values that have been
-  // seen and *may* be in the decompressor table
-  grpc_core::HPackEncoderIndex<KeyElem, kNumFilterValues> elem_index_;
-  grpc_core::HPackEncoderIndex<KeySliceRef, kNumFilterValues> key_index_;
+  // Index into table_ for the te:trailers metadata element
+  uint32_t te_index_ = 0;
+  // Index into table_ for the content-type metadata element
+  uint32_t content_type_index_ = 0;
+  // Index into table_ for the user-agent metadata element
+  uint32_t user_agent_index_ = 0;
+  // Cached grpc-status values
+  uint32_t cached_grpc_status_[kNumCachedGrpcStatusValues] = {};
+  // Cached grpc-encoding values
+  uint32_t cached_grpc_encoding_[GRPC_COMPRESS_ALGORITHMS_COUNT] = {};
+  // Cached grpc-accept-encoding value
+  uint32_t grpc_accept_encoding_index_ = 0;
+  // The grpc-accept-encoding string referred to by grpc_accept_encoding_index_
+  CompressionAlgorithmSet grpc_accept_encoding_;
+  // Index of something that was sent with grpc-tags-bin
+  uint32_t grpc_tags_bin_index_ = 0;
+  // Index of something that was sent with grpc-trace-bin
+  uint32_t grpc_trace_bin_index_ = 0;
+  // The user-agent string referred to by user_agent_index_
+  Slice user_agent_;
+  SliceIndex path_index_;
+  SliceIndex authority_index_;
+  std::vector<PreviousTimeout> previous_timeouts_;
 };
 
 }  // namespace grpc_core

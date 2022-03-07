@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -54,10 +56,11 @@
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -393,7 +396,8 @@ struct grpc_tcp {
   std::string peer_string;
   std::string local_address;
 
-  grpc_slice_allocator* slice_allocator;
+  grpc_core::MemoryOwner memory_owner;
+  grpc_core::MemoryAllocator::Reservation self_reservation;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
   gpr_mu tb_mu; /* Lock for access to list of traced buffers */
@@ -457,7 +461,8 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p run", p);
   }
   gpr_mu_lock(p->pollset_mu);
-  grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 10 * GPR_MS_PER_SEC;
+  grpc_core::Timestamp deadline =
+      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
   GRPC_STATS_INC_TCP_BACKUP_POLLER_POLLS();
   GRPC_LOG_IF_ERROR(
       "backup_poller:pollset_work",
@@ -592,8 +597,7 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
           /* All tcp errors are marked with UNAVAILABLE so that application may
            * choose to retry. */
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS,
-      grpc_slice_from_copied_string(tcp->peer_string.c_str()));
+      GRPC_ERROR_STR_TARGET_ADDRESS, tcp->peer_string);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -609,7 +613,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_slice_allocator_destroy(tcp->slice_allocator);
   /* The lock is not really necessary here, since all refs have been released */
   gpr_mu_lock(&tcp->tb_mu);
   grpc_core::TracedBuffer::Shutdown(
@@ -702,6 +705,8 @@ static void tcp_do_read(grpc_tcp* tcp) {
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
   }
 
+  GPR_ASSERT(tcp->incoming_buffer->length != 0);
+
   do {
     /* Assume there is something on the queue. If we receive TCP_INQ from
      * kernel, we will update this value, otherwise, we have to assume there is
@@ -788,7 +793,6 @@ static void tcp_do_read(grpc_tcp* tcp) {
 
     total_read_bytes += read_bytes;
     if (tcp->inq == 0 || total_read_bytes == tcp->incoming_buffer->length) {
-      /* We have filled incoming_buffer, and we cannot read any more. */
       break;
     }
 
@@ -828,36 +832,25 @@ static void tcp_do_read(grpc_tcp* tcp) {
   TCP_UNREF(tcp, "read");
 }
 
-static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
-  grpc_tcp* tcp = static_cast<grpc_tcp*>(tcpp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp,
-            grpc_error_std_string(error).c_str());
-  }
-  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
-    grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-    grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
-    call_read_cb(tcp, GRPC_ERROR_REF(error));
-    TCP_UNREF(tcp, "read");
-  } else {
-    tcp_do_read(tcp);
-  }
-}
-
 static void tcp_continue_read(grpc_tcp* tcp) {
-  /* Wait for allocation only when there is no buffer left. */
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
+      gpr_log(GPR_INFO,
+              "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
+              "buf_len=%" PRIdPTR,
+              tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
+              tcp->target_length, tcp->incoming_buffer->length);
     }
-    if (GPR_UNLIKELY(!grpc_slice_allocator_allocate(
-            tcp->slice_allocator, tcp->target_length, 1,
-            grpc_slice_allocator_intent::kReadBuffer, tcp->incoming_buffer,
-            tcp_read_allocation_done, tcp))) {
-      // Wait for allocation.
-      return;
-    }
+    int target_length = static_cast<int>(tcp->target_length);
+    int extra_wanted =
+        target_length - static_cast<int>(tcp->incoming_buffer->length);
+    grpc_slice_buffer_add_indexed(
+        tcp->incoming_buffer,
+        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+            tcp->min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
+                             tcp->max_read_chunk_size))));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
@@ -1670,8 +1663,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_channel_args* channel_args,
-                               const char* peer_string,
-                               grpc_slice_allocator* slice_allocator) {
+                               absl::string_view peer_string) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
   int tcp_max_read_chunk_size = 4 * 1024 * 1024;
@@ -1728,9 +1720,12 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_tcp* tcp = new grpc_tcp(tcp_tx_zerocopy_max_simult_sends,
                                tcp_tx_zerocopy_send_bytes_thresh);
   tcp->base.vtable = &vtable;
-  tcp->peer_string = peer_string;
+  tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->slice_allocator = slice_allocator;
+  tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
+                          ->memory_quota()
+                          ->CreateMemoryOwner(peer_string);
+  tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);

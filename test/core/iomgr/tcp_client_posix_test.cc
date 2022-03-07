@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -37,7 +38,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "test/core/util/resource_user_util.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/test_config.h"
 
 static grpc_pollset_set* g_pollset_set;
@@ -46,8 +47,9 @@ static grpc_pollset* g_pollset;
 static int g_connections_complete = 0;
 static grpc_endpoint* g_connecting = nullptr;
 
-static grpc_millis test_deadline(void) {
-  return grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+static grpc_core::Timestamp test_deadline(void) {
+  return grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(10));
 }
 
 static void finish_connection() {
@@ -106,9 +108,12 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(
-      &done, &g_connecting, grpc_slice_allocator_create_unlimited(),
-      g_pollset_set, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
+  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
+                          &resolved_addr, grpc_core::Timestamp::InfFuture());
+  grpc_channel_args_destroy(args);
   /* await the connection */
   do {
     resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
@@ -125,7 +130,7 @@ void test_succeeds(void) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
+                          grpc_core::Timestamp::FromTimespecRoundUp(
                               grpc_timeout_seconds_to_deadline(5)))));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
@@ -155,20 +160,19 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(
-      &done, &g_connecting, grpc_slice_allocator_create_unlimited(),
-      g_pollset_set, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+                          &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
-    grpc_millis polling_deadline = test_deadline();
+    grpc_core::Timestamp polling_deadline = test_deadline();
     switch (grpc_timer_check(&polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        polling_deadline = 0;
+        polling_deadline = grpc_core::Timestamp::ProcessEpoch();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -202,18 +206,17 @@ void test_fails_bad_addr_no_leak(void) {
   gpr_mu_unlock(g_mu);
   // connect to an invalid address.
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(
-      &done, &g_connecting, grpc_slice_allocator_create_unlimited(),
-      g_pollset_set, nullptr, &resolved_addr, GRPC_MILLIS_INF_FUTURE);
+  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
+                          &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;
-    grpc_millis polling_deadline = test_deadline();
+    grpc_core::Timestamp polling_deadline = test_deadline();
     switch (grpc_timer_check(&polling_deadline)) {
       case GRPC_TIMERS_FIRED:
         break;
       case GRPC_TIMERS_NOT_CHECKED:
-        polling_deadline = 0;
+        polling_deadline = grpc_core::Timestamp::ProcessEpoch();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         GPR_ASSERT(GRPC_LOG_IF_ERROR(

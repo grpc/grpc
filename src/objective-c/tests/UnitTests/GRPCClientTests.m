@@ -396,43 +396,6 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   }
 }
 
-- (void)testIdempotentProtoRPC {
-  __weak XCTestExpectation *response = [self expectationWithDescription:@"Expected response."];
-  __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
-
-  RMTSimpleRequest *request = [RMTSimpleRequest message];
-  request.responseSize = 100;
-  request.fillUsername = YES;
-  request.fillOauthScope = YES;
-  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
-
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
-                                             path:kUnaryCallMethod.HTTPPath
-                                   requestsWriter:requestsWriter];
-  [GRPCCall setCallSafety:GRPCCallSafetyIdempotentRequest
-                     host:kHostAddress
-                     path:kUnaryCallMethod.HTTPPath];
-
-  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]
-      initWithValueHandler:^(NSData *value) {
-        XCTAssertNotNil(value, @"nil value received as response.");
-        XCTAssertGreaterThan(value.length, 0, @"Empty response received.");
-        RMTSimpleResponse *responseProto = [RMTSimpleResponse parseFromData:value error:NULL];
-        // We expect empty strings, not nil:
-        XCTAssertNotNil(responseProto.username, @"Response's username is nil.");
-        XCTAssertNotNil(responseProto.oauthScope, @"Response's OAuth scope is nil.");
-        [response fulfill];
-      }
-      completionHandler:^(NSError *errorOrNil) {
-        XCTAssertNil(errorOrNil, @"Finished with unexpected error: %@", errorOrNil);
-        [completion fulfill];
-      }];
-
-  [call startWithWriteable:responsesWriteable];
-
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
-}
-
 - (void)testAlternateDispatchQueue {
   const int32_t kPayloadSize = 100;
   RMTSimpleRequest *request = [RMTSimpleRequest message];
@@ -563,7 +526,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 - (void)testTimeoutBackoffWithTimeout:(double)timeout Backoff:(double)backoff {
   const double maxConnectTime = timeout > backoff ? timeout : backoff;
-  const double kMargin = 0.1;
+  const double kMargin = 0.2;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
   NSString *const kPhonyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];

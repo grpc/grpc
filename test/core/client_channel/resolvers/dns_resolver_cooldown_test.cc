@@ -17,36 +17,37 @@
  */
 
 #include <cstring>
+#include <functional>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/test_config.h"
 
 constexpr int kMinResolutionPeriodMs = 1000;
 
-extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
-static grpc_address_resolver_vtable* default_resolve_address;
-
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
-static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
+static grpc_ares_request* (*g_default_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
+    char** service_config_json, int query_timeout_ms);
 
-// Counter incremented by test_resolve_address_impl indicating the number of
-// times a system-level resolution has happened.
+// Counter incremented by TestDNSResolver::ResolveName indicating the
+// number of times a system-level resolution has happened.
 static int g_resolution_count;
 
 static struct iomgr_args {
@@ -57,71 +58,75 @@ static struct iomgr_args {
   grpc_pollset_set* pollset_set;
 } g_iomgr_args;
 
-// Wrapper around default resolve_address in order to count the number of
-// times we incur in a system-level name resolution.
-static void test_resolve_address_impl(const char* name,
-                                      const char* default_port,
-                                      grpc_pollset_set* /*interested_parties*/,
-                                      grpc_closure* on_done,
-                                      grpc_resolved_addresses** addrs) {
-  default_resolve_address->resolve_address(
-      name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
-  ++g_resolution_count;
-  static grpc_millis last_resolution_time = 0;
-  if (last_resolution_time == 0) {
-    last_resolution_time =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-  } else {
-    grpc_millis now =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
-    last_resolution_time = now;
+namespace {
+
+grpc_core::DNSResolver* g_default_dns_resolver;
+
+class TestDNSResolver : public grpc_core::DNSResolver {
+ public:
+  // Wrapper around default resolve_address in order to count the number of
+  // times we incur in a system-level name resolution.
+  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
+      absl::string_view name, absl::string_view default_port,
+      grpc_pollset_set* interested_parties,
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_done) override {
+    auto result = g_default_dns_resolver->ResolveName(
+        name, default_port, interested_parties, std::move(on_done));
+    ++g_resolution_count;
+    static grpc_core::Timestamp last_resolution_time =
+        grpc_core::Timestamp::ProcessEpoch();
+    if (last_resolution_time == grpc_core::Timestamp::ProcessEpoch()) {
+      last_resolution_time = grpc_core::Timestamp::FromTimespecRoundUp(
+          gpr_now(GPR_CLOCK_MONOTONIC));
+    } else {
+      auto now = grpc_core::Timestamp::FromTimespecRoundUp(
+          gpr_now(GPR_CLOCK_MONOTONIC));
+      GPR_ASSERT(now - last_resolution_time >=
+                 grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
+      last_resolution_time = now;
+    }
+    // For correct time diff comparisons, make sure that any subsequent calls
+    // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
+    // which is earlier than that returned by the call(s) to
+    // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
+    // because the resolver's last_resolution_timestamp_ will be taken from
+    // grpc_core::ExecCtx::Get()->Now() right after this returns.
+    grpc_core::ExecCtx::Get()->InvalidateNow();
+    return result;
   }
-  // For correct time diff comparisons, make sure that any subsequent calls
-  // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
-  // which is earlier than that returned by the call(s) to
-  // gpr_now(GPR_CLOCK_MONOTONIC) within this function. This is important
-  // because the resolver's last_resolution_timestamp_ will be taken from
-  // grpc_core::ExecCtx::Get()->Now() right after this returns.
-  grpc_core::ExecCtx::Get()->InvalidateNow();
-}
 
-static grpc_error_handle test_blocking_resolve_address_impl(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
-  return default_resolve_address->blocking_resolve_address(name, default_port,
-                                                           addresses);
-}
+  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+      absl::string_view name, absl::string_view default_port) override {
+    return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
+  }
+};
 
-static grpc_address_resolver_vtable test_resolver = {
-    test_resolve_address_impl, test_blocking_resolve_address_impl};
+}  // namespace
 
-static grpc_ares_request* test_dns_lookup_ares_locked(
+static grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms,
-    std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  grpc_ares_request* result = g_default_dns_lookup_ares_locked(
+    char** service_config_json, int query_timeout_ms) {
+  grpc_ares_request* result = g_default_dns_lookup_ares(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-      addresses, balancer_addresses, service_config_json, query_timeout_ms,
-      std::move(work_serializer));
+      addresses, balancer_addresses, service_config_json, query_timeout_ms);
   ++g_resolution_count;
-  static grpc_millis last_resolution_time = 0;
-  grpc_millis now =
-      grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+  static auto last_resolution_time = grpc_core::Timestamp::ProcessEpoch();
+  auto now =
+      grpc_core::Timestamp::FromTimespecRoundUp(gpr_now(GPR_CLOCK_MONOTONIC));
   gpr_log(GPR_DEBUG,
           "last_resolution_time:%" PRId64 " now:%" PRId64
           " min_time_between:%d",
-          last_resolution_time, now, kMinResolutionPeriodMs);
-  if (last_resolution_time == 0) {
-    last_resolution_time =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
-  } else {
-    GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodMs);
-    last_resolution_time = now;
+          last_resolution_time.milliseconds_after_process_epoch(),
+          now.milliseconds_after_process_epoch(), kMinResolutionPeriodMs);
+  if (last_resolution_time != grpc_core::Timestamp::ProcessEpoch()) {
+    GPR_ASSERT(now - last_resolution_time >=
+               grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
   }
+  last_resolution_time = now;
   // For correct time diff comparisons, make sure that any subsequent calls
   // to grpc_core::ExecCtx::Get()->Now() on this thread don't return a time
   // which is earlier than that returned by the call(s) to
@@ -163,22 +168,22 @@ static void iomgr_args_finish(iomgr_args* args) {
   gpr_free(args->pollset);
 }
 
-static grpc_millis n_sec_deadline(int seconds) {
-  return grpc_timespec_to_millis_round_up(
+static grpc_core::Timestamp n_sec_deadline(int seconds) {
+  return grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
 static void poll_pollset_until_request_done(iomgr_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  grpc_core::Timestamp deadline = n_sec_deadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
       break;
     }
-    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
-    GPR_ASSERT(time_left >= 0);
+    grpc_core::Duration time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
+    GPR_ASSERT(time_left >= grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
@@ -202,7 +207,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
+  void ReportResult(grpc_core::Resolver::Result /*result*/) override {
     GPR_ASSERT(result_cb_ != nullptr);
     GPR_ASSERT(state_ != nullptr);
     ResultCallback cb = result_cb_;
@@ -210,12 +215,6 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     result_cb_ = nullptr;
     state_ = nullptr;
     cb(state);
-  }
-
-  void ReturnError(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s",
-            grpc_error_std_string(error).c_str());
-    GPR_ASSERT(false);
   }
 
  private:
@@ -291,12 +290,13 @@ static void start_test_under_work_serializer(void* arg) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
   res_cb_arg->result_handler = new ResultHandler();
-  grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
+  grpc_core::ResolverFactory* factory = grpc_core::CoreConfiguration::Get()
+                                            .resolver_registry()
+                                            .LookupResolverFactory("dns");
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(res_cb_arg->uri_str);
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", res_cb_arg->uri_str,
-          factory->scheme());
+          std::string(factory->scheme()).c_str());
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
     GPR_ASSERT(uri.ok());
@@ -341,10 +341,10 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
-  grpc_dns_lookup_ares_locked = test_dns_lookup_ares_locked;
-  default_resolve_address = grpc_resolve_address_impl;
-  grpc_set_resolver_impl(&test_resolver);
+  g_default_dns_lookup_ares = grpc_dns_lookup_ares;
+  grpc_dns_lookup_ares = test_dns_lookup_ares;
+  g_default_dns_resolver = grpc_core::GetDNSResolver();
+  grpc_core::SetDNSResolver(new TestDNSResolver());
 
   test_cooldown();
 

@@ -30,7 +30,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -121,7 +120,7 @@ static void test_retry_server_pushback_disabled(
 
   grpc_metadata pushback_md;
   memset(&pushback_md, 0, sizeof(pushback_md));
-  pushback_md.key = GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS;
+  pushback_md.key = grpc_slice_from_static_string("grpc-retry-pushback-ms");
   pushback_md.value = grpc_slice_from_static_string("-1");
 
   grpc_arg args[] = {

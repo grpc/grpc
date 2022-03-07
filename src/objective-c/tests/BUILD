@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
-
-package(default_visibility = ["//visibility:public"])
-
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_testing_library",
@@ -28,6 +24,10 @@ load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
+
+licenses(["notice"])
+
+package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
 
@@ -145,6 +145,11 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "GRPCBasicUnitTests-lib",
+    srcs = ["UnitTests/GRPCCallOptionsTests.m"],
+)
+
+grpc_objc_testing_library(
     name = "APIv2Tests-lib",
     srcs = ["UnitTests/APIv2Tests.m"],
 )
@@ -180,6 +185,7 @@ ios_unit_test(
         ":APIv2Tests-lib",
         ":ChannelPoolTest-lib",
         ":ChannelTests-lib",
+        ":GRPCBasicUnitTests-lib",
         ":GRPCClientTests-lib",
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",

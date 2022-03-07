@@ -5,6 +5,7 @@ require 'google/protobuf'
 
 require 'src/proto/grpc/testing/payloads_pb'
 require 'src/proto/grpc/testing/stats_pb'
+
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("src/proto/grpc/testing/control.proto", :syntax => :proto3) do
     add_message "grpc.testing.PoissonParams" do

@@ -15,11 +15,14 @@
 #ifndef GRPC_CORE_LIB_PROMISE_PROMISE_H
 #define GRPC_CORE_LIB_PROMISE_PROMISE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -62,7 +65,6 @@ class Immediate {
  private:
   T value_;
 };
-
 }  // namespace promise_detail
 
 // Return \a value immediately
@@ -70,6 +72,11 @@ template <typename T>
 promise_detail::Immediate<T> Immediate(T value) {
   return promise_detail::Immediate<T>(std::move(value));
 }
+
+// Return status Ok immediately
+struct ImmediateOkStatus {
+  Poll<absl::Status> operator()() { return absl::OkStatus(); }
+};
 
 // Typecheck that a promise returns the expected return type.
 // usage: auto promise = WithResult<int>([]() { return 3; });

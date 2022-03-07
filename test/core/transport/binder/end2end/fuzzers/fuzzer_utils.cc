@@ -38,17 +38,18 @@ void JoinFuzzingThread() {
 }
 
 int32_t ReadableParcelForFuzzing::GetDataSize() const {
-  return data_provider_->ConsumeIntegral<int32_t>();
+  return parcel_data_size_;
 }
 
 absl::Status ReadableParcelForFuzzing::ReadInt32(int32_t* data) {
   if (consumed_data_size_ >= kParcelDataSizeLimit) {
     return absl::InternalError("Parcel size limit exceeds");
   }
-  if (!is_setup_transport_ && data_provider_->ConsumeBool()) {
+  if (values_.empty() || !values_.front().has_i32()) {
     return absl::InternalError("error");
   }
-  *data = data_provider_->ConsumeIntegral<int32_t>();
+  *data = values_.front().i32();
+  values_.pop();
   consumed_data_size_ += sizeof(int32_t);
   return absl::OkStatus();
 }
@@ -57,10 +58,11 @@ absl::Status ReadableParcelForFuzzing::ReadInt64(int64_t* data) {
   if (consumed_data_size_ >= kParcelDataSizeLimit) {
     return absl::InternalError("Parcel size limit exceeds");
   }
-  if (!is_setup_transport_ && data_provider_->ConsumeBool()) {
+  if (values_.empty() || !values_.front().has_i64()) {
     return absl::InternalError("error");
   }
-  *data = data_provider_->ConsumeIntegral<int64_t>();
+  *data = values_.front().i64();
+  values_.pop();
   consumed_data_size_ += sizeof(int64_t);
   return absl::OkStatus();
 }
@@ -70,10 +72,11 @@ absl::Status ReadableParcelForFuzzing::ReadBinder(
   if (consumed_data_size_ >= kParcelDataSizeLimit) {
     return absl::InternalError("Parcel size limit exceeds");
   }
-  if (!is_setup_transport_ && data_provider_->ConsumeBool()) {
+  if (values_.empty() || !values_.front().has_binder()) {
     return absl::InternalError("error");
   }
   *binder = absl::make_unique<BinderForFuzzing>();
+  values_.pop();
   consumed_data_size_ += sizeof(void*);
   return absl::OkStatus();
 }
@@ -82,10 +85,11 @@ absl::Status ReadableParcelForFuzzing::ReadByteArray(std::string* data) {
   if (consumed_data_size_ >= kParcelDataSizeLimit) {
     return absl::InternalError("Parcel size limit exceeds");
   }
-  if (!is_setup_transport_ && data_provider_->ConsumeBool()) {
+  if (values_.empty() || !values_.front().has_byte_array()) {
     return absl::InternalError("error");
   }
-  *data = data_provider_->ConsumeRandomLengthString(100);
+  *data = values_.front().byte_array();
+  values_.pop();
   consumed_data_size_ += data->size();
   return absl::OkStatus();
 }
@@ -94,59 +98,56 @@ absl::Status ReadableParcelForFuzzing::ReadString(std::string* data) {
   if (consumed_data_size_ >= kParcelDataSizeLimit) {
     return absl::InternalError("Parcel size limit exceeds");
   }
-  if (!is_setup_transport_ && data_provider_->ConsumeBool()) {
+  if (values_.empty() || !values_.front().has_str()) {
     return absl::InternalError("error");
   }
-  *data = data_provider_->ConsumeRandomLengthString(100);
+  *data = values_.front().str();
+  values_.pop();
   consumed_data_size_ += data->size();
   return absl::OkStatus();
 }
 
 void FuzzingLoop(
-    const uint8_t* data, size_t size,
+    binder_transport_fuzzer::IncomingParcels incoming_parcels,
     grpc_core::RefCountedPtr<grpc_binder::WireReader> wire_reader_ref,
     grpc_binder::TransactionReceiver::OnTransactCb callback) {
-  FuzzedDataProvider data_provider(data, size);
   {
     // Send SETUP_TRANSPORT request.
     std::unique_ptr<grpc_binder::ReadableParcel> parcel =
         absl::make_unique<ReadableParcelForFuzzing>(
-            &data_provider,
-            /*is_setup_transport=*/true);
+            incoming_parcels.setup_transport_transaction().parcel());
     callback(static_cast<transaction_code_t>(
                  grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT),
-             parcel.get(), /*uid=*/data_provider.ConsumeIntegral<int>())
+             parcel.get(),
+             /*uid=*/incoming_parcels.setup_transport_transaction().uid())
         .IgnoreError();
   }
-  while (data_provider.remaining_bytes() > 0) {
-    transaction_code_t tx_code =
-        data_provider.ConsumeIntegralInRange<transaction_code_t>(
-            0, LAST_CALL_TRANSACTION);
+  for (const auto& tx_iter : incoming_parcels.transactions()) {
+    transaction_code_t tx_code = tx_iter.code();
     std::unique_ptr<grpc_binder::ReadableParcel> parcel =
-        absl::make_unique<ReadableParcelForFuzzing>(
-            &data_provider,
-            /*is_setup_transport=*/false);
+        absl::make_unique<ReadableParcelForFuzzing>(tx_iter.parcel());
     callback(tx_code, parcel.get(),
-             /*uid=*/data_provider.ConsumeIntegral<int>())
+             /*uid=*/tx_iter.uid())
         .IgnoreError();
   }
   wire_reader_ref = nullptr;
 }
 
-TranasctionReceiverForFuzzing::TranasctionReceiverForFuzzing(
-    const uint8_t* data, size_t size,
+TransactionReceiverForFuzzing::TransactionReceiverForFuzzing(
+    binder_transport_fuzzer::IncomingParcels incoming_parcels,
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) {
-  gpr_log(GPR_INFO, "Construct TranasctionReceiverForFuzzing");
-  CreateFuzzingThread(FuzzingLoop, data, size, std::move(wire_reader_ref),
-                      std::move(cb));
+  gpr_log(GPR_INFO, "Construct TransactionReceiverForFuzzing");
+  CreateFuzzingThread(FuzzingLoop, std::move(incoming_parcels),
+                      std::move(wire_reader_ref), std::move(cb));
 }
 
 std::unique_ptr<TransactionReceiver> BinderForFuzzing::ConstructTxReceiver(
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) const {
-  return absl::make_unique<TranasctionReceiverForFuzzing>(data_, size_,
-                                                          wire_reader_ref, cb);
+  auto tx_receiver = absl::make_unique<TransactionReceiverForFuzzing>(
+      incoming_parcels_, wire_reader_ref, cb);
+  return tx_receiver;
 }
 
 }  // namespace fuzzing

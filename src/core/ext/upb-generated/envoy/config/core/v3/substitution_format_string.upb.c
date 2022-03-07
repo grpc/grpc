@@ -18,25 +18,38 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_core_v3_SubstitutionFormatString_submsgs[3] = {
-  &envoy_config_core_v3_DataSource_msginit,
-  &envoy_config_core_v3_TypedExtensionConfig_msginit,
-  &google_protobuf_Struct_msginit,
+static const upb_MiniTable_Sub envoy_config_core_v3_SubstitutionFormatString_submsgs[3] = {
+  {.submsg = &envoy_config_core_v3_DataSource_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
+  {.submsg = &google_protobuf_Struct_msginit},
 };
 
-static const upb_msglayout_field envoy_config_core_v3_SubstitutionFormatString__fields[6] = {
-  {1, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 2, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 11, _UPB_MODE_SCALAR},
-  {6, UPB_SIZE(12, 24), 0, 1, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_config_core_v3_SubstitutionFormatString__fields[6] = {
+  {1, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(0, 0), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(12, 24), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_core_v3_SubstitutionFormatString_msginit = {
+const upb_MiniTable envoy_config_core_v3_SubstitutionFormatString_msginit = {
   &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
-  UPB_SIZE(32, 64), 6, false, 6, 255,
+  UPB_SIZE(32, 64), 6, upb_ExtMode_NonExtendable, 6, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[1] = {
+  &envoy_config_core_v3_SubstitutionFormatString_msginit,
+};
+
+const upb_MiniTable_File envoy_config_core_v3_substitution_format_string_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  1,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

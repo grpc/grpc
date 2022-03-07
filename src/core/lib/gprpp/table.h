@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_TABLE_H
 #define GRPC_CORE_LIB_GPRPP_TABLE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
@@ -268,9 +268,21 @@ class Table {
   TypeIndex<I>* set(Args&&... args) {
     auto* p = element_ptr<I>();
     if (set_present<I>(true)) {
-      *p = TypeIndex<I>(std::forward<Args>(args)...);
+      TypeIndex<I> replacement(std::forward<Args>(args)...);
+      *p = std::move(replacement);
     } else {
       new (p) TypeIndex<I>(std::forward<Args>(args)...);
+    }
+    return p;
+  }
+
+  template <size_t I>
+  TypeIndex<I>* set(TypeIndex<I>&& value) {
+    auto* p = element_ptr<I>();
+    if (set_present<I>(true)) {
+      *p = std::forward<TypeIndex<I>>(value);
+    } else {
+      new (p) TypeIndex<I>(std::forward<TypeIndex<I>>(value));
     }
     return p;
   }
@@ -298,6 +310,12 @@ class Table {
 
   // Count the number of set fields in the table
   size_t count() const { return present_bits_.count(); }
+
+  // Check if the table is completely empty
+  bool empty() const { return present_bits_.none(); }
+
+  // Clear all elements in the table.
+  void ClearAll() { ClearAllImpl(absl::make_index_sequence<sizeof...(Ts)>()); }
 
  private:
   // Bit field for which elements of the table are set (true) or un-set (false,
@@ -398,6 +416,11 @@ class Table {
   template <typename F, size_t... I>
   void ForEachImpl(F f, absl::index_sequence<I...>) const {
     table_detail::do_these_things<int>({(CallIf<I>(&f), 1)...});
+  }
+
+  template <size_t... I>
+  void ClearAllImpl(absl::index_sequence<I...>) {
+    table_detail::do_these_things<int>({(clear<I>(), 1)...});
   }
 
   // Bit field indicating which elements are set.

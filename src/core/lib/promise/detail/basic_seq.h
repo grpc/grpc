@@ -15,10 +15,15 @@
 #ifndef GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 #define GRPC_CORE_LIB_PROMISE_DETAIL_BASIC_SEQ_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
+#include <array>
 #include <cassert>
+#include <new>
+#include <tuple>
+#include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
 
@@ -29,6 +34,8 @@
 
 namespace grpc_core {
 namespace promise_detail {
+template <typename F>
+class PromiseLike;
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -155,9 +162,9 @@ absl::enable_if_t<I <= J, SeqState<Traits, I, Fs...>*> GetSeqState(
 }
 
 template <template <typename> class Traits, char I, typename... Fs, typename T>
-auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg) -> decltype(
-    SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
-        &state->next_factory, std::forward<T>(arg))) {
+auto CallNext(SeqState<Traits, I, Fs...>* state, T&& arg)
+    -> decltype(SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::
+                    CallFactory(&state->next_factory, std::forward<T>(arg))) {
   return SeqState<Traits, I, Fs...>::Types::PromiseResultTraits::CallFactory(
       &state->next_factory, std::forward<T>(arg));
 }
@@ -392,6 +399,95 @@ class BasicSeq {
   Poll<Result> operator()() {
     return Run(absl::make_integer_sequence<char, N>());
   }
+};
+
+// As above, but models a sequence of unknown size
+// At each element, the accumulator A and the current value V is passed to some
+// function of type F as f(V, A); f is expected to return a promise that
+// resolves to Traits::WrappedType.
+template <template <typename Wrapped> class Traits, typename F, typename Arg,
+          typename Iter>
+class BasicSeqIter {
+ private:
+  using IterValue = decltype(*std::declval<Iter>());
+  using StateCreated = decltype(std::declval<F>()(std::declval<IterValue>(),
+                                                  std::declval<Arg>()));
+  using State = PromiseLike<StateCreated>;
+  using Wrapped = typename State::Result;
+
+ public:
+  BasicSeqIter(Iter begin, Iter end, F f, Arg arg)
+      : cur_(begin), end_(end), f_(std::move(f)) {
+    if (cur_ == end_) {
+      Construct(&result_, std::move(arg));
+    } else {
+      Construct(&state_, f_(*cur_, std::move(arg)));
+    }
+  }
+
+  ~BasicSeqIter() {
+    if (cur_ == end_) {
+      Destruct(&result_);
+    } else {
+      Destruct(&state_);
+    }
+  }
+
+  BasicSeqIter(const BasicSeqIter& other) = delete;
+  BasicSeqIter& operator=(const BasicSeqIter&) = delete;
+
+  BasicSeqIter(BasicSeqIter&& other) noexcept
+      : cur_(other.cur_), end_(other.end_), f_(std::move(other.f_)) {
+    if (cur_ == end_) {
+      Construct(&result_, std::move(other.result_));
+    } else {
+      Construct(&state_, std::move(other.state_));
+    }
+  }
+  BasicSeqIter& operator=(BasicSeqIter&& other) noexcept {
+    cur_ = other.cur_;
+    end_ = other.end_;
+    if (cur_ == end_) {
+      Construct(&result_, std::move(other.result_));
+    } else {
+      Construct(&state_, std::move(other.state_));
+    }
+    return *this;
+  }
+
+  Poll<Wrapped> operator()() {
+    if (cur_ == end_) {
+      return std::move(result_);
+    }
+    return PollNonEmpty();
+  }
+
+ private:
+  Poll<Wrapped> PollNonEmpty() {
+    Poll<Wrapped> r = state_();
+    if (absl::holds_alternative<Pending>(r)) return r;
+    return Traits<Wrapped>::template CheckResultAndRunNext<Wrapped>(
+        std::move(absl::get<Wrapped>(r)), [this](Wrapped arg) -> Poll<Wrapped> {
+          auto next = cur_;
+          ++next;
+          if (next == end_) {
+            return std::move(arg);
+          }
+          cur_ = next;
+          state_.~State();
+          Construct(&state_,
+                    Traits<Wrapped>::CallSeqFactory(f_, *cur_, std::move(arg)));
+          return PollNonEmpty();
+        });
+  }
+
+  Iter cur_;
+  const Iter end_;
+  GPR_NO_UNIQUE_ADDRESS F f_;
+  union {
+    GPR_NO_UNIQUE_ADDRESS State state_;
+    GPR_NO_UNIQUE_ADDRESS Arg result_;
+  };
 };
 
 }  // namespace promise_detail

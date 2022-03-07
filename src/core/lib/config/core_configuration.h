@@ -15,11 +15,15 @@
 #ifndef GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 #define GRPC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <atomic>
 
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
@@ -35,17 +39,37 @@ class CoreConfiguration {
   // their configuration and assemble the published CoreConfiguration.
   class Builder {
    public:
+    ChannelArgsPreconditioning::Builder* channel_args_preconditioning() {
+      return &channel_args_preconditioning_;
+    }
+
     ChannelInit::Builder* channel_init() { return &channel_init_; }
 
     HandshakerRegistry::Builder* handshaker_registry() {
       return &handshaker_registry_;
     }
 
+    ChannelCredsRegistry<>::Builder* channel_creds_registry() {
+      return &channel_creds_registry_;
+    }
+
+    ServiceConfigParser::Builder* service_config_parser() {
+      return &service_config_parser_;
+    }
+
+    ResolverRegistry::Builder* resolver_registry() {
+      return &resolver_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
+    ChannelArgsPreconditioning::Builder channel_args_preconditioning_;
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
+    ChannelCredsRegistry<>::Builder channel_creds_registry_;
+    ServiceConfigParser::Builder service_config_parser_;
+    ResolverRegistry::Builder resolver_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -111,10 +135,30 @@ class CoreConfiguration {
 
   // Accessors
 
+  const ChannelArgsPreconditioning& channel_args_preconditioning() const {
+    return channel_args_preconditioning_;
+  }
+
   const ChannelInit& channel_init() const { return channel_init_; }
 
   const HandshakerRegistry& handshaker_registry() const {
     return handshaker_registry_;
+  }
+
+  const ChannelCredsRegistry<>& channel_creds_registry() const {
+    return channel_creds_registry_;
+  }
+
+  const ServiceConfigParser& service_config_parser() const {
+    return service_config_parser_;
+  }
+
+  const ResolverRegistry& resolver_registry() const {
+    return resolver_registry_;
+  }
+
+  static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
+    default_builder_ = builder;
   }
 
  private:
@@ -134,9 +178,15 @@ class CoreConfiguration {
   static std::atomic<CoreConfiguration*> config_;
   // Extra registered builders
   static std::atomic<RegisteredBuilder*> builders_;
+  // Default builder
+  static void (*default_builder_)(CoreConfiguration::Builder*);
 
+  ChannelArgsPreconditioning channel_args_preconditioning_;
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
+  ChannelCredsRegistry<> channel_creds_registry_;
+  ServiceConfigParser service_config_parser_;
+  ResolverRegistry resolver_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

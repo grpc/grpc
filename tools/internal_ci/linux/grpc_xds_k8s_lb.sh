@@ -17,11 +17,7 @@ set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
-# GKE Cluster
-readonly GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
-readonly GKE_CLUSTER_ZONE="us-central1-a"
-readonly SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
-readonly SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
+readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 ## xDS test client Docker images
 readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
@@ -99,12 +95,18 @@ run_test() {
   # Test driver usage:
   # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
-  python -m "tests.${test_name}" \
+  # testing_version is used by the framework to determine the supported PSM
+  # features. It's captured from Kokoro job name of the Core repo, which takes
+  # 2 forms:
+  #   grpc/core/master/linux/...
+  #   grpc/core/v1.42.x/branch/linux/...
+  python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     ${@:2}
 }
@@ -139,8 +141,14 @@ run_alpha_test() {
 main() {
   local script_dir
   script_dir="$(dirname "$0")"
-  # shellcheck source=tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh
-  source "${script_dir}/grpc_xds_k8s_install_test_driver.sh"
+
+  # Source the test captured from the master branch.
+  echo "Sourcing test driver install captured from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
+  source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
+
+  activate_gke_cluster GKE_CLUSTER_PSM_LB
+  activate_secondary_gke_cluster GKE_CLUSTER_PSM_LB
+
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
@@ -148,11 +156,12 @@ main() {
     local_setup_test_driver "${script_dir}"
   fi
   build_docker_images_if_needed
+
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
   run_alpha_test subsetting_test || (( failed_tests++ ))
-  test_suites=("change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test")
+  test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test" "affinity_test")
   for test in "${test_suites[@]}"; do
     run_test $test || (( failed_tests++ ))
   done

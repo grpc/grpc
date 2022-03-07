@@ -34,15 +34,15 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
@@ -118,16 +118,16 @@ struct grpc_chttp2_ping_queue {
 struct grpc_chttp2_repeated_ping_policy {
   int max_pings_without_data;
   int max_ping_strikes;
-  grpc_millis min_recv_ping_interval_without_data;
+  grpc_core::Duration min_recv_ping_interval_without_data;
 };
 struct grpc_chttp2_repeated_ping_state {
-  grpc_millis last_ping_sent_time;
+  grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 };
 struct grpc_chttp2_server_ping_recv_state {
-  grpc_millis last_ping_recv_time;
+  grpc_core::Timestamp last_ping_recv_time;
   int ping_strikes;
 };
 /* deframer state for the overall http2 stream of bytes */
@@ -253,12 +253,10 @@ class Chttp2IncomingByteStream : public ByteStream {
   static void NextLocked(void* arg, grpc_error_handle error_ignored);
   static void OrphanLocked(void* arg, grpc_error_handle error_ignored);
 
-  void MaybeCreateStreamDecompressionCtx();
-
   grpc_chttp2_transport* transport_;  // Immutable.
   grpc_chttp2_stream* stream_;        // Immutable.
 
-  grpc_core::RefCount refs_;
+  RefCount refs_;
 
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==
@@ -287,8 +285,7 @@ typedef enum {
 
 struct grpc_chttp2_transport {
   grpc_chttp2_transport(const grpc_channel_args* channel_args,
-                        grpc_endpoint* ep, bool is_client,
-                        grpc_resource_user* resource_user);
+                        grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
@@ -296,7 +293,9 @@ struct grpc_chttp2_transport {
   grpc_endpoint* ep;
   std::string peer_string;
 
-  grpc_resource_user* resource_user;
+  grpc_core::MemoryOwner memory_owner;
+  const grpc_core::MemoryAllocator::Reservation self_reservation;
+  grpc_core::ReclamationSweep active_reclamation;
 
   grpc_core::Combiner* combiner;
 
@@ -478,9 +477,9 @@ struct grpc_chttp2_transport {
   /** watchdog to kill the transport when waiting for the keepalive ping */
   grpc_timer keepalive_watchdog_timer;
   /** time duration in between pings */
-  grpc_millis keepalive_time;
+  grpc_core::Duration keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
-  grpc_millis keepalive_timeout;
+  grpc_core::Duration keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
   /** If start_keepalive_ping_locked has been called */
@@ -589,8 +588,8 @@ struct grpc_chttp2_stream {
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
 
-  grpc_chttp2_incoming_metadata_buffer initial_metadata_buffer;
-  grpc_chttp2_incoming_metadata_buffer trailing_metadata_buffer;
+  grpc_metadata_batch initial_metadata_buffer;
+  grpc_metadata_batch trailing_metadata_buffer;
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
@@ -610,7 +609,7 @@ struct grpc_chttp2_stream {
       GRPC_ERROR_NONE;              /* protected by t combiner */
   bool received_last_frame = false; /* protected by t combiner */
 
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
   grpc_error_handle forced_close_error = GRPC_ERROR_NONE;
@@ -640,38 +639,10 @@ struct grpc_chttp2_stream {
   grpc_chttp2_write_cb* finish_after_write = nullptr;
   size_t sending_bytes = 0;
 
-  /* Stream compression method to be used. */
-  grpc_stream_compression_method stream_compression_method =
-      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
-  /* Stream decompression method to be used. */
-  grpc_stream_compression_method stream_decompression_method =
-      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
-
-  /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
-   */
-  bool unprocessed_incoming_frames_decompressed = false;
   /** Whether the bytes needs to be traced using Fathom */
   bool traced = false;
-  /** gRPC header bytes that are already decompressed */
-  size_t decompressed_header_bytes = 0;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
-
-  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
-   * emptied */
-  size_t uncompressed_data_size;
-  /** Stream compression compress context */
-  grpc_stream_compression_context* stream_compression_ctx;
-  /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer compressed_data_buffer;
-
-  /** Stream compression decompress context */
-  grpc_stream_compression_context* stream_decompression_ctx;
-  /** Temporary buffer storing decompressed data.
-   * Initialized, used, and destroyed only when stream uses (non-identity)
-   * compression.
-   */
-  grpc_slice_buffer decompressed_data_buffer;
 };
 
 /** Transport writing call flow:
@@ -767,7 +738,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
-                                     const grpc_slice& goaway_text);
+                                     absl::string_view goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 

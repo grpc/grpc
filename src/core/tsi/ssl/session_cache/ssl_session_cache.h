@@ -21,14 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
+#include <openssl/ssl.h>
+
 #include <grpc/slice.h>
 #include <grpc/support/sync.h>
 
-extern "C" {
-#include <openssl/ssl.h>
-}
-
-#include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -72,7 +71,7 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
  private:
   class Node;
 
-  Node* FindLocked(const grpc_slice& key);
+  Node* FindLocked(const std::string& key);
   void Remove(Node* node);
   void PushFront(Node* node);
   void AssertInvariants();
@@ -83,7 +82,7 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
   Node* use_order_list_head_ = nullptr;
   Node* use_order_list_tail_ = nullptr;
   size_t use_order_list_size_ = 0;
-  grpc_avl entry_by_key_;
+  std::map<std::string, Node*> entry_by_key_;
 };
 
 }  // namespace tsi

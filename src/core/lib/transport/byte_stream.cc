@@ -40,6 +40,10 @@ SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   grpc_slice_buffer_init(&backing_buffer_);
   grpc_slice_buffer_swap(slice_buffer, &backing_buffer_);
+  if (backing_buffer_.count == 0) {
+    grpc_slice_buffer_add_indexed(&backing_buffer_, grpc_empty_slice());
+    GPR_ASSERT(backing_buffer_.count > 0);
+  }
 }
 
 SliceBufferByteStream::~SliceBufferByteStream() {}
@@ -47,6 +51,7 @@ SliceBufferByteStream::~SliceBufferByteStream() {}
 void SliceBufferByteStream::Orphan() {
   grpc_slice_buffer_destroy_internal(&backing_buffer_);
   GRPC_ERROR_UNREF(shutdown_error_);
+  shutdown_error_ = GRPC_ERROR_NONE;
   // Note: We do not actually delete the object here, since
   // SliceBufferByteStream is usually allocated as part of a larger
   // object and has an OrphanablePtr of itself passed down through the
@@ -103,6 +108,7 @@ ByteStreamCache::CachingByteStream::~CachingByteStream() {}
 
 void ByteStreamCache::CachingByteStream::Orphan() {
   GRPC_ERROR_UNREF(shutdown_error_);
+  shutdown_error_ = GRPC_ERROR_NONE;
   // Note: We do not actually delete the object here, since
   // CachingByteStream is usually allocated as part of a larger
   // object and has an OrphanablePtr of itself passed down through the

@@ -32,7 +32,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -268,7 +267,7 @@ class InjectStatusFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
- public:
+ private:
   class CallData {
    public:
     static grpc_error_handle Init(grpc_call_element* elem,
@@ -326,6 +325,7 @@ class InjectStatusFilter {
 
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -338,16 +338,15 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool AddFilter(grpc_channel_stack_builder* builder) {
+bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_channel_args* args = builder->channel_args();
   if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;
   }
   // Install filter.
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &InjectStatusFilter::kFilterVtable, nullptr, nullptr);
+  builder->PrependFilter(&InjectStatusFilter::kFilterVtable, nullptr);
+  return true;
 }
 
 }  // namespace

@@ -24,6 +24,72 @@ readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
 readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
 readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
 
+# GKE cluster identifiers.
+readonly GKE_CLUSTER_PSM_LB="psm-lb"
+readonly GKE_CLUSTER_PSM_SECURITY="psm-security"
+readonly GKE_CLUSTER_PSM_BASIC="psm-basic"
+
+#######################################
+# Determines the cluster name and zone based on the given cluster identifier.
+# Globals:
+#   GKE_CLUSTER_NAME: Set to reflect the cluster name to use
+#   GKE_CLUSTER_ZONE: Set to reflect the cluster zone to use.
+# Arguments:
+#   The cluster identifier
+# Outputs:
+#   Writes the output to stdout, stderr
+#######################################
+activate_gke_cluster() {
+  case $1 in
+    GKE_CLUSTER_PSM_LB)
+      GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-central1-a"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
+    GKE_CLUSTER_PSM_SECURITY)
+      GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-central1-a"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
+    GKE_CLUSTER_PSM_BASIC)
+      GKE_CLUSTER_NAME="interop-test-psm-basic"
+      GKE_CLUSTER_ZONE="us-central1-c"
+      ;;
+    *)
+      echo "Unknown GKE cluster: ${1}"
+      exit 1
+      ;;
+  esac
+  echo "Activated GKE cluster: GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME} GKE_CLUSTER_ZONE=${GKE_CLUSTER_ZONE}"
+}
+
+#######################################
+# Determines the secondary cluster name and zone based on the given cluster
+# identifier.
+# Globals:
+#   GKE_CLUSTER_NAME: Set to reflect the cluster name to use
+#   GKE_CLUSTER_ZONE: Set to reflect the cluster zone to use.
+# Arguments:
+#   The cluster identifier
+# Outputs:
+#   Writes the output to stdout, stderr
+#######################################
+activate_secondary_gke_cluster() {
+  case $1 in
+    GKE_CLUSTER_PSM_LB)
+      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-lb-v1-us-west1-b"
+      SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
+      ;;
+    GKE_CLUSTER_PSM_SECURITY)
+      SECONDARY_GKE_CLUSTER_NAME="interop-test-psm-sec-v2-us-west1-b"
+      SECONDARY_GKE_CLUSTER_ZONE="us-west1-b"
+      ;;
+    *)
+      echo "Unknown secondary GKE cluster: ${1}"
+      exit 1
+      ;;
+  esac
+  echo "Activated secondary GKE cluster: GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME} GKE_CLUSTER_ZONE=${GKE_CLUSTER_ZONE}"
+}
+
 #######################################
 # Run command end report its exit code. Doesn't exit on non-zero exit code.
 # Globals:
@@ -160,9 +226,9 @@ test_driver_pip_install() {
     source "${venv_dir}/bin/activate"
   fi
 
-  pip install -r requirements.txt
+  python3 -m pip install -r requirements.txt
   echo "Installed Python packages:"
-  pip list
+  python3 -m pip list
 }
 
 #######################################
@@ -188,7 +254,7 @@ test_driver_compile_protos() {
   )
   echo "Generate python code from grpc.testing protos: ${protos[*]}"
   cd "${TEST_DRIVER_REPO_DIR}"
-  python -m grpc_tools.protoc \
+  python3 -m grpc_tools.protoc \
     --proto_path=. \
     --python_out="${TEST_DRIVER_FULL_DIR}" \
     --grpc_python_out="${TEST_DRIVER_FULL_DIR}" \
@@ -279,12 +345,12 @@ kokoro_setup_python_virtual_environment() {
   pyenv virtualenv --no-pip "${py_latest_patch}" k8s_xds_test_runner
   pyenv local k8s_xds_test_runner
   pyenv activate k8s_xds_test_runner
-  python -m ensurepip
+  python3 -m ensurepip
   # pip is fixed to 21.0.1 due to issue https://github.com/pypa/pip/pull/9835
   # internal details: b/186411224
   # TODO(sergiitk): revert https://github.com/grpc/grpc/pull/26087 when 21.1.1 released
-  python -m pip install -U pip==21.0.1
-  pip --version
+  python3 -m pip install -U pip==21.0.1
+  python3 -m pip --version
 }
 
 #######################################
@@ -342,13 +408,12 @@ kokoro_setup_test_driver() {
 #   TEST_DRIVER_REPO_DIR: Unless provided, populated with a temporary dir with
 #                         the path to the test driver repo
 #   SRC_DIR: Populated with absolute path to the source repo
-#   TEST_DRIVER_FULL_DIR: Populated with the path to the test driver source code
+#   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
 #   TEST_DRIVER_FLAGFILE: Populated with relative path to test driver flagfile
 #   TEST_XML_OUTPUT_DIR: Populated with the path to test xUnit XML report
 #   GIT_ORIGIN_URL: Populated with the origin URL of git repo used for the build
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
 #   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
-#   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
 #   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   The path to the folder containing the build script
@@ -358,12 +423,14 @@ kokoro_setup_test_driver() {
 local_setup_test_driver() {
   local script_dir="${1:?Usage: local_setup_test_driver SCRIPT_DIR}"
   readonly SRC_DIR="$(git -C "${script_dir}" rev-parse --show-toplevel)"
-  parse_src_repo_git_info SRC_DIR
+  parse_src_repo_git_info "${SRC_DIR}"
   readonly KUBE_CONTEXT="${KUBE_CONTEXT:-$(kubectl config current-context)}"
   readonly SECONDARY_KUBE_CONTEXT="${SECONDARY_KUBE_CONTEXT}"
+
   local test_driver_repo_dir
   test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   test_driver_install "${test_driver_repo_dir}"
+
   # shellcheck disable=SC2034  # Used in the main script
   readonly TEST_DRIVER_FLAGFILE="config/local-dev.cfg"
   # Test out

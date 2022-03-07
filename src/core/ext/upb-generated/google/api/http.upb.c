@@ -12,54 +12,69 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const google_api_Http_submsgs[1] = {
-  &google_api_HttpRule_msginit,
+static const upb_MiniTable_Sub google_api_Http_submsgs[1] = {
+  {.submsg = &google_api_HttpRule_msginit},
 };
 
-static const upb_msglayout_field google_api_Http__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 11, _UPB_MODE_ARRAY},
-  {2, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field google_api_Http__fields[2] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 0), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_Http_msginit = {
+const upb_MiniTable google_api_Http_msginit = {
   &google_api_Http_submsgs[0],
   &google_api_Http__fields[0],
-  UPB_SIZE(8, 16), 2, false, 2, 255,
+  UPB_SIZE(8, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const google_api_HttpRule_submsgs[2] = {
-  &google_api_CustomHttpPattern_msginit,
-  &google_api_HttpRule_msginit,
+static const upb_MiniTable_Sub google_api_HttpRule_submsgs[2] = {
+  {.submsg = &google_api_CustomHttpPattern_msginit},
+  {.submsg = &google_api_HttpRule_msginit},
 };
 
-static const upb_msglayout_field google_api_HttpRule__fields[10] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {6, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
-  {8, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 11, _UPB_MODE_SCALAR},
-  {11, UPB_SIZE(24, 48), 0, 1, 11, _UPB_MODE_ARRAY},
-  {12, UPB_SIZE(16, 32), 0, 0, 9, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field google_api_HttpRule__fields[10] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(8, 16), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {8, UPB_SIZE(28, 56), UPB_SIZE(-37, -73), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {11, UPB_SIZE(24, 48), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {12, UPB_SIZE(16, 32), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_HttpRule_msginit = {
+const upb_MiniTable google_api_HttpRule_msginit = {
   &google_api_HttpRule_submsgs[0],
   &google_api_HttpRule__fields[0],
-  UPB_SIZE(40, 80), 10, false, 8, 255,
+  UPB_SIZE(40, 80), 10, upb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
-static const upb_msglayout_field google_api_CustomHttpPattern__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field google_api_CustomHttpPattern__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout google_api_CustomHttpPattern_msginit = {
+const upb_MiniTable google_api_CustomHttpPattern_msginit = {
   NULL,
   &google_api_CustomHttpPattern__fields[0],
-  UPB_SIZE(16, 32), 2, false, 2, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[3] = {
+  &google_api_Http_msginit,
+  &google_api_HttpRule_msginit,
+  &google_api_CustomHttpPattern_msginit,
+};
+
+const upb_MiniTable_File google_api_http_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  3,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

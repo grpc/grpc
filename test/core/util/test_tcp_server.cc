@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -65,10 +66,12 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   memset(&addr->sin_addr, 0, sizeof(addr->sin_addr));
   resolved_addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 
-  grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete, nullptr,
-      grpc_slice_allocator_factory_create(grpc_resource_quota_create(nullptr)),
-      &server->tcp_server);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
+  grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
+                                                   args, &server->tcp_server);
+  grpc_channel_args_destroy(args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
@@ -83,7 +86,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {
   grpc_pollset_worker* worker = nullptr;
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = grpc_timespec_to_millis_round_up(
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_milliseconds_to_deadline(milliseconds));
   gpr_mu_lock(server->mu);
   GRPC_LOG_IF_ERROR("pollset_work",

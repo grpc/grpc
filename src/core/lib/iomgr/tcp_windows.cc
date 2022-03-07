@@ -116,8 +116,6 @@ typedef struct grpc_tcp {
   grpc_slice_buffer* write_slices;
   grpc_slice_buffer* read_slices;
 
-  grpc_slice_allocator* slice_allocator;
-
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
   gpr_mu mu;
@@ -132,7 +130,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
-  grpc_slice_allocator_destroy(tcp->slice_allocator);
   if (tcp->shutting_down) GRPC_ERROR_UNREF(tcp->shutdown_error);
   delete tcp;
 }
@@ -186,7 +183,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
   }
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   if (error == GRPC_ERROR_NONE) {
     if (info->wsa_error != 0 && !tcp->shutting_down) {
@@ -222,10 +219,12 @@ static void on_read(void* tcpp, grpc_error_handle error) {
           gpr_log(GPR_INFO, "TCP:%p unref read_slice", tcp);
         }
         grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
-        error = tcp->shutting_down
-                    ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                          "TCP stream shutting down", &tcp->shutdown_error, 1)
-                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream");
+        error = grpc_error_set_int(
+            tcp->shutting_down
+                ? GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                      "TCP stream shutting down", &tcp->shutdown_error, 1)
+                : GRPC_ERROR_CREATE_FROM_STATIC_STRING("End of TCP stream"),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       }
     }
   }
@@ -255,8 +254,10 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   if (tcp->shutting_down) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "TCP socket is shutting down", &tcp->shutdown_error, 1));
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                "TCP socket is shutting down", &tcp->shutdown_error, 1),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -322,7 +323,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
   }
 
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
@@ -369,8 +370,10 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   if (tcp->shutting_down) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
-        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-            "TCP socket is shutting down", &tcp->shutdown_error, 1));
+        grpc_error_set_int(
+            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                "TCP socket is shutting down", &tcp->shutdown_error, 1),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -502,10 +505,10 @@ static grpc_endpoint_vtable vtable = {win_read,
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
-                               const char* peer_string,
-                               grpc_slice_allocator* slice_allocator) {
-  grpc_tcp* tcp = new grpc_tcp;
-  memset(tcp, 0, sizeof(grpc_tcp));
+                               absl::string_view peer_string) {
+  // TODO(jtattermusch): C++ize grpc_tcp and its dependencies (i.e. add
+  // constructors) to ensure proper initialization
+  grpc_tcp* tcp = new grpc_tcp{};
   tcp->base.vtable = &vtable;
   tcp->socket = socket;
   gpr_mu_init(&tcp->mu);
@@ -521,9 +524,8 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   } else {
     tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
-  tcp->peer_string = peer_string;
+  tcp->peer_string = std::string(peer_string);
   grpc_slice_buffer_init(&tcp->last_read_buffer);
-  tcp->slice_allocator = slice_allocator;
   return &tcp->base;
 }
 

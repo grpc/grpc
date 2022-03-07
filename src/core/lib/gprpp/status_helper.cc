@@ -20,6 +20,8 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <type_traits>
+
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -159,7 +161,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
-                          std::initializer_list<absl::Status> children) {
+                          std::vector<absl::Status> children) {
   absl::Status s(code, msg);
   if (location.file() != nullptr) {
     StatusSetStr(&s, StatusStrProperty::kFile, location.file());
@@ -218,9 +220,23 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
+#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1910
+  // Abseil has a workaround for MSVC 2015 which prevents absl::Time
+  // from being is_trivially_copyable but it's still safe to be
+  // memcopied.
+#elif defined(__GNUG__) && __GNUC__ < 5
+  // GCC versions < 5 do not support std::is_trivially_copyable
+#else
+  static_assert(std::is_trivially_copyable<absl::Time>::value,
+                "absl::Time needs to be able to be memcopied");
+#endif
+  // This is required not to get uninitialized padding of absl::Time.
+  alignas(absl::Time) char buf[sizeof(time)] = {
+      0,
+  };
+  new (buf) absl::Time(time);
   status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&time), sizeof(time))));
+                     absl::Cord(absl::string_view(buf, sizeof(time))));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
@@ -230,7 +246,10 @@ absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
     if (sv.has_value()) {
-      return *reinterpret_cast<const absl::Time*>(sv->data());
+      // copy the content before casting to avoid misaligned address access
+      alignas(absl::Time) char buf[sizeof(const absl::Time)];
+      memcpy(buf, sv->data(), sizeof(const absl::Time));
+      return *reinterpret_cast<const absl::Time*>(buf);
     } else {
       std::string s = std::string(*p);
       return *reinterpret_cast<const absl::Time*>(s.c_str());
@@ -331,32 +350,34 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
-google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
+google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
   google_rpc_Status_set_message(
-      msg, upb_strview_make(status.message().data(), status.message().size()));
+      msg, upb_StringView_FromDataAndSize(status.message().data(),
+                                          status.message().size()));
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
     google_protobuf_Any* any = google_rpc_Status_add_details(msg, arena);
     char* type_url_buf =
-        reinterpret_cast<char*>(upb_arena_malloc(arena, type_url.size()));
+        reinterpret_cast<char*>(upb_Arena_Malloc(arena, type_url.size()));
     memcpy(type_url_buf, type_url.data(), type_url.size());
     google_protobuf_Any_set_type_url(
-        any, upb_strview_make(type_url_buf, type_url.size()));
+        any, upb_StringView_FromDataAndSize(type_url_buf, type_url.size()));
     absl::optional<absl::string_view> v_view = payload.TryFlat();
     if (v_view.has_value()) {
       google_protobuf_Any_set_value(
-          any, upb_strview_make(v_view->data(), v_view->size()));
+          any, upb_StringView_FromDataAndSize(v_view->data(), v_view->size()));
     } else {
       char* buf =
-          reinterpret_cast<char*>(upb_arena_malloc(arena, payload.size()));
+          reinterpret_cast<char*>(upb_Arena_Malloc(arena, payload.size()));
       char* cur = buf;
       for (absl::string_view chunk : payload.Chunks()) {
         memcpy(cur, chunk.data(), chunk.size());
         cur += chunk.size();
       }
-      google_protobuf_Any_set_value(any, upb_strview_make(buf, payload.size()));
+      google_protobuf_Any_set_value(
+          any, upb_StringView_FromDataAndSize(buf, payload.size()));
     }
   });
   return msg;
@@ -364,43 +385,49 @@ google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
 
 absl::Status StatusFromProto(google_rpc_Status* msg) {
   int32_t code = google_rpc_Status_code(msg);
-  upb_strview message = google_rpc_Status_message(msg);
+  upb_StringView message = google_rpc_Status_message(msg);
   absl::Status status(static_cast<absl::StatusCode>(code),
                       absl::string_view(message.data, message.size));
   size_t detail_len;
   const google_protobuf_Any* const* details =
       google_rpc_Status_details(msg, &detail_len);
   for (size_t i = 0; i < detail_len; i++) {
-    upb_strview type_url = google_protobuf_Any_type_url(details[i]);
-    upb_strview value = google_protobuf_Any_value(details[i]);
+    upb_StringView type_url = google_protobuf_Any_type_url(details[i]);
+    upb_StringView value = google_protobuf_Any_value(details[i]);
     status.SetPayload(absl::string_view(type_url.data, type_url.size),
                       absl::Cord(absl::string_view(value.data, value.size)));
   }
   return status;
 }
 
-uintptr_t StatusAllocPtr(absl::Status s) {
-  // This relies the fact that absl::Status has only one member, StatusRep*
-  // so the sizeof(absl::Status) has the same size of intptr_t and StatusRep*
-  // can be stolen using placement allocation.
-  static_assert(sizeof(intptr_t) == sizeof(absl::Status),
-                "absl::Status should be as big as intptr_t");
-  // This does two things;
-  // 1. Copies StatusRep* of absl::Status to ptr
-  // 2. Increases the counter of StatusRep if it's not inlined
-  uintptr_t ptr;
-  new (&ptr) absl::Status(s);
-  return ptr;
+uintptr_t StatusAllocHeapPtr(absl::Status s) {
+  if (s.ok()) return 0;
+  absl::Status* ptr = new absl::Status(s);
+  return reinterpret_cast<uintptr_t>(ptr);
 }
 
-void StatusFreePtr(uintptr_t ptr) {
-  // Decreases the counter of StatusRep if it's not inlined.
-  reinterpret_cast<absl::Status*>(&ptr)->~Status();
+void StatusFreeHeapPtr(uintptr_t ptr) {
+  absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+  delete s;
 }
 
-absl::Status StatusGetFromPtr(uintptr_t ptr) {
-  // Constructs Status from ptr having the address of StatusRep.
-  return *reinterpret_cast<absl::Status*>(&ptr);
+absl::Status StatusGetFromHeapPtr(uintptr_t ptr) {
+  if (ptr == 0) {
+    return absl::OkStatus();
+  } else {
+    return *reinterpret_cast<absl::Status*>(ptr);
+  }
+}
+
+absl::Status StatusMoveFromHeapPtr(uintptr_t ptr) {
+  if (ptr == 0) {
+    return absl::OkStatus();
+  } else {
+    absl::Status* s = reinterpret_cast<absl::Status*>(ptr);
+    absl::Status ret = std::move(*s);
+    delete s;
+    return ret;
+  }
 }
 
 }  // namespace internal

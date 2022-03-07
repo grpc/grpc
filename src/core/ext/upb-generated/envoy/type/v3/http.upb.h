@@ -27,6 +27,9 @@ typedef enum {
 } envoy_type_v3_CodecClientType;
 
 
+
+extern const upb_MiniTable_File envoy_type_v3_http_proto_upb_file_layout;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

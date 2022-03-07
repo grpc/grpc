@@ -59,8 +59,7 @@ class TestScenario {
   const std::string credentials_type;
 };
 
-static std::ostream& operator<<(std::ostream& out,
-                                const TestScenario& scenario) {
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
   return out << "TestScenario{protocol="
              << (scenario.protocol == Protocol::INPROC ? "INPROC" : "TCP")
              << "," << scenario.credentials_type << "}";
@@ -112,8 +111,8 @@ class ContextAllocatorEnd2endTestBase
         GetParam().credentials_type, &args);
     switch (GetParam().protocol) {
       case Protocol::TCP:
-        channel_ = ::grpc::CreateCustomChannel(server_address_.str(),
-                                               channel_creds, args);
+        channel_ = grpc::CreateCustomChannel(server_address_.str(),
+                                             channel_creds, args);
         break;
       case Protocol::INPROC:
         channel_ = server_->InProcessChannel(args);

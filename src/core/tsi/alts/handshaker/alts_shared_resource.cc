@@ -22,6 +22,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 static alts_shared_resource_dedicated g_alts_resource_dedicated;
@@ -55,8 +56,15 @@ void grpc_alts_shared_resource_dedicated_start(
     const char* handshaker_service_url) {
   gpr_mu_lock(&g_alts_resource_dedicated.mu);
   if (g_alts_resource_dedicated.cq == nullptr) {
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    // Disable retries so that we quickly get a signal when the
+    // handshake server is not reachable.
+    grpc_arg disable_retries_arg = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0);
+    grpc_channel_args args = {1, &disable_retries_arg};
     g_alts_resource_dedicated.channel =
-        grpc_insecure_channel_create(handshaker_service_url, nullptr, nullptr);
+        grpc_channel_create(handshaker_service_url, creds, &args);
+    grpc_channel_credentials_release(creds);
     g_alts_resource_dedicated.cq =
         grpc_completion_queue_create_for_next(nullptr);
     g_alts_resource_dedicated.thread =

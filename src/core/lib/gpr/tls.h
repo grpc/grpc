@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_GPR_TLS_H
 #define GRPC_CORE_LIB_GPR_TLS_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <type_traits>
 
@@ -116,6 +116,12 @@ class PthreadTlsImpl : TlsTypeConstrainer<T> {
       dst += step;
     }
     return t;
+  }
+
+  T operator->() const {
+    static_assert(std::is_pointer<T>::value,
+                  "operator-> only usable on pointers");
+    return this->operator T();
   }
 
   T operator=(T t) {

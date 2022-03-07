@@ -1,0 +1,33 @@
+actions {
+  create_channel {
+    channel_actions {}
+  }
+}
+actions {
+  create_call {
+    method {
+    value:
+      "contenttype"
+    }
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+        metadata {
+          key {
+          value:
+            "content-type"
+          }
+        }
+        metadata {
+          key {
+          value:
+            "content-type"
+          }
+        }
+      }
+    }
+  }
+}

@@ -48,6 +48,7 @@ class EvaluateArgs {
     std::vector<absl::string_view> uri_sans;
     std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
+    absl::string_view subject;
     Address local_address;
     Address peer_address;
   };
@@ -56,9 +57,8 @@ class EvaluateArgs {
       : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
-  absl::string_view GetHost() const;
+  absl::string_view GetAuthority() const;
   absl::string_view GetMethod() const;
-  std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
   // Returns metadata value(s) for the specified key.
   // If the key is not present in the batch, returns absl::nullopt.
   // If the key is present exactly once in the batch, returns a string_view of
@@ -80,6 +80,7 @@ class EvaluateArgs {
   std::vector<absl::string_view> GetUriSans() const;
   std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
+  absl::string_view GetSubject() const;
 
  private:
   grpc_metadata_batch* metadata_;

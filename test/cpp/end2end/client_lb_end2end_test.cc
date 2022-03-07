@@ -1,20 +1,16 @@
-/*
- *
- * Copyright 2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+// Copyright 2016 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include <algorithm>
 #include <memory>
@@ -48,20 +44,22 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/orca_load_report_for_test.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
@@ -83,17 +81,17 @@ namespace {
 gpr_atm g_connection_delay_ms;
 
 void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
-                                   grpc_slice_allocator* slice_allocator,
                                    grpc_pollset_set* interested_parties,
                                    const grpc_channel_args* channel_args,
                                    const grpc_resolved_address* addr,
-                                   grpc_millis deadline) {
+                                   grpc_core::Timestamp deadline) {
   const int delay_ms = gpr_atm_acq_load(&g_connection_delay_ms);
   if (delay_ms > 0) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
   }
-  default_client_impl->connect(closure, ep, slice_allocator, interested_parties,
-                               channel_args, addr, deadline + delay_ms);
+  default_client_impl->connect(
+      closure, ep, interested_parties, channel_args, addr,
+      deadline + grpc_core::Duration::Milliseconds(delay_ms));
 }
 
 grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
@@ -104,7 +102,7 @@ class MyTestServiceImpl : public TestServiceImpl {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    const udpa::data::orca::v1::OrcaLoadReport* load_report = nullptr;
+    const xds::data::orca::v3::OrcaLoadReport* load_report = nullptr;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
@@ -135,7 +133,7 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
-  void set_load_report(udpa::data::orca::v1::OrcaLoadReport* load_report) {
+  void set_load_report(xds::data::orca::v3::OrcaLoadReport* load_report) {
     grpc::internal::MutexLock lock(&mu_);
     load_report_ = load_report;
   }
@@ -148,7 +146,7 @@ class MyTestServiceImpl : public TestServiceImpl {
 
   grpc::internal::Mutex mu_;
   int request_count_ = 0;
-  const udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
+  const xds::data::orca::v3::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
   std::set<std::string> clients_;
 };
@@ -200,6 +198,7 @@ class FakeResolverResponseGeneratorWrapper {
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
           nullptr) {
     grpc_core::Resolver::Result result;
+    result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(
           absl::StrCat(ipv6_only ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port));
@@ -212,13 +211,14 @@ class FakeResolverResponseGeneratorWrapper {
       if (attribute != nullptr) {
         attributes[attribute_key] = attribute->Copy();
       }
-      result.addresses.emplace_back(address.addr, address.len,
-                                    nullptr /* args */, std::move(attributes));
+      result.addresses->emplace_back(address.addr, address.len,
+                                     nullptr /* args */, std::move(attributes));
     }
     if (service_config_json != nullptr) {
-      result.service_config = grpc_core::ServiceConfig::Create(
-          nullptr, service_config_json, &result.service_config_error);
-      GPR_ASSERT(result.service_config != nullptr);
+      grpc_error_handle error = GRPC_ERROR_NONE;
+      result.service_config = grpc_core::ServiceConfigImpl::Create(
+          nullptr, service_config_json, &error);
+      GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;
   }
@@ -310,7 +310,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator.Get());
-    return ::grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
   bool SendRpc(
@@ -602,11 +602,12 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   ASSERT_TRUE(channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
-  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
+  const grpc_core::Duration waited =
+      grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kInitialBackOffMs. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited_ms, kInitialBackOffMs - 1);
+  EXPECT_GE(waited.millis(), kInitialBackOffMs - 1);
   // But not much more.
   EXPECT_GT(
       gpr_time_cmp(
@@ -632,11 +633,12 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
-  gpr_log(GPR_DEBUG, "Waited %" PRId64 " ms", waited_ms);
+  const grpc_core::Duration waited =
+      grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
-  EXPECT_GE(waited_ms, kMinReconnectBackOffMs - 1);
+  EXPECT_GE(waited.millis(), kMinReconnectBackOffMs - 1);
   gpr_atm_rel_store(&g_connection_delay_ms, 0);
 }
 
@@ -667,10 +669,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
   EXPECT_TRUE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(20)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
-  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
+  const grpc_core::Duration waited =
+      grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   // We should have waited less than kInitialBackOffMs.
-  EXPECT_LT(waited_ms, kInitialBackOffMs);
+  EXPECT_LT(waited.millis(), kInitialBackOffMs);
 }
 
 TEST_F(ClientLbEnd2endTest,
@@ -714,9 +717,11 @@ TEST_F(ClientLbEnd2endTest,
   EXPECT_TRUE(channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kWaitMs)));
   const gpr_timespec t1 = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_millis waited_ms = gpr_time_to_millis(gpr_time_sub(t1, t0));
-  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited_ms);
-  EXPECT_LT(waited_ms, kWaitMs);
+  const grpc_core::Duration waited =
+      grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
+  gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
+  // We should have waited less than kInitialBackOffMs.
+  EXPECT_LT(waited.millis(), kWaitMs);
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
@@ -799,6 +804,39 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("pick_first", channel->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, PickFirstUpdateToUnconnected) {
+  const int kNumServers = 2;
+  CreateServers(kNumServers);
+  StartServer(0);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+
+  std::vector<int> ports;
+
+  // Try to send rpcs against a list where the server is available.
+  ports.emplace_back(servers_[0]->port_);
+  response_generator.SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [0] *******");
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+
+  // Send resolution for which all servers are currently unavailable. Eventually
+  // this triggers replacing the existing working subchannel_list with the new
+  // currently unresponsive list.
+  ports.clear();
+  ports.emplace_back(grpc_pick_unused_port_or_die());
+  ports.emplace_back(servers_[1]->port_);
+  response_generator.SetNextResolution(ports);
+  gpr_log(GPR_INFO, "****** SET [unavailable] *******");
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
+
+  // Ensure that the last resolution was installed correctly by verifying that
+  // the channel becomes ready once one of if its endpoints becomes available.
+  gpr_log(GPR_INFO, "****** StartServer(1) *******");
+  StartServer(1);
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstGlobalSubchannelPool) {
@@ -1076,6 +1114,34 @@ TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest,
+       PickFirstStaysTransientFailureOnFailedConnectionAttemptUntilReady) {
+  // Allocate 3 ports, with no servers running.
+  std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die()};
+  // Create channel with a 1-second backoff.
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
+              1000 * grpc_test_slowdown_factor());
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(ports);
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(false));
+  // Send an RPC, which should fail.
+  CheckRpcSendFailure(stub);
+  // Channel should be in TRANSIENT_FAILURE.
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
+  // Now start a server on the last port.
+  StartServers(1, {ports.back()});
+  // Channel should remain in TRANSIENT_FAILURE until it transitions to READY.
+  EXPECT_TRUE(channel->WaitForStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                          grpc_timeout_seconds_to_deadline(4)));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobin) {
@@ -1771,7 +1837,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return trailing_metadata_;
   }
 
-  const udpa::data::orca::v1::OrcaLoadReport* backend_load_report() {
+  const xds::data::orca::v3::OrcaLoadReport* backend_load_report() {
     grpc::internal::MutexLock lock(&mu_);
     return load_report_.get();
   }
@@ -1786,7 +1852,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     self->trailing_metadata_ = args_seen.metadata;
     if (backend_metric_data != nullptr) {
       self->load_report_ =
-          absl::make_unique<udpa::data::orca::v1::OrcaLoadReport>();
+          absl::make_unique<xds::data::orca::v3::OrcaLoadReport>();
       self->load_report_->set_cpu_utilization(
           backend_metric_data->cpu_utilization);
       self->load_report_->set_mem_utilization(
@@ -1807,7 +1873,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
   grpc_core::MetadataVector trailing_metadata_;
-  std::unique_ptr<udpa::data::orca::v1::OrcaLoadReport> load_report_;
+  std::unique_ptr<xds::data::orca::v3::OrcaLoadReport> load_report_;
 };
 
 ClientLbInterceptTrailingMetadataTest*
@@ -1885,7 +1951,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
-  udpa::data::orca::v1::OrcaLoadReport load_report;
+  xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
   load_report.set_rps(25);

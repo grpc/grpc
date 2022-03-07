@@ -24,7 +24,7 @@ spec:
     language: csharp
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
@@ -32,9 +32,12 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - build
+      - --config
+      - opt
       - //test/cpp/qps:qps_worker
       command:
       - bazel
@@ -44,13 +47,14 @@ spec:
     language: cxx
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             bazel-bin/test/cpp/qps/qps_worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - build
@@ -65,13 +69,14 @@ spec:
     language: go
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             /src/workspace/bin/worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - -PskipAndroid=true
@@ -85,14 +90,14 @@ spec:
     language: java
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+            /run_scripts/run_worker.sh
       command:
       - bash
+      name: main
   - build:
       command:
       - bash
@@ -103,7 +108,7 @@ spec:
     language: node
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" node -r \
@@ -111,6 +116,7 @@ spec:
             --benchmark_impl=grpc --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       command:
       - bash
@@ -121,13 +127,14 @@ spec:
     language: php7
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
         /run_scripts/run_worker.sh
       command:
       - bash
+      name: main
   - build:
       command:
       - bash
@@ -138,16 +145,19 @@ spec:
     language: php7_protobuf_c
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
         /run_scripts/run_protobuf_c_worker.sh
       command:
       - bash
+      name: main
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests/qps:qps_worker
       command:
       - bazel
@@ -157,7 +167,7 @@ spec:
     language: python
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -165,9 +175,12 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests_aio/benchmark:worker
       command:
       - bazel
@@ -177,7 +190,7 @@ spec:
     language: python_asyncio
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -185,6 +198,7 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       command:
       - bash
@@ -195,16 +209,17 @@ spec:
     language: ruby
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
             src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   driver:
     language: cxx
-    run: {}
+    run: []
   results:
     bigQueryTable: ${big_query_table}
   servers:
@@ -218,7 +233,7 @@ spec:
     language: csharp
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
@@ -226,9 +241,12 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - build
+      - --config
+      - opt
       - //test/cpp/qps:qps_worker
       command:
       - bazel
@@ -238,7 +256,7 @@ spec:
     language: cxx
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -246,6 +264,7 @@ spec:
             --server_port=10010
       command:
       - bash
+      name: main
   - build:
       args:
       - build
@@ -260,13 +279,14 @@ spec:
     language: go
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             /src/workspace/bin/worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - -PskipAndroid=true
@@ -280,14 +300,14 @@ spec:
     language: java
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
-            benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker \
-            --driver_port="${DRIVER_PORT}"
+            /run_scripts/run_worker.sh
       command:
       - bash
+      name: main
   - build:
       command:
       - bash
@@ -298,7 +318,7 @@ spec:
     language: node
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" node -r \
@@ -306,9 +326,12 @@ spec:
             --benchmark_impl=grpc --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests/qps:qps_worker
       command:
       - bazel
@@ -318,7 +341,7 @@ spec:
     language: python
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -326,9 +349,12 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       args:
       - build
+      - --compilation_mode
+      - opt
       - //src/python/grpcio_tests/tests_aio/benchmark:worker
       command:
       - bazel
@@ -338,7 +364,7 @@ spec:
     language: python_asyncio
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -346,6 +372,7 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   - build:
       command:
       - bash
@@ -356,12 +383,13 @@ spec:
     language: ruby
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
             src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      name: main
   timeoutSeconds: ${timeout_seconds}
   ttlSeconds: 86400

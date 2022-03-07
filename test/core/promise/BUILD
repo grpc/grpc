@@ -13,18 +13,30 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/promise")
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_cc_library(
     name = "test_wakeup_schedulers",
     testonly = True,
     hdrs = ["test_wakeup_schedulers.h"],
     external_deps = ["gtest"],
+    visibility = ["//test/core:__subpackages__"],
+    deps = [
+        "//:gpr_base",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_context",
+    testonly = True,
+    hdrs = ["test_context.h"],
+    external_deps = ["gtest"],
+    visibility = ["//test/core:__subpackages__"],
     deps = [
         "//:gpr_base",
         "//test/core/util:grpc_suppressions",
@@ -63,6 +75,20 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:promise",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "arena_promise_test",
+    srcs = ["arena_promise_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        ":test_context",
+        "//:arena_promise",
+        "//:resource_quota",
         "//test/core/util:grpc_suppressions",
     ],
 )
@@ -188,6 +214,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "try_seq_metadata_test",
+    srcs = ["try_seq_metadata_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//:try_seq",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "activity_test",
     srcs = ["activity_test.cc"],
     external_deps = ["gtest"],
@@ -247,6 +287,7 @@ grpc_cc_test(
         "//:map",
         "//:observable",
         "//:pipe",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
@@ -263,6 +304,7 @@ grpc_cc_test(
         "//:join",
         "//:pipe",
         "//:promise",
+        "//:resource_quota",
         "//:seq",
         "//test/core/util:grpc_suppressions",
     ],
@@ -277,6 +319,12 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
+        "//:activity",
+        "//:join",
+        "//:map",
+        "//:promise",
+        "//:race",
+        "//:seq",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -290,6 +338,39 @@ grpc_cc_test(
     deps = [
         "//:activity",
         "//:exec_ctx_wakeup_scheduler",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "sleep_test",
+    srcs = ["sleep_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/synchronization",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "test_wakeup_schedulers",
+        "//:activity",
+        "//:grpc",
+        "//:sleep",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_push_pull_test",
+    srcs = ["call_push_pull_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:call_push_pull",
         "//test/core/util:grpc_suppressions",
     ],
 )

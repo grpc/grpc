@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
+
+#ifndef GRPC_NO_BINDER
 
 #include <functional>
 #include <limits>
@@ -39,6 +41,8 @@
 
 namespace grpc_binder {
 namespace {
+
+const int32_t kWireFormatVersion = 1;
 
 absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
   int num_header;
@@ -69,9 +73,12 @@ absl::StatusOr<Metadata> parse_metadata(ReadableParcel* reader) {
 
 WireReaderImpl::WireReaderImpl(
     std::shared_ptr<TransportStreamReceiver> transport_stream_receiver,
-    bool is_client, std::function<void()> on_destruct_callback)
+    bool is_client,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy,
+    std::function<void()> on_destruct_callback)
     : transport_stream_receiver_(std::move(transport_stream_receiver)),
       is_client_(is_client),
+      security_policy_(security_policy),
       on_destruct_callback_(on_destruct_callback) {}
 
 WireReaderImpl::~WireReaderImpl() {
@@ -109,9 +116,8 @@ void WireReaderImpl::SendSetupTransport(Binder* binder) {
   gpr_log(GPR_INFO, "prepare transaction = %d",
           binder->PrepareTransaction().ok());
   WritableParcel* writable_parcel = binder->GetWritableParcel();
-  int32_t version = 77;
   gpr_log(GPR_INFO, "write int32 = %d",
-          writable_parcel->WriteInt32(version).ok());
+          writable_parcel->WriteInt32(kWireFormatVersion).ok());
   // The lifetime of the transaction receiver is the same as the wire writer's.
   // The transaction receiver is responsible for not calling the on-transact
   // callback when it's dead.
@@ -168,7 +174,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     return absl::InvalidArgumentError("Transports not connected yet");
   }
 
-  // TODO(mingcl): Verify security policy for every incoming call
+  // TODO(mingcl): See if we want to check the security policy for every RPC
+  // call or just during transport setup.
 
   switch (BinderTransportTxCode(code)) {
     case BinderTransportTxCode::SETUP_TRANSPORT: {
@@ -176,11 +183,27 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
         return absl::InvalidArgumentError(
             "Already received a SETUP_TRANSPORT request");
       }
-      gpr_log(GPR_ERROR, "calling uid = %d", uid);
       recvd_setup_transport_ = true;
+
+      gpr_log(GPR_ERROR, "calling uid = %d", uid);
+      if (!security_policy_->IsAuthorized(uid)) {
+        return absl::PermissionDeniedError(
+            "UID " + std::to_string(uid) +
+            " is not allowed to connect to this "
+            "transport according to security policy.");
+      }
+
       int version;
       RETURN_IF_ERROR(parcel->ReadInt32(&version));
-      gpr_log(GPR_INFO, "version = %d", version);
+      gpr_log(GPR_INFO, "The other end respond with version = %d", version);
+      // We only support this single lowest possible version, so server must
+      // respond that version too.
+      if (version != kWireFormatVersion) {
+        gpr_log(GPR_ERROR,
+                "The other end respond with version = %d, but we requested "
+                "version %d, trying to continue anyway",
+                version, kWireFormatVersion);
+      }
       std::unique_ptr<Binder> binder{};
       RETURN_IF_ERROR(parcel->ReadBinder(&binder));
       if (!binder) {
@@ -367,3 +390,4 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
 }
 
 }  // namespace grpc_binder
+#endif

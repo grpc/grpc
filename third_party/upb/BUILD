@@ -26,6 +26,8 @@
 load(
     "//bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
+    "UPB_DEFAULT_CPPOPTS",
+    "make_shell_script",
     "upb_amalgamation",  # copybara:strip_for_google3
 )
 load(
@@ -46,6 +48,7 @@ exports_files([
 config_setting(
     name = "windows",
     constraint_values = ["@bazel_tools//platforms:windows"],
+    visibility = ["//visibility:public"],
 )
 
 upb_fasttable_enabled(
@@ -102,12 +105,14 @@ cc_library(
     deps = [
         ":fastdecode",
         ":port",
+        "//third_party/utf8_range",
     ],
 )
 
 cc_library(
     name = "fastdecode",
     srcs = [
+        "upb/decode.h",
         "upb/decode_internal.h",
         "upb/decode_fast.c",
         "upb/decode_fast.h",
@@ -119,6 +124,7 @@ cc_library(
     deps = [
         ":port",
         ":table",
+        "//third_party/utf8_range",
     ],
 )
 
@@ -215,6 +221,174 @@ cc_library(
     ],
 )
 
+# Tests ########################################################################
+
+cc_test(
+    name = "test_generated_code",
+    srcs = ["upb/test_generated_code.cc"],
+    deps = [
+        ":empty_upbdefs_proto",
+        ":test_messages_proto3_proto_upb",
+        ":test_upb_proto",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+proto_library(
+    name = "test_proto",
+    testonly = 1,
+    srcs = ["upb/test.proto"],
+)
+
+upb_proto_library(
+    name = "test_upb_proto",
+    testonly = 1,
+    deps = [":test_proto"],
+)
+
+proto_library(
+    name = "empty_proto",
+    srcs = ["upb/empty.proto"],
+)
+
+upb_proto_reflection_library(
+    name = "empty_upbdefs_proto",
+    testonly = 1,
+    deps = [":empty_proto"],
+)
+
+upb_proto_library(
+    name = "test_messages_proto3_proto_upb",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+cc_test(
+    name = "msg_test",
+    srcs = ["upb/msg_test.cc"],
+    deps = [
+        "@com_google_googletest//:gtest_main",
+        ":msg_test_upb_proto_reflection",
+        ":json",
+    ],
+)
+
+proto_library(
+    name = "msg_test_proto",
+    srcs = ["upb/msg_test.proto"],
+    deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "msg_test_upb_proto_reflection",
+    deps = [":msg_test_proto"],
+)
+
+proto_library(
+    name = "test_cpp_proto",
+    srcs = ["upb/test_cpp.proto"],
+    deps = ["@com_google_protobuf//:timestamp_proto"]
+)
+
+upb_proto_library(
+    name = "test_cpp_upb_proto",
+    deps = ["test_cpp_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "test_cpp_upb_proto_reflection",
+    deps = ["test_cpp_proto"],
+)
+
+cc_test(
+    name = "test_cpp",
+    srcs = ["upb/test_cpp.cc"],
+    copts = UPB_DEFAULT_CPPOPTS,
+    deps = [
+        ":test_cpp_upb_proto",
+        ":test_cpp_upb_proto_reflection",
+        "//:json",
+        "//:port",
+        "//:reflection",
+        "//:upb",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "test_table",
+    srcs = ["upb/test_table.cc"],
+    copts = UPB_DEFAULT_CPPOPTS,
+    deps = [
+        "//:port",
+        "//:table",
+        "//:upb",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+upb_proto_library(
+    name = "conformance_proto_upb",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:conformance_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "conformance_proto_upbdefs",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:conformance_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "test_messages_proto2_upbdefs",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:test_messages_proto2_proto"],
+)
+
+upb_proto_reflection_library(
+    name = "test_messages_proto3_upbdefs",
+    testonly = 1,
+    deps = ["@com_google_protobuf//:test_messages_proto3_proto"],
+)
+
+cc_binary(
+    name = "conformance_upb",
+    testonly = 1,
+    srcs = ["upb/conformance_upb.c"],
+    copts = UPB_DEFAULT_COPTS,
+    data = ["upb/conformance_upb_failures.txt"],
+    deps = [
+        ":conformance_proto_upb",
+        ":conformance_proto_upbdefs",
+        ":test_messages_proto2_upbdefs",
+        ":test_messages_proto3_upbdefs",
+        "//:json",
+        "//:port",
+        "//:reflection",
+        "//:textformat",
+        "//:upb",
+    ],
+)
+
+make_shell_script(
+    name = "gen_test_conformance_upb",
+    out = "test_conformance_upb.sh",
+    contents = "external/com_google_protobuf/conformance_test_runner " +
+               " --enforce_recommended " +
+               " --failure_list ./upb/conformance_upb_failures.txt" +
+               " ./conformance_upb",
+)
+
+sh_test(
+    name = "test_conformance_upb",
+    srcs = ["test_conformance_upb.sh"],
+    data = [
+        "upb/conformance_upb_failures.txt",
+        ":conformance_upb",
+        "@com_google_protobuf//:conformance_test_runner",
+    ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
 # Internal C/C++ libraries #####################################################
 
 cc_library(
@@ -233,18 +407,12 @@ cc_library(
 
 # copybara:strip_for_google3_begin
 
-py_binary(
-    name = "amalgamate",
-    srcs = ["tools/amalgamate.py"],
-)
-
 upb_amalgamation(
     name = "gen_amalgamation",
     outs = [
         "upb.c",
         "upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -259,6 +427,7 @@ cc_library(
     srcs = ["upb.c"],
     hdrs = ["upb.h"],
     copts = UPB_DEFAULT_COPTS,
+    deps = ["//third_party/utf8_range"],
 )
 
 upb_amalgamation(
@@ -267,7 +436,6 @@ upb_amalgamation(
         "php-upb.c",
         "php-upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -285,6 +453,7 @@ cc_library(
     srcs = ["php-upb.c"],
     hdrs = ["php-upb.h"],
     copts = UPB_DEFAULT_COPTS,
+    deps = ["//third_party/utf8_range"],
 )
 
 upb_amalgamation(
@@ -293,7 +462,6 @@ upb_amalgamation(
         "ruby-upb.c",
         "ruby-upb.h",
     ],
-    amalgamator = ":amalgamate",
     libs = [
         ":upb",
         ":fastdecode",
@@ -310,6 +478,7 @@ cc_library(
     srcs = ["ruby-upb.c"],
     hdrs = ["ruby-upb.h"],
     copts = UPB_DEFAULT_COPTS,
+    deps = ["//third_party/utf8_range"],
 )
 
 exports_files(
@@ -326,7 +495,7 @@ exports_files(
         "third_party/lunit/console.lua",
         "third_party/lunit/lunit.lua",
     ],
-    visibility = ["//tests/bindings/lua:__pkg__"],
+    visibility = ["//upb/bindings/lua:__pkg__"],
 )
 
 filegroup(

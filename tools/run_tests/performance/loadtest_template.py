@@ -26,11 +26,14 @@
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 
 import argparse
+import os
 import sys
 from typing import Any, Dict, Iterable, List, Mapping, Type
 
-import loadtest_config
 import yaml
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import loadtest_config
 
 TEMPLATE_FILE_HEADER_COMMENT = """
 # Template generated from load test configurations by loadtest_template.py.
@@ -61,7 +64,7 @@ def insert_worker(worker: Dict[str, Any], workers: List[Dict[str,
 
 def uniquify_workers(workermap: Dict[str, List[Dict[str, Any]]]) -> None:
     """Name workers if there is more than one for the same map key."""
-    for workers in workermap.values():
+    for workers in list(workermap.values()):
         if len(workers) <= 1:
             continue
         for i, worker in enumerate(workers):
@@ -140,8 +143,8 @@ def loadtest_template(
         del driver['name']
     if inject_driver_image:
         if 'run' not in driver:
-            driver['run'] = {}
-        driver['run']['image'] = '${driver_image}'
+            driver['run'] = [{'name': 'main'}]
+        driver['run'][0]['image'] = '${driver_image}'
     if inject_driver_pool:
         driver['pool'] = '${driver_pool}'
 

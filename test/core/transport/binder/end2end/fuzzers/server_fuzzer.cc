@@ -15,9 +15,12 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
 bool squelch = true;
@@ -27,7 +30,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
@@ -43,10 +46,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
     grpc_transport* server_transport = grpc_create_binder_transport_server(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(data, size));
-    server->core_server->SetupTransport(server_transport, nullptr, nullptr,
-                                        nullptr);
-
+        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+            input.incoming_parcels()),
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
+    const grpc_channel_args* channel_args =
+        grpc_core::CoreConfiguration::Get()
+            .channel_args_preconditioning()
+            .PreconditionChannelArgs(nullptr);
+    (void)grpc_core::Server::FromC(server)->SetupTransport(
+        server_transport, nullptr, channel_args, nullptr);
+    grpc_channel_args_destroy(channel_args);
     grpc_call* call1 = nullptr;
     grpc_call_details call_details1;
     grpc_metadata_array request_metadata1;
@@ -85,7 +95,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;
+    grpc_core::Timestamp deadline =
+        grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(5);
     for (int i = 0; i <= requested_calls; i++) {
       // A single grpc_completion_queue_next might not be sufficient for getting
       // the tag from shutdown, because we might potentially get blocked by
@@ -118,5 +129,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_completion_queue_destroy(cq);
   }
   grpc_shutdown();
-  return 0;
 }

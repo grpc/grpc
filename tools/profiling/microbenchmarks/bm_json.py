@@ -81,7 +81,7 @@ _BM_SPECS = {
         'dyn': ['end_of_stream', 'request_size'],
     },
     'BM_HpackParserParseHeader': {
-        'tpl': ['fixture', 'on_header'],
+        'tpl': ['fixture'],
         'dyn': [],
     },
     'BM_CallCreateDestroy': {
@@ -198,14 +198,23 @@ def expand_json(js, js2=None):
             labels = dict(labels_list)
         else:
             labels = {}
+        # TODO(jtattermusch): grabbing kokoro env values shouldn't be buried
+        # deep in the JSON conversion logic.
+        # Link the data to a kokoro job run by adding
+        # well known kokoro env variables as metadata for each row
         row = {
-            'jenkins_build': os.environ.get('BUILD_NUMBER', ''),
-            'jenkins_job': os.environ.get('JOB_NAME', ''),
+            'jenkins_build': os.environ.get('KOKORO_BUILD_NUMBER', ''),
+            'jenkins_job': os.environ.get('KOKORO_JOB_NAME', ''),
         }
         row.update(context)
         row.update(bm)
         row.update(parse_name(row['name']))
         row.update(labels)
+        # TODO(jtattermusch): add a comment explaining what's the point
+        # of merging values of some of the columns js2 into the row.
+        # Empirically, the js contains data from "counters" config
+        # and js2 contains data from the "opt" config, but the point of merging
+        # really deserves further explanation.
         if js2:
             for bm2 in js2['benchmarks']:
                 if bm['name'] == bm2['name'] and 'already_used' not in bm2:

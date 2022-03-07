@@ -18,6 +18,7 @@
 // top-level metadata. The following tests verify that the interactions between
 // WireReaderImpl and both the output (readable) parcel and the transport stream
 // receiver are correct in all possible situations.
+
 #include <memory>
 #include <string>
 #include <thread>
@@ -26,6 +27,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
+
+#include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "test/core/transport/binder/mock_objects.h"
@@ -45,7 +48,10 @@ class WireReaderTest : public ::testing::Test {
   WireReaderTest()
       : transport_stream_receiver_(
             std::make_shared<StrictMock<MockTransportStreamReceiver>>()),
-        wire_reader_(transport_stream_receiver_, /*is_client=*/true) {}
+        wire_reader_(
+            transport_stream_receiver_, /*is_client=*/true,
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>()) {}
 
  protected:
   void ExpectReadInt32(int result) {
@@ -108,19 +114,7 @@ TEST_F(WireReaderTest, SetupTransport) {
   EXPECT_CALL(mock_binder_ref, GetWritableParcel);
 
   // Write version.
-  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(77));
-
-  // The transaction receiver immediately informs the wire writer that the
-  // transport has been successfully set up.
-  EXPECT_CALL(mock_binder_ref, ConstructTxReceiver);
-
-  EXPECT_CALL(mock_binder_ref.GetReader(), ReadInt32);
-  EXPECT_CALL(mock_binder_ref.GetReader(), ReadBinder);
-
-  // Write transaction receiver.
-  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteBinder);
-  // Perform transaction.
-  EXPECT_CALL(mock_binder_ref, Transact);
+  EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(1));
 
   wire_reader_.SetupTransport(std::move(mock_binder));
 }

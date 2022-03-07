@@ -8,31 +8,18 @@
 
 #include "upb/def.h"
 #include "envoy/service/status/v3/csds.upbdefs.h"
+#include "envoy/service/status/v3/csds.upb.h"
 
-extern upb_def_init envoy_admin_v3_config_dump_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_node_proto_upbdefinit;
-extern upb_def_init google_api_annotations_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern const upb_msglayout envoy_service_status_v3_ClientStatusRequest_msginit;
-extern const upb_msglayout envoy_service_status_v3_PerXdsConfig_msginit;
-extern const upb_msglayout envoy_service_status_v3_ClientConfig_msginit;
-extern const upb_msglayout envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit;
-extern const upb_msglayout envoy_service_status_v3_ClientStatusResponse_msginit;
-
-static const upb_msglayout *layouts[5] = {
-  &envoy_service_status_v3_ClientStatusRequest_msginit,
-  &envoy_service_status_v3_PerXdsConfig_msginit,
-  &envoy_service_status_v3_ClientConfig_msginit,
-  &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit,
-  &envoy_service_status_v3_ClientStatusResponse_msginit,
-};
-
-static const char descriptor[2677] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', 
+extern _upb_DefPool_Init envoy_admin_v3_config_dump_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_node_proto_upbdefinit;
+extern _upb_DefPool_Init google_api_annotations_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+static const char descriptor[2751] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', 
 '/', 'c', 's', 'd', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 
 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', '\032', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 
 'v', '3', '/', 'c', 'o', 'n', 'f', 'i', 'g', '_', 'd', 'u', 'm', 'p', '.', 'p', 'r', 'o', 't', 'o', '\032', '\037', 'e', 'n', 'v', 
@@ -136,13 +123,16 @@ static const char descriptor[2677] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 
 'c', 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', '.', 'C', 'l', 'i', 'e', 'n', 't', 'S', 't', 'a', 't', 'u', 's', 
 'R', 'e', 's', 'p', 'o', 'n', 's', 'e', '\"', ',', '\202', '\323', '\344', '\223', '\002', '\035', '\"', '\033', '/', 'v', '3', '/', 'd', 'i', 's', 
 'c', 'o', 'v', 'e', 'r', 'y', ':', 'c', 'l', 'i', 'e', 'n', 't', '_', 's', 't', 'a', 't', 'u', 's', '\202', '\323', '\344', '\223', '\002', 
-'\003', ':', '\001', '*', 'B', '?', '\n', '%', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 
-'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', 'B', '\t', 'C', 's', 'd', 
-'s', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\210', '\001', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 
-'o', '3', 
+'\003', ':', '\001', '*', 'B', '\210', '\001', '\n', '%', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 
+'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', 'B', '\t', 'C', 's', 
+'d', 's', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'G', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 
+'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 
+'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', ';', 's', 
+'t', 'a', 't', 'u', 's', 'v', '3', '\210', '\001', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', 
+'3', 
 };
 
-static upb_def_init *deps[10] = {
+static _upb_DefPool_Init *deps[10] = {
   &envoy_admin_v3_config_dump_proto_upbdefinit,
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_type_matcher_v3_node_proto_upbdefinit,
@@ -155,9 +145,9 @@ static upb_def_init *deps[10] = {
   NULL
 };
 
-upb_def_init envoy_service_status_v3_csds_proto_upbdefinit = {
+_upb_DefPool_Init envoy_service_status_v3_csds_proto_upbdefinit = {
   deps,
-  layouts,
+  &envoy_service_status_v3_csds_proto_upb_file_layout,
   "envoy/service/status/v3/csds.proto",
-  UPB_STRVIEW_INIT(descriptor, 2677)
+  UPB_STRINGVIEW_INIT(descriptor, 2751)
 };

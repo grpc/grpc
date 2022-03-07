@@ -171,30 +171,31 @@ static void destroy_pollset(void* p, grpc_error_handle /*e*/) {
 
 static int is_metadata_server_reachable() {
   metadata_server_detector detector;
-  grpc_httpcli_request request;
-  grpc_httpcli_context context;
+  grpc_http_request request;
   grpc_closure destroy_closure;
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  grpc_millis max_detection_delay = GPR_MS_PER_SEC;
+  const auto max_detection_delay = grpc_core::Duration::Seconds(1);
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &g_polling_mu);
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
   detector.success = 0;
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = const_cast<char*>(GRPC_COMPUTE_ENGINE_DETECTION_HOST);
-  request.http.path = const_cast<char*>("/");
-  grpc_httpcli_context_init(&context);
-  grpc_resource_quota* resource_quota =
-      grpc_resource_quota_create("google_default_credentials");
-  grpc_httpcli_get(
-      &context, &detector.pollent, resource_quota, &request,
+  memset(&request, 0, sizeof(grpc_http_request));
+  auto uri =
+      grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
+                             {} /* query params */, "" /* fragment */);
+  GPR_ASSERT(uri.ok());  // params are hardcoded
+  auto http_request = grpc_core::HttpRequest::Get(
+      std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::ExecCtx::Get()->Now() + max_detection_delay,
       GRPC_CLOSURE_CREATE(on_metadata_server_detection_http_response, &detector,
                           grpc_schedule_on_exec_ctx),
-      &detector.response);
+      &detector.response,
+      grpc_core::RefCountedPtr<grpc_channel_credentials>(
+          grpc_insecure_credentials_create()));
+  http_request->Start();
   grpc_core::ExecCtx::Get()->Flush();
   /* Block until we get the response. This is not ideal but this should only be
     called once for the lifetime of the process by the default credentials. */
@@ -204,13 +205,13 @@ static int is_metadata_server_reachable() {
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&detector.pollent),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+                              &worker, grpc_core::Timestamp::InfFuture()))) {
       detector.is_done = 1;
       detector.success = 0;
     }
   }
   gpr_mu_unlock(g_polling_mu);
-  grpc_httpcli_context_destroy(&context);
+  http_request.reset();
   GRPC_CLOSURE_INIT(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),
                     grpc_schedule_on_exec_ctx);
@@ -290,7 +291,7 @@ static grpc_error_handle create_default_creds_from_path(
   if (json.type() != Json::Type::OBJECT) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),
-        GRPC_ERROR_STR_RAW_BYTES, grpc_slice_ref_internal(creds_data));
+        GRPC_ERROR_STR_RAW_BYTES, grpc_core::StringViewFromSlice(creds_data));
     goto end;
   }
 
@@ -441,9 +442,9 @@ void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
 }
 
 void grpc_flush_cached_google_default_credentials(void) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
-  grpc_core::MutexLock lock(g_state_mu);
+  MutexLock lock(g_state_mu);
   g_metadata_server_available = 0;
 }
 

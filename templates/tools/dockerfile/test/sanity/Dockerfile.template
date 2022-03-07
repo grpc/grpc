@@ -14,8 +14,25 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  <%include file="../../python_debian11.include"/>
+  FROM silkeh/clang:13
+
+  <%include file="../../apt_get_basic.include"/>
   <%include file="../../cxx_deps.include"/>
+
+  # Install Python 3.7 from source (and installed as a default python3)
+  # (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
+  RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev ${'\\'}
+                              libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
+  RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && ${'\\'}
+  tar -xf Python-3.7.9.tar.xz && ${'\\'}
+  cd Python-3.7.9 && ${'\\'}
+  ./configure && ${'\\'}
+  make -j 4 && ${'\\'}
+  make install
+  RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+
+  <%include file="../../gcp_api_libraries.include"/>
+  <%include file="../../run_tests_addons.include"/>
 
   #========================
   # Sanity test dependencies
@@ -26,18 +43,17 @@
         libtool ${"\\"}
         curl ${"\\"}
         shellcheck
-  RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
+
+  # otherwise clang-tidy will report missing <gtest/gtest.h> header
+  RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
+
   RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 
   # Upgrade Python's YAML library
-  RUN python2 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
   RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
-  # Install clang, clang-format, and clang-tidy
-  RUN apt-get update && apt-get install -y clang clang-format-11 clang-tidy-11 jq
-  ENV CLANG_FORMAT=clang-format-11
-  ENV CLANG_TIDY=clang-tidy-11
-
+  # Install prerequisites for the clang-tidy script
+  RUN apt-get update && apt-get install -y jq git
 
   <%include file="../../bazel.include"/>
   <%include file="../../buildifier.include"/>

@@ -13,12 +13,11 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_package(name = "test/core/security")
-
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "alts_credentials_fuzzer",
@@ -88,6 +87,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -117,6 +117,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_authorization_base",
         "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
@@ -240,7 +241,6 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_linux_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
@@ -253,7 +253,6 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_windows_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
@@ -266,7 +265,6 @@ grpc_cc_test(
     srcs = ["grpc_alts_credentials_options_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_util",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -282,8 +280,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base",
         "//:grpc_secure",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -308,8 +304,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_secure",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -361,6 +355,19 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tls_certificate_verifier_test",
+    srcs = ["grpc_tls_certificate_verifier_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [
@@ -454,12 +461,32 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_authorization_policy_provider_test",
     srcs = ["grpc_authorization_policy_provider_test.cc"],
+    data = [
+        "//test/core/security/authorization/test_policies:invalid_policy.json",
+        "//test/core/security/authorization/test_policies:valid_policy_1.json",
+        "//test/core/security/authorization/test_policies:valid_policy_2.json",
+    ],
     external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc_authorization_provider",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channel_creds_registry_test",
+    srcs = ["channel_creds_registry_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
         "//test/core/util:grpc_test_util",
     ],
 )

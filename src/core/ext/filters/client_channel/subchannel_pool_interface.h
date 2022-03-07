@@ -52,6 +52,9 @@ class SubchannelKey {
   const grpc_resolved_address& address() const { return address_; }
   const grpc_channel_args* args() const { return args_; }
 
+  // Human-readable string suitable for logging.
+  std::string ToString() const;
+
  private:
   // Initializes the subchannel key with the given \a args and the function to
   // copy channel args.

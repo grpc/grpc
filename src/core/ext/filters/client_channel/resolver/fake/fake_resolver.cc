@@ -30,16 +30,17 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -142,23 +143,23 @@ void FakeResolver::MaybeSendResultLocked() {
   if (!started_ || shutdown_) return;
   if (return_failure_) {
     // TODO(roth): Change resolver result generator to be able to inject
-    // the error to be returned.
-    result_handler_->ReturnError(grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver transient failure"),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    // the error to be returned and to be able to independently set errors
+    // for addresses and service config.
+    Result result;
+    result.addresses = absl::UnavailableError("Resolver transient failure");
+    result.service_config = result.addresses.status();
+    result.args = grpc_channel_args_copy(channel_args_);
+    result_handler_->ReportResult(std::move(result));
     return_failure_ = false;
   } else if (has_next_result_) {
     Result result;
     result.addresses = std::move(next_result_.addresses);
     result.service_config = std::move(next_result_.service_config);
-    // TODO(roth): Use std::move() once grpc_error is converted to C++.
-    result.service_config_error = next_result_.service_config_error;
-    next_result_.service_config_error = GRPC_ERROR_NONE;
     // When both next_results_ and channel_args_ contain an arg with the same
     // name, only the one in next_results_ will be kept since next_results_ is
     // before channel_args_.
     result.args = grpc_channel_args_union(next_result_.args, channel_args_);
-    result_handler_->ReturnResult(std::move(result));
+    result_handler_->ReportResult(std::move(result));
     has_next_result_ = false;
   }
 }
@@ -359,22 +360,22 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "fake"; }
+
   bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<FakeResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "fake"; }
 };
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_fake_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::FakeResolverFactory>());
+void RegisterFakeResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<FakeResolverFactory>());
 }
+
+}  // namespace grpc_core
 
 void grpc_resolver_fake_shutdown() {}

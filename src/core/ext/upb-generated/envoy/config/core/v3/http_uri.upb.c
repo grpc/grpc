@@ -16,20 +16,33 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_core_v3_HttpUri_submsgs[1] = {
-  &google_protobuf_Duration_msginit,
+static const upb_MiniTable_Sub envoy_config_core_v3_HttpUri_submsgs[1] = {
+  {.submsg = &google_protobuf_Duration_msginit},
 };
 
-static const upb_msglayout_field envoy_config_core_v3_HttpUri__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_core_v3_HttpUri__fields[3] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 32), UPB_SIZE(-25, -49), 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_core_v3_HttpUri_msginit = {
+const upb_MiniTable envoy_config_core_v3_HttpUri_msginit = {
   &envoy_config_core_v3_HttpUri_submsgs[0],
   &envoy_config_core_v3_HttpUri__fields[0],
-  UPB_SIZE(32, 64), 3, false, 3, 255,
+  UPB_SIZE(32, 64), 3, upb_ExtMode_NonExtendable, 3, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[1] = {
+  &envoy_config_core_v3_HttpUri_msginit,
+};
+
+const upb_MiniTable_File envoy_config_core_v3_http_uri_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  1,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

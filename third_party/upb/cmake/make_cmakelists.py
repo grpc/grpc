@@ -121,6 +121,9 @@ class BuildFileFunctions(object):
     # self._add_deps(kwargs)
     pass
 
+  def cc_fuzz_test(self, **kwargs):
+    pass
+
   def py_library(self, **kwargs):
     pass
 
@@ -214,6 +217,18 @@ class WorkspaceFileFunctions(object):
   def upb_deps(self):
     pass
 
+  def rules_fuzzing_dependencies(self):
+    pass
+
+  def rules_fuzzing_init(self):
+    pass
+
+  def system_python(self, **kwargs):
+    pass
+
+  def register_toolchains(self, toolchain):
+    pass
+
 
 class Converter(object):
   def __init__(self):
@@ -299,6 +314,7 @@ converter = Converter()
 def GetDict(obj):
   ret = {}
   ret["UPB_DEFAULT_COPTS"] = []  # HACK
+  ret["UPB_DEFAULT_CPPOPTS"] = []  # HACK
   for k in dir(obj):
     if not k.startswith("_"):
       ret[k] = getattr(obj, k);

@@ -15,3 +15,21 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_refcount.h"
+
+#include <chrono>
+
+namespace grpc_core {
+
+uint32_t g_hash_seed = []() {
+  auto now = std::chrono::system_clock::now();
+  auto now_since_epoch = now.time_since_epoch();
+  auto now_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(now_since_epoch);
+  return static_cast<uint32_t>(now_ns.count());
+}();
+
+}  // namespace grpc_core
+
+void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
+  grpc_core::g_hash_seed = seed;
+}

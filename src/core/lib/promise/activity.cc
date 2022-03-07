@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/activity.h"
+
+#include "absl/base/attributes.h"
 
 #include "src/core/lib/gprpp/atomic_utils.h"
 
@@ -23,18 +25,19 @@ namespace grpc_core {
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
-ABSL_CONST_INIT GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_ =
-    nullptr;
+GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
 Waker::Unwakeable Waker::unwakeable_;
+
+namespace promise_detail {
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER TYPES
 
 // Weak handle to an Activity.
 // Handle can persist while Activity goes away.
-class Activity::Handle final : public Wakeable {
+class FreestandingActivity::Handle final : public Wakeable {
  public:
-  explicit Handle(Activity* activity) : activity_(activity) {}
+  explicit Handle(FreestandingActivity* activity) : activity_(activity) {}
 
   // Ref the Handle (not the activity).
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
@@ -56,7 +59,7 @@ class Activity::Handle final : public Wakeable {
     // against DropActivity, so we need to only increase activities refcount if
     // it is non-zero.
     if (activity_ && activity_->RefIfNonzero()) {
-      Activity* activity = activity_;
+      FreestandingActivity* activity = activity_;
       mu_.Unlock();
       // Activity still exists and we have a reference: wake it up, which will
       // drop the ref.
@@ -84,15 +87,15 @@ class Activity::Handle final : public Wakeable {
   // activity.
   std::atomic<size_t> refs_{2};
   Mutex mu_ ABSL_ACQUIRED_AFTER(activity_->mu_);
-  Activity* activity_ ABSL_GUARDED_BY(mu_);
+  FreestandingActivity* activity_ ABSL_GUARDED_BY(mu_);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 // ACTIVITY IMPLEMENTATION
 
-bool Activity::RefIfNonzero() { return IncrementIfNonzero(&refs_); }
+bool FreestandingActivity::RefIfNonzero() { return IncrementIfNonzero(&refs_); }
 
-Activity::Handle* Activity::RefHandle() {
+FreestandingActivity::Handle* FreestandingActivity::RefHandle() {
   if (handle_ == nullptr) {
     // No handle created yet - construct it and return it.
     handle_ = new Handle(this);
@@ -104,11 +107,15 @@ Activity::Handle* Activity::RefHandle() {
   }
 }
 
-void Activity::DropHandle() {
+void FreestandingActivity::DropHandle() {
   handle_->DropActivity();
   handle_ = nullptr;
 }
 
-Waker Activity::MakeNonOwningWaker() { return Waker(RefHandle()); }
+Waker FreestandingActivity::MakeNonOwningWaker() {
+  mu_.AssertHeld();
+  return Waker(RefHandle());
+}
 
+}  // namespace promise_detail
 }  // namespace grpc_core

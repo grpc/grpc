@@ -18,10 +18,14 @@
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
+#include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
 bool squelch = true;
@@ -31,7 +35,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void dont_log(gpr_log_func_args*) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
   grpc_init();
@@ -42,15 +46,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_transport* client_transport = grpc_create_binder_transport_client(
-        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(data, size));
+        absl::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+            input.incoming_parcels()),
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));
     grpc_channel_args* args =
         grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    grpc_channel* channel =
-        grpc_channel_create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, nullptr, 0, nullptr);
+    const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
+                                                .channel_args_preconditioning()
+                                                .PreconditionChannelArgs(args);
+    grpc_channel* channel = grpc_channel_create_internal(
+        "test-target", channel_args, GRPC_CLIENT_DIRECT_CHANNEL,
+        client_transport, nullptr);
+    grpc_channel_args_destroy(channel_args);
     grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
     grpc_call* call = grpc_channel_create_call(
@@ -94,8 +105,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    grpc_call_error error =
-        grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), nullptr);
+    grpc_call_error error = grpc_call_start_batch(
+        call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
     int requested_calls = 1;
     GPR_ASSERT(GRPC_CALL_OK == error);
     grpc_event ev;
@@ -141,5 +152,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
   }
   grpc_shutdown();
-  return 0;
 }

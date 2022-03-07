@@ -21,222 +21,249 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_accesslog_v3_AccessLog_submsgs[2] = {
-  &envoy_config_accesslog_v3_AccessLogFilter_msginit,
-  &google_protobuf_Any_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_AccessLog_submsgs[2] = {
+  {.submsg = &envoy_config_accesslog_v3_AccessLogFilter_msginit},
+  {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_AccessLog__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 1, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_AccessLog__fields[3] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 32), UPB_SIZE(-21, -41), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_AccessLog_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_AccessLog_msginit = {
   &envoy_config_accesslog_v3_AccessLog_submsgs[0],
   &envoy_config_accesslog_v3_AccessLog__fields[0],
-  UPB_SIZE(24, 48), 3, false, 2, 255,
+  UPB_SIZE(24, 48), 3, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_AccessLogFilter_submsgs[12] = {
-  &envoy_config_accesslog_v3_AndFilter_msginit,
-  &envoy_config_accesslog_v3_DurationFilter_msginit,
-  &envoy_config_accesslog_v3_ExtensionFilter_msginit,
-  &envoy_config_accesslog_v3_GrpcStatusFilter_msginit,
-  &envoy_config_accesslog_v3_HeaderFilter_msginit,
-  &envoy_config_accesslog_v3_MetadataFilter_msginit,
-  &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit,
-  &envoy_config_accesslog_v3_OrFilter_msginit,
-  &envoy_config_accesslog_v3_ResponseFlagFilter_msginit,
-  &envoy_config_accesslog_v3_RuntimeFilter_msginit,
-  &envoy_config_accesslog_v3_StatusCodeFilter_msginit,
-  &envoy_config_accesslog_v3_TraceableFilter_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_AccessLogFilter_submsgs[12] = {
+  {.submsg = &envoy_config_accesslog_v3_AndFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_DurationFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_ExtensionFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_GrpcStatusFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_HeaderFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_MetadataFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_OrFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_ResponseFlagFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_RuntimeFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_StatusCodeFilter_msginit},
+  {.submsg = &envoy_config_accesslog_v3_TraceableFilter_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_AccessLogFilter__fields[12] = {
-  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 10, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 11, 11, _UPB_MODE_SCALAR},
-  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 9, 11, _UPB_MODE_SCALAR},
-  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, _UPB_MODE_SCALAR},
-  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, _UPB_MODE_SCALAR},
-  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, _UPB_MODE_SCALAR},
-  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 8, 11, _UPB_MODE_SCALAR},
-  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, _UPB_MODE_SCALAR},
-  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, _UPB_MODE_SCALAR},
-  {12, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_AccessLogFilter__fields[12] = {
+  {1, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 10, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 6, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 11, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 9, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 7, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {8, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 4, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {9, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 8, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {10, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 3, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {11, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {12, UPB_SIZE(0, 0), UPB_SIZE(-5, -9), 5, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_AccessLogFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_AccessLogFilter_msginit = {
   &envoy_config_accesslog_v3_AccessLogFilter_submsgs[0],
   &envoy_config_accesslog_v3_AccessLogFilter__fields[0],
-  UPB_SIZE(8, 16), 12, false, 12, 255,
+  UPB_SIZE(8, 16), 12, upb_ExtMode_NonExtendable, 12, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_ComparisonFilter_submsgs[1] = {
-  &envoy_config_core_v3_RuntimeUInt32_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_ComparisonFilter_submsgs[1] = {
+  {.submsg = &envoy_config_core_v3_RuntimeUInt32_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_ComparisonFilter__fields[2] = {
-  {1, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_ComparisonFilter__fields[2] = {
+  {1, UPB_SIZE(4, 4), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_ComparisonFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_ComparisonFilter_msginit = {
   &envoy_config_accesslog_v3_ComparisonFilter_submsgs[0],
   &envoy_config_accesslog_v3_ComparisonFilter__fields[0],
-  UPB_SIZE(16, 16), 2, false, 2, 255,
+  UPB_SIZE(16, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_StatusCodeFilter_submsgs[1] = {
-  &envoy_config_accesslog_v3_ComparisonFilter_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_StatusCodeFilter_submsgs[1] = {
+  {.submsg = &envoy_config_accesslog_v3_ComparisonFilter_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_StatusCodeFilter__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_StatusCodeFilter__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_StatusCodeFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_StatusCodeFilter_msginit = {
   &envoy_config_accesslog_v3_StatusCodeFilter_submsgs[0],
   &envoy_config_accesslog_v3_StatusCodeFilter__fields[0],
-  UPB_SIZE(8, 16), 1, false, 1, 255,
+  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_DurationFilter_submsgs[1] = {
-  &envoy_config_accesslog_v3_ComparisonFilter_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_DurationFilter_submsgs[1] = {
+  {.submsg = &envoy_config_accesslog_v3_ComparisonFilter_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_DurationFilter__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_DurationFilter__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_DurationFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_DurationFilter_msginit = {
   &envoy_config_accesslog_v3_DurationFilter_submsgs[0],
   &envoy_config_accesslog_v3_DurationFilter__fields[0],
-  UPB_SIZE(8, 16), 1, false, 1, 255,
+  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-const upb_msglayout envoy_config_accesslog_v3_NotHealthCheckFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_NotHealthCheckFilter_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 0, 255,
+  UPB_SIZE(0, 0), 0, upb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-const upb_msglayout envoy_config_accesslog_v3_TraceableFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_TraceableFilter_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false, 0, 255,
+  UPB_SIZE(0, 0), 0, upb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_RuntimeFilter_submsgs[1] = {
-  &envoy_type_v3_FractionalPercent_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_RuntimeFilter_submsgs[1] = {
+  {.submsg = &envoy_type_v3_FractionalPercent_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_RuntimeFilter__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(12, 24), 1, 0, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_RuntimeFilter__fields[3] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(1, 1), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_RuntimeFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_RuntimeFilter_msginit = {
   &envoy_config_accesslog_v3_RuntimeFilter_submsgs[0],
   &envoy_config_accesslog_v3_RuntimeFilter__fields[0],
-  UPB_SIZE(16, 32), 3, false, 3, 255,
+  UPB_SIZE(16, 32), 3, upb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_AndFilter_submsgs[1] = {
-  &envoy_config_accesslog_v3_AccessLogFilter_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_AndFilter_submsgs[1] = {
+  {.submsg = &envoy_config_accesslog_v3_AccessLogFilter_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_AndFilter__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_AndFilter__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_AndFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_AndFilter_msginit = {
   &envoy_config_accesslog_v3_AndFilter_submsgs[0],
   &envoy_config_accesslog_v3_AndFilter__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_OrFilter_submsgs[1] = {
-  &envoy_config_accesslog_v3_AccessLogFilter_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_OrFilter_submsgs[1] = {
+  {.submsg = &envoy_config_accesslog_v3_AccessLogFilter_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_OrFilter__fields[1] = {
-  {2, UPB_SIZE(0, 0), 0, 0, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_OrFilter__fields[1] = {
+  {2, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_OrFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_OrFilter_msginit = {
   &envoy_config_accesslog_v3_OrFilter_submsgs[0],
   &envoy_config_accesslog_v3_OrFilter__fields[0],
-  UPB_SIZE(8, 8), 1, false, 0, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_HeaderFilter_submsgs[1] = {
-  &envoy_config_route_v3_HeaderMatcher_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_HeaderFilter_submsgs[1] = {
+  {.submsg = &envoy_config_route_v3_HeaderMatcher_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_HeaderFilter__fields[1] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_HeaderFilter__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_HeaderFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_HeaderFilter_msginit = {
   &envoy_config_accesslog_v3_HeaderFilter_submsgs[0],
   &envoy_config_accesslog_v3_HeaderFilter__fields[0],
-  UPB_SIZE(8, 16), 1, false, 1, 255,
+  UPB_SIZE(8, 16), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_ResponseFlagFilter__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_ResponseFlagFilter__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_ResponseFlagFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_ResponseFlagFilter_msginit = {
   NULL,
   &envoy_config_accesslog_v3_ResponseFlagFilter__fields[0],
-  UPB_SIZE(8, 8), 1, false, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_GrpcStatusFilter__fields[2] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 14, _UPB_MODE_ARRAY | _UPB_MODE_IS_PACKED},
-  {2, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_GrpcStatusFilter__fields[2] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 5, kUpb_FieldMode_Array | upb_LabelFlags_IsPacked | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 0), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_GrpcStatusFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_GrpcStatusFilter_msginit = {
   NULL,
   &envoy_config_accesslog_v3_GrpcStatusFilter__fields[0],
-  UPB_SIZE(8, 16), 2, false, 2, 255,
+  UPB_SIZE(8, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_MetadataFilter_submsgs[2] = {
-  &envoy_type_matcher_v3_MetadataMatcher_msginit,
-  &google_protobuf_BoolValue_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_MetadataFilter_submsgs[2] = {
+  {.submsg = &envoy_type_matcher_v3_MetadataMatcher_msginit},
+  {.submsg = &google_protobuf_BoolValue_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_MetadataFilter__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_MetadataFilter__fields[2] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_MetadataFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_MetadataFilter_msginit = {
   &envoy_config_accesslog_v3_MetadataFilter_submsgs[0],
   &envoy_config_accesslog_v3_MetadataFilter__fields[0],
-  UPB_SIZE(16, 24), 2, false, 2, 255,
+  UPB_SIZE(16, 24), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_config_accesslog_v3_ExtensionFilter_submsgs[1] = {
-  &google_protobuf_Any_msginit,
+static const upb_MiniTable_Sub envoy_config_accesslog_v3_ExtensionFilter_submsgs[1] = {
+  {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field envoy_config_accesslog_v3_ExtensionFilter__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_config_accesslog_v3_ExtensionFilter__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_accesslog_v3_ExtensionFilter_msginit = {
+const upb_MiniTable envoy_config_accesslog_v3_ExtensionFilter_msginit = {
   &envoy_config_accesslog_v3_ExtensionFilter_submsgs[0],
   &envoy_config_accesslog_v3_ExtensionFilter__fields[0],
-  UPB_SIZE(16, 32), 2, false, 1, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 1, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[15] = {
+  &envoy_config_accesslog_v3_AccessLog_msginit,
+  &envoy_config_accesslog_v3_AccessLogFilter_msginit,
+  &envoy_config_accesslog_v3_ComparisonFilter_msginit,
+  &envoy_config_accesslog_v3_StatusCodeFilter_msginit,
+  &envoy_config_accesslog_v3_DurationFilter_msginit,
+  &envoy_config_accesslog_v3_NotHealthCheckFilter_msginit,
+  &envoy_config_accesslog_v3_TraceableFilter_msginit,
+  &envoy_config_accesslog_v3_RuntimeFilter_msginit,
+  &envoy_config_accesslog_v3_AndFilter_msginit,
+  &envoy_config_accesslog_v3_OrFilter_msginit,
+  &envoy_config_accesslog_v3_HeaderFilter_msginit,
+  &envoy_config_accesslog_v3_ResponseFlagFilter_msginit,
+  &envoy_config_accesslog_v3_GrpcStatusFilter_msginit,
+  &envoy_config_accesslog_v3_MetadataFilter_msginit,
+  &envoy_config_accesslog_v3_ExtensionFilter_msginit,
+};
+
+const upb_MiniTable_File envoy_config_accesslog_v3_accesslog_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  15,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"

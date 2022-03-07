@@ -194,7 +194,7 @@ class TransportFlowControlBase {
   virtual void TestOnlyForceHugeWindow() {}
 
  protected:
-  friend class ::grpc::testing::TrickledCHTTP2;
+  friend class grpc::testing::TrickledCHTTP2;
   int64_t remote_window_ = kDefaultWindow;
   int64_t target_initial_window_size_ = kDefaultWindow;
   int64_t announced_window_ = kDefaultWindow;
@@ -331,11 +331,11 @@ class TransportFlowControl final : public TransportFlowControlBase {
   const bool enable_bdp_probe_;
 
   /* bdp estimation */
-  grpc_core::BdpEstimator bdp_estimator_;
+  BdpEstimator bdp_estimator_;
 
   /* pid controller */
-  grpc_core::PidController pid_controller_;
-  grpc_millis last_pid_update_ = 0;
+  PidController pid_controller_;
+  Timestamp last_pid_update_;
 };
 
 // Fat interface with all methods a stream flow control implementation needs
@@ -384,7 +384,7 @@ class StreamFlowControlBase {
   int64_t announced_window_delta() const { return announced_window_delta_; }
 
  protected:
-  friend class ::grpc::testing::TrickledCHTTP2;
+  friend class grpc::testing::TrickledCHTTP2;
   int64_t remote_window_delta_ = 0;
   int64_t local_window_delta_ = 0;
   int64_t announced_window_delta_ = 0;

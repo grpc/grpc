@@ -122,7 +122,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     void Orphan() override;
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
-                      const ServerAddressList& addresses,
+                      const absl::StatusOr<ServerAddressList>& addresses,
                       const grpc_channel_args* args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -151,6 +151,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
+      absl::string_view GetAuthority() override;
       void AddTraceEvent(TraceSeverity severity,
                          absl::string_view message) override;
 
@@ -440,7 +441,8 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const ServerAddressList& addresses, const grpc_channel_args* args) {
+    const absl::StatusOr<ServerAddressList>& addresses,
+    const grpc_channel_args* args) {
   if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -485,7 +487,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() +
-                      GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS,
+                      Duration::Milliseconds(
+                          GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS),
                   &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }
@@ -493,7 +496,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
     void* arg, grpc_error_handle error) {
   ClusterChild* self = static_cast<ClusterChild*>(arg);
-  GRPC_ERROR_REF(error);  // Ref owned by the lambda
+  (void)GRPC_ERROR_REF(error);  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);
@@ -568,6 +571,12 @@ void XdsClusterManagerLb::ClusterChild::Helper::RequestReresolution() {
   xds_cluster_manager_child_->xds_cluster_manager_policy_
       ->channel_control_helper()
       ->RequestReresolution();
+}
+
+absl::string_view XdsClusterManagerLb::ClusterChild::Helper::GetAuthority() {
+  return xds_cluster_manager_child_->xds_cluster_manager_policy_
+      ->channel_control_helper()
+      ->GetAuthority();
 }
 
 void XdsClusterManagerLb::ClusterChild::Helper::AddTraceEvent(

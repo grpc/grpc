@@ -18,6 +18,8 @@
 # Once those issues are clear, these checks can be enabled later.
 #
 # - bugprone-branch-clone
+# - bugprone-easily-swappable-parameters,
+# - bugprone-implicit-widening-of-multiplication-result
 # - bugprone-infinite-loop
 # - bugprone-narrowing-conversions
 # - bugprone-not-null-terminated-result
@@ -42,18 +44,20 @@
 # - modernize-use-equals-delete
 # - modernize-use-using
 # - performance-no-automatic-move
+# - performance-no-int-to-ptr
 # - performance-unnecessary-copy-initialization
 # - performance-unnecessary-value-param
 # - readability-else-after-return
 # - readability-implicit-bool-conversion
 # - readability-redundant-declaration
-# - readability-static-definition-in-anonymous-namespace
 #
 Checks: '-*,
   abseil-*,
   -abseil-no-namespace,
   bugprone-*,
   -bugprone-branch-clone,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-infinite-loop,
   -bugprone-narrowing-conversions,
   -bugprone-not-null-terminated-result,
@@ -68,6 +72,7 @@ Checks: '-*,
   -google-upgrade-googletest-case,
   performance-*,
   -performance-no-automatic-move,
+  -performance-no-int-to-ptr,
   -performance-unnecessary-copy-initialization,
   -performance-unnecessary-value-param,
   clang-diagnostic-deprecated-register,
@@ -115,6 +120,7 @@ Checks: '-*,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
   readability-simplify-boolean-expr,
+  readability-static-definition-in-anonymous-namespace,
   readability-string-compare,
   readability-uniqueptr-delete-release'
 WarningsAsErrors: '*'

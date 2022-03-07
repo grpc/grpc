@@ -1,36 +1,42 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 def upb_deps():
     maybe(
-        git_repository,
+        http_archive,
         name = "com_google_absl",
-        commit = "998805a4c79d5d7a771f7e5a8ee3cbbbcba04f94",
-        remote = "https://github.com/abseil/abseil-cpp.git",
-        shallow_since = "1583355457 -0500",
+        url = "https://github.com/abseil/abseil-cpp/archive/b9b925341f9e90f5e7aa0cf23f036c29c7e454eb.zip",
+        strip_prefix = "abseil-cpp-b9b925341f9e90f5e7aa0cf23f036c29c7e454eb",
+        sha256 = "bb2a0b57c92b6666e8acb00f4cbbfce6ddb87e83625fb851b0e78db581340617",
     )
 
     maybe(
         http_archive,
         name = "com_google_protobuf",
-        sha256 = "cf63d46ef743f4c30b0e36a562caf83cabed3f10e6ca49eb476913c4655394d5",
-        strip_prefix = "protobuf-3.17.3",
+        sha256 = "87407cd28e7a9c95d9f61a098a53cf031109d451a7763e7dd1253abf8b4df422",
+        strip_prefix = "protobuf-3.19.1",
         urls = [
-            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.17.3.tar.gz",
-            "https://github.com/protocolbuffers/protobuf/archive/v3.17.3.tar.gz",
+            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v3.19.1.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/v3.19.1.tar.gz",
         ],
+        patches = [
+            "//bazel:protobuf.patch",
+        ],
+        patch_cmds = [
+            "rm python/google/protobuf/__init__.py",
+            "rm python/google/protobuf/pyext/__init__.py",
+            "rm python/google/protobuf/internal/__init__.py",
+        ]
     )
+
+    rules_python_version = "740825b7f74930c62f44af95c9a4c1bd428d2c53" # Latest @ 2021-06-23
 
     maybe(
         http_archive,
         name = "rules_python",
-        sha256 = "e5470e92a18aa51830db99a4d9c492cc613761d5bdb7131c04bd92b9834380f6",
-        strip_prefix = "rules_python-4b84ad270387a7c439ebdccfd530e2339601ef27",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz",
-            "https://github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz",
-        ],
+        strip_prefix = "rules_python-{}".format(rules_python_version),
+        url = "https://github.com/bazelbuild/rules_python/archive/{}.zip".format(rules_python_version),
+        sha256 = "09a3c4791c61b62c2cbc5b2cbea4ccc32487b38c7a2cc8f87a794d7a659cc742",
     )
 
     maybe(

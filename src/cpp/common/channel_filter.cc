@@ -30,13 +30,14 @@ namespace grpc {
 
 // MetadataBatch
 
-grpc_linked_mdelem* MetadataBatch::AddMetadata(const string& key,
-                                               const string& value) {
-  grpc_linked_mdelem* storage = new grpc_linked_mdelem;
-  storage->md = grpc_mdelem_from_slices(SliceFromCopiedString(key),
-                                        SliceFromCopiedString(value));
-  GRPC_LOG_IF_ERROR("MetadataBatch::AddMetadata", batch_->LinkHead(storage));
-  return storage;
+void MetadataBatch::AddMetadata(const string& key, const string& value) {
+  batch_->Append(key, grpc_core::Slice::FromCopiedString(value),
+                 [&](absl::string_view error, const grpc_core::Slice&) {
+                   gpr_log(GPR_INFO, "%s",
+                           absl::StrCat("MetadataBatch::AddMetadata error:",
+                                        error, " key=", key, " value=", value)
+                               .c_str());
+                 });
 }
 
 // ChannelData
@@ -70,14 +71,13 @@ void RegisterChannelFilter(
     std::function<bool(const grpc_channel_args&)> include_filter,
     const grpc_channel_filter* filter) {
   auto maybe_add_filter = [include_filter,
-                           filter](grpc_channel_stack_builder* builder) {
+                           filter](grpc_core::ChannelStackBuilder* builder) {
     if (include_filter != nullptr) {
-      const grpc_channel_args* args =
-          grpc_channel_stack_builder_get_channel_arguments(builder);
+      const grpc_channel_args* args = builder->channel_args();
       if (!include_filter(*args)) return true;
     }
-    return grpc_channel_stack_builder_prepend_filter(builder, filter, nullptr,
-                                                     nullptr);
+    builder->PrependFilter(filter, nullptr);
+    return true;
   };
   grpc_core::CoreConfiguration::RegisterBuilder(
       [stack_type, priority,

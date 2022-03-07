@@ -25,7 +25,6 @@ import grpc
 from grpc import _grpcio_metadata
 
 from tests.unit import _tcp_proxy
-from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
 _UNARY_UNARY = '/test/UnaryUnary'

@@ -24,12 +24,9 @@
 #include "src/core/lib/transport/transport_impl.h"
 
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
-                                         grpc_channel_args* args,
+                                         const grpc_channel_args* args,
                                          void* reserved);
 
 extern grpc_core::TraceFlag grpc_inproc_trace;
-
-void grpc_inproc_transport_init(void);
-void grpc_inproc_transport_shutdown(void);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H */

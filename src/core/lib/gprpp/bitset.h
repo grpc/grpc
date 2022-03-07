@@ -15,7 +15,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_BITSET_H
 #define GRPC_CORE_LIB_GPRPP_BITSET_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
@@ -144,6 +144,13 @@ class BitSet {
       count += BitCount(units_[i]);
     }
     return count;
+  }
+
+  bool operator==(const BitSet& other) const {
+    for (size_t i = 0; i < kUnits; i++) {
+      if (units_[i] != other.units_[i]) return false;
+    }
+    return true;
   }
 
  private:

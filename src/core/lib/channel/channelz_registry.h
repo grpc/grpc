@@ -19,7 +19,7 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 

@@ -8,18 +8,7 @@
 
 #include "upb/def.h"
 #include "google/protobuf/struct.upbdefs.h"
-
-extern const upb_msglayout google_protobuf_Struct_msginit;
-extern const upb_msglayout google_protobuf_Struct_FieldsEntry_msginit;
-extern const upb_msglayout google_protobuf_Value_msginit;
-extern const upb_msglayout google_protobuf_ListValue_msginit;
-
-static const upb_msglayout *layouts[4] = {
-  &google_protobuf_Struct_msginit,
-  &google_protobuf_Struct_FieldsEntry_msginit,
-  &google_protobuf_Value_msginit,
-  &google_protobuf_ListValue_msginit,
-};
+#include "google/protobuf/struct.upb.h"
 
 static const char descriptor[738] = {'\n', '\034', 'g', 'o', 'o', 'g', 'l', 'e', '/', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '/', 's', 't', 'r', 'u', 'c', 't', '.', 
 'p', 'r', 'o', 't', 'o', '\022', '\017', 'g', 'o', 'o', 'g', 'l', 'e', '.', 'p', 'r', 'o', 't', 'o', 'b', 'u', 'f', '\"', '\230', '\001', 
@@ -53,13 +42,13 @@ static const char descriptor[738] = {'\n', '\034', 'g', 'o', 'o', 'g', 'l', 'e',
 'T', 'y', 'p', 'e', 's', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[1] = {
+static _upb_DefPool_Init *deps[1] = {
   NULL
 };
 
-upb_def_init google_protobuf_struct_proto_upbdefinit = {
+_upb_DefPool_Init google_protobuf_struct_proto_upbdefinit = {
   deps,
-  layouts,
+  &google_protobuf_struct_proto_upb_file_layout,
   "google/protobuf/struct.proto",
-  UPB_STRVIEW_INIT(descriptor, 738)
+  UPB_STRINGVIEW_INIT(descriptor, 738)
 };

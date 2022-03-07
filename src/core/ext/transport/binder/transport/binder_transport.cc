@@ -16,6 +16,8 @@
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
+#ifndef GRPC_NO_BINDER
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -34,12 +36,10 @@
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_utils.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
-#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 #ifndef NDEBUG
@@ -118,21 +118,16 @@ static void set_pollset_set(grpc_transport*, grpc_stream*, grpc_pollset_set*) {
   gpr_log(GPR_INFO, __func__);
 }
 
-static void AssignMetadata(grpc_metadata_batch* mb, grpc_core::Arena* arena,
+static void AssignMetadata(grpc_metadata_batch* mb,
                            const grpc_binder::Metadata& md) {
   mb->Clear();
   for (auto& p : md) {
-    grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
-        arena->Alloc(sizeof(grpc_linked_mdelem)));
-    memset(glm, 0, sizeof(grpc_linked_mdelem));
-    grpc_slice key = grpc_slice_from_cpp_string(p.first);
-    grpc_slice value = grpc_slice_from_cpp_string(p.second);
-    glm->md = grpc_mdelem_from_slices(grpc_slice_intern(key),
-                                      grpc_slice_intern(value));
-    // Unref here to prevent memory leak
-    grpc_slice_unref_internal(key);
-    grpc_slice_unref_internal(value);
-    GPR_ASSERT(mb->LinkTail(glm) == GRPC_ERROR_NONE);
+    mb->Append(p.first, grpc_core::Slice::FromCopiedString(p.second),
+               [&](absl::string_view error, const grpc_core::Slice&) {
+                 gpr_log(
+                     GPR_DEBUG, "Failed to parse metadata: %s",
+                     absl::StrCat("key=", p.first, " error=", error).c_str());
+               });
   }
 }
 
@@ -176,10 +171,10 @@ static bool ContainsAuthorityAndPath(const grpc_binder::Metadata& metadata) {
   bool has_authority = false;
   bool has_path = false;
   for (const auto& kv : metadata) {
-    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_AUTHORITY)) {
+    if (kv.first == ":authority") {
       has_authority = true;
     }
-    if (kv.first == grpc_core::StringViewFromSlice(GRPC_MDSTR_PATH)) {
+    if (kv.first == ":path") {
       has_path = true;
     }
   }
@@ -210,8 +205,7 @@ static void recv_initial_metadata_locked(void* arg,
               "Missing :authority or :path in initial metadata");
         }
       }
-      AssignMetadata(gbs->recv_initial_metadata, gbs->arena,
-                     *args->initial_metadata);
+      AssignMetadata(gbs->recv_initial_metadata, *args->initial_metadata);
       return GRPC_ERROR_NONE;
     }();
 
@@ -293,20 +287,14 @@ static void recv_trailing_metadata_locked(void* arg,
           return GRPC_ERROR_CANCELLED;
         }
       } else {
-        AssignMetadata(gbs->recv_trailing_metadata, gbs->arena,
-                       *args->trailing_metadata);
+        AssignMetadata(gbs->recv_trailing_metadata, *args->trailing_metadata);
         // Append status to metadata
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
         gpr_log(GPR_INFO, "status = %d", args->status);
-        grpc_linked_mdelem* glm = static_cast<grpc_linked_mdelem*>(
-            gbs->arena->Alloc(sizeof(grpc_linked_mdelem)));
-        glm->md = grpc_get_reffed_status_elem(args->status);
-        GPR_ASSERT(gbs->recv_trailing_metadata->LinkTail(glm) ==
-                   GRPC_ERROR_NONE);
-        gpr_log(GPR_INFO, "trailing_metadata = %p",
-                gbs->recv_trailing_metadata);
-        gpr_log(GPR_INFO, "glm = %p", glm);
+        gbs->recv_trailing_metadata->Set(
+            grpc_core::GrpcStatusMetadata(),
+            static_cast<grpc_status_code>(args->status));
       }
       return GRPC_ERROR_NONE;
     }();
@@ -328,6 +316,52 @@ static void recv_trailing_metadata_locked(void* arg,
   }
   GRPC_BINDER_STREAM_UNREF(gbs, "recv_trailing_metadata");
 }
+
+namespace grpc_binder {
+namespace {
+
+class MetadataEncoder {
+ public:
+  MetadataEncoder(bool is_client, Transaction* tx, Metadata* init_md)
+      : is_client_(is_client), tx_(tx), init_md_(init_md) {}
+
+  void Encode(const grpc_core::Slice& key_slice,
+              const grpc_core::Slice& value_slice) {
+    absl::string_view key = key_slice.as_string_view();
+    absl::string_view value = value_slice.as_string_view();
+    init_md_->emplace_back(std::string(key), std::string(value));
+  }
+
+  void Encode(grpc_core::HttpPathMetadata, const grpc_core::Slice& value) {
+    // TODO(b/192208403): Figure out if it is correct to simply drop '/'
+    // prefix and treat it as rpc method name
+    GPR_ASSERT(value[0] == '/');
+    std::string path = std::string(value.as_string_view().substr(1));
+
+    // Only client send method ref.
+    GPR_ASSERT(is_client_);
+    tx_->SetMethodRef(path);
+  }
+
+  void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {
+    gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
+    tx_->SetStatus(status);
+  }
+
+  template <typename Trait>
+  void Encode(Trait, const typename Trait::ValueType& value) {
+    init_md_->emplace_back(std::string(Trait::key()),
+                           std::string(Trait::Encode(value).as_string_view()));
+  }
+
+ private:
+  const bool is_client_;
+  Transaction* const tx_;
+  Metadata* const init_md_;
+};
+
+}  // namespace
+}  // namespace grpc_binder
 
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error_handle /*error*/) {
@@ -396,25 +430,8 @@ static void perform_stream_op_locked(void* stream_op,
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    batch->ForEach([&](grpc_mdelem md) {
-      absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
-      absl::string_view value =
-          grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
-      gpr_log(GPR_INFO, "send initial metatday key-value %s",
-              absl::StrCat(key, " ", value).c_str());
-      if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_PATH)) {
-        // TODO(b/192208403): Figure out if it is correct to simply drop '/'
-        // prefix and treat it as rpc method name
-        GPR_ASSERT(value[0] == '/');
-        std::string path = std::string(value).substr(1);
-
-        // Only client send method ref.
-        GPR_ASSERT(gbt->is_client);
-        tx.SetMethodRef(path);
-      } else {
-        init_md.emplace_back(std::string(key), std::string(value));
-      }
-    });
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx, &init_md);
+    batch->Encode(&encoder);
     tx.SetPrefix(init_md);
   }
   if (op->send_message) {
@@ -436,7 +453,6 @@ static void perform_stream_op_locked(void* stream_op,
       message_data += std::string(reinterpret_cast<char*>(p), len);
       grpc_slice_unref_internal(message_slice);
     }
-    gpr_log(GPR_INFO, "message_data = %s", message_data.c_str());
     tx.SetData(message_data);
     // TODO(b/192369787): Are we supposed to reset here to avoid
     // use-after-free issue in call.cc?
@@ -448,23 +464,10 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    batch->ForEach([&](grpc_mdelem md) {
-      // Client will not send trailing metadata.
-      GPR_ASSERT(!gbt->is_client);
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx,
+                                         &trailing_metadata);
+    batch->Encode(&encoder);
 
-      if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_STATUS)) {
-        int status = grpc_get_status_code_from_metadata(md);
-        gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
-        tx.SetStatus(status);
-      } else {
-        absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md));
-        absl::string_view value =
-            grpc_core::StringViewFromSlice(GRPC_MDVALUE(md));
-        gpr_log(GPR_INFO, "send trailing metatday key-value %s",
-                absl::StrCat(key, " ", value).c_str());
-        trailing_metadata.emplace_back(std::string(key), std::string(value));
-      }
-    });
     // TODO(mingcl): Will we ever has key-value pair here? According to
     // wireformat client suffix data is always empty.
     tx.SetSuffix(trailing_metadata);
@@ -686,6 +689,7 @@ static grpc_endpoint* get_endpoint(grpc_transport*) {
 static const grpc_transport_vtable vtable = {sizeof(grpc_binder_stream),
                                              "binder",
                                              init_stream,
+                                             nullptr,
                                              set_pollset,
                                              set_pollset_set,
                                              perform_stream_op,
@@ -705,11 +709,13 @@ static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
 }
 
 grpc_binder_transport::grpc_binder_transport(
-    std::unique_ptr<grpc_binder::Binder> binder, bool is_client)
+    std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy)
     : is_client(is_client),
       combiner(grpc_combiner_create()),
-      state_tracker(is_client ? "binder_transport_client"
-                              : "binder_transport_server"),
+      state_tracker(
+          is_client ? "binder_transport_client" : "binder_transport_server",
+          GRPC_CHANNEL_READY),
       refs(1, nullptr) {
   gpr_log(GPR_INFO, __func__);
   base.vtable = get_vtable();
@@ -724,8 +730,9 @@ grpc_binder_transport::grpc_binder_transport(
   // WireReader holds a ref to grpc_binder_transport.
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");
   wire_reader = grpc_core::MakeOrphanable<grpc_binder::WireReaderImpl>(
-      transport_stream_receiver, is_client,
-      /*on_destruct_callback=*/[this] {
+      transport_stream_receiver, is_client, security_policy,
+      /*on_destruct_callback=*/
+      [this] {
         // Unref transport when destructed.
         GRPC_BINDER_UNREF_TRANSPORT(this, "wire reader");
       });
@@ -737,21 +744,32 @@ grpc_binder_transport::~grpc_binder_transport() {
 }
 
 grpc_transport* grpc_create_binder_transport_client(
-    std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
+    std::unique_ptr<grpc_binder::Binder> endpoint_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
-      new grpc_binder_transport(std::move(endpoint_binder), /*is_client=*/true);
+  GPR_ASSERT(endpoint_binder != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
+  grpc_binder_transport* t = new grpc_binder_transport(
+      std::move(endpoint_binder), /*is_client=*/true, security_policy);
 
   return &t->base;
 }
 
 grpc_transport* grpc_create_binder_transport_server(
-    std::unique_ptr<grpc_binder::Binder> client_binder) {
+    std::unique_ptr<grpc_binder::Binder> client_binder,
+    std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
+        security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  grpc_binder_transport* t =
-      new grpc_binder_transport(std::move(client_binder), /*is_client=*/false);
+  GPR_ASSERT(client_binder != nullptr);
+  GPR_ASSERT(security_policy != nullptr);
+
+  grpc_binder_transport* t = new grpc_binder_transport(
+      std::move(client_binder), /*is_client=*/false, security_policy);
 
   return &t->base;
 }
+#endif

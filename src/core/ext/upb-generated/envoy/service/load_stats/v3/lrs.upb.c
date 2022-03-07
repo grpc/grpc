@@ -17,37 +17,51 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_service_load_stats_v3_LoadStatsRequest_submsgs[2] = {
-  &envoy_config_core_v3_Node_msginit,
-  &envoy_config_endpoint_v3_ClusterStats_msginit,
+static const upb_MiniTable_Sub envoy_service_load_stats_v3_LoadStatsRequest_submsgs[2] = {
+  {.submsg = &envoy_config_core_v3_Node_msginit},
+  {.submsg = &envoy_config_endpoint_v3_ClusterStats_msginit},
 };
 
-static const upb_msglayout_field envoy_service_load_stats_v3_LoadStatsRequest__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
-  {2, UPB_SIZE(8, 16), 0, 1, 11, _UPB_MODE_ARRAY},
+static const upb_MiniTable_Field envoy_service_load_stats_v3_LoadStatsRequest__fields[2] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_load_stats_v3_LoadStatsRequest_msginit = {
+const upb_MiniTable envoy_service_load_stats_v3_LoadStatsRequest_msginit = {
   &envoy_service_load_stats_v3_LoadStatsRequest_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsRequest__fields[0],
-  UPB_SIZE(16, 24), 2, false, 2, 255,
+  UPB_SIZE(16, 24), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout *const envoy_service_load_stats_v3_LoadStatsResponse_submsgs[1] = {
-  &google_protobuf_Duration_msginit,
+static const upb_MiniTable_Sub envoy_service_load_stats_v3_LoadStatsResponse_submsgs[1] = {
+  {.submsg = &google_protobuf_Duration_msginit},
 };
 
-static const upb_msglayout_field envoy_service_load_stats_v3_LoadStatsResponse__fields[4] = {
-  {1, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_ARRAY},
-  {2, UPB_SIZE(4, 8), 1, 0, 11, _UPB_MODE_SCALAR},
-  {3, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR},
-  {4, UPB_SIZE(2, 2), 0, 0, 8, _UPB_MODE_SCALAR},
+static const upb_MiniTable_Field envoy_service_load_stats_v3_LoadStatsResponse__fields[4] = {
+  {1, UPB_SIZE(8, 16), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(1, 1), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(2, 2), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_load_stats_v3_LoadStatsResponse_msginit = {
+const upb_MiniTable envoy_service_load_stats_v3_LoadStatsResponse_msginit = {
   &envoy_service_load_stats_v3_LoadStatsResponse_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsResponse__fields[0],
-  UPB_SIZE(16, 24), 4, false, 4, 255,
+  UPB_SIZE(16, 24), 4, upb_ExtMode_NonExtendable, 4, 255, 0,
+};
+
+static const upb_MiniTable *messages_layout[2] = {
+  &envoy_service_load_stats_v3_LoadStatsRequest_msginit,
+  &envoy_service_load_stats_v3_LoadStatsResponse_msginit,
+};
+
+const upb_MiniTable_File envoy_service_load_stats_v3_lrs_proto_upb_file_layout = {
+  messages_layout,
+  NULL,
+  NULL,
+  2,
+  0,
+  0,
 };
 
 #include "upb/port_undef.inc"
