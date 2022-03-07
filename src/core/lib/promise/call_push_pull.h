@@ -75,7 +75,7 @@ class CallPushPull {
         if (IsStatusOk(*status)) {
           done_.set(kDonePush);
         } else {
-          return std::move(*status);
+          return Result(std::move(*status));
         }
       }
     }
@@ -97,7 +97,7 @@ class CallPushPull {
         if (IsStatusOk(*status)) {
           done_.set(kDonePull);
         } else {
-          return std::move(*status);
+          return Result(std::move(*status));
         }
       }
     }

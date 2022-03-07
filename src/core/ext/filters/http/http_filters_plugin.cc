@@ -80,8 +80,8 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
            GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
   optional(GRPC_SERVER_CHANNEL, true, GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION,
            &MessageDecompressFilter);
-  required(GRPC_CLIENT_SUBCHANNEL, &grpc_http_client_filter);
-  required(GRPC_CLIENT_DIRECT_CHANNEL, &grpc_http_client_filter);
+  required(GRPC_CLIENT_SUBCHANNEL, &grpc_core::HttpClientFilter::kFilter);
+  required(GRPC_CLIENT_DIRECT_CHANNEL, &grpc_core::HttpClientFilter::kFilter);
   required(GRPC_SERVER_CHANNEL, &grpc_http_server_filter);
 }
 }  // namespace grpc_core

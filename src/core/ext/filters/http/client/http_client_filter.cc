@@ -33,13 +33,9 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/b64.h"
+#include "src/core/lib/promise/call_push_pull.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/percent_encoding.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport_impl.h"
 
@@ -59,7 +55,8 @@ static absl::Status CheckServerMetadata(const ServerMetadata& b) {
     } else {
       return absl::Status(static_cast<absl::StatusCode>(
                               grpc_http2_status_to_grpc_status(*status)),
-                          absl::StrCat(absl::StrCat("Received http2 header with status: ", *status));
+                          absl::StrCat(absl::StrCat(
+                              "Received http2 header with status: ", *status)));
     }
   }
 
@@ -141,18 +138,20 @@ ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
       absl::exchange(call_args.server_initial_metadata, read_latch);
 
   return CallPushPull(
-      []() { return absl::OkStatus(); },
       Seq(next_promise_factory(std::move(call_args)),
           [](ServerMetadata md) -> ServerMetadata {
             auto r = CheckServerMetadata(md);
             if (!r.ok()) return ServerMetadata(r);
             return md;
           }),
-      Seq(read_latch->Wait(), [write_latch](ServerInitialMetadata* md) {
-        auto r = CheckServerMetadata(*md);
-        write_latch->Set(md);
-        return r;
-      }));
+      []() { return absl::OkStatus(); },
+      Seq(read_latch->Wait(),
+          [write_latch](ServerMetadata** md) -> absl::Status {
+            auto r =
+                *md == nullptr ? absl::OkStatus() : CheckServerMetadata(**md);
+            write_latch->Set(*md);
+            return r;
+          }));
 }
 
 absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
