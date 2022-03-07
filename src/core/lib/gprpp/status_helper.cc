@@ -357,18 +357,9 @@ namespace internal {
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
-  // Update a message to have 0-127 code only so that it can be encoded/decoded
-  // by protobuf which assumes that text fields are expected to be a valid UTF-8
-  // string.
-  const char* msg_data = status.message().data();
-  const size_t msg_len = status.message().size();
-  char* msg_buf = reinterpret_cast<char*>(upb_Arena_Malloc(arena, msg_len));
-  for (size_t i = 0; i < msg_len; i++) {
-    msg_buf[i] = (msg_data[i] >= 0) ? msg_data[i] : 32;
-  }
   google_rpc_Status_set_message(
-      msg, upb_StringView_FromDataAndSize(msg_buf, msg_len));
-  // Put all payloads
+      msg, upb_StringView_FromDataAndSize(status.message().data(),
+                                          status.message().size()));
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
     google_protobuf_Any* any = google_rpc_Status_add_details(msg, arena);
