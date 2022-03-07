@@ -31,7 +31,7 @@ sys.path.append(
                  'python_utils'))
 import check_on_pr
 
-argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
+argp = argparse.ArgumentParser(description='Perform diff on memory benchmarks')
 
 argp.add_argument('-d',
                   '--diff_base',
