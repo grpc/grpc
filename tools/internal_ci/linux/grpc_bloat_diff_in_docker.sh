@@ -24,3 +24,6 @@ time python3 -m pip install --user -r tools/internal_ci/helper_scripts/requireme
 
 tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/bloat/bloat_diff.py \
   -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"
+
+tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/memory/memory_diff.py \
+  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"
