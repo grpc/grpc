@@ -217,7 +217,8 @@ def diff(bms, loops, regex, track, old, new, counters):
     _NOISY = ["BM_WellFlushed"]
     for name, bm in benchmarks.items():
         if name in _NOISY:
-            print("skipping noisy benchmark '%s' for labelling evaluation" % name)
+            print("skipping noisy benchmark '%s' for labelling evaluation" %
+                  name)
         if bm.skip():
             continue
         d = bm.speedup['cpu_time']
