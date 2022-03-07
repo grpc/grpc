@@ -80,13 +80,11 @@ if args.diff_base:
         ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
     # checkout the diff base (="old")
     subprocess.check_call(['git', 'checkout', args.diff_base])
-    subprocess.check_call(['git', 'submodule', 'update'])
     try:
         new = _run()
     finally:
         # restore the original revision (="new")
         subprocess.check_call(['git', 'checkout', where_am_i])
-        subprocess.check_call(['git', 'submodule', 'update'])
 
 text = ''
 if new is None:
