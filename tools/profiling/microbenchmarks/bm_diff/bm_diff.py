@@ -214,7 +214,10 @@ def diff(bms, loops, regex, track, old, new, counters):
     # figure out the significance of the changes... right now we take the 95%-ile
     # benchmark delta %-age, and then apply some hand chosen thresholds
     histogram = []
-    for bm in benchmarks.values():
+    _NOISY = ["BM_WellFlushed"]
+    for name, bm in benchmarks.items():
+        if name in _NOISY:
+            print("skipping noisy benchmark '%s' for labelling evaluation" % name)
         if bm.skip():
             continue
         d = bm.speedup['cpu_time']
