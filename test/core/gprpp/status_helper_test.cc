@@ -84,15 +84,27 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status s = absl::CancelledError();
   absl::Status child1 = absl::AbortedError("Message1");
   absl::Status child2 = absl::DeadlineExceededError("Message2");
+  absl::Status child3 = absl::UnimplementedError("");
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
-  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(child1, child2));
+  StatusAddChild(&s, child3);
+  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(child1, child2, child3));
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
   StatusSetStr(&s, StatusStrProperty::kOsError, "value");
+  upb::Arena arena;
+  google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
+  absl::Status s2 = internal::StatusFromProto(msg);
+  EXPECT_EQ(s, s2);
+}
+
+TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
+  absl::Status s = absl::CancelledError("_\xAB\xCD\xEF_");
+  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
+  StatusSetStr(&s, StatusStrProperty::kOsError, "!\xFF\xCC\xAA!");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   absl::Status s2 = internal::StatusFromProto(msg);
