@@ -41,6 +41,10 @@
 
 namespace grpc_core {
 
+const grpc_channel_filter HttpClientFilter::kFilter =
+    MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient>(
+        "http_client");
+
 namespace {
 static absl::Status CheckServerMetadata(const ServerMetadata& b) {
   if (auto* status = b->get_pointer(grpc_core::HttpStatusMetadata())) {
@@ -153,6 +157,10 @@ ArenaPromise<ServerMetadata> HttpClientFilter::MakeCallPromise(
             return r;
           }));
 }
+
+HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
+                                   Slice user_agent)
+    : scheme_(scheme), user_agent_(std::move(user_agent)) {}
 
 absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
     const grpc_channel_args* args, ChannelFilter::Args filter_args) {
