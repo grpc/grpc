@@ -194,7 +194,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
-    void StartConnectivityWatchLocked();
+    void StartConnectivityWatchLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void CancelConnectivityWatchLocked();
 
     void SubscribeLocked(const XdsResourceType* type,
@@ -252,7 +253,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    grpc_millis last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = ExecCtx::Get()->Now();
   };
 
   // Load report data.
@@ -293,7 +294,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
-  const grpc_millis request_timeout_;
+  const Duration request_timeout_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;

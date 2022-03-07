@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 22.0.0
+PROJECT_NUMBER         = 23.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -909,8 +909,6 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
@@ -1014,24 +1012,13 @@ src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
-src/core/ext/transport/chttp2/client/insecure/README.md \
-src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
-src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
-src/core/ext/transport/chttp2/client/secure/README.md \
-src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
 src/core/ext/transport/chttp2/server/chttp2_server.cc \
 src/core/ext/transport/chttp2/server/chttp2_server.h \
-src/core/ext/transport/chttp2/server/insecure/README.md \
-src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
-src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
-src/core/ext/transport/chttp2/server/secure/README.md \
-src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc \
 src/core/ext/transport/chttp2/transport/README.md \
 src/core/ext/transport/chttp2/transport/bin_decoder.cc \
 src/core/ext/transport/chttp2/transport/bin_decoder.h \
 src/core/ext/transport/chttp2/transport/bin_encoder.cc \
 src/core/ext/transport/chttp2/transport/bin_encoder.h \
-src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
 src/core/ext/transport/chttp2/transport/chttp2_transport.h \
 src/core/ext/transport/chttp2/transport/context_list.cc \
@@ -1636,8 +1623,6 @@ src/core/ext/xds/xds_bootstrap.h \
 src/core/ext/xds/xds_certificate_provider.cc \
 src/core/ext/xds/xds_certificate_provider.h \
 src/core/ext/xds/xds_channel_args.h \
-src/core/ext/xds/xds_channel_creds.cc \
-src/core/ext/xds/xds_channel_creds.h \
 src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
@@ -1675,6 +1660,7 @@ src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/README.md \
+src/core/lib/channel/call_finalization.h \
 src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
@@ -1698,6 +1684,7 @@ src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
@@ -1768,6 +1755,7 @@ src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
+src/core/lib/gprpp/capture.h \
 src/core/lib/gprpp/chunked_vector.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
@@ -1801,6 +1789,8 @@ src/core/lib/gprpp/table.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
+src/core/lib/gprpp/time.cc \
+src/core/lib/gprpp/time.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/http/format_request.cc \
@@ -1885,8 +1875,6 @@ src/core/lib/iomgr/iocp_windows.cc \
 src/core/lib/iomgr/iocp_windows.h \
 src/core/lib/iomgr/iomgr.cc \
 src/core/lib/iomgr/iomgr.h \
-src/core/lib/iomgr/iomgr_custom.cc \
-src/core/lib/iomgr/iomgr_custom.h \
 src/core/lib/iomgr/iomgr_internal.cc \
 src/core/lib/iomgr/iomgr_internal.h \
 src/core/lib/iomgr/iomgr_posix.cc \
@@ -1903,12 +1891,8 @@ src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
 src/core/lib/iomgr/pollset.h \
-src/core/lib/iomgr/pollset_custom.cc \
-src/core/lib/iomgr/pollset_custom.h \
 src/core/lib/iomgr/pollset_set.cc \
 src/core/lib/iomgr/pollset_set.h \
-src/core/lib/iomgr/pollset_set_custom.cc \
-src/core/lib/iomgr/pollset_set_custom.h \
 src/core/lib/iomgr/pollset_set_windows.cc \
 src/core/lib/iomgr/pollset_set_windows.h \
 src/core/lib/iomgr/pollset_windows.cc \
@@ -1917,8 +1901,6 @@ src/core/lib/iomgr/port.h \
 src/core/lib/iomgr/python_util.h \
 src/core/lib/iomgr/resolve_address.cc \
 src/core/lib/iomgr/resolve_address.h \
-src/core/lib/iomgr/resolve_address_custom.cc \
-src/core/lib/iomgr/resolve_address_custom.h \
 src/core/lib/iomgr/resolve_address_impl.h \
 src/core/lib/iomgr/resolve_address_posix.cc \
 src/core/lib/iomgr/resolve_address_posix.h \
@@ -1927,6 +1909,7 @@ src/core/lib/iomgr/resolve_address_windows.h \
 src/core/lib/iomgr/resolved_address.h \
 src/core/lib/iomgr/sockaddr.h \
 src/core/lib/iomgr/sockaddr_posix.h \
+src/core/lib/iomgr/sockaddr_utils_posix.cc \
 src/core/lib/iomgr/sockaddr_windows.h \
 src/core/lib/iomgr/socket_factory_posix.cc \
 src/core/lib/iomgr/socket_factory_posix.h \
@@ -1944,17 +1927,13 @@ src/core/lib/iomgr/sys_epoll_wrapper.h \
 src/core/lib/iomgr/tcp_client.cc \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_cfstream.cc \
-src/core/lib/iomgr/tcp_client_custom.cc \
 src/core/lib/iomgr/tcp_client_posix.cc \
 src/core/lib/iomgr/tcp_client_posix.h \
 src/core/lib/iomgr/tcp_client_windows.cc \
-src/core/lib/iomgr/tcp_custom.cc \
-src/core/lib/iomgr/tcp_custom.h \
 src/core/lib/iomgr/tcp_posix.cc \
 src/core/lib/iomgr/tcp_posix.h \
 src/core/lib/iomgr/tcp_server.cc \
 src/core/lib/iomgr/tcp_server.h \
-src/core/lib/iomgr/tcp_server_custom.cc \
 src/core/lib/iomgr/tcp_server_posix.cc \
 src/core/lib/iomgr/tcp_server_utils_posix.h \
 src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
@@ -1967,8 +1946,6 @@ src/core/lib/iomgr/time_averaged_stats.cc \
 src/core/lib/iomgr/time_averaged_stats.h \
 src/core/lib/iomgr/timer.cc \
 src/core/lib/iomgr/timer.h \
-src/core/lib/iomgr/timer_custom.cc \
-src/core/lib/iomgr/timer_custom.h \
 src/core/lib/iomgr/timer_generic.cc \
 src/core/lib/iomgr/timer_generic.h \
 src/core/lib/iomgr/timer_heap.cc \
@@ -2012,6 +1989,9 @@ src/core/lib/promise/poll.h \
 src/core/lib/promise/promise.h \
 src/core/lib/promise/race.h \
 src/core/lib/promise/seq.h \
+src/core/lib/promise/sleep.cc \
+src/core/lib/promise/sleep.h \
+src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
 src/core/lib/resolver/resolver_factory.h \
@@ -2038,12 +2018,12 @@ src/core/lib/security/authorization/evaluate_args.cc \
 src/core/lib/security/authorization/evaluate_args.h \
 src/core/lib/security/authorization/grpc_authorization_engine.cc \
 src/core/lib/security/authorization/grpc_authorization_engine.h \
+src/core/lib/security/authorization/grpc_server_authz_filter.cc \
+src/core/lib/security/authorization/grpc_server_authz_filter.h \
 src/core/lib/security/authorization/matchers.cc \
 src/core/lib/security/authorization/matchers.h \
 src/core/lib/security/authorization/rbac_policy.cc \
 src/core/lib/security/authorization/rbac_policy.h \
-src/core/lib/security/authorization/sdk_server_authz_filter.cc \
-src/core/lib/security/authorization/sdk_server_authz_filter.h \
 src/core/lib/security/context/security_context.cc \
 src/core/lib/security/context/security_context.h \
 src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -2057,6 +2037,10 @@ src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h \
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+src/core/lib/security/credentials/call_creds_util.cc \
+src/core/lib/security/credentials/call_creds_util.h \
+src/core/lib/security/credentials/channel_creds_registry.h \
+src/core/lib/security/credentials/channel_creds_registry_init.cc \
 src/core/lib/security/credentials/composite/composite_credentials.cc \
 src/core/lib/security/credentials/composite/composite_credentials.h \
 src/core/lib/security/credentials/credentials.cc \
@@ -2140,9 +2124,10 @@ src/core/lib/security/transport/tsi_error.cc \
 src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/json_util.cc \
 src/core/lib/security/util/json_util.h \
-src/core/lib/service_config/service_config.cc \
 src/core/lib/service_config/service_config.h \
 src/core/lib/service_config/service_config_call_data.h \
+src/core/lib/service_config/service_config_impl.cc \
+src/core/lib/service_config/service_config_impl.h \
 src/core/lib/service_config/service_config_parser.cc \
 src/core/lib/service_config/service_config_parser.h \
 src/core/lib/slice/b64.cc \
@@ -2188,7 +2173,6 @@ src/core/lib/surface/event_string.cc \
 src/core/lib/surface/event_string.h \
 src/core/lib/surface/init.cc \
 src/core/lib/surface/init.h \
-src/core/lib/surface/init_secure.cc \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
 src/core/lib/surface/metadata_array.cc \
@@ -2223,6 +2207,7 @@ src/core/lib/transport/transport_op_string.cc \
 src/core/lib/uri/uri_parser.cc \
 src/core/lib/uri/uri_parser.h \
 src/core/plugin_registry/grpc_plugin_registry.cc \
+src/core/plugin_registry/grpc_plugin_registry_extra.cc \
 src/core/tsi/README.md \
 src/core/tsi/alts/crypt/aes_gcm.cc \
 src/core/tsi/alts/crypt/gsec.cc \

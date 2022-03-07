@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -69,7 +70,7 @@ class grpc_alts_channel_security_connector final
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name)
-      : grpc_channel_security_connector(GRPC_ALTS_URL_SCHEME,
+      : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_name_(gpr_strdup(target_name)) {}
@@ -116,20 +117,13 @@ class grpc_alts_channel_security_connector final
     return strcmp(target_name_, other->target_name_);
   }
 
-  bool check_call_host(absl::string_view host,
-                       grpc_auth_context* /*auth_context*/,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* error) override {
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context*) override {
     if (host.empty() || host != target_name_) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "ALTS call host does not match target name");
+      return grpc_core::Immediate(absl::UnauthenticatedError(
+          "ALTS call host does not match target name"));
     }
-    return true;
-  }
-
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
+    return grpc_core::ImmediateOkStatus();
   }
 
  private:
@@ -141,7 +135,7 @@ class grpc_alts_server_security_connector final
  public:
   explicit grpc_alts_server_security_connector(
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
-      : grpc_server_security_connector(GRPC_ALTS_URL_SCHEME,
+      : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
                                        std::move(server_creds)) {}
 
   ~grpc_alts_server_security_connector() override = default;

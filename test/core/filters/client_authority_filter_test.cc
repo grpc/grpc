@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/promise/test_context.h"
 
 namespace grpc_core {
 namespace {
@@ -40,32 +41,35 @@ class TestChannelArgs {
 };
 
 TEST(ClientAuthorityFilterTest, DefaultFails) {
-  EXPECT_FALSE(ClientAuthorityFilter::Create(nullptr).ok());
+  EXPECT_FALSE(
+      ClientAuthorityFilter::Create(nullptr, ChannelFilter::Args()).ok());
 }
 
 TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
-  EXPECT_EQ(ClientAuthorityFilter::Create(
-                TestChannelArgs("foo.test.google.au").args())
-                .status(),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ClientAuthorityFilter::Create(
+          TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args())
+          .status(),
+      absl::OkStatus());
 }
 
 TEST(ClientAuthorityFilterTest, NonStringArgFails) {
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), 123);
   grpc_channel_args args = {1, &arg};
-  EXPECT_FALSE(ClientAuthorityFilter::Create(&args).ok());
+  EXPECT_FALSE(
+      ClientAuthorityFilter::Create(&args, ChannelFilter::Args()).ok());
 }
 
 TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au").args());
+      TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
   bool seen = false;
   // TODO(ctiller): use Activity here, once it's ready.
-  promise_detail::Context<Arena> context(arena.get());
+  TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
       ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
       [&](ClientInitialMetadata initial_metadata) {
@@ -85,7 +89,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
 TEST(ClientAuthorityFilterTest,
      PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au").args());
+      TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
@@ -93,7 +97,7 @@ TEST(ClientAuthorityFilterTest,
                              Slice::FromStaticString("bar.test.google.au"));
   bool seen = false;
   // TODO(ctiller): use Activity here, once it's ready.
-  promise_detail::Context<Arena> context(arena.get());
+  TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
       ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
       [&](ClientInitialMetadata initial_metadata) {

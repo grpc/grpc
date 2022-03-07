@@ -332,3 +332,15 @@ grpc_proto_fuzzer(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "time_test",
+    srcs = ["time_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:time",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

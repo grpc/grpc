@@ -157,7 +157,10 @@ static void run_channel_shutdown_before_timeout_test(
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
-  return grpc_insecure_channel_create(addr, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* channel = grpc_channel_create(addr, creds, nullptr);
+  grpc_channel_credentials_release(creds);
+  return channel;
 }
 
 static const test_fixture insecure_test = {
@@ -180,8 +183,7 @@ static grpc_channel* secure_test_create_channel(const char* addr) {
       {const_cast<char*>("foo.test.google.fr")}};
   grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(nullptr, &ssl_name_override, 1);
-  grpc_channel* channel =
-      grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
+  grpc_channel* channel = grpc_channel_create(addr, ssl_creds, new_client_args);
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(new_client_args);

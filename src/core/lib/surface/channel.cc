@@ -220,11 +220,10 @@ void CreateChannelzNode(grpc_core::ChannelStackBuilder* builder) {
 
 }  // namespace
 
-grpc_channel* grpc_channel_create(const char* target,
-                                  const grpc_channel_args* input_args,
-                                  grpc_channel_stack_type channel_stack_type,
-                                  grpc_transport* optional_transport,
-                                  grpc_error_handle* error) {
+grpc_channel* grpc_channel_create_internal(
+    const char* target, const grpc_channel_args* input_args,
+    grpc_channel_stack_type channel_stack_type,
+    grpc_transport* optional_transport, grpc_error_handle* error) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -341,7 +340,7 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
-    grpc_millis deadline) {
+    grpc_core::Timestamp deadline) {
   GPR_ASSERT(channel->is_client);
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
 
@@ -377,7 +376,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       host != nullptr
           ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
           : absl::nullopt,
-      grpc_timespec_to_millis_round_up(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }
@@ -385,7 +384,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
 grpc_call* grpc_channel_create_pollset_set_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_millis deadline, void* reserved) {
+    const grpc_slice* host, grpc_core::Timestamp deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
@@ -464,7 +463,7 @@ grpc_call* grpc_channel_create_registered_call(
       rc->authority.has_value()
           ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
           : absl::nullopt,
-      grpc_timespec_to_millis_round_up(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }
@@ -482,7 +481,7 @@ static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   channel->allocator.Destroy();
   channel->target.Destroy();
   gpr_free(channel);
-  // See comment in grpc_channel_create() for why we do this.
+  // See comment in grpc_channel_create_internal() for why we do this.
   grpc_shutdown();
 }
 

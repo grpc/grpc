@@ -50,7 +50,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
@@ -415,7 +415,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     }
     if (subchannel_cache_delay_ms > 0) {
       args.SetInt(GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS,
-                  subchannel_cache_delay_ms);
+                  subchannel_cache_delay_ms * grpc_test_slowdown_factor());
     }
     std::ostringstream uri;
     uri << "fake:///" << kApplicationTargetName_;
@@ -424,13 +424,13 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        g_kCallCredsMdKey, g_kCallCredsMdValue, false);
+        g_kCallCredsMdKey, g_kCallCredsMdValue);
     std::shared_ptr<ChannelCredentials> creds(
         new SecureChannelCredentials(grpc_composite_channel_credentials_create(
             channel_creds, call_creds, nullptr)));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = ::grpc::CreateCustomChannel(uri.str(), creds, args);
+    channel_ = grpc::CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -531,8 +531,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses =
         CreateLbAddressesFromAddressDataList(backend_address_data);
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config =
-        grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
+        nullptr, service_config_json, &error);
     GPR_ASSERT(error == GRPC_ERROR_NONE);
     grpc_core::ServerAddressList balancer_addresses =
         CreateLbAddressesFromAddressDataList(balancer_address_data);
@@ -971,7 +971,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
 }
 
 TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(

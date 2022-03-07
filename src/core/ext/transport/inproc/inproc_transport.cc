@@ -231,7 +231,8 @@ struct inproc_stream {
   grpc_metadata_batch write_buffer_initial_md{arena};
   bool write_buffer_initial_md_filled = false;
   uint32_t write_buffer_initial_md_flags = 0;
-  grpc_millis write_buffer_deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp write_buffer_deadline =
+      grpc_core::Timestamp::InfFuture();
   grpc_metadata_batch write_buffer_trailing_md{arena};
   bool write_buffer_trailing_md_filled = false;
   grpc_error_handle write_buffer_cancel_error = GRPC_ERROR_NONE;
@@ -265,7 +266,7 @@ struct inproc_stream {
   grpc_error_handle cancel_self_error = GRPC_ERROR_NONE;
   grpc_error_handle cancel_other_error = GRPC_ERROR_NONE;
 
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   bool listed = true;
   struct inproc_stream* stream_list_prev;
@@ -705,7 +706,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
               .recv_initial_metadata,
           s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
           nullptr);
-      if (s->deadline != GRPC_MILLIS_INF_FUTURE) {
+      if (s->deadline != grpc_core::Timestamp::InfFuture()) {
         s->recv_initial_md_op->payload->recv_initial_metadata
             .recv_initial_metadata->Set(grpc_core::GrpcTimeoutMetadata(),
                                         s->deadline);
@@ -1008,12 +1009,12 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
               dest, destflags, destfilled);
         }
         if (s->t->is_client) {
-          grpc_millis* dl =
+          grpc_core::Timestamp* dl =
               (other == nullptr) ? &s->write_buffer_deadline : &other->deadline;
           *dl = std::min(
               *dl, op->payload->send_initial_metadata.send_initial_metadata
                        ->get(grpc_core::GrpcTimeoutMetadata())
-                       .value_or(GRPC_MILLIS_INF_FUTURE));
+                       .value_or(grpc_core::Timestamp::InfFuture()));
           s->initial_md_sent = true;
         }
       }
@@ -1275,9 +1276,9 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error == GRPC_ERROR_NONE) {
-    channel =
-        grpc_channel_create("inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                            client_transport, &error);
+    channel = grpc_channel_create_internal("inproc", client_args,
+                                           GRPC_CLIENT_DIRECT_CHANNEL,
+                                           client_transport, &error);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
@@ -1288,7 +1289,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
         status = static_cast<grpc_status_code>(integer);
       }
       GRPC_ERROR_UNREF(error);
-      // client_transport was destroyed when grpc_channel_create saw an error.
+      // client_transport was destroyed when grpc_channel_create_internal saw an
+      // error.
       grpc_transport_destroy(server_transport);
       channel = grpc_lame_client_channel_create(
           nullptr, status, "Failed to create client channel");

@@ -131,17 +131,6 @@ typedef struct grpc_call_credentials grpc_call_credentials;
    The creator of the credentials object is responsible for its release. */
 GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
 
-/** --- grpc_channel_credentials object. ---
-
-   A channel credentials object represents a way to authenticate a client on a
-   channel.  */
-
-typedef struct grpc_channel_credentials grpc_channel_credentials;
-
-/** Releases a channel credentials object.
-   The creator of the credentials object is responsible for its release. */
-GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
-
 /** Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. The security level of the
@@ -478,30 +467,6 @@ GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level, void* reserved);
 
-/** --- Secure channel creation. --- */
-
-/** Creates a secure channel using the passed-in credentials. Additional
-    channel level configuration MAY be provided by grpc_channel_args, though
-    the expectation is that most clients will want to simply pass NULL. The
-    user data in 'args' need only live through the invocation of this function.
-    However, if any args of the 'pointer' type are passed, then the referenced
-    vtable must be maintained by the caller until grpc_channel_destroy
-    terminates. See grpc_channel_args definition for more on this. */
-GRPCAPI grpc_channel* grpc_secure_channel_create(
-    grpc_channel_credentials* creds, const char* target,
-    const grpc_channel_args* args, void* reserved);
-
-/** --- grpc_server_credentials object. ---
-
-   A server credentials object represents a way to authenticate a server.  */
-
-typedef struct grpc_server_credentials grpc_server_credentials;
-
-/** Releases a server_credentials object.
-   The creator of the server_credentials object is responsible for its release.
-   */
-GRPCAPI void grpc_server_credentials_release(grpc_server_credentials* creds);
-
 /** Server certificate config object holds the server's public certificates and
    associated private keys, as well as any CA certificates needed for client
    certificate validation (if applicable). Create using
@@ -598,15 +563,6 @@ GRPCAPI void grpc_ssl_server_credentials_options_destroy(
 GRPCAPI grpc_server_credentials*
 grpc_ssl_server_credentials_create_with_options(
     grpc_ssl_server_credentials_options* options);
-
-/** --- Server-side secure ports. --- */
-
-/** Add a HTTP2 over an encrypted link over tcp listener.
-   Returns bound port number on success, 0 on failure.
-   REQUIRES: server not started */
-GRPCAPI int grpc_server_add_secure_http2_port(grpc_server* server,
-                                              const char* addr,
-                                              grpc_server_credentials* creds);
 
 /** --- Call specific credentials. --- */
 
@@ -1187,14 +1143,14 @@ grpc_server_credentials* grpc_tls_server_credentials_create(
  *
  * This method creates an insecure channel credentials object.
  */
-grpc_channel_credentials* grpc_insecure_credentials_create();
+GRPCAPI grpc_channel_credentials* grpc_insecure_credentials_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
  *
  * This method creates an insecure server credentials object.
  */
-grpc_server_credentials* grpc_insecure_server_credentials_create();
+GRPCAPI grpc_server_credentials* grpc_insecure_server_credentials_create();
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -1236,9 +1192,9 @@ typedef struct grpc_authorization_policy_provider
 
 /**
  * EXPERIMENTAL - Subject to change.
- * Creates a grpc_authorization_policy_provider using SDK authorization policy
+ * Creates a grpc_authorization_policy_provider using gRPC authorization policy
  * from static string.
- * - authz_policy is the input SDK authorization policy.
+ * - authz_policy is the input gRPC authorization policy.
  * - code is the error status code on failure. On success, it equals
  *   GRPC_STATUS_OK.
  * - error_details contains details about the error if any. If the
@@ -1252,9 +1208,9 @@ grpc_authorization_policy_provider_static_data_create(
 
 /**
  * EXPERIMENTAL - Subject to change.
- * Creates a grpc_authorization_policy_provider by watching for SDK
+ * Creates a grpc_authorization_policy_provider by watching for gRPC
  * authorization policy changes in filesystem.
- * - authz_policy is the file path of SDK authorization policy.
+ * - authz_policy is the file path of gRPC authorization policy.
  * - refresh_interval_sec is the amount of time the internal thread would wait
  *   before checking for file updates.
  * - code is the error status code on failure. On success, it equals

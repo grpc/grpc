@@ -85,7 +85,8 @@ static void test_grpc_status_to_http2_status() {
 }
 
 static void test_http2_error_to_grpc_status() {
-  const grpc_millis before_deadline = GRPC_MILLIS_INF_FUTURE;
+  const grpc_core::Timestamp before_deadline =
+      grpc_core::Timestamp::InfFuture();
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, before_deadline,
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_PROTOCOL_ERROR, before_deadline,
@@ -113,7 +114,7 @@ static void test_http2_error_to_grpc_status() {
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, before_deadline,
                              GRPC_STATUS_PERMISSION_DENIED);
 
-  const grpc_millis after_deadline = 0;
+  const grpc_core::Timestamp after_deadline;
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, after_deadline,
                              GRPC_STATUS_INTERNAL);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_PROTOCOL_ERROR, after_deadline,

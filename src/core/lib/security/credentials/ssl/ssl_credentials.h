@@ -43,6 +43,12 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   void set_max_tls_version(grpc_tls_version max_tls_version);
 
  private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
+
   void build_config(const char* pem_root_certs,
                     grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
                     const grpc_ssl_verify_peer_options* verify_options);
@@ -101,8 +107,5 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
-
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_SSL_SSL_CREDENTIALS_H */

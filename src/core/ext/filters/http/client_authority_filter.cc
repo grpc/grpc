@@ -40,7 +40,7 @@
 namespace grpc_core {
 
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
-    const grpc_channel_args* args) {
+    const grpc_channel_args* args, ChannelFilter::Args) {
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority_arg == nullptr) {
@@ -71,7 +71,8 @@ ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
 
 namespace {
 const grpc_channel_filter grpc_client_authority_filter =
-    MakePromiseBasedFilter<ClientAuthorityFilter>();
+    MakePromiseBasedFilter<ClientAuthorityFilter, FilterEndpoint::kClient>(
+        "authority");
 
 bool add_client_authority_filter(ChannelStackBuilder* builder) {
   const grpc_channel_args* channel_args = builder->channel_args();

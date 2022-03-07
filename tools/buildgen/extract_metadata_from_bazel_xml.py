@@ -666,6 +666,9 @@ def _generate_build_extra_metadata_for_tests(
             print(('skipping fuzzer ' + test))
             continue
 
+        if 'bazel_only' in bazel_tags:
+            continue
+
         # if any tags that restrict platform compatibility are present,
         # generate the "platforms" field accordingly
         # TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
@@ -876,11 +879,6 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c',
         'build': 'private',
         '_RENAME': 'end2end_tests'
-    },
-    'test/core/end2end:end2end_nosec_tests': {
-        'language': 'c',
-        'build': 'private',
-        '_RENAME': 'end2end_nosec_tests'
     },
 
     # benchmark support libraries

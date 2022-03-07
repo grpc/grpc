@@ -603,7 +603,7 @@ grpc_error_handle Server::SetupTransport(
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create(
+  grpc_channel* channel = grpc_channel_create_internal(
       nullptr, args, GRPC_SERVER_CHANNEL, transport, &error);
   if (channel == nullptr) {
     return error;
@@ -685,7 +685,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
       return nullptr;
     }
   }
-  if ((flags & ~GRPC_INITIAL_METADATA_USED_MASK) != 0) {
+  if (flags != 0) {
     gpr_log(GPR_ERROR, "grpc_server_register_method invalid flags 0x%08x",
             flags);
     return nullptr;
@@ -1062,7 +1062,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
 }
 
 Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const grpc_slice& host, const grpc_slice& path, bool is_idempotent) {
+    const grpc_slice& host, const grpc_slice& path) {
   if (registered_methods_ == nullptr) return nullptr;
   /* TODO(ctiller): unify these two searches */
   /* check for an exact match with host */
@@ -1075,10 +1075,6 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     if (!rm->has_host) continue;
     if (rm->host != host) continue;
     if (rm->method != path) continue;
-    if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-        !is_idempotent) {
-      continue;
-    }
     return rm;
   }
   /* check for a wildcard method definition (no host set) */
@@ -1089,10 +1085,6 @@ Server::ChannelRegisteredMethod* Server::ChannelData::GetRegisteredMethod(
     if (rm->server_registered_method == nullptr) break;
     if (rm->has_host) continue;
     if (rm->method != path) continue;
-    if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
-        !is_idempotent) {
-      continue;
-    }
     return rm;
   }
   return nullptr;
@@ -1110,7 +1102,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   args.cq = nullptr;
   args.pollset_set_alternative = nullptr;
   args.server_transport_data = transport_server_data;
-  args.send_deadline = GRPC_MILLIS_INF_FUTURE;
+  args.send_deadline = Timestamp::InfFuture();
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
   grpc_call_element* elem =
@@ -1240,12 +1232,12 @@ void Server::CallData::Publish(size_t cq_idx, RequestedCall* rc) {
       rc->data.batch.details->method =
           grpc_slice_ref_internal(path_->c_slice());
       rc->data.batch.details->deadline =
-          grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
+          deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       rc->data.batch.details->flags = recv_initial_metadata_flags_;
       break;
     case RequestedCall::Type::REGISTERED_CALL:
       *rc->data.registered.deadline =
-          grpc_millis_to_timespec(deadline_, GPR_CLOCK_MONOTONIC);
+          deadline_.as_timespec(GPR_CLOCK_MONOTONIC);
       if (rc->data.registered.optional_payload != nullptr) {
         *rc->data.registered.optional_payload = payload_;
         payload_ = nullptr;
@@ -1299,9 +1291,7 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
     ChannelRegisteredMethod* rm =
-        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice(),
-                                   (recv_initial_metadata_flags_ &
-                                    GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST));
+        chand->GetRegisteredMethod(host_->c_slice(), path_->c_slice());
     if (rm != nullptr) {
       matcher_ = rm->server_registered_method->matcher.get();
       payload_handling = rm->server_registered_method->payload_handling;

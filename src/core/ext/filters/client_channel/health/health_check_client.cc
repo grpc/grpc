@@ -68,12 +68,12 @@ HealthCheckClient::HealthCheckClient(
       watcher_(std::move(watcher)),
       retry_backoff_(
           BackOff::Options()
-              .set_initial_backoff(
-                  HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS * 1000)
+              .set_initial_backoff(Duration::Seconds(
+                  HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS))
               .set_multiplier(HEALTH_CHECK_RECONNECT_BACKOFF_MULTIPLIER)
               .set_jitter(HEALTH_CHECK_RECONNECT_JITTER)
-              .set_max_backoff(HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS *
-                               1000)) {
+              .set_max_backoff(Duration::Seconds(
+                  HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "created HealthCheckClient %p", this);
   }
@@ -144,14 +144,14 @@ void HealthCheckClient::StartCallLocked() {
 void HealthCheckClient::StartRetryTimerLocked() {
   SetHealthStatusLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                         "health check call failed; will retry after backoff");
-  grpc_millis next_try = retry_backoff_.NextAttemptTime();
+  Timestamp next_try = retry_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: health check call lost...", this);
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
-    if (timeout > 0) {
+    Duration timeout = next_try - ExecCtx::Get()->Now();
+    if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO,
               "HealthCheckClient %p: ... will retry in %" PRId64 "ms.", this,
-              timeout);
+              timeout.millis());
     } else {
       gpr_log(GPR_INFO, "HealthCheckClient %p: ... retrying immediately.",
               this);
@@ -193,7 +193,7 @@ void EncodeRequest(const std::string& service_name,
       grpc_health_v1_HealthCheckRequest_new(arena.ptr());
   grpc_health_v1_HealthCheckRequest_set_service(
       request_struct,
-      upb_strview_make(service_name.data(), service_name.size()));
+      upb_StringView_FromDataAndSize(service_name.data(), service_name.size()));
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckRequest_serialize(
       request_struct, arena.ptr(), &buf_length);
@@ -262,10 +262,10 @@ HealthCheckClient::CallState::CallState(
                                ->GetInitialCallSizeEstimate(),
                            &health_check_client_->call_allocator_)),
       payload_(context_),
-      send_initial_metadata_(arena_),
-      send_trailing_metadata_(arena_),
-      recv_initial_metadata_(arena_),
-      recv_trailing_metadata_(arena_) {}
+      send_initial_metadata_(arena_.get()),
+      send_trailing_metadata_(arena_.get()),
+      recv_initial_metadata_(arena_.get()),
+      recv_trailing_metadata_(arena_.get()) {}
 
 HealthCheckClient::CallState::~CallState() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
@@ -282,7 +282,6 @@ HealthCheckClient::CallState::~CallState() {
   // any, so that it can release any internal references it may be
   // holding to the call stack.
   call_combiner_.SetNotifyOnCancel(nullptr);
-  arena_->Destroy();
 }
 
 void HealthCheckClient::CallState::Orphan() {
@@ -296,8 +295,8 @@ void HealthCheckClient::CallState::StartCall() {
       &pollent_,
       Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
       gpr_get_cycle_counter(),  // start_time
-      GRPC_MILLIS_INF_FUTURE,   // deadline
-      arena_,
+      Timestamp::InfFuture(),   // deadline
+      arena_.get(),
       context_,
       &call_combiner_,
   };
@@ -561,7 +560,7 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
       self->recv_trailing_metadata_.get(GrpcStatusMetadata())
           .value_or(GRPC_STATUS_UNKNOWN);
   if (error != GRPC_ERROR_NONE) {
-    grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status,
+    grpc_error_get_status(error, Timestamp::InfFuture(), &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);
   }

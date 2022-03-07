@@ -30,6 +30,7 @@
 #include <gmock/gmock.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -300,8 +301,11 @@ class FlowControlTest : public ::testing::Test {
                                              server_args};
     server_ = grpc_server_create(&server_channel_args, nullptr);
     grpc_server_register_completion_queue(server_, cq_, nullptr);
-    GPR_ASSERT(
-        grpc_server_add_insecure_http2_port(server_, server_address.c_str()));
+    grpc_server_credentials* server_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(grpc_server_add_http2_port(server_, server_address.c_str(),
+                                          server_creds));
+    grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     // create the channel (bdp pings are enabled by default)
     grpc_arg client_args[] = {
@@ -315,8 +319,10 @@ class FlowControlTest : public ::testing::Test {
             const_cast<char*>(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH), -1)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
-    channel_ = grpc_insecure_channel_create(server_address.c_str(),
-                                            &client_channel_args, nullptr);
+    grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+    channel_ = grpc_channel_create(server_address.c_str(), creds,
+                                   &client_channel_args);
+    grpc_channel_credentials_release(creds);
     VerifyChannelReady(channel_, cq_);
     g_target_initial_window_size_mocker->Reset();
   }
@@ -362,7 +368,7 @@ int main(int argc, char** argv) {
   // are capable of sending and receiving even in the case that we don't have an
   // active RPC operation on the fd.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  ::grpc_core::chttp2::g_test_only_transport_flow_control_window_check = true;
+  grpc_core::chttp2::g_test_only_transport_flow_control_window_check = true;
   g_target_initial_window_size_mocker = new TransportTargetWindowSizeMocker();
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       g_target_initial_window_size_mocker;

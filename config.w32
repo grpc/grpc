@@ -26,7 +26,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\client_load_reporting_filter.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_balancer_addresses.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_channel_secure.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
@@ -83,16 +82,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\server_config_selector\\server_config_selector_filter.cc " +
     "src\\core\\ext\\transport\\chttp2\\alpn\\alpn.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
-    "src\\core\\ext\\transport\\chttp2\\client\\secure\\secure_channel_create.cc " +
     "src\\core\\ext\\transport\\chttp2\\server\\chttp2_server.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\insecure\\server_chttp2_posix.cc " +
-    "src\\core\\ext\\transport\\chttp2\\server\\secure\\server_secure_chttp2.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\bin_decoder.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\bin_encoder.cc " +
-    "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_plugin.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\chttp2_transport.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\context_list.cc " +
     "src\\core\\ext\\transport\\chttp2\\transport\\flow_control.cc " +
@@ -394,7 +386,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\xds\\xds_api.cc " +
     "src\\core\\ext\\xds\\xds_bootstrap.cc " +
     "src\\core\\ext\\xds\\xds_certificate_provider.cc " +
-    "src\\core\\ext\\xds\\xds_channel_creds.cc " +
     "src\\core\\ext\\xds\\xds_channel_stack_modifier.cc " +
     "src\\core\\ext\\xds\\xds_client.cc " +
     "src\\core\\ext\\xds\\xds_client_stats.cc " +
@@ -422,6 +413,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\channel\\connected_channel.cc " +
     "src\\core\\lib\\channel\\handshaker.cc " +
     "src\\core\\lib\\channel\\handshaker_registry.cc " +
+    "src\\core\\lib\\channel\\promise_based_filter.cc " +
     "src\\core\\lib\\channel\\status_util.cc " +
     "src\\core\\lib\\compression\\compression.cc " +
     "src\\core\\lib\\compression\\compression_internal.cc " +
@@ -477,6 +469,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\status_helper.cc " +
     "src\\core\\lib\\gprpp\\thd_posix.cc " +
     "src\\core\\lib\\gprpp\\thd_windows.cc " +
+    "src\\core\\lib\\gprpp\\time.cc " +
     "src\\core\\lib\\gprpp\\time_util.cc " +
     "src\\core\\lib\\http\\format_request.cc " +
     "src\\core\\lib\\http\\httpcli.cc " +
@@ -522,7 +515,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\internal_errqueue.cc " +
     "src\\core\\lib\\iomgr\\iocp_windows.cc " +
     "src\\core\\lib\\iomgr\\iomgr.cc " +
-    "src\\core\\lib\\iomgr\\iomgr_custom.cc " +
     "src\\core\\lib\\iomgr\\iomgr_internal.cc " +
     "src\\core\\lib\\iomgr\\iomgr_posix.cc " +
     "src\\core\\lib\\iomgr\\iomgr_posix_cfstream.cc " +
@@ -532,15 +524,13 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\lockfree_event.cc " +
     "src\\core\\lib\\iomgr\\polling_entity.cc " +
     "src\\core\\lib\\iomgr\\pollset.cc " +
-    "src\\core\\lib\\iomgr\\pollset_custom.cc " +
     "src\\core\\lib\\iomgr\\pollset_set.cc " +
-    "src\\core\\lib\\iomgr\\pollset_set_custom.cc " +
     "src\\core\\lib\\iomgr\\pollset_set_windows.cc " +
     "src\\core\\lib\\iomgr\\pollset_windows.cc " +
     "src\\core\\lib\\iomgr\\resolve_address.cc " +
-    "src\\core\\lib\\iomgr\\resolve_address_custom.cc " +
     "src\\core\\lib\\iomgr\\resolve_address_posix.cc " +
     "src\\core\\lib\\iomgr\\resolve_address_windows.cc " +
+    "src\\core\\lib\\iomgr\\sockaddr_utils_posix.cc " +
     "src\\core\\lib\\iomgr\\socket_factory_posix.cc " +
     "src\\core\\lib\\iomgr\\socket_mutator.cc " +
     "src\\core\\lib\\iomgr\\socket_utils_common_posix.cc " +
@@ -550,13 +540,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\socket_windows.cc " +
     "src\\core\\lib\\iomgr\\tcp_client.cc " +
     "src\\core\\lib\\iomgr\\tcp_client_cfstream.cc " +
-    "src\\core\\lib\\iomgr\\tcp_client_custom.cc " +
     "src\\core\\lib\\iomgr\\tcp_client_posix.cc " +
     "src\\core\\lib\\iomgr\\tcp_client_windows.cc " +
-    "src\\core\\lib\\iomgr\\tcp_custom.cc " +
     "src\\core\\lib\\iomgr\\tcp_posix.cc " +
     "src\\core\\lib\\iomgr\\tcp_server.cc " +
-    "src\\core\\lib\\iomgr\\tcp_server_custom.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_posix.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_utils_posix_common.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_utils_posix_ifaddrs.cc " +
@@ -565,7 +552,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\tcp_windows.cc " +
     "src\\core\\lib\\iomgr\\time_averaged_stats.cc " +
     "src\\core\\lib\\iomgr\\timer.cc " +
-    "src\\core\\lib\\iomgr\\timer_custom.cc " +
     "src\\core\\lib\\iomgr\\timer_generic.cc " +
     "src\\core\\lib\\iomgr\\timer_heap.cc " +
     "src\\core\\lib\\iomgr\\timer_manager.cc " +
@@ -583,6 +569,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\profiling\\basic_timers.cc " +
     "src\\core\\lib\\profiling\\stap_timers.cc " +
     "src\\core\\lib\\promise\\activity.cc " +
+    "src\\core\\lib\\promise\\sleep.cc " +
     "src\\core\\lib\\resolver\\resolver.cc " +
     "src\\core\\lib\\resolver\\resolver_registry.cc " +
     "src\\core\\lib\\resolver\\server_address.cc " +
@@ -595,9 +582,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\authorization\\authorization_policy_provider_vtable.cc " +
     "src\\core\\lib\\security\\authorization\\evaluate_args.cc " +
     "src\\core\\lib\\security\\authorization\\grpc_authorization_engine.cc " +
+    "src\\core\\lib\\security\\authorization\\grpc_server_authz_filter.cc " +
     "src\\core\\lib\\security\\authorization\\matchers.cc " +
     "src\\core\\lib\\security\\authorization\\rbac_policy.cc " +
-    "src\\core\\lib\\security\\authorization\\sdk_server_authz_filter.cc " +
     "src\\core\\lib\\security\\context\\security_context.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\alts_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
@@ -607,6 +594,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_client_options.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_options.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_server_options.cc " +
+    "src\\core\\lib\\security\\credentials\\call_creds_util.cc " +
+    "src\\core\\lib\\security\\credentials\\channel_creds_registry_init.cc " +
     "src\\core\\lib\\security\\credentials\\composite\\composite_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\credentials.cc " +
     "src\\core\\lib\\security\\credentials\\external\\aws_external_account_credentials.cc " +
@@ -650,7 +639,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\transport\\server_auth_filter.cc " +
     "src\\core\\lib\\security\\transport\\tsi_error.cc " +
     "src\\core\\lib\\security\\util\\json_util.cc " +
-    "src\\core\\lib\\service_config\\service_config.cc " +
+    "src\\core\\lib\\service_config\\service_config_impl.cc " +
     "src\\core\\lib\\service_config\\service_config_parser.cc " +
     "src\\core\\lib\\slice\\b64.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
@@ -675,7 +664,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\completion_queue_factory.cc " +
     "src\\core\\lib\\surface\\event_string.cc " +
     "src\\core\\lib\\surface\\init.cc " +
-    "src\\core\\lib\\surface\\init_secure.cc " +
     "src\\core\\lib\\surface\\lame_client.cc " +
     "src\\core\\lib\\surface\\metadata_array.cc " +
     "src\\core\\lib\\surface\\server.cc " +
@@ -693,6 +681,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\transport\\transport_op_string.cc " +
     "src\\core\\lib\\uri\\uri_parser.cc " +
     "src\\core\\plugin_registry\\grpc_plugin_registry.cc " +
+    "src\\core\\plugin_registry\\grpc_plugin_registry_extra.cc " +
     "src\\core\\tsi\\alts\\crypt\\aes_gcm.cc " +
     "src\\core\\tsi\\alts\\crypt\\gsec.cc " +
     "src\\core\\tsi\\alts\\frame_protector\\alts_counter.cc " +
@@ -1119,6 +1108,9 @@ if (PHP_GRPC != "no") {
     "third_party\\re2\\util\\pcre.cc " +
     "third_party\\re2\\util\\rune.cc " +
     "third_party\\re2\\util\\strutil.cc " +
+    "third_party\\upb\\third_party\\utf8_range\\naive.c " +
+    "third_party\\upb\\third_party\\utf8_range\\range2-neon.c " +
+    "third_party\\upb\\third_party\\utf8_range\\range2-sse.c " +
     "third_party\\upb\\upb\\decode.c " +
     "third_party\\upb\\upb\\decode_fast.c " +
     "third_party\\upb\\upb\\def.c " +
@@ -1203,11 +1195,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\alpn");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\client");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\client\\insecure");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\client\\secure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server\\insecure");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server\\secure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated");
@@ -1551,6 +1539,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\re2\\re2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\re2\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\third_party\\utf8_range");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();

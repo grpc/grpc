@@ -28,12 +28,14 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -125,11 +127,9 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
-    GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(args->pollset, &worker,
-                          grpc_timespec_to_millis_round_up(
-                              gpr_inf_future(GPR_CLOCK_REALTIME))));
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(args->pollset, &worker,
+                                        grpc_core::Timestamp::InfFuture()));
     gpr_mu_unlock(args->mu);
   }
 }
@@ -164,7 +164,7 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
       fake_dns_server.port());
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      grpc_core::ResolverRegistry::CreateResolver(
+      grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
           client_target.c_str(), nullptr, args->pollset_set, args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
@@ -328,8 +328,10 @@ void TestCancelDuringActiveQuery(
   } else {
     abort();
   }
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* client =
-      grpc_insecure_channel_create(client_target.c_str(), client_args, nullptr);
+      grpc_channel_create(client_target.c_str(), creds, client_args);
+  grpc_channel_credentials_release(creds);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
   grpc_call* call = grpc_channel_create_call(

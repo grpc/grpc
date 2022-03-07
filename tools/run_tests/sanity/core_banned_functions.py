@@ -52,6 +52,12 @@ BANNED_EXCEPT = {
     'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.cc'],
     'grpc_error*': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_string': ['src/core/lib/iomgr/error.cc'],
+    # std::random_device needs /dev/random which is not available on all linuxes that we support.
+    # Any usage must be optional and opt-in, so that those platforms can use gRPC without problem.
+    'std::random_device': [
+        'src/core/ext/filters/client_channel/lb_policy/rls/rls.cc',
+        'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
+    ]
 }
 
 errors = 0

@@ -176,6 +176,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     return clients_;
   }
 
+  void ForceADSFailure(Status status) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    forced_ads_failure_ = std::move(status);
+  }
+
  private:
   // A queue of resource type/name pairs that have changed since the client
   // subscribed to them.
@@ -233,6 +238,17 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     Status StreamAggregatedResources(ServerContext* context,
                                      Stream* stream) override {
       gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+      {
+        grpc_core::MutexLock lock(&parent_->ads_mu_);
+        if (parent_->forced_ads_failure_.has_value()) {
+          gpr_log(GPR_INFO,
+                  "ADS[%p]: StreamAggregatedResources forcing early failure "
+                  "with status code: %d, message: %s",
+                  this, parent_->forced_ads_failure_.value().error_code(),
+                  parent_->forced_ads_failure_.value().error_message().c_str());
+          return parent_->forced_ads_failure_.value();
+        }
+      }
       parent_->AddClient(context->peer());
       if (is_v2_) {
         parent_->seen_v2_client_ = true;
@@ -660,6 +676,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   //   yet been destroyed by UnsetResource()).
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
+  absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);

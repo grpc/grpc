@@ -32,6 +32,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -116,17 +117,9 @@ class grpc_httpcli_ssl_channel_security_connector final
     return strcmp(secure_peer_name_, other->secure_peer_name_);
   }
 
-  bool check_call_host(absl::string_view /*host*/,
-                       grpc_auth_context* /*auth_context*/,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* error) override {
-    *error = GRPC_ERROR_NONE;
-    return true;
-  }
-
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
+  ArenaPromise<absl::Status> CheckCallHost(absl::string_view,
+                                           grpc_auth_context*) override {
+    return ImmediateOkStatus();
   }
 
   const char* secure_peer_name() const { return secure_peer_name_; }
@@ -190,12 +183,22 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   grpc_channel_args* update_arguments(grpc_channel_args* args) override {
     return args;
   }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* /* other */) const override {
+    // There's no differentiating factor between two HttpRequestSSLCredentials
+    // objects.
+    return 0;
+  }
 };
 
 }  // namespace
 
 RefCountedPtr<grpc_channel_credentials> CreateHttpRequestSSLCredentials() {
-  return MakeRefCounted<HttpRequestSSLCredentials>();
+  // Create a singleton object for HttpRequestSSLCredentials so that channels to
+  // the same target with HttpRequestSSLCredentials can reuse the subchannels.
+  static auto* creds = new HttpRequestSSLCredentials();
+  return creds->Ref();
 }
 
 }  // namespace grpc_core

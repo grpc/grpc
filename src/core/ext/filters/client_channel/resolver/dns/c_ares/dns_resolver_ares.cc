@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/config/core_configuration.h"
+
 #if GRPC_ARES == 1
 
 #include <limits.h>
@@ -40,14 +42,13 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/gethostname.h"
-#include "src/core/lib/iomgr/iomgr_custom.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -100,7 +101,7 @@ class AresClientChannelDNSResolver : public Resolver {
   // timeout in milliseconds for active DNS queries
   int query_timeout_ms_;
   /// min interval between DNS requests
-  grpc_millis min_time_between_resolutions_;
+  Duration min_time_between_resolutions_;
 
   /// closures used by the work_serializer
   grpc_closure on_next_resolution_;
@@ -113,7 +114,7 @@ class AresClientChannelDNSResolver : public Resolver {
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
   /// timestamp of last DNS request
-  grpc_millis last_resolution_timestamp_ = -1;
+  absl::optional<Timestamp> last_resolution_timestamp_;
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving backend addresses
@@ -140,16 +141,17 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(ResolverArgs args)
       query_timeout_ms_(grpc_channel_args_find_integer(
           channel_args_, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS,
           {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX})),
-      min_time_between_resolutions_(grpc_channel_args_find_integer(
-          channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
-          {1000 * 30, 0, INT_MAX})),
-      backoff_(
-          BackOff::Options()
-              .set_initial_backoff(GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS *
-                                   1000)
-              .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
-              .set_jitter(GRPC_DNS_RECONNECT_JITTER)
-              .set_max_backoff(GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)) {
+      min_time_between_resolutions_(
+          Duration::Milliseconds(grpc_channel_args_find_integer(
+              channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
+              {1000 * 30, 0, INT_MAX}))),
+      backoff_(BackOff::Options()
+                   .set_initial_backoff(Duration::Milliseconds(
+                       GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS))
+                   .set_multiplier(GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER)
+                   .set_jitter(GRPC_DNS_RECONNECT_JITTER)
+                   .set_max_backoff(Duration::Milliseconds(
+                       GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS))) {
   // Closure initialization.
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
@@ -345,7 +347,7 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
-        service_config = ServiceConfig::Create(
+        service_config = ServiceConfigImpl::Create(
             channel_args_, service_config_string, &service_config_error);
       }
       if (service_config_error != GRPC_ERROR_NONE) {
@@ -387,8 +389,8 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    grpc_millis next_try = backoff_.NextAttemptTime();
-    grpc_millis timeout = next_try - ExecCtx::Get()->Now();
+    Timestamp next_try = backoff_.NextAttemptTime();
+    Duration timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
                          this, grpc_error_std_string(error).c_str());
     GPR_ASSERT(!have_next_resolution_timer_);
@@ -397,9 +399,9 @@ void AresClientChannelDNSResolver::OnResolvedLocked(grpc_error_handle error) {
     // new closure API is done, find a way to track this ref with the timer
     // callback as part of the type system.
     Ref(DEBUG_LOCATION, "retry-timer").release();
-    if (timeout > 0) {
+    if (timeout > Duration::Zero()) {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying in %" PRId64 " milliseconds",
-                           this, timeout);
+                           this, timeout.millis());
     } else {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", this);
     }
@@ -413,29 +415,30 @@ void AresClientChannelDNSResolver::MaybeStartResolvingLocked() {
   // If there is an existing timer, the time it fires is the earliest time we
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
-  if (last_resolution_timestamp_ >= 0) {
+  if (last_resolution_timestamp_.has_value()) {
     // InvalidateNow to avoid getting stuck re-initializing this timer
     // in a loop while draining the currently-held WorkSerializer.
     // Also see https://github.com/grpc/grpc/issues/26079.
     ExecCtx::Get()->InvalidateNow();
-    const grpc_millis earliest_next_resolution =
-        last_resolution_timestamp_ + min_time_between_resolutions_;
-    const grpc_millis ms_until_next_resolution =
+    const Timestamp earliest_next_resolution =
+        *last_resolution_timestamp_ + min_time_between_resolutions_;
+    const Duration time_until_next_resolution =
         earliest_next_resolution - ExecCtx::Get()->Now();
-    if (ms_until_next_resolution > 0) {
-      const grpc_millis last_resolution_ago =
-          ExecCtx::Get()->Now() - last_resolution_timestamp_;
+    if (time_until_next_resolution > Duration::Zero()) {
+      const Duration last_resolution_ago =
+          ExecCtx::Get()->Now() - *last_resolution_timestamp_;
       GRPC_CARES_TRACE_LOG(
           "resolver:%p In cooldown from last resolution (from %" PRId64
           " ms ago). Will resolve again in %" PRId64 " ms",
-          this, last_resolution_ago, ms_until_next_resolution);
+          this, last_resolution_ago.millis(),
+          time_until_next_resolution.millis());
       have_next_resolution_timer_ = true;
       // TODO(roth): We currently deal with this ref manually.  Once the
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
       grpc_timer_init(&next_resolution_timer_,
-                      ExecCtx::Get()->Now() + ms_until_next_resolution,
+                      ExecCtx::Get()->Now() + time_until_next_resolution,
                       &on_next_resolution_);
       return;
     }
@@ -467,6 +470,8 @@ void AresClientChannelDNSResolver::StartResolvingLocked() {
 //
 class AresClientChannelDNSResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "dns"; }
+
   bool IsValidUri(const URI& uri) const override {
     if (absl::StripPrefix(uri.path(), "/").empty()) {
       gpr_log(GPR_ERROR, "no server name supplied in dns URI");
@@ -478,8 +483,6 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<AresClientChannelDNSResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "dns"; }
 };
 
 class AresDNSResolver : public DNSResolver {
@@ -605,25 +608,33 @@ class AresDNSResolver : public DNSResolver {
 };
 
 bool ShouldUseAres(const char* resolver_env) {
-  // TODO(lidiz): Remove the "g_custom_iomgr_enabled" flag once c-ares support
-  // custom IO managers (e.g. gevent).
-  return !g_custom_iomgr_enabled &&
-         (resolver_env == nullptr || strlen(resolver_env) == 0 ||
-          gpr_stricmp(resolver_env, "ares") == 0);
+  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
+         gpr_stricmp(resolver_env, "ares") == 0;
 }
 
-bool g_use_ares_dns_resolver;
+bool UseAresDnsResolver() {
+  static const bool result = []() {
+    UniquePtr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+    bool result = ShouldUseAres(resolver.get());
+    if (result) gpr_log(GPR_DEBUG, "Using ares dns resolver");
+    return result;
+  }();
+  return result;
+}
 
 }  // namespace
+
+void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
+  if (UseAresDnsResolver()) {
+    builder->resolver_registry()->RegisterResolverFactory(
+        absl::make_unique<AresClientChannelDNSResolverFactory>());
+  }
+}
 
 }  // namespace grpc_core
 
 void grpc_resolver_dns_ares_init() {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (grpc_core::ShouldUseAres(resolver.get())) {
-    grpc_core::g_use_ares_dns_resolver = true;
-    gpr_log(GPR_DEBUG, "Using ares dns resolver");
+  if (grpc_core::UseAresDnsResolver()) {
     address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
@@ -631,15 +642,11 @@ void grpc_resolver_dns_ares_init() {
       return;
     }
     grpc_core::SetDNSResolver(grpc_core::AresDNSResolver::GetOrCreate());
-    grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        absl::make_unique<grpc_core::AresClientChannelDNSResolverFactory>());
-  } else {
-    grpc_core::g_use_ares_dns_resolver = false;
   }
 }
 
 void grpc_resolver_dns_ares_shutdown() {
-  if (grpc_core::g_use_ares_dns_resolver) {
+  if (grpc_core::UseAresDnsResolver()) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
@@ -647,8 +654,12 @@ void grpc_resolver_dns_ares_shutdown() {
 
 #else /* GRPC_ARES == 1 */
 
-void grpc_resolver_dns_ares_init(void) {}
+namespace grpc_core {
+void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
+}  // namespace grpc_core
 
-void grpc_resolver_dns_ares_shutdown(void) {}
+void grpc_resolver_dns_ares_init() {}
+
+void grpc_resolver_dns_ares_shutdown() {}
 
 #endif /* GRPC_ARES == 1 */

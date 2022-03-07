@@ -23,6 +23,7 @@
 
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/context.h"
 
 typedef enum grpc_pollset_tag {
   GRPC_POLLS_NONE,
@@ -64,5 +65,10 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
  * pollset_set \a * pss_dst */
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst);
+
+namespace grpc_core {
+template <>
+struct ContextType<grpc_polling_entity> {};
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

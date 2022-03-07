@@ -56,7 +56,8 @@ static grpc_error_handle recursively_find_error_with_field(
   return GRPC_ERROR_NONE;
 }
 
-void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
+void grpc_error_get_status(grpc_error_handle error,
+                           grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
@@ -149,8 +150,9 @@ absl::Status grpc_error_to_absl_status(grpc_error_handle error) {
   // TODO(yashykt): This should be updated once we decide on how to use the
   // absl::Status payload to capture all the contents of grpc_error.
   std::string message;
-  grpc_error_get_status(error, GRPC_MILLIS_INF_FUTURE, &status, &message,
-                        nullptr /* http_error */, nullptr /* error_string */);
+  grpc_error_get_status(error, grpc_core::Timestamp::InfFuture(), &status,
+                        &message, nullptr /* http_error */,
+                        nullptr /* error_string */);
   return absl::Status(static_cast<absl::StatusCode>(status), message);
 }
 

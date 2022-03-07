@@ -200,8 +200,7 @@ class Server : public InternallyRefCounted<Server>,
     size_t cq_idx() const { return cq_idx_; }
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
-                                                 const grpc_slice& path,
-                                                 bool is_idempotent);
+                                                 const grpc_slice& path);
 
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
@@ -295,7 +294,7 @@ class Server : public InternallyRefCounted<Server>,
 
     absl::optional<Slice> path_;
     absl::optional<Slice> host_;
-    grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
+    Timestamp deadline_ = Timestamp::InfFuture();
 
     grpc_completion_queue* cq_new_ = nullptr;
 

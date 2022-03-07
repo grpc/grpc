@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -189,8 +190,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cqv = cq_verifier_create(state.cq);
   state.target = grpc_core::JoinHostPort("127.0.0.1", target_port);
 
-  state.channel =
-      grpc_insecure_channel_create(state.target.c_str(), nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  state.channel = grpc_channel_create(state.target.c_str(), creds, nullptr);
+  grpc_channel_credentials_release(creds);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   // The default connect deadline is 20 seconds, so reduce the RPC deadline to 1
   // second. This helps us verify - a) If the server responded with a non-HTTP2
@@ -340,7 +342,6 @@ static void run_test(bool http2_response, bool send_settings,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-
   /* status defined in hpack static table */
   run_test(true, true, HTTP2_RESP(204), sizeof(HTTP2_RESP(204)) - 1,
            GRPC_STATUS_UNKNOWN, HTTP2_DETAIL_MSG(204));
@@ -370,7 +371,8 @@ int main(int argc, char** argv) {
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(503));
   run_test(true, true, HTTP2_RESP(504), sizeof(HTTP2_RESP(504)) - 1,
            GRPC_STATUS_UNAVAILABLE, HTTP2_DETAIL_MSG(504));
-  /* unparseable response. RPC should fail immediately due to a connect failure.
+  /* unparseable response. RPC should fail immediately due to a connect
+   * failure.
    */
   run_test(false, false, UNPARSEABLE_RESP, sizeof(UNPARSEABLE_RESP) - 1,
            GRPC_STATUS_UNAVAILABLE, nullptr);

@@ -57,7 +57,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -95,8 +94,8 @@ grpc_channel* create_secure_channel_for_test(
   }
   grpc_channel_args* channel_args =
       grpc_channel_args_copy_and_add(nullptr, new_args.data(), new_args.size());
-  grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
-                                                     channel_args, nullptr);
+  grpc_channel* channel =
+      grpc_channel_create(server_addr, channel_creds, channel_args);
   grpc_channel_args_destroy(channel_args);
   grpc_channel_credentials_release(channel_creds);
   return channel;
@@ -153,8 +152,8 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server_, server_addr_.c_str(),
-                                                 server_creds));
+    GPR_ASSERT(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+                                          server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,

@@ -29,6 +29,7 @@ from framework import xds_flags
 from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
 from framework.helpers import retryers
+from framework.helpers import skips
 import framework.helpers.rand
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
@@ -39,10 +40,6 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
-_FORCE_CLEANUP = flags.DEFINE_bool(
-    "force_cleanup",
-    default=False,
-    help="Force resource cleanup, even if not created by this test run")
 # TODO(yashkt): We will no longer need this flag once Core exposes local certs
 # from channelz
 _CHECK_LOCAL_CERTS = flags.DEFINE_bool(
@@ -82,11 +79,24 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     td: TrafficDirectorManager
     config_scope: str
 
+    @staticmethod
+    def isSupported(config: skips.TestConfig) -> bool:
+        """Overrided by the test class to decide if the config is supported.
+
+        Returns:
+          A bool indicates if the given config is supported.
+        """
+        return True
+
     @classmethod
     def setUpClass(cls):
         """Hook method for setting up class fixture before running tests in
         the class.
         """
+        # Raises unittest.SkipTest if given client/server/version does not
+        # support current test case.
+        skips.evaluate_test_config(cls.isSupported)
+
         # GCP
         cls.project: str = xds_flags.PROJECT.value
         cls.network: str = xds_flags.NETWORK.value
@@ -117,7 +127,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         cls.client_port = xds_flags.CLIENT_PORT.value
 
         # Test suite settings
-        cls.force_cleanup = _FORCE_CLEANUP.value
+        cls.force_cleanup = xds_flags.FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
         cls.enable_workload_identity = xds_k8s_flags.ENABLE_WORKLOAD_IDENTITY.value

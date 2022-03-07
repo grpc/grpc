@@ -32,6 +32,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_posix.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -52,11 +53,21 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/surface/completion_queue.h"
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
 namespace {
@@ -136,7 +147,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       RefCountedPtr<HandshakeManager> handshake_mgr_
           ABSL_GUARDED_BY(&connection_->mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
-      grpc_millis const deadline_;
+      Timestamp const deadline_;
       grpc_timer timer_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_timeout_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&connection_->mu_);
@@ -323,10 +334,10 @@ void Chttp2ServerListener::ConfigFetcherWatcher::StopServing() {
 // Chttp2ServerListener::ActiveConnection::HandshakingState
 //
 
-grpc_millis GetConnectionDeadline(const grpc_channel_args* args) {
-  int timeout_ms =
+Timestamp GetConnectionDeadline(const grpc_channel_args* args) {
+  auto timeout_ms = Duration::Milliseconds(
       grpc_channel_args_find_integer(args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS,
-                                     {120 * GPR_MS_PER_SEC, 1, INT_MAX});
+                                     {120 * GPR_MS_PER_SEC, 1, INT_MAX}));
   return ExecCtx::Get()->Now() + timeout_ms;
 }
 
@@ -555,10 +566,10 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
                         this, nullptr);
       grpc_timer_init(&drain_grace_timer_,
                       ExecCtx::Get()->Now() +
-                          grpc_channel_args_find_integer(
+                          Duration::Milliseconds(grpc_channel_args_find_integer(
                               listener_->args_,
                               GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
-                              {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
+                              {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX})),
                       &on_drain_grace_time_expiry_);
       drain_grace_timer_expiry_callback_pending_ = true;
       shutdown_ = true;
@@ -947,7 +958,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     }
     return GRPC_ERROR_NONE;
   }();  // lambda end
-  for (grpc_error_handle error : error_list) {
+  for (const grpc_error_handle& error : error_list) {
     GRPC_ERROR_UNREF(error);
   }
   grpc_channel_args_destroy(args);
@@ -956,3 +967,134 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
 }
 
 }  // namespace grpc_core
+
+namespace {
+
+grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
+                                           grpc_error_handle* error) {
+  grpc_server_credentials* server_credentials =
+      grpc_find_server_credentials_in_args(args);
+  if (server_credentials == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Could not find server credentials");
+    return args;
+  }
+  auto security_connector = server_credentials->create_security_connector(args);
+  if (security_connector == nullptr) {
+    *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        absl::StrCat("Unable to create secure server with credentials of type ",
+                     server_credentials->type()));
+    return args;
+  }
+  grpc_arg arg_to_add =
+      grpc_security_connector_to_arg(security_connector.get());
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
+  grpc_channel_args_destroy(args);
+  return new_args;
+}
+
+}  // namespace
+
+int grpc_server_add_http2_port(grpc_server* server, const char* addr,
+                               grpc_server_credentials* creds) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error_handle err = GRPC_ERROR_NONE;
+  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
+  int port_num = 0;
+  grpc_channel_args* args = nullptr;
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+  GRPC_API_TRACE("grpc_server_add_http2_port(server=%p, addr=%s, creds=%p)", 3,
+                 (server, addr, creds));
+  // Create security context.
+  if (creds == nullptr) {
+    err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "No credentials specified for secure server port (creds==NULL)");
+    goto done;
+  }
+  // TODO(yashykt): Ideally, we would not want to have different behavior here
+  // based on whether a config fetcher is configured or not. Currently, we have
+  // a feature for SSL credentials reloading with an application callback that
+  // assumes that there is a single security connector. If we delay the creation
+  // of the security connector to after the creation of the listener(s), we
+  // would have potentially multiple security connectors which breaks the
+  // assumption for SSL creds reloading. When the API for SSL creds reloading is
+  // rewritten, we would be able to make this workaround go away by removing
+  // that assumption. As an immediate drawback of this workaround, config
+  // fetchers need to be registered before adding ports to the server.
+  if (core_server->config_fetcher() != nullptr) {
+    // Create channel args.
+    grpc_arg arg_to_add = grpc_server_credentials_to_arg(creds);
+    args = grpc_channel_args_copy_and_add(core_server->channel_args(),
+                                          &arg_to_add, 1);
+  } else {
+    sc = creds->create_security_connector(nullptr);
+    if (sc == nullptr) {
+      err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Unable to create secure server with credentials of type ",
+          creds->type()));
+      goto done;
+    }
+    grpc_arg args_to_add[2];
+    args_to_add[0] = grpc_server_credentials_to_arg(creds);
+    args_to_add[1] = grpc_security_connector_to_arg(sc.get());
+    args = grpc_channel_args_copy_and_add(
+        core_server->channel_args(), args_to_add, GPR_ARRAY_SIZE(args_to_add));
+  }
+  // Add server port.
+  err = grpc_core::Chttp2ServerAddPort(core_server, addr, args,
+                                       ModifyArgsForConnection, &port_num);
+done:
+  sc.reset(DEBUG_LOCATION, "server");
+  if (err != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
+
+    GRPC_ERROR_UNREF(err);
+  }
+  return port_num;
+}
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
+                                     grpc_server_credentials* creds) {
+  // For now, we only support insecure server credentials
+  if (creds == nullptr ||
+      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
+    gpr_log(GPR_ERROR, "Failed to create channel due to invalid creds");
+    return;
+  }
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+
+  const grpc_channel_args* server_args = core_server->channel_args();
+  std::string name = absl::StrCat("fd:", fd);
+  auto memory_quota =
+      grpc_core::ResourceQuotaFromChannelArgs(server_args)->memory_quota();
+  grpc_endpoint* server_endpoint = grpc_tcp_create(
+      grpc_fd_create(fd, name.c_str(), true), server_args, name);
+  grpc_transport* transport = grpc_create_chttp2_transport(
+      server_args, server_endpoint, false /* is_client */
+  );
+  grpc_error_handle error =
+      core_server->SetupTransport(transport, nullptr, server_args, nullptr);
+  if (error == GRPC_ERROR_NONE) {
+    for (grpc_pollset* pollset : core_server->pollsets()) {
+      grpc_endpoint_add_to_pollset(server_endpoint, pollset);
+    }
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+  } else {
+    gpr_log(GPR_ERROR, "Failed to create channel: %s",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    grpc_transport_destroy(transport);
+  }
+}
+
+#else  // !GPR_SUPPORT_CHANNELS_FROM_FD
+
+void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
+                                     grpc_server_credentials* /* creds */) {
+  GPR_ASSERT(0);
+}
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
