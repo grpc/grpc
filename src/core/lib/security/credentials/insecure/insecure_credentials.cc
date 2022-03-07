@@ -30,7 +30,7 @@ InsecureCredentials::create_security_connector(
     const char* /* target_name */, const grpc_channel_args* /* args */,
     grpc_channel_args** /* new_args */) {
   return MakeRefCounted<InsecureChannelSecurityConnector>(
-      Ref(), std::move(call_creds));
+      Ref(), std::move(request_metadata_creds));
 }
 
 const char* InsecureCredentials::Type() { return "Insecure"; }
