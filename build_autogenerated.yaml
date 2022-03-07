@@ -4750,6 +4750,25 @@ targets:
   - test/core/channel/call_finalization_test.cc
   deps:
   - grpc_test_util
+- name: call_push_pull_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/promise/call_push_pull.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/poll.h
+  src:
+  - test/core/promise/call_push_pull_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:variant
+  uses_polling: false
 - name: cancel_ares_query_test
   gtest: true
   build: test
