@@ -99,14 +99,6 @@ TEST(StatusUtilTest, ToAndFromProto) {
   EXPECT_EQ(s, s2);
 }
 
-TEST(StatusUtilTest, ToAndFromProtoWithUTF8Sanitization) {
-  absl::Status s = absl::CancelledError("UTF-8_\x80_Awesome_\xFF_");
-  upb::Arena arena;
-  google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
-  absl::Status s2 = internal::StatusFromProto(msg);
-  EXPECT_EQ(s2.message(), "UTF-8_ _Awesome_ _");
-}
-
 TEST(StatusUtilTest, OkToString) {
   absl::Status s = absl::OkStatus();
   std::string t = StatusToString(s);

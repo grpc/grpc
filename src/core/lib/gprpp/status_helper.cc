@@ -359,13 +359,12 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status_set_code(msg, int32_t(status.code()));
   // Update a message to have 0-127 code only so that it can be encoded/decoded
   // by protobuf which assumes that text fields are expected to be a valid UTF-8
-  // string. Characters of 128-255 code will be replaced by a space (32).
+  // string.
   const char* msg_data = status.message().data();
   const size_t msg_len = status.message().size();
   char* msg_buf = reinterpret_cast<char*>(upb_Arena_Malloc(arena, msg_len));
   for (size_t i = 0; i < msg_len; i++) {
-    msg_buf[i] =
-        (static_cast<unsigned char>(msg_data[i]) < 128) ? msg_data[i] : 32;
+    msg_buf[i] = (msg_data[i] >= 0) ? msg_data[i] : 32;
   }
   google_rpc_Status_set_message(
       msg, upb_StringView_FromDataAndSize(msg_buf, msg_len));
