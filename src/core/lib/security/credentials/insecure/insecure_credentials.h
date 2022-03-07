@@ -31,8 +31,8 @@ class InsecureCredentials final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target_name, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char* /* target_name */, const grpc_channel_args* /* args */,
+      grpc_channel_args** /* new_args */) override;
 
   static const char* Type();
 
