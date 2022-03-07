@@ -26,7 +26,7 @@ namespace grpc_core {
 
 RefCountedPtr<grpc_channel_security_connector>
 InsecureCredentials::create_security_connector(
-    RefCountedPtr<grpc_call_credentials> call_creds,
+    RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* /* target_name */, const grpc_channel_args* /* args */,
     grpc_channel_args** /* new_args */) {
   return MakeRefCounted<InsecureChannelSecurityConnector>(
