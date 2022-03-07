@@ -294,14 +294,14 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, &slice,
-          args_->args, 1);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, &slice, args_->args, 1);
       grpc_slice_unref_internal(slice);
     } else {
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, nullptr,
-          args_->args, 0);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, nullptr, args_->args, 0);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
