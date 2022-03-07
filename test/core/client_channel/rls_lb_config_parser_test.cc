@@ -50,7 +50,7 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"rls.example.com:80\",\n"
       "        \"cacheSizeBytes\":1,\n"
@@ -88,7 +88,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "    }\n"
       "  }]\n"
       "}\n";
@@ -109,7 +109,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":1,\n"
       "      \"routeLookupChannelServiceConfig\": 1,\n"
       "      \"childPolicy\":1,\n"
@@ -135,7 +135,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"unknown\":{}}\n"
       "      ],\n"
@@ -160,7 +160,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"grpclb\":{\"childPolicy\":1}}\n"
       "      ],\n"
@@ -184,7 +184,7 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupChannelServiceConfig\": {\n"
       "        \"loadBalancingPolicy\": \"unknown\"\n"
       "      },\n"
@@ -217,7 +217,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "      }\n"
       "    }\n"
@@ -239,7 +239,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":1,\n"
       "        \"name\":1,\n"
@@ -273,7 +273,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"\",\n"
       "        \"cacheSizeBytes\":0\n"
@@ -301,7 +301,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -328,7 +328,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -362,7 +362,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -403,7 +403,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -463,7 +463,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -500,7 +500,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -537,7 +537,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
