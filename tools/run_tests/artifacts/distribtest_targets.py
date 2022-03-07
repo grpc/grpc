@@ -395,7 +395,7 @@ def targets():
                        testcase='cmake_as_externalproject',
                        presubmit=True),
         # C#
-        CSharpDistribTest('linux', 'x64', 'stretch'),
+        CSharpDistribTest('linux', 'x64', 'stretch', presubmit=True),
         CSharpDistribTest('linux',
                           'x64',
                           'stretch',
