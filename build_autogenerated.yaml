@@ -65,7 +65,6 @@ libs:
   - test/core/end2end/tests/graceful_server_shutdown.cc
   - test/core/end2end/tests/high_initial_seqno.cc
   - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/idempotent_request.cc
   - test/core/end2end/tests/invoke_large_request.cc
   - test/core/end2end/tests/keepalive_timeout.cc
   - test/core/end2end/tests/large_metadata.cc
@@ -122,7 +121,6 @@ libs:
   - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_cacheable_request.cc
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/end2end/tests/simple_request.cc
@@ -205,7 +203,6 @@ libs:
   - test/core/end2end/tests/grpc_authz.cc
   - test/core/end2end/tests/high_initial_seqno.cc
   - test/core/end2end/tests/hpack_size.cc
-  - test/core/end2end/tests/idempotent_request.cc
   - test/core/end2end/tests/invoke_large_request.cc
   - test/core/end2end/tests/keepalive_timeout.cc
   - test/core/end2end/tests/large_metadata.cc
@@ -262,7 +259,6 @@ libs:
   - test/core/end2end/tests/server_streaming.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
-  - test/core/end2end/tests/simple_cacheable_request.cc
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/end2end/tests/simple_request.cc
@@ -816,6 +812,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
@@ -1986,6 +1983,7 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
@@ -4569,6 +4567,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
   - src/core/lib/slice/slice_string_helpers.h
+  - test/core/promise/test_context.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/memory_allocator.cc
@@ -4860,6 +4859,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: call_finalization_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/promise/test_context.h
+  src:
+  - test/core/channel/call_finalization_test.cc
+  deps:
+  - grpc_test_util
 - name: cancel_ares_query_test
   gtest: true
   build: test
@@ -5127,7 +5136,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/promise/test_context.h
   src:
   - test/core/filters/client_authority_filter_test.cc
   deps:

@@ -92,7 +92,8 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   // of this filter.
   if (batch->send_initial_metadata) {
     // If we're already cancelled, just terminate the batch.
-    if (send_initial_state_ == SendInitialState::kCancelled) {
+    if (send_initial_state_ == SendInitialState::kCancelled ||
+        recv_trailing_state_ == RecvTrailingState::kCancelled) {
       grpc_transport_stream_op_batch_finish_with_failure(
           batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
       return;
@@ -116,6 +117,11 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   // recv_trailing_metadata *without* send_initial_metadata: hook it so we can
   // respond to it, and push it down.
   if (batch->recv_trailing_metadata) {
+    if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
+      return;
+    }
     GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
     recv_trailing_state_ = RecvTrailingState::kForwarded;
     HookRecvTrailingMetadata(batch);
@@ -323,7 +329,6 @@ void ClientCallData::WakeInsideCombiner() {
           }
           GRPC_ERROR_UNREF(cancelled_error_);
           cancelled_error_ = GRPC_ERROR_REF(error);
-          recv_trailing_state_ = RecvTrailingState::kCancelled;
           if (send_initial_state_ == SendInitialState::kQueued) {
             send_initial_state_ = SendInitialState::kCancelled;
             cancel_send_initial_metadata_error = error;
@@ -336,6 +341,7 @@ void ClientCallData::WakeInsideCombiner() {
             forward_batch->cancel_stream = true;
             forward_batch->payload->cancel_stream.cancel_error = error;
           }
+          recv_trailing_state_ = RecvTrailingState::kCancelled;
         }
         if (destroy_md) {
           md->~grpc_metadata_batch();
