@@ -60,6 +60,7 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
 
@@ -87,92 +88,8 @@ const char* kConstantKey = "constant_key";
 const char* kConstantValue = "constant_value";
 
 using BackendService = CountedService<TestServiceImpl>;
-using RlsService =
-    CountedService<grpc::lookup::v1::RouteLookupService::Service>;
 
-class RlsServiceImpl : public RlsService {
- public:
-  grpc::Status RouteLookup(grpc::ServerContext* context,
-                           const RouteLookupRequest* request,
-                           RouteLookupResponse* response) override {
-    gpr_log(GPR_INFO, "RLS: Received request: %s",
-            request->DebugString().c_str());
-    // RLS server should see call creds.
-    EXPECT_THAT(context->client_metadata(),
-                ::testing::Contains(
-                    ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
-    IncreaseRequestCount();
-    EXPECT_EQ(request->target_type(), "grpc");
-    // See if we have a configured response for this request.
-    ResponseData res;
-    {
-      grpc::internal::MutexLock lock(&mu_);
-      auto it = responses_.find(*request);
-      if (it == responses_.end()) {
-        gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
-        unmatched_requests_.push_back(*request);
-        return Status(StatusCode::INTERNAL, "no response entry");
-      }
-      res = it->second;
-    }
-    // Configured response found, so use it.
-    if (res.response_delay > grpc_core::Duration::Zero()) {
-      gpr_sleep_until(
-          grpc_timeout_milliseconds_to_deadline(res.response_delay.millis()));
-    }
-    IncreaseResponseCount();
-    *response = res.response;
-    gpr_log(GPR_INFO, "RLS: returning configured response: %s",
-            response->DebugString().c_str());
-    return Status::OK;
-  }
-
-  void Start() {}
-
-  void Shutdown() {}
-
-  void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
-                   grpc_core::Duration response_delay = grpc_core::Duration()) {
-    grpc::internal::MutexLock lock(&mu_);
-    responses_[std::move(request)] = {std::move(response), response_delay};
-  }
-
-  void RemoveResponse(const RouteLookupRequest& request) {
-    grpc::internal::MutexLock lock(&mu_);
-    responses_.erase(request);
-  }
-
-  std::vector<RouteLookupRequest> GetUnmatchedRequests() {
-    grpc::internal::MutexLock lock(&mu_);
-    return std::move(unmatched_requests_);
-  }
-
- private:
-  // Sorting thunk for RouteLookupRequest.
-  struct RlsRequestLessThan {
-    bool operator()(const RouteLookupRequest& req1,
-                    const RouteLookupRequest& req2) const {
-      std::map<absl::string_view, absl::string_view> key_map1(
-          req1.key_map().begin(), req1.key_map().end());
-      std::map<absl::string_view, absl::string_view> key_map2(
-          req2.key_map().begin(), req2.key_map().end());
-      if (key_map1 < key_map2) return true;
-      if (req1.reason() < req2.reason()) return true;
-      if (req1.stale_header_data() < req2.stale_header_data()) return true;
-      return false;
-    }
-  };
-
-  struct ResponseData {
-    RouteLookupResponse response;
-    grpc_core::Duration response_delay;
-  };
-
-  grpc::internal::Mutex mu_;
-  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan> responses_
-      ABSL_GUARDED_BY(&mu_);
-  std::vector<RouteLookupRequest> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
-};
+}  // namespace
 
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo Rpc.
@@ -314,26 +231,6 @@ class RlsEnd2endTest : public ::testing::Test {
   std::string TargetStringForPort(int port) {
     if (ipv6_only_) return absl::StrCat("ipv6:[::1]:", port);
     return absl::StrCat("ipv4:127.0.0.1:", port);
-  }
-
-  static RouteLookupRequest BuildRlsRequest(
-      std::map<std::string, std::string> key,
-      RouteLookupRequest::Reason reason = RouteLookupRequest::REASON_MISS,
-      const char* stale_header_data = "") {
-    RouteLookupRequest request;
-    request.set_target_type("grpc");
-    request.mutable_key_map()->insert(key.begin(), key.end());
-    request.set_reason(reason);
-    request.set_stale_header_data(stale_header_data);
-    return request;
-  }
-
-  static RouteLookupResponse BuildRlsResponse(std::vector<std::string> targets,
-                                              const char* header_data = "") {
-    RouteLookupResponse response;
-    response.mutable_targets()->Add(targets.begin(), targets.end());
-    response.set_header_data(header_data);
-    return response;
   }
 
   struct RpcOptions {
@@ -1471,7 +1368,6 @@ TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
       "");
 }
 
-}  // namespace
 }  // namespace testing
 }  // namespace grpc
 

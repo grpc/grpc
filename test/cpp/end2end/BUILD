@@ -70,6 +70,21 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "rls_server",
+    testonly = True,
+    external_deps = [
+        "gtest",
+    ],
+    srcs = ["rls_server.cc"],
+    hdrs = ["rls_server.h"],
+    deps = [
+        ":counted_service",
+        "//src/proto/grpc/lookup/v1:rls_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
@@ -487,6 +502,7 @@ grpc_cc_test(
     tags = ["no_test_ios"],
     deps = [
         ":counted_service",
+        ":rls_server",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
