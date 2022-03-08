@@ -214,7 +214,7 @@ void LibuvEventEngine::RunInLibuvThread(SchedulingRequest::functor&& f) {
             "LibuvEventEngine@%p::RunInLibuvThread functor, created %p", this,
             request);
   }
-  scheduling_request_queue_.Push(request);
+  uv_state_->scheduling_request_queue.Push(request);
   uv_async_send(&uv_state_->kicker);
 }
 
@@ -225,7 +225,7 @@ void LibuvEventEngine::RunInLibuvThread(std::unique_ptr<LibuvTask> task,
     gpr_log(GPR_ERROR, "LibuvEventEngine@%p::RunInLibuvThread task, created %p",
             this, request);
   }
-  scheduling_request_queue_.Push(request);
+  uv_state_->scheduling_request_queue.Push(request);
   uv_async_send(&uv_state_->kicker);
 }
 
@@ -233,11 +233,12 @@ void LibuvEventEngine::RunInLibuvThread(std::unique_ptr<LibuvTask> task,
 // uv_async_send call above is being processed. The kick is only guaranteed
 // to be called once per loop iteration, even if we sent the event multiple
 // times, so we have to process as many events from the queue as possible.
-void LibuvEventEngine::Kicker() {
+void LibuvEventEngine::Kicker(UvState* uv_state) {
   bool empty_schedule_queue = false;
   while (!empty_schedule_queue) {
     SchedulingRequest* node = reinterpret_cast<SchedulingRequest*>(
-        scheduling_request_queue_.PopAndCheckEnd(&empty_schedule_queue));
+        uv_state->scheduling_request_queue.PopAndCheckEnd(
+            &empty_schedule_queue));
     // TODO(hork): use the type system
     if (node != nullptr) {
       if (node->task == nullptr) {
@@ -280,7 +281,7 @@ void LibuvEventEngine::RunThread() {
       gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::kicker_(%p) initialized", engine,
               async);
     }
-    engine->Kicker();
+    engine->Kicker(engine->uv_state_);
   });
   if (r != 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {

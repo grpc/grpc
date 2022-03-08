@@ -196,6 +196,7 @@ class LibuvEventEngine final : public EventEngine {
     // This should be set only once to true by the thread when it's done setting
     // itself up.
     Promise<bool> ready;
+    grpc_core::MultiProducerSingleConsumerQueue scheduling_request_queue;
   };
 
   // The main logic in the uv event loop
@@ -207,7 +208,10 @@ class LibuvEventEngine final : public EventEngine {
   // Overload to start a uv_task in the uv thread. This is used to usher
   // ownership of the LibuvTask to the engine.
   void RunInLibuvThread(std::unique_ptr<LibuvTask> task, uint64_t timeout);
-  void Kicker();
+  // libuv-executed async callback, used to process closures and timers.
+  // The UvState is passed here explicitly since a libuv instance may outlive
+  // its EventEngine, and the task queue needs to be accessible.
+  void Kicker(UvState* uv_state);
   uv_loop_t* GetLoop() { return &uv_state_->loop; }
   // Destructor logic that must be executed in the libuv thread before the
   // engine can be destroyed (from any thread).
@@ -215,7 +219,6 @@ class LibuvEventEngine final : public EventEngine {
 
   UvState* uv_state_;
   grpc_core::Thread thread_;
-  grpc_core::MultiProducerSingleConsumerQueue scheduling_request_queue_;
 
   // We keep a list of all of the tasks here. The atomics will serve as a
   // simple counter mechanism, with the assumption that if it ever rolls over,
