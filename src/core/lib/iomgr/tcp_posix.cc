@@ -378,7 +378,9 @@ struct grpc_tcp {
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
-  grpc_slice_buffer* incoming_buffer;
+  absl::Mutex incoming_buffer_mu;
+  grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(incoming_buffer_mu) =
+      nullptr;
   int inq;          /* bytes pending on the socket from the last read. */
   bool inq_capable; /* cache whether kernel supports inq */
 
@@ -402,7 +404,7 @@ struct grpc_tcp {
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
   grpc_core::TracedBuffer* tb_head; /* List of traced buffers */
-  gpr_mu tb_mu;        /* Lock for access to list of traced buffers */
+  gpr_mu tb_mu; /* Lock for access to list of traced buffers */
 
   /* grpc_endpoint_write takes an argument which if non-null means that the
    * transport layer wants the TCP layer to collect timestamps for this write.
@@ -882,9 +884,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
+  tcp->incoming_buffer_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
+  tcp->incoming_buffer_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
     /* Endpoint read called for the very first time. Register read callback with
@@ -1743,7 +1747,6 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->current_zerocopy_send = nullptr;
   tcp->release_fd_cb = nullptr;
   tcp->release_fd = nullptr;
-  tcp->incoming_buffer = nullptr;
   tcp->target_length = static_cast<double>(tcp_read_chunk_size);
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
