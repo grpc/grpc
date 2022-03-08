@@ -102,21 +102,19 @@ void LibuvEventEngine::LibuvTask::Cancel(Promise<bool>& will_be_cancelled) {
 void LibuvEventEngine::LibuvTask::Erase(uv_handle_t* uv_handle) {
   uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(uv_handle);
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
-  LibuvEventEngine* engine =
-      reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
-  engine->uv_state_->task_set.erase(task->GetHandle());
+  UvState* uv_state = reinterpret_cast<UvState*>(timer->loop->data);
+  uv_state->task_set.erase(task->GetHandle());
 }
 
 void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
   uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(handle);
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   std::function<void()> fn = std::move(task->fn_);
-  LibuvEventEngine* engine =
-      reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
+  UvState* uv_state = reinterpret_cast<UvState*>(timer->loop->data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, executing", task->ToString().c_str());
   }
-  engine->uv_state_->task_set.erase(task->GetHandle());
+  uv_state->task_set.erase(task->GetHandle());
   fn();
 }
 
@@ -126,6 +124,7 @@ LibuvEventEngine::LibuvEventEngine() {
     gpr_log(GPR_DEBUG, "LibuvEventEngine:%p created", this);
   }
   uv_state_ = new UvState();
+  uv_state_->engine = this;
   thread_ = grpc_core::Thread(
       "uv loop",
       [](void* arg) {
@@ -277,15 +276,14 @@ void LibuvEventEngine::RunThread() {
   // Setting up the loop.
   worker_thread_id_ = gpr_thd_currentid();
   int r = uv_loop_init(&uv_state->loop);
-  uv_state->loop.data = this;
+  uv_state->loop.data = uv_state;
   r |= uv_async_init(&uv_state->loop, &uv_state->kicker, [](uv_async_t* async) {
-    LibuvEventEngine* engine =
-        reinterpret_cast<LibuvEventEngine*>(async->loop->data);
+    UvState* uv_state = reinterpret_cast<UvState*>(async->loop->data);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::kicker(%p) initialized", engine,
-              async);
+      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::kicker(%p) initialized",
+              uv_state->engine, async);
     }
-    engine->Kicker(engine->uv_state_);
+    uv_state->engine->Kicker(uv_state);
   });
   if (r != 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {

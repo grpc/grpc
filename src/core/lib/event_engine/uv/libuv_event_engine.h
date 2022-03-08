@@ -200,6 +200,9 @@ class LibuvEventEngine final : public EventEngine {
     absl::flat_hash_set<LibuvTask::Handle, LibuvTask::Handle::Comparator::Hash,
                         LibuvTask::Handle::Comparator::Eq>
         task_set;
+    // A non-owning pointer to the engine, which may be destroyed before libuv
+    // is fully shut down.
+    LibuvEventEngine* engine;
   };
 
   // The main logic in the uv event loop
