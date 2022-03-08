@@ -176,10 +176,16 @@ void LibuvEventEngine::DestroyInLibuvThread(
         },
         nullptr);
   }
+  // Purge the task queue synchronously in the uv thread.
+  // Callers should have ensured that all tasks are either cancelled or executed
+  // before destroying the engine.
+  Kicker(uv_state_);
   destruction_done.Notify(true);
 }
 
 LibuvEventEngine::~LibuvEventEngine() {
+  // TODO(hork): ensure new operations fail after shutdown has begun. We likely
+  // need to clear up the API documentation around shutdown.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::~LibuvEventEngine", this);
   }
