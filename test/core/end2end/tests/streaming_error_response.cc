@@ -66,7 +66,8 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
   } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
