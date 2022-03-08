@@ -88,7 +88,8 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
   StatusAddChild(&s, child3);
-  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(child1, child2, child3));
+  EXPECT_THAT(StatusGetChildren(s),
+              ::testing::ElementsAre(child1, child2, child3));
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {
