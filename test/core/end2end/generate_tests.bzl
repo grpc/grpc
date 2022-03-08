@@ -65,6 +65,7 @@ END2END_FIXTURES = {
         fullstack = False,
         client_channel = False,
         _platforms = ["linux", "mac", "posix"],
+        tags = ["no_test_ios"],
     ),
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
