@@ -378,9 +378,8 @@ struct grpc_tcp {
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
-  absl::Mutex incoming_buffer_mu;
-  grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(incoming_buffer_mu) =
-      nullptr;
+  absl::Mutex read_mu;
+  grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
   int inq;          /* bytes pending on the socket from the last read. */
   bool inq_capable; /* cache whether kernel supports inq */
 
@@ -664,33 +663,58 @@ static void tcp_destroy(grpc_endpoint* ep) {
   TCP_UNREF(tcp, "destroy");
 }
 
+static void maybe_post_reclaimer(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  if (!tcp->has_posted_reclaimer) {
+    tcp->has_posted_reclaimer = true;
+    tcp->memory_owner.PostReclaimer(
+        grpc_core::ReclamationPass::kBenign,
+        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+              gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
+            }
+            tcp->read_mu.Lock();
+            if (tcp->incoming_buffer != nullptr) {
+              grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+            }
+            tcp->read_mu.Unlock();
+            tcp->has_posted_reclaimer = false;
+          }
+        });
+  }
+}
+
 static void call_read_cb(grpc_tcp* tcp, grpc_error_handle error)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->incoming_buffer_mu) {
+    ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
   grpc_closure* cb = tcp->read_cb;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
-    size_t i;
-    gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
-            tcp->peer_string.c_str(), grpc_error_std_string(error).c_str());
-    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-      for (i = 0; i < tcp->incoming_buffer->count; i++) {
-        char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
-                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "DATA: %s", dump);
-        gpr_free(dump);
+  {
+    absl::MutexLock l(&tcp->read_mu);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
+      size_t i;
+      gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
+              tcp->peer_string.c_str(), grpc_error_std_string(error).c_str());
+      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+        for (i = 0; i < tcp->incoming_buffer->count; i++) {
+          char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
+                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          gpr_log(GPR_DEBUG, "DATA: %s", dump);
+          gpr_free(dump);
+        }
       }
     }
-  }
 
-  tcp->read_cb = nullptr;
-  tcp->incoming_buffer = nullptr;
+    tcp->read_cb = nullptr;
+    tcp->incoming_buffer = nullptr;
+  }
   grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
 }
 
 #define MAX_READ_IOVEC 4
-static void tcp_do_read(grpc_tcp* tcp) {
-  absl::MutexLock l(&tcp->incoming_buffer_mu);
+static void tcp_do_read(grpc_tcp* tcp) ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
+  tcp->read_mu.Lock();
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
@@ -751,12 +775,14 @@ static void tcp_do_read(grpc_tcp* tcp) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
+        tcp->read_mu.Unlock();
         finish_estimate(tcp);
         tcp->inq = 0;
         /* We've consumed the edge, request a new one */
         notify_on_read(tcp);
       } else {
         grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+        tcp->read_mu.Unlock();
         call_read_cb(tcp,
                      tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp));
         TCP_UNREF(tcp, "read");
@@ -770,6 +796,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
       grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+      tcp->read_mu.Unlock();
       call_read_cb(
           tcp, tcp_annotate_error(
                    GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
@@ -833,54 +860,35 @@ static void tcp_do_read(grpc_tcp* tcp) {
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
   }
+  tcp->read_mu.Unlock();
   call_read_cb(tcp, GRPC_ERROR_NONE);
   TCP_UNREF(tcp, "read");
 }
 
-static void post_benign_reclaimer(grpc_tcp* tcp) {
-  if (!tcp->has_posted_reclaimer) {
-    tcp->has_posted_reclaimer = true;
-    tcp->memory_owner.PostReclaimer(
-        grpc_core::ReclamationPass::kBenign,
-        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
-          if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-              gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
-            }
-            tcp->incoming_buffer_mu.Lock();
-            if (tcp->incoming_buffer != nullptr) {
-              grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-            }
-            tcp->incoming_buffer_mu.Unlock();
-            tcp->has_posted_reclaimer = false;
-          }
-        });
-  }
-}
-
-static void tcp_continue_read(grpc_tcp* tcp) {
-  tcp->incoming_buffer_mu.Lock();
-  if (tcp->incoming_buffer->length == 0 &&
-      tcp->incoming_buffer->count < MAX_READ_IOVEC) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO,
-              "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
-              "buf_len=%" PRIdPTR,
-              tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
-              tcp->target_length, tcp->incoming_buffer->length);
+static void tcp_continue_read(grpc_tcp* tcp) ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
+  {
+    absl::MutexLock l(&tcp->read_mu);
+    if (tcp->incoming_buffer->length == 0 &&
+        tcp->incoming_buffer->count < MAX_READ_IOVEC) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_INFO,
+                "TCP:%p alloc_slices; min_chunk=%d max_chunk=%d target=%lf "
+                "buf_len=%" PRIdPTR,
+                tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
+                tcp->target_length, tcp->incoming_buffer->length);
+      }
+      int target_length = static_cast<int>(tcp->target_length);
+      int extra_wanted =
+          target_length - static_cast<int>(tcp->incoming_buffer->length);
+      grpc_slice_buffer_add_indexed(
+          tcp->incoming_buffer,
+          tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+              tcp->min_read_chunk_size,
+              grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
+                               tcp->max_read_chunk_size))));
     }
-    int target_length = static_cast<int>(tcp->target_length);
-    int extra_wanted =
-        target_length - static_cast<int>(tcp->incoming_buffer->length);
-    grpc_slice_buffer_add_indexed(
-        tcp->incoming_buffer,
-        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
-                             tcp->max_read_chunk_size))));
+    maybe_post_reclaimer(tcp);
   }
-  tcp->incoming_buffer_mu.Unlock();
-  post_benign_reclaimer(tcp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }
@@ -896,10 +904,10 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
 
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
-    tcp->incoming_buffer_mu.Lock();
+    tcp->read_mu.Lock();
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+    tcp->read_mu.Unlock();
     call_read_cb(tcp, GRPC_ERROR_REF(error));
-    tcp->incoming_buffer_mu.Unlock();
     TCP_UNREF(tcp, "read");
   } else {
     tcp_continue_read(tcp);
@@ -911,11 +919,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
-  tcp->incoming_buffer_mu.Lock();
+  tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
-  tcp->incoming_buffer_mu.Unlock();
+  tcp->read_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
     /* Endpoint read called for the very first time. Register read callback with
