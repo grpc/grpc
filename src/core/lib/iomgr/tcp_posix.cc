@@ -378,9 +378,8 @@ struct grpc_tcp {
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
-  absl::Mutex incoming_buffer_mu;
-  grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(incoming_buffer_mu) =
-      nullptr;
+  absl::Mutex read_mu;
+  grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
   int inq;          /* bytes pending on the socket from the last read. */
   bool inq_capable; /* cache whether kernel supports inq */
 
@@ -746,6 +745,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
+        tcp->read_mu.Unlock();
         finish_estimate(tcp);
         tcp->inq = 0;
         return false;
@@ -837,15 +837,7 @@ static void maybe_make_read_slices(grpc_tcp* tcp) {
               tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
               tcp->target_length, tcp->incoming_buffer->length);
     }
-    int target_length = static_cast<int>(tcp->target_length);
-    int extra_wanted =
-        target_length - static_cast<int>(tcp->incoming_buffer->length);
-    grpc_slice_buffer_add_indexed(
-        tcp->incoming_buffer,
-        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
-                             tcp->max_read_chunk_size))));
+    maybe_post_reclaimer(tcp);
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
@@ -884,11 +876,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
-  tcp->incoming_buffer_mu.Lock();
+  tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
-  tcp->incoming_buffer_mu.Unlock();
+  tcp->read_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
     /* Endpoint read called for the very first time. Register read callback with
