@@ -70,12 +70,13 @@ struct secure_endpoint {
         grpc_core::ResourceQuotaFromChannelArgs(channel_args)
             ->memory_quota()
             ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
-                                             ":client_transport"));
+                                             ":secure_endpoint"));
     self_reservation = memory_owner.MakeReservation(sizeof(this));
     read_staging_buffer =
         memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
     write_staging_buffer =
         memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    has_posted_reclaimer.store(false, std::memory_order_relaxed);
     gpr_ref_init(&ref, 1);
   }
 
@@ -107,13 +108,12 @@ struct secure_endpoint {
   /* saved handshaker leftover data to unprotect. */
   grpc_slice_buffer leftover_bytes;
   /* buffers for read and write */
-  grpc_slice read_staging_buffer ABSL_GUARDED_BY(read_mu) = grpc_empty_slice();
-  grpc_slice write_staging_buffer ABSL_GUARDED_BY(write_mu) =
-      grpc_empty_slice();
+  grpc_slice read_staging_buffer ABSL_GUARDED_BY(read_mu);
+  grpc_slice write_staging_buffer ABSL_GUARDED_BY(write_mu);
   grpc_slice_buffer output_buffer;
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
-  bool has_posted_reclaimer = false;
+  std::atomic<bool> has_posted_reclaimer;
 
   gpr_refcount ref;
 };
@@ -163,10 +163,10 @@ static void secure_endpoint_unref(secure_endpoint* ep) {
 static void secure_endpoint_ref(secure_endpoint* ep) { gpr_ref(&ep->ref); }
 #endif
 
-static void post_reclaimer(secure_endpoint* ep) {
+static void maybe_post_reclaimer(secure_endpoint* ep) {
   if (!ep->has_posted_reclaimer) {
     SECURE_ENDPOINT_REF(ep, "benign_reclaimer");
-    ep->has_posted_reclaimer = true;
+    ep->has_posted_reclaimer.exchange(true, std::memory_order_relaxed);
     ep->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
@@ -190,7 +190,7 @@ static void post_reclaimer(secure_endpoint* ep) {
 
             grpc_slice_unref_internal(temp_read_slice);
             grpc_slice_unref_internal(temp_write_slice);
-            ep->has_posted_reclaimer = false;
+            ep->has_posted_reclaimer.exchange(false, std::memory_order_relaxed);
           }
           SECURE_ENDPOINT_UNREF(ep, "benign_reclaimer");
         });
@@ -199,15 +199,12 @@ static void post_reclaimer(secure_endpoint* ep) {
 
 static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
                                       uint8_t** end)
-    ABSL_LOCKS_EXCLUDED(ep->read_mu) {
-  ep->read_mu.Lock();
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(ep->read_mu) {
   grpc_slice_buffer_add_indexed(ep->read_buffer, ep->read_staging_buffer);
   ep->read_staging_buffer =
       ep->memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
   *cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
-  ep->read_mu.Unlock();
-  post_reclaimer(ep);
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
@@ -231,73 +228,73 @@ static void on_read(void* user_data, grpc_error_handle error) {
   tsi_result result = TSI_OK;
   secure_endpoint* ep = static_cast<secure_endpoint*>(user_data);
 
-  ep->read_mu.Lock();
-  uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
-  uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
-  ep->read_mu.Unlock();
+  {
+    absl::MutexLock l(&ep->read_mu);
+    uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
+    uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
-  if (error != GRPC_ERROR_NONE) {
-    grpc_slice_buffer_reset_and_unref_internal(ep->read_buffer);
-    call_read_cb(ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                         "Secure read failed", &error, 1));
-    return;
-  }
+    if (error != GRPC_ERROR_NONE) {
+      grpc_slice_buffer_reset_and_unref_internal(ep->read_buffer);
+      call_read_cb(ep, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Secure read failed", &error, 1));
+      return;
+    }
 
-  if (ep->zero_copy_protector != nullptr) {
-    // Use zero-copy grpc protector to unprotect.
-    result = tsi_zero_copy_grpc_protector_unprotect(
-        ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
-  } else {
-    // Use frame protector to unprotect.
-    /* TODO(yangg) check error, maybe bail out early */
-    for (i = 0; i < ep->source_buffer.count; i++) {
-      grpc_slice encrypted = ep->source_buffer.slices[i];
-      uint8_t* message_bytes = GRPC_SLICE_START_PTR(encrypted);
-      size_t message_size = GRPC_SLICE_LENGTH(encrypted);
+    if (ep->zero_copy_protector != nullptr) {
+      // Use zero-copy grpc protector to unprotect.
+      result = tsi_zero_copy_grpc_protector_unprotect(
+          ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
+    } else {
+      // Use frame protector to unprotect.
+      /* TODO(yangg) check error, maybe bail out early */
+      for (i = 0; i < ep->source_buffer.count; i++) {
+        grpc_slice encrypted = ep->source_buffer.slices[i];
+        uint8_t* message_bytes = GRPC_SLICE_START_PTR(encrypted);
+        size_t message_size = GRPC_SLICE_LENGTH(encrypted);
 
-      while (message_size > 0 || keep_looping) {
-        size_t unprotected_buffer_size_written = static_cast<size_t>(end - cur);
-        size_t processed_message_size = message_size;
-        gpr_mu_lock(&ep->protector_mu);
-        result = tsi_frame_protector_unprotect(
-            ep->protector, message_bytes, &processed_message_size, cur,
-            &unprotected_buffer_size_written);
-        gpr_mu_unlock(&ep->protector_mu);
-        if (result != TSI_OK) {
-          gpr_log(GPR_ERROR, "Decryption error: %s",
-                  tsi_result_to_string(result));
-          break;
+        while (message_size > 0 || keep_looping) {
+          size_t unprotected_buffer_size_written =
+              static_cast<size_t>(end - cur);
+          size_t processed_message_size = message_size;
+          gpr_mu_lock(&ep->protector_mu);
+          result = tsi_frame_protector_unprotect(
+              ep->protector, message_bytes, &processed_message_size, cur,
+              &unprotected_buffer_size_written);
+          gpr_mu_unlock(&ep->protector_mu);
+          if (result != TSI_OK) {
+            gpr_log(GPR_ERROR, "Decryption error: %s",
+                    tsi_result_to_string(result));
+            break;
+          }
+          message_bytes += processed_message_size;
+          message_size -= processed_message_size;
+          cur += unprotected_buffer_size_written;
+
+          if (cur == end) {
+            flush_read_staging_buffer(ep, &cur, &end);
+            /* Force to enter the loop again to extract buffered bytes in
+              protector. The bytes could be buffered because of running out of
+              staging_buffer. If this happens at the end of all slices, doing
+              another unprotect avoids leaving data in the protector. */
+            keep_looping = 1;
+          } else if (unprotected_buffer_size_written > 0) {
+            keep_looping = 1;
+          } else {
+            keep_looping = 0;
+          }
         }
-        message_bytes += processed_message_size;
-        message_size -= processed_message_size;
-        cur += unprotected_buffer_size_written;
-
-        if (cur == end) {
-          flush_read_staging_buffer(ep, &cur, &end);
-          /* Force to enter the loop again to extract buffered bytes in
-             protector. The bytes could be buffered because of running out of
-             staging_buffer. If this happens at the end of all slices, doing
-             another unprotect avoids leaving data in the protector. */
-          keep_looping = 1;
-        } else if (unprotected_buffer_size_written > 0) {
-          keep_looping = 1;
-        } else {
-          keep_looping = 0;
-        }
+        if (result != TSI_OK) break;
       }
-      if (result != TSI_OK) break;
-    }
 
-    ep->read_mu.Lock();
-    if (cur != GRPC_SLICE_START_PTR(ep->read_staging_buffer)) {
-      grpc_slice_buffer_add(
-          ep->read_buffer,
-          grpc_slice_split_head(
-              &ep->read_staging_buffer,
-              static_cast<size_t>(
-                  cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
+      if (cur != GRPC_SLICE_START_PTR(ep->read_staging_buffer)) {
+        grpc_slice_buffer_add(
+            ep->read_buffer,
+            grpc_slice_split_head(
+                &ep->read_staging_buffer,
+                static_cast<size_t>(
+                    cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
+      }
     }
-    ep->read_mu.Unlock();
   }
 
   /* TODO(yangg) experiment with moving this block after read_cb to see if it
@@ -335,15 +332,13 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
                                        uint8_t** end)
-    ABSL_LOCKS_EXCLUDED(ep->write_mu) {
-  ep->write_mu.Lock();
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(ep->write_mu) {
   grpc_slice_buffer_add_indexed(&ep->output_buffer, ep->write_staging_buffer);
   ep->write_staging_buffer =
       ep->memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
   *cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
   *end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
-  ep->write_mu.Unlock();
-  post_reclaimer(ep);
+  maybe_post_reclaimer(ep);
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
@@ -353,80 +348,80 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  ep->write_mu.Lock();
-  uint8_t* cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
-  uint8_t* end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
-  ep->write_mu.Unlock();
 
-  grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
+  {
+    absl::MutexLock l(&ep->write_mu);
+    uint8_t* cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
+    uint8_t* end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
-    for (i = 0; i < slices->count; i++) {
-      char* data =
-          grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "WRITE %p: %s", ep, data);
-      gpr_free(data);
-    }
-  }
+    grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
 
-  if (ep->zero_copy_protector != nullptr) {
-    // Use zero-copy grpc protector to protect.
-    result = tsi_zero_copy_grpc_protector_protect(ep->zero_copy_protector,
-                                                  slices, &ep->output_buffer);
-  } else {
-    // Use frame protector to protect.
-    for (i = 0; i < slices->count; i++) {
-      grpc_slice plain = slices->slices[i];
-      uint8_t* message_bytes = GRPC_SLICE_START_PTR(plain);
-      size_t message_size = GRPC_SLICE_LENGTH(plain);
-      while (message_size > 0) {
-        size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
-        size_t processed_message_size = message_size;
-        gpr_mu_lock(&ep->protector_mu);
-        result = tsi_frame_protector_protect(ep->protector, message_bytes,
-                                             &processed_message_size, cur,
-                                             &protected_buffer_size_to_send);
-        gpr_mu_unlock(&ep->protector_mu);
-        if (result != TSI_OK) {
-          gpr_log(GPR_ERROR, "Encryption error: %s",
-                  tsi_result_to_string(result));
-          break;
-        }
-        message_bytes += processed_message_size;
-        message_size -= processed_message_size;
-        cur += protected_buffer_size_to_send;
-
-        if (cur == end) {
-          flush_write_staging_buffer(ep, &cur, &end);
-        }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+      for (i = 0; i < slices->count; i++) {
+        char* data =
+            grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        gpr_log(GPR_INFO, "WRITE %p: %s", ep, data);
+        gpr_free(data);
       }
-      if (result != TSI_OK) break;
     }
-    if (result == TSI_OK) {
-      size_t still_pending_size;
-      do {
-        size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
-        gpr_mu_lock(&ep->protector_mu);
-        result = tsi_frame_protector_protect_flush(
-            ep->protector, cur, &protected_buffer_size_to_send,
-            &still_pending_size);
-        gpr_mu_unlock(&ep->protector_mu);
+
+    if (ep->zero_copy_protector != nullptr) {
+      // Use zero-copy grpc protector to protect.
+      result = tsi_zero_copy_grpc_protector_protect(ep->zero_copy_protector,
+                                                    slices, &ep->output_buffer);
+    } else {
+      // Use frame protector to protect.
+      for (i = 0; i < slices->count; i++) {
+        grpc_slice plain = slices->slices[i];
+        uint8_t* message_bytes = GRPC_SLICE_START_PTR(plain);
+        size_t message_size = GRPC_SLICE_LENGTH(plain);
+        while (message_size > 0) {
+          size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+          size_t processed_message_size = message_size;
+          gpr_mu_lock(&ep->protector_mu);
+          result = tsi_frame_protector_protect(ep->protector, message_bytes,
+                                               &processed_message_size, cur,
+                                               &protected_buffer_size_to_send);
+          gpr_mu_unlock(&ep->protector_mu);
+          if (result != TSI_OK) {
+            gpr_log(GPR_ERROR, "Encryption error: %s",
+                    tsi_result_to_string(result));
+            break;
+          }
+          message_bytes += processed_message_size;
+          message_size -= processed_message_size;
+          cur += protected_buffer_size_to_send;
+
+          if (cur == end) {
+            flush_write_staging_buffer(ep, &cur, &end);
+          }
+        }
         if (result != TSI_OK) break;
-        cur += protected_buffer_size_to_send;
-        if (cur == end) {
-          flush_write_staging_buffer(ep, &cur, &end);
-        }
-      } while (still_pending_size > 0);
-      ep->write_mu.Lock();
-      if (cur != GRPC_SLICE_START_PTR(ep->write_staging_buffer)) {
-        grpc_slice_buffer_add(
-            &ep->output_buffer,
-            grpc_slice_split_head(
-                &ep->write_staging_buffer,
-                static_cast<size_t>(
-                    cur - GRPC_SLICE_START_PTR(ep->write_staging_buffer))));
       }
-      ep->write_mu.Unlock();
+      if (result == TSI_OK) {
+        size_t still_pending_size;
+        do {
+          size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+          gpr_mu_lock(&ep->protector_mu);
+          result = tsi_frame_protector_protect_flush(
+              ep->protector, cur, &protected_buffer_size_to_send,
+              &still_pending_size);
+          gpr_mu_unlock(&ep->protector_mu);
+          if (result != TSI_OK) break;
+          cur += protected_buffer_size_to_send;
+          if (cur == end) {
+            flush_write_staging_buffer(ep, &cur, &end);
+          }
+        } while (still_pending_size > 0);
+        if (cur != GRPC_SLICE_START_PTR(ep->write_staging_buffer)) {
+          grpc_slice_buffer_add(
+              &ep->output_buffer,
+              grpc_slice_split_head(
+                  &ep->write_staging_buffer,
+                  static_cast<size_t>(
+                      cur - GRPC_SLICE_START_PTR(ep->write_staging_buffer))));
+        }
+      }
     }
   }
 
