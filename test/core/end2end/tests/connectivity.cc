@@ -166,8 +166,6 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_completion_queue_shutdown(f.cq);
   grpc_completion_queue_destroy(f.cq);
 
-  /* shutdown_cq is not used in this test */
-  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
 
   cq_verifier_destroy(cqv);
@@ -230,9 +228,8 @@ static void test_watch_connectivity_cq_callback(
   grpc_channel_destroy(f.client);
   grpc_completion_queue_destroy(cq);
 
-  /* shutdown_cq and cq are not used in this test */
+  /* cq is not used in this test */
   grpc_completion_queue_destroy(f.cq);
-  grpc_completion_queue_destroy(f.shutdown_cq);
 
   config.tear_down_data(&f);
 }
