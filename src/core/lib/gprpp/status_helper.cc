@@ -355,7 +355,7 @@ std::string StatusToString(const absl::Status& status) {
 namespace internal {
 
 // This is the key for the message but it's only used for serialization.
-constexpr absl::string_view kMessageKey("<m>");
+constexpr char kMessageKey[] = "<m>";
 
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
@@ -367,9 +367,8 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   // this limitation.
   if (!status.message().empty()) {
     google_protobuf_Any* msg_any = google_rpc_Status_add_details(msg, arena);
-    google_protobuf_Any_set_type_url(
-        msg_any,
-        upb_StringView_FromDataAndSize(kMessageKey.data(), kMessageKey.size()));
+    google_protobuf_Any_set_type_url(msg_any,
+                                     upb_StringView_FromString(kMessageKey));
     google_protobuf_Any_set_value(
         msg_any, upb_StringView_FromDataAndSize(status.message().data(),
                                                 status.message().size()));
