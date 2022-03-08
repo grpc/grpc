@@ -202,19 +202,16 @@ class RlsServiceImpl : public RlsService {
     //            ::testing::Contains(
     //                ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
-    // EXPECT_EQ(request->target_type(), "grpc");
+    EXPECT_EQ(request->target_type(), "grpc");
     // See if we have a configured response for this request.
     ResponseData res;
     {
       grpc::internal::MutexLock lock(&mu_);
       auto it = responses_.find(*request);
       if (it == responses_.end()) {
-        gpr_log(GPR_INFO,
-                "RLS: no matching request, returning INTERNAL, donna for "
-                "testing always return something");
-        // unmatched_requests_.push_back(*request);
-        // return Status(StatusCode::INTERNAL, "no response entry");
-        it = responses_.begin();
+        gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
+        unmatched_requests_.push_back(*request);
+        return Status(StatusCode::INTERNAL, "no response entry");
       }
       res = it->second;
     }
@@ -237,6 +234,8 @@ class RlsServiceImpl : public RlsService {
   void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
                    grpc_core::Duration response_delay = grpc_core::Duration()) {
     grpc::internal::MutexLock lock(&mu_);
+    gpr_log(GPR_INFO, "donna set response and set request: %s",
+            request.DebugString().c_str());
     responses_[std::move(request)] = {std::move(response), response_delay};
   }
 
@@ -2075,7 +2074,9 @@ class BasicTest : public XdsEnd2endTest {
       const char* stale_header_data = "") {
     RouteLookupRequest request;
     request.set_target_type("grpc");
-    request.mutable_key_map()->insert(key.begin(), key.end());
+    if (!key.empty()) {
+      request.mutable_key_map()->insert(key.begin(), key.end());
+    }
     request.set_reason(reason);
     request.set_stale_header_data(stale_header_data);
     return request;
@@ -4822,11 +4823,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   // Prepare the RLS server.
-  balancer_->rls_service()->SetResponse(
-      BuildRlsRequest({{kTestKey, kTestValue}}),
-      // BuildRlsResponse({absl::StrCat("ipv4:127.0.0.1:",
-      // backends_[0]->port())}));
-      BuildRlsResponse({kNewClusterName}));
+  balancer_->rls_service()->SetResponse(BuildRlsRequest({}),
+                                        BuildRlsResponse({kNewClusterName}));
   // Change Route Configurations: use cluster specifier plugin.
   RouteLookupConfig route_lookup_config;
   route_lookup_config.set_lookup_service(
