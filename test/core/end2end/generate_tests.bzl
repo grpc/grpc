@@ -31,7 +31,8 @@ def _fixture_options(
         supports_write_buffering = True,
         client_channel = True,
         supports_msvc = True,
-        flaky_tests = []):
+        flaky_tests = [],
+        tags = []):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -48,6 +49,7 @@ def _fixture_options(
         supports_msvc = supports_msvc,
         _platforms = _platforms,
         flaky_tests = flaky_tests,
+        tags = tags,
     )
 
 # maps fixture name to whether it requires the security library
@@ -110,6 +112,7 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+        tags = ["requires-net:ipv4", "requires-net:loopback"],
     ),
     "h2_local_ipv6": _fixture_options(
         secure = True,
@@ -422,7 +425,7 @@ def grpc_end2end_tests():
                 "//:gpr",
                 "//test/core/compression:args_utils",
             ],
-            tags = _platform_support_tags(fopt),
+            tags = _platform_support_tags(fopt) + fopt.tags,
         )
 
         for t, topt in END2END_TESTS.items():
@@ -441,7 +444,7 @@ def grpc_end2end_tests():
                     "//:gpr",
                     "//test/core/compression:args_utils",
                 ],
-                tags = _platform_support_tags(fopt) + [
+                tags = _platform_support_tags(fopt) + fopt.tags + [
                     "no_extract",  # do not run end2end tests on CMake
                     "no_test_ios",
                 ],
