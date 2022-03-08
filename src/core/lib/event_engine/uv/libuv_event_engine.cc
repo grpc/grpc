@@ -144,6 +144,9 @@ LibuvEventEngine::LibuvEventEngine() {
 void LibuvEventEngine::DestroyInLibuvThread(
     grpc_event_engine::experimental::Promise<bool>& destruction_done) {
   GPR_ASSERT(IsWorkerThread());
+  // Set the shutdown bit, and ensure it was not already shut down.
+  GPR_ASSERT(GPR_LIKELY(shut_down_.exchange(true, std::memory_order_relaxed) ==
+                        false));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG,
             "LibuvEventEngine@%p shutting down, unreferencing Kicker now",
@@ -333,6 +336,10 @@ void LibuvEventEngine::Run(std::function<void()> fn) {
 
 EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
                                                 std::function<void()> fn) {
+  if (shut_down_.load(std::memory_order_relaxed)) {
+    gpr_log(GPR_ERROR, "Invalid usage: engine is already shutting down.");
+    GPR_ASSERT(false && "Crashing to avoid UB");
+  }
   auto task = absl::make_unique<LibuvTask>(this, std::move(fn));
   // To avoid a thread race if task erasure happens before this method returns.
   absl::Time now = absl::Now();
@@ -358,6 +365,10 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
 }
 
 bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
+  if (shut_down_.load(std::memory_order_relaxed)) {
+    gpr_log(GPR_ERROR, "Invalid usage: engine is already shutting down.");
+    GPR_ASSERT(false && "Crashing to avoid UB");
+  }
   Promise<bool> will_be_cancelled;
   RunInLibuvThread([&handle, &will_be_cancelled](LibuvEventEngine* engine) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {

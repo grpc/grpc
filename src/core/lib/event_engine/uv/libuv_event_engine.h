@@ -231,6 +231,9 @@ class LibuvEventEngine final : public EventEngine {
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
   gpr_thd_id worker_thread_id_;
+
+  // Reject new work if the engine is shutting down
+  std::atomic<bool> shut_down_{false};
 };
 
 }  // namespace experimental
