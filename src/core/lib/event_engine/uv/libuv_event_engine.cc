@@ -104,7 +104,7 @@ void LibuvEventEngine::LibuvTask::Erase(uv_handle_t* uv_handle) {
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   LibuvEventEngine* engine =
       reinterpret_cast<LibuvEventEngine*>(timer->loop->data);
-  engine->task_set_.erase(task->GetHandle());
+  engine->uv_state_->task_set.erase(task->GetHandle());
 }
 
 void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
@@ -116,7 +116,7 @@ void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "LibuvTask@%p, executing", task->ToString().c_str());
   }
-  engine->task_set_.erase(task->GetHandle());
+  engine->uv_state_->task_set.erase(task->GetHandle());
   fn();
 }
 
@@ -157,9 +157,9 @@ void LibuvEventEngine::DestroyInLibuvThread(
   uv_unref(reinterpret_cast<uv_handle_t*>(&uv_state_->kicker));
   uv_close(reinterpret_cast<uv_handle_t*>(&uv_state_->kicker), nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_set_.size=%zu", this,
-            task_set_.size());
-    for (const LibuvTask::Handle& handle : task_set_) {
+    gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::task_set.size=%zu", this,
+            uv_state_->task_set.size());
+    for (const LibuvTask::Handle& handle : uv_state_->task_set) {
       gpr_log(GPR_DEBUG, " - %s", handle.Task()->ToString().c_str());
     }
     // This is an unstable API from libuv that we use for its intended
@@ -176,11 +176,7 @@ void LibuvEventEngine::DestroyInLibuvThread(
         },
         nullptr);
   }
-  RunInLibuvThread([&destruction_done](LibuvEventEngine* /* engine */) {
-    // ensure all other closures are executed in this loop before proceeding to
-    // destruction
-    destruction_done.Notify(true);
-  });
+  destruction_done.Notify(true);
 }
 
 LibuvEventEngine::~LibuvEventEngine() {
@@ -198,7 +194,6 @@ LibuvEventEngine::~LibuvEventEngine() {
     });
   }
   destruction_done.Wait();
-  GPR_ASSERT(GPR_LIKELY(task_set_.empty()));
 }
 
 // Since libuv is single-threaded and not thread-safe, we will be running all
@@ -247,7 +242,7 @@ void LibuvEventEngine::Kicker(UvState* uv_state) {
         f(this);
       } else {
         auto weak_task = node->task.get();
-        task_set_.emplace(std::move(node->task));
+        uv_state_->task_set.emplace(std::move(node->task));
         weak_task->Start(this, node->timeout);
         delete node;
       }
@@ -278,7 +273,7 @@ void LibuvEventEngine::RunThread() {
     LibuvEventEngine* engine =
         reinterpret_cast<LibuvEventEngine*>(async->loop->data);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::kicker_(%p) initialized", engine,
+      gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::kicker(%p) initialized", engine,
               async);
     }
     engine->Kicker(engine->uv_state_);
@@ -322,6 +317,7 @@ void LibuvEventEngine::RunThread() {
     gpr_log(GPR_DEBUG, "LibuvEventEngine@%p::Thread, shutting down", this);
   }
   GPR_ASSERT(GPR_LIKELY(uv_loop_close(&uv_state->loop) != UV_EBUSY));
+  GPR_ASSERT(GPR_LIKELY(uv_state->task_set.empty()));
   delete uv_state;
 }
 
@@ -362,7 +358,7 @@ bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
       gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, attempting %s", engine,
               LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
     }
-    if (!engine->task_set_.contains(handle)) {
+    if (!engine->uv_state_->task_set.contains(handle)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, %s not found", engine,
                 LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());

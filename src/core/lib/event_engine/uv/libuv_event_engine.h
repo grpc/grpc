@@ -197,6 +197,9 @@ class LibuvEventEngine final : public EventEngine {
     // itself up.
     Promise<bool> ready;
     grpc_core::MultiProducerSingleConsumerQueue scheduling_request_queue;
+    absl::flat_hash_set<LibuvTask::Handle, LibuvTask::Handle::Comparator::Hash,
+                        LibuvTask::Handle::Comparator::Eq>
+        task_set;
   };
 
   // The main logic in the uv event loop
@@ -224,9 +227,6 @@ class LibuvEventEngine final : public EventEngine {
   // simple counter mechanism, with the assumption that if it ever rolls over,
   // the colliding tasks will have long been completed.
   std::atomic<intptr_t> task_key_;
-  absl::flat_hash_set<LibuvTask::Handle, LibuvTask::Handle::Comparator::Hash,
-                      LibuvTask::Handle::Comparator::Eq>
-      task_set_;
 
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
