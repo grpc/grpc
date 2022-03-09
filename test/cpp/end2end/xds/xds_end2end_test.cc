@@ -4735,8 +4735,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   header->set_key(kTestKey);
   auto* key_name = header->add_names();
   *key_name = kTestKey1;
+  auto* key_name2 = header->add_names();
+  *key_name2 = "key2";
   auto* extra_keys = key_builder->mutable_extra_keys();
-  // extra_keys->set_host(kHostKey);
+  extra_keys->set_host(kHostKey);
   extra_keys->set_service(kServiceKey);
   extra_keys->set_method(kMethodKey);
   route_lookup_config.set_lookup_service(
@@ -4751,9 +4753,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForAllBackends(1, 2, WaitForBackendOptions(),
-                     RpcOptions().set_metadata({{"key1", kTestValue}}));
+                     RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
   CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+                 RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");

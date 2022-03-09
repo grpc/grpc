@@ -111,14 +111,13 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     }
     builder_result["headers"] = std::move(keybuilder_headers_array_result);
     // parse constant keys
-    /*
     Json::Object const_keys_map_result;
     size_t const_key_it = kUpb_Map_Begin;
     while (true) {
       const auto* const_key_entry =
           grpc_lookup_v1_GrpcKeyBuilder_constant_keys_next(keybuilders[i],
                                                            &const_key_it);
-      if (const_key_entry != nullptr) break;
+      if (const_key_entry == nullptr) break;
       Json::Object const_key_entry_result;
       std::string key = UpbStringToStdString(
           grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_key(const_key_entry));
@@ -129,7 +128,6 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
       }
     }
     builder_result["const_keys"] = std::move(const_keys_map_result);
-    */
     keybuilders_array_result.emplace_back(std::move(builder_result));
   }
   result["grpcKeybuilders"] = std::move(keybuilders_array_result);
