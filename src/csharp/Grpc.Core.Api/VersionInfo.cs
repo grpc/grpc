@@ -38,6 +38,6 @@ namespace Grpc.Core
         /// <summary>
         /// Current version of gRPC C#
         /// </summary>
-        public const string CurrentVersion = "2.45.0-dev";
+        public const string CurrentVersion = "2.45.0-pre1";
     }
 }

@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gravity
   protobuf_version: 3.19.4
-  version: 1.45.0-dev
+  version: 1.45.0-pre1
 targets:
 - name: check_epollexclusive
   build: tool
