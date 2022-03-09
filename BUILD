@@ -155,7 +155,7 @@ g_stands_for = "gravity"  # @unused
 
 core_version = "23.0.0"  # @unused
 
-version = "1.45.0-dev"  # @unused
+version = "1.45.0-pre1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
