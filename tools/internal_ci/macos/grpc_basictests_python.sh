@@ -16,4 +16,5 @@
 set -ex
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=1
 $(dirname $0)/grpc_run_tests_matrix.sh
