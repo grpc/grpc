@@ -22,5 +22,5 @@ cd $(dirname $0)/../../..
 # TODO(jtattermusch): avoid needing to install these pip packages each time
 time python3 -m pip install --user -r tools/internal_ci/helper_scripts/requirements.linux_perf.txt
 
-tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/bloat/bloat_diff.py \
+tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/memory/memory_diff.py \
   -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"
