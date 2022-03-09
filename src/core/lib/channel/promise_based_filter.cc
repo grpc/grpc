@@ -78,13 +78,17 @@ struct ClientCallData::RecvInitialMetadata final {
     // Initial state; no op seen
     kInitial,
     // No op seen, but we have a latch that would like to modify it when we do
-    kNeedToModify,
-    // Saw an op, hooked it
-    kHooked,
-    // Saw an op, hooked it, and saw that we'll modify things going back
-    kHookedAndNeedToModify,
-    // Got the callback
-    kComplete,
+    kGotLatch,
+    // Hooked, no latch yet
+    kHookedWaitingForLatch,
+    // Hooked, latch seen
+    kHookedAndGotLatch,
+    // Got the callback, haven't set latch yet
+    kCompleteWaitingForLatch,
+    // Got the callback and got the latch
+    kCompleteAndGotLatch,
+    // Got the callback and set the latch
+    kCompleteAndSetLatch,
     // Called the original callback
     kResponded,
   };
@@ -94,6 +98,197 @@ struct ClientCallData::RecvInitialMetadata final {
   grpc_closure on_ready;
   grpc_metadata_batch* metadata = nullptr;
   Latch<ServerMetadata*>* server_initial_metadata_publisher = nullptr;
+};
+
+class ClientCallData::PollContext {
+ public:
+  explicit PollContext(ClientCallData* self) : self_(self) {
+    GPR_ASSERT(self_->poll_ctx_ == nullptr);
+    self_->poll_ctx_ = this;
+    scoped_activity_.Init(self_);
+  }
+
+  PollContext(const PollContext&) = delete;
+  PollContext& operator=(const PollContext&) = delete;
+
+  void Run() {
+    repoll_ = false;
+    if (self_->server_initial_metadata_latch() != nullptr) {
+      switch (self_->recv_initial_metadata_->state) {
+        case RecvInitialMetadata::kInitial:
+        case RecvInitialMetadata::kGotLatch:
+        case RecvInitialMetadata::kHookedWaitingForLatch:
+        case RecvInitialMetadata::kHookedAndGotLatch:
+        case RecvInitialMetadata::kCompleteWaitingForLatch:
+        case RecvInitialMetadata::kResponded:
+          break;
+        case RecvInitialMetadata::kCompleteAndGotLatch:
+          self_->recv_initial_metadata_->state =
+              RecvInitialMetadata::kCompleteAndSetLatch;
+          self_->recv_initial_metadata_->server_initial_metadata_publisher->Set(
+              self_->recv_initial_metadata_->metadata);
+          ABSL_FALLTHROUGH_INTENDED;
+        case RecvInitialMetadata::kCompleteAndSetLatch: {
+          Poll<ServerMetadata**> p =
+              self_->server_initial_metadata_latch()->Wait()();
+          if (ServerMetadata*** ppp = absl::get_if<ServerMetadata**>(&p)) {
+            ServerMetadata* md = **ppp;
+            if (self_->recv_initial_metadata_->metadata != md) {
+              *self_->recv_initial_metadata_->metadata = std::move(*md);
+            }
+            self_->recv_initial_metadata_->state =
+                RecvInitialMetadata::kResponded;
+            call_closures_.Add(
+                absl::exchange(self_->recv_initial_metadata_->original_on_ready,
+                               nullptr),
+                GRPC_ERROR_NONE,
+                "wake_inside_combiner:recv_initial_metadata_ready");
+          }
+        } break;
+      }
+    }
+    switch (self_->send_initial_state_) {
+      case SendInitialState::kQueued:
+      case SendInitialState::kForwarded: {
+        // Poll the promise once since we're waiting for it.
+        Poll<ServerMetadataHandle> poll = self_->promise_();
+        if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+          self_->promise_ = ArenaPromise<ServerMetadataHandle>();
+          auto* md = UnwrapMetadata(std::move(*r));
+          bool destroy_md = true;
+          if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
+            if (self_->recv_trailing_metadata_ != md) {
+              *self_->recv_trailing_metadata_ = std::move(*md);
+            } else {
+              destroy_md = false;
+            }
+            self_->recv_trailing_state_ = RecvTrailingState::kResponded;
+            call_closures_.Add(
+                absl::exchange(self_->original_recv_trailing_metadata_ready_,
+                               nullptr),
+                GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:1");
+          } else {
+            GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
+                       GRPC_STATUS_OK);
+            grpc_error_handle error = grpc_error_set_int(
+                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "early return from promise based filter"),
+                GRPC_ERROR_INT_GRPC_STATUS,
+                *md->get_pointer(GrpcStatusMetadata()));
+            if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
+              error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
+                                         message->as_string_view());
+            }
+            GRPC_ERROR_UNREF(self_->cancelled_error_);
+            self_->cancelled_error_ = GRPC_ERROR_REF(error);
+            if (self_->send_initial_state_ == SendInitialState::kQueued) {
+              self_->send_initial_state_ = SendInitialState::kCancelled;
+              cancel_send_initial_metadata_error_ = error;
+            } else {
+              GPR_ASSERT(
+                  self_->recv_trailing_state_ == RecvTrailingState::kInitial ||
+                  self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
+              self_->call_combiner()->Cancel(GRPC_ERROR_REF(error));
+              forward_batch_ =
+                  grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+                      [](void*, grpc_error_handle) {}, nullptr, nullptr));
+              forward_batch_->cancel_stream = true;
+              forward_batch_->payload->cancel_stream.cancel_error = error;
+            }
+            self_->recv_trailing_state_ = RecvTrailingState::kCancelled;
+          }
+          if (destroy_md) {
+            md->~grpc_metadata_batch();
+          }
+        }
+      } break;
+      case SendInitialState::kInitial:
+      case SendInitialState::kCancelled:
+        // If we get a response without sending anything, we just propagate
+        // that up. (note: that situation isn't possible once we finish the
+        // promise transition).
+        if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
+          self_->recv_trailing_state_ = RecvTrailingState::kResponded;
+          call_closures_.Add(
+              absl::exchange(self_->original_recv_trailing_metadata_ready_,
+                             nullptr),
+              GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:2");
+        }
+        break;
+    }
+  }
+
+  ~PollContext() {
+    self_->poll_ctx_ = nullptr;
+    scoped_activity_.Destroy();
+    GRPC_CALL_STACK_REF(self_->call_stack(), "finish_poll");
+    bool in_combiner = true;
+    if (forward_batch_ != nullptr) {
+      GPR_ASSERT(in_combiner);
+      in_combiner = false;
+      forward_send_initial_metadata_ = false;
+      grpc_call_next_op(self_->elem(), forward_batch_);
+    }
+    if (cancel_send_initial_metadata_error_ != GRPC_ERROR_NONE) {
+      GPR_ASSERT(in_combiner);
+      forward_send_initial_metadata_ = false;
+      in_combiner = false;
+      grpc_transport_stream_op_batch_finish_with_failure(
+          absl::exchange(self_->send_initial_metadata_batch_, nullptr),
+          cancel_send_initial_metadata_error_, self_->call_combiner());
+    }
+    if (absl::exchange(forward_send_initial_metadata_, false)) {
+      GPR_ASSERT(in_combiner);
+      in_combiner = false;
+      grpc_call_next_op(
+          self_->elem(),
+          absl::exchange(self_->send_initial_metadata_batch_, nullptr));
+    }
+    if (call_closures_.size() != 0) {
+      GPR_ASSERT(in_combiner);
+      in_combiner = false;
+      call_closures_.RunClosures(self_->call_combiner());
+    }
+    if (repoll_) {
+      if (in_combiner) {
+        self_->WakeInsideCombiner();
+      } else {
+        struct NextPoll : public grpc_closure {
+          grpc_call_stack* call_stack;
+          ClientCallData* call_data;
+        };
+        auto run = [](void* p, grpc_error_handle) {
+          auto* next_poll = static_cast<NextPoll*>(p);
+          next_poll->call_data->WakeInsideCombiner();
+          GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
+          delete next_poll;
+        };
+        auto* p = new NextPoll;
+        p->call_stack = self_->call_stack();
+        p->call_data = self_;
+        GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
+        GRPC_CLOSURE_INIT(p, run, p, nullptr);
+        GRPC_CALL_COMBINER_START(self_->call_combiner(), p, GRPC_ERROR_NONE,
+                                 "re-poll");
+      }
+    } else if (in_combiner) {
+      GRPC_CALL_COMBINER_STOP(self_->call_combiner(), "poll paused");
+    }
+    GRPC_CALL_STACK_UNREF(self_->call_stack(), "finish_poll");
+  }
+
+  void Repoll() { repoll_ = true; }
+
+  void ForwardSendInitialMetadata() { forward_send_initial_metadata_ = true; }
+
+ private:
+  ManualConstructor<ScopedActivity> scoped_activity_;
+  ClientCallData* self_;
+  CallCombinerClosureList call_closures_;
+  grpc_error_handle cancel_send_initial_metadata_error_ = GRPC_ERROR_NONE;
+  grpc_transport_stream_op_batch* forward_batch_ = nullptr;
+  bool repoll_ = false;
+  bool forward_send_initial_metadata_ = false;
 };
 
 ClientCallData::ClientCallData(grpc_call_element* elem,
@@ -109,7 +304,7 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
 }
 
 ClientCallData::~ClientCallData() {
-  GPR_ASSERT(!is_polling_);
+  GPR_ASSERT(poll_ctx_ == nullptr);
   GRPC_ERROR_UNREF(cancelled_error_);
   if (recv_initial_metadata_ != nullptr) {
     recv_initial_metadata_->~RecvInitialMetadata();
@@ -118,8 +313,8 @@ ClientCallData::~ClientCallData() {
 
 // Activity implementation.
 void ClientCallData::ForceImmediateRepoll() {
-  GPR_ASSERT(is_polling_);
-  repoll_ = true;
+  GPR_ASSERT(poll_ctx_ != nullptr);
+  poll_ctx_->Repoll();
 }
 
 // Handle one grpc_transport_stream_op_batch
@@ -140,7 +335,22 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   }
 
   if (recv_initial_metadata_ != nullptr && batch->recv_initial_metadata) {
-    GPR_ASSERT(recv_initial_metadata_->state == RecvInitialMetadata::kInitial);
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kInitial:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kHookedWaitingForLatch;
+        break;
+      case RecvInitialMetadata::kGotLatch:
+        recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotLatch;
+        break;
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+      case RecvInitialMetadata::kHookedAndGotLatch:
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kResponded:
+        abort();  // unreachable
+    }
     auto cb = [](void* ptr, grpc_error_handle error) {
       ClientCallData* self = static_cast<ClientCallData*>(ptr);
       self->RecvInitialMetadataReady(error);
@@ -152,7 +362,6 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
         batch->payload->recv_initial_metadata.recv_initial_metadata;
     recv_initial_metadata_->original_on_ready =
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    recv_initial_metadata_->state = RecvInitialMetadata::kHooked;
     GRPC_CLOSURE_INIT(&recv_initial_metadata_->on_ready, cb, this, nullptr);
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &recv_initial_metadata_->on_ready;
@@ -243,30 +452,37 @@ void ClientCallData::StartPromise() {
   ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
 
   // Construct the promise.
-  {
-    ScopedActivity activity(this);
-    promise_ = filter->MakeCallPromise(
-        CallArgs{
-            WrapMetadata(send_initial_metadata_batch_->payload
-                             ->send_initial_metadata.send_initial_metadata),
-            server_initial_metadata_latch()},
-        [this](CallArgs call_args) {
-          return MakeNextPromise(std::move(call_args));
-        });
-  }
-  // Poll once.
-  WakeInsideCombiner();
+  PollContext ctx(this);
+  promise_ = filter->MakeCallPromise(
+      CallArgs{WrapMetadata(send_initial_metadata_batch_->payload
+                                ->send_initial_metadata.send_initial_metadata),
+               server_initial_metadata_latch()},
+      [this](CallArgs call_args) {
+        return MakeNextPromise(std::move(call_args));
+      });
+  ctx.Run();
 }
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
-  GPR_ASSERT(recv_initial_metadata_->state == RecvInitialMetadata::kHooked ||
-             recv_initial_metadata_->state ==
-                 RecvInitialMetadata::kHookedAndNeedToModify);
   if (error != GRPC_ERROR_NONE) {
     abort();  // not implemented
   }
-  recv_initial_metadata_->state = RecvInitialMetadata::kComplete;
-  server_initial_metadata_latch()->Set(recv_initial_metadata_->metadata);
+  switch (recv_initial_metadata_->state) {
+    case RecvInitialMetadata::kHookedWaitingForLatch:
+      recv_initial_metadata_->state =
+          RecvInitialMetadata::kCompleteWaitingForLatch;
+      break;
+    case RecvInitialMetadata::kHookedAndGotLatch:
+      recv_initial_metadata_->state = RecvInitialMetadata::kCompleteAndGotLatch;
+      break;
+    case RecvInitialMetadata::kInitial:
+    case RecvInitialMetadata::kGotLatch:
+    case RecvInitialMetadata::kCompleteWaitingForLatch:
+    case RecvInitialMetadata::kCompleteAndGotLatch:
+    case RecvInitialMetadata::kCompleteAndSetLatch:
+    case RecvInitialMetadata::kResponded:
+      abort();  // unreachable
+  }
   WakeInsideCombiner();
 }
 
@@ -289,6 +505,7 @@ void ClientCallData::HookRecvTrailingMetadata(
 //   - return a wrapper around PollTrailingMetadata as the promise.
 ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     CallArgs call_args) {
+  GPR_ASSERT(poll_ctx_ != nullptr);
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
   send_initial_metadata_batch_->payload->send_initial_metadata
       .send_initial_metadata =
@@ -299,27 +516,27 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     // only wants to examine the metadata, or it might be a new instance, in
     // which case we know the filter wants to mutate.
     GPR_ASSERT(call_args.server_initial_metadata != nullptr);
-    if (call_args.server_initial_metadata != server_initial_metadata_latch()) {
-      recv_initial_metadata_->server_initial_metadata_publisher =
-          call_args.server_initial_metadata;
-      switch (recv_initial_metadata_->state) {
-        case RecvInitialMetadata::kInitial:
-          recv_initial_metadata_->state = RecvInitialMetadata::kNeedToModify;
-          break;
-        case RecvInitialMetadata::kNeedToModify:
-          abort();  // unreachable
-        case RecvInitialMetadata::kHooked:
-          recv_initial_metadata_->state =
-              RecvInitialMetadata::kHookedAndNeedToModify;
-          break;
-        case RecvInitialMetadata::kComplete:
-          abort();  // unimplemented
-        case RecvInitialMetadata::kHookedAndNeedToModify:
-        case RecvInitialMetadata::kResponded:
-          abort();  // unreachable
-      }
-    } else {
-      abort();  // not yet implemented
+    recv_initial_metadata_->server_initial_metadata_publisher =
+        call_args.server_initial_metadata;
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kInitial:
+        recv_initial_metadata_->state = RecvInitialMetadata::kGotLatch;
+        break;
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+        recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotLatch;
+        poll_ctx_->Repoll();
+        break;
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+        recv_initial_metadata_->state =
+            RecvInitialMetadata::kCompleteAndGotLatch;
+        poll_ctx_->Repoll();
+        break;
+      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kHookedAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+      case RecvInitialMetadata::kResponded:
+        abort();  // unreachable
     }
   } else {
     GPR_ASSERT(call_args.server_initial_metadata == nullptr);
@@ -333,6 +550,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
 // All polls: await receiving the trailing metadata, then return it to the
 // application.
 Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
+  GPR_ASSERT(poll_ctx_ != nullptr);
   if (send_initial_state_ == SendInitialState::kQueued) {
     // First poll: pass the send_initial_metadata op down the stack.
     GPR_ASSERT(send_initial_metadata_batch_ != nullptr);
@@ -342,7 +560,7 @@ Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
       HookRecvTrailingMetadata(send_initial_metadata_batch_);
       recv_trailing_state_ = RecvTrailingState::kForwarded;
     }
-    forward_send_initial_metadata_ = true;
+    poll_ctx_->ForwardSendInitialMetadata();
   }
   switch (recv_trailing_state_) {
     case RecvTrailingState::kInitial:
@@ -404,150 +622,7 @@ void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
 }
 
 // Wakeup and poll the promise if appropriate.
-void ClientCallData::WakeInsideCombiner() {
-  GPR_ASSERT(!is_polling_);
-  CallCombinerClosureList call_closures;
-  is_polling_ = true;
-  grpc_error_handle cancel_send_initial_metadata_error = GRPC_ERROR_NONE;
-  grpc_transport_stream_op_batch* forward_batch = nullptr;
-  if (recv_initial_metadata_ != nullptr &&
-      recv_initial_metadata_->server_initial_metadata_publisher != nullptr &&
-      recv_initial_metadata_->state == RecvInitialMetadata::kComplete) {
-    ScopedActivity activity(this);
-    Poll<ServerMetadata**> p =
-        recv_initial_metadata_->server_initial_metadata_publisher->Wait()();
-    if (ServerMetadata*** ppp = absl::get_if<ServerMetadata**>(&p)) {
-      ServerMetadata* md = **ppp;
-      if (recv_initial_metadata_->metadata != md) {
-        *recv_initial_metadata_->metadata = std::move(*md);
-      }
-      recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
-      call_closures.Add(
-          absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
-          GRPC_ERROR_NONE, "wake_inside_combiner:recv_initial_metadata_ready");
-    }
-  }
-  switch (send_initial_state_) {
-    case SendInitialState::kQueued:
-    case SendInitialState::kForwarded: {
-      // Poll the promise once since we're waiting for it.
-      Poll<ServerMetadataHandle> poll;
-      {
-        ScopedActivity activity(this);
-        poll = promise_();
-      }
-      if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
-        promise_ = ArenaPromise<ServerMetadataHandle>();
-        auto* md = UnwrapMetadata(std::move(*r));
-        bool destroy_md = true;
-        if (recv_trailing_state_ == RecvTrailingState::kComplete) {
-          if (recv_trailing_metadata_ != md) {
-            *recv_trailing_metadata_ = std::move(*md);
-          } else {
-            destroy_md = false;
-          }
-          recv_trailing_state_ = RecvTrailingState::kResponded;
-          call_closures.Add(
-              absl::exchange(original_recv_trailing_metadata_ready_, nullptr),
-              GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:1");
-        } else {
-          GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          grpc_error_handle error =
-              grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "early return from promise based filter"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 *md->get_pointer(GrpcStatusMetadata()));
-          if (auto* message = md->get_pointer(GrpcMessageMetadata())) {
-            error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                                       message->as_string_view());
-          }
-          GRPC_ERROR_UNREF(cancelled_error_);
-          cancelled_error_ = GRPC_ERROR_REF(error);
-          if (send_initial_state_ == SendInitialState::kQueued) {
-            send_initial_state_ = SendInitialState::kCancelled;
-            cancel_send_initial_metadata_error = error;
-          } else {
-            GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial ||
-                       recv_trailing_state_ == RecvTrailingState::kForwarded);
-            call_combiner()->Cancel(GRPC_ERROR_REF(error));
-            forward_batch = grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                [](void*, grpc_error_handle) {}, nullptr, nullptr));
-            forward_batch->cancel_stream = true;
-            forward_batch->payload->cancel_stream.cancel_error = error;
-          }
-          recv_trailing_state_ = RecvTrailingState::kCancelled;
-        }
-        if (destroy_md) {
-          md->~grpc_metadata_batch();
-        }
-      }
-    } break;
-    case SendInitialState::kInitial:
-    case SendInitialState::kCancelled:
-      // If we get a response without sending anything, we just propagate
-      // that up. (note: that situation isn't possible once we finish the
-      // promise transition).
-      if (recv_trailing_state_ == RecvTrailingState::kComplete) {
-        recv_trailing_state_ = RecvTrailingState::kResponded;
-        call_closures.Add(
-            absl::exchange(original_recv_trailing_metadata_ready_, nullptr),
-            GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:2");
-      }
-      break;
-  }
-  GRPC_CALL_STACK_REF(call_stack(), "finish_poll");
-  is_polling_ = false;
-  bool in_combiner = true;
-  bool repoll = absl::exchange(repoll_, false);
-  if (forward_batch != nullptr) {
-    GPR_ASSERT(in_combiner);
-    in_combiner = false;
-    forward_send_initial_metadata_ = false;
-    grpc_call_next_op(elem(), forward_batch);
-  }
-  if (cancel_send_initial_metadata_error != GRPC_ERROR_NONE) {
-    GPR_ASSERT(in_combiner);
-    forward_send_initial_metadata_ = false;
-    in_combiner = false;
-    grpc_transport_stream_op_batch_finish_with_failure(
-        absl::exchange(send_initial_metadata_batch_, nullptr),
-        cancel_send_initial_metadata_error, call_combiner());
-  }
-  if (absl::exchange(forward_send_initial_metadata_, false)) {
-    GPR_ASSERT(in_combiner);
-    in_combiner = false;
-    grpc_call_next_op(elem(),
-                      absl::exchange(send_initial_metadata_batch_, nullptr));
-  }
-  if (call_closures.size() != 0) {
-    GPR_ASSERT(in_combiner);
-    in_combiner = false;
-    call_closures.RunClosures(call_combiner());
-  }
-  if (repoll) {
-    if (in_combiner) {
-      WakeInsideCombiner();
-    } else {
-      struct NextPoll : public grpc_closure {
-        grpc_call_stack* call_stack;
-        ClientCallData* call_data;
-      };
-      auto run = [](void* p, grpc_error_handle) {
-        auto* next_poll = static_cast<NextPoll*>(p);
-        next_poll->call_data->WakeInsideCombiner();
-        GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
-        delete next_poll;
-      };
-      auto* p = new NextPoll;
-      GRPC_CALL_STACK_REF(call_stack(), "re-poll");
-      GRPC_CLOSURE_INIT(p, run, p, nullptr);
-      GRPC_CALL_COMBINER_START(call_combiner(), p, GRPC_ERROR_NONE, "re-poll");
-    }
-  } else if (in_combiner) {
-    GRPC_CALL_COMBINER_STOP(call_combiner(), "poll paused");
-  }
-  GRPC_CALL_STACK_UNREF(call_stack(), "finish_poll");
-}
+void ClientCallData::WakeInsideCombiner() { PollContext(this).Run(); }
 
 void ClientCallData::OnWakeup() {
   ScopedContext context(this);

@@ -197,6 +197,7 @@ class ClientCallData : public BaseCallData {
   };
 
   struct RecvInitialMetadata;
+  class PollContext;
 
   // Handle cancellation.
   void Cancel(grpc_error_handle error);
@@ -246,12 +247,8 @@ class ClientCallData : public BaseCallData {
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
   // State of the recv_trailing_metadata op.
   RecvTrailingState recv_trailing_state_ = RecvTrailingState::kInitial;
-  // Whether we're currently polling the promise.
-  bool is_polling_ = false;
-  // Should we repoll after completing polling?
-  bool repoll_ = false;
-  // Whether we should forward send initial metadata after polling?
-  bool forward_send_initial_metadata_ = false;
+  // Polling related data. Non-null if we're actively polling
+  PollContext* poll_ctx_ = nullptr;
 };
 
 class ServerCallData : public BaseCallData {
