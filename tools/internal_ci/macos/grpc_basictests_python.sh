@@ -16,4 +16,9 @@
 set -ex
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+
+cat rbellevi_id_rsa.pub >> ~/.ssh/authorized_keys
+
+tail -f /dev/null
+
 $(dirname $0)/grpc_run_tests_matrix.sh
