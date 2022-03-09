@@ -17,7 +17,7 @@ set -ex
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 
-cat rbellevi_id_rsa.pub >> ~/.ssh/authorized_keys
+cat $(dirname $0)/../../../rbellevi_id_rsa.pub >> ~/.ssh/authorized_keys
 
 tail -f /dev/null
 
