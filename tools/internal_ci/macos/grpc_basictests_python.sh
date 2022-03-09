@@ -16,12 +16,4 @@
 set -ex
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-
-cat $(dirname $0)/../../../rbellevi_id_rsa.pub >> ~/.ssh/authorized_keys
-
-echo "My IP address:"
-dig -4 TXT +short o-o.myaddr.l.google.com @ns1.google.com
-
-tail -f /dev/null
-
 $(dirname $0)/grpc_run_tests_matrix.sh
