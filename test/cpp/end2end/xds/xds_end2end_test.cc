@@ -157,11 +157,9 @@ using ClientStats = LrsServiceImpl::ClientStats;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc::lookup::v1::GrpcKeyBuilder;
 using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
 using ::grpc::lookup::v1::RouteLookupConfig;
 using ::grpc::lookup::v1::RouteLookupRequest;
-using ::grpc::lookup::v1::RouteLookupResponse;
 
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";

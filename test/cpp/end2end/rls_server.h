@@ -19,9 +19,6 @@
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "test/cpp/end2end/counted_service.h"
 
-using ::grpc::lookup::v1::RouteLookupRequest;
-using ::grpc::lookup::v1::RouteLookupResponse;
-
 namespace grpc {
 namespace testing {
 
@@ -30,26 +27,28 @@ using RlsService =
 
 class RlsServiceImpl : public RlsService {
  public:
-  grpc::Status RouteLookup(grpc::ServerContext* context,
-                           const RouteLookupRequest* request,
-                           RouteLookupResponse* response) override;
+  grpc::Status RouteLookup(
+      grpc::ServerContext* context,
+      const ::grpc::lookup::v1::RouteLookupRequest* request,
+      ::grpc::lookup::v1::RouteLookupResponse* response) override;
 
   void Start() {}
 
   void Shutdown() {}
 
-  void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
+  void SetResponse(::grpc::lookup::v1::RouteLookupRequest request,
+                   ::grpc::lookup::v1::RouteLookupResponse response,
                    grpc_core::Duration response_delay = grpc_core::Duration());
 
-  void RemoveResponse(const RouteLookupRequest& request);
+  void RemoveResponse(const ::grpc::lookup::v1::RouteLookupRequest& request);
 
-  std::vector<RouteLookupRequest> GetUnmatchedRequests();
+  std::vector<::grpc::lookup::v1::RouteLookupRequest> GetUnmatchedRequests();
 
  private:
   // Sorting thunk for RouteLookupRequest.
   struct RlsRequestLessThan {
-    bool operator()(const RouteLookupRequest& req1,
-                    const RouteLookupRequest& req2) const {
+    bool operator()(const ::grpc::lookup::v1::RouteLookupRequest& req1,
+                    const ::grpc::lookup::v1::RouteLookupRequest& req2) const {
       std::map<absl::string_view, absl::string_view> key_map1(
           req1.key_map().begin(), req1.key_map().end());
       std::map<absl::string_view, absl::string_view> key_map2(
@@ -62,21 +61,24 @@ class RlsServiceImpl : public RlsService {
   };
 
   struct ResponseData {
-    RouteLookupResponse response;
+    ::grpc::lookup::v1::RouteLookupResponse response;
     grpc_core::Duration response_delay;
   };
 
   grpc::internal::Mutex mu_;
-  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan> responses_
+  std::map<::grpc::lookup::v1::RouteLookupRequest, ResponseData,
+           RlsRequestLessThan>
+      responses_ ABSL_GUARDED_BY(&mu_);
+  std::vector<::grpc::lookup::v1::RouteLookupRequest> unmatched_requests_
       ABSL_GUARDED_BY(&mu_);
-  std::vector<RouteLookupRequest> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
 };
 
-static RouteLookupRequest BuildRlsRequest(
+static ::grpc::lookup::v1::RouteLookupRequest BuildRlsRequest(
     std::map<std::string, std::string> key,
-    RouteLookupRequest::Reason reason = RouteLookupRequest::REASON_MISS,
+    ::grpc::lookup::v1::RouteLookupRequest::Reason reason =
+        ::grpc::lookup::v1::RouteLookupRequest::REASON_MISS,
     const char* stale_header_data = "") {
-  RouteLookupRequest request;
+  ::grpc::lookup::v1::RouteLookupRequest request;
   request.set_target_type("grpc");
   request.mutable_key_map()->insert(key.begin(), key.end());
   request.set_reason(reason);
@@ -84,9 +86,9 @@ static RouteLookupRequest BuildRlsRequest(
   return request;
 }
 
-static RouteLookupResponse BuildRlsResponse(std::vector<std::string> targets,
-                                            const char* header_data = "") {
-  RouteLookupResponse response;
+static ::grpc::lookup::v1::RouteLookupResponse BuildRlsResponse(
+    std::vector<std::string> targets, const char* header_data = "") {
+  ::grpc::lookup::v1::RouteLookupResponse response;
   response.mutable_targets()->Add(targets.begin(), targets.end());
   response.set_header_data(header_data);
   return response;
