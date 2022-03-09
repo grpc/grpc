@@ -300,6 +300,8 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     // which case we know the filter wants to mutate.
     GPR_ASSERT(call_args.server_initial_metadata != nullptr);
     if (call_args.server_initial_metadata != server_initial_metadata_latch()) {
+      recv_initial_metadata_->server_initial_metadata_publisher =
+          call_args.server_initial_metadata;
       switch (recv_initial_metadata_->state) {
         case RecvInitialMetadata::kInitial:
           recv_initial_metadata_->state = RecvInitialMetadata::kNeedToModify;
