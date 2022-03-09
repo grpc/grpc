@@ -109,8 +109,9 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
           grpc_lookup_v1_NameMatcher_required_match(headers[k]);
       keybuilder_headers_array_result.emplace_back(std::move(header_result));
     }
-    builder_result["header"] = std::move(keybuilder_headers_array_result);
+    builder_result["headers"] = std::move(keybuilder_headers_array_result);
     // parse constant keys
+    /*
     Json::Object const_keys_map_result;
     size_t const_key_it = kUpb_Map_Begin;
     while (true) {
@@ -128,6 +129,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
       }
     }
     builder_result["const_keys"] = std::move(const_keys_map_result);
+    */
     keybuilders_array_result.emplace_back(std::move(builder_result));
   }
   result["grpcKeybuilders"] = std::move(keybuilders_array_result);
@@ -178,6 +180,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   policy["rls_experimental"] = std::move(rls_policy);
   Json::Array policies;
   policies.emplace_back(std::move(policy));
+  gpr_log(GPR_INFO, "donna rls policy dump %s", Json(policies).Dump().c_str());
   return Json(policies).Dump();
 }
 

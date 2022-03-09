@@ -157,6 +157,7 @@ using ClientStats = LrsServiceImpl::ClientStats;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
+using ::grpc::lookup::v1::GrpcKeyBuilder;
 using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
 using ::grpc::lookup::v1::RouteLookupConfig;
 using ::grpc::lookup::v1::RouteLookupRequest;
@@ -184,6 +185,17 @@ constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
+
+constexpr char kTestKey[] = "test_key";
+constexpr char kTestKey1[] = "key1";
+constexpr char kTestValue[] = "test_value";
+constexpr char kHostKey[] = "host_key";
+constexpr char kServiceKey[] = "service_key";
+constexpr char kServiceValue[] = "grpc.testing.EchoTestService";
+constexpr char kMethodKey[] = "method_key";
+constexpr char kMethodValue[] = "Echo";
+constexpr char kConstantKey[] = "constant_key";
+constexpr char kConstantValue[] = "constant_value";
 
 template <typename RpcService>
 class BackendServiceImpl
@@ -4709,11 +4721,24 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   CheckRpcSendOk(kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  // Prepare the RLS server.
-  balancer_->rls_service()->SetResponse(BuildRlsRequest({}),
-                                        BuildRlsResponse({kNewClusterName}));
-  // Change Route Configurations: use cluster specifier plugin.
+  // Prepare the RLS server and change route configurations to use cluster
+  // specifier plugin.
+  balancer_->rls_service()->SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse({kNewClusterName}));
   RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kServiceValue);
+  name->set_method(kMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kTestKey);
+  auto* key_name = header->add_names();
+  *key_name = kTestKey1;
+  auto* extra_keys = key_builder->mutable_extra_keys();
+  // extra_keys->set_host(kHostKey);
+  extra_keys->set_service(kServiceKey);
+  extra_keys->set_method(kMethodKey);
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", balancer_->port()));
   RouteLookupClusterSpecifier rls;
@@ -4725,8 +4750,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(1, 2);
-  CheckRpcSendOk(kNumEchoRpcs);
+  WaitForAllBackends(1, 2, WaitForBackendOptions(),
+                     RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendOk(kNumEchoRpcs,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
