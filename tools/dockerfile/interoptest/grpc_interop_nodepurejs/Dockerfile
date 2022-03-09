@@ -53,22 +53,20 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+
+RUN mkdir /var/local/jenkins
+
 #==================
 # Node dependencies
 
 # Install nvm
-RUN touch .profile
-RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
+RUN mkdir -p /home/appuser && chown appuser /home/appuser
+USER appuser
+RUN touch ~/.profile
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 # Install all versions of node that we want to test
-RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 9 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm install 10 && npm config set cache /tmp/npm-cache"
-RUN /bin/bash -l -c "nvm alias default 10"
-
-RUN mkdir /var/local/jenkins
-
+RUN /bin/bash -l -c "nvm install 16 && npm config set cache /tmp/npm-cache"
+RUN /bin/bash -l -c "nvm alias default 16"
 # Define the default command.
 CMD ["bash"]
