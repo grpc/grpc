@@ -1863,6 +1863,35 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     std::shared_ptr<RlsServiceImpl> rls_service_;
   };
 
+  class RlsServerThread : public ServerThread {
+   public:
+    explicit RlsServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
+          rls_service_(new RlsServiceImpl()) {}
+
+    RlsServiceImpl* rls_service() { return rls_service_.get(); }
+
+   private:
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(rls_service_.get());
+    }
+
+    void StartAllServices() override { rls_service_->Start(); }
+
+    void ShutdownAllServices() override { rls_service_->Shutdown(); }
+
+    const char* Type() override { return "Rls"; }
+
+    std::shared_ptr<RlsServiceImpl> rls_service_;
+  };
+
+  std::unique_ptr<RlsServerThread> CreateAndStartRlsServer() {
+    std::unique_ptr<RlsServerThread> rls_server =
+        absl::make_unique<RlsServerThread>(this);
+    rls_server->Start();
+    return rls_server;
+  }
+
 #ifndef DISABLED_XDS_PROTO_IN_CC
   class AdminServerThread : public ServerThread {
    public:
@@ -1963,6 +1992,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::unique_ptr<grpc::testing::EchoTest2Service::Stub> stub2_;
   std::vector<std::unique_ptr<BackendServerThread>> backends_;
   std::unique_ptr<BalancerServerThread> balancer_;
+  std::unique_ptr<RlsServerThread> rls_server_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       logical_dns_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
@@ -4692,7 +4722,24 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
               ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
 }
 
-TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
+class RlsTest : public XdsEnd2endTest {
+ protected:
+  RlsTest() : XdsEnd2endTest(4) { rls_server_ = CreateAndStartRlsServer(); }
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
+  }
+
+  void TearDown() override {
+    rls_server_->Shutdown();
+    XdsEnd2endTest::TearDown();
+  }
+
+  std::unique_ptr<RlsServerThread> rls_server_;
+};
+
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
   const char* kNewClusterName = "new_cluster";
@@ -4723,7 +4770,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
-  balancer_->rls_service()->SetResponse(
+  rls_server_->rls_service()->SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue},
                        {kHostKey, kServerName},
                        {kServiceKey, kServiceValue},
@@ -4747,7 +4794,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   extra_keys->set_method(kMethodKey);
   (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
   route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", balancer_->port()));
+      absl::StrCat("localhost:", rls_server_->port()));
   RouteLookupClusterSpecifier rls;
   *rls.mutable_route_lookup_config() = route_lookup_config;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
@@ -13531,6 +13578,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
 // LDS/RDS commmon tests depend on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LdsRdsTest,
+    ::testing::Values(TestType(), TestType().set_enable_rds_testing(),
+                      // Also test with xDS v2.
+                      TestType().set_enable_rds_testing().set_use_v2()),
+    &TestTypeName);
+
+// Rls tests depend on XdsResolver.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, RlsTest,
     ::testing::Values(TestType(), TestType().set_enable_rds_testing(),
                       // Also test with xDS v2.
                       TestType().set_enable_rds_testing().set_use_v2()),
