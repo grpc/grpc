@@ -21,4 +21,5 @@ exports_files([
     "valid.key",
     "valid.pem",
     "ab06acdd.r0",
+    "86e6d4f1.r0",
 ])

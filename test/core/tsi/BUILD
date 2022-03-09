@@ -89,6 +89,7 @@ grpc_cc_test(
     srcs = ["crl_ssl_transport_security_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data:86e6d4f1.r0",
         "//test/core/tsi/test_creds/crl_data:ca.pem",
         "//test/core/tsi/test_creds/crl_data:revoked.key",
         "//test/core/tsi/test_creds/crl_data:revoked.pem",
