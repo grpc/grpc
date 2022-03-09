@@ -41,6 +41,11 @@ struct RecvTrailingMetadataArgs {
   int status;
 };
 
+struct RegisterStreamArgs {
+  grpc_binder_stream* gbs;
+  grpc_binder_transport* gbt;
+};
+
 // TODO(mingcl): Figure out if we want to use class instead of struct here
 struct grpc_binder_stream {
   // server_data will be null for client, and for server it will be whatever
@@ -54,9 +59,6 @@ struct grpc_binder_stream {
         tx_code(tx_code),
         is_client(is_client),
         is_closed(false) {
-    // TODO(waynetu): Should this be protected?
-    t->registered_stream[tx_code] = this;
-
     recv_initial_metadata_args.gbs = this;
     recv_initial_metadata_args.gbt = t;
     recv_message_args.gbs = this;
@@ -95,6 +97,9 @@ struct grpc_binder_stream {
   RecvMessageArgs recv_message_args;
   grpc_closure recv_trailing_metadata_closure;
   RecvTrailingMetadataArgs recv_trailing_metadata_args;
+
+  grpc_closure register_stream_closure;
+  RegisterStreamArgs register_stream_args;
 
   // We store these fields passed from op batch, in order to access them through
   // grpc_binder_stream
