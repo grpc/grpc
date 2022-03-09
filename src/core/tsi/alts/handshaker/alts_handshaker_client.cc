@@ -209,13 +209,13 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   }
   /* TSI handshake has been shutdown. */
   if (alts_tsi_handshaker_has_shutdown(handshaker)) {
-    gpr_log(GPR_ERROR, "TSI handshake shutdown");
+    gpr_log(GPR_INFO, "TSI handshake shutdown");
     handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN, nullptr, 0, nullptr);
     return;
   }
   /* Failed grpc call check. */
   if (!is_ok || status != GRPC_STATUS_OK) {
-    gpr_log(GPR_ERROR, "grpc call made to handshaker service failed");
+    gpr_log(GPR_INFO, "grpc call made to handshaker service failed");
     handle_response_done(client, TSI_INTERNAL_ERROR, nullptr, 0, nullptr);
     return;
   }
