@@ -86,7 +86,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
           grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_service(extra_keys));
       extra_keys_result["method"] = UpbStringToStdString(
           grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_method(extra_keys));
-      builder_result["extra_keys"] = std::move(extra_keys_result);
+      builder_result["extraKeys"] = std::move(extra_keys_result);
     }
     // parse headers
     size_t num_headers;
@@ -105,8 +105,8 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
         header_names_result.emplace_back(UpbStringToStdString(header_names[l]));
       }
       header_result["names"] = std::move(header_names_result);
-      header_result["required_match"] =
-          grpc_lookup_v1_NameMatcher_required_match(headers[k]);
+      // requiredMatch must not be present, should the check be here and fail
+      // the policy if it is present?
       keybuilder_headers_array_result.emplace_back(std::move(header_result));
     }
     builder_result["headers"] = std::move(keybuilder_headers_array_result);
@@ -127,7 +127,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
                 const_key_entry));
       }
     }
-    builder_result["const_keys"] = std::move(const_keys_map_result);
+    builder_result["constantKeys"] = std::move(const_keys_map_result);
     keybuilders_array_result.emplace_back(std::move(builder_result));
   }
   result["grpcKeybuilders"] = std::move(keybuilders_array_result);

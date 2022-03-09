@@ -4721,10 +4721,14 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   CheckRpcSendOk(kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  // Prepare the RLS server and change route configurations to use cluster
-  // specifier plugin.
+  // Prepare the RLSLookupConfig and configure all the keys; change route
+  // configurations to use cluster specifier plugin.
   balancer_->rls_service()->SetResponse(
-      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsRequest({{kTestKey, kTestValue},
+                       {kHostKey, kServerName},
+                       {kServiceKey, kServiceValue},
+                       {kMethodKey, kMethodValue},
+                       {kConstantKey, kConstantValue}}),
       BuildRlsResponse({kNewClusterName}));
   RouteLookupConfig route_lookup_config;
   auto* key_builder = route_lookup_config.add_grpc_keybuilders();
@@ -4741,6 +4745,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterSpecifierPlugin) {
   extra_keys->set_host(kHostKey);
   extra_keys->set_service(kServiceKey);
   extra_keys->set_method(kMethodKey);
+  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", balancer_->port()));
   RouteLookupClusterSpecifier rls;
