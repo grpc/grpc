@@ -14,8 +14,6 @@
 
 FROM debian:11
 
-RUN apt-get --allow-releaseinfo-change update
-
 #=================
 # Basic C core dependencies
 
@@ -30,9 +28,7 @@ RUN apt-get update && apt-get install -y \
 # GCC
 RUN apt-get update && apt-get install -y \
   gcc \
-  gcc-multilib \
   g++ \
-  g++-multilib  \
   && apt-get clean
 
 # libc6
