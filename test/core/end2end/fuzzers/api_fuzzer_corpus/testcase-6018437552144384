@@ -1,0 +1,66 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "unix::p,"
+    channel_actions {
+      add_n_bytes_writable: 200000000
+    }
+    channel_actions {
+      add_n_bytes_writable: 1
+      add_n_bytes_readable: 1
+      wait_ms: 200000000
+    }
+  }
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "bob"
+    }
+    host {
+      value: "ee="
+    }
+    timeout: 200000000
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+    operations {
+      send_message {
+        message {
+          value: "Hello"
+        }
+      }
+    }
+    operations {
+      receive_status_on_client {
+      }
+    }
+  }
+}
+actions {
+  advance_time: 2000000
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  cancel_call {
+  }
+}
+actions {
+  get_peer {
+  }
+}

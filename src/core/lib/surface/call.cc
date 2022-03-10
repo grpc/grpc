@@ -592,9 +592,21 @@ void grpc_call_unref(grpc_call* c) {
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
   GPR_ASSERT(!reserved);
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
-  cancel_with_error(call, GRPC_ERROR_CANCELLED);
+  {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx;
+    cancel_with_error(call, GRPC_ERROR_CANCELLED);
+  }
+  // (b/222144056): During normal operation, call->peer_string is made to point
+  // to a string/memory allocated by the transport. After the above ExecCtx
+  // flush due to grpc_call_cancel, the transport may be destroyed. When the
+  // transport gets destroyed, it frees the allocated peer_string. However,
+  // call->peer_string still continues to point to that free'ed memory location
+  // and may cause a heap-use after free error if there's an attempt to access
+  // it again using grpc_call_get_peer API call. By setting it to nullptr here
+  // we prevent such errors by forcing any grpc_call_get_peer invocation
+  // after a call cancellation to return nullptr.
+  gpr_atm_rel_store(&call->peer_string, nullptr);
   return GRPC_CALL_OK;
 }
 
