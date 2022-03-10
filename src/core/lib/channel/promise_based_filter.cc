@@ -147,6 +147,10 @@ class ClientCallData::PollContext {
         } break;
       }
     }
+    if (self_->recv_trailing_state_ == RecvTrailingState::kCancelled ||
+        self_->recv_trailing_state_ == RecvTrailingState::kResponded) {
+      return;
+    }
     switch (self_->send_initial_state_) {
       case SendInitialState::kQueued:
       case SendInitialState::kForwarded: {
@@ -480,9 +484,7 @@ void ClientCallData::StartPromise() {
 }
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
-    abort();  // not implemented
-  }
+  ScopedContext context(this);
   switch (recv_initial_metadata_->state) {
     case RecvInitialMetadata::kHookedWaitingForLatch:
       recv_initial_metadata_->state =
@@ -499,12 +501,18 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
     case RecvInitialMetadata::kResponded:
       abort();  // unreachable
   }
-  if (send_initial_state_ == SendInitialState::kCancelled) {
+  if (error != GRPC_ERROR_NONE) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     GRPC_CALL_COMBINER_START(
         call_combiner(),
         absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         GRPC_ERROR_REF(error), "propagate cancellation");
+  } else if (send_initial_state_ == SendInitialState::kCancelled) {
+    recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+    GRPC_CALL_COMBINER_START(
+        call_combiner(),
+        absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
+        GRPC_ERROR_REF(cancelled_error_), "propagate cancellation");
   }
   WakeInsideCombiner();
 }
