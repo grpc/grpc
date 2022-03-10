@@ -85,7 +85,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
-    server_->Shutdown();
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -214,7 +214,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   ~EndpointPairFixture() override {
-    server_->Shutdown();
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
     bool ok;
