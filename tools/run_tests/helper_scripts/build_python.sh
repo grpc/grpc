@@ -15,8 +15,13 @@
 
 set -ex
 
+# We need to unset this on MacOS to allow run_tests.py to run a different
+# interpreter version from the built Python version.
+unset __PYVENV_LAUNCHER__
+
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
+
 
 ##########################
 # Portability operations #
