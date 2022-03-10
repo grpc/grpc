@@ -16,5 +16,8 @@
 set -ex
 
 
+which python3
+which python3.8 || true
+exit 1
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 $(dirname $0)/grpc_run_tests_matrix.sh
