@@ -168,6 +168,7 @@ pip_install_dir() {
   # pip --version
   # $VENV_PYTHON -m pip --version
   # $VENV_PYTHON -m pip install --no-deps .
+  env
   find $VENV -type f
   source $VENV/bin/activate
   python --version
