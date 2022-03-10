@@ -177,7 +177,7 @@ pip_install_dir() {
   # python3 --version
   # pip --version
   # pip3 --version
-  # python -m pip install --no-deps .
+  python -m pip install --no-deps .
   cd "$PWD"
 }
 
