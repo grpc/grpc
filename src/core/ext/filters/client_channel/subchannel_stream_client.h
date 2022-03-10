@@ -50,7 +50,7 @@ class SubchannelStreamClient
     : public InternallyRefCounted<SubchannelStreamClient> {
  public:
   // Interface implemented by caller.  Thread safety is provided for the
-  // implementation; only one method will be called any thread at any
+  // implementation; only one method will be called by any thread at any
   // one time (including destruction).
   //
   // The address of the SubchannelStreamClient object is passed to most
@@ -82,6 +82,10 @@ class SubchannelStreamClient
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_) = 0;
   };
 
+  // If tracer is non-null, it enables trace logging, with the specified
+  // string being the first part of the log message.
+  // Does not take ownership of interested_parties; the caller is responsible
+  // for ensuring that it will outlive the SubchannelStreamClient.
   SubchannelStreamClient(
       RefCountedPtr<ConnectedSubchannel> connected_subchannel,
       grpc_pollset_set* interested_parties,
