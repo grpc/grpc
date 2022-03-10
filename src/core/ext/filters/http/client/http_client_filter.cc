@@ -43,7 +43,7 @@ namespace grpc_core {
 
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>("http_client");
+                           kFilterExaminesServerInitialMetadata>("http-client");
 
 namespace {
 absl::Status CheckServerMetadata(ServerMetadata* b) {
