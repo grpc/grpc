@@ -16,7 +16,8 @@
 set -ex
 
 # Pyenv can cause unintended switches between interpreter versions.
-pyenv shell --unset || true
+env
+unset __PYVENV_LAUNCHER__
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 $(dirname $0)/grpc_run_tests_matrix.sh
