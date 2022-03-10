@@ -18,6 +18,8 @@ set -ex
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
+unset __PYVENV_LAUNCHER__
+
 ##########################
 # Portability operations #
 ##########################
@@ -176,7 +178,6 @@ pip_install_dir() {
   # pip --version
   # pip3 --version
   # python -m pip install --no-deps .
-  unset __PYVENV_LAUNCHER__
   cd "$PWD"
 }
 
