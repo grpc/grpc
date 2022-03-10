@@ -185,6 +185,27 @@ class ClientCallData::PollContext {
             }
             GRPC_ERROR_UNREF(self_->cancelled_error_);
             self_->cancelled_error_ = GRPC_ERROR_REF(error);
+            if (self_->recv_initial_metadata_ != nullptr) {
+              switch (self_->recv_initial_metadata_->state) {
+                case RecvInitialMetadata::kInitial:
+                case RecvInitialMetadata::kGotLatch:
+                case RecvInitialMetadata::kHookedWaitingForLatch:
+                case RecvInitialMetadata::kHookedAndGotLatch:
+                case RecvInitialMetadata::kResponded:
+                  break;
+                case RecvInitialMetadata::kCompleteWaitingForLatch:
+                case RecvInitialMetadata::kCompleteAndGotLatch:
+                case RecvInitialMetadata::kCompleteAndSetLatch:
+                  self_->recv_initial_metadata_->state =
+                      RecvInitialMetadata::kResponded;
+                  call_closures_.Add(
+                      absl::exchange(
+                          self_->recv_initial_metadata_->original_on_ready,
+                          nullptr),
+                      GRPC_ERROR_REF(error),
+                      "wake_inside_combiner:recv_initial_metadata_ready");
+              }
+            }
             if (self_->send_initial_state_ == SendInitialState::kQueued) {
               self_->send_initial_state_ = SendInitialState::kCancelled;
               cancel_send_initial_metadata_error_ = error;
@@ -227,6 +248,14 @@ class ClientCallData::PollContext {
     scoped_activity_.Destroy();
     GRPC_CALL_STACK_REF(self_->call_stack(), "finish_poll");
     bool in_combiner = true;
+    if (call_closures_.size() != 0) {
+      if (forward_batch_ != nullptr) {
+        call_closures_.RunClosuresWithoutYielding(self_->call_combiner());
+      } else {
+        in_combiner = false;
+        call_closures_.RunClosures(self_->call_combiner());
+      }
+    }
     if (forward_batch_ != nullptr) {
       GPR_ASSERT(in_combiner);
       in_combiner = false;
@@ -247,11 +276,6 @@ class ClientCallData::PollContext {
       grpc_call_next_op(
           self_->elem(),
           absl::exchange(self_->send_initial_metadata_batch_, nullptr));
-    }
-    if (call_closures_.size() != 0) {
-      GPR_ASSERT(in_combiner);
-      in_combiner = false;
-      call_closures_.RunClosures(self_->call_combiner());
     }
     if (repoll_) {
       if (in_combiner) {
