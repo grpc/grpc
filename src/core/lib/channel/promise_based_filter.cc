@@ -354,9 +354,6 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     auto cb = [](void* ptr, grpc_error_handle error) {
       ClientCallData* self = static_cast<ClientCallData*>(ptr);
       self->RecvInitialMetadataReady(error);
-      Closure::Run(DEBUG_LOCATION,
-                   self->recv_initial_metadata_->original_on_ready,
-                   GRPC_ERROR_REF(error));
     };
     recv_initial_metadata_->metadata =
         batch->payload->recv_initial_metadata.recv_initial_metadata;
@@ -450,7 +447,8 @@ void ClientCallData::Cancel(grpc_error_handle error) {
       case RecvInitialMetadata::kCompleteAndSetLatch:
         recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
         GRPC_CALL_COMBINER_START(
-            call_combiner(), recv_initial_metadata_->original_on_ready,
+            call_combiner(),
+            absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
             GRPC_ERROR_REF(error), "propagate cancellation");
         break;
       case RecvInitialMetadata::kInitial:
@@ -503,9 +501,10 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   }
   if (send_initial_state_ == SendInitialState::kCancelled) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
-    GRPC_CALL_COMBINER_START(call_combiner(),
-                             recv_initial_metadata_->original_on_ready,
-                             GRPC_ERROR_REF(error), "propagate cancellation");
+    GRPC_CALL_COMBINER_START(
+        call_combiner(),
+        absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
+        GRPC_ERROR_REF(error), "propagate cancellation");
   }
   WakeInsideCombiner();
 }
