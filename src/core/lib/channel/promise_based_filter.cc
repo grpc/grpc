@@ -443,6 +443,24 @@ void ClientCallData::Cancel(grpc_error_handle error) {
   } else {
     send_initial_state_ = SendInitialState::kCancelled;
   }
+  if (recv_initial_metadata_ != nullptr) {
+    switch (recv_initial_metadata_->state) {
+      case RecvInitialMetadata::kCompleteWaitingForLatch:
+      case RecvInitialMetadata::kCompleteAndGotLatch:
+      case RecvInitialMetadata::kCompleteAndSetLatch:
+        recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+        GRPC_CALL_COMBINER_START(
+            call_combiner(), recv_initial_metadata_->original_on_ready,
+            GRPC_ERROR_REF(error), "propagate cancellation");
+        break;
+      case RecvInitialMetadata::kInitial:
+      case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kHookedWaitingForLatch:
+      case RecvInitialMetadata::kHookedAndGotLatch:
+      case RecvInitialMetadata::kResponded:
+        break;
+    }
+  }
 }
 
 // Begin running the promise - which will ultimately take some initial
@@ -482,6 +500,12 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
     case RecvInitialMetadata::kCompleteAndSetLatch:
     case RecvInitialMetadata::kResponded:
       abort();  // unreachable
+  }
+  if (send_initial_state_ == SendInitialState::kCancelled) {
+    recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
+    GRPC_CALL_COMBINER_START(call_combiner(),
+                             recv_initial_metadata_->original_on_ready,
+                             GRPC_ERROR_REF(error), "propagate cancellation");
   }
   WakeInsideCombiner();
 }
