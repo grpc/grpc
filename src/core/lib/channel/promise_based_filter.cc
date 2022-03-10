@@ -626,6 +626,11 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 }
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
+  if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
+    Closure::Run(DEBUG_LOCATION, original_recv_trailing_metadata_ready_,
+                 GRPC_ERROR_REF(cancelled_error_));
+    return;
+  }
   // If there was an error, we'll put that into the trailing metadata and
   // proceed as if there was not.
   if (error != GRPC_ERROR_NONE) {
