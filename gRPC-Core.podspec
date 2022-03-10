@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.45.0-dev'
+  version = '1.46.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -2457,7 +2457,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/grpc_authz.cc',
                       'test/core/end2end/tests/high_initial_seqno.cc',
                       'test/core/end2end/tests/hpack_size.cc',
-                      'test/core/end2end/tests/idempotent_request.cc',
                       'test/core/end2end/tests/invoke_large_request.cc',
                       'test/core/end2end/tests/keepalive_timeout.cc',
                       'test/core/end2end/tests/large_metadata.cc',
@@ -2515,7 +2514,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/server_streaming.cc',
                       'test/core/end2end/tests/shutdown_finishes_calls.cc',
                       'test/core/end2end/tests/shutdown_finishes_tags.cc',
-                      'test/core/end2end/tests/simple_cacheable_request.cc',
                       'test/core/end2end/tests/simple_delayed_request.cc',
                       'test/core/end2end/tests/simple_metadata.cc',
                       'test/core/end2end/tests/simple_request.cc',

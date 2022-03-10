@@ -1,4 +1,5 @@
-# Copyright 2020 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/grpcio_tools/grpc_version.py.template`!!!
+set -ex
 
-VERSION = '1.46.0.dev0'
-PROTOBUF_VERSION = '3.19.4'
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
+
+# some extra pip packages are needed for the check_on_pr.py script to work
+# TODO(jtattermusch): avoid needing to install these pip packages each time
+time python3 -m pip install --user -r tools/internal_ci/helper_scripts/requirements.linux_perf.txt
+
+tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/bloat/bloat_diff.py \
+  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"

@@ -12,6 +12,9 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem allow timing of how long the script takes to run.
+echo "!TIME!: prepare_build_windows.bat started"
+
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python3.7
 @rem set path to CMake
@@ -62,7 +65,8 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
 @rem Only install Python interpreters if we are running Python tests
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
-    powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
+  echo "!TIME!: invoking install_python_interpreters.ps1"
+  powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
 )
 
 @rem Needed for uploading test results to bigquery
@@ -70,7 +74,9 @@ python -m pip install google-api-python-client oauth2client six==1.16.0 || goto 
 
 git submodule update --init || goto :error
 
+echo "!TIME!: prepare_build_windows.bat exiting with success"
 goto :EOF
 
 :error
+echo "!TIME!: prepare_build_windows.bat exiting with error"
 exit /b 1

@@ -353,12 +353,12 @@ def targets():
     """Gets list of supported targets"""
     return [
         # C++
+        CppDistribTest('linux', 'x64', 'stretch', 'cmake', presubmit=True),
         CppDistribTest('linux',
                        'x64',
-                       'jessie',
+                       'stretch',
                        'cmake_as_submodule',
                        presubmit=True),
-        CppDistribTest('linux', 'x64', 'stretch', 'cmake', presubmit=True),
         CppDistribTest('linux',
                        'x64',
                        'stretch',
@@ -395,8 +395,7 @@ def targets():
                        testcase='cmake_as_externalproject',
                        presubmit=True),
         # C#
-        CSharpDistribTest('linux', 'x64', 'jessie', presubmit=True),
-        CSharpDistribTest('linux', 'x64', 'stretch'),
+        CSharpDistribTest('linux', 'x64', 'stretch', presubmit=True),
         CSharpDistribTest('linux',
                           'x64',
                           'stretch',
