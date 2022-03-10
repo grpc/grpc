@@ -2387,7 +2387,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/include/uv.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/include/uv/aix.h" role="src" />
-    <file baseinstalldir="/" name="third_party/libuv/include/uv/android-ifaddrs.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/include/uv/bsd.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/include/uv/darwin.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/include/uv/errno.h" role="src" />
@@ -2414,7 +2413,6 @@
     <file baseinstalldir="/" name="third_party/libuv/src/timer.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/aix-common.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/aix.c" role="src" />
-    <file baseinstalldir="/" name="third_party/libuv/src/unix/android-ifaddrs.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/async.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/atomic-ops.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/bsd-ifaddrs.c" role="src" />
@@ -2432,6 +2430,7 @@
     <file baseinstalldir="/" name="third_party/libuv/src/unix/getaddrinfo.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/getnameinfo.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/haiku.c" role="src" />
+    <file baseinstalldir="/" name="third_party/libuv/src/unix/hurd.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/ibmi.c" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/libuv/src/unix/kqueue.c" role="src" />
