@@ -415,8 +415,8 @@ class Http2Client:
 class NodeLanguage:
 
     def __init__(self):
-        self.client_cwd = '../grpc-node'
-        self.server_cwd = '../grpc-node'
+        self.client_cwd = '~/grpc-node'
+        self.server_cwd = '~/grpc-node'
         self.safename = str(self)
 
     def client_cmd(self, args):
