@@ -50,7 +50,7 @@ extern zend_module_entry grpc_module_entry;
 #define TSRMLS_CC
 #define TSRMLS_C
 #define TSRMLS_DC
-#define TSRMLS_D
+#define TSRMLS_D void
 #define TSRMLS_FETCH()
 #endif
 

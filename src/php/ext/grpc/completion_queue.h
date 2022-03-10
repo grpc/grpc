@@ -24,7 +24,7 @@
 #include <grpc/grpc.h>
 
 #if PHP_MAJOR_VERSION >= 8
-#define TSRMLS_D
+#define TSRMLS_D void
 #endif
 
 /* The global completion queue for all operations */

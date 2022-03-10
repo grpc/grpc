@@ -120,7 +120,7 @@ void create_new_channel(
   }
 }
 
-void acquire_persistent_locks() {
+void acquire_persistent_locks(void) {
   zval *data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
     php_grpc_zend_resource *rsrc  =
@@ -134,7 +134,7 @@ void acquire_persistent_locks() {
   PHP_GRPC_HASH_FOREACH_END()
 }
 
-void release_persistent_locks() {
+void release_persistent_locks(void) {
   zval *data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
     php_grpc_zend_resource *rsrc  =
@@ -148,7 +148,7 @@ void release_persistent_locks() {
   PHP_GRPC_HASH_FOREACH_END()
 }
 
-void destroy_grpc_channels() {
+void destroy_grpc_channels(void) {
   zval *data;
   PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
     php_grpc_zend_resource *rsrc  =
@@ -166,7 +166,7 @@ void destroy_grpc_channels() {
   PHP_GRPC_HASH_FOREACH_END()
 }
 
-void prefork() {
+void prefork(void) {
   acquire_persistent_locks();
 }
 
@@ -177,7 +177,7 @@ void php_grpc_clean_persistent_list(TSRMLS_D) {
     zend_hash_clean(&grpc_target_upper_bound_map);
 }
 
-void postfork_child() {
+void postfork_child(void) {
   TSRMLS_FETCH();
 
   // loop through persistent list and destroy all underlying grpc_channel objs
@@ -204,11 +204,11 @@ void postfork_child() {
   grpc_php_init_completion_queue(TSRMLS_C);
 }
 
-void postfork_parent() {
+void postfork_parent(void) {
   release_persistent_locks();
 }
 
-void register_fork_handlers() {
+void register_fork_handlers(void) {
   if (getenv("GRPC_ENABLE_FORK_SUPPORT")) {
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     pthread_atfork(&prefork, &postfork_parent, &postfork_child);
