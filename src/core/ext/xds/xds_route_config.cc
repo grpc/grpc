@@ -345,6 +345,9 @@ grpc_error_handle ClusterSpecifierPluginParse(
     if (lb_policy_config.ok()) {
       rds_update->cluster_specifier_plugin_map[std::move(name)] =
           std::move(lb_policy_config.value());
+    } else {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          lb_policy_config.status().ToString().c_str());
     }
   }
   return GRPC_ERROR_NONE;

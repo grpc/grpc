@@ -105,8 +105,12 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
         header_names_result.emplace_back(UpbStringToStdString(header_names[l]));
       }
       header_result["names"] = std::move(header_names_result);
-      // requiredMatch must not be present, should the check be here and fail
-      // the policy if it is present?
+      if (grpc_lookup_v1_NameMatcher_required_match(headers[k])) {
+        gpr_log(GPR_INFO, "donna this should have been trigger");
+        return absl::InvalidArgumentError(
+            "RouteLookupConfig GrpcKeyBuilder headers must not set "
+            "required_match.");
+      }
       keybuilder_headers_array_result.emplace_back(std::move(header_result));
     }
     builder_result["headers"] = std::move(keybuilder_headers_array_result);

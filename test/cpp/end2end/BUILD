@@ -73,11 +73,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "rls_server",
     testonly = True,
+    srcs = ["rls_server.cc"],
+    hdrs = ["rls_server.h"],
     external_deps = [
         "gtest",
     ],
-    srcs = ["rls_server.cc"],
-    hdrs = ["rls_server.h"],
     deps = [
         ":counted_service",
         "//src/proto/grpc/lookup/v1:rls_proto",

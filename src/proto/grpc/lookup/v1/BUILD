@@ -33,6 +33,7 @@ grpc_proto_library(
     srcs = ["rls_config.proto"],
     well_known_protos = True,
 )
+
 proto_library(
     name = "rls_proto_descriptor",
     srcs = ["rls.proto"],

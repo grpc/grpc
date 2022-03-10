@@ -65,7 +65,6 @@
 #include "test/cpp/util/test_config.h"
 
 using ::grpc::lookup::v1::RouteLookupRequest;
-using ::grpc::lookup::v1::RouteLookupResponse;
 
 namespace grpc {
 namespace testing {

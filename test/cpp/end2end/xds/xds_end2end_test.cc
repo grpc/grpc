@@ -4720,98 +4720,6 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
               ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
 }
 
-class RlsTest : public XdsEnd2endTest {
- protected:
-  RlsTest() : XdsEnd2endTest(4) { rls_server_ = CreateAndStartRlsServer(); }
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
-  }
-
-  void TearDown() override {
-    rls_server_->Shutdown();
-    XdsEnd2endTest::TearDown();
-  }
-
-  std::unique_ptr<RlsServerThread> rls_server_;
-};
-
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumEchoRpcs = 5;
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Send Route Configuration.
-  RouteConfiguration new_route_config = default_route_config_;
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs);
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  // Prepare the RLSLookupConfig and configure all the keys; change route
-  // configurations to use cluster specifier plugin.
-  rls_server_->rls_service()->SetResponse(
-      BuildRlsRequest({{kTestKey, kTestValue},
-                       {kHostKey, kServerName},
-                       {kServiceKey, kServiceValue},
-                       {kMethodKey, kMethodValue},
-                       {kConstantKey, kConstantValue}}),
-      BuildRlsResponse({kNewClusterName}));
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kServiceValue);
-  name->set_method(kMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kTestKey);
-  auto* key_name = header->add_names();
-  *key_name = kTestKey1;
-  auto* key_name2 = header->add_names();
-  *key_name2 = "key2";
-  auto* extra_keys = key_builder->mutable_extra_keys();
-  extra_keys->set_host(kHostKey);
-  extra_keys->set_service(kServiceKey);
-  extra_keys->set_method(kMethodKey);
-  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = route_lookup_config;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kNewClusterName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(1, 2, WaitForBackendOptions(),
-                     RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
-  CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
-  gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
-}
-
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -7605,6 +7513,231 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "min_ring_size cannot be greater than max_ring_size."));
+}
+
+class RlsTest : public XdsEnd2endTest {
+ protected:
+  RlsTest() : XdsEnd2endTest(4) { rls_server_ = CreateAndStartRlsServer(); }
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    StartAllBackends();
+  }
+
+  void TearDown() override {
+    rls_server_->Shutdown();
+    XdsEnd2endTest::TearDown();
+  }
+
+  std::unique_ptr<RlsServerThread> rls_server_;
+};
+
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  const size_t kNumEchoRpcs = 5;
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Send Route Configuration.
+  RouteConfiguration new_route_config = default_route_config_;
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  WaitForAllBackends(0, 1);
+  CheckRpcSendOk(kNumEchoRpcs);
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
+  // Prepare the RLSLookupConfig and configure all the keys; change route
+  // configurations to use cluster specifier plugin.
+  rls_server_->rls_service()->SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue},
+                       {kHostKey, kServerName},
+                       {kServiceKey, kServiceValue},
+                       {kMethodKey, kMethodValue},
+                       {kConstantKey, kConstantValue}}),
+      BuildRlsResponse({kNewClusterName}));
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kServiceValue);
+  name->set_method(kMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kTestKey);
+  auto* key_name = header->add_names();
+  *key_name = kTestKey1;
+  auto* key_name2 = header->add_names();
+  *key_name2 = "key2";
+  auto* extra_keys = key_builder->mutable_extra_keys();
+  extra_keys->set_host(kHostKey);
+  extra_keys->set_service(kServiceKey);
+  extra_keys->set_method(kMethodKey);
+  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = route_lookup_config;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  WaitForAllBackends(1, 2, WaitForBackendOptions(),
+                     RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
+  CheckRpcSendOk(kNumEchoRpcs,
+                 RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
+  // Make sure RPCs all go to the correct backend.
+  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+}
+
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewUnknownClusterName = "new_unknown_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  const size_t kNumEchoRpcs = 5;
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Prepare the RLSLookupConfig and configure all the keys; change route
+  // configurations to use cluster specifier plugin.
+  rls_server_->rls_service()->SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue},
+                       {kHostKey, kServerName},
+                       {kServiceKey, kServiceValue},
+                       {kMethodKey, kMethodValue},
+                       {kConstantKey, kConstantValue}}),
+      BuildRlsResponse({kNewClusterName}));
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kServiceValue);
+  name->set_method(kMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kTestKey);
+  auto* key_name = header->add_names();
+  *key_name = kTestKey1;
+  auto* key_name2 = header->add_names();
+  *key_name2 = "key2";
+  auto* extra_keys = key_builder->mutable_extra_keys();
+  extra_keys->set_host(kHostKey);
+  extra_keys->set_service(kServiceKey);
+  extra_keys->set_method(kMethodKey);
+  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = route_lookup_config;
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kNewUnknownClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("RouteAction cluster contains cluster "
+                                   "specifier plugin name not configured."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+}
+
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  const size_t kNumEchoRpcs = 5;
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Prepare the RLSLookupConfig and configure all the keys; change route
+  // configurations to use cluster specifier plugin.
+  rls_server_->rls_service()->SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue},
+                       {kHostKey, kServerName},
+                       {kServiceKey, kServiceValue},
+                       {kMethodKey, kMethodValue},
+                       {kConstantKey, kConstantValue}}),
+      BuildRlsResponse({kNewClusterName}));
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kServiceValue);
+  name->set_method(kMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kTestKey);
+  auto* key_name = header->add_names();
+  *key_name = kTestKey1;
+  auto* key_name2 = header->add_names();
+  *key_name2 = "key2";
+  header->set_required_match(true);
+  auto* extra_keys = key_builder->mutable_extra_keys();
+  extra_keys->set_host(kHostKey);
+  extra_keys->set_service(kServiceKey);
+  extra_keys->set_method(kMethodKey);
+  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = route_lookup_config;
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("RouteLookupConfig GrpcKeyBuilder headers "
+                                   "must not set required_match."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 class XdsSecurityTest : public BasicTest {
