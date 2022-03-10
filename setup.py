@@ -210,8 +210,8 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cxx = os.environ.get('CXX', 'c++')
-    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+    cxx = shlex.split(os.environ.get('CXX', 'c++'))
+    cpp_test = subprocess.Popen(cxx + ['-x', 'c++', '-std=c++11', '-'],
                                 stdin=PIPE,
                                 stdout=PIPE,
                                 stderr=PIPE)

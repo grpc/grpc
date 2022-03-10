@@ -55,10 +55,14 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
-  grpc_arg a[1];
+  grpc_arg a[2];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
   a[0].value.integer = static_cast<int>(slice_size);
+  a[1].key = const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA);
+  a[1].type = GRPC_ARG_POINTER;
+  a[1].value.pointer.p = grpc_resource_quota_create("test");
+  a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
@@ -67,7 +71,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   if (leftover_nslices == 0) {
     f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
                                               fake_read_zero_copy_protector,
-                                              tcp.client, nullptr, 0);
+                                              tcp.client, nullptr, &args, 0);
   } else {
     unsigned i;
     tsi_result result;
@@ -111,14 +115,16 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         total_buffer_size - buffer_size);
     f.client_ep = grpc_secure_endpoint_create(
         fake_read_protector, fake_read_zero_copy_protector, tcp.client,
-        &encrypted_leftover, 1);
+        &encrypted_leftover, &args, 1);
     grpc_slice_unref(encrypted_leftover);
     gpr_free(encrypted_buffer);
   }
 
   f.server_ep = grpc_secure_endpoint_create(fake_write_protector,
                                             fake_write_zero_copy_protector,
-                                            tcp.server, nullptr, 0);
+                                            tcp.server, nullptr, &args, 0);
+  grpc_resource_quota_unref(
+      static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 
   return f;
 }

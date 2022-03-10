@@ -99,7 +99,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }

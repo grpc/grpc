@@ -191,6 +191,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/polling_resolver.cc )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/polling_resolver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h )
