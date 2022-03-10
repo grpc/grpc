@@ -59,6 +59,7 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
+  - dns_resolver - traces state in the native DNS resolver
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state

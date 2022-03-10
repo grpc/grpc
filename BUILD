@@ -3426,6 +3426,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "polling_resolver",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/polling_resolver.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/polling_resolver.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_resolver",
+        "orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_selection",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
@@ -3457,6 +3477,8 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver",
         "grpc_resolver_dns_selection",
+        "grpc_trace",
+        "polling_resolver",
         "server_address",
     ],
 )
@@ -3499,6 +3521,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "iomgr_port",
         "json",
+        "polling_resolver",
         "server_address",
         "sockaddr_utils",
     ],
