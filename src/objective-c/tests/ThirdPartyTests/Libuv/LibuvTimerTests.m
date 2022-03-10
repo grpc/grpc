@@ -24,7 +24,7 @@
 TEST_DECLARE(timer)
 TEST_DECLARE(timer_init)
 TEST_DECLARE(timer_again)
-TEST_DECLARE(timer_start_twice)
+// TEST_DECLARE(timer_start_twice) //withhold until libuv patched
 TEST_DECLARE(timer_order)
 TEST_DECLARE(timer_huge_timeout)
 TEST_DECLARE(timer_huge_repeat)
@@ -38,7 +38,7 @@ TASK_LIST_START
 TEST_ENTRY(timer)
 TEST_ENTRY(timer_init)
 TEST_ENTRY(timer_again)
-TEST_ENTRY(timer_start_twice)
+// TEST_ENTRY(timer_start_twice)  //withhold until libuv patched
 TEST_ENTRY(timer_order)
 TEST_ENTRY(timer_huge_timeout)
 TEST_ENTRY(timer_huge_repeat)
