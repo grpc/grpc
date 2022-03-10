@@ -164,7 +164,9 @@ pip_install_dir() {
   PWD=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  $VENV_PYTHON -m pip install --no-deps .
+  $VENV_PYTHON -m pip --version
+  $VENV_PYTHON -m setup.py install --no-deps
+  # $VENV_PYTHON -m pip install --no-deps .
   cd "$PWD"
 }
 
