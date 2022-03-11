@@ -26,9 +26,12 @@ X will be v1.17.2. In both cases Y will be origin/v1.17.x.
 
 """
 
-import base64
 from collections import defaultdict
+import logging
 import json
+import urllib3
+
+logging.basicConfig(level=logging.WARNING)
 
 content_header = """Draft Release Notes For {version}
 --
@@ -96,31 +99,17 @@ def get_commit_log(prevRelLabel, relBranch):
 
 def get_pr_data(pr_num):
     """Get the PR data from github. Return 'error' on exception"""
-
-    try:
-        from urllib.error import HTTPError
-        from urllib.request import Request
-        from urllib.request import urlopen
-    except ImportError:
-        import urllib.error
-        import urllib.parse
-        import urllib.request
-        from urllib.request import HTTPError
-        from urllib.request import Request
-        from urllib.request import urlopen
+    http = urllib3.PoolManager(retries=urllib3.Retry(total=7, backoff_factor=1),
+                               timeout=4.0)
     url = API_URL + pr_num
-    req = Request(url)
-    req.add_header('Authorization', 'token %s' % TOKEN)
     try:
-        f = urlopen(req)
-        response = json.loads(f.read().decode('utf-8'))
-        #print(response)
-    except HTTPError as e:
-        response = json.loads(e.fp.read().decode('utf-8'))
-        if 'message' in response:
-            print((response['message']))
-        response = "error"
-    return response
+        response = http.request('GET',
+                                url,
+                                headers={'Authorization': 'token %s' % TOKEN})
+    except urllib3.exceptions.HTTPError as e:
+        print('Request error:', e.reason)
+        return 'error'
+    return json.loads(response.data.decode('utf-8'))
 
 
 def get_pr_titles(gitLogs):
