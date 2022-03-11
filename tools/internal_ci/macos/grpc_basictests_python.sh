@@ -16,11 +16,11 @@
 set -ex
 
 # The default 3.7 completely messes up subprocesses.
-# export PATH="/usr/local/bin/python3.8:$PATH"
-realpath $(which python3.8) || grealpath $(which python3.8) || true
+export PATH="/Library/Frameworks/Python.framework/Versions/3.8/bin:$PATH"
+# realpath $(which python3.8) || grealpath $(which python3.8) || true
 
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 python3 --version
 pip --version
-exit 1
+# exit 1
 $(dirname $0)/grpc_run_tests_matrix.sh
