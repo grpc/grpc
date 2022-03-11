@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.45.0-dev'
+  version = '1.46.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -247,6 +247,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                       'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                      'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                       'src/core/ext/filters/client_channel/retry_filter.h',
@@ -1067,6 +1068,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                               'src/core/ext/filters/client_channel/retry_filter.h',
