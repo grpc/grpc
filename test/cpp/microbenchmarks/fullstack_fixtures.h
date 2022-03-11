@@ -40,6 +40,7 @@
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -85,7 +86,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
-    server_->Shutdown();
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -214,7 +215,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   ~EndpointPairFixture() override {
-    server_->Shutdown();
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
     bool ok;
