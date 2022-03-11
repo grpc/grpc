@@ -27,8 +27,9 @@ X will be v1.17.2. In both cases Y will be origin/v1.17.x.
 """
 
 from collections import defaultdict
-import logging
 import json
+import logging
+
 import urllib3
 
 logging.basicConfig(level=logging.WARNING)
