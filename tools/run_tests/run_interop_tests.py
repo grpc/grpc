@@ -1234,7 +1234,7 @@ argp.add_argument(
     '--service_account_key_file',
     type=str,
     help='The service account key file to use for some auth interop tests.',
-    default='/root/service_account/grpc-testing-ebe7c1ac7381.json')
+    default='~/service_account/grpc-testing-ebe7c1ac7381.json')
 argp.add_argument(
     '--default_service_account',
     type=str,
