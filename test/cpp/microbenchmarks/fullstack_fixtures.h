@@ -40,6 +40,7 @@
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
