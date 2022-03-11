@@ -16,7 +16,9 @@
 set -ex
 
 # The default 3.7 completely messes up subprocesses.
-export PATH="/usr/local/bin/python3.8:$PATH"
+# export PATH="/usr/local/bin/python3.8:$PATH"
+realpath $(which python3.8) || grealpath $(which python3.8) || true
+
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 python3 --version
 pip --version
