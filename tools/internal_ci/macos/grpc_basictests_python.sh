@@ -18,4 +18,7 @@ set -ex
 # The default 3.7 completely messes up subprocesses.
 export PATH="/usr/local/bin/python3.8:$PATH"
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
+python3 --version
+pip --version
+exit 1
 $(dirname $0)/grpc_run_tests_matrix.sh
