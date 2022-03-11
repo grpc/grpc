@@ -295,6 +295,11 @@ setuptools.setup(name='grpcio-tools',
                      'setuptools',
                  ],
                  package_data=package_data(),
+                 entry_points={
+                     "setuptools.finalize_distribution_options": [
+                          "gen_grpc_files = grpc_tools.auto_generate:generate_files",
+                     ],
+                 },
                  cmdclass={
                      'build_ext': BuildExt,
                  })
