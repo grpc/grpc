@@ -344,6 +344,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
+  - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
@@ -1010,6 +1011,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   - src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
@@ -1804,6 +1806,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h
+  - src/core/ext/filters/client_channel/resolver/polling_resolver.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
   - src/core/ext/filters/client_channel/retry_filter.h
   - src/core/ext/filters/client_channel/retry_service_config.h
@@ -2121,6 +2124,7 @@ libs:
   - src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   - src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   - src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  - src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
   - src/core/ext/filters/client_channel/retry_filter.cc
