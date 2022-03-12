@@ -216,7 +216,11 @@ class ClientCallData::PollContext {
               self_->call_combiner()->Cancel(GRPC_ERROR_REF(error));
               forward_batch_ =
                   grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                      [](void*, grpc_error_handle) {}, nullptr, nullptr));
+                      [](void* p, grpc_error_handle) {
+                        GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
+                                                "finish_cancel");
+                      },
+                      self_->call_combiner(), nullptr));
               forward_batch_->cancel_stream = true;
               forward_batch_->payload->cancel_stream.cancel_error = error;
             }
