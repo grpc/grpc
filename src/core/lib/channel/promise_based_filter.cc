@@ -299,7 +299,7 @@ class ClientCallData::PollContext {
           GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
           delete next_poll;
         };
-        auto* p = new NextPoll;
+        auto* p = absl::make_unique<NextPoll>().release();
         p->call_stack = self_->call_stack();
         p->call_data = self_;
         GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
