@@ -106,12 +106,14 @@ class ClientCallData::PollContext {
     GPR_ASSERT(self_->poll_ctx_ == nullptr);
     self_->poll_ctx_ = this;
     scoped_activity_.Init(self_);
+    have_scoped_activity_ = true;
   }
 
   PollContext(const PollContext&) = delete;
   PollContext& operator=(const PollContext&) = delete;
 
   void Run() {
+    GPR_ASSERT(have_scoped_activity_);
     repoll_ = false;
     if (self_->server_initial_metadata_latch() != nullptr) {
       switch (self_->recv_initial_metadata_->state) {
@@ -157,7 +159,6 @@ class ClientCallData::PollContext {
         // Poll the promise once since we're waiting for it.
         Poll<ServerMetadataHandle> poll = self_->promise_();
         if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
-          self_->promise_ = ArenaPromise<ServerMetadataHandle>();
           auto* md = UnwrapMetadata(std::move(*r));
           bool destroy_md = true;
           if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
@@ -229,6 +230,9 @@ class ClientCallData::PollContext {
           if (destroy_md) {
             md->~grpc_metadata_batch();
           }
+          scoped_activity_.Destroy();
+          have_scoped_activity_ = false;
+          self_->promise_ = ArenaPromise<ServerMetadataHandle>();
         }
       } break;
       case SendInitialState::kInitial:
@@ -249,7 +253,7 @@ class ClientCallData::PollContext {
 
   ~PollContext() {
     self_->poll_ctx_ = nullptr;
-    scoped_activity_.Destroy();
+    if (have_scoped_activity_) scoped_activity_.Destroy();
     GRPC_CALL_STACK_REF(self_->call_stack(), "finish_poll");
     bool in_combiner = true;
     if (call_closures_.size() != 0) {
@@ -321,6 +325,7 @@ class ClientCallData::PollContext {
   grpc_transport_stream_op_batch* forward_batch_ = nullptr;
   bool repoll_ = false;
   bool forward_send_initial_metadata_ = false;
+  bool have_scoped_activity_;
 };
 
 ClientCallData::ClientCallData(grpc_call_element* elem,
