@@ -80,7 +80,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  ChannelStackBuilderImpl builder("test");
+  ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL);
   builder.SetChannelArgs(args);
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
@@ -90,8 +90,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
-  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(
-      &builder, GRPC_SERVER_CHANNEL));
+  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
   std::vector<std::string> filters;
   for (const auto& entry : *builder.mutable_stack()) {
     filters.push_back(entry.filter->name);
@@ -119,7 +118,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  ChannelStackBuilderImpl builder("test");
+  ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL);
   builder.SetChannelArgs(args);
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
@@ -129,8 +128,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added after the census filter
-  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(
-      &builder, GRPC_SERVER_CHANNEL));
+  ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
   std::vector<std::string> filters;
   for (const auto& entry : *builder.mutable_stack()) {
     filters.push_back(entry.filter->name);

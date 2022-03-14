@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_channel_element grpc_channel_element;
@@ -54,7 +55,8 @@ class ChannelStackBuilder {
   };
 
   // Initialize with a name.
-  explicit ChannelStackBuilder(const char* name) : name_(name) {}
+  ChannelStackBuilder(const char* name, grpc_channel_stack_type type)
+      : name_(name), type_(type) {}
 
   const char* name() const { return name_; }
 
@@ -83,6 +85,9 @@ class ChannelStackBuilder {
   // Mutable vector of proposed stack entries.
   std::vector<StackEntry>* mutable_stack() { return &stack_; }
 
+  // The type of channel stack being built.
+  grpc_channel_stack_type channel_stack_type() const { return type_; }
+
   // Helper to add a filter to the front of the stack.
   void PrependFilter(const grpc_channel_filter* filter, PostInitFunc post_init);
 
@@ -106,6 +111,8 @@ class ChannelStackBuilder {
 
   // The name of the stack
   const char* const name_;
+  // The type of stack being built
+  const grpc_channel_stack_type type_;
   // The target
   std::string target_{unknown_target()};
   // The transport

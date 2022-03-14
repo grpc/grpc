@@ -2226,6 +2226,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_stack_builder",
         "channel_stack_type",
         "gpr_base",
     ],
@@ -2243,6 +2244,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
+        "channel_stack_type",
         "closure",
         "error",
         "gpr_base",

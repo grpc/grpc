@@ -724,7 +724,7 @@ class IsolatedCallFixture : public TrackCounters {
     const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
-    grpc_core::ChannelStackBuilderImpl builder("phony");
+    grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
     builder.SetTarget("phony_target");
     builder.SetChannelArgs(args);
     builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);

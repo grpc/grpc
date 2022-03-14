@@ -243,7 +243,7 @@ grpc_channel* grpc_channel_create_internal(
   // ensuring that shutdown is deferred until that point.
   grpc_init();
   grpc_core::ChannelStackBuilderImpl builder(
-      grpc_channel_stack_type_string(channel_stack_type));
+      grpc_channel_stack_type_string(channel_stack_type), channel_stack_type);
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
   grpc_channel_args* args =
@@ -259,7 +259,7 @@ grpc_channel* grpc_channel_create_internal(
       optional_transport);
   grpc_channel_args_destroy(args);
   if (!grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-          &builder, channel_stack_type)) {
+          &builder)) {
     grpc_shutdown();  // Since we won't call destroy_channel().
     return nullptr;
   }

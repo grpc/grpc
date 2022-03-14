@@ -124,7 +124,8 @@ static int check_stack(const char* file, int line, const char* transport_name,
                        grpc_channel_args* init_args,
                        unsigned channel_stack_type, ...) {
   // create phony channel stack
-  grpc_core::ChannelStackBuilderImpl builder("test");
+  grpc_core::ChannelStackBuilderImpl builder(
+      "test", static_cast<grpc_channel_stack_type>(channel_stack_type));
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
@@ -137,7 +138,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   {
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-        &builder, (grpc_channel_stack_type)channel_stack_type));
+        &builder));
   }
 
   // build up our expectation list
