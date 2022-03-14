@@ -44,16 +44,17 @@ using ::testing::StrictMock;
 namespace {
 
 class WireReaderTest : public ::testing::Test {
- public:
-  WireReaderTest()
-      : transport_stream_receiver_(
-            std::make_shared<StrictMock<MockTransportStreamReceiver>>()),
-        wire_reader_(
-            transport_stream_receiver_, /*is_client=*/true,
-            std::make_shared<
-                grpc::experimental::binder::UntrustedSecurityPolicy>()) {}
-
  protected:
+  void SetUp() override { SetUp(true); }
+  void SetUp(bool is_client) {
+    transport_stream_receiver_ =
+        std::make_shared<StrictMock<MockTransportStreamReceiver>>();
+    wire_reader_ = std::make_shared<WireReaderImpl>(
+        transport_stream_receiver_, is_client,
+        std::make_shared<
+            grpc::experimental::binder::UntrustedSecurityPolicy>());
+  }
+
   void ExpectReadInt32(int result) {
     EXPECT_CALL(mock_readable_parcel_, ReadInt32)
         .WillOnce(DoAll(SetArgPointee<0>(result), Return(absl::OkStatus())));
@@ -70,24 +71,32 @@ class WireReaderTest : public ::testing::Test {
     }
   }
 
+  void ExpectReadString(const std::string& str) {
+    EXPECT_CALL(mock_readable_parcel_, ReadString)
+        .WillOnce([str](std::string* out) {
+          *out = str;
+          return absl::OkStatus();
+        });
+  }
+
   void UnblockSetupTransport() {
     // SETUP_TRANSPORT should finish before we can proceed with any other
     // requests and streaming calls. The MockBinder will construct a
     // MockTransactionReceiver, which will then sends SETUP_TRANSPORT request
     // back to us.
-    wire_reader_.SetupTransport(absl::make_unique<MockBinder>());
+    wire_reader_->SetupTransport(absl::make_unique<MockBinder>());
   }
 
   template <typename T>
   absl::Status CallProcessTransaction(T tx_code) {
-    return wire_reader_.ProcessTransaction(
+    return wire_reader_->ProcessTransaction(
         static_cast<transaction_code_t>(tx_code), &mock_readable_parcel_,
         /*uid=*/0);
   }
 
   std::shared_ptr<StrictMock<MockTransportStreamReceiver>>
       transport_stream_receiver_;
-  WireReaderImpl wire_reader_;
+  std::shared_ptr<WireReaderImpl> wire_reader_;
   MockReadableParcel mock_readable_parcel_;
 };
 
@@ -116,7 +125,7 @@ TEST_F(WireReaderTest, SetupTransport) {
   // Write version.
   EXPECT_CALL(mock_binder_ref.GetWriter(), WriteInt32(1));
 
-  wire_reader_.SetupTransport(std::move(mock_binder));
+  wire_reader_->SetupTransport(std::move(mock_binder));
 }
 
 TEST_F(WireReaderTest, ProcessTransactionControlMessageSetupTransport) {
@@ -304,6 +313,55 @@ TEST_F(WireReaderTest, InBoundFlowControl) {
               NotifyRecvMessage(kFirstCallId,
                                 StatusOrContainerEq(std::string(1000, 'a') +
                                                     std::string(1000, 'b'))));
+  EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
+}
+
+TEST_F(WireReaderTest, ServerInitialMetadata) {
+  SetUp(/*is_client=*/false);
+
+  ::testing::InSequence sequence;
+  UnblockSetupTransport();
+
+  // flag
+  ExpectReadInt32(kFlagPrefix);
+  // sequence number
+  ExpectReadInt32(0);
+
+  const std::vector<std::pair<std::string, std::string>> kMetadata = {
+      {"", ""},
+      {"", "value"},
+      {"key", ""},
+      {"key", "value"},
+      {"another-key", "another-value"},
+  };
+
+  // method ref
+  ExpectReadString("test.service/rpc.method");
+
+  // metadata
+  {
+    // count
+    ExpectReadInt32(kMetadata.size());
+    for (const auto& md : kMetadata) {
+      // metadata key
+      ExpectReadByteArray(md.first);
+      // metadata val
+      // TODO(waynetu): metadata value can also be "parcelable".
+      ExpectReadByteArray(md.second);
+    }
+  }
+
+  // Since path and authority is not encoded as metadata in wire format,
+  // wire_reader implementation should insert them as metadata before passing
+  // to transport layer.
+  auto metadata_expectation = kMetadata;
+  metadata_expectation.push_back({":path", "/test.service/rpc.method"});
+  metadata_expectation.push_back({":authority", "binder.authority"});
+
+  EXPECT_CALL(*transport_stream_receiver_,
+              NotifyRecvInitialMetadata(
+                  kFirstCallId, StatusOrContainerEq(metadata_expectation)));
+
   EXPECT_TRUE(CallProcessTransaction(kFirstCallId).ok());
 }
 

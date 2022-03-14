@@ -45,7 +45,6 @@ grpc_end2end_test_fixture Chttp2CreateFixtureInsecureFullstack(
   ffd->localaddr = grpc_core::JoinHostPort("localhost", port);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }

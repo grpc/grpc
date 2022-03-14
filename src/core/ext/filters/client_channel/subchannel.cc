@@ -487,14 +487,14 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   void StartHealthCheckingLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(subchannel_->mu_) {
     GPR_ASSERT(health_check_client_ == nullptr);
-    health_check_client_ = MakeOrphanable<HealthCheckClient>(
+    health_check_client_ = MakeHealthCheckClient(
         health_check_service_name_, subchannel_->connected_subchannel_,
         subchannel_->pollset_set_, subchannel_->channelz_node_, Ref());
   }
 
   WeakRefCountedPtr<Subchannel> subchannel_;
   std::string health_check_service_name_;
-  OrphanablePtr<HealthCheckClient> health_check_client_;
+  OrphanablePtr<SubchannelStreamClient> health_check_client_;
   grpc_connectivity_state state_;
   absl::Status status_;
   ConnectivityStateWatcherList watcher_list_;

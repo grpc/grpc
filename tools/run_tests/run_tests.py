@@ -291,7 +291,7 @@ class CLanguage(object):
             if self.platform == 'linux':
                 # Allow all the known architectures. _check_arch_option has already checked that we're not doing
                 # something illegal when not running under docker.
-                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+                _check_arch(self.args.arch, ['default', 'x64', 'x86', 'arm64'])
             else:
                 _check_arch(self.args.arch, ['default'])
 
@@ -774,6 +774,11 @@ class PythonLanguage(object):
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
                 return (python38_config,)
+            elif platform.machine() == 'aarch64':
+                # Currently the python_debian11_default_arm64 docker image
+                # only has python3.9 installed (and that seems sufficient
+                # for arm64 testing)
+                return (python39_config,)
             else:
                 return (
                     python36_config,
@@ -1234,12 +1239,15 @@ def _check_arch_option(arch):
         _windows_arch_option(arch)
     elif platform_string() == 'linux':
         # On linux, we need to be running under docker with the right architecture.
+        runtime_machine = platform.machine()
         runtime_arch = platform.architecture()[0]
         if arch == 'default':
             return
-        elif runtime_arch == '64bit' and arch == 'x64':
+        elif runtime_machine == 'x86_64' and runtime_arch == '64bit' and arch == 'x64':
             return
-        elif runtime_arch == '32bit' and arch == 'x86':
+        elif runtime_machine == 'x86_64' and runtime_arch == '32bit' and arch == 'x86':
+            return
+        elif runtime_machine == 'aarch64' and runtime_arch == '64bit' and arch == 'arm64':
             return
         else:
             print(
@@ -1259,6 +1267,8 @@ def _docker_arch_suffix(arch):
         return 'x64'
     elif arch == 'x86':
         return 'x86'
+    elif arch == 'arm64':
+        return 'arm64'
     else:
         print('Architecture %s not supported with current settings.' % arch)
         sys.exit(1)
@@ -1549,7 +1559,7 @@ argp.add_argument(
 )
 argp.add_argument(
     '--arch',
-    choices=['default', 'x86', 'x64'],
+    choices=['default', 'x86', 'x64', 'arm64'],
     default='default',
     help=
     'Selects architecture to target. For some platforms "default" is the only supported choice.'

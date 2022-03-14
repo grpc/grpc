@@ -877,7 +877,8 @@ void XdsResolver::OnError(grpc_error_handle error) {
   Result result;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config = grpc_error_to_absl_status(error);
+  result.service_config = absl::UnavailableError(absl::StrCat(
+      "error obtaining xDS resources: ", grpc_error_std_string(error)));
   result_handler_->ReportResult(std::move(result));
   GRPC_ERROR_UNREF(error);
 }

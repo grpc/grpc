@@ -71,7 +71,6 @@ class InteropClient {
   bool DoCustomMetadata();
   bool DoUnimplementedMethod();
   bool DoUnimplementedService();
-  bool DoCacheableUnary();
   // all requests are sent to one server despite multiple servers are resolved
   bool DoPickFirstUnary();
 
