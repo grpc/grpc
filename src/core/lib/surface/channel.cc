@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
@@ -241,7 +242,7 @@ grpc_channel* grpc_channel_create_internal(
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
-  grpc_core::ChannelStackBuilder builder(
+  grpc_core::ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type));
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
