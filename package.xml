@@ -881,6 +881,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder_impl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channelz.cc" role="src" />

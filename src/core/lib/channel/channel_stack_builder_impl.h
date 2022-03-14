@@ -41,8 +41,8 @@ class ChannelStackBuilderImpl : public ChannelStackBuilder {
   // On failure, *result is nullptr.
   grpc_error_handle Build(size_t prefix_bytes, int initial_refs,
                           grpc_iomgr_cb_func destroy, void* destroy_arg,
-                          void** result);
+                          void** result) override;
 };
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H
+#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H
