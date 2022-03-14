@@ -412,7 +412,7 @@ void grpc_end2end_tests(const std::vector<char*>& argv,
     return;
   }
 
-  for (int i = 1; i < argv.size(); ++i) {
+  for (std::size_t i = 1; i < argv.size(); ++i) {
     if (0 == strcmp("authority_not_supported", argv[i])) {
       authority_not_supported(config);
       continue;

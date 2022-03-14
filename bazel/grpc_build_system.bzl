@@ -339,9 +339,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     )
     if not uses_polling:
         # the test behavior doesn't depend on polling, just generate the test
-        # TODO(hork): identify if any non-polling tests should be exercised by
-        # all known EventEngines. It is assumed that non-polling tests are
-        # engine-agnostic.
         native.cc_test(
             name = name,
             srcs = srcs,

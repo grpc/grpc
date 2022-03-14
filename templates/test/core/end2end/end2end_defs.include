@@ -55,7 +55,7 @@ void grpc_end2end_tests(const std::vector<char*>& argv,
     return;
   }
 
-  for (int i = 1; i < argv.size(); ++i) {
+  for (std::size_t i = 1; i < argv.size(); ++i) {
 % for test in tests:
     if (0 == strcmp("${test}", argv[i])) {
       ${test}(config);
