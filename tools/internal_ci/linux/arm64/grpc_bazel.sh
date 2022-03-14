@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-# Copyright 2015 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This is used by run_tests.py to create cpu load on a machine"""
 
-while True:
-    pass
+set -ex
+
+# change to grpc repo root
+cd $(dirname $0)/../../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel_arm64
+export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
+exec tools/run_tests/dockerize/build_and_run_docker.sh

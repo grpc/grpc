@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM arm64v8/debian:11
 
 #=================
 # Basic C core dependencies
@@ -78,48 +78,28 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-#================
-# C# dependencies
+#==================
+# Ruby dependencies
 
-# cmake >=3.6 needed to build grpc_csharp_ext
+# Install rvm
+RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
+RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+RUN \curl -sSL https://get.rvm.io | bash -s stable
+
+# Install Ruby 2.5
+RUN apt-get update && apt-get install -y procps && apt-get clean
+RUN /bin/bash -l -c "rvm install ruby-2.5"
+RUN /bin/bash -l -c "rvm use --default ruby-2.5"
+RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
+RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
+
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
 RUN apt-get update && apt-get install -y cmake && apt-get clean
-
-# Install mono
-RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
-RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
-RUN apt-get update && apt-get install -y \
-    mono-devel \
-    ca-certificates-mono \
-    nuget \
-    && apt-get clean
-
-# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
-RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
-    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
-    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz
-
-# Install .NET 6
-RUN DOTNET_DOWNLOAD_VERSION=6.0.100 \
-    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
-    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz
-
-# Make sure "dotnet" is on PATH
-RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
-
-# Trigger the population of the local package cache
-ENV NUGET_XMLDOC_MODE skip
-RUN mkdir warmup \
-    && cd warmup \
-    && dotnet new \
-    && cd .. \
-    && rm -rf warmup
 
 #=================
 # Install ccache
@@ -138,6 +118,9 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 RUN mkdir /var/local/jenkins
 
+
+# Seems required by XDS interop tests.
+RUN python3 -m pip install virtualenv==16.7.9
 
 # Define the default command.
 CMD ["bash"]

@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:13
+FROM arm64v8/debian:11
 
 #=================
 # Basic C core dependencies
@@ -53,52 +53,37 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
-#=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+#====================
+# run_tests.py python dependencies
 
+# Basic python dependencies to be able to run tools/run_tests python scripts
+# These dependencies are not sufficient to build gRPC Python, gRPC Python
+# deps are defined elsewhere (e.g. python_deps.include)
+RUN apt-get update && apt-get install -y \
+  python3 \
+  python3-pip \
+  python3-setuptools \
+  python3-yaml \
+  && apt-get clean
 
-# Install Python 3.7 from source (and installed as a default python3)
-# (Bullseye comes with Python 3.9 which isn't supported by pytype yet)
-RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
-                            libnss3-dev libssl-dev libreadline-dev libffi-dev libbz2-dev
-RUN curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
-tar -xf Python-3.7.9.tar.xz && \
-cd Python-3.7.9 && \
-./configure && \
-make -j 4 && \
-make install
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+# use pinned version of pip to avoid sudden breakages
+RUN python3 -m pip install --upgrade pip==19.3.1
+
+# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
+# but since our python2 usage is deprecated, we should get rid of it.
+RUN python3 -m pip install six==1.16.0
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-RUN mkdir /var/local/jenkins
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
 
 
-#========================
-# Sanity test dependencies
-
-RUN apt-get update && apt-get install -y \
-      autoconf \
-      automake \
-      libtool \
-      curl \
-      shellcheck
-
-# otherwise clang-tidy will report missing <gtest/gtest.h> header
-RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
-
-RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
-
-# Upgrade Python's YAML library
-RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
-
-# Install prerequisites for the clang-tidy script
-RUN apt-get update && apt-get install -y jq git
-
+# Install bazel
 #========================
 # Bazel installation
 
@@ -121,11 +106,6 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 # but the self-extraction is broken for bazel currently.
 # The binary will work correctly when run on real arm64
 # hardware, when qemu-user-static isn't getting into the way.
-
-# Install buildifier v0.29.0
-RUN wget https://github.com/bazelbuild/buildtools/releases/download/0.29.0/buildifier
-RUN chmod +x buildifier
-RUN mv buildifier /usr/local/bin
 
 
 # Define the default command.
