@@ -210,11 +210,34 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
+    # ARM64 Linux C# tests
+    test_jobs += _generate_jobs(languages=['csharp'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                labels=['basictests_arm64'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
     test_jobs += _generate_jobs(languages=['python'],
                                 configs=['opt'],
                                 platforms=['linux', 'macos', 'windows'],
                                 iomgr_platforms=['native'],
                                 labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
+    # ARM64 Linux Python tests
+    test_jobs += _generate_jobs(languages=['python'],
+                                configs=['opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                iomgr_platforms=['native'],
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
@@ -234,6 +257,17 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 configs=['dbg', 'opt'],
                                 platforms=['linux', 'macos'],
                                 labels=['basictests', 'multilang'],
+                                extra_args=extra_args +
+                                ['--report_multi_target'],
+                                inner_jobs=inner_jobs)
+
+    # ARM64 Linux Ruby and PHP tests
+    test_jobs += _generate_jobs(languages=['ruby', 'php7'],
+                                configs=['dbg', 'opt'],
+                                platforms=['linux'],
+                                arch='arm64',
+                                compiler='default',
+                                labels=['basictests_arm64'],
                                 extra_args=extra_args +
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
