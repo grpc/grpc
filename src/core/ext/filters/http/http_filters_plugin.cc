@@ -66,6 +66,9 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
           return true;
         });
   };
+  // TODO(ctiller): return this flag to true once the promise conversion is
+  // complete.
+  static constexpr bool kMinimalStackHasDecompression = false;
   optional(GRPC_CLIENT_SUBCHANNEL, false,
            GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
            &grpc_message_compress_filter);
@@ -74,12 +77,14 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
            &grpc_message_compress_filter);
   optional(GRPC_SERVER_CHANNEL, false, GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION,
            &grpc_message_compress_filter);
-  optional(GRPC_CLIENT_SUBCHANNEL, true,
+  optional(GRPC_CLIENT_SUBCHANNEL, kMinimalStackHasDecompression,
            GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
-  optional(GRPC_CLIENT_DIRECT_CHANNEL, true,
+  optional(GRPC_CLIENT_DIRECT_CHANNEL, kMinimalStackHasDecompression,
            GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
-  optional(GRPC_SERVER_CHANNEL, true, GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION,
-           &MessageDecompressFilter);
+  optional(GRPC_SERVER_CHANNEL, kMinimalStackHasDecompression,
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
+  optional(GRPC_SERVER_CHANNEL, kMinimalStackHasDecompression,
+           GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION, &MessageDecompressFilter);
   required(GRPC_CLIENT_SUBCHANNEL, &HttpClientFilter::kFilter);
   required(GRPC_CLIENT_DIRECT_CHANNEL, &HttpClientFilter::kFilter);
   required(GRPC_SERVER_CHANNEL, &grpc_http_server_filter);
