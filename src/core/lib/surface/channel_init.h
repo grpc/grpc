@@ -24,6 +24,7 @@
 #include <functional>
 #include <vector>
 
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 #define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
@@ -34,8 +35,6 @@
 /// a channel stack for various subsystems.
 
 namespace grpc_core {
-
-class ChannelStackBuilder;
 
 class ChannelInit {
  public:
