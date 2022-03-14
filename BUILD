@@ -5064,8 +5064,8 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_filter.h",
     ],
     external_deps = [
-        "absl-base",
-        "absl-time",
+        "absl/base",
+        "absl/time",
         "absl/strings",
         "opencensus-trace",
         "opencensus-trace-context_util",
