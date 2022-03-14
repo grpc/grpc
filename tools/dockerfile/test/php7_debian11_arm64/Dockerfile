@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM arm64v8/debian:11
 
 #=================
 # Basic C core dependencies
@@ -78,48 +78,43 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-#================
-# C# dependencies
+#=================
+# PHP7 dependencies
 
-# cmake >=3.6 needed to build grpc_csharp_ext
-RUN apt-get update && apt-get install -y cmake && apt-get clean
-
-# Install mono
-RUN apt-get update && apt-get install -y apt-transport-https dirmngr && apt-get clean
-RUN apt-key adv --no-tty --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+# PHP specific dependencies
 RUN apt-get update && apt-get install -y \
-    mono-devel \
-    ca-certificates-mono \
-    nuget \
-    && apt-get clean
+  libbison-dev \
+  libcurl4-openssl-dev \
+  libgmp-dev \
+  libgmp3-dev \
+  libssl-dev \
+  libxml2-dev \
+  re2c \
+  zlib1g-dev \
+  && apt-get clean
 
-# Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
-RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
-    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
-    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz
+# Compile PHP7 from source
+RUN git clone https://github.com/php/php-src /var/local/git/php-src
+RUN cd /var/local/git/php-src \
+  && git checkout PHP-7.2.34 \
+  && ./buildconf --force \
+  && ./configure \
+  --with-gmp \
+  --with-openssl \
+  --with-zlib \
+  && make -j$(nproc) \
+  && make install
 
-# Install .NET 6
-RUN DOTNET_DOWNLOAD_VERSION=6.0.100 \
-    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
-    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz
+#=================
+# PHP Test dependencies
 
-# Make sure "dotnet" is on PATH
-RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+ RUN apt-get update && apt-get install -y \
+    valgrind
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
-# Trigger the population of the local package cache
-ENV NUGET_XMLDOC_MODE skip
-RUN mkdir warmup \
-    && cd warmup \
-    && dotnet new \
-    && cd .. \
-    && rm -rf warmup
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 #=================
 # Install ccache
@@ -137,7 +132,6 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
-
 
 # Define the default command.
 CMD ["bash"]
