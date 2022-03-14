@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(argc, argv, configs[i]);
+    grpc_end2end_tests(env.UnparsedArgv(), configs[i]);
   }
 
   grpc_shutdown();

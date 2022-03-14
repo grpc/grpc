@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 
+#include <vector>
+
 #include <grpc/support/time.h>
 
 #include "test/core/util/build.h"
@@ -40,7 +42,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #endif
 
 // Prefer TestEnvironment below.
-void grpc_test_init(int argc, char** argv);
+std::vector<char*> grpc_test_init(int argc, char** argv);
 
 // Wait until gRPC is fully shut down.
 // Returns if grpc is shutdown
@@ -55,6 +57,10 @@ class TestEnvironment {
  public:
   TestEnvironment(int argc, char** argv);
   ~TestEnvironment();
+  const std::vector<char*>& UnparsedArgv() const { return unparsed_argv_; }
+
+ private:
+  std::vector<char*> unparsed_argv_;
 };
 
 // A TestGrpcScope makes sure that

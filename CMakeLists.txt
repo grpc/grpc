@@ -2287,6 +2287,8 @@ target_link_libraries(grpc_test_util
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::flags
+  absl::flags_parse
   grpc
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2354,6 +2356,8 @@ target_link_libraries(grpc_test_util_unsecure
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::flags
+  absl::flags_parse
   grpc_unsecure
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -3506,7 +3510,6 @@ target_include_directories(grpc++_test_util
 target_link_libraries(grpc++_test_util
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flags
   grpc++
   grpc_test_util
 )
@@ -17041,6 +17044,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     absl::failure_signal_handler
     absl::stacktrace
     absl::symbolize
+    absl::flags
+    absl::flags_parse
     grpc++
   )
 
@@ -17464,7 +17469,6 @@ target_include_directories(xds_interop_client
 target_link_libraries(xds_interop_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flags
   grpc++_reflection
   grpcpp_channelz
   grpc_test_util
@@ -17539,7 +17543,6 @@ target_include_directories(xds_interop_server
 target_link_libraries(xds_interop_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flags
   grpc++_reflection
   grpcpp_channelz
   grpc_test_util

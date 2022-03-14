@@ -311,7 +311,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
 
     # Test args for all tests
     test_args = {
-        "args": args,
         "data": data,
         "copts": GRPC_DEFAULT_COPTS + copts,
         "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
@@ -335,6 +334,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = srcs,
         tags = tags,
         deps = core_deps + ee_deps,
+        args = args,
         **test_args
     )
     if not uses_polling:
@@ -347,6 +347,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             srcs = srcs,
             tags = tags + ["no_uses_polling"],
             deps = core_deps + ee_deps,
+            args = args,
             **test_args
         )
         return
@@ -382,6 +383,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 tags = (tags + engine["tags"] + [
                     "no_linux",  # linux supports multiple pollers
                 ]),
+                args = args,
                 **test_args
             )
 
@@ -392,14 +394,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         native.cc_test(
             name = name + "@poller=" + poller,
             deps = base_deps + EVENT_ENGINES["default"]["deps"],
-            env = {
-                "GRPC_POLL_STRATEGY": poller,
-            },
             tags = (tags + EVENT_ENGINES["default"]["tags"] + [
                 "no_windows",
                 "no_mac",
                 "no_extract",  # do not run with CMake
             ]),
+            args = args + ["--poller=" + poller],
             **test_args
         )
 
@@ -411,14 +411,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         native.cc_test(
             name = name + "@poller=" + POLLERS[0] + "@engine=" + engine_name,
             deps = base_deps + engine["deps"],
-            env = {
-                "GRPC_POLL_STRATEGY": POLLERS[0],
-            },
             tags = (tags + engine["tags"] + [
                 "no_windows",
                 "no_mac",
                 "no_extract",  # do not run with CMake
             ]),
+            args = args,
             **test_args
         )
 

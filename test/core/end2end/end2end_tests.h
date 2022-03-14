@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_END2END_TESTS_H
 #define GRPC_TEST_CORE_END2END_END2END_TESTS_H
 
+#include <vector>
+
 #include <grpc/grpc.h>
 
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
@@ -73,7 +75,8 @@ struct grpc_end2end_test_config {
 };
 
 void grpc_end2end_tests_pre_init(void);
-void grpc_end2end_tests(int argc, char** argv, grpc_end2end_test_config config);
+void grpc_end2end_tests(const std::vector<char*>& argv,
+                        grpc_end2end_test_config config);
 
 const char* get_host_override_string(const char* str,
                                      grpc_end2end_test_config config);

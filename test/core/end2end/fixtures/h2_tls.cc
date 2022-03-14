@@ -402,7 +402,7 @@ int main(int argc, char** argv) {
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
-    grpc_end2end_tests(argc, argv, configs[ind]);
+    grpc_end2end_tests(env.UnparsedArgv(), configs[ind]);
   }
   grpc_shutdown();
   return 0;

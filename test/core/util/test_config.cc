@@ -27,12 +27,15 @@
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/symbolize.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/examine_stack.h"
@@ -40,6 +43,8 @@
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
+
+ABSL_FLAG(std::string, poller, "", "Override the poller for this test");
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -91,9 +96,14 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-void grpc_test_init(int /*argc*/, char** argv) {
+std::vector<char*> grpc_test_init(int argc, char** argv) {
   gpr_log_verbosity_init();
+  std::vector<char*> unparsed_argv = absl::ParseCommandLine(argc, argv);
   grpc_event_engine::experimental::InitializeTestingEventEngineFactory();
+  std::string poller_override = absl::GetFlag(FLAGS_poller);
+  if (!poller_override.empty()) {
+    gpr_setenv("GRPC_POLL_STRATEGY", poller_override.c_str());
+  }
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
@@ -105,6 +115,7 @@ void grpc_test_init(int /*argc*/, char** argv) {
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());
+  return unparsed_argv;
 }
 
 bool grpc_wait_until_shutdown(int64_t time_s) {
@@ -124,7 +135,7 @@ namespace grpc {
 namespace testing {
 
 TestEnvironment::TestEnvironment(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  unparsed_argv_ = grpc_test_init(argc, argv);
 }
 
 TestEnvironment::~TestEnvironment() {

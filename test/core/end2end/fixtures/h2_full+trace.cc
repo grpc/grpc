@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
   GPR_ASSERT(1 == grpc_tracer_set_enabled("all", 1));
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(argc, argv, configs[i]);
+    grpc_end2end_tests(env.UnparsedArgv(), configs[i]);
   }
 
   grpc_shutdown();

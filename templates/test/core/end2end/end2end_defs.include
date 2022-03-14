@@ -44,20 +44,18 @@ void grpc_end2end_tests_pre_init(void) {
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-void grpc_end2end_tests(int argc, char **argv,
+void grpc_end2end_tests(const std::vector<char*>& argv,
                         grpc_end2end_test_config config) {
-  int i;
-
   GPR_ASSERT(g_pre_init_called);
 
-  if (argc <= 1) {
+  if (argv.empty()) {
 % for test in tests:
     ${test}(config);
 % endfor
     return;
   }
 
-  for (i = 1; i < argc; i++) {
+  for (int i = 1; i < argv.size(); ++i) {
 % for test in tests:
     if (0 == strcmp("${test}", argv[i])) {
       ${test}(config);

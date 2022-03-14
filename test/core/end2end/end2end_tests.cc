@@ -312,13 +312,11 @@ void grpc_end2end_tests_pre_init(void) {
 }
 
 // NOLINTNEXTLINE(readability-function-size)
-void grpc_end2end_tests(int argc, char **argv,
+void grpc_end2end_tests(const std::vector<char*>& argv,
                         grpc_end2end_test_config config) {
-  int i;
-
   GPR_ASSERT(g_pre_init_called);
 
-  if (argc <= 1) {
+  if (argv.empty()) {
     authority_not_supported(config);
     bad_hostname(config);
     bad_ping(config);
@@ -414,7 +412,7 @@ void grpc_end2end_tests(int argc, char **argv,
     return;
   }
 
-  for (i = 1; i < argc; i++) {
+  for (int i = 1; i < argv.size(); ++i) {
     if (0 == strcmp("authority_not_supported", argv[i])) {
       authority_not_supported(config);
       continue;
