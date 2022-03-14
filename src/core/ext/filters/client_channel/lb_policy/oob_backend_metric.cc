@@ -19,6 +19,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
+#include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 
 namespace grpc_core {
 
@@ -38,12 +39,16 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
     subchannel_->AddDataProducer(this);
   }
 
-  void Orphan() override { subchannel_->RemoveDataProducer(this); }
+  void Orphan() override {
+    subchannel_->RemoveDataProducer(this);
+    stream_client_.reset();
+  }
 
   const char* type() override { return kProducerType; }
 
   void AddWatcher(WeakRefCountedPtr<OrcaWatcher> watcher) {
     watcher_map_[watcher.get()] = std::move(watcher);
+// FIXME: start stream if not already started
   }
 
   void RemoveWatcher(OrcaWatcher* watcher) {
@@ -57,7 +62,7 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   // map lookups.
   std::map<OrcaWatcher*, WeakRefCountedPtr<OrcaWatcher>> watcher_map_
       ABSL_GUARDED_BY(mu_);
-// FIXME  OrphanablePtr<OrcaCall> call_ ABSL_GUARDED_BY(mu_);
+  OrphanablePtr<SubchannelStreamClient> stream_client_ ABSL_GUARDED_BY(mu_);
 };
 
 // This watcher is returned to the LB policy and added to the
@@ -68,7 +73,12 @@ class OrcaWatcher : public SubchannelInterface::DataWatcherInterface {
               std::unique_ptr<OobBackendMetricWatcher> watcher)
       : report_interval_(report_interval), watcher_(std::move(watcher)) {}
 
-  void Orphan() override { producer_->RemoveWatcher(this); }
+  void Orphan() override {
+    if (producer_ != nullptr) {
+      producer_->RemoveWatcher(this);
+      producer_.reset();
+    }
+  }
 
   // When the client channel sees this wrapper, it will pass it the real
   // subchannel and the WorkSerializer to use.

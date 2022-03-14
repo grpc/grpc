@@ -29,6 +29,10 @@ namespace grpc_core {
 
 // Interface for watching data of a particular type for this subchannel.
 // Implementations will generally define their own type-specific methods.
+// FIXME: does this actually need to be DualRefCounted?  Or even
+// RefCounted at all?  Maybe it can just be single-owner.  Need to
+// consider how LB policy will set this as it creates a new subchannel
+// list for each address list update from its parent.
 class SubchannelInterface::DataWatcherInterface
     : public DualRefCounted<SubchannelInterface::DataWatcherInterface> {
  public:
