@@ -1100,22 +1100,24 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string.c_str(),
             goaway_error, grpc_error_std_string(t->goaway_error).c_str());
   }
-  cancel_unstarted_streams(t, GRPC_ERROR_REF(t->goaway_error));
-  // Cancel all unseen streams
-  grpc_chttp2_stream_map_for_each(
-      &t->stream_map,
-      [](void* user_data, uint32_t /* key */, void* stream) {
-        uint32_t last_stream_id = *(static_cast<uint32_t*>(user_data));
-        grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
-        if (s->id > last_stream_id) {
-          s->trailing_metadata_buffer.Set(
-              grpc_core::GrpcStreamNetworkState(),
-              grpc_core::GrpcStreamNetworkState::kNotSeenByServer);
-          grpc_chttp2_cancel_stream(s->t, s,
-                                    GRPC_ERROR_REF(s->t->goaway_error));
-        }
-      },
-      &last_stream_id);
+  if (t->is_client) {
+    cancel_unstarted_streams(t, GRPC_ERROR_REF(t->goaway_error));
+    // Cancel all unseen streams
+    grpc_chttp2_stream_map_for_each(
+        &t->stream_map,
+        [](void* user_data, uint32_t /* key */, void* stream) {
+          uint32_t last_stream_id = *(static_cast<uint32_t*>(user_data));
+          grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+          if (s->id > last_stream_id) {
+            s->trailing_metadata_buffer.Set(
+                grpc_core::GrpcStreamNetworkState(),
+                grpc_core::GrpcStreamNetworkState::kNotSeenByServer);
+            grpc_chttp2_cancel_stream(s->t, s,
+                                      GRPC_ERROR_REF(s->t->goaway_error));
+          }
+        },
+        &last_stream_id);
+  }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
