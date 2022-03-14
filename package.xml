@@ -1475,7 +1475,6 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv-wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/libuv/include/uv/android-ifaddrs-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/bsd-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/darwin-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/include/uv/errno-wrapper.h" role="src" />
@@ -1496,7 +1495,6 @@
     <file baseinstalldir="/" name="src/libuv/src/strscpy-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/threadpool-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/timer-wrapper.c" role="src" />
-    <file baseinstalldir="/" name="src/libuv/src/unix/android-ifaddrs-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/async-wrapper.c" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/atomic-ops-wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/libuv/src/unix/bsd-ifaddrs-wrapper.c" role="src" />

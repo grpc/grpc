@@ -2542,7 +2542,6 @@ LIBUV_SRC = \
     src/libuv/src/strscpy-wrapper.c \
     src/libuv/src/threadpool-wrapper.c \
     src/libuv/src/timer-wrapper.c \
-    src/libuv/src/unix/android-ifaddrs-wrapper.c \
     src/libuv/src/unix/async-wrapper.c \
     src/libuv/src/unix/bsd-ifaddrs-wrapper.c \
     src/libuv/src/unix/bsd-proctitle-wrapper.c \

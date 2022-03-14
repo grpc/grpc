@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Any modifications to this file must be accompanied with corresponding changes
-# to `generate_libuv_source_wrappers.py`.
+# After modifying this file, run:
+# `tools/buildgen/generate_libuv_source_wrappers.py`.
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
@@ -224,7 +224,6 @@ LINUX_LIBUV_SOURCES = [
 ]
 
 ANDROID_LIBUV_SOURCES = [
-    "src/unix/android-ifaddrs.c",
     "src/unix/pthread-fixes.c",
 ]
 
