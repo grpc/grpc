@@ -20,6 +20,8 @@ kind of build configuration, so this script creates wrapper code for every libuv
 source file that conditionally compiles the original source file if it supports
 the current platform.
 """
+# TODO(hork): remove wrapper files when the source files are removed.
+
 import os
 
 from mako.runtime import Context

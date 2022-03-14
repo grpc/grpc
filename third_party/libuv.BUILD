@@ -155,9 +155,7 @@ LINUX_LIBUV_HEADERS = [
     "src/unix/linux-syscalls.h",
 ]
 
-ANDROID_LIBUV_HEADERS = [
-    "include/uv/android-ifaddrs.h",
-]
+ANDROID_LIBUV_HEADERS = []
 
 DARWIN_LIBUV_HEADERS = [
     "include/uv/darwin.h",
