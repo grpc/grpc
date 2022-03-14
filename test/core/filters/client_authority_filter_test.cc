@@ -71,18 +71,24 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
-      [&](ClientInitialMetadata initial_metadata) {
-        EXPECT_EQ(initial_metadata->get_pointer(HttpAuthorityMetadata())
+      CallArgs{
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+          nullptr,
+      },
+      [&](CallArgs call_args) {
+        EXPECT_EQ(call_args.client_initial_metadata
+                      ->get_pointer(HttpAuthorityMetadata())
                       ->as_string_view(),
                   "foo.test.google.au");
         seen = true;
-        return ArenaPromise<TrailingMetadata>([&]() -> Poll<TrailingMetadata> {
-          return TrailingMetadata::TestOnlyWrap(&trailing_metadata_batch);
-        });
+        return ArenaPromise<ServerMetadataHandle>(
+            [&]() -> Poll<ServerMetadataHandle> {
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
+            });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<TrailingMetadata>(&result) != nullptr);
+  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
   EXPECT_TRUE(seen);
 }
 
@@ -99,18 +105,24 @@ TEST(ClientAuthorityFilterTest,
   // TODO(ctiller): use Activity here, once it's ready.
   TestContext<Arena> context(arena.get());
   auto promise = filter.MakeCallPromise(
-      ClientInitialMetadata::TestOnlyWrap(&initial_metadata_batch),
-      [&](ClientInitialMetadata initial_metadata) {
-        EXPECT_EQ(initial_metadata->get_pointer(HttpAuthorityMetadata())
+      CallArgs{
+          ClientMetadataHandle::TestOnlyWrap(&initial_metadata_batch),
+          nullptr,
+      },
+      [&](CallArgs call_args) {
+        EXPECT_EQ(call_args.client_initial_metadata
+                      ->get_pointer(HttpAuthorityMetadata())
                       ->as_string_view(),
                   "bar.test.google.au");
         seen = true;
-        return ArenaPromise<TrailingMetadata>([&]() -> Poll<TrailingMetadata> {
-          return TrailingMetadata::TestOnlyWrap(&trailing_metadata_batch);
-        });
+        return ArenaPromise<ServerMetadataHandle>(
+            [&]() -> Poll<ServerMetadataHandle> {
+              return ServerMetadataHandle::TestOnlyWrap(
+                  &trailing_metadata_batch);
+            });
       });
   auto result = promise();
-  EXPECT_TRUE(absl::get_if<TrailingMetadata>(&result) != nullptr);
+  EXPECT_TRUE(absl::get_if<ServerMetadataHandle>(&result) != nullptr);
   EXPECT_TRUE(seen);
 }
 

@@ -54,9 +54,8 @@ class ChannelFilter {
   };
 
   // Construct a promise for one call.
-  virtual ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) = 0;
+  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) = 0;
 
   // Start a legacy transport op
   // Return true if the op was handled, false if it should be passed to the
@@ -205,17 +204,16 @@ class ClientCallData : public BaseCallData {
   // Effectively:
   //   - put the modified initial metadata into the batch to be sent down.
   //   - return a wrapper around PollTrailingMetadata as the promise.
-  ArenaPromise<TrailingMetadata> MakeNextPromise(
-      ClientInitialMetadata initial_metadata);
+  ArenaPromise<ServerMetadataHandle> MakeNextPromise(CallArgs call_args);
   // Wrapper to make it look like we're calling the next filter as a promise.
   // First poll: send the send_initial_metadata op down the stack.
   // All polls: await receiving the trailing metadata, then return it to the
   // application.
-  Poll<TrailingMetadata> PollTrailingMetadata();
+  Poll<ServerMetadataHandle> PollTrailingMetadata();
   static void RecvTrailingMetadataReadyCallback(void* arg,
                                                 grpc_error_handle error);
   void RecvTrailingMetadataReady(grpc_error_handle error);
-  // Given an error, fill in TrailingMetadata to represent that error.
+  // Given an error, fill in ServerMetadataHandle to represent that error.
   void SetStatusFromError(grpc_metadata_batch* metadata,
                           grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
@@ -223,7 +221,7 @@ class ClientCallData : public BaseCallData {
   void OnWakeup() override;
 
   // Contained promise
-  ArenaPromise<TrailingMetadata> promise_;
+  ArenaPromise<ServerMetadataHandle> promise_;
   // Queued batch containing at least a send_initial_metadata op.
   grpc_transport_stream_op_batch* send_initial_metadata_batch_ = nullptr;
   // Pointer to where trailing metadata will be stored.
@@ -289,12 +287,11 @@ class ServerCallData : public BaseCallData {
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
   //   - return a wrapper around PollTrailingMetadata as the promise.
-  ArenaPromise<TrailingMetadata> MakeNextPromise(
-      ClientInitialMetadata initial_metadata);
+  ArenaPromise<ServerMetadataHandle> MakeNextPromise(CallArgs call_args);
   // Wrapper to make it look like we're calling the next filter as a promise.
   // All polls: await sending the trailing metadata, then foward it down the
   // stack.
-  Poll<TrailingMetadata> PollTrailingMetadata();
+  Poll<ServerMetadataHandle> PollTrailingMetadata();
   static void RecvInitialMetadataReadyCallback(void* arg,
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
@@ -303,7 +300,7 @@ class ServerCallData : public BaseCallData {
   void OnWakeup() override;
 
   // Contained promise
-  ArenaPromise<TrailingMetadata> promise_;
+  ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
@@ -366,10 +363,10 @@ MakePromiseBasedFilter(const char* name) {
         static_cast<CallData*>(elem->call_data)->StartBatch(batch);
       },
       // make_call_promise
-      [](grpc_channel_element* elem, ClientInitialMetadata initial_metadata,
+      [](grpc_channel_element* elem, CallArgs call_args,
          NextPromiseFactory next_promise_factory) {
         return static_cast<F*>(elem->channel_data)
-            ->MakeCallPromise(std::move(initial_metadata),
+            ->MakeCallPromise(std::move(call_args),
                               std::move(next_promise_factory));
       },
       // start_transport_op

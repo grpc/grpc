@@ -2193,6 +2193,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_port",
         "json",
+        "latch",
         "memory_quota",
         "orphanable",
         "promise",
@@ -4183,6 +4184,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "capture",
         "config",
         "gpr_base",
         "grpc_base",
