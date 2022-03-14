@@ -403,7 +403,7 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
     absl::string_view serialized_resource =
         UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
     // Unwrap Resource messages, if so wrapped.
-    if (type_url == "envoy.service.discovery.v2.Resource" ||
+    if (type_url == "envoy.api.v2.Resource" ||
         type_url == "envoy.service.discovery.v3.Resource") {
       const auto* resource_wrapper = envoy_service_discovery_v3_Resource_parse(
           serialized_resource.data(), serialized_resource.size(), arena.ptr());
