@@ -18,7 +18,7 @@ set -e
 
 git clone /var/local/jenkins/grpc-node ~/grpc-node
 # clone gRPC submodules, use data from locally cloned submodules where possible
-(cd ~/grpc-node/ && git submodule foreach 'cd ~/grpc-node \
+(cd /var/local/jenkins/grpc-node/ && git submodule foreach 'cd ~/grpc-node \
 && git submodule update --init --recursive --reference /var/local/jenkins/grpc-node/${name} \
 ${name}')
 
