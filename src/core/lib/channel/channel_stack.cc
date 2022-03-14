@@ -105,7 +105,7 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_channel_args* channel_args, const char* name,
-    grpc_channel_stack* stack) {
+    grpc_channel_stack_type channel_stack_type, grpc_channel_stack* stack) {
   // see if everything is promise-y
   bool is_promise_only = true;
   for (size_t i = 0; i < filter_count; i++) {
@@ -165,7 +165,10 @@ grpc_error_handle grpc_channel_stack_init(
   GPR_ASSERT((uintptr_t)(user_data - (char*)stack) ==
              grpc_channel_stack_size(filters, filter_count));
 
-  stack->call_stack_size = is_promise_only ? 0 : call_size;
+  stack->call_stack_size =
+      is_promise_only
+          ? (grpc_channel_stack_type_is_client(channel_stack_type) ? 0 : 1)
+          : call_size;
   return first_error;
 }
 
@@ -281,4 +284,34 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
   return reinterpret_cast<grpc_call_stack*>(
       reinterpret_cast<char*>(elem) -
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
+}
+
+template <int kDirection>
+static grpc_core::NextPromiseFactory next_promise_factory_from_elems(
+    grpc_channel_element* elems) {
+  return [elems](grpc_core::CallArgs call_args) {
+    auto e = elems + kDirection;
+    return e->filter->make_call_promise(
+        e, std::move(call_args),
+        next_promise_factory_from_elems<kDirection>(e));
+  };
+}
+
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+grpc_channel_stack_make_call_promise(grpc_channel_stack* stack,
+                                     grpc_core::CallArgs call_args) {
+  grpc_core::NextPromiseFactory next;
+  grpc_channel_element* elems = CHANNEL_ELEMS_FROM_STACK(stack);
+  grpc_channel_element* first;
+  if (stack->call_stack_size == 0) {
+    // client side - we iterate from top to bottom
+    first = elems;
+    next = next_promise_factory_from_elems<1>(first);
+  } else {
+    // server side - we iterate from bottom to top
+    first = elems + stack->call_stack_size - 1;
+    next = next_promise_factory_from_elems<-1>(first);
+  }
+  return first->filter->make_call_promise(first, std::move(call_args),
+                                          std::move(next));
 }

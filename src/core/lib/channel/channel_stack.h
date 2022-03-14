@@ -60,6 +60,7 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -199,10 +200,11 @@ struct grpc_channel_stack {
   grpc_stream_refcount refcount;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
-     initialization) - if 0 then this is a promise-based channel stack */
+     initialization) - if 0 then this is a client side promise-based channel
+     stack, if 1 then this is a server side promise-based channel stack */
   size_t call_stack_size;
 
-  bool is_promise_based() const { return call_stack_size == 0; }
+  bool is_promise_based() const { return call_stack_size > 1; }
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.
@@ -251,9 +253,15 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* args, const char* name, grpc_channel_stack* stack);
+    const grpc_channel_args* args, const char* name,
+    grpc_channel_stack_type channel_stack_type, grpc_channel_stack* stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
+
+/* Given a promise-based channel stack, construct an Activity around a
+   promise for one call */
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+grpc_channel_stack_make_call_promise(grpc_channel_stack* stack);
 
 /* Initialize a call stack given a channel stack. transport_server_data is
    expected to be NULL on a client, or an opaque transport owned pointer on the

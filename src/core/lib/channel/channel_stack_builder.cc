@@ -102,7 +102,8 @@ grpc_error_handle ChannelStackBuilder::Build(size_t prefix_bytes,
   // and initialize it
   grpc_error_handle error = grpc_channel_stack_init(
       initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
-      filters.data(), filters.size(), final_args, name_, channel_stack);
+      filters.data(), filters.size(), final_args, name_, channel_stack_type_,
+      channel_stack);
 
   if (final_args != args_) {
     grpc_channel_args_destroy(final_args);

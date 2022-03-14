@@ -43,7 +43,9 @@ class ChannelStackBuilder {
   };
 
   // Initialize with a name.
-  explicit ChannelStackBuilder(const char* name) : name_(name) {}
+  explicit ChannelStackBuilder(const char* name,
+                               grpc_channel_stack_type channel_stack_type)
+      : name_(name), channel_stack_type_(channel_stack_type) {}
 
   ~ChannelStackBuilder();
 
@@ -78,6 +80,11 @@ class ChannelStackBuilder {
   // Helper to add a filter to the end of the stack.
   void AppendFilter(const grpc_channel_filter* filter, PostInitFunc post_init);
 
+  // Get the channel stack type.
+  grpc_channel_stack_type channel_stack_type() const {
+    return channel_stack_type_;
+  }
+
   // Build the channel stack.
   // After success, *result holds the new channel stack,
   // prefix_bytes are allocated before the channel stack,
@@ -92,6 +99,8 @@ class ChannelStackBuilder {
 
   // The name of the stack
   const char* const name_;
+  // The type of the channel stack
+  const grpc_channel_stack_type channel_stack_type_;
   // The target
   std::string target_{unknown_target()};
   // The transport

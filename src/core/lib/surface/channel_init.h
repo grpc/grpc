@@ -74,8 +74,7 @@ class ChannelInit {
   /// Construct a channel stack of some sort: see channel_stack.h for details
   /// \a type is the type of channel stack to create
   /// \a builder is the channel stack builder to build into.
-  bool CreateStack(ChannelStackBuilder* builder,
-                   grpc_channel_stack_type type) const;
+  bool CreateStack(ChannelStackBuilder* builder) const;
 
  private:
   std::vector<Stage> slots_[GRPC_NUM_CHANNEL_STACK_TYPES];
