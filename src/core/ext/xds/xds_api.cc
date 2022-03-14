@@ -326,6 +326,9 @@ grpc_slice XdsApi::CreateAdsRequest(
                                                                  arena.ptr());
     PopulateNode(context, node_, build_version_, user_agent_name_,
                  user_agent_version_, node_msg);
+    envoy_config_core_v3_Node_add_client_features(
+        node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
+        context.arena);
   }
   // Add resource_names.
   for (const std::string& resource_name : resource_names) {
@@ -399,6 +402,23 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
         "type.googleapis.com/");
     absl::string_view serialized_resource =
         UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
+    // Unwrap Resource messages, if so wrapped.
+    if (type_url == "envoy.service.discovery.v2.Resource" ||
+        type_url == "envoy.service.discovery.v3.Resource") {
+      const auto* resource_wrapper = envoy_service_discovery_v3_Resource_parse(
+          serialized_resource.data(), serialized_resource.size(), arena.ptr());
+      if (resource_wrapper == nullptr) {
+        return absl::InvalidArgumentError(
+            "Can't decode Resource proto wrapper");
+      }
+      const auto* resource =
+          envoy_service_discovery_v3_Resource_resource(resource_wrapper);
+      type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(resource)),
+          "type.googleapis.com/");
+      serialized_resource =
+          UpbStringToAbsl(google_protobuf_Any_value(resource));
+    }
     parser->ParseResource(context, i, type_url, serialized_resource);
   }
   return absl::OkStatus();

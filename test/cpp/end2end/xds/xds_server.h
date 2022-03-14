@@ -37,6 +37,7 @@
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
@@ -91,6 +92,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   ::envoy::service::discovery::v3::AggregatedDiscoveryService::Service*
   v3_rpc_service() {
     return &v3_rpc_service_;
+  }
+
+  void set_wrap_resources(bool wrap_resources) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    wrap_resources_ = wrap_resources;
   }
 
   // Sets a resource to a particular value, overwriting any previous value.
@@ -471,6 +477,11 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
             if (is_v2_) {
               resource->set_type_url(request.type_url());
             }
+            if (parent_->wrap_resources_) {
+              envoy::service::discovery::v3::Resource resource_wrapper;
+              *resource_wrapper.mutable_resource() = std::move(*resource);
+              resource->PackFrom(resource_wrapper);
+            }
           }
         } else {
           gpr_log(GPR_INFO,
@@ -537,9 +548,10 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       while (stream->Read(&request)) {
         if (!seen_first_request) {
           EXPECT_TRUE(request.has_node());
-          ASSERT_FALSE(request.node().client_features().empty());
-          EXPECT_EQ(request.node().client_features(0),
-                    "envoy.lb.does_not_support_overprovisioning");
+          EXPECT_THAT(request.node().client_features(),
+                      ::testing::UnorderedElementsAre(
+                          "envoy.lb.does_not_support_overprovisioning",
+                          "xds.config.resource-in-sotw"));
           CheckBuildVersion(request);
           seen_first_request = true;
         }
@@ -677,6 +689,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   // - There is at least one subscription for the resource.
   ResourceMap resource_map_ ABSL_GUARDED_BY(ads_mu_);
   absl::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
+  bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);

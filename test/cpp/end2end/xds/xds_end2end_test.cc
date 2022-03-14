@@ -1988,6 +1988,30 @@ TEST_P(BasicTest, Vanilla) {
             channel_->GetLoadBalancingPolicyName());
 }
 
+// Tests that the client can handle resource wrapped in a Resource message.
+TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
+  balancer_->ads_service()->set_wrap_resources(true);
+  const size_t kNumRpcsPerAddress = 100;
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("xds_cluster_manager_experimental",
+            channel_->GetLoadBalancingPolicyName());
+}
+
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   const size_t kNumRpcsPerAddress = 100;
   auto endpoints = CreateEndpointsForBackends();
