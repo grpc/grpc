@@ -199,8 +199,10 @@ struct grpc_channel_stack {
   grpc_stream_refcount refcount;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
-     initialization) */
+     initialization) - if 0 then this is a promise-based channel stack */
   size_t call_stack_size;
+
+  bool is_promise_based() const { return call_stack_size == 0; }
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.

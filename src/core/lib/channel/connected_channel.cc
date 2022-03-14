@@ -201,6 +201,15 @@ static void connected_channel_get_channel_info(
     grpc_channel_element* /*elem*/, const grpc_channel_info* /*channel_info*/) {
 }
 
+/* Connected channel based on a promise: translate promise stuff into transport
+ * stream operations. */
+static grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+connected_channel_make_call_promise(grpc_channel_element* elem,
+                                    grpc_core::CallArgs call_args,
+                                    grpc_core::NextPromiseFactory) {
+  abort();
+}
+
 const grpc_channel_filter grpc_connected_filter = {
     connected_channel_start_transport_stream_op_batch,
     nullptr,

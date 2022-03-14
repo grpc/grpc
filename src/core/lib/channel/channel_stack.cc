@@ -106,6 +106,15 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_channel_args* channel_args, const char* name,
     grpc_channel_stack* stack) {
+  // see if everything is promise-y
+  bool is_promise_only = true;
+  for (size_t i = 0; i < filter_count; i++) {
+    if (filters[i]->make_call_promise == nullptr) {
+      is_promise_only = false;
+      break;
+    }
+  }
+
   if (grpc_trace_channel_stack.enabled()) {
     gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
     for (size_t i = 0; i < filter_count; i++) {
@@ -156,7 +165,7 @@ grpc_error_handle grpc_channel_stack_init(
   GPR_ASSERT((uintptr_t)(user_data - (char*)stack) ==
              grpc_channel_stack_size(filters, filter_count));
 
-  stack->call_stack_size = call_size;
+  stack->call_stack_size = is_promise_only ? 0 : call_size;
   return first_error;
 }
 
@@ -175,6 +184,7 @@ grpc_error_handle grpc_call_stack_init(
     grpc_channel_stack* channel_stack, int initial_refs,
     grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_call_element_args* elem_args) {
+  GPR_ASSERT(!channel_stack->is_promise_based());
   grpc_channel_element* channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   size_t count = channel_stack->count;
   grpc_call_element* call_elems;
