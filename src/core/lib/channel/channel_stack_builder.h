@@ -55,14 +55,8 @@ class ChannelStackBuilder {
   };
 
   // Initialize with a name.
-<<<<<<< HEAD
-  explicit ChannelStackBuilder(const char* name,
-                               grpc_channel_stack_type channel_stack_type)
-      : name_(name), channel_stack_type_(channel_stack_type) {}
-=======
   ChannelStackBuilder(const char* name, grpc_channel_stack_type type)
       : name_(name), type_(type) {}
->>>>>>> e62865270c4775ec688c2ec5a40ed96dee4a8390
 
   const char* name() const { return name_; }
 
