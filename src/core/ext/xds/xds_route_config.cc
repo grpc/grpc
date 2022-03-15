@@ -37,7 +37,6 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
-#include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
@@ -48,7 +47,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/proto/grpc/lookup/v1/rls_config.upb.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -343,13 +342,11 @@ grpc_error_handle ClusterSpecifierPluginParse(
         XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
             plugin_type, google_protobuf_Any_value(any), context.arena,
             context.symtab);
-    if (lb_policy_config.ok()) {
-      rds_update->cluster_specifier_plugin_map[std::move(name)] =
-          std::move(lb_policy_config.value());
-    } else {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          lb_policy_config.status().ToString().c_str());
+    if (!lb_policy_config.ok()) {
+      return absl_status_to_grpc_error(lb_policy_config.status());
     }
+    rds_update->cluster_specifier_plugin_map[std::move(name)] =
+        std::move(lb_policy_config.value());
   }
   return GRPC_ERROR_NONE;
 }
@@ -767,9 +764,7 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
-    route->action =
-        std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>(
-            std::move(action_weighted_clusters));
+    route->action = std::move(action_weighted_clusters);
   } else if (XdsRlsEnabled() &&
              envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
                  route_action)) {
