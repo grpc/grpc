@@ -150,6 +150,11 @@ HttpRequest::HttpRequest(
                     grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  connect_args_ = {
+      .bind_endpoint_to_pollset = false,
+      .deadline = deadline_,
+      .interested_parties = pollset_set_,
+  };
   // Create the DNS resolver. We'll start resolving when Start is called.
   dns_request_ = GetDNSResolver()->ResolveName(
       uri_.authority(), uri_.scheme(), pollset_set_,
@@ -272,10 +277,16 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
     g_test_only_on_handshake_done_intercept(req.get());
   }
   MutexLock lock(&req->mu_);
+  req->connecting_ = false;
   req->own_endpoint_ = true;
+  if (req->cancelled_) {
+    // Handshake finished after the request was cancelled.
+    // This might be due to delay in connectivity for example.
+    // As we already finished and the on_done_ callback was called, nothing
+    // to do here.
+   return; 
+  }
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
-            grpc_error_std_string(error).c_str());
     req->NextAddress(GRPC_ERROR_REF(error));
     return;
   }
@@ -292,63 +303,50 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   req->StartWrite();
 }
 
-void HttpRequest::OnConnected(void* arg, grpc_error_handle error) {
-  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
-  MutexLock lock(&req->mu_);
-  req->connecting_ = false;
-  req->own_endpoint_ = true;
-  if (req->cancelled_) {
-    // since we were cancelled while connecting, Finish has already
-    // been called.
-    return;
-  }
-  if (!req->ep_) {
-    req->NextAddress(GRPC_ERROR_REF(error));
-    return;
-  }
+void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
+  connecting_ = true;
   // TODO(yihuaz): treating nullptr channel_creds_ as insecure is
   // a hack used to support the port server client (a test utility) in
   // unsecure builds (when no definition of grpc_insecure_credentials_create
   // exists). We can remove this hack and unconditionally assume a valid
   // channel_creds_ object after unsecure builds are deleted, in
   // https://github.com/grpc/grpc/pull/25586.
-  if (req->channel_creds_ == nullptr) {
-    gpr_log(GPR_DEBUG,
-            "HTTP request skipping handshake because creds are null");
-    req->StartWrite();
-    return;
-  }
   // Create the security connector using the credentials and target name.
-  grpc_channel_args* new_args_from_connector = nullptr;
-  RefCountedPtr<grpc_channel_security_connector> sc =
-      req->channel_creds_->create_security_connector(
-          nullptr /*call_creds*/, req->uri_.authority().c_str(),
-          req->channel_args_, &new_args_from_connector);
-  if (sc == nullptr) {
-    req->Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-        "failed to create security connector", &req->overall_error_, 1));
-    return;
+  const grpc_channel_args* new_args = channel_args_;
+  RefCountedPtr<grpc_channel_security_connector> sc;
+  if (channel_creds_ != nullptr) {
+    grpc_channel_args* new_args_from_connector = nullptr;
+    sc = channel_creds_->create_security_connector(
+        nullptr /*call_creds*/, uri_.authority().c_str(), channel_args_,
+        &new_args_from_connector);
+    if (sc == nullptr) {
+      Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "failed to create security connector", &overall_error_, 1));
+      return;
+    }
+    grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
+    new_args = grpc_channel_args_copy_and_add(
+        new_args_from_connector != nullptr ? new_args_from_connector
+                                           : channel_args_,
+        &security_connector_arg, 1);
+    grpc_channel_args_destroy(new_args_from_connector);
   }
-  grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-      new_args_from_connector != nullptr ? new_args_from_connector
-                                         : req->channel_args_,
-      &security_connector_arg, 1);
-  grpc_channel_args_destroy(new_args_from_connector);
   // Start the handshake
-  req->handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_CLIENT, new_args, req->pollset_set_,
-      req->handshake_mgr_.get());
-  req->Ref().release();  // ref held by pending handshake
-  grpc_endpoint* ep = req->ep_;
-  req->ep_ = nullptr;
-  req->own_endpoint_ = false;
-  req->handshake_mgr_->DoHandshake(ep, new_args, req->deadline_,
-                                   /*acceptor=*/nullptr, OnHandshakeDone,
-                                   /*user_data=*/req.get());
+      HANDSHAKER_CLIENT, new_args, pollset_set_, handshake_mgr_.get());
+  Ref().release();  // ref held by pending handshake
+  grpc_endpoint* ep = ep_;
+  ep_ = nullptr;
+  own_endpoint_ = false;
+  memcpy(&connect_args_.address, addr, sizeof(grpc_resolved_address));
+  handshake_mgr_->DoHandshake(ep, new_args, &connect_args_,
+                              /*acceptor=*/nullptr, OnHandshakeDone,
+                              /*user_data=*/this);
   sc.reset(DEBUG_LOCATION, "httpcli");
-  grpc_channel_args_destroy(new_args);
+  if (new_args != channel_args_) {
+    grpc_channel_args_destroy(new_args);
+  }
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {
@@ -366,12 +364,7 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
     return;
   }
   const grpc_resolved_address* addr = &addresses_[next_address_++];
-  GRPC_CLOSURE_INIT(&connected_, OnConnected, this, grpc_schedule_on_exec_ctx);
-  connecting_ = true;
-  own_endpoint_ = false;
-  Ref().release();  // ref held by pending connect
-  grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, channel_args_, addr,
-                          deadline_);
+  DoHandshake(addr);
 }
 
 void HttpRequest::OnResolved(

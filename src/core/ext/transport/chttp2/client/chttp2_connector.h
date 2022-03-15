@@ -29,14 +29,12 @@ namespace grpc_core {
 
 class Chttp2Connector : public SubchannelConnector {
  public:
-  Chttp2Connector();
   ~Chttp2Connector() override;
 
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override;
 
  private:
-  static void Connected(void* arg, grpc_error_handle error);
   void StartHandshakeLocked();
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
@@ -55,14 +53,13 @@ class Chttp2Connector : public SubchannelConnector {
 
   Mutex mu_;
   Args args_;
+  ConnectionArgs connect_args_;
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
-  bool connecting_ = false;
   // Holds the endpoint when first created before being handed off to
   // the handshake manager, and then again after handshake is done.
   grpc_endpoint* endpoint_ = nullptr;
-  grpc_closure connected_;
   grpc_closure on_receive_settings_;
   grpc_timer timer_;
   grpc_closure on_timeout_;

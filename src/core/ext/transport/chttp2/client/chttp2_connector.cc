@@ -59,10 +59,6 @@
 
 namespace grpc_core {
 
-Chttp2Connector::Chttp2Connector() {
-  GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
-}
-
 Chttp2Connector::~Chttp2Connector() {
   if (endpoint_ != nullptr) {
     grpc_endpoint_destroy(endpoint_);
@@ -71,17 +67,19 @@ Chttp2Connector::~Chttp2Connector() {
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
-  grpc_endpoint** ep;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
     args_ = args;
     result_ = result;
     notify_ = notify;
-    GPR_ASSERT(!connecting_);
-    connecting_ = true;
     GPR_ASSERT(endpoint_ == nullptr);
-    ep = &endpoint_;
+    connect_args_ = ConnectionArgs{
+        .bind_endpoint_to_pollset = true,
+        .deadline = args.deadline,
+        .interested_parties = args.interested_parties,
+    };
+    memcpy(&connect_args_.address, args.address, sizeof(grpc_resolved_address));
   }
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
@@ -89,52 +87,19 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   // https://github.com/grpc/grpc/issues/16427 for details).
   // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
   // make sure that we still exist at that point by taking a ref.
-  Ref().release();  // Ref held by callback.
-  grpc_tcp_client_connect(&connected_, ep, args.interested_parties,
-                          args.channel_args, args.address, args.deadline);
+  Ref().release();  // Ref held by Handshake Manager.
+  StartHandshakeLocked();
 }
+
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
   MutexLock lock(&mu_);
   shutdown_ = true;
   if (handshake_mgr_ != nullptr) {
+    // Handshaker will also shutdown the endpoint if it exists
     handshake_mgr_->Shutdown(GRPC_ERROR_REF(error));
   }
-  // If handshaking is not yet in progress, shutdown the endpoint.
-  // Otherwise, the handshaker will do this for us.
-  if (!connecting_ && endpoint_ != nullptr) {
-    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_REF(error));
-  }
   GRPC_ERROR_UNREF(error);
-}
-
-void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
-  bool unref = false;
-  {
-    MutexLock lock(&self->mu_);
-    GPR_ASSERT(self->connecting_);
-    self->connecting_ = false;
-    if (error != GRPC_ERROR_NONE || self->shutdown_) {
-      if (error == GRPC_ERROR_NONE) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
-      } else {
-        error = GRPC_ERROR_REF(error);
-      }
-      if (self->endpoint_ != nullptr) {
-        grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
-      }
-      self->result_->Reset();
-      grpc_closure* notify = self->notify_;
-      self->notify_ = nullptr;
-      ExecCtx::Run(DEBUG_LOCATION, notify, error);
-      unref = true;
-    } else {
-      GPR_ASSERT(self->endpoint_ != nullptr);
-      self->StartHandshakeLocked();
-    }
-  }
-  if (unref) self->Unref();
 }
 
 void Chttp2Connector::StartHandshakeLocked() {
@@ -142,8 +107,7 @@ void Chttp2Connector::StartHandshakeLocked() {
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, args_.channel_args, args_.interested_parties,
       handshake_mgr_.get());
-  grpc_endpoint_add_to_pollset_set(endpoint_, args_.interested_parties);
-  handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, args_.deadline,
+  handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, &connect_args_,
                               nullptr /* acceptor */, OnHandshakeDone, this);
   endpoint_ = nullptr;  // Endpoint handed off to handshake manager.
 }

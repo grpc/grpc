@@ -37,6 +37,19 @@
 
 namespace grpc_core {
 
+
+// Arguments related to connection that can be used by the Handshaker.
+struct ConnectionArgs {
+  // Address for which the handshake is being performed.
+  grpc_resolved_address address;
+  // Whether to bind pollset after the connection was established.
+  bool bind_endpoint_to_pollset;
+  // Deadline for the connection.
+  Timestamp deadline;
+  // Set of pollsets interested in this connection.
+  grpc_pollset_set* interested_parties;
+};
+
 /// Handshakers are used to perform initial handshakes on a connection
 /// before the client sends the initial request.  Some examples of what
 /// a handshaker can be used for includes support for HTTP CONNECT on
@@ -68,6 +81,10 @@ struct HandshakerArgs {
   // User data passed through the handshake manager.  Not used by
   // individual handshakers.
   void* user_data = nullptr;
+  // Arguments related to connectivity that can be used by the handshakers.
+  // Can be ignored by most handshakers unless they are interested establishing
+  // the network connection.
+  ConnectionArgs* connect_args = nullptr;
 };
 
 ///
@@ -114,7 +131,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
   void DoHandshake(grpc_endpoint* endpoint,
-                   const grpc_channel_args* channel_args, Timestamp deadline,
+                   const grpc_channel_args* channel_args,
+                   ConnectionArgs* connect_args,
                    grpc_tcp_server_acceptor* acceptor,
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 

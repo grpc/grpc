@@ -147,7 +147,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       RefCountedPtr<HandshakeManager> handshake_mgr_
           ABSL_GUARDED_BY(&connection_->mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
-      Timestamp const deadline_;
+      ConnectionArgs connect_args_;
       grpc_timer timer_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_timeout_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&connection_->mu_);
@@ -349,8 +349,8 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()),
-      deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
+  connect_args_ = {.deadline = GetConnectionDeadline(args)};
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
@@ -382,7 +382,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
     if (handshake_mgr_ == nullptr) return;
     handshake_mgr = handshake_mgr_;
   }
-  handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
+  handshake_mgr->DoHandshake(endpoint, args, &connect_args_, acceptor_,
                              OnHandshakeDone, this);
 }
 
@@ -486,7 +486,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           self->Ref().release();  // Held by OnTimeout().
           GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
                             grpc_schedule_on_exec_ctx);
-          grpc_timer_init(&self->timer_, self->deadline_, &self->on_timeout_);
+          grpc_timer_init(&self->timer_, self->connect_args_.deadline,
+                          &self->on_timeout_);
         } else {
           // Failed to create channel from transport. Clean up.
           gpr_log(GPR_ERROR, "Failed to create channel: %s",

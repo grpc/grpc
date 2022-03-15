@@ -169,7 +169,7 @@ void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
 
 void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
                                    const grpc_channel_args* channel_args,
-                                   Timestamp deadline,
+                                   ConnectionArgs* connect_args,
                                    grpc_tcp_server_acceptor* acceptor,
                                    grpc_iomgr_cb_func on_handshake_done,
                                    void* user_data) {
@@ -181,6 +181,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;
     args_.args = grpc_channel_args_copy(channel_args);
+    args_.connect_args = connect_args;
     args_.user_data = user_data;
     args_.read_buffer =
         static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
@@ -201,7 +202,8 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     Ref().release();
     GRPC_CLOSURE_INIT(&on_timeout_, &HandshakeManager::OnTimeoutFn, this,
                       grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&deadline_timer_, deadline, &on_timeout_);
+    grpc_timer_init(&deadline_timer_, args_.connect_args->deadline,
+                    &on_timeout_);
     // Start first handshaker, which also owns a ref.
     Ref().release();
     done = CallNextHandshakerLocked(GRPC_ERROR_NONE);
