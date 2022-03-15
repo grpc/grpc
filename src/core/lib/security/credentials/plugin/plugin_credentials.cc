@@ -62,7 +62,7 @@ std::string grpc_plugin_credentials::debug_string() {
 
 const char* grpc_plugin_credentials::type() const { return "Plugin"; }
 
-absl::StatusOr<grpc_core::ClientInitialMetadata>
+absl::StatusOr<grpc_core::ClientMetadataHandle>
 grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
     const grpc_metadata* md, size_t num_md, grpc_status_code status,
     const char* error_details) {
@@ -98,12 +98,12 @@ grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
             });
       }
       if (!error.ok()) return std::move(error);
-      return grpc_core::ClientInitialMetadata(std::move(md_));
+      return grpc_core::ClientMetadataHandle(std::move(md_));
     }
   }
 }
 
-grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::Poll<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_plugin_credentials::PendingRequest::PollAsyncResult() {
   if (!ready_.load(std::memory_order_acquire)) {
     return grpc_core::Pending{};
@@ -139,9 +139,9 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
   r->waker_.Wakeup();
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_plugin_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   if (plugin_.get_metadata == nullptr) {
     return grpc_core::Immediate(std::move(initial_metadata));

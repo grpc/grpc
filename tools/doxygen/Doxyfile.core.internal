@@ -955,6 +955,8 @@ src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
 src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
+src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
+src/core/ext/filters/client_channel/resolver/polling_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
@@ -973,6 +975,8 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_channel/subchannel_stream_client.cc \
+src/core/ext/filters/client_channel/subchannel_stream_client.h \
 src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/client_idle/idle_filter_state.cc \
 src/core/ext/filters/client_idle/idle_filter_state.h \
@@ -1983,6 +1987,8 @@ src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
 src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
+src/core/lib/promise/intra_activity_waiter.h \
+src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
 src/core/lib/promise/poll.h \

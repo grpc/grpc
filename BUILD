@@ -151,11 +151,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gravity"  # @unused
+g_stands_for = "golazo"  # @unused
 
 core_version = "23.0.0"  # @unused
 
-version = "1.45.0-dev"  # @unused
+version = "1.46.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2182,6 +2182,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_port",
         "json",
+        "latch",
         "memory_quota",
         "orphanable",
         "promise",
@@ -2437,6 +2438,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
+        "src/core/ext/filters/client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backend_metric.h",
@@ -2465,6 +2467,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
+        "src/core/ext/filters/client_channel/subchannel_stream_client.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",
@@ -3426,6 +3429,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "polling_resolver",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/polling_resolver.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/polling_resolver.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_resolver",
+        "orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_selection",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
@@ -3457,6 +3480,8 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver",
         "grpc_resolver_dns_selection",
+        "grpc_trace",
+        "polling_resolver",
         "server_address",
     ],
 )
@@ -3499,6 +3524,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "iomgr_port",
         "json",
+        "polling_resolver",
         "server_address",
         "sockaddr_utils",
     ],
@@ -4150,14 +4176,18 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "capture",
         "config",
         "gpr_base",
         "grpc_base",
         "grpc_trace",
         "json",
+        "memory_quota",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
+        "resource_quota",
+        "resource_quota_trace",
         "try_seq",
         "tsi_base",
     ],

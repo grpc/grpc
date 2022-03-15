@@ -78,7 +78,6 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_channel* client;
   grpc_server* server;
   grpc_completion_queue* cq;
-  grpc_completion_queue* shutdown_cq;
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv;
@@ -257,14 +256,14 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_channel_destroy(client);
 
   /* Destroy server. */
-  shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-  grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(server, cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
+
   grpc_server_destroy(server);
-  grpc_completion_queue_destroy(shutdown_cq);
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
   grpc_completion_queue_destroy(cq);

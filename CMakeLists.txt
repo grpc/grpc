@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.45.0-dev")
+set(PACKAGE_VERSION       "1.46.0-dev")
 set(gRPC_CORE_VERSION     "23.0.0")
 set(gRPC_CORE_SOVERSION   "23")
-set(gRPC_CPP_VERSION      "1.45.0-dev")
-set(gRPC_CPP_SOVERSION    "1.45")
-set(gRPC_CSHARP_VERSION   "2.45.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.45")
+set(gRPC_CPP_VERSION      "1.46.0-dev")
+set(gRPC_CPP_SOVERSION    "1.46")
+set(gRPC_CSHARP_VERSION   "2.46.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.46")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -292,7 +292,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.45.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.46.0-dev\"")
 endif()
 
 if(UNIX)
@@ -1189,6 +1189,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   test/core/end2end/tests/retry_send_op_fails.cc
+  test/core/end2end/tests/retry_send_recv_batch.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
   test/core/end2end/tests/retry_server_pushback_disabled.cc
   test/core/end2end/tests/retry_streaming.cc
@@ -1483,6 +1484,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc
+  src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   src/core/ext/filters/client_channel/resolver_result_parsing.cc
@@ -1492,6 +1494,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2410,6 +2413,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  src/core/ext/filters/client_channel/resolver/polling_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver_result_parsing.cc
   src/core/ext/filters/client_channel/retry_filter.cc
@@ -2418,6 +2422,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc

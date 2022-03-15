@@ -47,15 +47,15 @@ const char* grpc_composite_channel_credentials::type() const {
 
 /* -- Composite call credentials. -- */
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_composite_call_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto self = Ref();
   return TrySeqIter(
       inner_.begin(), inner_.end(), std::move(initial_metadata),
       [self, args](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
-                   grpc_core::ClientInitialMetadata initial_metadata) {
+                   grpc_core::ClientMetadataHandle initial_metadata) {
         return creds->GetRequestMetadata(std::move(initial_metadata), args);
       });
 }

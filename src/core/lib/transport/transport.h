@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
@@ -99,21 +100,33 @@ class MetadataHandle {
 
 // Trailing metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+using ServerMetadata = grpc_metadata_batch;
+using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
 
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
-inline bool IsStatusOk(const TrailingMetadata& m) {
+inline bool IsStatusOk(const ServerMetadataHandle& m) {
   return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
          GRPC_STATUS_OK;
 }
 
 // Client initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
+
+// Server initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
+
+struct CallArgs {
+  ClientMetadataHandle client_initial_metadata;
+  Latch<ServerMetadata*>* server_initial_metadata;
+};
 
 using NextPromiseFactory =
-    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
 }  // namespace grpc_core
 
 /* forward declarations */

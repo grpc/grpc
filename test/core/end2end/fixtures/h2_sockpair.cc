@@ -103,7 +103,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   fixture_data->ep = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   return f;
 }

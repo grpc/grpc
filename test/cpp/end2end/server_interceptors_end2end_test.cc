@@ -403,7 +403,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
@@ -485,7 +485,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
@@ -591,7 +591,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   void* ignored_tag;
   bool ignored_ok;
   while (cli_cq.Next(&ignored_tag, &ignored_ok)) {
@@ -640,7 +640,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   cq->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
@@ -688,7 +688,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 
-  server->Shutdown();
+  server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   grpc_recycle_unused_port(port);
 }
 

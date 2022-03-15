@@ -213,6 +213,13 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     proxy_server_ = proxy_builder.BuildAndStart();
   }
 
+  void TearDown() override {
+    for (auto& backend : backends_) {
+      backend.server->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+    }
+    proxy_server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+  }
+
   // Sets the proxy up to have an arbitrary number of backends.
   void ConfigureProxy(size_t num_backends) {
     backends_.resize(num_backends);
