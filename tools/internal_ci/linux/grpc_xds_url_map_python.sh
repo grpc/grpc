@@ -100,13 +100,15 @@ run_test() {
   #   grpc/core/master/linux/...
   #   grpc/core/v1.42.x/branch/linux/...
   set -x
-  python3 -m "tests.${test_name}" \
-    --flagfile="${TEST_DRIVER_FLAGFILE}" \
-    --kube_context="${KUBE_CONTEXT}" \
-    --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
-    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --flagfile="config/url-map.cfg"
+  ../../bazel test tests/url_map:all \
+    --action_env=HOME=$(echo $HOME) \
+    --test_arg="--flagfile=${TEST_DRIVER_FLAGFILE}" \
+    --test_arg="--kube_context=${KUBE_CONTEXT}" \
+    --test_arg="--client_image=${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --test_arg="--flagfile=config/url-map.cfg" \
+    --test_arg="--testing_version=$(echo \"$KOKORO_JOB_NAME\" | sed -E 's|^grpc/core/([^/]+)/.*|\1|')" \
+    --test_arg="--xml_output_file=\"${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml\"" \
+    --test_output=errors)
   set +x
 }
 
