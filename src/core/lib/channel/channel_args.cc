@@ -37,6 +37,104 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/match.h"
+
+static int cmp_ptr(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
+                   void* b_ptr, const grpc_arg_pointer_vtable* b_vtable) {
+  int c = grpc_core::QsortCompare(a_ptr, b_ptr);
+  if (c == 0) return 0;
+  c = grpc_core::QsortCompare(a_vtable, b_vtable);
+  if (c != 0) return c;
+  return a_vtable->cmp(a_ptr, b_ptr);
+}
+
+namespace grpc_core {
+
+bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
+  return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
+}
+
+bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
+  return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
+}
+
+ChannelArgs::ChannelArgs() = default;
+
+ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
+  switch (arg.type) {
+    case GRPC_ARG_INTEGER:
+      return Set(arg.key, arg.value.integer);
+    case GRPC_ARG_STRING:
+      if (arg.value.string != nullptr) return Set(arg.key, arg.value.string);
+      return Set(arg.key, "");
+    case GRPC_ARG_POINTER:
+      return Set(arg.key,
+                 Pointer(arg.value.pointer.vtable->copy(arg.value.pointer.p),
+                         arg.value.pointer.vtable));
+  }
+  GPR_UNREACHABLE_CODE(return ChannelArgs());
+}
+
+ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
+  ChannelArgs result;
+  if (args != nullptr) {
+    for (size_t i = 0; i < args->num_args; i++) {
+      result = result.Set(args->args[i]);
+    }
+  }
+  return result;
+}
+
+const grpc_channel_args* ChannelArgs::ToC() const {
+  std::vector<grpc_arg> c_args;
+  args_.ForEach([&c_args](const std::string& key, const Value& value) {
+    char* name = const_cast<char*>(key.c_str());
+    c_args.push_back(Match(
+        value,
+        [name](int i) { return grpc_channel_arg_integer_create(name, i); },
+        [name](const std::string& s) {
+          return grpc_channel_arg_string_create(name,
+                                                const_cast<char*>(s.c_str()));
+        },
+        [name](const Pointer& p) {
+          return grpc_channel_arg_pointer_create(name, p.c_pointer(),
+                                                 p.c_vtable());
+        }));
+  });
+  return grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size());
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
+  return ChannelArgs(args_.Add(std::string(key), std::move(value)));
+}
+
+ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
+  return ChannelArgs(args_.Remove(key));
+}
+
+absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return absl::nullopt;
+  if (!absl::holds_alternative<int>(*v)) return absl::nullopt;
+  return absl::get<int>(*v);
+}
+
+absl::optional<absl::string_view> ChannelArgs::GetString(
+    absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return absl::nullopt;
+  if (!absl::holds_alternative<std::string>(*v)) return absl::nullopt;
+  return absl::get<std::string>(*v);
+}
+
+void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return nullptr;
+  if (!absl::holds_alternative<Pointer>(*v)) return nullptr;
+  return absl::get<Pointer>(*v).c_pointer();
+}
+
+}  // namespace grpc_core
 
 static grpc_arg copy_arg(const grpc_arg* src) {
   grpc_arg dst;
@@ -156,16 +254,8 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
     case GRPC_ARG_INTEGER:
       return grpc_core::QsortCompare(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
-      c = grpc_core::QsortCompare(a->value.pointer.p, b->value.pointer.p);
-      if (c != 0) {
-        c = grpc_core::QsortCompare(a->value.pointer.vtable,
-                                    b->value.pointer.vtable);
-        if (c == 0) {
-          c = a->value.pointer.vtable->cmp(a->value.pointer.p,
-                                           b->value.pointer.p);
-        }
-      }
-      return c;
+      return cmp_ptr(a->value.pointer.p, a->value.pointer.vtable,
+                     b->value.pointer.p, b->value.pointer.vtable);
   }
   GPR_UNREACHABLE_CODE(return 0);
 }
@@ -384,9 +474,9 @@ const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
   return dst;
 }
 
-const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
-  if (src == nullptr) return nullptr;
-  std::map<absl::string_view, const grpc_arg*> values;
+ChannelArgs UniquifyChannelArgKeys(const grpc_channel_args* src) {
+  if (src == nullptr) return ChannelArgs();
+  ChannelArgs output;
   std::map<absl::string_view, std::vector<std::string>> concatenated_values;
   for (size_t i = 0; i < src->num_args; i++) {
     absl::string_view key = src->args[i].key;
@@ -401,46 +491,23 @@ const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src) {
         concatenated_values[key].push_back(src->args[i].value.string);
       }
       continue;
+    } else if (absl::StartsWith(key, "grpc.internal.")) {
+      continue;
     }
-    auto it = values.find(key);
-    if (it == values.end()) {
-      values[key] = &src->args[i];
+    if (!output.Contains(key)) {
+      output = output.Set(src->args[i]);
     } else {
       // Traditional grpc_channel_args_find behavior was to pick the first
       // value.
       // For compatibility with existing users, we will do the same here.
     }
   }
-  if (values.size() + concatenated_values.size() == src->num_args) {
-    return grpc_channel_args_copy(src);
-  }
   // Concatenate the concatenated values.
-  std::map<absl::string_view, std::string> concatenated_values_str;
   for (const auto& concatenated_value : concatenated_values) {
-    concatenated_values_str[concatenated_value.first] =
-        absl::StrJoin(concatenated_value.second, " ");
+    output = output.Set(concatenated_value.first,
+                        absl::StrJoin(concatenated_value.second, " "));
   }
-  // Create the result
-  std::vector<grpc_arg> argv;
-  argv.reserve(values.size());
-  for (const auto& a : values) {
-    argv.push_back(*a.second);
-  }
-  for (const auto& a : concatenated_values_str) {
-    argv.push_back(
-        grpc_channel_arg_string_create(const_cast<char*>(a.first.data()),
-                                       const_cast<char*>(a.second.c_str())));
-  }
-  grpc_channel_args args = {argv.size(), argv.data()};
-  // Log that we're mutating things
-  gpr_log(GPR_INFO,
-          "Uniquification pass on channel args is mutating them: {%s} is being "
-          "changed to {%s}",
-          grpc_channel_args_string(src).c_str(),
-          grpc_channel_args_string(&args).c_str());
-  // Return the result (note we need to copy because we're borrowing the args
-  // from src still!)
-  return grpc_channel_args_copy(&args);
+  return output;
 }
 }  // namespace grpc_core
 
