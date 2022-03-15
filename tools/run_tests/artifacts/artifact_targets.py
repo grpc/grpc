@@ -419,6 +419,7 @@ def targets():
         CSharpExtArtifact('linux', 'x64', presubmit=True),
         CSharpExtArtifact('linux', 'aarch64', presubmit=True),
         CSharpExtArtifact('macos', 'x64', presubmit=True),
+        CSharpExtArtifact('macos', 'arm64', presubmit=True),
         CSharpExtArtifact('windows', 'x64', presubmit=True),
         CSharpExtArtifact('windows', 'x86', presubmit=True),
         CSharpExtArtifact('linux',
