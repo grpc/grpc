@@ -383,6 +383,24 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   grpc_call_unref(s);
 }
 
+// Make sure that the graceful goaway eventually makes progress even if a client
+// does not respond to the ping.
+TEST_F(GracefulShutdownTest, UnresponsiveClient) {
+  absl::Time initial_time = absl::Now();
+  // Initiate shutdown on the server
+  grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
+  // Wait for first goaway
+  WaitForGoaway((1u << 31) - 1);
+  // Wait for the ping
+  WaitForPing(0);
+  // Wait for final goaway without sending a ping ACK.
+  WaitForGoaway(0);
+  EXPECT_GE(absl::Now() - initial_time, absl::Seconds(20));
+  // The shutdown should successfully complete.
+  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
+  cq_verify(cqv_);
+}
+
 }  // namespace
 }  // namespace grpc_core
 

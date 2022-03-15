@@ -1828,7 +1828,6 @@ class GracefulGoaway : public grpc_core::InternallyRefCounted<GracefulGoaway> {
   }
 
   static void OnPingAckLocked(void* arg, grpc_error_handle /* error */) {
-    gpr_log(GPR_ERROR, "ping ack");
     auto* self = static_cast<GracefulGoaway*>(arg);
     grpc_timer_cancel(&self->timer_);
     self->MaybeSendFinalGoawayLocked();
@@ -1847,7 +1846,6 @@ class GracefulGoaway : public grpc_core::InternallyRefCounted<GracefulGoaway> {
   }
 
   static void OnTimerLocked(void* arg, grpc_error_handle /* error */) {
-    gpr_log(GPR_ERROR, "timer locked");
     auto* self = static_cast<GracefulGoaway*>(arg);
     self->MaybeSendFinalGoawayLocked();
     self->Unref();
