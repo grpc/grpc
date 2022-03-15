@@ -312,8 +312,6 @@ class Call : public CppImplOf<Call, grpc_call> {
    * Always support no compression. */
   CompressionAlgorithmSet encodings_accepted_by_peer_{
       GRPC_COMPRESS_NONE};
-  /* Supported stream encodings (stream compression algorithms), a bitset */
-  uint32_t stream_encodings_accepted_by_peer_ = 0;
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
