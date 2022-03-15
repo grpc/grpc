@@ -26,4 +26,4 @@ void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder);
 
 } // namespace grpc_core
  
-#endif  /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_TCP_CONNECT_HANDSHAKER_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_TCP_CONNECT_HANDSHAKER_H
