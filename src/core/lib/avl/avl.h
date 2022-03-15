@@ -22,8 +22,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "absl/container/inlined_vector.h"
-
 namespace grpc_core {
 
 template <class K, class V = void>
@@ -34,12 +32,8 @@ class AVL {
   AVL Add(K key, V value) const {
     return AVL(AddKey(root_, std::move(key), std::move(value)));
   }
-  template <typename SomethingLikeK>
-  AVL Remove(const SomethingLikeK& key) const {
-    return AVL(RemoveKey(root_, key));
-  }
-  template <typename SomethingLikeK>
-  const V* Lookup(const SomethingLikeK& key) const {
+  AVL Remove(const K& key) const { return AVL(RemoveKey(root_, key)); }
+  const V* Lookup(const K& key) const {
     NodePtr n = Get(root_, key);
     return n ? &n->kv.second : nullptr;
   }
@@ -56,36 +50,7 @@ class AVL {
     ForEachImpl(root_.get(), std::forward<F>(f));
   }
 
-  bool SameIdentity(const AVL& avl) const { return root_ == avl.root_; }
-
-  bool operator==(const AVL& other) const {
-    Iterator a(root_);
-    Iterator b(other.root_);
-    for (;;) {
-      Node* p = a.current();
-      Node* q = b.current();
-      if (p == nullptr) return q == nullptr;
-      if (q == nullptr) return false;
-      if (p->kv != q->kv) return false;
-      a.MoveNext();
-      b.MoveNext();
-    }
-  }
-
-  bool operator<(const AVL& other) const {
-    Iterator a(root_);
-    Iterator b(other.root_);
-    for (;;) {
-      Node* p = a.current();
-      Node* q = b.current();
-      if (p == nullptr) return q != nullptr;
-      if (q == nullptr) return false;
-      if (p->kv < q->kv) return true;
-      if (p->kv != q->kv) return false;
-      a.MoveNext();
-      b.MoveNext();
-    }
-  }
+  bool SameIdentity(AVL avl) const { return root_ == avl.root_; }
 
  private:
   struct Node;
@@ -102,32 +67,6 @@ class AVL {
     const long height;
   };
   NodePtr root_;
-
-  class Iterator {
-   public:
-    explicit Iterator(const NodePtr& root) {
-      auto* n = root.get();
-      while (n != nullptr) {
-        stack_.push_back(n);
-        n = n->left.get();
-      }
-    }
-    Node* current() const { return stack_.empty() ? nullptr : stack_.back(); }
-    void MoveNext() {
-      auto* n = stack_.back();
-      stack_.pop_back();
-      if (n->right != nullptr) {
-        n = n->right.get();
-        while (n != nullptr) {
-          stack_.push_back(n);
-          n = n->left.get();
-        }
-      }
-    }
-
-   private:
-    absl::InlinedVector<Node*, 8> stack_;
-  };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}
 
@@ -147,8 +86,7 @@ class AVL {
                                   1 + std::max(Height(left), Height(right)));
   }
 
-  template <typename SomethingLikeK>
-  static NodePtr Get(const NodePtr& node, const SomethingLikeK& key) {
+  static NodePtr Get(const NodePtr& node, const K& key) {
     if (node == nullptr) {
       return nullptr;
     }
@@ -260,8 +198,7 @@ class AVL {
     return node;
   }
 
-  template <typename SomethingLikeK>
-  static NodePtr RemoveKey(const NodePtr& node, const SomethingLikeK& key) {
+  static NodePtr RemoveKey(const NodePtr& node, const K& key) {
     if (node == nullptr) {
       return nullptr;
     }

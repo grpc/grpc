@@ -20,8 +20,6 @@
 
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/log.h>
@@ -29,101 +27,11 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
-
-TEST(ChannelArgsTest, Noop) { ChannelArgs(); }
-
-TEST(ChannelArgsTest, SetGetRemove) {
-  const grpc_arg_pointer_vtable malloc_vtable = {
-      // copy
-      [](void* p) { return p; },
-      // destroy
-      [](void*) {},
-      // equal
-      [](void* p1, void* p2) { return QsortCompare(p1, p2); },
-  };
-  void* ptr = gpr_malloc(42);
-
-  ChannelArgs a;
-  ChannelArgs b = a.Set("answer", 42);
-  ChannelArgs c = b.Set("foo", "bar");
-  ChannelArgs d = c.Set("ptr", ChannelArgs::Pointer(ptr, &malloc_vtable));
-  ChannelArgs e = d.Set("alpha", "beta");
-  ChannelArgs f = e.Remove("answer");
-  EXPECT_EQ(a.Get("answer"), nullptr);
-  EXPECT_EQ(*b.Get("answer"), ChannelArgs::Value(42));
-  EXPECT_EQ(*c.Get("answer"), ChannelArgs::Value(42));
-  EXPECT_EQ(c.GetInt("answer"), 42);
-  EXPECT_EQ(c.GetString("answer"), absl::nullopt);
-  EXPECT_EQ(f.Get("answer"), nullptr);
-  EXPECT_EQ(*c.Get("foo"), ChannelArgs::Value("bar"));
-  EXPECT_EQ(c.GetString("foo"), "bar");
-  EXPECT_EQ(c.GetString("answer"), absl::nullopt);
-  EXPECT_EQ(*d.Get("ptr"),
-            ChannelArgs::Value(ChannelArgs::Pointer(ptr, &malloc_vtable)));
-  EXPECT_EQ(*e.Get("alpha"), ChannelArgs::Value("beta"));
-  gpr_free(ptr);
-}
-
-TEST(ChannelArgsTest, StoreRefCountedPtr) {
-  struct Test : public RefCounted<Test> {
-    explicit Test(int n) : n(n) {}
-    int n;
-    bool operator<(const Test& rhs) const { return n < rhs.n; }
-  };
-  auto p = MakeRefCounted<Test>(123);
-
-  ChannelArgs a;
-  a = a.Set("test", std::move(p));
-  EXPECT_EQ(a.GetPointer<Test>("test")->n, 123);
-}
-
-TEST(ChannelArgsTest, ObjectApi) {
-  struct MyFancyObject : public RefCounted<MyFancyObject> {
-    explicit MyFancyObject(int n) : n(n) {}
-    static absl::string_view channel_arg_name() {
-      return "grpc.internal.my-fancy-object";
-    }
-    int n;
-    bool operator<(const MyFancyObject& rhs) const { return n < rhs.n; }
-  };
-  auto p = MakeRefCounted<MyFancyObject>(42);
-  ChannelArgs a;
-  a = a.SetObject(std::move(p));
-  EXPECT_EQ(a.GetObject<MyFancyObject>()->n, 42);
-}
-
-TEST(ChannelArgsTest, ToAndFromC) {
-  const grpc_arg_pointer_vtable malloc_vtable = {
-      // copy
-      [](void* p) { return p; },
-      // destroy
-      [](void*) {},
-      // equal
-      [](void* p1, void* p2) { return QsortCompare(p1, p2); },
-  };
-  void* ptr = gpr_malloc(42);
-  ChannelArgs a = ChannelArgs()
-                      .Set("answer", 42)
-                      .Set("foo", "bar")
-                      .Set("ptr", ChannelArgs::Pointer(ptr, &malloc_vtable))
-                      .Set("alpha", "beta");
-  const grpc_channel_args* c = a.ToC();
-  ChannelArgs b = ChannelArgs::FromC(c);
-  grpc_channel_args_destroy(c);
-  EXPECT_EQ(a, b);
-  gpr_free(ptr);
-}
-
-}  // namespace grpc_core
-
-TEST(GrpcChannelArgsTest, Create) {
+static void test_create(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_arg to_add[2];
   grpc_channel_args* ch_args;
@@ -172,7 +80,7 @@ static int fake_pointer_cmp(void* a, void* b) {
 static const grpc_arg_pointer_vtable fake_pointer_arg_vtable = {
     fake_pointer_arg_copy, fake_pointer_arg_destroy, fake_pointer_cmp};
 
-TEST(GrpcChannelArgsTest, ChannelCreateWithArgs) {
+static void test_channel_create_with_args(void) {
   grpc_arg client_a[3];
 
   client_a[0] =
@@ -223,7 +131,53 @@ grpc_channel_args* mutate_channel_args(const char* target,
   return new_args;
 }
 
-TEST(GrpcChannelArgsTest, TestServerCreateWithArgs) {
+// Minimal stack should not have client_idle filter
+static bool channel_has_client_idle_filter(grpc_channel* c) {
+  grpc_channel_stack* stack = grpc_channel_get_channel_stack(c);
+  for (size_t i = 0; i < stack->count; i++) {
+    if (strcmp(grpc_channel_stack_element(stack, i)->filter->name,
+               "client_idle") == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static void test_channel_create_with_global_mutator(void) {
+  grpc_channel_args_set_client_channel_creation_mutator(mutate_channel_args);
+  // We also add some custom args to make sure the ownership is correct.
+  grpc_arg client_a[3];
+
+  client_a[0] =
+      grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
+  client_a[1] = grpc_channel_arg_string_create(
+      const_cast<char*>("arg_str"), const_cast<char*>("arg_str_val"));
+  // allocated and adds custom pointer arg
+  fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
+  fc->foo = 42;
+  client_a[2] = grpc_channel_arg_pointer_create(
+      const_cast<char*>("arg_pointer"), fc, &fake_pointer_arg_vtable);
+
+  // creates channels
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  grpc_channel* c = grpc_channel_create("no_op_mutator", creds, &client_args);
+  grpc_channel_credentials_release(creds);
+  GPR_ASSERT(channel_has_client_idle_filter(c));
+  grpc_channel_destroy(c);
+
+  grpc_channel_credentials* another_creds = grpc_insecure_credentials_create();
+  c = grpc_channel_create("minimal_stack_mutator", another_creds, &client_args);
+  grpc_channel_credentials_release(another_creds);
+  GPR_ASSERT(channel_has_client_idle_filter(c) == false);
+  grpc_channel_destroy(c);
+
+  gpr_free(fc);
+  auto mutator = grpc_channel_args_get_client_channel_creation_mutator();
+  GPR_ASSERT(mutator == &mutate_channel_args);
+}
+
+static void test_server_create_with_args(void) {
   grpc_arg server_a[3];
 
   // adds integer arg
@@ -253,10 +207,14 @@ TEST(GrpcChannelArgsTest, TestServerCreateWithArgs) {
 }
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  auto r = RUN_ALL_TESTS();
+  test_create();
+  test_channel_create_with_args();
+  test_server_create_with_args();
+  // This has to be the last test.
+  // TODO(markdroth): re-enable this test once client_idle is re-enabled
+  // test_channel_create_with_global_mutator();
   grpc_shutdown();
-  return r;
+  return 0;
 }

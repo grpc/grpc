@@ -21,7 +21,6 @@ licenses(["notice"])
 grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
-    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
     deps = [
