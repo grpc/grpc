@@ -2257,7 +2257,8 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
-        "grpc_channel_idle_filter",
+        "grpc_client_idle_filter",
+        "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
@@ -2553,10 +2554,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
-        "src/core/ext/filters/channel_idle/idle_filter_state.cc",
+        "src/core/ext/filters/client_idle/idle_filter_state.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/channel_idle/idle_filter_state.h",
+        "src/core/ext/filters/client_idle/idle_filter_state.h",
     ],
     language = "c++",
     deps = [
@@ -2565,9 +2566,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_channel_idle_filter",
+    name = "grpc_client_idle_filter",
     srcs = [
-        "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
+        "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     deps = [
         "capture",
@@ -2579,6 +2580,22 @@ grpc_cc_library(
         "loop",
         "sleep",
         "try_seq",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_max_age_filter",
+    srcs = [
+        "src/core/ext/filters/max_age/max_age_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/max_age/max_age_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
     ],
 )
 
