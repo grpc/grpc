@@ -223,7 +223,7 @@ class Call : public CppImplOf<Call, grpc_call> {
     Call* sibling_prev = nullptr;
   };
 
-  Call(grpc_core::Arena* arena, const grpc_call_create_args& args)
+  Call(Arena* arena, const grpc_call_create_args& args)
       : arena_(arena),
         cq_(args.cq),
         channel_(args.channel),
@@ -257,9 +257,9 @@ class Call : public CppImplOf<Call, grpc_call> {
   void RecvTrailingFilter(grpc_metadata_batch* b,
                           grpc_error_handle batch_error);
 
-  grpc_core::RefCount ext_ref_;
-  grpc_core::Arena* arena_;
-  grpc_core::CallCombiner call_combiner_;
+  RefCount ext_ref_;
+  Arena* arena_;
+  CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
   grpc_channel* channel_;
@@ -310,7 +310,7 @@ class Call : public CppImplOf<Call, grpc_call> {
       GRPC_COMPRESS_NONE;
   /* Supported encodings (compression algorithms), a bitset.
    * Always support no compression. */
-  grpc_core::CompressionAlgorithmSet encodings_accepted_by_peer_{
+  CompressionAlgorithmSet encodings_accepted_by_peer_{
       GRPC_COMPRESS_NONE};
   /* Supported stream encodings (stream compression algorithms), a bitset */
   uint32_t stream_encodings_accepted_by_peer_ = 0;
@@ -318,12 +318,12 @@ class Call : public CppImplOf<Call, grpc_call> {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-  grpc_core::Timestamp send_deadline_;
+  Timestamp send_deadline_;
 
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream>
+  ManualConstructor<SliceBufferByteStream>
       sending_stream_;
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream> receiving_stream_;
+  OrphanablePtr<ByteStream> receiving_stream_;
   bool call_failed_before_recv_message_ = false;
   grpc_byte_buffer** receiving_buffer_ = nullptr;
   grpc_slice receiving_slice_ = grpc_empty_slice();
@@ -347,7 +347,7 @@ class Call : public CppImplOf<Call, grpc_call> {
     struct {
       int* cancelled;
       // backpointer to owning server if this is a server side call.
-      grpc_core::Server* core_server;
+      Server* core_server;
     } server;
   } final_op_;
   AtomicError status_error_;
@@ -405,7 +405,7 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
     *composite = grpc_error_add_child(*composite, new_err);
   };
 
-  grpc_core::Arena* arena;
+  Arena* arena;
   Call* call;
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack =
@@ -417,8 +417,8 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
   size_t call_alloc_size =
       call_and_stack_size + (args->parent ? sizeof(ChildCall) : 0);
 
-  std::pair<grpc_core::Arena*, void*> arena_with_call =
-      grpc_core::Arena::CreateWithAlloc(initial_size, call_alloc_size,
+  std::pair<Arena*, void*> arena_with_call =
+      Arena::CreateWithAlloc(initial_size, call_alloc_size,
                                         &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) Call(arena, *args);
@@ -430,10 +430,10 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
     call->final_op_.client.error_string = nullptr;
     GRPC_STATS_INC_CLIENT_CALLS_CREATED();
     path = grpc_slice_ref_internal(args->path->c_slice());
-    call->send_initial_metadata_.Set(grpc_core::HttpPathMetadata(),
+    call->send_initial_metadata_.Set(HttpPathMetadata(),
                                      std::move(*args->path));
     if (args->authority.has_value()) {
-      call->send_initial_metadata_.Set(grpc_core::HttpAuthorityMetadata(),
+      call->send_initial_metadata_.Set(HttpAuthorityMetadata(),
                                        std::move(*args->authority));
     }
   } else {
@@ -442,7 +442,7 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
     call->final_op_.server.core_server = args->server;
   }
 
-  grpc_core::Timestamp send_deadline = args->send_deadline;
+  Timestamp send_deadline = args->send_deadline;
   bool immediately_cancel = false;
 
   Call* parent = Call::FromC(args->parent);
@@ -531,13 +531,13 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
   }
 
   if (call->is_client_) {
-    grpc_core::channelz::ChannelNode* channelz_channel =
+    channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(call->channel_);
     if (channelz_channel != nullptr) {
       channelz_channel->RecordCallStarted();
     }
   } else if (call->final_op_.server.core_server != nullptr) {
-    grpc_core::channelz::ServerNode* channelz_node =
+    channelz::ServerNode* channelz_node =
         call->final_op_.server.core_server->channelz_node();
     if (channelz_node != nullptr) {
       channelz_node->RecordCallStarted();
@@ -565,7 +565,7 @@ void Call::SetCompletionQueue(grpc_completion_queue* cq) {
 void Call::ReleaseCall(void* call, grpc_error_handle /*error*/) {
   auto* c = static_cast<Call*>(call);
   grpc_channel* channel = c->channel_;
-  grpc_core::Arena* arena = c->arena_;
+  Arena* arena = c->arena_;
   c->~Call();
   grpc_channel_update_call_size_estimate(channel, arena->Destroy());
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
@@ -603,8 +603,8 @@ void Call::ExternalUnref() {
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
 
   ChildCall* cc = child_;
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
 
@@ -658,8 +658,8 @@ void Call::ExecuteBatch(grpc_transport_stream_op_batch* batch,
     GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
     grpc_transport_stream_op_batch* batch =
         static_cast<grpc_transport_stream_op_batch*>(arg);
-    grpc_core::Call* call =
-        static_cast<grpc_core::Call*>(batch->handler_private.extra_arg);
+    Call* call =
+        static_cast<Call*>(batch->handler_private.extra_arg);
     grpc_call_element* elem = call->call_elem(0);
     GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
     elem->filter->start_transport_stream_op_batch(elem, batch);
@@ -734,7 +734,7 @@ void Call::SetFinalStatus(grpc_error_handle error) {
         grpc_slice_from_cpp_string(std::move(status_details));
     status_error_.set(error);
     GRPC_ERROR_UNREF(error);
-    grpc_core::channelz::ChannelNode* channelz_channel =
+    channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(channel_);
     if (channelz_channel != nullptr) {
       if (*final_op_.client.status != GRPC_STATUS_OK) {
@@ -746,7 +746,7 @@ void Call::SetFinalStatus(grpc_error_handle error) {
   } else {
     *final_op_.server.cancelled =
         error != GRPC_ERROR_NONE || !sent_server_trailing_metadata_;
-    grpc_core::channelz::ServerNode* channelz_node =
+    channelz::ServerNode* channelz_node =
         final_op_.server.core_server->channelz_node();
     if (channelz_node != nullptr) {
       if (*final_op_.server.cancelled || !status_error_.ok()) {
@@ -778,12 +778,12 @@ bool Call::PrepareApplicationMetadata(size_t count, grpc_metadata* metadata,
       return false;
     }
     batch->Append(
-        grpc_core::StringViewFromSlice(md->key),
-        grpc_core::Slice(grpc_slice_ref_internal(md->value)),
-        [md](absl::string_view error, const grpc_core::Slice& value) {
+        StringViewFromSlice(md->key),
+        Slice(grpc_slice_ref_internal(md->value)),
+        [md](absl::string_view error, const Slice& value) {
           gpr_log(
               GPR_DEBUG, "Append error: %s",
-              absl::StrCat("key=", grpc_core::StringViewFromSlice(md->key),
+              absl::StrCat("key=", StringViewFromSlice(md->key),
                            " error=", error, " value=", value.as_string_view())
                   .c_str());
         });
@@ -797,7 +797,7 @@ class PublishToAppEncoder {
  public:
   explicit PublishToAppEncoder(grpc_metadata_array* dest) : dest_(dest) {}
 
-  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value) {
+  void Encode(const Slice& key, const Slice& value) {
     Append(key.c_slice(), value.c_slice());
   }
 
@@ -807,35 +807,35 @@ class PublishToAppEncoder {
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {}
 
-  void Encode(grpc_core::UserAgentMetadata, const grpc_core::Slice& slice) {
-    Append(grpc_core::UserAgentMetadata::key(), slice);
+  void Encode(UserAgentMetadata, const Slice& slice) {
+    Append(UserAgentMetadata::key(), slice);
   }
 
-  void Encode(grpc_core::HostMetadata, const grpc_core::Slice& slice) {
-    Append(grpc_core::HostMetadata::key(), slice);
+  void Encode(HostMetadata, const Slice& slice) {
+    Append(HostMetadata::key(), slice);
   }
 
-  void Encode(grpc_core::GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
-    Append(grpc_core::GrpcPreviousRpcAttemptsMetadata::key(), count);
+  void Encode(GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
+    Append(GrpcPreviousRpcAttemptsMetadata::key(), count);
   }
 
-  void Encode(grpc_core::GrpcRetryPushbackMsMetadata,
-              grpc_core::Duration count) {
-    Append(grpc_core::GrpcRetryPushbackMsMetadata::key(), count.millis());
+  void Encode(GrpcRetryPushbackMsMetadata,
+              Duration count) {
+    Append(GrpcRetryPushbackMsMetadata::key(), count.millis());
   }
 
-  void Encode(grpc_core::LbTokenMetadata, const grpc_core::Slice& slice) {
-    Append(grpc_core::LbTokenMetadata::key(), slice);
+  void Encode(LbTokenMetadata, const Slice& slice) {
+    Append(LbTokenMetadata::key(), slice);
   }
 
  private:
   void Append(absl::string_view key, int64_t value) {
-    Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
-           grpc_core::Slice::FromInt64(value).c_slice());
+    Append(StaticSlice::FromStaticString(key).c_slice(),
+           Slice::FromInt64(value).c_slice());
   }
 
-  void Append(absl::string_view key, const grpc_core::Slice& value) {
-    Append(grpc_core::StaticSlice::FromStaticString(key).c_slice(),
+  void Append(absl::string_view key, const Slice& value) {
+    Append(StaticSlice::FromStaticString(key).c_slice(),
            value.c_slice());
   }
 
@@ -868,10 +868,10 @@ void Call::PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing) {
 
 void Call::RecvInitialFilter(grpc_metadata_batch* b) {
   incoming_compression_algorithm_ =
-      b->Take(grpc_core::GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
+      b->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
   encodings_accepted_by_peer_ =
-      b->Take(grpc_core::GrpcAcceptEncodingMetadata())
-          .value_or(grpc_core::CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
+      b->Take(GrpcAcceptEncodingMetadata())
+          .value_or(CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
   PublishAppMetadata(b, false);
 }
 
@@ -881,7 +881,7 @@ void Call::RecvTrailingFilter(grpc_metadata_batch* b,
     SetFinalStatus(batch_error);
   } else {
     absl::optional<grpc_status_code> grpc_status =
-        b->Take(grpc_core::GrpcStatusMetadata());
+        b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
       grpc_status_code status_code = *grpc_status;
       grpc_error_handle error = GRPC_ERROR_NONE;
@@ -893,7 +893,7 @@ void Call::RecvTrailingFilter(grpc_metadata_batch* b,
             GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
         gpr_free(peer);
       }
-      auto grpc_message = b->Take(grpc_core::GrpcMessageMetadata());
+      auto grpc_message = b->Take(GrpcMessageMetadata());
       if (grpc_message.has_value()) {
         error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                                    grpc_message->as_string_view());
@@ -1025,7 +1025,7 @@ void Call::BatchControl::PostCompletion() {
   if (completion_data_.notify_tag.is_closure) {
     /* unrefs error */
     call_ = nullptr;
-    grpc_core::Closure::Run(
+    Closure::Run(
         DEBUG_LOCATION,
         static_cast<grpc_closure*>(completion_data_.notify_tag.tag), error);
     GRPC_CALL_INTERNAL_UNREF(call->c_ptr(), "completion");
@@ -1186,7 +1186,7 @@ void Call::BatchControl::ValidateFilteredMetadata() {
       grpc_channel_compression_options(call->channel_);
   const grpc_compression_algorithm compression_algorithm =
       call->incoming_compression_algorithm_;
-  if (GPR_UNLIKELY(!grpc_core::CompressionAlgorithmSet::FromUint32(
+  if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
                         compression_options.enabled_algorithms_bitset)
                         .IsSet(compression_algorithm))) {
     /* check if algorithm is supported by current channel config */
@@ -1216,8 +1216,8 @@ void Call::BatchControl::ReceivingInitialMetadataReady(
     GPR_TIMER_SCOPE("validate_filtered_metadata", 0);
     ValidateFilteredMetadata();
 
-    absl::optional<grpc_core::Timestamp> deadline =
-        md->get(grpc_core::GrpcTimeoutMetadata());
+    absl::optional<Timestamp> deadline =
+        md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client_) {
       call_->send_deadline_ = *deadline;
     }
@@ -1256,7 +1256,7 @@ void Call::BatchControl::ReceivingInitialMetadataReady(
     }
   }
   if (saved_rsr_closure != nullptr) {
-    grpc_core::Closure::Run(DEBUG_LOCATION, saved_rsr_closure,
+    Closure::Run(DEBUG_LOCATION, saved_rsr_closure,
                             GRPC_ERROR_REF(error));
   }
 
@@ -1316,7 +1316,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           static_cast<grpc_cq_completion*>(
               gpr_malloc(sizeof(grpc_cq_completion))));
     } else {
-      grpc_core::Closure::Run(DEBUG_LOCATION,
+      Closure::Run(DEBUG_LOCATION,
                               static_cast<grpc_closure*>(notify_tag),
                               GRPC_ERROR_NONE);
     }
@@ -1381,7 +1381,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           // The following metadata will be checked and removed by the message
           // compression filter. It will be used as the call's compression
           // algorithm.
-          send_initial_metadata_.Set(grpc_core::GrpcInternalEncodingRequest(),
+          send_initial_metadata_.Set(GrpcInternalEncodingRequest(),
                                      calgo);
         }
         if (op->data.send_initial_metadata.count > INT_MAX) {
@@ -1392,15 +1392,15 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
         sent_initial_metadata_ = true;
         if (!PrepareApplicationMetadata(op->data.send_initial_metadata.count,
                                         op->data.send_initial_metadata.metadata,
-                                        0)) {
+                                        false)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
         // Ignore any te metadata key value pairs specified.
-        send_initial_metadata_.Remove(grpc_core::TeMetadata());
+        send_initial_metadata_.Remove(TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
-        if (is_client_ && send_deadline_ != grpc_core::Timestamp::InfFuture()) {
-          send_initial_metadata_.Set(grpc_core::GrpcTimeoutMetadata(),
+        if (is_client_ && send_deadline_ != Timestamp::InfFuture()) {
+          send_initial_metadata_.Set(GrpcTimeoutMetadata(),
                                      send_deadline_);
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
@@ -1488,7 +1488,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
 
         if (!PrepareApplicationMetadata(
                 op->data.send_status_from_server.trailing_metadata_count,
-                op->data.send_status_from_server.trailing_metadata, 1)) {
+                op->data.send_status_from_server.trailing_metadata, true)) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1504,13 +1504,13 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
                           op->data.send_status_from_server.status));
         if (op->data.send_status_from_server.status_details != nullptr) {
           send_trailing_metadata_.Set(
-              grpc_core::GrpcMessageMetadata(),
-              grpc_core::Slice(grpc_slice_copy(
+              GrpcMessageMetadata(),
+              Slice(grpc_slice_copy(
                   *op->data.send_status_from_server.status_details)));
           if (status_error != GRPC_ERROR_NONE) {
             status_error = grpc_error_set_str(
                 status_error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                grpc_core::StringViewFromSlice(
+                StringViewFromSlice(
                     *op->data.send_status_from_server.status_details));
           }
         }
@@ -1518,11 +1518,11 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
         status_error_.set(status_error);
         GRPC_ERROR_UNREF(status_error);
 
-        send_trailing_metadata_.Set(grpc_core::GrpcStatusMetadata(),
+        send_trailing_metadata_.Set(GrpcStatusMetadata(),
                                     op->data.send_status_from_server.status);
 
         // Ignore any te metadata key value pairs specified.
-        send_trailing_metadata_.Remove(grpc_core::TeMetadata());
+        send_trailing_metadata_.Remove(TeMetadata());
         stream_op_payload->send_trailing_metadata.send_trailing_metadata =
             &send_trailing_metadata_;
         stream_op_payload->send_trailing_metadata.sent =
