@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/surface/channel_stack_type.h"
 
 #define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
 
@@ -71,7 +70,6 @@ class ChannelInit {
   };
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
-  /// \a type is the type of channel stack to create
   /// \a builder is the channel stack builder to build into.
   bool CreateStack(ChannelStackBuilder* builder) const;
 
