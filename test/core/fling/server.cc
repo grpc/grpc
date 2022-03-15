@@ -186,8 +186,8 @@ int main(int argc, char** argv) {
   gpr_timers_set_log_filename("latency_trace.fling_server.txt");
 
   GPR_ASSERT(argc >= 1);
+  argc = 1;
   fake_argv[0] = argv[0];
-  int argc = 1;
   grpc_test_init(&argc, fake_argv);
 
   grpc_init();
