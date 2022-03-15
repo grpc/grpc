@@ -393,7 +393,6 @@ if "win32" in sys.platform:
 else:
     DEFINE_MACROS += (
         ('HAVE_CONFIG_H', 1),
-        ('GRPC_ENABLE_FORK_SUPPORT', 1),
     )
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
