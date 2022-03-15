@@ -2530,14 +2530,6 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
   }
 };
 
-bool RlsEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 }  //  namespace
 
 void RlsLbPluginInit() {

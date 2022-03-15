@@ -44,16 +44,18 @@ class XdsClusterSpecifierPluginImpl {
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Returns the LB policy config in JSON form.
-  virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena) const = 0;
+  virtual absl::StatusOr<Json> GenerateLoadBalancingPolicyConfig(
+      upb_StringView serialized_plugin_config, upb_Arena* arena,
+      upb_DefPool* symtab) const = 0;
 };
 
 class XdsRouteLookupClusterSpecifierPlugin
     : public XdsClusterSpecifierPluginImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
-  absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      upb_StringView serialized_plugin_config, upb_Arena* arena) const override;
+  absl::StatusOr<Json> GenerateLoadBalancingPolicyConfig(
+      upb_StringView serialized_plugin_config, upb_Arena* arena,
+      upb_DefPool* symtab) const override;
 };
 
 class XdsClusterSpecifierPluginRegistry {
@@ -66,7 +68,8 @@ class XdsClusterSpecifierPluginRegistry {
 
   static absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
       absl::string_view proto_type_name,
-      upb_StringView serialized_plugin_config, upb_Arena* arena);
+      upb_StringView serialized_plugin_config, upb_Arena* arena,
+      upb_DefPool* symtab);
 
   // Global init and shutdown.
   static void Init();

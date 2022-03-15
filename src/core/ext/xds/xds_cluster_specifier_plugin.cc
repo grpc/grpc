@@ -22,7 +22,9 @@
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 #include "google/protobuf/duration.upb.h"
+#include "upb/json_encode.h"
 
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
@@ -37,9 +39,10 @@ void XdsRouteLookupClusterSpecifierPlugin::PopulateSymtab(
   grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
 }
 
-absl::StatusOr<std::string>
+absl::StatusOr<Json>
 XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
-    upb_StringView serialized_plugin_config, upb_Arena* arena) const {
+    upb_StringView serialized_plugin_config, upb_Arena* arena,
+    upb_DefPool* symtab) const {
   const auto* specifier = grpc_lookup_v1_RouteLookupClusterSpecifier_parse(
       serialized_plugin_config.data, serialized_plugin_config.size, arena);
   if (specifier == nullptr) {
@@ -52,126 +55,24 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
         "Could not get route lookup config from route lookup cluster "
         "specifier");
   }
-  Json::Object result;
-  // parse array of grpc keybuilders
-  size_t num_keybuilders;
-  Json::Array keybuilders_array_result;
-  const grpc_lookup_v1_GrpcKeyBuilder* const* keybuilders =
-      grpc_lookup_v1_RouteLookupConfig_grpc_keybuilders(plugin_config,
-                                                        &num_keybuilders);
-  for (size_t i = 0; i < num_keybuilders; ++i) {
-    Json::Object builder_result;
-    // parse array of names
-    size_t num_names;
-    Json::Array keybuilder_names_array_result;
-    const grpc_lookup_v1_GrpcKeyBuilder_Name* const* names =
-        grpc_lookup_v1_GrpcKeyBuilder_names(keybuilders[i], &num_names);
-    for (size_t j = 0; j < num_names; ++j) {
-      Json::Object name_result;
-      name_result["service"] = UpbStringToStdString(
-          grpc_lookup_v1_GrpcKeyBuilder_Name_service(names[j]));
-      name_result["method"] = UpbStringToStdString(
-          grpc_lookup_v1_GrpcKeyBuilder_Name_method(names[j]));
-      keybuilder_names_array_result.emplace_back(std::move(name_result));
-    }
-    builder_result["names"] = std::move(keybuilder_names_array_result);
-    // parse extra_keys
-    if (grpc_lookup_v1_GrpcKeyBuilder_has_extra_keys(keybuilders[i])) {
-      const auto* extra_keys =
-          grpc_lookup_v1_GrpcKeyBuilder_extra_keys(keybuilders[i]);
-      Json::Object extra_keys_result;
-      extra_keys_result["host"] = UpbStringToStdString(
-          grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_host(extra_keys));
-      extra_keys_result["service"] = UpbStringToStdString(
-          grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_service(extra_keys));
-      extra_keys_result["method"] = UpbStringToStdString(
-          grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_method(extra_keys));
-      builder_result["extraKeys"] = std::move(extra_keys_result);
-    }
-    // parse headers
-    size_t num_headers;
-    Json::Array keybuilder_headers_array_result;
-    const grpc_lookup_v1_NameMatcher* const* headers =
-        grpc_lookup_v1_GrpcKeyBuilder_headers(keybuilders[i], &num_headers);
-    for (size_t k = 0; k < num_headers; ++k) {
-      Json::Object header_result;
-      header_result["key"] =
-          UpbStringToStdString(grpc_lookup_v1_NameMatcher_key(headers[k]));
-      size_t num_header_names;
-      Json::Array header_names_result;
-      upb_StringView const* header_names =
-          grpc_lookup_v1_NameMatcher_names(headers[k], &num_header_names);
-      for (size_t l = 0; l < num_header_names; ++l) {
-        header_names_result.emplace_back(UpbStringToStdString(header_names[l]));
-      }
-      header_result["names"] = std::move(header_names_result);
-      if (grpc_lookup_v1_NameMatcher_required_match(headers[k])) {
-        gpr_log(GPR_INFO, "donna this should have been trigger");
-        return absl::InvalidArgumentError(
-            "RouteLookupConfig GrpcKeyBuilder headers must not set "
-            "required_match.");
-      }
-      keybuilder_headers_array_result.emplace_back(std::move(header_result));
-    }
-    builder_result["headers"] = std::move(keybuilder_headers_array_result);
-    // parse constant keys
-    Json::Object const_keys_map_result;
-    size_t const_key_it = kUpb_Map_Begin;
-    while (true) {
-      const auto* const_key_entry =
-          grpc_lookup_v1_GrpcKeyBuilder_constant_keys_next(keybuilders[i],
-                                                           &const_key_it);
-      if (const_key_entry == nullptr) break;
-      Json::Object const_key_entry_result;
-      std::string key = UpbStringToStdString(
-          grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_key(const_key_entry));
-      if (!key.empty()) {
-        const_keys_map_result[std::move(key)] = UpbStringToStdString(
-            grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_value(
-                const_key_entry));
-      }
-    }
-    builder_result["constantKeys"] = std::move(const_keys_map_result);
-    keybuilders_array_result.emplace_back(std::move(builder_result));
+  upb::Status status;
+  const upb_MessageDef* msg_type =
+      // grpc_lookup_v1_RouteLookupClusterSpecifier_getmsgdef(symtab);
+      grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
+  char buf[10240];
+  size_t json_size = upb_JsonEncode(plugin_config, msg_type, symtab, 0, nullptr,
+                                    0, status.ptr());
+  if (json_size < 10240) {
+    upb_JsonEncode(plugin_config, msg_type, symtab, 0, buf, json_size + 1,
+                   status.ptr());
+  } else {
+    return absl::InvalidArgumentError(
+        "Route lookup config too big to fit in parsing buffer of size 10240");
   }
-  result["grpcKeybuilders"] = std::move(keybuilders_array_result);
-  // parse lookupService
-  result["lookupService"] = UpbStringToStdString(
-      grpc_lookup_v1_RouteLookupConfig_lookup_service(plugin_config));
-  // parse lookupServiceTimeout
-  if (grpc_lookup_v1_RouteLookupConfig_has_lookup_service_timeout(
-          plugin_config)) {
-    const auto* timeout =
-        grpc_lookup_v1_RouteLookupConfig_lookup_service_timeout(plugin_config);
-    result["lookupServiceTimeout"] =
-        absl::StrFormat("%d.%09ds", google_protobuf_Duration_seconds(timeout),
-                        google_protobuf_Duration_nanos(timeout));
-  }
-  // parse maxAge
-  if (grpc_lookup_v1_RouteLookupConfig_has_max_age(plugin_config)) {
-    const auto* max_age =
-        grpc_lookup_v1_RouteLookupConfig_max_age(plugin_config);
-    result["maxAge"] =
-        absl::StrFormat("%d.%09ds", google_protobuf_Duration_seconds(max_age),
-                        google_protobuf_Duration_nanos(max_age));
-  }
-  // parse staleAge
-  if (grpc_lookup_v1_RouteLookupConfig_has_stale_age(plugin_config)) {
-    const auto* stale_age =
-        grpc_lookup_v1_RouteLookupConfig_stale_age(plugin_config);
-    result["staleAge"] =
-        absl::StrFormat("%d.%09ds", google_protobuf_Duration_seconds(stale_age),
-                        google_protobuf_Duration_nanos(stale_age));
-  }
-  // parse cashSizeBytes
-  result["cashSizeBytes"] =
-      grpc_lookup_v1_RouteLookupConfig_cache_size_bytes(plugin_config);
-  // parse defaultTarget
-  result["defaultTarget"] = UpbStringToStdString(
-      grpc_lookup_v1_RouteLookupConfig_default_target(plugin_config));
-  // Construct the config
   Json::Object rls_policy;
-  rls_policy["routeLookupConfig"] = std::move(result);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  rls_policy["routeLookupConfig"] = Json::Parse(buf, &error);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;
@@ -182,8 +83,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   policy["rls_experimental"] = std::move(rls_policy);
   Json::Array policies;
   policies.emplace_back(std::move(policy));
-  gpr_log(GPR_INFO, "donna rls policy dump %s", Json(policies).Dump().c_str());
-  return Json(policies).Dump();
+  return Json(policies);
 }
 
 namespace {
@@ -210,14 +110,27 @@ void XdsClusterSpecifierPluginRegistry::RegisterPlugin(
 absl::StatusOr<std::string>
 XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
     absl::string_view proto_type_name, upb_StringView serialized_plugin_config,
-    upb_Arena* arena) {
+    upb_Arena* arena, upb_DefPool* symtab) {
   auto it = g_plugin_registry->find(proto_type_name);
   if (it == g_plugin_registry->end()) {
     return absl::InvalidArgumentError(
         "Unable to locate the cluster specifier plugin in the registry");
   }
-  return it->second->GenerateLoadBalancingPolicyConfig(serialized_plugin_config,
-                                                       arena);
+  auto lb_policy_config = it->second->GenerateLoadBalancingPolicyConfig(
+      serialized_plugin_config, arena, symtab);
+  if (!lb_policy_config.ok()) return lb_policy_config.status();
+  grpc_error_handle parse_error = GRPC_ERROR_NONE;
+  LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(*lb_policy_config,
+                                                        &parse_error);
+  if (parse_error != GRPC_ERROR_NONE) {
+    absl::Status status = absl::InvalidArgumentError(absl::StrCat(
+        proto_type_name,
+        " ClusterSpecifierPlugin returned invalid LB policy config: ",
+        grpc_error_std_string(parse_error)));
+    GRPC_ERROR_UNREF(parse_error);
+    return status;
+  }
+  return lb_policy_config->Dump();
 }
 
 void XdsClusterSpecifierPluginRegistry::Init() {

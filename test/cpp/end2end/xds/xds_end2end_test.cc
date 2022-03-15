@@ -7587,8 +7587,9 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
   RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = route_lookup_config;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
   plugin->mutable_extension()->set_name(kNewClusterName);
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
@@ -7654,6 +7655,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
   (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
   RouteLookupClusterSpecifier rls;
   *rls.mutable_route_lookup_config() = route_lookup_config;
   RouteConfiguration new_route_config = default_route_config_;
@@ -7722,6 +7724,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
   (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
   RouteLookupClusterSpecifier rls;
   *rls.mutable_route_lookup_config() = route_lookup_config;
   RouteConfiguration new_route_config = default_route_config_;
@@ -7734,9 +7737,9 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("RouteLookupConfig GrpcKeyBuilder headers "
-                                   "must not set required_match."));
+  EXPECT_THAT(
+      response_state->error_message,
+      ::testing::HasSubstr("field:requiredMatch error:must not be present"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
