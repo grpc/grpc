@@ -727,9 +727,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/table.h
@@ -1906,9 +1904,7 @@ libs:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
-  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/gprpp/table.h
@@ -3330,6 +3326,15 @@ targets:
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
+- name: channel_args_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/channel/channel_args_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_stack_test
   build: test
   language: c
@@ -4537,8 +4542,7 @@ targets:
   - src/core/lib/avl/avl.h
   src:
   - test/core/avl/avl_test.cc
-  deps:
-  - absl/container:inlined_vector
+  deps: []
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
@@ -4854,16 +4858,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: channel_args_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/channel/channel_args_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: channel_arguments_test
   gtest: true
   build: test
