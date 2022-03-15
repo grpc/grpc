@@ -87,6 +87,7 @@ RUN mkdir /var/local/jenkins
 # Install nvm
 RUN groupadd -g 999 appuser && useradd -r -u 999 -g appuser appuser
 RUN mkdir -p /home/appuser && chown appuser /home/appuser
+RUN chmod 777 /root
 USER appuser
 RUN touch ~/.profile
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash

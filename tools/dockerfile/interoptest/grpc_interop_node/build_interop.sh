@@ -23,7 +23,7 @@ git clone /var/local/jenkins/grpc-node ~/grpc-node
 ${name}')
 
 # copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+cp -r /var/local/jenkins/service_account /root/ || true
 
 cd ~/grpc-node
 
