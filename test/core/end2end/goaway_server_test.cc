@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
   grpc_op ops[6];
   grpc_op* op;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   gpr_mu_init(&g_mu);
   grpc_init();

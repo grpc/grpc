@@ -307,7 +307,7 @@ int external_dns_works(const char* host) {
 int main(int argc, char** argv) {
   int do_ipv6 = 1;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   if (!grpc_ipv6_loopback_available()) {

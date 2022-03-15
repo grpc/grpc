@@ -27,8 +27,6 @@
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/symbolize.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -43,8 +41,6 @@
 #include "test/core/event_engine/test_init.h"
 #include "test/core/util/build.h"
 #include "test/core/util/stack_tracer.h"
-
-ABSL_FLAG(std::string, poller, "", "Override the poller for this test");
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -96,14 +92,29 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
           GPR_TIMESPAN));
 }
 
-std::vector<char*> grpc_test_init(int argc, char** argv) {
-  gpr_log_verbosity_init();
-  std::vector<char*> unparsed_argv = absl::ParseCommandLine(argc, argv);
-  grpc_event_engine::experimental::InitializeTestingEventEngineFactory();
-  std::string poller_override = absl::GetFlag(FLAGS_poller);
-  if (!poller_override.empty()) {
-    gpr_setenv("GRPC_POLL_STRATEGY", poller_override.c_str());
+namespace {
+void grpc_test_init_parse_argv(int* argc, char** argv) {
+  // flags to look for and consume
+  constexpr char poller_flag[] = "--poller=";
+  constexpr size_t poller_flag_len = sizeof(poller_flag) - 1;
+  for (int i = 1; i < *argc; ++i) {
+    if (strncmp(poller_flag, argv[i], poller_flag_len) == 0) {
+      gpr_setenv("GRPC_POLL_STRATEGY", argv[i] + poller_flag_len);
+      // remove the spent argv
+      for (int j = i; j < *argc - 1; ++j) {
+        argv[j] = argv[j + 1];
+      }
+      --i;
+      --(*argc);
+    }
   }
+}
+}  // namespace
+
+void grpc_test_init(int* argc, char** argv) {
+  gpr_log_verbosity_init();
+  grpc_test_init_parse_argv(argc, argv);
+  grpc_event_engine::experimental::InitializeTestingEventEngineFactory();
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;
   absl::InstallFailureSignalHandler(options);
@@ -115,7 +126,6 @@ std::vector<char*> grpc_test_init(int argc, char** argv) {
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
   srand(seed());
-  return unparsed_argv;
 }
 
 bool grpc_wait_until_shutdown(int64_t time_s) {
@@ -134,8 +144,8 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
 namespace grpc {
 namespace testing {
 
-TestEnvironment::TestEnvironment(int argc, char** argv) {
-  unparsed_argv_ = grpc_test_init(argc, argv);
+TestEnvironment::TestEnvironment(int* argc, char** argv) {
+  grpc_test_init(argc, argv);
 }
 
 TestEnvironment::~TestEnvironment() {

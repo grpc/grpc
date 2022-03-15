@@ -737,7 +737,7 @@ static void test_close_before_call_create() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   /* Init grpc */
   grpc_init();
   int iterations = 10;

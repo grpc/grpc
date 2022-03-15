@@ -66,7 +66,7 @@ static void verification_test(hash_func hash, uint32_t expected) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   /* basic tests to verify that things don't crash */
   gpr_murmur_hash3("", 0, 0);
   gpr_murmur_hash3("xyz", 3, 0);

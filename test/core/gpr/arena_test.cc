@@ -121,7 +121,7 @@ static void concurrent_test(void) {
 }
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   test_noop();
   TEST(0_1, 0, 1);

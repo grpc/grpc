@@ -307,7 +307,7 @@ static void test_channel_args_compression_algorithm_states(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_compression_algorithm_parse();
   test_compression_algorithm_name();

@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
     abort();
   }
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   {

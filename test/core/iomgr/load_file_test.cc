@@ -153,7 +153,7 @@ static void test_load_big_file(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_load_empty_file();
   test_load_failure();

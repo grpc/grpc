@@ -637,7 +637,7 @@ static void test_multiple_ops_in_a_single_batch() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_invalid_initial_metadata_reserved_key();
   test_non_null_reserved_on_start_batch();

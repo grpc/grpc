@@ -137,7 +137,7 @@ static void test_bind_server_to_addrs(const char** addrs, size_t n) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_register_method_fail();
   test_request_call_on_no_server_cq();

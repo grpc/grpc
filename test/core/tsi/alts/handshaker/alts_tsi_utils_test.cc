@@ -71,7 +71,7 @@ static void deserialize_response_test() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   /* Tests. */
   grpc_init();
   deserialize_response_test();

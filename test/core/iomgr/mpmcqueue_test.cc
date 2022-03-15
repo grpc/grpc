@@ -217,7 +217,7 @@ static void test_many_thread(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_FIFO();
   test_space_efficiency();

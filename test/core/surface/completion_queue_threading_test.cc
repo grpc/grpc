@@ -288,7 +288,7 @@ static void test_threading(size_t producers, size_t consumers) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_too_many_plucks();
   test_threading(1, 1);

@@ -372,7 +372,7 @@ int main(int argc, char** argv) {
   g_target_initial_window_size_mocker = new TransportTargetWindowSizeMocker();
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       g_target_initial_window_size_mocker;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

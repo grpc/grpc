@@ -202,7 +202,7 @@ static void test_unpadded_decode(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_simple_encode_decode_b64_no_multiline();
   test_simple_encode_decode_b64_multiline();

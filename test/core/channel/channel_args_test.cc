@@ -207,7 +207,7 @@ static void test_server_create_with_args(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_create();
   test_channel_create_with_args();

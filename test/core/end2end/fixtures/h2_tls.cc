@@ -397,12 +397,12 @@ static grpc_end2end_test_config configs[] = {
 };
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   grpc_init();
   for (size_t ind = 0; ind < sizeof(configs) / sizeof(*configs); ind++) {
-    grpc_end2end_tests(env.UnparsedArgv(), configs[ind]);
+    grpc_end2end_tests(argc, argv, configs[ind]);
   }
   grpc_shutdown();
   return 0;

@@ -108,12 +108,12 @@ int main(int argc, char** argv) {
 
   grpc_allow_specialized_wakeup_fd = 0;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(env.UnparsedArgv(), configs[i]);
+    grpc_end2end_tests(argc, argv, configs[i]);
   }
 
   grpc_shutdown();

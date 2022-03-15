@@ -366,7 +366,7 @@ int main(int argc, char** argv) {
   gpr_mu_init(&g_mu);
   gpr_now_impl = now_impl;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto ret = RUN_ALL_TESTS();
   return ret;

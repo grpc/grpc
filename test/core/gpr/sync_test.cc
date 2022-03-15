@@ -457,7 +457,7 @@ static void refcheck(void* v /*=m*/) {
 /* ------------------------------------------------- */
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test("mutex", &inc, nullptr, 1, 1);
   test("mutex try", &inctry, nullptr, 1, 1);
   test("cv", &inc_by_turns, nullptr, 1, 1);

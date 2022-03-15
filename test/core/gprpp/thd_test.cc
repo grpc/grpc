@@ -94,7 +94,7 @@ static void test2(void) {
 /* ------------------------------------------------- */
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test1();
   test2();
   return 0;

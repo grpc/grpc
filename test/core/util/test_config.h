@@ -42,7 +42,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #endif
 
 // Prefer TestEnvironment below.
-std::vector<char*> grpc_test_init(int argc, char** argv);
+void grpc_test_init(int* argc, char** argv);
 
 // Wait until gRPC is fully shut down.
 // Returns if grpc is shutdown
@@ -55,12 +55,8 @@ namespace testing {
 // provides test init and shutdown inside.
 class TestEnvironment {
  public:
-  TestEnvironment(int argc, char** argv);
+  TestEnvironment(int* argc, char** argv);
   ~TestEnvironment();
-  const std::vector<char*>& UnparsedArgv() const { return unparsed_argv_; }
-
- private:
-  std::vector<char*> unparsed_argv_;
 };
 
 // A TestGrpcScope makes sure that

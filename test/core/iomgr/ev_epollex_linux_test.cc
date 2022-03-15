@@ -92,7 +92,7 @@ static void test_pollable_owner_fd() {
 
 int main(int argc, char** argv) {
   const char* poll_strategy = nullptr;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

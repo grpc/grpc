@@ -145,7 +145,7 @@ static void cpu_test(void) {
 }
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   cpu_test();
   return 0;
 }

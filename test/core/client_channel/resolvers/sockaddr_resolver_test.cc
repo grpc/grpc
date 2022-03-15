@@ -79,7 +79,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();

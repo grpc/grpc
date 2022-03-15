@@ -139,7 +139,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   run_test(false /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, true /* use_service_config */);

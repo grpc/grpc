@@ -223,7 +223,7 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc::testing::TestEnvironment env(1, fake_argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   grpc_init();
 

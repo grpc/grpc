@@ -434,7 +434,7 @@ int main(int argc, char** argv) {
   }
   GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, g_resolver_type);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;
 }

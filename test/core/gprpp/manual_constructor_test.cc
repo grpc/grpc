@@ -93,7 +93,7 @@ static void complex_test() {
 /* ------------------------------------------------- */
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   basic_test();
   complex_test();
   return 0;

@@ -433,7 +433,7 @@ static void test_parse_refresh_token_failure_no_refresh_token(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_parse_json_key_success();
   test_parse_json_key_failure_bad_json();

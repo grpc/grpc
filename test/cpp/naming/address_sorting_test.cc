@@ -829,7 +829,7 @@ int main(int argc, char** argv) {
   } else if (strcmp("ares", resolver.get()) != 0) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
   }
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   // Test sequential and nested inits and shutdowns.

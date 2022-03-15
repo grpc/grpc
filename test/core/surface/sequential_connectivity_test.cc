@@ -177,7 +177,7 @@ static void secure_test_add_port(grpc_server* server, const char* addr) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   const test_fixture insecure_test = {
