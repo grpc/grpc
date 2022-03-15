@@ -63,13 +63,9 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_client(f);
-
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  /* f->shutdown_cq is not used in this test */
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void test_early_server_shutdown_finishes_tags(
@@ -89,6 +85,7 @@ static void test_early_server_shutdown_finishes_tags(
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
+  shutdown_client(&f);
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
   CQ_EXPECT_COMPLETION(cqv, tag(101), 0);
   CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);

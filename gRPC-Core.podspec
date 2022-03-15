@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.45.0-dev'
+  version = '1.46.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -275,6 +275,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/polling_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
@@ -292,6 +294,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
+                      'src/core/ext/filters/client_channel/subchannel_stream_client.cc',
+                      'src/core/ext/filters/client_channel/subchannel_stream_client.h',
                       'src/core/ext/filters/deadline/deadline_filter.cc',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/fault_injection/fault_injection_filter.cc',
@@ -968,6 +972,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.cc',
                       'src/core/lib/backoff/backoff.h',
+                      'src/core/lib/channel/call_finalization.h',
                       'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_args.h',
@@ -1287,6 +1292,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/detail/status.h',
                       'src/core/lib/promise/detail/switch.h',
                       'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
+                      'src/core/lib/promise/intra_activity_waiter.h',
+                      'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
                       'src/core/lib/promise/poll.h',
@@ -1680,6 +1687,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
                               'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
+                              'src/core/ext/filters/client_channel/resolver/polling_resolver.h',
                               'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
                               'src/core/ext/filters/client_channel/retry_filter.h',
@@ -1688,6 +1696,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_interface.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
+                              'src/core/ext/filters/client_channel/subchannel_stream_client.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                               'src/core/ext/filters/fault_injection/service_config_parser.h',
@@ -2027,6 +2036,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
+                              'src/core/lib/channel/call_finalization.h',
                               'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_args_preconditioning.h',
@@ -2180,6 +2190,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/detail/status.h',
                               'src/core/lib/promise/detail/switch.h',
                               'src/core/lib/promise/exec_ctx_wakeup_scheduler.h',
+                              'src/core/lib/promise/intra_activity_waiter.h',
+                              'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
                               'src/core/lib/promise/poll.h',
@@ -2452,7 +2464,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/grpc_authz.cc',
                       'test/core/end2end/tests/high_initial_seqno.cc',
                       'test/core/end2end/tests/hpack_size.cc',
-                      'test/core/end2end/tests/idempotent_request.cc',
                       'test/core/end2end/tests/invoke_large_request.cc',
                       'test/core/end2end/tests/keepalive_timeout.cc',
                       'test/core/end2end/tests/large_metadata.cc',
@@ -2493,6 +2504,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_recv_trailing_metadata_error.cc',
                       'test/core/end2end/tests/retry_send_initial_metadata_refs.cc',
                       'test/core/end2end/tests/retry_send_op_fails.cc',
+                      'test/core/end2end/tests/retry_send_recv_batch.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
                       'test/core/end2end/tests/retry_server_pushback_disabled.cc',
                       'test/core/end2end/tests/retry_streaming.cc',
@@ -2509,7 +2521,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/server_streaming.cc',
                       'test/core/end2end/tests/shutdown_finishes_calls.cc',
                       'test/core/end2end/tests/shutdown_finishes_tags.cc',
-                      'test/core/end2end/tests/simple_cacheable_request.cc',
                       'test/core/end2end/tests/simple_delayed_request.cc',
                       'test/core/end2end/tests/simple_metadata.cc',
                       'test/core/end2end/tests/simple_request.cc',

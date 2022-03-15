@@ -127,9 +127,8 @@ class ChannelIdleFilter : public ChannelFilter {
   ChannelIdleFilter& operator=(ChannelIdleFilter&&) = default;
 
   // Construct a promise for one call.
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) override;
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
   bool StartTransportOp(grpc_transport_op* op) override;
 
@@ -299,15 +298,14 @@ void MaxAgeFilter::Start() {
 }
 
 // Construct a promise for one call.
-ArenaPromise<TrailingMetadata> ChannelIdleFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
-  return ArenaPromise<TrailingMetadata>(Capture(
-      [](Decrementer*, ArenaPromise<TrailingMetadata>* next)
-          -> Poll<TrailingMetadata> { return (*next)(); },
-      Decrementer(this), next_promise_factory(std::move(initial_metadata))));
+  return ArenaPromise<ServerMetadataHandle>(
+      Capture([](Decrementer*, ArenaPromise<ServerMetadataHandle>* next)
+                  -> Poll<ServerMetadataHandle> { return (*next)(); },
+              Decrementer(this), next_promise_factory(std::move(call_args))));
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
