@@ -5836,6 +5836,17 @@ targets:
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   deps:
   - grpc_test_util
+- name: graceful_shutdown_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/chttp2/graceful_shutdown_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
   build: test

@@ -196,8 +196,9 @@ typedef enum {
 
 typedef enum {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
-  GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
-  GRPC_CHTTP2_GOAWAY_SENT,
+  GRPC_CHTTP2_GRACEFUL_GOAWAY,
+  GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_FINAL_GOAWAY_SENT,
 } grpc_chttp2_sent_goaway_state;
 
 typedef struct grpc_chttp2_write_cb {

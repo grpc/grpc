@@ -87,9 +87,10 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             ? grpc_core::Duration::Hours(2)
             : grpc_core::Duration::Seconds(1); /* A second is added to deal with
                          network delays and timing imprecision */
-  } else {
+  } else if (t->sent_goaway_state != GRPC_CHTTP2_GRACEFUL_GOAWAY) {
     // The gRPC keepalive spec doesn't call for any throttling on the server
-    // side, but we are adding some throttling for protection anyway.
+    // side, but we are adding some throttling for protection anyway, unless
+    // we are doing a graceful GOAWAY in which case we don't want to wait.
     next_allowed_ping_interval =
         t->keepalive_time == grpc_core::Duration::Infinity()
             ? grpc_core::Duration::Seconds(20)
