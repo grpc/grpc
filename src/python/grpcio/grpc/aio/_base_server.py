@@ -371,3 +371,23 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A bool indicates if the RPC is done.
         """
+
+    def host(self):
+        """Accesses the value of the host used to connect to the RPC.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The Host value for the RPC.
+        """
+        raise NotImplementedError()
+
+    def method(self):
+        """Accesses the value of the method used to connect to the RPC.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The Method value for the RPC.
+        """
+        raise NotImplementedError()
