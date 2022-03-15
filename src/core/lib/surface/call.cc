@@ -607,7 +607,7 @@ void Call::ExternalUnref() {
   GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
 
   if (cc) {
-    ParentCall* pc = parent_call();
+    ParentCall* pc = cc->parent->parent_call();
     {
       MutexLock lock(&pc->child_list_mu);
       if (this == pc->first_child) {
