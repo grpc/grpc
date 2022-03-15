@@ -37,6 +37,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -191,6 +192,8 @@ void grpc_init(void) {
     }
     grpc_tracer_init();
     grpc_iomgr_start();
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        []() { gpr_log(GPR_DEBUG, "EventEngine loaded."); });
   }
 
   GRPC_API_TRACE("grpc_init(void)", 0, ());
