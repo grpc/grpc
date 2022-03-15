@@ -221,10 +221,7 @@ class ClientCallData : public BaseCallData {
   static void RecvTrailingMetadataReadyCallback(void* arg,
                                                 grpc_error_handle error);
   void RecvTrailingMetadataReady(grpc_error_handle error);
-<<<<<<< HEAD
   void RecvInitialMetadataReady(grpc_error_handle error);
-=======
->>>>>>> 138c4667c9caeef50c193ed18019edeacfe6a2cc
   // Given an error, fill in ServerMetadataHandle to represent that error.
   void SetStatusFromError(grpc_metadata_batch* metadata,
                           grpc_error_handle error);
