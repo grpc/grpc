@@ -228,7 +228,9 @@ class Call : public CppImplOf<Call, grpc_call> {
         cq_(args.cq),
         channel_(args.channel),
         is_client_(args.server_transport_data == nullptr),
-        stream_op_payload_(context_) {}
+        stream_op_payload_(context_) {
+    GPR_DEBUG_ASSERT(arena_ != nullptr);
+  }
 
   static void ReleaseCall(void* call, grpc_error_handle);
   static void DestroyCall(void* call, grpc_error_handle);
@@ -238,7 +240,7 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   static Call* FromCallStack(grpc_call_stack* call_stack) {
     return reinterpret_cast<Call*>(
-        reinterpret_cast<char*>(call_stack) +
+        reinterpret_cast<char*>(call_stack) -
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)));
   }
 
@@ -258,7 +260,7 @@ class Call : public CppImplOf<Call, grpc_call> {
                           grpc_error_handle batch_error);
 
   RefCount ext_ref_;
-  Arena* arena_;
+  Arena* const arena_;
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
@@ -417,6 +419,7 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
       initial_size, call_alloc_size, &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) Call(arena, *args);
+  GPR_DEBUG_ASSERT(FromC(call->c_ptr()) == call);
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
   if (call->is_client_) {
