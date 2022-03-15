@@ -30,7 +30,7 @@ namespace grpc_core {
 // in-progress build.
 // Carries some useful context for the channel stack, such as a target string
 // and a transport.
-class ChannelStackBuilderImpl : public ChannelStackBuilder {
+class ChannelStackBuilderImpl final : public ChannelStackBuilder {
  public:
   using ChannelStackBuilder::ChannelStackBuilder;
 
