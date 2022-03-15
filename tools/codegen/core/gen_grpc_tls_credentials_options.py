@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import collections
 from dataclasses import dataclass
+import difflib
 import filecmp
 import os
 import sys
@@ -186,13 +187,26 @@ def put_copyright(f, year):
           file=f)
 
 
+# Prints differences between two files
+def get_file_differences(file1, file2):
+    with open(file1) as f1:
+        file1_text = f1.readlines()
+    with open(file2) as f2:
+        file2_text = f2.readlines()
+    return difflib.unified_diff(file1_text,
+                                file2_text,
+                                fromfile=file1,
+                                tofile=file2)
+
+
 # Is this script executed in test mode?
 test_mode = False
 if len(sys.argv) > 1 and sys.argv[1] == "--test":
     test_mode = True
 
+HEADER_FILE_NAME = 'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h'
 # Generate src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
-header_file_name = 'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h'
+header_file_name = HEADER_FILE_NAME
 if (test_mode):
     header_file_name = tempfile.NamedTemporaryFile(delete=False).name
 H = open(header_file_name, 'w')
@@ -297,7 +311,8 @@ print("""};
 H.close()
 
 # Generate test/core/security/grpc_tls_credentials_options_comparator_test.cc
-test_file_name = 'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h'
+TEST_FILE_NAME = 'test/core/security/grpc_tls_credentials_options_comparator_test.cc'
+test_file_name = TEST_FILE_NAME
 if (test_mode):
     test_file_name = tempfile.NamedTemporaryFile(delete=False).name
 T = open(test_file_name, 'w')
@@ -353,25 +368,27 @@ int main(int argc, char** argv) {
 T.close()
 
 if (test_mode):
-    header_diff = False
-    test_diff = False
-    if not filecmp.cmp(
-            header_file_name,
-            'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h'
-    ):
-        header_diff = True
-    if not filecmp.cmp(
-            test_file_name,
-            'test/core/security/grpc_tls_credentials_options_comparator_test.cc'
-    ):
-        test_diff = True
+    header_diff = get_file_differences(header_file_name, HEADER_FILE_NAME)
+    test_diff = get_file_differences(test_file_name, TEST_FILE_NAME)
     os.unlink(header_file_name)
     os.unlink(test_file_name)
-    if header_diff:
-        sys.exit(
-            'src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h should not be manually modified. Please make changes to tools/distrib/gen_grpc_tls_credentials_options.py instead.'
+    header_error = False
+    for line in header_diff:
+        print(line)
+        header_error = True
+    if header_error:
+        print(
+            HEADER_FILE_NAME +
+            ' should not be manually modified. Please make changes to tools/distrib/gen_grpc_tls_credentials_options.py instead.'
         )
-    if test_diff:
-        sys.exit(
-            'test/core/security/grpc_tls_credentials_options_comparator_test.cc should not be manually modified. Please make changes to tools/distrib/gen_grpc_tls_credentials_options.py instead.'
+    test_error = False
+    for line in test_diff:
+        print(line)
+        test_error = True
+    if test_error:
+        print(
+            TEST_FILE_NAME +
+            ' should not be manually modified. Please make changes to tools/distrib/gen_grpc_tls_credentials_options.py instead.'
         )
+    if (header_error or test_error):
+        sys.exit(1)

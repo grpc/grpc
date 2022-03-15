@@ -54,5 +54,4 @@ class InsecureServerCredentials final : public grpc_server_credentials {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_INSECURE_INSECURE_CREDENTIALS_H \
-        */
+#endif // GRPC_CORE_LIB_SECURITY_CREDENTIALS_INSECURE_INSECURE_CREDENTIALS_H
