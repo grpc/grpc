@@ -310,16 +310,14 @@ class Call : public CppImplOf<Call, grpc_call> {
       GRPC_COMPRESS_NONE;
   /* Supported encodings (compression algorithms), a bitset.
    * Always support no compression. */
-  CompressionAlgorithmSet encodings_accepted_by_peer_{
-      GRPC_COMPRESS_NONE};
+  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
   Timestamp send_deadline_;
 
-  ManualConstructor<SliceBufferByteStream>
-      sending_stream_;
+  ManualConstructor<SliceBufferByteStream> sending_stream_;
 
   OrphanablePtr<ByteStream> receiving_stream_;
   bool call_failed_before_recv_message_ = false;
@@ -415,9 +413,8 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
   size_t call_alloc_size =
       call_and_stack_size + (args->parent ? sizeof(ChildCall) : 0);
 
-  std::pair<Arena*, void*> arena_with_call =
-      Arena::CreateWithAlloc(initial_size, call_alloc_size,
-                                        &*args->channel->allocator);
+  std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
+      initial_size, call_alloc_size, &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) Call(arena, *args);
   *out_call = call->c_ptr();
@@ -656,8 +653,7 @@ void Call::ExecuteBatch(grpc_transport_stream_op_batch* batch,
     GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
     grpc_transport_stream_op_batch* batch =
         static_cast<grpc_transport_stream_op_batch*>(arg);
-    Call* call =
-        static_cast<Call*>(batch->handler_private.extra_arg);
+    Call* call = static_cast<Call*>(batch->handler_private.extra_arg);
     grpc_call_element* elem = call->call_elem(0);
     GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
     elem->filter->start_transport_stream_op_batch(elem, batch);
@@ -775,16 +771,15 @@ bool Call::PrepareApplicationMetadata(size_t count, grpc_metadata* metadata,
       // HTTP2 hpack encoding has a maximum limit.
       return false;
     }
-    batch->Append(
-        StringViewFromSlice(md->key),
-        Slice(grpc_slice_ref_internal(md->value)),
-        [md](absl::string_view error, const Slice& value) {
-          gpr_log(
-              GPR_DEBUG, "Append error: %s",
-              absl::StrCat("key=", StringViewFromSlice(md->key),
-                           " error=", error, " value=", value.as_string_view())
-                  .c_str());
-        });
+    batch->Append(StringViewFromSlice(md->key),
+                  Slice(grpc_slice_ref_internal(md->value)),
+                  [md](absl::string_view error, const Slice& value) {
+                    gpr_log(GPR_DEBUG, "Append error: %s",
+                            absl::StrCat("key=", StringViewFromSlice(md->key),
+                                         " error=", error,
+                                         " value=", value.as_string_view())
+                                .c_str());
+                  });
   }
 
   return true;
@@ -817,8 +812,7 @@ class PublishToAppEncoder {
     Append(GrpcPreviousRpcAttemptsMetadata::key(), count);
   }
 
-  void Encode(GrpcRetryPushbackMsMetadata,
-              Duration count) {
+  void Encode(GrpcRetryPushbackMsMetadata, Duration count) {
     Append(GrpcRetryPushbackMsMetadata::key(), count.millis());
   }
 
@@ -833,8 +827,7 @@ class PublishToAppEncoder {
   }
 
   void Append(absl::string_view key, const Slice& value) {
-    Append(StaticSlice::FromStaticString(key).c_slice(),
-           value.c_slice());
+    Append(StaticSlice::FromStaticString(key).c_slice(), value.c_slice());
   }
 
   void Append(grpc_slice key, grpc_slice value) {
@@ -1023,9 +1016,9 @@ void Call::BatchControl::PostCompletion() {
   if (completion_data_.notify_tag.is_closure) {
     /* unrefs error */
     call_ = nullptr;
-    Closure::Run(
-        DEBUG_LOCATION,
-        static_cast<grpc_closure*>(completion_data_.notify_tag.tag), error);
+    Closure::Run(DEBUG_LOCATION,
+                 static_cast<grpc_closure*>(completion_data_.notify_tag.tag),
+                 error);
     GRPC_CALL_INTERNAL_UNREF(call->c_ptr(), "completion");
   } else {
     /* unrefs error */
@@ -1214,8 +1207,7 @@ void Call::BatchControl::ReceivingInitialMetadataReady(
     GPR_TIMER_SCOPE("validate_filtered_metadata", 0);
     ValidateFilteredMetadata();
 
-    absl::optional<Timestamp> deadline =
-        md->get(GrpcTimeoutMetadata());
+    absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client_) {
       call_->send_deadline_ = *deadline;
     }
@@ -1254,8 +1246,7 @@ void Call::BatchControl::ReceivingInitialMetadataReady(
     }
   }
   if (saved_rsr_closure != nullptr) {
-    Closure::Run(DEBUG_LOCATION, saved_rsr_closure,
-                            GRPC_ERROR_REF(error));
+    Closure::Run(DEBUG_LOCATION, saved_rsr_closure, GRPC_ERROR_REF(error));
   }
 
   FinishStep();
@@ -1314,9 +1305,8 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           static_cast<grpc_cq_completion*>(
               gpr_malloc(sizeof(grpc_cq_completion))));
     } else {
-      Closure::Run(DEBUG_LOCATION,
-                              static_cast<grpc_closure*>(notify_tag),
-                              GRPC_ERROR_NONE);
+      Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
+                   GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;
     goto done;
@@ -1379,8 +1369,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           // The following metadata will be checked and removed by the message
           // compression filter. It will be used as the call's compression
           // algorithm.
-          send_initial_metadata_.Set(GrpcInternalEncodingRequest(),
-                                     calgo);
+          send_initial_metadata_.Set(GrpcInternalEncodingRequest(), calgo);
         }
         if (op->data.send_initial_metadata.count > INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
@@ -1398,8 +1387,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
         send_initial_metadata_.Remove(TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
         if (is_client_ && send_deadline_ != Timestamp::InfFuture()) {
-          send_initial_metadata_.Set(GrpcTimeoutMetadata(),
-                                     send_deadline_);
+          send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline_);
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
