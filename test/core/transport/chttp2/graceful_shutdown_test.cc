@@ -286,12 +286,11 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   // TODO(yashykt): The surface layer automatically cancels calls received after
   // shutdown has been called. Once that is fixed, this should be a success.
   CQ_EXPECT_COMPLETION(cqv_, Tag(100), 0);
-  cq_verify(cqv_);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
   // The shutdown should successfully complete.
   CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
   cq_verify(cqv_);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
 }
 
 TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
@@ -381,6 +380,8 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
   cq_verify(cqv_);
   grpc_call_unref(s);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
 }
 
 // Make sure that the graceful goaway eventually makes progress even if a client
