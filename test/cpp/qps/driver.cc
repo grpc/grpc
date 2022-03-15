@@ -400,7 +400,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
       char args_buf[100];
       strcpy(args_buf, "some-benchmark");
       char* args[] = {args_buf};
-      grpc_test_init(1, args);
+      int argc = 1;
+      grpc_test_init(&argc, args);
       called_init = true;
     }
 

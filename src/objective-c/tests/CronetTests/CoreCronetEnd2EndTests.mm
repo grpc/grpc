@@ -163,7 +163,8 @@ static char *roots_filename;
   size_t roots_size = strlen(test_root_cert);
 
   char *argv[] = {(char *)"CoreCronetEnd2EndTests"};
-  grpc_test_init(1, argv);
+  int argc = 1;
+  grpc_test_init(&argc, argv);
   grpc_end2end_tests_pre_init();
 
   /* Set the SSL roots env var. */

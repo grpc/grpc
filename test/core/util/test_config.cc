@@ -97,7 +97,7 @@ void grpc_test_init_parse_argv(int* argc, char** argv) {
   // flags to look for and consume
   constexpr char poller_flag[] = "--poller=";
   constexpr size_t poller_flag_len = sizeof(poller_flag) - 1;
-  for (int i = 1; i < *argc; ++i) {
+  for (int i = 1; argc && i < *argc; ++i) {
     if (strncmp(poller_flag, argv[i], poller_flag_len) == 0) {
       gpr_setenv("GRPC_POLL_STRATEGY", argv[i] + poller_flag_len);
       // remove the spent argv
