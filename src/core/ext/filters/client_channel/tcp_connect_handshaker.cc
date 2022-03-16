@@ -76,8 +76,6 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                        HandshakerArgs* args) {
   {
     MutexLock lock(&mu_);
-    // The grpc_tcp_client_connect call will set the endpoint.
-    args->endpoint = nullptr;
     args_ = args;
     on_handshake_done_ = on_handshake_done;
     Ref().release();  // Ref held by callback.
