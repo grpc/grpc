@@ -194,6 +194,7 @@ constexpr char kRlsMethodKey[] = "method_key";
 constexpr char kRlsMethodValue[] = "Echo";
 constexpr char kRlsConstantKey[] = "constant_key";
 constexpr char kRlsConstantValue[] = "constant_value";
+constexpr char kRlsClusterSpecifierPluginInstanceName[] = "rls_plugin_instance";
 
 template <typename RpcService>
 class BackendServiceImpl
@@ -7572,17 +7573,16 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
   RouteConfiguration new_route_config = default_route_config_;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(
-      1, 2, WaitForBackendOptions(),
-      RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}}));
-  CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}}));
+  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
+  WaitForAllBackends(1, 2, WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(kNumEchoRpcs, rpc_options);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
@@ -7640,7 +7640,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
   *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
   RouteConfiguration new_route_config = default_route_config_;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -7707,11 +7707,12 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
   *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
   RouteConfiguration new_route_config = default_route_config_;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kNewClusterName);
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
