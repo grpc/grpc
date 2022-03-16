@@ -25,10 +25,6 @@ void ChannelArgsPreconditioning::Builder::RegisterStage(Stage stage) {
 }
 
 ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
-  // TODO(ctiller): should probably make this registered too.
-  stages_.emplace_back(RemoveGrpcInternalArgs);
-  stages_.emplace_back(UniquifyChannelArgKeys);
-
   ChannelArgsPreconditioning preconditioning;
   preconditioning.stages_ = std::move(stages_);
   return preconditioning;
@@ -36,13 +32,11 @@ ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
 
 const grpc_channel_args* ChannelArgsPreconditioning::PreconditionChannelArgs(
     const grpc_channel_args* args) const {
-  const grpc_channel_args* owned_args = nullptr;
+  ChannelArgs channel_args = UniquifyChannelArgKeys(args);
   for (auto& stage : stages_) {
-    args = stage(args);
-    grpc_channel_args_destroy(owned_args);
-    owned_args = args;
+    channel_args = stage(std::move(channel_args));
   }
-  return args;
+  return channel_args.ToC();
 }
 
 }  // namespace grpc_core
