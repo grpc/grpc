@@ -59,6 +59,8 @@ TCPConnectHandshaker::TCPConnectHandshaker() {
 }
 
 void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
+  // TODO(anramach): After migration to EventEngine, cancel the in-progress 
+  // TCP connection attempt.
   {
     MutexLock lock(&mu_);
     shutdown_ = true;
