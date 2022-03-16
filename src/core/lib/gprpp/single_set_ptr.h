@@ -34,8 +34,7 @@ class SingleSetPtr {
   SingleSetPtr(SingleSetPtr&& other) noexcept
       : p_(other.p_.exchange(sentinel())) {}
   SingleSetPtr& operator=(SingleSetPtr&& other) noexcept {
-    T* p = p_.exchange(other.p_.exchange(sentinel(), std::memory_order_acq_rel),
-                       std::memory_order_acq_rel);
+    Set(other.p_.exchange(sentinel(), std::memory_order_acq_rel));
     return *this;
   }
 
@@ -60,14 +59,13 @@ class SingleSetPtr {
 
   bool is_set() const {
     T* p = p_.load(std::memory_order_acquire);
-    if (p == sentinel()) return false;
-    if (p == nullptr) return false;
-    return true;
+    return p != nullptr && p != sentinel();
   }
 
   T* operator->() const {
     T* p = p_.load(std::memory_order_acquire);
-    GPR_DEBUG_ASSERT(p != sentinel() && p != nullptr);
+    GPR_DEBUG_ASSERT(p != sentinel());
+    GPR_DEBUG_ASSERT(p != nullptr);
     return p;
   }
 
