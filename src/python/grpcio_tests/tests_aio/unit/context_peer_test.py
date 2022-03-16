@@ -16,7 +16,7 @@
 import asyncio
 import logging
 import os
-from typing import Callable, Iterable, Sequence, Tuple
+from typing import Callable, Iterable, Sequence, Tuple, Union
 import unittest
 
 import grpc
@@ -31,33 +31,58 @@ from tests_aio.unit._test_server import TestServiceServicer
 from tests_aio.unit._test_server import start_test_server
 
 _REQUEST = b'\x03\x07'
-_TEST_METHOD = '/test/UnaryUnary'
 
 
 class TestContextPeer(AioTestBase):
 
     async def test_peer(self):
 
-        @grpc.unary_unary_rpc_method_handler
-        async def check_peer_unary_unary(request: bytes,
-                                         context: aio.ServicerContext):
+        def exercise(
+            request: bytes, 
+            context: aio.ServicerContext,
+            is_sync: bool,
+        ):
+            method_name = "test_sync" if is_sync else "test_async"
+            servicer_class = "_SyncServicerContext" if is_sync else "_ServicerContext"
+
             self.assertEqual(_REQUEST, request)
             # The peer address could be ipv4 or ipv6
             self.assertIn('ip', context.peer())
+
+            self.assertIn('localhost', context.host().decode())
+            self.assertEqual('/%s/UnaryUnary' % method_name, context.method().decode())
+            self.assertEqual(0, context.code())
+            self.assertSequenceEqual((), context.trailing_metadata())
+            self.assertIn(servicer_class, str(type(context)))
+
+        @grpc.unary_unary_rpc_method_handler
+        async def check_peer_unary_unary_async(request: bytes,
+                                         context: aio.ServicerContext):
+            exercise(request, context, False)
+            return request
+
+        @grpc.unary_unary_rpc_method_handler
+        def check_peer_unary_unary_sync(request: bytes,
+                                         context: aio.ServicerContext):
+            exercise(request, context, True)
             return request
 
         # Creates a server
         server = aio.server()
-        handlers = grpc.method_handlers_generic_handler(
-            'test', {'UnaryUnary': check_peer_unary_unary})
-        server.add_generic_rpc_handlers((handlers,))
+        handler_async = grpc.method_handlers_generic_handler(
+            'test_async', {'UnaryUnary': check_peer_unary_unary_async})
+        handler_sync = grpc.method_handlers_generic_handler(
+            'test_sync', {'UnaryUnary': check_peer_unary_unary_sync})
+        server.add_generic_rpc_handlers((handler_async, handler_sync))
         port = server.add_insecure_port('[::]:0')
         await server.start()
 
         # Creates a channel
         async with aio.insecure_channel('localhost:%d' % port) as channel:
-            response = await channel.unary_unary(_TEST_METHOD)(_REQUEST)
-            self.assertEqual(_REQUEST, response)
+            for method in ("test_async", "test_sync"):
+                _test_method = '/%s/UnaryUnary' % method
+                response = await channel.unary_unary(_test_method)(_REQUEST)
+                self.assertEqual(_REQUEST, response)
 
         await server.stop(None)
 
