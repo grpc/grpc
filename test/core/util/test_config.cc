@@ -27,6 +27,8 @@
 
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/debugging/symbolize.h"
+#include "absl/strings/match.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
@@ -93,27 +95,29 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 }
 
 namespace {
-void grpc_test_init_parse_argv(int* argc, char** argv) {
+void ParseTestArgs(int* argc, char** argv) {
   // flags to look for and consume
-  constexpr char poller_flag[] = "--poller=";
-  constexpr size_t poller_flag_len = sizeof(poller_flag) - 1;
-  for (int i = 1; argc && i < *argc; ++i) {
-    if (strncmp(poller_flag, argv[i], poller_flag_len) == 0) {
-      gpr_setenv("GRPC_POLL_STRATEGY", argv[i] + poller_flag_len);
+  constexpr absl::string_view poller_flag{"--poller="};
+  if (argc == nullptr || *argc <= 1) return;
+  int i = 1;
+  while (i < *argc) {
+    if (absl::StartsWith(argv[i], poller_flag)) {
+      gpr_setenv("GRPC_POLL_STRATEGY", argv[i] + poller_flag.length());
       // remove the spent argv
-      for (int j = i; j < *argc - 1; ++j) {
-        argv[j] = argv[j + 1];
-      }
-      --i;
       --(*argc);
+      if (i < *argc) {
+        memmove(argv + i, argv + i + 1, *argc - i);
+      }
+      continue;
     }
+    ++i;
   }
 }
 }  // namespace
 
 void grpc_test_init(int* argc, char** argv) {
   gpr_log_verbosity_init();
-  grpc_test_init_parse_argv(argc, argv);
+  ParseTestArgs(argc, argv);
   grpc_event_engine::experimental::InitializeTestingEventEngineFactory();
   grpc_core::testing::InitializeStackTracer(argv[0]);
   absl::FailureSignalHandlerOptions options;

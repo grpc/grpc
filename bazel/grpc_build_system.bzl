@@ -358,7 +358,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         name = base_lib_name,
         testonly = True,
         srcs = srcs,
-        deps = deps + _get_external_deps(external_deps),
+        deps = core_deps,
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]),
         linkstatic = linkstatic,

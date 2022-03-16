@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 #define GRPC_TEST_CORE_UTIL_TEST_CONFIG_H
 
-#include <vector>
-
 #include <grpc/support/time.h>
 
 #include "test/core/util/build.h"
