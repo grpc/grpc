@@ -153,7 +153,6 @@ HttpRequest::HttpRequest(
   connect_args_ = {
       .bind_endpoint_to_pollset = false,
       .deadline = deadline_,
-      .interested_parties = pollset_set_,
   };
   // Create the DNS resolver. We'll start resolving when Start is called.
   dns_request_ = GetDNSResolver()->ResolveName(

@@ -46,8 +46,6 @@ struct ConnectionArgs {
   bool bind_endpoint_to_pollset;
   // Deadline for the connection.
   Timestamp deadline;
-  // Set of pollsets interested in this connection.
-  grpc_pollset_set* interested_parties;
 };
 
 /// Handshakers are used to perform initial handshakes on a connection

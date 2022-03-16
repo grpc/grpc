@@ -32,7 +32,7 @@ namespace {
 
 class TCPConnectHandshaker : public Handshaker {
  public:
-  TCPConnectHandshaker();
+  TCPConnectHandshaker(grpc_pollset_set* interested_parties);
   void Shutdown(grpc_error_handle why) override;
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
@@ -50,16 +50,18 @@ class TCPConnectHandshaker : public Handshaker {
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_pollset_set* interested_parties_ = nullptr;
   HandshakerArgs* args_ = nullptr;
   grpc_closure connected_;
 };
 
-TCPConnectHandshaker::TCPConnectHandshaker() {
+TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* interested_parties)
+    : interested_parties_(interested_parties) {
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
 void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
-  // TODO(anramach): After migration to EventEngine, cancel the in-progress 
+  // TODO(anramach): After migration to EventEngine, cancel the in-progress
   // TCP connection attempt.
   {
     MutexLock lock(&mu_);
@@ -89,9 +91,9 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
-  grpc_tcp_client_connect(
-      &connected_, &args->endpoint, args->connect_args->interested_parties,
-      args->args, &args->connect_args->address, args->connect_args->deadline);
+  grpc_tcp_client_connect(&connected_, &args->endpoint, interested_parties_,
+                          args->args, &args->connect_args->address,
+                          args->connect_args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
@@ -118,8 +120,8 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
 
     GPR_ASSERT(self->args_->endpoint != nullptr);
     if (self->args_->connect_args->bind_endpoint_to_pollset) {
-      grpc_endpoint_add_to_pollset_set(
-          self->args_->endpoint, self->args_->connect_args->interested_parties);
+      grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
+                                       self->interested_parties_);
     }
     ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, GRPC_ERROR_NONE);
   }
@@ -151,9 +153,10 @@ void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
 class TCPConnectHandshakerFactory : public HandshakerFactory {
  public:
   void AddHandshakers(const grpc_channel_args* /*args*/,
-                      grpc_pollset_set* /*interested_parties*/,
+                      grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
-    handshake_mgr->Add(MakeRefCounted<TCPConnectHandshaker>());
+    handshake_mgr->Add(
+        MakeRefCounted<TCPConnectHandshaker>(interested_parties));
   }
   ~TCPConnectHandshakerFactory() override = default;
 };
