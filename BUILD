@@ -2230,6 +2230,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "single_set_ptr",
+    hdrs = [
+        "src/core/lib/gprpp/single_set_ptr.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_common",
     defines = select({
         "grpc_no_rls": ["GRPC_NO_RLS"],

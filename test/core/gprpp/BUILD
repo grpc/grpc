@@ -337,3 +337,15 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "single_set_ptr_test",
+    srcs = ["single_set_ptr_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:single_set_ptr",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
