@@ -184,16 +184,16 @@ constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
-constexpr char kTestKey[] = "test_key";
-constexpr char kTestKey1[] = "key1";
-constexpr char kTestValue[] = "test_value";
-constexpr char kHostKey[] = "host_key";
-constexpr char kServiceKey[] = "service_key";
-constexpr char kServiceValue[] = "grpc.testing.EchoTestService";
-constexpr char kMethodKey[] = "method_key";
-constexpr char kMethodValue[] = "Echo";
-constexpr char kConstantKey[] = "constant_key";
-constexpr char kConstantValue[] = "constant_value";
+constexpr char kRlsTestKey[] = "test_key";
+constexpr char kRlsTestKey1[] = "key1";
+constexpr char kRlsTestValue[] = "test_value";
+constexpr char kRlsHostKey[] = "host_key";
+constexpr char kRlsServiceKey[] = "service_key";
+constexpr char kRlsServiceValue[] = "grpc.testing.EchoTestService";
+constexpr char kRlsMethodKey[] = "method_key";
+constexpr char kRlsMethodValue[] = "Echo";
+constexpr char kRlsConstantKey[] = "constant_key";
+constexpr char kRlsConstantValue[] = "constant_value";
 
 template <typename RpcService>
 class BackendServiceImpl
@@ -7563,28 +7563,28 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
   rls_server_->rls_service()->SetResponse(
-      BuildRlsRequest({{kTestKey, kTestValue},
-                       {kHostKey, kServerName},
-                       {kServiceKey, kServiceValue},
-                       {kMethodKey, kMethodValue},
-                       {kConstantKey, kConstantValue}}),
+      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
+                       {kRlsHostKey, kServerName},
+                       {kRlsServiceKey, kRlsServiceValue},
+                       {kRlsMethodKey, kRlsMethodValue},
+                       {kRlsConstantKey, kRlsConstantValue}}),
       BuildRlsResponse({kNewClusterName}));
   RouteLookupConfig route_lookup_config;
   auto* key_builder = route_lookup_config.add_grpc_keybuilders();
   auto* name = key_builder->add_names();
-  name->set_service(kServiceValue);
-  name->set_method(kMethodValue);
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
   auto* header = key_builder->add_headers();
-  header->set_key(kTestKey);
+  header->set_key(kRlsTestKey);
   auto* key_name = header->add_names();
-  *key_name = kTestKey1;
+  *key_name = kRlsTestKey1;
   auto* key_name2 = header->add_names();
   *key_name2 = "key2";
   auto* extra_keys = key_builder->mutable_extra_keys();
-  extra_keys->set_host(kHostKey);
-  extra_keys->set_service(kServiceKey);
-  extra_keys->set_method(kMethodKey);
-  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
+  extra_keys->set_host(kRlsHostKey);
+  extra_keys->set_service(kRlsServiceKey);
+  extra_keys->set_method(kRlsMethodKey);
+  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
   route_lookup_config.set_cache_size_bytes(5000);
@@ -7597,10 +7597,11 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster_specifier_plugin(kNewClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(1, 2, WaitForBackendOptions(),
-                     RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
+  WaitForAllBackends(
+      1, 2, WaitForBackendOptions(),
+      RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}}));
   CheckRpcSendOk(kNumEchoRpcs,
-                 RpcOptions().set_metadata({{kTestKey1, kTestValue}}));
+                 RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}}));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
@@ -7631,28 +7632,28 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
   rls_server_->rls_service()->SetResponse(
-      BuildRlsRequest({{kTestKey, kTestValue},
-                       {kHostKey, kServerName},
-                       {kServiceKey, kServiceValue},
-                       {kMethodKey, kMethodValue},
-                       {kConstantKey, kConstantValue}}),
+      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
+                       {kRlsHostKey, kServerName},
+                       {kRlsServiceKey, kRlsServiceValue},
+                       {kRlsMethodKey, kRlsMethodValue},
+                       {kRlsConstantKey, kRlsConstantValue}}),
       BuildRlsResponse({kNewClusterName}));
   RouteLookupConfig route_lookup_config;
   auto* key_builder = route_lookup_config.add_grpc_keybuilders();
   auto* name = key_builder->add_names();
-  name->set_service(kServiceValue);
-  name->set_method(kMethodValue);
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
   auto* header = key_builder->add_headers();
-  header->set_key(kTestKey);
+  header->set_key(kRlsTestKey);
   auto* key_name = header->add_names();
-  *key_name = kTestKey1;
+  *key_name = kRlsTestKey1;
   auto* key_name2 = header->add_names();
   *key_name2 = "key2";
   auto* extra_keys = key_builder->mutable_extra_keys();
-  extra_keys->set_host(kHostKey);
-  extra_keys->set_service(kServiceKey);
-  extra_keys->set_method(kMethodKey);
-  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
+  extra_keys->set_host(kRlsHostKey);
+  extra_keys->set_service(kRlsServiceKey);
+  extra_keys->set_method(kRlsMethodKey);
+  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
   route_lookup_config.set_cache_size_bytes(5000);
@@ -7699,29 +7700,29 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
   rls_server_->rls_service()->SetResponse(
-      BuildRlsRequest({{kTestKey, kTestValue},
-                       {kHostKey, kServerName},
-                       {kServiceKey, kServiceValue},
-                       {kMethodKey, kMethodValue},
-                       {kConstantKey, kConstantValue}}),
+      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
+                       {kRlsHostKey, kServerName},
+                       {kRlsServiceKey, kRlsServiceValue},
+                       {kRlsMethodKey, kRlsMethodValue},
+                       {kRlsConstantKey, kRlsConstantValue}}),
       BuildRlsResponse({kNewClusterName}));
   RouteLookupConfig route_lookup_config;
   auto* key_builder = route_lookup_config.add_grpc_keybuilders();
   auto* name = key_builder->add_names();
-  name->set_service(kServiceValue);
-  name->set_method(kMethodValue);
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
   auto* header = key_builder->add_headers();
-  header->set_key(kTestKey);
+  header->set_key(kRlsTestKey);
   auto* key_name = header->add_names();
-  *key_name = kTestKey1;
+  *key_name = kRlsTestKey1;
   auto* key_name2 = header->add_names();
   *key_name2 = "key2";
   header->set_required_match(true);
   auto* extra_keys = key_builder->mutable_extra_keys();
-  extra_keys->set_host(kHostKey);
-  extra_keys->set_service(kServiceKey);
-  extra_keys->set_method(kMethodKey);
-  (*key_builder->mutable_constant_keys())[kConstantKey] = kConstantValue;
+  extra_keys->set_host(kRlsHostKey);
+  extra_keys->set_service(kRlsServiceKey);
+  extra_keys->set_method(kRlsMethodKey);
+  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
   route_lookup_config.set_cache_size_bytes(5000);

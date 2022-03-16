@@ -1,5 +1,5 @@
 //
-// Copyright 2022 gRPC authors.
+// Copyright 2020 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -73,7 +73,8 @@ class RlsServiceImpl : public RlsService {
       ABSL_GUARDED_BY(&mu_);
 };
 
-static grpc::lookup::v1::RouteLookupRequest BuildRlsRequest(
+namespace {
+grpc::lookup::v1::RouteLookupRequest BuildRlsRequest(
     std::map<std::string, std::string> key,
     grpc::lookup::v1::RouteLookupRequest::Reason reason =
         grpc::lookup::v1::RouteLookupRequest::REASON_MISS,
@@ -93,5 +94,6 @@ static grpc::lookup::v1::RouteLookupResponse BuildRlsResponse(
   response.set_header_data(header_data);
   return response;
 }
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
