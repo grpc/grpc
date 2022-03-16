@@ -750,6 +750,7 @@ void XdsResolver::StartLocked() {
     Result result;
     result.service_config = absl::UnavailableError(
         absl::StrCat("Failed to create XdsClient: ", error_message));
+    result.args = grpc_channel_args_copy(args_);
     result_handler_->ReportResult(std::move(result));
     GRPC_ERROR_UNREF(error);
     return;
@@ -764,6 +765,7 @@ void XdsResolver::StartLocked() {
       result.service_config = absl::UnavailableError(
           absl::StrCat("Invalid target URI -- authority not found for %s.",
                        uri_.authority().c_str()));
+      result.args = grpc_channel_args_copy(args_);
       result_handler_->ReportResult(std::move(result));
       return;
     }

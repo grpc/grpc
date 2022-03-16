@@ -296,6 +296,7 @@ END2END_TESTS = {
     "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True),
     "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True),
     "retry_send_op_fails": _test_options(needs_client_channel = True),
+    "retry_send_recv_batch": _test_options(needs_client_channel = True),
     "retry_server_pushback_delay": _test_options(needs_client_channel = True),
     "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
     "retry_streaming": _test_options(needs_client_channel = True),

@@ -1205,6 +1205,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
             xds_client(), chand()->server_.server_uri.c_str(),
             status.ToString().c_str());
   } else {
+    seen_response_ = true;
     AdsResponseParser::Result result = parser.TakeResult();
     // Update nonce.
     auto& state = state_map_[result.type];
@@ -1260,7 +1261,6 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     }
     // If we had valid resources, update the version.
     if (result.have_valid_resources) {
-      seen_response_ = true;
       chand()->resource_type_version_map_[result.type] =
           std::move(result.version);
       // Start load reporting if needed.
