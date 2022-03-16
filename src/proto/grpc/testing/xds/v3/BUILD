@@ -190,14 +190,6 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "rls_config_proto",
-    srcs = [
-        "rls_config.proto",
-    ],
-    well_known_protos = True,
-)
-
-grpc_proto_library(
     name = "route_proto",
     srcs = [
         "route.proto",
