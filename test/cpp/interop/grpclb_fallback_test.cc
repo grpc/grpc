@@ -191,11 +191,13 @@ void RunCommand(const std::string& command) {
 void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   int fallback_retry_count = 0;
   bool fallback = false;
-  absl::Time fallback_deadline = absl::Now() + absl::Seconds(FLAGS_fallback_deadline_seconds);
+  absl::Time fallback_deadline =
+      absl::Now() + absl::Seconds(FLAGS_fallback_deadline_seconds);
   while (absl::Now() < fallback_deadline) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 1);
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
-      gpr_log(GPR_ERROR, "Got grpclb route type backend. Backends are "
+      gpr_log(GPR_ERROR,
+              "Got grpclb route type backend. Backends are "
               "supposed to be unreachable, so this test is broken");
       GPR_ASSERT(0);
     }
@@ -204,7 +206,8 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
               grpclb_route_type);
       abort();
     } else {
-      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %d" + fallback_retry_count);
+      gpr_log(GPR_ERROR,
+              "Retryable RPC failure on iteration: %d" + fallback_retry_count);
     }
     fallback_retry_count++;
   }
