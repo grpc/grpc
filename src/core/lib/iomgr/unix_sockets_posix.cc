@@ -37,8 +37,14 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
 
+extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace;
+
 void grpc_create_socketpair_if_unix(int sv[2]) {
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+  int result = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+  if (result != 0 && GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {
+    gpr_log(GPR_INFO, "(fd-trace) Error creating sockpair: %d", errno);
+  }
+  GPR_ASSERT(result == 0);
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
