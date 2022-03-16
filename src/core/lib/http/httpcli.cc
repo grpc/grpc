@@ -284,7 +284,7 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
     // This might be due to delay in connectivity for example.
     // As we already finished and the on_done_ callback was called, nothing
     // to do here.
-   return; 
+    return;
   }
   if (error != GRPC_ERROR_NONE) {
     req->NextAddress(GRPC_ERROR_REF(error));
@@ -305,32 +305,23 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
 
 void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   connecting_ = true;
-  // TODO(yihuaz): treating nullptr channel_creds_ as insecure is
-  // a hack used to support the port server client (a test utility) in
-  // unsecure builds (when no definition of grpc_insecure_credentials_create
-  // exists). We can remove this hack and unconditionally assume a valid
-  // channel_creds_ object after unsecure builds are deleted, in
-  // https://github.com/grpc/grpc/pull/25586.
   // Create the security connector using the credentials and target name.
-  const grpc_channel_args* new_args = channel_args_;
-  RefCountedPtr<grpc_channel_security_connector> sc;
-  if (channel_creds_ != nullptr) {
-    grpc_channel_args* new_args_from_connector = nullptr;
-    sc = channel_creds_->create_security_connector(
-        nullptr /*call_creds*/, uri_.authority().c_str(), channel_args_,
-        &new_args_from_connector);
-    if (sc == nullptr) {
-      Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "failed to create security connector", &overall_error_, 1));
-      return;
-    }
-    grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
-    new_args = grpc_channel_args_copy_and_add(
-        new_args_from_connector != nullptr ? new_args_from_connector
-                                           : channel_args_,
-        &security_connector_arg, 1);
-    grpc_channel_args_destroy(new_args_from_connector);
+  grpc_channel_args* new_args_from_connector = nullptr;
+  RefCountedPtr<grpc_channel_security_connector> sc =
+      channel_creds_->create_security_connector(
+          nullptr /*call_creds*/, uri_.authority().c_str(), channel_args_,
+          &new_args_from_connector);
+  if (sc == nullptr) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "failed to create security connector", &overall_error_, 1));
+    return;
   }
+  grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
+  const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      new_args_from_connector != nullptr ? new_args_from_connector
+                                         : channel_args_,
+      &security_connector_arg, 1);
+  grpc_channel_args_destroy(new_args_from_connector);
   // Start the handshake
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
@@ -344,9 +335,7 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);
   sc.reset(DEBUG_LOCATION, "httpcli");
-  if (new_args != channel_args_) {
-    grpc_channel_args_destroy(new_args);
-  }
+  grpc_channel_args_destroy(new_args);
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {
