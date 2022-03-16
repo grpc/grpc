@@ -32,7 +32,7 @@ ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
 
 const grpc_channel_args* ChannelArgsPreconditioning::PreconditionChannelArgs(
     const grpc_channel_args* args) const {
-  ChannelArgs channel_args = UniquifyChannelArgKeys(args);
+  ChannelArgs channel_args = ChannelArgsBuiltinPrecondition(args);
   for (auto& stage : stages_) {
     channel_args = stage(std::move(channel_args));
   }

@@ -47,7 +47,7 @@ void RegisterResourceQuota(CoreConfiguration::Builder* builder) {
 }  // namespace grpc_core
 
 extern "C" const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable() {
-  return grpc_core::ChannelArgTypeTraits<grpc_core::ResourceQuota>::vtable();
+  return grpc_core::ChannelArgTypeTraits<grpc_core::ResourceQuota>::VTable();
 }
 
 extern "C" grpc_resource_quota* grpc_resource_quota_create(const char* name) {

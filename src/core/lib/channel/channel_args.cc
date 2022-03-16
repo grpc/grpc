@@ -39,7 +39,9 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
 
-static int cmp_ptr(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
+namespace {
+
+int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
                    void* b_ptr, const grpc_arg_pointer_vtable* b_vtable) {
   int c = grpc_core::QsortCompare(a_ptr, b_ptr);
   if (c == 0) return 0;
@@ -48,14 +50,16 @@ static int cmp_ptr(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
   return a_vtable->cmp(a_ptr, b_ptr);
 }
 
+}  // namespace
+
 namespace grpc_core {
 
 bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
-  return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
+  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
 }
 
 bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
-  return cmp_ptr(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
+  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
 }
 
 ChannelArgs::ChannelArgs() = default;
@@ -254,8 +258,8 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
     case GRPC_ARG_INTEGER:
       return grpc_core::QsortCompare(a->value.integer, b->value.integer);
     case GRPC_ARG_POINTER:
-      return cmp_ptr(a->value.pointer.p, a->value.pointer.vtable,
-                     b->value.pointer.p, b->value.pointer.vtable);
+      return PointerCompare(a->value.pointer.p, a->value.pointer.vtable,
+                            b->value.pointer.p, b->value.pointer.vtable);
   }
   GPR_UNREACHABLE_CODE(return 0);
 }
@@ -459,25 +463,11 @@ std::string grpc_channel_args_string(const grpc_channel_args* args) {
 }
 
 namespace grpc_core {
-const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src) {
-  if (src == nullptr) return nullptr;
-  // Create result.
-  grpc_channel_args* dst =
-      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
-  dst->args =
-      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * src->num_args));
-  dst->num_args = 0;
-  for (size_t i = 0; i < src->num_args; ++i) {
-    if (absl::StartsWith(src->args[i].key, "grpc.internal.")) continue;
-    dst->args[dst->num_args++] = copy_arg(&src->args[i]);
-  }
-  return dst;
-}
-
-ChannelArgs UniquifyChannelArgKeys(const grpc_channel_args* src) {
+ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src) {
   if (src == nullptr) return ChannelArgs();
   ChannelArgs output;
-  std::map<absl::string_view, std::vector<std::string>> concatenated_values;
+  std::map<absl::string_view, std::vector<absl::string_view>>
+      concatenated_values;
   for (size_t i = 0; i < src->num_args; i++) {
     absl::string_view key = src->args[i].key;
     // User-agent strings were traditionally multi-valued and concatenated.

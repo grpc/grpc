@@ -87,7 +87,7 @@ TEST(ChannelArgsTest, StoreRefCountedPtr) {
 TEST(ChannelArgsTest, ObjectApi) {
   struct MyFancyObject : public RefCounted<MyFancyObject> {
     explicit MyFancyObject(int n) : n(n) {}
-    static absl::string_view channel_arg_name() {
+    static absl::string_view ChannelArgName() {
       return "grpc.internal.my-fancy-object";
     }
     int n;

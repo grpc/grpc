@@ -35,6 +35,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
+// Channel args are intentionally immutable, to avoid the need for locking.
+
 namespace grpc_core {
 
 // Define a traits object for vtable lookup - allows us to integrate with
@@ -42,16 +44,17 @@ namespace grpc_core {
 // ChannelArgs to automatically derive a vtable from a T*.
 // To participate as a pointer, instances should expose the function:
 //   // Gets the vtable for this type
-//   static const grpc_channel_arg_vtable* vtable();
+//   static const grpc_channel_arg_vtable* VTable();
 //   // Performs any mutations required for channel args to own a pointer
-//   static void* take_unowned_pointer(T* p);
+//   // Only needed if ChannelArgs::Set is to be called with a raw pointer.
+//   static void* TakeUnownedPointer(T* p);
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct ChannelArgTypeTraits;
 
 template <typename T>
 struct ChannelArgTypeTraits<
     T, absl::enable_if_t<std::is_base_of<RefCounted<T>, T>::value, void>> {
-  static const grpc_arg_pointer_vtable* vtable() {
+  static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
         // copy
         [](void* p) -> void* { return static_cast<T*>(p)->Ref().release(); },
@@ -72,7 +75,7 @@ class ChannelArgs {
   class Pointer {
    public:
     Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
-        : p_(p), vtable_(vtable == nullptr ? empty_vtable() : vtable) {}
+        : p_(p), vtable_(vtable == nullptr ? EmptyVTable() : vtable) {}
     ~Pointer() { vtable_->destroy(p_); }
 
     Pointer(const Pointer& other)
@@ -84,7 +87,7 @@ class ChannelArgs {
     }
     Pointer(Pointer&& other) noexcept : p_(other.p_), vtable_(other.vtable_) {
       other.p_ = nullptr;
-      other.vtable_ = empty_vtable();
+      other.vtable_ = EmptyVTable();
     }
     Pointer& operator=(Pointer&& other) noexcept {
       std::swap(p_, other.p_);
@@ -101,9 +104,7 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* c_vtable() const { return vtable_; }
 
    private:
-    void* p_;
-    const grpc_arg_pointer_vtable* vtable_;
-    static const grpc_arg_pointer_vtable* empty_vtable() {
+    static const grpc_arg_pointer_vtable* EmptyVTable() {
       static const grpc_arg_pointer_vtable vtable = {
           // copy
           [](void* p) { return p; },
@@ -114,12 +115,17 @@ class ChannelArgs {
       };
       return &vtable;
     }
+
+    void* p_;
+    const grpc_arg_pointer_vtable* vtable_;
   };
   using Value = absl::variant<int, std::string, Pointer>;
 
   ChannelArgs();
 
   static ChannelArgs FromC(const grpc_channel_args* args);
+  // Construct a new grpc_channel_args struct which the caller will own.
+  // It should be destroyed with grpc_channel_args_destroy.
   const grpc_channel_args* ToC() const;
 
   const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
@@ -132,18 +138,17 @@ class ChannelArgs {
                    decltype(ChannelArgTypeTraits<T>::vtable())>::value,
       ChannelArgs>
   Set(absl::string_view name, T* value) const {
-    return Set(name,
-               Pointer(ChannelArgTypeTraits<T>::take_unowned_pointer(value),
-                       ChannelArgTypeTraits<T>::vtable()));
+    return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
+                             ChannelArgTypeTraits<T>::VTable()));
   }
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
-                   decltype(ChannelArgTypeTraits<T>::vtable())>::value,
+                   decltype(ChannelArgTypeTraits<T>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, RefCountedPtr<T> value) const {
     return Set(name,
-               Pointer(value.release(), ChannelArgTypeTraits<T>::vtable()));
+               Pointer(value.release(), ChannelArgTypeTraits<T>::VTable()));
   }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const { return Get(name) != nullptr; }
@@ -160,18 +165,18 @@ class ChannelArgs {
   // Deal with the common case that we set a pointer to an object under
   // the same name in every usage.
   // Expects ChannelArgTypeTraits to exist for T, and T to expose:
-  //   static string_view channel_arg_name();
+  //   static string_view ChannelArgName();
   template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetObject(T* p) const {
-    return Set(T::channel_arg_name(), p);
+    return Set(T::ChannelArgName(), p);
   }
   template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetObject(RefCountedPtr<T> p) const {
-    return Set(T::channel_arg_name(), std::move(p));
+    return Set(T::ChannelArgName(), std::move(p));
   }
   template <typename T>
   T* GetObject() {
-    return GetPointer<T>(T::channel_arg_name());
+    return GetPointer<T>(T::ChannelArgName());
   }
 
   bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
@@ -180,14 +185,12 @@ class ChannelArgs {
   }
 
  private:
-  explicit ChannelArgs(AVL<std::string, Value> args) : args_(args) {}
+  explicit ChannelArgs(AVL<std::string, Value> args) : args_(std::move(args)) {}
 
   AVL<std::string, Value> args_;
 };
 
 }  // namespace grpc_core
-
-// Channel args are intentionally immutable, to avoid the need for locking.
 
 /** Copy the arguments in \a src into a new instance */
 grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src);
@@ -280,9 +283,10 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
 std::string grpc_channel_args_string(const grpc_channel_args* args);
 
 namespace grpc_core {
-/** Ensure no duplicate channel args (with some backwards compatibility hacks),
- * and return a C++ object */
-ChannelArgs UniquifyChannelArgKeys(const grpc_channel_args* src);
+// Ensure no duplicate channel args (with some backwards compatibility hacks).
+// Eliminate any grpc.internal.* args.
+// Return a C++ object.
+ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src);
 }  // namespace grpc_core
 
 // Takes ownership of the old_args
