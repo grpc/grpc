@@ -49,9 +49,9 @@ class TCPConnectHandshaker : public Handshaker {
   // Endpoint and read buffer to destroy after a shutdown.
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
-  HandshakerArgs* args_;
+  HandshakerArgs* args_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_closure connected_;
-  grpc_closure* on_handshake_done_;
 };
 
 TCPConnectHandshaker::TCPConnectHandshaker() {
@@ -74,15 +74,17 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
 void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                        grpc_closure* on_handshake_done,
                                        HandshakerArgs* args) {
-  // The grpc_tcp_client_connect call will set the endpoint.
-  args->endpoint = nullptr;
-  args_ = args;
-
-  on_handshake_done_ = on_handshake_done;
-  Ref().release();  // Ref held by callback.
-  grpc_tcp_client_connect(
-      &connected_, &args->endpoint, args->connect_args->interested_parties,
-      args->args, &args->connect_args->address, args->connect_args->deadline);
+  {
+    MutexLock lock(&mu_);
+    // The grpc_tcp_client_connect call will set the endpoint.
+    args->endpoint = nullptr;
+    args_ = args;
+    on_handshake_done_ = on_handshake_done;
+    Ref().release();  // Ref held by callback.
+    grpc_tcp_client_connect(
+        &connected_, &args->endpoint, args->connect_args->interested_parties,
+        args->args, &args->connect_args->address, args->connect_args->deadline);
+  }
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
@@ -109,14 +111,14 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       self->Unref();
       return;
     }
-  }
 
-  GPR_ASSERT(self->args_->endpoint != nullptr);
-  if (self->args_->connect_args->bind_endpoint_to_pollset) {
-    grpc_endpoint_add_to_pollset_set(
-        self->args_->endpoint, self->args_->connect_args->interested_parties);
+    GPR_ASSERT(self->args_->endpoint != nullptr);
+    if (self->args_->connect_args->bind_endpoint_to_pollset) {
+      grpc_endpoint_add_to_pollset_set(
+          self->args_->endpoint, self->args_->connect_args->interested_parties);
+    }
+    ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, GRPC_ERROR_NONE);
   }
-  ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, GRPC_ERROR_NONE);
   self->Unref();
 }
 
