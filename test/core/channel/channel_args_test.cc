@@ -143,39 +143,39 @@ static bool channel_has_client_idle_filter(grpc_channel* c) {
   return false;
 }
 
-static void test_channel_create_with_global_mutator(void) {
-  grpc_channel_args_set_client_channel_creation_mutator(mutate_channel_args);
-  // We also add some custom args to make sure the ownership is correct.
-  grpc_arg client_a[3];
+// static void test_channel_create_with_global_mutator(void) {
+//   grpc_channel_args_set_client_channel_creation_mutator(mutate_channel_args);
+//   // We also add some custom args to make sure the ownership is correct.
+//   grpc_arg client_a[3];
 
-  client_a[0] =
-      grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
-  client_a[1] = grpc_channel_arg_string_create(
-      const_cast<char*>("arg_str"), const_cast<char*>("arg_str_val"));
-  // allocated and adds custom pointer arg
-  fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
-  fc->foo = 42;
-  client_a[2] = grpc_channel_arg_pointer_create(
-      const_cast<char*>("arg_pointer"), fc, &fake_pointer_arg_vtable);
+//   client_a[0] =
+//       grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);
+//   client_a[1] = grpc_channel_arg_string_create(
+//       const_cast<char*>("arg_str"), const_cast<char*>("arg_str_val"));
+//   // allocated and adds custom pointer arg
+//   fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
+//   fc->foo = 42;
+//   client_a[2] = grpc_channel_arg_pointer_create(
+//       const_cast<char*>("arg_pointer"), fc, &fake_pointer_arg_vtable);
 
-  // creates channels
-  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  grpc_channel* c = grpc_channel_create("no_op_mutator", creds, &client_args);
-  grpc_channel_credentials_release(creds);
-  GPR_ASSERT(channel_has_client_idle_filter(c));
-  grpc_channel_destroy(c);
+//   // creates channels
+//   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
+//   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+//   grpc_channel* c = grpc_channel_create("no_op_mutator", creds, &client_args);
+//   grpc_channel_credentials_release(creds);
+//   GPR_ASSERT(channel_has_client_idle_filter(c));
+//   grpc_channel_destroy(c);
 
-  grpc_channel_credentials* another_creds = grpc_insecure_credentials_create();
-  c = grpc_channel_create("minimal_stack_mutator", another_creds, &client_args);
-  grpc_channel_credentials_release(another_creds);
-  GPR_ASSERT(channel_has_client_idle_filter(c) == false);
-  grpc_channel_destroy(c);
+//   grpc_channel_credentials* another_creds = grpc_insecure_credentials_create();
+//   c = grpc_channel_create("minimal_stack_mutator", another_creds, &client_args);
+//   grpc_channel_credentials_release(another_creds);
+//   GPR_ASSERT(channel_has_client_idle_filter(c) == false);
+//   grpc_channel_destroy(c);
 
-  gpr_free(fc);
-  auto mutator = grpc_channel_args_get_client_channel_creation_mutator();
-  GPR_ASSERT(mutator == &mutate_channel_args);
-}
+//   gpr_free(fc);
+//   auto mutator = grpc_channel_args_get_client_channel_creation_mutator();
+//   GPR_ASSERT(mutator == &mutate_channel_args);
+// }
 
 static void test_server_create_with_args(void) {
   grpc_arg server_a[3];
