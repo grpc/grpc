@@ -1826,12 +1826,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
               (GetParam().enable_load_reporting()
                    ? test_obj->client_load_reporting_interval_seconds_
                    : 0),
-              {kDefaultClusterName})),
-          rls_service_(new RlsServiceImpl()) {}
+              {kDefaultClusterName})) {}
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
-    RlsServiceImpl* rls_service() { return rls_service_.get(); }
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
@@ -1839,56 +1837,23 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       builder->RegisterService(ads_service_->v3_rpc_service());
       builder->RegisterService(lrs_service_->v2_rpc_service());
       builder->RegisterService(lrs_service_->v3_rpc_service());
-      builder->RegisterService(rls_service_.get());
     }
 
     void StartAllServices() override {
       ads_service_->Start();
       lrs_service_->Start();
-      rls_service_->Start();
     }
 
     void ShutdownAllServices() override {
       ads_service_->Shutdown();
       lrs_service_->Shutdown();
-      rls_service_->Shutdown();
     }
 
     const char* Type() override { return "Balancer"; }
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
-    std::shared_ptr<RlsServiceImpl> rls_service_;
   };
-
-  class RlsServerThread : public ServerThread {
-   public:
-    explicit RlsServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
-          rls_service_(new RlsServiceImpl()) {}
-
-    RlsServiceImpl* rls_service() { return rls_service_.get(); }
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(rls_service_.get());
-    }
-
-    void StartAllServices() override { rls_service_->Start(); }
-
-    void ShutdownAllServices() override { rls_service_->Shutdown(); }
-
-    const char* Type() override { return "Rls"; }
-
-    std::shared_ptr<RlsServiceImpl> rls_service_;
-  };
-
-  std::unique_ptr<RlsServerThread> CreateAndStartRlsServer() {
-    std::unique_ptr<RlsServerThread> rls_server =
-        absl::make_unique<RlsServerThread>(this);
-    rls_server->Start();
-    return rls_server;
-  }
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
   class AdminServerThread : public ServerThread {
@@ -1990,7 +1955,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::unique_ptr<grpc::testing::EchoTest2Service::Stub> stub2_;
   std::vector<std::unique_ptr<BackendServerThread>> backends_;
   std::unique_ptr<BalancerServerThread> balancer_;
-  std::unique_ptr<RlsServerThread> rls_server_;
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       logical_dns_cluster_resolver_response_generator_;
   int xds_resource_does_not_exist_timeout_ms_ = 0;
@@ -7516,8 +7480,33 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
 }
 
 class RlsTest : public XdsEnd2endTest {
+  class RlsServerThread : public ServerThread {
+   public:
+    explicit RlsServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
+          rls_service_(new RlsServiceImpl()) {}
+
+    RlsServiceImpl* rls_service() { return rls_service_.get(); }
+
+   private:
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(rls_service_.get());
+    }
+
+    void StartAllServices() override { rls_service_->Start(); }
+
+    void ShutdownAllServices() override { rls_service_->Shutdown(); }
+
+    const char* Type() override { return "Rls"; }
+
+    std::shared_ptr<RlsServiceImpl> rls_service_;
+  };
+
  protected:
-  RlsTest() : XdsEnd2endTest(4) { rls_server_ = CreateAndStartRlsServer(); }
+  RlsTest() : XdsEnd2endTest(4) {
+    rls_server_ = absl::make_unique<RlsServerThread>(this);
+    rls_server_->Start();
+  }
 
   void SetUp() override {
     XdsEnd2endTest::SetUp();
@@ -7553,13 +7542,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Send Route Configuration.
-  RouteConfiguration new_route_config = default_route_config_;
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs);
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
   rls_server_->rls_service()->SetResponse(
@@ -7576,10 +7558,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   name->set_method(kRlsMethodValue);
   auto* header = key_builder->add_headers();
   header->set_key(kRlsTestKey);
-  auto* key_name = header->add_names();
-  *key_name = kRlsTestKey1;
-  auto* key_name2 = header->add_names();
-  *key_name2 = "key2";
+  header->add_names(kRlsTestKey1);
+  header->add_names("key2");
   auto* extra_keys = key_builder->mutable_extra_keys();
   extra_keys->set_host(kRlsHostKey);
   extra_keys->set_service(kRlsServiceKey);
@@ -7590,6 +7570,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   route_lookup_config.set_cache_size_bytes(5000);
   RouteLookupClusterSpecifier rls;
   *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  RouteConfiguration new_route_config = default_route_config_;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
   plugin->mutable_extension()->set_name(kNewClusterName);
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
@@ -7645,10 +7626,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
   name->set_method(kRlsMethodValue);
   auto* header = key_builder->add_headers();
   header->set_key(kRlsTestKey);
-  auto* key_name = header->add_names();
-  *key_name = kRlsTestKey1;
-  auto* key_name2 = header->add_names();
-  *key_name2 = "key2";
+  header->add_names(kRlsTestKey1);
+  header->add_names("key2");
   auto* extra_keys = key_builder->mutable_extra_keys();
   extra_keys->set_host(kRlsHostKey);
   extra_keys->set_service(kRlsServiceKey);
@@ -7658,7 +7637,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
       absl::StrCat("localhost:", rls_server_->port()));
   route_lookup_config.set_cache_size_bytes(5000);
   RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = route_lookup_config;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
   RouteConfiguration new_route_config = default_route_config_;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
   plugin->mutable_extension()->set_name(kNewClusterName);
@@ -7713,10 +7692,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
   name->set_method(kRlsMethodValue);
   auto* header = key_builder->add_headers();
   header->set_key(kRlsTestKey);
-  auto* key_name = header->add_names();
-  *key_name = kRlsTestKey1;
-  auto* key_name2 = header->add_names();
-  *key_name2 = "key2";
+  header->add_names(kRlsTestKey1);
+  header->add_names("key2");
   header->set_required_match(true);
   auto* extra_keys = key_builder->mutable_extra_keys();
   extra_keys->set_host(kRlsHostKey);
@@ -7727,7 +7704,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
       absl::StrCat("localhost:", rls_server_->port()));
   route_lookup_config.set_cache_size_bytes(5000);
   RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = route_lookup_config;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
   RouteConfiguration new_route_config = default_route_config_;
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
   plugin->mutable_extension()->set_name(kNewClusterName);
