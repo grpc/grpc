@@ -903,6 +903,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/channel_stack.h )
   s.files += %w( src/core/lib/channel/channel_stack_builder.cc )
   s.files += %w( src/core/lib/channel/channel_stack_builder.h )
+  s.files += %w( src/core/lib/channel/channel_stack_builder_impl.cc )
+  s.files += %w( src/core/lib/channel/channel_stack_builder_impl.h )
   s.files += %w( src/core/lib/channel/channel_trace.cc )
   s.files += %w( src/core/lib/channel/channel_trace.h )
   s.files += %w( src/core/lib/channel/channelz.cc )
