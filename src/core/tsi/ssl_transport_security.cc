@@ -1947,7 +1947,7 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
     gpr_log(
         GPR_INFO,
         "Certificate verification failed to get CRL files. Ignoring error.");
-    return 0;
+    return 1;
   }
   if (cert_error != 0) {
     gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
