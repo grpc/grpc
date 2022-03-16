@@ -42,10 +42,9 @@ that the *users* of your library do not fetch the tools package:
  Studio, edit the project file and add this attribute. [This is a bug in NuGet
  client](https://github.com/NuGet/Home/issues/4125).
 
- * "Classic" .csproj with `packages.config` (Visual Studio, Mono): This is
- handled automatically by NuGet. See the attribute added by Visual Studio to the
- [packages.config](../../examples/csharp/HelloworldLegacyCsproj/Greeter/packages.config#L6)
- file in the HelloworldLegacyCsproj/Greeter example.
+* "Classic" .csproj with `packages.config` (Visual Studio before 2017, old versions of Mono):
+ This is handled automatically by NuGet after you set the `developmentDependency="true"`
+ attribute on the `<package>` tag in `packages.config`.
 
 If building a NuGet package from your library with the nuget command line tool
 from a .nuspec file, then the spec file may (and probably should) reference the
