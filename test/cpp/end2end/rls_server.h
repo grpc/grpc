@@ -87,7 +87,7 @@ grpc::lookup::v1::RouteLookupRequest BuildRlsRequest(
   return request;
 }
 
-static grpc::lookup::v1::RouteLookupResponse BuildRlsResponse(
+grpc::lookup::v1::RouteLookupResponse BuildRlsResponse(
     std::vector<std::string> targets, const char* header_data = "") {
   grpc::lookup::v1::RouteLookupResponse response;
   response.mutable_targets()->Add(targets.begin(), targets.end());
