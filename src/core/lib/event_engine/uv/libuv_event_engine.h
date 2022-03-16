@@ -229,7 +229,7 @@ class LibuvEventEngine final : public EventEngine {
   // We keep a list of all of the tasks here. The atomics will serve as a
   // simple counter mechanism, with the assumption that if it ever rolls over,
   // the colliding tasks will have long been completed.
-  std::atomic<intptr_t> task_key_;
+  std::atomic<intptr_t> task_key_{0};
 
   // Hopefully temporary until we can solve shutdown from the main grpc code.
   // Used by IsWorkerThread.
