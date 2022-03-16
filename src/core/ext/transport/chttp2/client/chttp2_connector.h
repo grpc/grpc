@@ -35,7 +35,6 @@ class Chttp2Connector : public SubchannelConnector {
   void Shutdown(grpc_error_handle error) override;
 
  private:
-  void StartHandshakeLocked();
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
   static void OnTimeout(void* arg, grpc_error_handle error);
