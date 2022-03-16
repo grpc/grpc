@@ -16,17 +16,16 @@
 # Builds Node interop server and client in a base image.
 set -e
 
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc-node /var/local/git/grpc-node
+git clone /var/local/jenkins/grpc-node ~/grpc-node
 # clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc-node/ && git submodule foreach 'cd /var/local/git/grpc-node \
+(cd /var/local/jenkins/grpc-node/ && git submodule foreach 'cd ~/grpc-node \
 && git submodule update --init --recursive --reference /var/local/jenkins/grpc-node/${name} \
 ${name}')
 
 # copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
+cp -r /var/local/jenkins/service_account /root/ || true
 
-cd /var/local/git/grpc-node
+cd ~/grpc-node
 
 # build Node interop client & server
 ./setup_interop_purejs.sh

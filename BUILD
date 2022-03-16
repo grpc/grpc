@@ -1875,7 +1875,7 @@ grpc_cc_library(
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_stack.cc",
-        "src/core/lib/channel/channel_stack_builder.cc",
+        "src/core/lib/channel/channel_stack_builder_impl.cc",
         "src/core/lib/channel/channel_trace.cc",
         "src/core/lib/channel/channelz.cc",
         "src/core/lib/channel/channelz_registry.cc",
@@ -2017,7 +2017,7 @@ grpc_cc_library(
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/promise_based_filter.h",
-        "src/core/lib/channel/channel_stack_builder.h",
+        "src/core/lib/channel/channel_stack_builder_impl.h",
         "src/core/lib/channel/channel_trace.h",
         "src/core/lib/channel/channelz.h",
         "src/core/lib/channel/channelz_registry.h",
@@ -2132,6 +2132,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/channel/channel_args.h",
+        "src/core/lib/channel/channel_stack_builder.h",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
     # integrated, or when it becomes obvious the glue code is unnecessary.
@@ -2164,6 +2165,7 @@ grpc_cc_library(
         "avl",
         "bitset",
         "channel_args",
+        "channel_stack_builder",
         "channel_stack_type",
         "chunked_vector",
         "closure",
@@ -2224,7 +2226,27 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_stack_builder",
         "channel_stack_type",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_stack_builder",
+    srcs = [
+        "src/core/lib/channel/channel_stack_builder.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_stack_builder.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "channel_args",
+        "channel_stack_type",
+        "closure",
+        "error",
         "gpr_base",
     ],
 )
@@ -2254,7 +2276,8 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
-        "grpc_channel_idle_filter",
+        "grpc_client_idle_filter",
+        "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
@@ -2544,10 +2567,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
-        "src/core/ext/filters/channel_idle/idle_filter_state.cc",
+        "src/core/ext/filters/client_idle/idle_filter_state.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/channel_idle/idle_filter_state.h",
+        "src/core/ext/filters/client_idle/idle_filter_state.h",
     ],
     language = "c++",
     deps = [
@@ -2556,9 +2579,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_channel_idle_filter",
+    name = "grpc_client_idle_filter",
     srcs = [
-        "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
+        "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
     deps = [
         "capture",
@@ -2570,6 +2593,22 @@ grpc_cc_library(
         "loop",
         "sleep",
         "try_seq",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_max_age_filter",
+    srcs = [
+        "src/core/ext/filters/max_age/max_age_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/max_age/max_age_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
     ],
 )
 
