@@ -127,7 +127,7 @@ class CrlSslTransportSecurityTest
       } else {
         client_options.pem_key_cert_pair = valid_pem_key_cert_pairs_;
       }
-      if (use_faulty_crl_directory) {
+      if (use_faulty_crl_directory_) {
         client_options.crl_directory = kSslTsiTestFaultyCrlsDir;
       } else {
         client_options.crl_directory = kSslTsiTestCrlSupportedCredentialsDir;
