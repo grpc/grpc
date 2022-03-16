@@ -112,9 +112,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
         self->CleanupArgsForFailureLocked();
         self->shutdown_ = true;
       }
-      // If the TCP connection fails, we don't want future handshakers to be
-      // called.
-      self->args_->exit_early = true;
       ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, error);
       return;
     }
