@@ -63,8 +63,8 @@ class Fuzzer {
   std::map<int, int> map_;
 };
 
-AVL<int, int> AvlFromProto(
-    const ::google::protobuf::RepeatedPtrField<avl_fuzzer::KeyValue>& p) {
+template <typename RepeatedField>
+AVL<int, int> AvlFromProto(const RepeatedField& p) {
   AVL<int, int> a;
   for (const auto& kv : p) {
     a = a.Add(kv.key(), kv.value());
@@ -72,8 +72,8 @@ AVL<int, int> AvlFromProto(
   return a;
 }
 
-std::map<int, int> MapFromProto(
-    const ::google::protobuf::RepeatedPtrField<avl_fuzzer::KeyValue>& p) {
+template <typename RepeatedField>
+std::map<int, int> MapFromProto(const RepeatedField& p) {
   std::map<int, int> a;
   for (const auto& kv : p) {
     a[kv.key()] = kv.value();
