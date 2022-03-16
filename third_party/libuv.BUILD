@@ -225,6 +225,7 @@ ANDROID_LIBUV_SOURCES = [
 DARWIN_LIBUV_SOURCES = [
     "src/unix/bsd-ifaddrs.c",
     "src/unix/darwin.c",
+    "src/unix/darwin-stub.h",
     "src/unix/fsevents.c",
     "src/unix/kqueue.c",
     "src/unix/darwin-proctitle.c",
