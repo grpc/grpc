@@ -19,8 +19,20 @@
 
 #include <stdbool.h>
 
+#include <functional>
+#include <vector>
+
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+
+typedef struct grpc_channel_stack grpc_channel_stack;
+typedef struct grpc_channel_element grpc_channel_element;
+typedef struct grpc_channel_filter grpc_channel_filter;
+typedef struct grpc_transport grpc_transport;
 
 namespace grpc_core {
 
@@ -43,9 +55,10 @@ class ChannelStackBuilder {
   };
 
   // Initialize with a name.
-  explicit ChannelStackBuilder(const char* name) : name_(name) {}
+  ChannelStackBuilder(const char* name, grpc_channel_stack_type type)
+      : name_(name), type_(type) {}
 
-  ~ChannelStackBuilder();
+  const char* name() const { return name_; }
 
   // Set the target string.
   ChannelStackBuilder& SetTarget(const char* target);
@@ -72,6 +85,9 @@ class ChannelStackBuilder {
   // Mutable vector of proposed stack entries.
   std::vector<StackEntry>* mutable_stack() { return &stack_; }
 
+  // The type of channel stack being built.
+  grpc_channel_stack_type channel_stack_type() const { return type_; }
+
   // Helper to add a filter to the front of the stack.
   void PrependFilter(const grpc_channel_filter* filter, PostInitFunc post_init);
 
@@ -83,15 +99,20 @@ class ChannelStackBuilder {
   // prefix_bytes are allocated before the channel stack,
   // initial_refs, destroy, destroy_arg are as per grpc_channel_stack_init
   // On failure, *result is nullptr.
-  grpc_error_handle Build(size_t prefix_bytes, int initial_refs,
-                          grpc_iomgr_cb_func destroy, void* destroy_arg,
-                          void** result);
+  virtual grpc_error_handle Build(size_t prefix_bytes, int initial_refs,
+                                  grpc_iomgr_cb_func destroy, void* destroy_arg,
+                                  void** result) = 0;
+
+ protected:
+  ~ChannelStackBuilder();
 
  private:
   static std::string unknown_target() { return "unknown"; }
 
   // The name of the stack
   const char* const name_;
+  // The type of stack being built
+  const grpc_channel_stack_type type_;
   // The target
   std::string target_{unknown_target()};
   // The transport
