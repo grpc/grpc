@@ -49,8 +49,8 @@ class TCPConnectHandshaker : public Handshaker {
   // Endpoint and read buffer to destroy after a shutdown.
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
-  HandshakerArgs* args_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
+  HandshakerArgs* args_ = nullptr;
   grpc_closure connected_;
 };
 
@@ -76,17 +76,25 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                        HandshakerArgs* args) {
   {
     MutexLock lock(&mu_);
-    args_ = args;
     on_handshake_done_ = on_handshake_done;
-    Ref().release();  // Ref held by callback.
-    grpc_tcp_client_connect(
-        &connected_, &args->endpoint, args->connect_args->interested_parties,
-        args->args, &args->connect_args->address, args->connect_args->deadline);
   }
+  args_ = args;
+
+  // In some implementations, the closure can be flushed before
+  // grpc_tcp_client_connect() returns, and since the closure requires access
+  // to mu_, this can result in a deadlock (see
+  // https://github.com/grpc/grpc/issues/16427 for details).
+  // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
+  // make sure that we still exist at that point by taking a ref.
+  Ref().release();  // Ref held by callback.
+  grpc_tcp_client_connect(
+      &connected_, &args->endpoint, args->connect_args->interested_parties,
+      args->args, &args->connect_args->address, args->connect_args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
-  TCPConnectHandshaker* self = static_cast<TCPConnectHandshaker*>(arg);
+  RefCountedPtr<TCPConnectHandshaker> self(
+      static_cast<TCPConnectHandshaker*>(arg));
   {
     MutexLock lock(&self->mu_);
     if (error != GRPC_ERROR_NONE || self->shutdown_) {
@@ -106,7 +114,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       // called.
       self->args_->exit_early = true;
       ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, error);
-      self->Unref();
       return;
     }
 
@@ -117,7 +124,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
     }
     ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, GRPC_ERROR_NONE);
   }
-  self->Unref();
 }
 
 TCPConnectHandshaker::~TCPConnectHandshaker() {

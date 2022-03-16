@@ -81,12 +81,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     };
     memcpy(&connect_args_.address, args.address, sizeof(grpc_resolved_address));
   }
-  // In some implementations, the closure can be flushed before
-  // grpc_tcp_client_connect() returns, and since the closure requires access
-  // to mu_, this can result in a deadlock (see
-  // https://github.com/grpc/grpc/issues/16427 for details).
-  // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
-  // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by Handshake Manager.
   StartHandshakeLocked();
 }
