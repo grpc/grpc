@@ -69,8 +69,8 @@ void LibuvEventEngine::LibuvTask::Start(LibuvEventEngine* engine,
       &timer_,
       [](uv_timer_t* timer) {
         uv_timer_stop(timer);
-        LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
           gpr_log(GPR_DEBUG, "LibuvTask@%p, triggered: key = %s", task,
                   task->ToString().c_str());
         }
@@ -103,6 +103,9 @@ void LibuvEventEngine::LibuvTask::Erase(uv_handle_t* uv_handle) {
   uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(uv_handle);
   LibuvTask* task = reinterpret_cast<LibuvTask*>(timer->data);
   UvState* uv_state = reinterpret_cast<UvState*>(timer->loop->data);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "LibuvTask@%s, erasing", task->ToString().c_str());
+  }
   uv_state->task_set.erase(task->GetHandle());
 }
 
@@ -112,7 +115,8 @@ void LibuvEventEngine::LibuvTask::RunAndErase(uv_handle_t* handle) {
   std::function<void()> fn = std::move(task->fn_);
   UvState* uv_state = reinterpret_cast<UvState*>(timer->loop->data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_DEBUG, "LibuvTask@%p, executing", task->ToString().c_str());
+    gpr_log(GPR_DEBUG, "LibuvTask@%s, executing and erasing",
+            task->ToString().c_str());
   }
   uv_state->task_set.erase(task->GetHandle());
   fn();
