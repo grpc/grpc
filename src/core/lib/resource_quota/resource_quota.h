@@ -37,9 +37,7 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
   ResourceQuota(const ResourceQuota&) = delete;
   ResourceQuota& operator=(const ResourceQuota&) = delete;
 
-  static absl::string_view ChannelArgName() {
-    return GRPC_ARG_RESOURCE_QUOTA;
-  }
+  static absl::string_view ChannelArgName() { return GRPC_ARG_RESOURCE_QUOTA; }
 
   MemoryQuotaRefPtr memory_quota() { return memory_quota_; }
 
