@@ -1195,6 +1195,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   test/core/end2end/tests/retry_send_op_fails.cc
+  test/core/end2end/tests/retry_send_recv_batch.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
   test/core/end2end/tests/retry_server_pushback_disabled.cc
   test/core/end2end/tests/retry_streaming.cc
@@ -1501,6 +1502,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
@@ -2436,6 +2438,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
+  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/client_idle/idle_filter_state.cc
   src/core/ext/filters/deadline/deadline_filter.cc
