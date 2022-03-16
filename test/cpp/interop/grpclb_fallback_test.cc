@@ -187,94 +187,58 @@ void RunCommand(const std::string& command) {
   }
 }
 
-void RunFallbackBeforeStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd,
-    int per_rpc_deadline_seconds) {
-  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
-  RunCommand(break_lb_and_backend_conns_cmd);
-  for (size_t i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type =
-        DoRPCAndGetPath(stub.get(), per_rpc_deadline_seconds);
+void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
+  int fallback_retry_count = 0;
+  bool fallback = false;
+  absl::Time fallback_deadline = absl::Now() + absl::Seconds(FLAGS_fallback_deadline_seconds);
+  while (absl::Now() < fallback_deadline) {
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 1);
+    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
+      gpr_log(GPR_ERROR, "Got grpclb route type backend. Backends are "
+              "supposed to be unreachable, so this test is broken");
+      GPR_ASSERT(0);
+    }
     if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
       gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
               grpclb_route_type);
       abort();
+    } else {
+      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %d" + fallback_retry_count);
     }
+    fallback_retry_count++;
+  }
+  for (int i = 0; i < 30; i++) {
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
+    GPR_ASSERT(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 
-void DoFastFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(
-      absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd), 9);
+void DoFallbackBeforeStartupTest() {
+  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
+  RunCommand(FLAGS_induce_fallback_cmd);
+  WaitForFallbackAndDoRPCs(stub.get());
 }
 
-void DoSlowFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(
-      absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd), 20);
-}
-
-void RunFallbackAfterStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd) {
+void DoFallbackAfterStartupTest() {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
-  if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
-    gpr_log(GPR_ERROR, "Expected grpclb route type: BACKEND. Got: %d",
-            grpclb_route_type);
-    abort();
-  }
-  RunCommand(break_lb_and_backend_conns_cmd);
-  for (size_t i = 0; i < 40; i++) {
-    GrpclbRouteType grpclb_route_type =
-        DoWaitForReadyRPCAndGetPath(stub.get(), 1);
-    // Backends should be unreachable by now, otherwise the test is broken.
-    GPR_ASSERT(grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
-    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_INFO,
-              "Made one successul RPC to a fallback. Now expect the same for "
-              "the rest.");
-      break;
-    } else {
-      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %" PRIdPTR, i);
-    }
-  }
-  for (size_t i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
-    if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
-              grpclb_route_type);
-      abort();
-    }
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
+  GPR_ASSERT(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
+  RunCommand(FLAGS_induce_fallback_cmd);
+  WaitForFallbackAndDoRPCs(stub.get());
 }
 
-void DoFastFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(
-      absl::GetFlag(FLAGS_unroute_lb_and_backend_addrs_cmd));
-}
-
-void DoSlowFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(
-      absl::GetFlag(FLAGS_blackhole_lb_and_backend_addrs_cmd));
-}
 }  // namespace
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing: %s", absl::GetFlag(FLAGS_test_case).c_str());
-  if (absl::GetFlag(FLAGS_test_case) == "fast_fallback_before_startup") {
-    DoFastFallbackBeforeStartup();
-    gpr_log(GPR_INFO, "DoFastFallbackBeforeStartup done!");
-  } else if (absl::GetFlag(FLAGS_test_case) == "slow_fallback_before_startup") {
-    DoSlowFallbackBeforeStartup();
-    gpr_log(GPR_INFO, "DoSlowFallbackBeforeStartup done!");
-  } else if (absl::GetFlag(FLAGS_test_case) == "fast_fallback_after_startup") {
-    DoFastFallbackAfterStartup();
-    gpr_log(GPR_INFO, "DoFastFallbackAfterStartup done!");
-  } else if (absl::GetFlag(FLAGS_test_case) == "slow_fallback_after_startup") {
-    DoSlowFallbackAfterStartup();
-    gpr_log(GPR_INFO, "DoSlowFallbackAfterStartup done!");
+  if (absl::GetFlag(FLAGS_test_case) == "fallback_before_startup") {
+    DoFallbackBeforeStartupTest();
+    gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
+  } else if (absl::GetFlag(FLAGS_test_case) == "fallback_before_startup") {
+    DoFallbackAfterStartupTest();
+    gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
   } else {
     gpr_log(GPR_ERROR, "Invalid test case: %s",
             absl::GetFlag(FLAGS_test_case).c_str());
