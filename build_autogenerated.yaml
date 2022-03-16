@@ -1700,8 +1700,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/flags:flag
-  - absl/flags:parse
   - grpc
 - name: grpc_test_util_unsecure
   build: private
@@ -1753,8 +1751,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/flags:flag
-  - absl/flags:parse
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -2809,6 +2805,7 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
+  - absl/flags:flag
   - grpc++
   - grpc_test_util
 - name: grpc++_unsecure
@@ -8595,8 +8592,6 @@ targets:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/flags:flag
-  - absl/flags:parse
   - grpc++
   platforms:
   - linux
@@ -8730,6 +8725,7 @@ targets:
   - test/core/event_engine/event_engine_test_init_libuv.cc
   - test/cpp/interop/xds_interop_client.cc
   deps:
+  - absl/flags:flag
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
@@ -8756,6 +8752,7 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:
+  - absl/flags:flag
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util

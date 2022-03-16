@@ -2414,8 +2414,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/debugging/failure_signal_handler', abseil_version
     ss.dependency 'abseil/debugging/stacktrace', abseil_version
     ss.dependency 'abseil/debugging/symbolize', abseil_version
-    ss.dependency 'abseil/flags/flag', abseil_version
-    ss.dependency 'abseil/flags/parse', abseil_version
 
     ss.source_files = 'src/core/lib/security/authorization/grpc_authorization_policy_provider.cc',
                       'src/core/lib/security/authorization/grpc_authorization_policy_provider.h',

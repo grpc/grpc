@@ -1051,8 +1051,6 @@
         'absl/debugging:failure_signal_handler',
         'absl/debugging:stacktrace',
         'absl/debugging:symbolize',
-        'absl/flags:flag',
-        'absl/flags:parse',
         'grpc',
       ],
       'sources': [
@@ -1086,8 +1084,6 @@
         'absl/debugging:failure_signal_handler',
         'absl/debugging:stacktrace',
         'absl/debugging:symbolize',
-        'absl/flags:flag',
-        'absl/flags:parse',
         'grpc_unsecure',
       ],
       'sources': [
@@ -1588,6 +1584,7 @@
       'target_name': 'grpc++_test_util',
       'type': 'static_library',
       'dependencies': [
+        'absl/flags:flag',
         'grpc++',
         'grpc_test_util',
       ],
