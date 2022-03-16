@@ -37,7 +37,7 @@ class TCPConnectHandshaker : public Handshaker {
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override;
-  const char* name() const override { return "tcp_connect_handshaker"; }
+  const char* name() const override { return "tcp_connect"; }
 
  private:
   ~TCPConnectHandshaker() override;
