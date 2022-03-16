@@ -16,6 +16,7 @@ syntax = "proto3";
 
 import "src/proto/grpc/testing/payloads.proto";
 import "src/proto/grpc/testing/stats.proto";
+import "google/protobuf/timestamp.proto";
 
 package grpc.testing;
 
@@ -267,8 +268,8 @@ message ScenarioResultSummary
   double client_queries_per_cpu_sec = 18;
 
   // Start and end time for the test scenario
-  int64 start = 19;
-  int64 end =20;
+  google.protobuf.Timestamp start_time = 19;
+  google.protobuf.Timestamp end_time =20;
 }
 
 // Results of a single benchmark scenario.

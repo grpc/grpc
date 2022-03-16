@@ -18,13 +18,15 @@
 
 #include "test/cpp/qps/driver.h"
 
+#include <chrono>
 #include <cinttypes>
 #include <deque>
 #include <list>
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include <chrono>
+
+#include <google/protobuf/util/time_util.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -575,9 +577,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Start a run
   gpr_log(GPR_INFO, "Starting");
 
-  std::chrono::seconds start_epoch_time =
-        std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch());
+  google::protobuf::Timestamp start_timestamp =
+      google::protobuf::util::TimeUtil::GetCurrentTime();
 
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
@@ -629,10 +630,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // the result.
   bool client_finish_first =
       (client_config.rpc_type() != STREAMING_FROM_SERVER);
-  
-  std::chrono::seconds end_epoch_time =
-        std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch());
+
+  google::protobuf::Timestamp end_timestamp =
+      google::protobuf::util::TimeUtil::GetCurrentTime();
 
   FinishClients(clients, client_mark);
 
@@ -660,10 +660,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_status_code(it->first);
     rrc->set_count(it->second);
   }
-  
   // Fill in start and end time for the test scenario
-  result->mutable_summary()->set_start(start_epoch_time.count());
-  result->mutable_summary()->set_end(end_epoch_time.count());
+  result->mutable_summary()->mutable_start_time()->CopyFrom(start_timestamp);
+  result->mutable_summary()->mutable_end_time()->CopyFrom(end_timestamp);
 
   postprocess_scenario_result(result.get());
   return result;
