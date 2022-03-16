@@ -55,10 +55,10 @@
 ABSL_FLAG(std::string, custom_credentials_type, "",
           "User provided credentials type.");
 ABSL_FLAG(std::string, server_uri, "localhost:1000", "Server URI target");
-ABSL_FLAG(std::string, unroute_lb_and_backend_addrs_cmd, "exit 1",
-          "Shell command used to make LB and backend addresses unroutable");
-ABSL_FLAG(std::string, blackhole_lb_and_backend_addrs_cmd, "exit 1",
-          "Shell command used to make LB and backend addresses blackholed");
+ABSL_FLAG(std::string, FLAGS_induce_fallback_cmd, "exit 1",
+          "Shell command to induce fallback, e.g. by unrouting addresses");
+ABSL_FLAG(int, FLAGS_fallback_deadline_seconds, 1,
+          "Number of seconds to wait for fallback to occur after inducing it");
 ABSL_FLAG(
     std::string, test_case, "",
     "Test case to run. Valid options are:\n\n"
