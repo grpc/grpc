@@ -280,7 +280,6 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   req->own_endpoint_ = true;
   if (req->cancelled_) {
     // Handshake finished after the request was cancelled.
-    // This might be due to delay in connectivity for example.
     // As we already finished and the on_done_ callback was called, nothing
     // to do here.
     return;
