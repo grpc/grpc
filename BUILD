@@ -2236,6 +2236,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "single_set_ptr",
+    hdrs = [
+        "src/core/lib/gprpp/single_set_ptr.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "channel_stack_builder",
     srcs = [
         "src/core/lib/channel/channel_stack_builder.cc",
