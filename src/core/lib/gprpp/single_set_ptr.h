@@ -18,19 +18,17 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <memory>
 
 #include <grpc/support/log.h>
 
 namespace grpc_core {
 
-template <class T>
+template <class T, class Deleter = std::default_delete<T>>
 class SingleSetPtr {
  public:
   SingleSetPtr() = default;
-  ~SingleSetPtr() {
-    T* p = p_.load(std::memory_order_relaxed);
-    if (p != sentinel()) delete p;
-  }
+  ~SingleSetPtr() { Delete(p_.load(std::memory_order_relaxed)); }
 
   SingleSetPtr(const SingleSetPtr&) = delete;
   SingleSetPtr& operator=(const SingleSetPtr&) = delete;
@@ -48,17 +46,14 @@ class SingleSetPtr {
     T* expected = nullptr;
     if (!p_.compare_exchange_strong(expected, ptr, std::memory_order_acq_rel,
                                     std::memory_order_acquire)) {
-      delete ptr;
+      Delete(ptr);
       return expected == sentinel() ? nullptr : expected;
     }
     return ptr;
   }
 
   // Clear the pointer. Cannot be set again.
-  void Reset() {
-    T* p = p_.exchange(sentinel(), std::memory_order_acq_rel);
-    if (p != sentinel()) delete p;
-  }
+  void Reset() { Delete(p_.exchange(sentinel(), std::memory_order_acq_rel)); }
 
   bool is_set() const {
     T* p = p_.load(std::memory_order_acquire);
@@ -76,6 +71,10 @@ class SingleSetPtr {
 
  private:
   static T* sentinel() { return reinterpret_cast<T*>(1); }
+  static void Delete(T* p) {
+    if (p == sentinel() || p == nullptr) return;
+    Deleter()(p);
+  }
   std::atomic<T*> p_{nullptr};
 };
 
