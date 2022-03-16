@@ -88,8 +88,6 @@ const char* kConstantValue = "constant_value";
 
 using BackendService = CountedService<TestServiceImpl>;
 
-}  // namespace
-
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo Rpc.
 class MyTestServiceImpl : public BackendService {
@@ -181,7 +179,12 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>("rls");
+    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>(
+        "rls", [](grpc::ServerContext* ctx) {
+          EXPECT_THAT(ctx->client_metadata(),
+                      ::testing::Contains(
+                          ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
+        });
     rls_server_->Start();
     resolver_response_generator_ =
         absl::make_unique<FakeResolverResponseGeneratorWrapper>();
@@ -1367,6 +1370,7 @@ TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
       "");
 }
 
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
 

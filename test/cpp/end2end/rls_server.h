@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "absl/types/optional.h"
+
 #include "src/core/lib/gprpp/time.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
@@ -25,8 +27,14 @@ namespace testing {
 using RlsService =
     CountedService<grpc::lookup::v1::RouteLookupService::Service>;
 
+using ContextProcessingFunc = std::function<void(grpc::ServerContext*)>;
+
 class RlsServiceImpl : public RlsService {
  public:
+  explicit RlsServiceImpl(
+      absl::optional<ContextProcessingFunc> context_proc = absl::nullopt)
+      : context_proc_(context_proc) {}
+
   grpc::Status RouteLookup(
       grpc::ServerContext* context,
       const grpc::lookup::v1::RouteLookupRequest* request,
@@ -65,6 +73,7 @@ class RlsServiceImpl : public RlsService {
     grpc_core::Duration response_delay;
   };
 
+  absl::optional<ContextProcessingFunc> context_proc_;
   grpc::internal::Mutex mu_;
   std::map<grpc::lookup::v1::RouteLookupRequest, ResponseData,
            RlsRequestLessThan>

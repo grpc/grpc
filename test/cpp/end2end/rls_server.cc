@@ -33,10 +33,9 @@ namespace testing {
                                            RouteLookupResponse* response) {
   gpr_log(GPR_INFO, "RLS: Received request: %s",
           request->DebugString().c_str());
-  // RLS server should see call creds if they are sent, but since this server is
-  // now used also in xds_end2end_test, there will be cases where call creds are
-  // not sent; therefore we will not check other than logging the entire
-  // request.
+  if (context_proc_ != absl::nullopt) {
+    (*context_proc_)(context);
+  }
   IncreaseRequestCount();
   EXPECT_EQ(request->target_type(), "grpc");
   // See if we have a configured response for this request.
