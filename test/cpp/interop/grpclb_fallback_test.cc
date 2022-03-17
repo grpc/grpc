@@ -192,7 +192,8 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   int fallback_retry_count = 0;
   bool fallback = false;
   absl::Time fallback_deadline =
-      absl::Now() + absl::Seconds(FLAGS_fallback_deadline_seconds);
+      absl::Now() +
+      absl::Seconds(absl::GetFlag(FLAGS_fallback_deadline_seconds));
   while (absl::Now() < fallback_deadline) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 1);
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
@@ -201,26 +202,33 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
               "supposed to be unreachable, so this test is broken");
       GPR_ASSERT(0);
     }
-    if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
-              grpclb_route_type);
-      abort();
+    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
+      gpr_log(GPR_INFO,
+              "Made one successful RPC to a fallback. Now expect the same for "
+              "the rest.");
+      fallback = true;
+      break;
     } else {
-      gpr_log(GPR_ERROR,
-              "Retryable RPC failure on iteration: %d" + fallback_retry_count);
+      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %d",
+              fallback_retry_count);
     }
     fallback_retry_count++;
   }
+  if (!fallback) {
+    gpr_log(GPR_ERROR, "Didn't fall back within deadline");
+    GPR_ASSERT(0);
+  }
   for (int i = 0; i < 30; i++) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 20);
-    GPR_ASSERT(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
+    GPR_ASSERT(grpclb_route_type ==
+               GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
 
 void DoFallbackBeforeStartupTest() {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
-  RunCommand(FLAGS_induce_fallback_cmd);
+  RunCommand(absl::GetFlag(FLAGS_induce_fallback_cmd));
   WaitForFallbackAndDoRPCs(stub.get());
 }
 
@@ -228,7 +236,7 @@ void DoFallbackAfterStartupTest() {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
   GPR_ASSERT(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
-  RunCommand(FLAGS_induce_fallback_cmd);
+  RunCommand(absl::GetFlag(FLAGS_induce_fallback_cmd));
   WaitForFallbackAndDoRPCs(stub.get());
 }
 
