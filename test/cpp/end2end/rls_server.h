@@ -82,27 +82,14 @@ class RlsServiceImpl : public RlsService {
       ABSL_GUARDED_BY(&mu_);
 };
 
-namespace {
 grpc::lookup::v1::RouteLookupRequest BuildRlsRequest(
     std::map<std::string, std::string> key,
     grpc::lookup::v1::RouteLookupRequest::Reason reason =
         grpc::lookup::v1::RouteLookupRequest::REASON_MISS,
-    const char* stale_header_data = "") {
-  grpc::lookup::v1::RouteLookupRequest request;
-  request.set_target_type("grpc");
-  request.mutable_key_map()->insert(key.begin(), key.end());
-  request.set_reason(reason);
-  request.set_stale_header_data(stale_header_data);
-  return request;
-}
+    const char* stale_header_data = "");
 
 grpc::lookup::v1::RouteLookupResponse BuildRlsResponse(
-    std::vector<std::string> targets, const char* header_data = "") {
-  grpc::lookup::v1::RouteLookupResponse response;
-  response.mutable_targets()->Add(targets.begin(), targets.end());
-  response.set_header_data(header_data);
-  return response;
-}
-}  // namespace
+    std::vector<std::string> targets, const char* header_data = "");
+
 }  // namespace testing
 }  // namespace grpc
