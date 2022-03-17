@@ -396,7 +396,10 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
   WaitForPing(0);
   // Wait for final goaway without sending a ping ACK.
   WaitForGoaway(0);
-  EXPECT_GE(absl::Now() - initial_time, absl::Seconds(20));
+  EXPECT_GE(absl::Now() - initial_time,
+            absl::Seconds(20) -
+                absl::Seconds(
+                    1) /* clock skew between threads due to time caching */);
   // The shutdown should successfully complete.
   CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
   cq_verify(cqv_);
