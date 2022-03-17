@@ -76,7 +76,6 @@ grpc_cc_test(
     srcs = ["libuv_event_engine_test.cc"],
     external_deps = [
         "gtest",
-        "uv",
     ],
     language = "C++",
     uses_polling = False,
