@@ -39,6 +39,8 @@ class grpc_alts_credentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
+  const char* type() const override;
+
   const grpc_alts_credentials_options* options() const { return options_; }
   grpc_alts_credentials_options* mutable_options() { return options_; }
   const char* handshaker_service_url() const { return handshaker_service_url_; }
@@ -63,6 +65,8 @@ class grpc_alts_server_credentials final : public grpc_server_credentials {
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /* args */) override;
+
+  const char* type() const override;
 
   const grpc_alts_credentials_options* options() const { return options_; }
   grpc_alts_credentials_options* mutable_options() { return options_; }

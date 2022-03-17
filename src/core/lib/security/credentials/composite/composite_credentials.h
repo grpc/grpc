@@ -30,17 +30,12 @@
 
 /* -- Composite channel credentials. -- */
 
-namespace grpc_core {
-extern const char kCredentialsTypeComposite[];
-}
-
 class grpc_composite_channel_credentials : public grpc_channel_credentials {
  public:
   grpc_composite_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds)
-      : grpc_channel_credentials(grpc_core::kCredentialsTypeComposite),
-        inner_creds_(std::move(channel_creds)),
+      : inner_creds_(std::move(channel_creds)),
         call_creds_(std::move(call_creds)) {}
 
   ~grpc_composite_channel_credentials() override = default;
@@ -59,6 +54,8 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
   grpc_channel_args* update_arguments(grpc_channel_args* args) override {
     return inner_creds_->update_arguments(args);
   }
+
+  const char* type() const override;
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
@@ -100,6 +97,10 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
 
   const CallCredentialsList& inner() const { return inner_; }
   std::string debug_string() override;
+
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

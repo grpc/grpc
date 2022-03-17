@@ -3797,6 +3797,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
     ],
     hdrs = [
+        "src/core/lib/security/credentials/insecure/insecure_credentials.h",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",
     ],
     language = "c++",
@@ -4627,6 +4628,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_insecure_credentials",
         "grpc_resolver",
         "grpc_security_base",
         "grpc_transport_chttp2",
@@ -4655,6 +4657,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_http_filters",
+        "grpc_insecure_credentials",
         "grpc_security_base",
         "grpc_transport_chttp2",
         "memory_quota",

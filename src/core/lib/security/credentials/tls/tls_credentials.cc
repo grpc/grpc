@@ -31,8 +31,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-#define GRPC_CREDENTIALS_TYPE_TLS "Tls"
-
 namespace {
 
 bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
@@ -70,8 +68,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
 
 TlsCredentials::TlsCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsCredentials::~TlsCredentials() {}
 
@@ -109,10 +106,16 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
+int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
+  const TlsCredentials* o = static_cast<const TlsCredentials*>(other);
+  if (*options_ == *o->options_) return 0;
+  return grpc_core::QsortCompare(
+      static_cast<const grpc_channel_credentials*>(this), other);
+}
+
 TlsServerCredentials::TlsServerCredentials(
     grpc_core::RefCountedPtr<grpc_tls_credentials_options> options)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_TLS),
-      options_(std::move(options)) {}
+    : options_(std::move(options)) {}
 
 TlsServerCredentials::~TlsServerCredentials() {}
 
