@@ -30,6 +30,10 @@
 
 namespace grpc_core {
 
+//
+// ExternalCertificateVerifier
+//
+
 bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)> callback, absl::Status* sync_status) {
@@ -79,6 +83,10 @@ void ExternalCertificateVerifier::OnVerifyDone(
     callback(return_status);
   }
 }
+
+//
+// HostNameCertificateVerifier
+//
 
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,

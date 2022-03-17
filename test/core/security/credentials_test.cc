@@ -59,8 +59,11 @@
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
+#include "src/core/lib/security/credentials/iam/iam_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -560,7 +563,7 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
                                                  "authorization: Bearer blah");
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
-  GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
+  GPR_ASSERT(strcmp(creds->type(), grpc_access_token_credentials::Type()) == 0);
   /* Check security level. */
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -571,19 +574,17 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
 namespace {
 class check_channel_oauth2 final : public grpc_channel_credentials {
  public:
-  check_channel_oauth2() : grpc_channel_credentials("mock") {}
-  ~check_channel_oauth2() override = default;
-
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       const grpc_channel_args* /*args*/,
       grpc_channel_args** /*new_args*/) override {
-    GPR_ASSERT(strcmp(type(), "mock") == 0);
+    GPR_ASSERT(strcmp(type(), "check_channel_oauth2") == 0);
     GPR_ASSERT(call_creds != nullptr);
-    GPR_ASSERT(strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) ==
-               0);
+    GPR_ASSERT(call_creds->type() == grpc_access_token_credentials::Type());
     return nullptr;
   }
+
+  const char* type() const override { return "check_channel_oauth2"; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -638,16 +639,14 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
 
   oauth2_creds->Unref();
   google_iam_creds->Unref();
-  GPR_ASSERT(strcmp(composite_creds->type(),
-                    GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
+  GPR_ASSERT(composite_creds->type() ==
+             grpc_composite_call_credentials::Type());
   const grpc_composite_call_credentials::CallCredentialsList& creds_list =
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
   GPR_ASSERT(creds_list.size() == 2);
-  GPR_ASSERT(strcmp(creds_list[0]->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) ==
-             0);
-  GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
-             0);
+  GPR_ASSERT(creds_list[0]->type() == grpc_md_only_test_credentials::Type());
+  GPR_ASSERT(creds_list[1]->type() == grpc_google_iam_credentials::Type());
   state->RunRequestMetadataTest(composite_creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   composite_creds->Unref();
@@ -656,25 +655,23 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
 namespace {
 class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
  public:
-  check_channel_oauth2_google_iam() : grpc_channel_credentials("mock") {}
-  ~check_channel_oauth2_google_iam() override = default;
-
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       const grpc_channel_args* /*args*/,
       grpc_channel_args** /*new_args*/) override {
-    GPR_ASSERT(strcmp(type(), "mock") == 0);
+    GPR_ASSERT(strcmp(type(), "check_channel_oauth2_google_iam") == 0);
     GPR_ASSERT(call_creds != nullptr);
-    GPR_ASSERT(
-        strcmp(call_creds->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0);
+    GPR_ASSERT(call_creds->type() == grpc_composite_call_credentials::Type());
     const grpc_composite_call_credentials::CallCredentialsList& creds_list =
         static_cast<const grpc_composite_call_credentials*>(call_creds.get())
             ->inner();
-    GPR_ASSERT(
-        strcmp(creds_list[0]->type(), GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) == 0);
-    GPR_ASSERT(strcmp(creds_list[1]->type(), GRPC_CALL_CREDENTIALS_TYPE_IAM) ==
-               0);
+    GPR_ASSERT(creds_list[0]->type() == grpc_access_token_credentials::Type());
+    GPR_ASSERT(creds_list[1]->type() == grpc_google_iam_credentials::Type());
     return nullptr;
+  }
+
+  const char* type() const override {
+    return "check_channel_oauth2_google_iam";
   }
 
  private:
@@ -1346,7 +1343,8 @@ char* encode_and_sign_jwt_should_not_be_called(
 grpc_service_account_jwt_access_credentials* creds_as_jwt(
     grpc_call_credentials* creds) {
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(strcmp(creds->type(), GRPC_CALL_CREDENTIALS_TYPE_JWT) == 0);
+  GPR_ASSERT(creds->type() ==
+             grpc_service_account_jwt_access_credentials::Type());
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 
@@ -1769,8 +1767,6 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
 
 struct fake_call_creds : public grpc_call_credentials {
  public:
-  fake_call_creds() : grpc_call_credentials("fake") {}
-
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
       const grpc_call_credentials::GetRequestMetadataArgs*) override {
@@ -1778,6 +1774,8 @@ struct fake_call_creds : public grpc_call_credentials {
                              [](absl::string_view, const Slice&) { abort(); });
     return Immediate(std::move(initial_metadata));
   }
+
+  const char* type() const override { return "fake"; }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {
@@ -3585,6 +3583,62 @@ TEST(CredentialsTest,
   grpc_call_credentials_release(md_creds);
   grpc_channel_credentials_release(composite_creds_1);
   grpc_channel_credentials_release(composite_creds_2);
+}
+
+TEST(CredentialsTest, TestTlsCredentialsCompareSuccess) {
+  auto* tls_creds_1 =
+      grpc_tls_credentials_create(grpc_tls_credentials_options_create());
+  auto* tls_creds_2 =
+      grpc_tls_credentials_create(grpc_tls_credentials_options_create());
+  EXPECT_EQ(tls_creds_1->cmp(tls_creds_2), 0);
+  EXPECT_EQ(tls_creds_2->cmp(tls_creds_1), 0);
+  grpc_channel_credentials_release(tls_creds_1);
+  grpc_channel_credentials_release(tls_creds_2);
+}
+
+TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareSuccess) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  options_1->set_certificate_verifier(
+      MakeRefCounted<HostNameCertificateVerifier>());
+  auto* tls_creds_1 = grpc_tls_credentials_create(options_1);
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_2->set_certificate_verifier(
+      MakeRefCounted<HostNameCertificateVerifier>());
+  auto* tls_creds_2 = grpc_tls_credentials_create(options_2);
+  EXPECT_EQ(tls_creds_1->cmp(tls_creds_2), 0);
+  EXPECT_EQ(tls_creds_2->cmp(tls_creds_1), 0);
+  grpc_channel_credentials_release(tls_creds_1);
+  grpc_channel_credentials_release(tls_creds_2);
+}
+
+TEST(CredentialsTest, TestTlsCredentialsCompareFailure) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  options_1->set_check_call_host(true);
+  auto* tls_creds_1 = grpc_tls_credentials_create(options_1);
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_2->set_check_call_host(false);
+  auto* tls_creds_2 = grpc_tls_credentials_create(options_2);
+  EXPECT_NE(tls_creds_1->cmp(tls_creds_2), 0);
+  EXPECT_NE(tls_creds_2->cmp(tls_creds_1), 0);
+  grpc_channel_credentials_release(tls_creds_1);
+  grpc_channel_credentials_release(tls_creds_2);
+}
+
+TEST(CredentialsTest, TestTlsCredentialsWithVerifierCompareFailure) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  options_1->set_certificate_verifier(
+      MakeRefCounted<HostNameCertificateVerifier>());
+  auto* tls_creds_1 = grpc_tls_credentials_create(options_1);
+  auto* options_2 = grpc_tls_credentials_options_create();
+  grpc_tls_certificate_verifier_external verifier = {nullptr, nullptr, nullptr,
+                                                     nullptr};
+  options_2->set_certificate_verifier(
+      MakeRefCounted<ExternalCertificateVerifier>(&verifier));
+  auto* tls_creds_2 = grpc_tls_credentials_create(options_2);
+  EXPECT_NE(tls_creds_1->cmp(tls_creds_2), 0);
+  EXPECT_NE(tls_creds_2->cmp(tls_creds_1), 0);
+  grpc_channel_credentials_release(tls_creds_1);
+  grpc_channel_credentials_release(tls_creds_2);
 }
 
 TEST(CredentialsTest, TestXdsCredentialsCompareSucces) {
