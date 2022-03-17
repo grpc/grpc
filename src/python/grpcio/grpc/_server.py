@@ -880,7 +880,11 @@ def _serve(state):
         if state.server_deallocated:
             _begin_shutdown_once(state)
         if event.completion_type != cygrpc.CompletionType.queue_timeout:
-            if not _process_event_and_continue(state, event):
+            try:
+                if not _process_event_and_continue(state, event):
+                    return
+            except Exception:  # pylint: disable=broad-except
+                _stop(state, 0)
                 return
         # We want to force the deletion of the previous event
         # ~before~ we poll again; if the event has a reference
