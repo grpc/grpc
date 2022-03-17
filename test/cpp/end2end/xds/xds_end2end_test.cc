@@ -395,7 +395,15 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
+  const char* type() const override { return "fake"; }
+
  private:
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   CertDataMap cert_data_map_;
 };
@@ -7562,13 +7570,11 @@ class XdsSecurityTest : public BasicTest {
     constexpr int kRetryCount = 100;
     int num_tries = 0;
     for (; num_tries < kRetryCount; num_tries++) {
-      // Give some time for the updates to propagate.
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      // Restart the servers to force a reconnection so that previously
+      // connected subchannels are not used for the RPC.
+      ShutdownBackend(0);
+      StartBackend(0);
       if (test_expects_failure) {
-        // Restart the servers to force a reconnection so that previously
-        // connected subchannels are not used for the RPC.
-        ShutdownBackend(0);
-        StartBackend(0);
         if (SendRpc().ok()) {
           gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
           continue;
