@@ -96,9 +96,9 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
 
 namespace {
 void ParseTestArgs(int* argc, char** argv) {
-  // flags to look for and consume
-  constexpr absl::string_view poller_flag{"--poller="};
   if (argc == nullptr || *argc <= 1) return;
+  // flags to look for and consume
+  const absl::string_view poller_flag{"--poller="};
   int i = 1;
   while (i < *argc) {
     if (absl::StartsWith(argv[i], poller_flag)) {
