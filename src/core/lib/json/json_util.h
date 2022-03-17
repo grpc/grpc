@@ -45,8 +45,6 @@ bool ExtractJsonNumber(const Json& json, absl::string_view field_name,
                        NumericType* output,
                        std::vector<grpc_error_handle>* error_list) {
   static_assert(std::is_integral<NumericType>::value, "Integral required");
-  gpr_log(GPR_INFO, "donna debug json what is the type %d %s", json.type(),
-          json.string_value().c_str());
   if (!(json.type() == Json::Type::NUMBER ||
         json.type() == Json::Type::STRING)) {
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(

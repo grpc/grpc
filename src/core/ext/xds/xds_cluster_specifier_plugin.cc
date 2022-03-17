@@ -57,21 +57,16 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   }
   upb::Status status;
   const upb_MessageDef* msg_type =
-      // grpc_lookup_v1_RouteLookupClusterSpecifier_getmsgdef(symtab);
       grpc_lookup_v1_RouteLookupConfig_getmsgdef(symtab);
-  char buf[10240];
   size_t json_size = upb_JsonEncode(plugin_config, msg_type, symtab, 0, nullptr,
                                     0, status.ptr());
-  if (json_size < 10240) {
-    upb_JsonEncode(plugin_config, msg_type, symtab, 0, buf, json_size + 1,
-                   status.ptr());
-  } else {
-    return absl::InvalidArgumentError(
-        "Route lookup config too big to fit in parsing buffer of size 10240");
-  }
+  void* buf = upb_Arena_Malloc(arena, json_size + 1);
+  upb_JsonEncode(plugin_config, msg_type, symtab, 0,
+                 reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   Json::Object rls_policy;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  rls_policy["routeLookupConfig"] = Json::Parse(buf, &error);
+  rls_policy["routeLookupConfig"] =
+      Json::Parse(reinterpret_cast<char*>(buf), &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();

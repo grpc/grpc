@@ -325,8 +325,6 @@ grpc_error_handle ClusterSpecifierPluginParse(
             cluster_specifier_plugin[i]);
     std::string name = UpbStringToStdString(
         envoy_config_core_v3_TypedExtensionConfig_name(extension));
-    gpr_log(GPR_INFO, "donna here is the loop with name identifier %s",
-            name.c_str());
     const google_protobuf_Any* any =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
     if (any == nullptr) {
