@@ -212,7 +212,10 @@ void CallData::RecvInitialMetadataReady(void* user_data,
             &calld->service_config_call_data_;
       }
     } else {
-      calld->error_ = absl_status_to_grpc_error(config_selector.status());
+      calld->error_ = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_CPP_STRING(
+              config_selector.status().ToString()),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       error = calld->error_;
     }
   }

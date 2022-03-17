@@ -186,11 +186,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
             },
             DEBUG_LOCATION);
       }
-      void OnError(grpc_error_handle error) override {
+      void OnError(absl::Status status) override {
         Ref().release();  // ref held by callback
         discovery_mechanism_->parent()->work_serializer()->Run(
-            [this, error]() {
-              OnErrorHelper(error);
+            [this, status]() {
+              OnErrorHelper(status);
               Unref();
             },
             DEBUG_LOCATION);
@@ -213,9 +213,9 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         discovery_mechanism_->parent()->OnEndpointChanged(
             discovery_mechanism_->index(), std::move(update));
       }
-      void OnErrorHelper(grpc_error_handle error) {
+      void OnErrorHelper(absl::Status status) {
         discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
-                                                error);
+                                                status);
       }
       void OnResourceDoesNotExistHelper() {
         discovery_mechanism_->parent()->OnResourceDoesNotExist(
@@ -326,7 +326,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void OnEndpointChanged(size_t index, XdsEndpointResource update);
-  void OnError(size_t index, grpc_error_handle error);
+  void OnError(size_t index, absl::Status status);
   void OnResourceDoesNotExist(size_t index);
 
   void MaybeDestroyChildPolicyLocked();
@@ -491,9 +491,8 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Orphan() {
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
     ReportResult(Resolver::Result result) {
   if (!result.addresses.ok()) {
-    discovery_mechanism_->parent()->OnError(
-        discovery_mechanism_->index(),
-        absl_status_to_grpc_error(result.addresses.status()));
+    discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(),
+                                            result.addresses.status());
     return;
   }
   // Convert resolver result to EDS update.
@@ -660,12 +659,11 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   UpdatePriorityList(std::move(priority_list));
 }
 
-void XdsClusterResolverLb::OnError(size_t index, grpc_error_handle error) {
+void XdsClusterResolverLb::OnError(size_t index, absl::Status status) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " xds watcher reported error: %s",
-          this, index, grpc_error_std_string(error).c_str());
-  GRPC_ERROR_UNREF(error);
+          this, index, status.ToString().c_str());
   if (shutting_down_) return;
   if (!discovery_mechanisms_[index].first_update_received) {
     // Call OnEndpointChanged with an empty update just like
