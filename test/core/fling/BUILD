@@ -51,7 +51,7 @@ grpc_cc_test(
         ":fling_client",
         ":fling_server",
     ],
-    tags = ["no_windows"],
+    tags = ["no_windows", "requires-net:ipv4", "requires-net:loopback"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -67,7 +67,7 @@ grpc_cc_test(
         ":fling_client",
         ":fling_server",
     ],
-    tags = ["no_windows"],
+    tags = ["no_windows", "requires-net:ipv4", "requires-net:loopback"],
     deps = [
         "//:gpr",
         "//:grpc",
