@@ -21,6 +21,9 @@
 #include <grpc/status.h>
 
 #include "upb/upb.hpp"
+#include "google/protobuf/duration.upb.h"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
+#include "xds/service/orca/v3/orca.upb.h"
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
@@ -31,8 +34,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-#include "xds/service/orca/v3/orca.upb.h"
 
 namespace grpc_core {
 
@@ -49,67 +50,39 @@ class OrcaWatcher;
 // registered watchers.
 class OrcaProducer : public Subchannel::DataProducerInterface {
  public:
-  OrcaProducer(RefCountedPtr<Subchannel> subchannel)
-      : subchannel_(std::move(subchannel)) {
-    subchannel_->AddDataProducer(this);
-  }
+  OrcaProducer(RefCountedPtr<Subchannel> subchannel);
 
-  void Orphan() override {
-    subchannel_->RemoveDataProducer(this);
-    stream_client_.reset();
-  }
+  void Orphan() override;
 
   const char* type() override { return kProducerType; }
 
-  void OnConnected(RefCountedPtr<ConnectedSubchannel> connected_subchannel)
-      override;
-
-  void OnDisconnected() override;
-
+  // Adds and removes watchers.
   void AddWatcher(WeakRefCountedPtr<OrcaWatcher> watcher);
-
   void RemoveWatcher(OrcaWatcher* watcher);
 
  private:
-  class OrcaStreamEventHandler
-      : public SubchannelStreamClient::CallEventHandler {
-   public:
-    explicit OrcaStreamEventHandler(WeakRefCountedPtr<OrcaProducer> producer)
-        : producer_(std::move(producer)) {}
+  class ConnectivityWatcher;
+  class OrcaStreamEventHandler;
 
-    Slice GetPathLocked() override {
-      return Slice::FromStaticString(
-          "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics");
-    }
-
-    void OnCallStartLocked(SubchannelStreamClient* client) override {}
-
-    void OnRetryTimerStartLocked(SubchannelStreamClient* client) override {}
-
-    grpc_slice EncodeSendMessageLocked() override;
-
-    void RecvMessageReadyLocked(SubchannelStreamClient* client, char* message,
-                                size_t size) override;
-
-    void RecvTrailingMetadataReadyLocked(SubchannelStreamClient* client,
-                                         grpc_status_code status) override;
-
-   private:
-    // Returns true if healthy.
-    absl::StatusOr<bool> DecodeResponse(char* message, size_t size);
-
-    void SetHealthStatusLocked(SubchannelStreamClient* client,
-                               grpc_connectivity_state state,
-                               const char* reason);
-
-    WeakRefCountedPtr<OrcaProducer> producer_;
-  };
-
+  // Returns the minimum requested reporting interval across all watchers.
   Duration GetMinIntervalLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
+  // Starts a new stream.
+  // Called whenever the reporting interval changes or the subchannel
+  // transitions to state READY.
   void StartStreamLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
+  // Handles a connectivity state change on the subchannel.
+  void OnConnectivityStateChange(grpc_connectivity_state state);
+
+  // Called to notify watchers of a new backend metric report.
+  void NotifyWatchers(
+      const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
+          backend_metric_data);
+
   RefCountedPtr<Subchannel> subchannel_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;
   // TODO(roth): Use std::set<> instead once we can use C++14 heterogenous
   // map lookups.
@@ -127,112 +100,157 @@ class OrcaWatcher : public SubchannelInterface::DataWatcherInterface {
               std::unique_ptr<OobBackendMetricWatcher> watcher)
       : report_interval_(report_interval), watcher_(std::move(watcher)) {}
 
-  void Orphan() override {
-    if (producer_ != nullptr) {
-      producer_->RemoveWatcher(this);
-      producer_.reset();
-    }
-  }
+  void Orphan() override;
 
   Duration report_interval() const { return report_interval_; }
 
   // When the client channel sees this wrapper, it will pass it the real
-  // subchannel and the WorkSerializer to use.
-  void SetSubchannel(
-      Subchannel* subchannel,
-      std::shared_ptr<WorkSerializer> work_serializer) override;
+  // subchannel to use.
+  void SetSubchannel(Subchannel* subchannel) override;
 
   OobBackendMetricWatcher* watcher() const { return watcher_.get(); }
 
  private:
   Duration report_interval_;
   std::unique_ptr<OobBackendMetricWatcher> watcher_;
-  std::shared_ptr<WorkSerializer> work_serializer_;
   RefCountedPtr<OrcaProducer> producer_;
+};
+
+//
+// OrcaProducer::ConnectivityWatcher
+//
+
+class OrcaProducer::ConnectivityWatcher
+    : public Subchannel::ConnectivityStateWatcherInterface {
+ public:
+  explicit ConnectivityWatcher(WeakRefCountedPtr<OrcaProducer> producer)
+      : producer_(std::move(producer)),
+        interested_parties_(grpc_pollset_set_create()) {}
+
+  ~ConnectivityWatcher() override {
+    grpc_pollset_set_destroy(interested_parties_);
+  }
+
+  void OnConnectivityStateChange() override {
+    auto change = PopConnectivityStateChange();
+    producer_->OnConnectivityStateChange(change.state);
+  }
+
+  grpc_pollset_set* interested_parties() override {
+    return interested_parties_;
+  }
+
+ private:
+  WeakRefCountedPtr<OrcaProducer> producer_;
+  grpc_pollset_set* interested_parties_;
 };
 
 //
 // OrcaProducer::OrcaStreamEventHandler
 //
 
-grpc_slice OrcaProducer::OrcaStreamEventHandler::EncodeSendMessageLocked() {
-  upb::Arena arena;
-  xds_service_orca_v3_OrcaLoadReportRequest* request =
-      xds_service_orca_v3_OrcaLoadReportRequest_new(arena.ptr());
-  gpr_timespec timespec = producer_->report_interval_.as_timespec();
-  auto* report_interval =
-      xds_service_orca_v3_OrcaLoadReportRequest_mutable_report_interval(
-          request, arena.ptr());
-  google_protobuf_Duration_set_seconds(report_interval, timespec.tv_sec);
-  google_protobuf_Duration_set_nanos(report_interval, timespec.tv_nsec);
-  size_t buf_length;
-  char* buf = xds_service_orca_v3_OrcaLoadReportRequest_serialize(
-      request, arena.ptr(), &buf_length);
-  grpc_slice request_slice = GRPC_SLICE_MALLOC(buf_length);
-  memcpy(GRPC_SLICE_START_PTR(request_slice), buf, buf_length);
-  return request_slice;
-}
+class OrcaProducer::OrcaStreamEventHandler
+    : public SubchannelStreamClient::CallEventHandler {
+ public:
+  explicit OrcaStreamEventHandler(WeakRefCountedPtr<OrcaProducer> producer)
+      : producer_(std::move(producer)) {}
 
-void OrcaProducer::OrcaStreamEventHandler::RecvMessageReadyLocked(
-    SubchannelStreamClient* client, char* message, size_t size) {
-  LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData
-      backend_metric_data;
-  if (ParseBackendMetricData(absl::string_view(message, size),
-                             &backend_metric_data)) {
-// FIXME
-    producer_->NotifyWatchers();
+  Slice GetPathLocked() override {
+    return Slice::FromStaticString(
+        "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics");
   }
-}
 
-void OrcaProducer::OrcaStreamEventHandler::RecvTrailingMetadataReadyLocked(
-    SubchannelStreamClient* client, grpc_status_code status) override {
-  if (status == GRPC_STATUS_UNIMPLEMENTED) {
-    static const char kErrorMessage[] =
-        "health checking Watch method returned UNIMPLEMENTED; "
-        "disabling health checks but assuming server is healthy";
-    gpr_log(GPR_ERROR, kErrorMessage);
-    if (channelz_node_ != nullptr) {
-      channelz_node_->AddTraceEvent(
-          channelz::ChannelTrace::Error,
-          grpc_slice_from_static_string(kErrorMessage));
+  void OnCallStartLocked(SubchannelStreamClient* client) override {}
+
+  void OnRetryTimerStartLocked(SubchannelStreamClient* client) override {}
+
+  grpc_slice EncodeSendMessageLocked() override {
+    upb::Arena arena;
+    xds_service_orca_v3_OrcaLoadReportRequest* request =
+        xds_service_orca_v3_OrcaLoadReportRequest_new(arena.ptr());
+    gpr_timespec timespec = producer_->report_interval_.as_timespec();
+    auto* report_interval =
+        xds_service_orca_v3_OrcaLoadReportRequest_mutable_report_interval(
+            request, arena.ptr());
+    google_protobuf_Duration_set_seconds(report_interval, timespec.tv_sec);
+    google_protobuf_Duration_set_nanos(report_interval, timespec.tv_nsec);
+    size_t buf_length;
+    char* buf = xds_service_orca_v3_OrcaLoadReportRequest_serialize(
+        request, arena.ptr(), &buf_length);
+    grpc_slice request_slice = GRPC_SLICE_MALLOC(buf_length);
+    memcpy(GRPC_SLICE_START_PTR(request_slice), buf, buf_length);
+    return request_slice;
+  }
+
+  absl::Status RecvMessageReadyLocked(
+      SubchannelStreamClient* client,
+      absl::string_view serialized_message) override {
+    BackendMetricAllocator allocator;
+    auto* backend_metric_data =
+        ParseBackendMetricData(serialized_message, &allocator);
+    if (backend_metric_data == nullptr) {
+      return absl::InvalidArgumentError("unable to parse Orca response");
     }
-    SetHealthStatusLocked(client, GRPC_CHANNEL_READY, kErrorMessage);
+    producer_->NotifyWatchers(*backend_metric_data);
+    return absl::OkStatus();
   }
-}
 
-absl::StatusOr<bool> OrcaProducer::OrcaStreamEventHandler::DecodeResponse(
-    char* message, size_t size) {
-  // If message is empty, assume unhealthy.
-  if (size == 0) {
-    return absl::InvalidArgumentError("health check response was empty");
+  void RecvTrailingMetadataReadyLocked(SubchannelStreamClient* client,
+                                       grpc_status_code status) override {
+    if (status == GRPC_STATUS_UNIMPLEMENTED) {
+      gpr_log(GPR_ERROR, "Orca stream returned UNIMPLEMENTED; disabling");
+    }
   }
-  // Deserialize message.
-  upb::Arena arena;
-  auto* response_struct = grpc_health_v1_HealthCheckResponse_parse(
-      reinterpret_cast<char*>(message), size, arena.ptr());
-  if (response_struct == nullptr) {
-    // Can't parse message; assume unhealthy.
-    return absl::InvalidArgumentError("cannot parse health check response");
-  }
-  int32_t status = grpc_health_v1_HealthCheckResponse_status(response_struct);
-  return status == grpc_health_v1_HealthCheckResponse_SERVING;
-}
 
-void OrcaProducer::OrcaStreamEventHandler::SetHealthStatusLocked(
-    SubchannelStreamClient* client, grpc_connectivity_state state,
-    const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s",
-            client, ConnectivityStateName(state), reason);
-  }
-  watcher_->Notify(state, state == GRPC_CHANNEL_TRANSIENT_FAILURE
-                              ? absl::UnavailableError(reason)
-                              : absl::Status());
-}
+ private:
+  class BackendMetricAllocator : public BackendMetricAllocatorInterface {
+   public:
+    BackendMetricAllocator() = default;
+
+    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+        AllocateBackendMetricData() override {
+      return &backend_metric_data_;
+    }
+
+    char* AllocateString(size_t size) override {
+      char *string = static_cast<char*>(gpr_malloc(size));
+      string_storage_.emplace_back(string);
+      return string;
+    }
+
+   private:
+    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData
+        backend_metric_data_;
+    std::vector<UniquePtr<char>> string_storage_;
+  };
+
+  WeakRefCountedPtr<OrcaProducer> producer_;
+};
 
 //
 // OrcaProducer
 //
+
+OrcaProducer::OrcaProducer(RefCountedPtr<Subchannel> subchannel)
+    : subchannel_(std::move(subchannel)) {
+  subchannel_->AddDataProducer(this);
+  connected_subchannel_ = subchannel_->connected_subchannel();
+  auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
+  connectivity_watcher_ = connectivity_watcher.get();
+  subchannel_->WatchConnectivityState(
+      connected_subchannel_ == nullptr
+          ? GRPC_CHANNEL_IDLE
+          : GRPC_CHANNEL_READY,
+      /*health_check_service_name=*/absl::nullopt,
+      std::move(connectivity_watcher));
+}
+
+void OrcaProducer::Orphan() {
+  subchannel_->CancelConnectivityStateWatch(
+      /*health_check_service_name=*/absl::nullopt, connectivity_watcher_);
+  subchannel_->RemoveDataProducer(this);
+  stream_client_.reset();
+}
 
 void OrcaProducer::AddWatcher(WeakRefCountedPtr<OrcaWatcher> watcher) {
   MutexLock lock(&mu_);
@@ -243,8 +261,6 @@ void OrcaProducer::AddWatcher(WeakRefCountedPtr<OrcaWatcher> watcher) {
     stream_client_.reset();
     StartStreamLocked();
   }
-// FIXME: need to recreate stream client every time subchannel becomes
-// connected?
 }
 
 void OrcaProducer::RemoveWatcher(OrcaWatcher* watcher) {
@@ -256,6 +272,7 @@ void OrcaProducer::RemoveWatcher(OrcaWatcher* watcher) {
   }
   Duration new_interval = GetMinIntervalLocked();
   if (new_interval < report_interval_) {
+    report_interval_ = new_interval;
     stream_client_.reset();
     StartStreamLocked();
   }
@@ -272,20 +289,49 @@ Duration OrcaProducer::GetMinIntervalLocked() const {
 
 void OrcaProducer::StartStreamLocked() {
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
-      subchannel_->connected_subchannel(), subchannel_->pollset_set(),
+      connected_subchannel_, subchannel_->pollset_set(),
       absl::make_unique<OrcaStreamEventHandler>(WeakRef()),
       GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace)
           ? "OrcaClient"
           : nullptr);
 }
 
+void OrcaProducer::NotifyWatchers(
+    const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
+        backend_metric_data) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace)) {
+    gpr_log(GPR_INFO, "OrcaProducer %p: reporting backend metrics to watchers",
+            this);
+  }
+  MutexLock lock(&mu_);
+  for (const auto& p : watcher_map_) {
+    p.first->watcher()->OnBackendMetricReport(backend_metric_data);
+  }
+}
+
+void OrcaProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
+  MutexLock lock(&mu_);
+  if (state == GRPC_CHANNEL_READY) {
+    connected_subchannel_ = subchannel_->connected_subchannel();
+    if (!watcher_map_.empty()) StartStreamLocked();
+  } else {
+    connected_subchannel_.reset();
+    stream_client_.reset();
+  }
+}
+
 //
 // OrcaWatcher
 //
 
-void OrcaWatcher::SetSubchannel(
-    Subchannel* subchannel, std::shared_ptr<WorkSerializer> work_serializer) {
-  work_serializer_ = std::move(work_serializer);
+void OrcaWatcher::Orphan() {
+  if (producer_ != nullptr) {
+    producer_->RemoveWatcher(this);
+    producer_.reset();
+  }
+}
+
+void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // Check if our producer is already registered with the subchannel.
   // If not, create a new one, which will register itself with the subchannel.
   auto* p =

@@ -195,11 +195,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
     // are expected to return the same string *instance*, not just the
     // same string contents.
     virtual const char* type() = 0;
-
-    virtual void OnConnected(
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel) = 0;
-
-    virtual void OnDisconnected() = 0;
   };
 
   // Creates a subchannel.

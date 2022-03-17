@@ -37,9 +37,7 @@ class SubchannelInterface::DataWatcherInterface
     : public DualRefCounted<SubchannelInterface::DataWatcherInterface> {
  public:
   // Tells the watcher which subchannel to register itself with.
-  virtual void SetSubchannel(
-      Subchannel* subchannel,
-      std::shared_ptr<WorkSerializer> work_serializer) = 0;
+  virtual void SetSubchannel(Subchannel* subchannel) = 0;
 };
 
 }  // namespace grpc_core

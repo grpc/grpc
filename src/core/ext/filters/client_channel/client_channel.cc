@@ -533,7 +533,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   void AddDataWatcher(
       RefCountedPtr<DataWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-    watcher->SetSubchannel(subchannel_.get(), chand_->work_serializer_);
+    watcher->SetSubchannel(subchannel_.get());
     data_watchers_.push_back(std::move(watcher));
   }
 
@@ -2538,17 +2538,33 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     if (lb_call_->backend_metric_data_ == nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
               XEndpointLoadMetricsBinMetadata())) {
-        auto* backend_metric_data = lb_call_->arena_->New<
-            LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
-        if (ParseBackendMetricData(md->as_string_view(), backend_metric_data)) {
-          lb_call_->backend_metric_data_ = backend_metric_data;
-        }
+        BackendMetricAllocator allocator(lb_call_->arena_);
+        lb_call_->backend_metric_data_ =
+            ParseBackendMetricData(md->as_string_view(), &allocator);
       }
     }
     return lb_call_->backend_metric_data_;
   }
 
  private:
+  class BackendMetricAllocator : public BackendMetricAllocatorInterface {
+   public:
+    explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
+
+    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+        AllocateBackendMetricData() override {
+      return arena_->New<
+          LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
+    }
+
+    char* AllocateString(size_t size) override {
+      return static_cast<char*>(arena_->Alloc(size));
+    }
+
+   private:
+    Arena* arena_;
+  };
+
   LoadBalancedCall* lb_call_;
 };
 

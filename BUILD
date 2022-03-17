@@ -2501,6 +2501,7 @@ grpc_cc_library(
         "json",
         "json_util",
         "orphanable",
+        "protobuf_duration_upb",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
