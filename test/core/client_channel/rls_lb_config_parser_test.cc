@@ -36,13 +36,11 @@ namespace {
 class RlsConfigParsingTest : public ::testing::Test {
  public:
   static void SetUpTestSuite() {
-    gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
     grpc_init();
   }
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
-    gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
   }
 };
 
@@ -264,7 +262,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
                   "field:lookupService error:type should be STRING.*"
                   "field:maxAge error:type should be STRING.*"
                   "field:staleAge error:type should be STRING.*"
-                  "field:cacheSizeBytes error:type should be NUMBER.*"
+                  "field:cacheSizeBytes error:failed to parse.*"
                   "field:defaultTarget error:type should be STRING"));
   GRPC_ERROR_UNREF(error);
 }
