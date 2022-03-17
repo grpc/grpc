@@ -7592,7 +7592,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumEchoRpcs = 5;
   // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -7628,7 +7627,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumEchoRpcs = 5;
   // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -7681,7 +7679,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumEchoRpcs = 5;
   // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
