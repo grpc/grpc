@@ -88,7 +88,10 @@ class BaseCallData : public Activity, private Wakeable {
                uint8_t flags);
   ~BaseCallData() override;
 
-  void set_pollent(grpc_polling_entity* pollent) { pollent_ = pollent; }
+  void set_pollent(grpc_polling_entity* pollent) {
+    GPR_ASSERT(nullptr ==
+               pollent_.exchange(pollent, std::memory_order_release));
+  }
 
   // Activity implementation (partial).
   void Orphan() final;
@@ -110,7 +113,8 @@ class BaseCallData : public Activity, private Wakeable {
         : promise_detail::Context<Arena>(call_data->arena_),
           promise_detail::Context<grpc_call_context_element>(
               call_data->context_),
-          promise_detail::Context<grpc_polling_entity>(call_data->pollent_),
+          promise_detail::Context<grpc_polling_entity>(
+              call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_) {
     }
   };
@@ -148,7 +152,7 @@ class BaseCallData : public Activity, private Wakeable {
   const Timestamp deadline_;
   CallFinalization finalization_;
   grpc_call_context_element* const context_;
-  grpc_polling_entity* pollent_ = nullptr;
+  std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Latch<ServerMetadata*>* server_initial_metadata_latch_ = nullptr;
 };
 
