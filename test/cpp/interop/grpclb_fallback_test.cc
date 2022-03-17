@@ -59,17 +59,10 @@ ABSL_FLAG(std::string, induce_fallback_cmd, "exit 1",
           "Shell command to induce fallback, e.g. by unrouting addresses");
 ABSL_FLAG(int, fallback_deadline_seconds, 1,
           "Number of seconds to wait for fallback to occur after inducing it");
-ABSL_FLAG(
-    std::string, test_case, "",
-    "Test case to run. Valid options are:\n\n"
-    "fast_fallback_before_startup : fallback before establishing connection to "
-    "LB;\n"
-    "fast_fallback_after_startup : fallback after startup due to LB/backend "
-    "addresses becoming unroutable;\n"
-    "slow_fallback_before_startup : fallback before startup due to LB address "
-    "being blackholed;\n"
-    "slow_fallback_after_startup : fallback after startup due to LB/backend "
-    "addresses becoming blackholed;\n");
+ABSL_FLAG(std::string, test_case, "",
+          "Test case to run. Valid options are:\n\n"
+          "fallback_before_startup : fallback before making RPCs to backends"
+          "fallback_after_startup : fallback after making RPCs to backends");
 
 #ifdef LINUX_VERSION_CODE
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
@@ -248,7 +241,7 @@ int main(int argc, char** argv) {
   if (absl::GetFlag(FLAGS_test_case) == "fallback_before_startup") {
     DoFallbackBeforeStartupTest();
     gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
-  } else if (absl::GetFlag(FLAGS_test_case) == "fallback_before_startup") {
+  } else if (absl::GetFlag(FLAGS_test_case) == "fallback_after_startup") {
     DoFallbackAfterStartupTest();
     gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
   } else {
