@@ -165,7 +165,7 @@ class ChannelIdleFilter : public ChannelFilter {
   std::shared_ptr<IdleFilterState> idle_filter_state_{
       std::make_shared<IdleFilterState>(false)};
 
-  ActivityPtr activity_;
+  SingleSetActivityPtr activity_;
 };
 
 class ClientIdleFilter final : public ChannelIdleFilter {
@@ -323,7 +323,7 @@ void ChannelIdleFilter::Shutdown() {
   // IncreaseCallCount() introduces a phony call and prevent the timer from
   // being reset by other threads.
   IncreaseCallCount();
-  activity_.reset();
+  activity_.Reset();
 }
 
 void ChannelIdleFilter::IncreaseCallCount() {
@@ -353,10 +353,10 @@ void ChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
-  activity_ = MakeActivity(std::move(promise), ExecCtxWakeupScheduler{},
-                           [channel_stack, this](absl::Status status) {
-                             if (status.ok()) CloseChannel();
-                           });
+  activity_.Set(MakeActivity(std::move(promise), ExecCtxWakeupScheduler{},
+                             [channel_stack, this](absl::Status status) {
+                               if (status.ok()) CloseChannel();
+                             }));
 }
 
 void ChannelIdleFilter::CloseChannel() {

@@ -35,9 +35,9 @@ class SingleSetPtr {
   SingleSetPtr(const SingleSetPtr&) = delete;
   SingleSetPtr& operator=(const SingleSetPtr&) = delete;
   SingleSetPtr(SingleSetPtr&& other) noexcept
-      : p_(other.p_.exchange(sentinel())) {}
+      : p_(other.p_.exchange(nullptr)) {}
   SingleSetPtr& operator=(SingleSetPtr&& other) noexcept {
-    Set(other.p_.exchange(sentinel(), std::memory_order_acq_rel));
+    Set(other.p_.exchange(nullptr, std::memory_order_acq_rel));
     return *this;
   }
 
@@ -49,7 +49,7 @@ class SingleSetPtr {
     if (!p_.compare_exchange_strong(expected, ptr, std::memory_order_acq_rel,
                                     std::memory_order_acquire)) {
       Delete(ptr);
-      return expected == sentinel() ? nullptr : expected;
+      return expected;
     }
     return ptr;
   }
@@ -58,17 +58,16 @@ class SingleSetPtr {
   // above.
   T* Set(std::unique_ptr<T, Deleter> ptr) { return Set(ptr.release()); }
 
-  // Clear the pointer. Cannot be set again.
-  void Reset() { Delete(p_.exchange(sentinel(), std::memory_order_acq_rel)); }
+  // Clear the pointer.
+  void Reset() { Delete(p_.exchange(nullptr, std::memory_order_acq_rel)); }
 
   bool is_set() const {
     T* p = p_.load(std::memory_order_acquire);
-    return p != nullptr && p != sentinel();
+    return p != nullptr;
   }
 
   T* operator->() const {
     T* p = p_.load(std::memory_order_acquire);
-    GPR_DEBUG_ASSERT(p != sentinel());
     GPR_DEBUG_ASSERT(p != nullptr);
     return p;
   }
@@ -76,9 +75,8 @@ class SingleSetPtr {
   T& operator*() const { return *operator->(); }
 
  private:
-  static T* sentinel() { return reinterpret_cast<T*>(1); }
   static void Delete(T* p) {
-    if (p == sentinel() || p == nullptr) return;
+    if (p == nullptr) return;
     Deleter()(p);
   }
   std::atomic<T*> p_{nullptr};
