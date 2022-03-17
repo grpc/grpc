@@ -35,13 +35,9 @@ namespace {
 
 class RlsConfigParsingTest : public ::testing::Test {
  public:
-  static void SetUpTestSuite() {
-    grpc_init();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestSuite() {
-    grpc_shutdown_blocking();
-  }
+  static void TearDownTestSuite() { grpc_shutdown_blocking(); }
 };
 
 TEST_F(RlsConfigParsingTest, ValidConfig) {
