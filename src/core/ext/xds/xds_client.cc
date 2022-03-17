@@ -177,7 +177,8 @@ class XdsClient::ChannelState::AdsCallState
   XdsClient* xds_client() const { return chand()->xds_client(); }
   bool seen_response() const { return seen_response_; }
 
-  void SubscribeLocked(const XdsResourceType* type, const XdsResourceName& name)
+  void SubscribeLocked(const XdsResourceType* type, const XdsResourceName& name,
+                       bool delay_send)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
   void UnsubscribeLocked(const XdsResourceType* type,
                          const XdsResourceName& name, bool delay_unsubscription)
@@ -637,7 +638,7 @@ void XdsClient::ChannelState::SubscribeLocked(const XdsResourceType* type,
   // because when the call is restarted it will resend all necessary requests.
   if (ads_calld() == nullptr) return;
   // Subscribe to this resource if the ADS call is active.
-  ads_calld()->SubscribeLocked(type, name);
+  ads_calld()->SubscribeLocked(type, name, /*delay_send=*/false);
 }
 
 void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
@@ -988,9 +989,12 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
       const XdsResourceType* type = t.first;
       for (const auto& r : t.second) {
         const XdsResourceKey& resource_key = r.first;
-        SubscribeLocked(type, {authority, resource_key});
+        SubscribeLocked(type, {authority, resource_key}, /*delay_send=*/true);
       }
     }
+  }
+  for (const auto& p : state_map_) {
+    SendMessageLocked(p.first);
   }
   // Op: recv initial metadata.
   op = ops;
@@ -1106,11 +1110,11 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
 }
 
 void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
-    const XdsResourceType* type, const XdsResourceName& name) {
+    const XdsResourceType* type, const XdsResourceName& name, bool delay_send) {
   auto& state = state_map_[type].subscribed_resources[name.authority][name.key];
   if (state == nullptr) {
     state = MakeOrphanable<ResourceTimer>(type, name);
-    SendMessageLocked(type);
+    if (!delay_send) SendMessageLocked(type);
   }
 }
 
