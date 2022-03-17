@@ -79,7 +79,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   return ts;
 }
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
@@ -755,6 +755,7 @@ static grpc_channel_credentials* ReadChannelCreds(
 }
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
+  gpr_now_impl = now_impl;
   grpc_test_only_set_slice_hash_seed(0);
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
