@@ -64,20 +64,22 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 // global state
 
 static gpr_timespec g_now;
+static grpc_core::Mutex g_now_mu;
 static grpc_server* g_server;
 static grpc_channel* g_channel;
 static grpc_resource_quota* g_resource_quota;
 static std::vector<grpc_passthru_endpoint_channel_action> g_channel_actions;
 static std::atomic<bool> g_channel_force_delete{false};
 
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
-
 static gpr_timespec now_impl(gpr_clock_type clock_type) {
+  grpc_core::MutexLock lock(&g_now_mu);
   GPR_ASSERT(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;
 }
+
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type) = now_impl;
 
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
@@ -758,9 +760,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
-  g_now = {1, 0, GPR_CLOCK_MONOTONIC};
-  grpc_core::TestOnlySetProcessEpoch(g_now);
-  gpr_now_impl = now_impl;
+  {
+    grpc_core::MutexLock lock(&g_now_mu);
+    g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+    grpc_core::TestOnlySetProcessEpoch(g_now);
+  }
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
@@ -827,11 +831,14 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
         call->Shutdown();
       }
 
-      g_now = gpr_time_add(
-          g_now,
-          gpr_time_from_seconds(
-              std::max<int64_t>(1, static_cast<int64_t>(kMaxWaitMs / 1000)),
-              GPR_TIMESPAN));
+      {
+        grpc_core::MutexLock lock(&g_now_mu);
+        g_now = gpr_time_add(
+            g_now,
+            gpr_time_from_seconds(
+                std::max<int64_t>(1, static_cast<int64_t>(kMaxWaitMs / 1000)),
+                GPR_TIMESPAN));
+      }
       grpc_timer_manager_tick();
       GPR_ASSERT(!poll_cq());
       continue;
@@ -858,11 +865,14 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
       }
       // increment global time
       case api_fuzzer::Action::kAdvanceTime: {
-        g_now = gpr_time_add(
-            g_now, gpr_time_from_micros(
-                       std::min(static_cast<uint64_t>(action.advance_time()),
-                                kMaxAdvanceTimeMicros),
-                       GPR_TIMESPAN));
+        {
+          grpc_core::MutexLock lock(&g_now_mu);
+          g_now = gpr_time_add(
+              g_now, gpr_time_from_micros(
+                         std::min(static_cast<uint64_t>(action.advance_time()),
+                                  kMaxAdvanceTimeMicros),
+                         GPR_TIMESPAN));
+        }
         break;
       }
       // create an insecure channel
