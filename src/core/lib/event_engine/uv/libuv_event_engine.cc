@@ -367,20 +367,17 @@ EventEngine::TaskHandle LibuvEventEngine::RunAt(absl::Time when,
 }
 
 bool LibuvEventEngine::Cancel(EventEngine::TaskHandle handle) {
+  // Note that the handle may be invalid, or point to a destroyed object
   if (shut_down_.load(std::memory_order_relaxed)) {
     gpr_log(GPR_ERROR, "Invalid usage: engine is already shutting down.");
     GPR_ASSERT(false && "Crashing to avoid UB");
   }
   Promise<bool> will_be_cancelled;
   RunInLibuvThread([&handle, &will_be_cancelled](LibuvEventEngine* engine) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, attempting %s", engine,
-              LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
-    }
     if (!engine->uv_state_->task_set.contains(handle)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_DEBUG, "LibuvEventEnginE@%p::Cancel, %s not found", engine,
-                LibuvTask::Handle::Accessor::Task(handle)->ToString().c_str());
+                LibuvTask::Handle::Accessor::ToString(handle).c_str());
       }
       will_be_cancelled.Notify(false);
       return;

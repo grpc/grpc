@@ -99,6 +99,11 @@ class LibuvEventEngine final : public EventEngine {
         static intptr_t Tag(const EventEngine::TaskHandle& handle) {
           return handle.keys[1];
         }
+        static std::string ToString(const EventEngine::TaskHandle& handle) {
+          return absl::StrFormat("EventEngine::TaskHandle@{%" PRIdPTR
+                                 ", %" PRIdPTR "}",
+                                 handle.keys[0], handle.keys[1]);
+        }
       };
       // Custom hashing for EventEngine::TaskHandle comparison in absl
       // containers.
@@ -173,7 +178,8 @@ class LibuvEventEngine final : public EventEngine {
       return {reinterpret_cast<intptr_t>(this), handle_tag_};
     }
     std::string ToString() const {
-      return absl::StrFormat("{%p, %" PRIdPTR "}", this, handle_tag_);
+      return absl::StrFormat("LibuvTaskHandle@{%p, %" PRIdPTR "}", this,
+                             handle_tag_);
     }
 
    private:
