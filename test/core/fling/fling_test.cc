@@ -69,6 +69,8 @@ int main(int /*argc*/, const char** argv) {
   /* wait for completion */
   printf("waiting for client\n");
   if ((status = gpr_subprocess_join(cli))) {
+    // TODO(hork): delete debug logging
+    printf(" - subprocess join failed. Status: %d", status);
     gpr_subprocess_destroy(cli);
     gpr_subprocess_destroy(svr);
     return status;
@@ -77,6 +79,8 @@ int main(int /*argc*/, const char** argv) {
 
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);
+  // TODO(hork): delete debug logging
+  printf(" - subprocess server joined. Status: %d", status);
   gpr_subprocess_destroy(svr);
   return status;
 }
