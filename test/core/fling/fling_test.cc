@@ -24,12 +24,14 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
 int main(int /*argc*/, const char** argv) {
+  gpr_log_verbosity_init();
   const char* me = argv[0];
   const char* lslash = strrchr(me, '/');
   char root[1024];
@@ -70,7 +72,7 @@ int main(int /*argc*/, const char** argv) {
   printf("waiting for client\n");
   if ((status = gpr_subprocess_join(cli))) {
     // TODO(hork): delete debug logging
-    printf(" - subprocess join failed. Status: %d", status);
+    printf(" - subprocess join failed. Status: %d\n", status);
     gpr_subprocess_destroy(cli);
     gpr_subprocess_destroy(svr);
     return status;
@@ -80,7 +82,7 @@ int main(int /*argc*/, const char** argv) {
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);
   // TODO(hork): delete debug logging
-  printf(" - subprocess server joined. Status: %d", status);
+  printf(" - subprocess server joined. Status: %d\n", status);
   gpr_subprocess_destroy(svr);
   return status;
 }
