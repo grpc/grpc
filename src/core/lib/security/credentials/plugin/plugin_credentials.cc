@@ -60,6 +60,8 @@ std::string grpc_plugin_credentials::debug_string() {
   return debug_str;
 }
 
+const char* grpc_plugin_credentials::type() const { return "Plugin"; }
+
 absl::StatusOr<grpc_core::ClientMetadataHandle>
 grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
     const grpc_metadata* md, size_t num_md, grpc_status_code status,
@@ -197,7 +199,7 @@ grpc_plugin_credentials::GetRequestMetadata(
 grpc_plugin_credentials::grpc_plugin_credentials(
     grpc_metadata_credentials_plugin plugin,
     grpc_security_level min_security_level)
-    : grpc_call_credentials(plugin.type, min_security_level), plugin_(plugin) {}
+    : grpc_call_credentials(min_security_level), plugin_(plugin) {}
 
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin,
