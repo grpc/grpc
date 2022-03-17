@@ -2444,6 +2444,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/def.hpp )
   s.files += %w( third_party/upb/upb/encode.c )
   s.files += %w( third_party/upb/upb/encode.h )
+  s.files += %w( third_party/upb/upb/json_encode.c )
+  s.files += %w( third_party/upb/upb/json_encode.h )
   s.files += %w( third_party/upb/upb/msg.c )
   s.files += %w( third_party/upb/upb/msg.h )
   s.files += %w( third_party/upb/upb/msg_internal.h )
