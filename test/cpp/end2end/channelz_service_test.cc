@@ -139,12 +139,6 @@ std::string ReadFile(const char* file_path) {
   return file_contents;
 }
 
-grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
-                                                  const char* cert_path) {
-  return grpc_core::PemKeyCertPairList{
-      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
-}
-
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
     CredentialsType type, ChannelArguments* args) {
   if (type == CredentialsType::kInsecure) {

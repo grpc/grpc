@@ -1769,6 +1769,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     deps = [
         "gpr_platform",
     ],
@@ -2423,12 +2426,18 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
+        "avl",
         "channel_stack_type",
         "gpr_base",
         "grpc_codegen",
+        "match",
+        "ref_counted",
+        "ref_counted_ptr",
         "useful",
     ],
 )
@@ -3771,6 +3780,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
     ],
     hdrs = [
+        "src/core/lib/security/credentials/insecure/insecure_credentials.h",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",
     ],
     language = "c++",
@@ -4601,6 +4611,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_insecure_credentials",
         "grpc_resolver",
         "grpc_security_base",
         "grpc_transport_chttp2",
@@ -4629,6 +4640,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_http_filters",
+        "grpc_insecure_credentials",
         "grpc_security_base",
         "grpc_transport_chttp2",
         "memory_quota",
