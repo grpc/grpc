@@ -20,8 +20,6 @@
 
 // IWYU pragma: private, include <grpcpp/support/sync_stream.h>
 
-#include "call_op_set.h"
-
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
