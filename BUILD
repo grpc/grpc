@@ -2610,6 +2610,7 @@ grpc_cc_library(
         "grpc_base",
         "idle_filter_state",
         "loop",
+        "single_set_ptr",
         "sleep",
         "try_seq",
     ],

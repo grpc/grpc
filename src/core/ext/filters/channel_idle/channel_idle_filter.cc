@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/capture.h"
+#include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -66,6 +67,9 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
   } while (0)
 
 namespace {
+
+using SingleSetActivityPtr =
+    SingleSetPtr<Activity, typename ActivityPtr::deleter_type>;
 
 Duration GetClientIdleTimeout(const grpc_channel_args* args) {
   int ms = std::max(
@@ -205,7 +209,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
 
   void Shutdown() override;
 
-  ActivityPtr max_age_activity_;
+  SingleSetActivityPtr max_age_activity_;
   Duration max_connection_age_;
   Duration max_connection_age_grace_;
 };
@@ -225,7 +229,7 @@ absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
 }
 
 void MaxAgeFilter::Shutdown() {
-  max_age_activity_.reset();
+  max_age_activity_.Reset();
   ChannelIdleFilter::Shutdown();
 }
 
@@ -258,7 +262,7 @@ void MaxAgeFilter::Start() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
-    max_age_activity_ = MakeActivity(
+    max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
             Sleep(ExecCtx::Get()->Now() + max_connection_age_),
@@ -293,7 +297,7 @@ void MaxAgeFilter::Start() {
           // successfully.
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
-        });
+        }));
   }
 }
 

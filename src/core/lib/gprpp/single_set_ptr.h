@@ -28,6 +28,8 @@ template <class T, class Deleter = std::default_delete<T>>
 class SingleSetPtr {
  public:
   SingleSetPtr() = default;
+  explicit SingleSetPtr(T* p) : p_{p} {}
+  explicit SingleSetPtr(std::unique_ptr<T, Deleter> p) : p_{p.release()} {}
   ~SingleSetPtr() { Delete(p_.load(std::memory_order_relaxed)); }
 
   SingleSetPtr(const SingleSetPtr&) = delete;
@@ -51,6 +53,10 @@ class SingleSetPtr {
     }
     return ptr;
   }
+
+  // Set the pointer from a compatible unique_ptr - with the same caveats as
+  // above.
+  T* Set(std::unique_ptr<T, Deleter> ptr) { return Set(ptr.release()); }
 
   // Clear the pointer. Cannot be set again.
   void Reset() { Delete(p_.exchange(sentinel(), std::memory_order_acq_rel)); }
