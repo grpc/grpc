@@ -58,12 +58,6 @@ def if_windows(a):
         "//conditions:default": [],
     })
 
-def if_mac(a):
-    return select({
-        "//:mac_x86_64": a,
-        "//conditions:default": [],
-    })
-
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
@@ -138,7 +132,6 @@ def grpc_cc_library(
         visibility = None,
         alwayslink = 0,
         data = [],
-        use_cfstream = False,
         tags = [],
         linkstatic = False):
     """An internal wrapper around cc_library.
@@ -158,19 +151,14 @@ def grpc_cc_library(
       visibility: The visibility of the target.
       alwayslink: Whether to enable alwayslink on the cc_library.
       data: Data dependencies.
-      use_cfstream: Whether to use cfstream.
       tags: Tags to apply to the rule.
       linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)
     copts = []
-    if use_cfstream:
-        copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
     linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
-    if use_cfstream:
-        linkopts = linkopts + if_mac(["-framework CoreFoundation"])
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
@@ -303,7 +291,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_event_engine: set to False if grpc::testing::TestEnvironment is not called.
     """
-    copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
