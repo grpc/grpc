@@ -1012,6 +1012,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/overload.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
+  s.files += %w( src/core/lib/gprpp/single_set_ptr.h )
   s.files += %w( src/core/lib/gprpp/stat.h )
   s.files += %w( src/core/lib/gprpp/stat_posix.cc )
   s.files += %w( src/core/lib/gprpp/stat_windows.cc )
