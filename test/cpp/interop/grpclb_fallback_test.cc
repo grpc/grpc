@@ -55,9 +55,9 @@
 ABSL_FLAG(std::string, custom_credentials_type, "",
           "User provided credentials type.");
 ABSL_FLAG(std::string, server_uri, "localhost:1000", "Server URI target");
-ABSL_FLAG(std::string, FLAGS_induce_fallback_cmd, "exit 1",
+ABSL_FLAG(std::string, induce_fallback_cmd, "exit 1",
           "Shell command to induce fallback, e.g. by unrouting addresses");
-ABSL_FLAG(int, FLAGS_fallback_deadline_seconds, 1,
+ABSL_FLAG(int, fallback_deadline_seconds, 1,
           "Number of seconds to wait for fallback to occur after inducing it");
 ABSL_FLAG(
     std::string, test_case, "",
@@ -194,7 +194,7 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   absl::Time fallback_deadline =
       absl::Now() + absl::Seconds(FLAGS_fallback_deadline_seconds);
   while (absl::Now() < fallback_deadline) {
-    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 1);
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 1);
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
       gpr_log(GPR_ERROR,
               "Got grpclb route type backend. Backends are "
@@ -212,7 +212,7 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
     fallback_retry_count++;
   }
   for (int i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 20);
     GPR_ASSERT(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
