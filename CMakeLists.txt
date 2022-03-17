@@ -1676,6 +1676,7 @@ add_library(grpc
   src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
   src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
@@ -2481,6 +2482,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc

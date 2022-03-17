@@ -534,6 +534,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
@@ -1207,6 +1208,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
@@ -1875,6 +1877,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -2199,6 +2202,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc

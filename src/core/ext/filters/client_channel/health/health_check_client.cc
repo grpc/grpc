@@ -32,11 +32,6 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
-#define HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS 1
-#define HEALTH_CHECK_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS 120
-#define HEALTH_CHECK_RECONNECT_JITTER 0.2
-
 namespace grpc_core {
 
 TraceFlag grpc_health_check_client_trace(false, "health_check_client");

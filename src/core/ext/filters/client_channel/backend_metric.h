@@ -19,19 +19,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice.h>
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
-// Parses the serialized load report and allocates a BackendMetricData
-// object on the arena.
-const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-ParseBackendMetricData(const Slice& serialized_load_report, Arena* arena);
+// Parses the serialized load report and populates out.
+// Returns false on error.
+bool ParseBackendMetricData(
+    absl::string_view serialized_load_report,
+    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData* out);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKEND_METRIC_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKEND_METRIC_H

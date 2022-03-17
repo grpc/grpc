@@ -573,6 +573,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c )

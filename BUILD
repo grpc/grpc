@@ -2510,6 +2510,7 @@ grpc_cc_library(
         "uri_parser",
         "useful",
         "xds_orca_upb",
+        "xds_orca_service_upb",
     ],
 )
 
@@ -5301,6 +5302,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_orca_service_upb",
+    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(

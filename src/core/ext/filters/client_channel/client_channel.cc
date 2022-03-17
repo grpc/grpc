@@ -2538,8 +2538,11 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     if (lb_call_->backend_metric_data_ == nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
               XEndpointLoadMetricsBinMetadata())) {
-        lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(*md, lb_call_->arena_);
+        auto* backend_metric_data = lb_call_->arena_->New<
+            LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
+        if (ParseBackendMetricData(md->as_string_view(), backend_metric_data)) {
+          lb_call_->backend_metric_data_ = backend_metric_data;
+        }
       }
     }
     return lb_call_->backend_metric_data_;
