@@ -2073,7 +2073,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
-        "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",

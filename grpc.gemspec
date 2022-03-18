@@ -1153,7 +1153,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/socket_utils_windows.cc )
   s.files += %w( src/core/lib/iomgr/socket_windows.cc )
   s.files += %w( src/core/lib/iomgr/socket_windows.h )
-  s.files += %w( src/core/lib/iomgr/sys_epoll_wrapper.h )
   s.files += %w( src/core/lib/iomgr/tcp_client.cc )
   s.files += %w( src/core/lib/iomgr/tcp_client.h )
   s.files += %w( src/core/lib/iomgr/tcp_client_cfstream.cc )
