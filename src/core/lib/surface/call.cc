@@ -300,10 +300,10 @@ class FilterStackCall final : public Call {
   static void ReleaseCall(void* call, grpc_error_handle);
   static void DestroyCall(void* call, grpc_error_handle);
 
-  static Call* FromCallStack(grpc_call_stack* call_stack) {
-    return reinterpret_cast<Call*>(
+  static FilterStackCall* FromCallStack(grpc_call_stack* call_stack) {
+    return reinterpret_cast<FilterStackCall*>(
         reinterpret_cast<char*>(call_stack) -
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)));
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)));
   }
 
   void ExecuteBatch(grpc_transport_stream_op_batch* batch,
@@ -516,14 +516,16 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       grpc_channel_get_channel_stack(args->channel);
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
-  size_t call_alloc_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)) +
-                           channel_stack->call_stack_size;
+  size_t call_alloc_size =
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
+      channel_stack->call_stack_size;
 
   std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
       initial_size, call_alloc_size, &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) FilterStackCall(arena, *args);
   GPR_DEBUG_ASSERT(FromC(call->c_ptr()) == call);
+  GPR_DEBUG_ASSERT(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
   if (call->is_client()) {
