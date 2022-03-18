@@ -30,7 +30,7 @@ TEST_DECLARE(getsockname_udp)
 #define TASK_LIST_START_LOCAL static task_entry_t TEST_TASKS[] = {
 TASK_LIST_START_LOCAL
 TEST_ENTRY(getsockname_tcp)
-TEST_ENTRY(getsockname_udp)
+//TEST_ENTRY(getsockname_udp)
 TASK_LIST_END
 
 @interface LibuvGetSockNameTests : XCTestCase
