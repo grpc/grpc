@@ -155,6 +155,12 @@ gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
 }
 
 std::string Timestamp::ToString() const {
+  if (millis_ == std::numeric_limits<int64_t>::max()) {
+    return "@∞";
+  }
+  if (millis_ == std::numeric_limits<int64_t>::min()) {
+    return "@-∞";
+  }
   return "@" + std::to_string(millis_) + "ms";
 }
 
@@ -167,6 +173,12 @@ Duration Duration::FromTimespec(gpr_timespec t) {
 }
 
 std::string Duration::ToString() const {
+  if (millis_ == std::numeric_limits<int64_t>::max()) {
+    return "∞";
+  }
+  if (millis_ == std::numeric_limits<int64_t>::min()) {
+    return "-∞";
+  }
   return std::to_string(millis_) + "ms";
 }
 
