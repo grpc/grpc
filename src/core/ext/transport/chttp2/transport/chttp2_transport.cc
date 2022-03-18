@@ -1768,7 +1768,7 @@ namespace {
 // that a connection can be cleanly shut down without losing requests.
 // In the event, that the client does not respond to the ping for some reason,
 // we add a 20 second deadline, after which we send the second goaway.
-class GracefulGoaway : public grpc_core::InternallyRefCounted<GracefulGoaway> {
+class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
  public:
   static void Start(grpc_chttp2_transport* t) { new GracefulGoaway(t); }
 
@@ -1790,9 +1790,6 @@ class GracefulGoaway : public grpc_core::InternallyRefCounted<GracefulGoaway> {
         grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(20),
         GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr));
   }
-
-  // Unused
-  void Orphan() override { GPR_ASSERT(0); }
 
   void MaybeSendFinalGoawayLocked() {
     if (t_->sent_goaway_state != GRPC_CHTTP2_GRACEFUL_GOAWAY) {
