@@ -152,9 +152,6 @@ httpcli_ssl_channel_security_connector_create(
 
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
-  HttpRequestSSLCredentials() : grpc_channel_credentials("HttpRequestSSL") {}
-  ~HttpRequestSSLCredentials() override {}
-
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
       const grpc_channel_args* args,
@@ -183,6 +180,8 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   grpc_channel_args* update_arguments(grpc_channel_args* args) override {
     return args;
   }
+
+  const char* type() const override { return "HttpRequestSSL"; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {
