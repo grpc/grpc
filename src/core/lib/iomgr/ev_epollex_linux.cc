@@ -1404,7 +1404,17 @@ static void pollset_set_del_pollset(grpc_pollset_set* pss, grpc_pollset* ps) {
       break;
     }
   }
-  GPR_ASSERT(i != pss->pollset_count);
+  if (i == pss->pollset_count) {
+    gpr_log(GPR_ERROR,
+            "pollset_set_del_pollset: could not find pollset %p. "
+            "This should only happen if we failed to add it previously "
+            "e.g. because we hit the process's file descriptor limit, "
+            "check for an error log containing 'pollset_set_add_pollset' "
+            "to see if that's the case",
+            ps);
+    gpr_mu_unlock(&pss->mu);
+    return;
+  }
   for (; i < pss->pollset_count - 1; i++) {
     pss->pollsets[i] = pss->pollsets[i + 1];
   }
