@@ -27,13 +27,12 @@ namespace testing {
 using RlsService =
     CountedService<grpc::lookup::v1::RouteLookupService::Service>;
 
-using ContextProcessingFunc = std::function<void(grpc::ServerContext*)>;
-
 class RlsServiceImpl : public RlsService {
  public:
-  explicit RlsServiceImpl(
-      absl::optional<ContextProcessingFunc> context_proc = absl::nullopt)
-      : context_proc_(context_proc) {}
+  using ContextProcessingFunc = std::function<void(grpc::ServerContext*)>;
+
+  explicit RlsServiceImpl(ContextProcessingFunc context_proc = nullptr)
+      : context_proc_(std::move(context_proc)) {}
 
   grpc::Status RouteLookup(
       grpc::ServerContext* context,
@@ -73,7 +72,7 @@ class RlsServiceImpl : public RlsService {
     grpc_core::Duration response_delay;
   };
 
-  absl::optional<ContextProcessingFunc> context_proc_;
+  ContextProcessingFunc context_proc_;
   grpc::internal::Mutex mu_;
   std::map<grpc::lookup::v1::RouteLookupRequest, ResponseData,
            RlsRequestLessThan>

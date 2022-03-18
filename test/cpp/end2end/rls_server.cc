@@ -33,8 +33,8 @@ namespace testing {
                                            RouteLookupResponse* response) {
   gpr_log(GPR_INFO, "RLS: Received request: %s",
           request->DebugString().c_str());
-  if (context_proc_ != absl::nullopt) {
-    (*context_proc_)(context);
+  if (context_proc_ != nullptr) {
+    context_proc_(context);
   }
   IncreaseRequestCount();
   EXPECT_EQ(request->target_type(), "grpc");

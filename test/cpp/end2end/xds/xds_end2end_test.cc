@@ -7489,6 +7489,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
 }
 
 class RlsTest : public XdsEnd2endTest {
+ protected:
   class RlsServerThread : public ServerThread {
    public:
     explicit RlsServerThread(XdsEnd2endTest* test_obj)
@@ -7511,7 +7512,6 @@ class RlsTest : public XdsEnd2endTest {
     std::shared_ptr<RlsServiceImpl> rls_service_;
   };
 
- protected:
   RlsTest() : XdsEnd2endTest(4) {
     rls_server_ = absl::make_unique<RlsServerThread>(this);
     rls_server_->Start();
@@ -7631,7 +7631,12 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifier) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksRequiredMatch) {
+TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
+  // TODO(donnadionne): Doug is working on adding a new is_optional field to
+  // ClusterSpecifierPlugin in envoyproxy/envoy#20301. Once that goes in, the
+  // behavior we want in this case is that if is_optional is true, then we
+  // ignore that plugin and ignore any routes that refer to that plugin.
+  // However, if is_optional is false, then we want to NACK.
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -7705,13 +7710,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   balancer_->ads_service()->SetCdsResource(new_cluster);
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
-  rls_server_->rls_service()->SetResponse(
-      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
-                       {kRlsHostKey, kServerName},
-                       {kRlsServiceKey, kRlsServiceValue},
-                       {kRlsMethodKey, kRlsMethodValue},
-                       {kRlsConstantKey, kRlsConstantValue}}),
-      BuildRlsResponse({kNewClusterName}));
   RouteLookupConfig route_lookup_config;
   auto* key_builder = route_lookup_config.add_grpc_keybuilders();
   auto* name = key_builder->add_names();
@@ -7720,12 +7718,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   auto* header = key_builder->add_headers();
   header->set_key(kRlsTestKey);
   header->add_names(kRlsTestKey1);
-  header->add_names("key2");
-  auto* extra_keys = key_builder->mutable_extra_keys();
-  extra_keys->set_host(kRlsHostKey);
-  extra_keys->set_service(kRlsServiceKey);
-  extra_keys->set_method(kRlsMethodKey);
-  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
   route_lookup_config.set_lookup_service(
       absl::StrCat("localhost:", rls_server_->port()));
   route_lookup_config.set_cache_size_bytes(5000);
@@ -7735,15 +7727,17 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   auto* plugin = new_route_config.add_cluster_specifier_plugins();
   plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route->mutable_route()->set_cluster_specifier_plugin(
       kRlsClusterSpecifierPluginInstanceName);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
+  // Ensure we ignore the cluster specifier plugin and send traffic according to
+  // the default route.
+  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
+  WaitForAllBackends(0, 1, WaitForBackendOptions(), rpc_options);
 }
 
 class XdsSecurityTest : public BasicTest {
