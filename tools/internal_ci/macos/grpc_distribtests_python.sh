@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 gRPC authors.
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,10 +21,7 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-export PREPARE_BUILD_INSTALL_DEPS_CSHARP=true
 export PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
-export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
@@ -36,13 +33,21 @@ python3.7 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.8 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.9 -m pip install -U cython setuptools==44.1.1 wheel --user
 
-gem install rubygems-update
-update_rubygems
+# Build all python macos artifacts (this step actually builds all the binary wheels and source archives)
+tools/run_tests/task_runner.py -f artifact macos python ${TASK_RUNNER_EXTRA_FILTERS} -j 4 -x build_artifacts/sponge_log.xml || FAILED="true"
 
-# needed to build ruby artifacts
-time bash tools/distrib/build_ruby_environment_macos.sh
+# the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
+rm -rf input_artifacts
+mkdir -p input_artifacts
+cp -r artifacts/* input_artifacts/ || true
 
-tools/run_tests/task_runner.py -f artifact macos ${TASK_RUNNER_EXTRA_FILTERS} || FAILED="true"
+# Collect the python artifact from subdirectories of input_artifacts/ to artifacts/
+# TODO(jtattermusch): when collecting the artifacts that will later be uploaded as kokoro job artifacts,
+# potentially skip some file names that would clash with linux-created artifacts.
+cp -r input_artifacts/python_*/* artifacts/ || true
+
+# TODO(jtattermusch): Here we would normally run python macos distribtests, but currently no such tests are defined
+# in distribtest_targets.py
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
