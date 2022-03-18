@@ -217,7 +217,7 @@ void CallData::RecvInitialMetadataReady(void* user_data,
     if (calld->error_ != GRPC_ERROR_NONE) {
       calld->error_ = grpc_error_set_int(
           calld->error_, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-          error = calld->error_;  // Does not take a ref
+      error = calld->error_;  // Does not take a ref
     }
   }
   calld->MaybeResumeRecvTrailingMetadataReady();
