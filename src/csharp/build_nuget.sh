@@ -61,6 +61,7 @@ dotnet restore Grpc.sln
 mkdir -p ../../cmake/build
 cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so ../../cmake/build
 cp nativelibs/csharp_ext_macos_x64/libgrpc_csharp_ext.dylib ../../cmake/build
+cp nativelibs/csharp_ext_windows_x64/grpc_csharp_ext.dll ../../cmake/build
 
 dotnet pack --configuration Release Grpc.Core.Api --output ../../artifacts
 dotnet pack --configuration Release Grpc.Core --output ../../artifacts
