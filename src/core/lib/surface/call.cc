@@ -372,8 +372,6 @@ class FilterStackCall final : public Call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-  Timestamp send_deadline_;
-
   ManualConstructor<SliceBufferByteStream> sending_stream_;
 
   OrphanablePtr<ByteStream> receiving_stream_;
@@ -640,7 +638,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
   }
 
   grpc_error_handle status_error = c->status_error_.get();
-  grpc_error_get_status(status_error, c->send_deadline_,
+  grpc_error_get_status(status_error, c->send_deadline(),
                         &c->final_info_.final_status, nullptr, nullptr,
                         &(c->final_info_.error_string));
   c->status_error_.set(GRPC_ERROR_NONE);
@@ -785,7 +783,7 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   }
   if (is_client()) {
     std::string status_details;
-    grpc_error_get_status(error, send_deadline_, final_op_.client.status,
+    grpc_error_get_status(error, send_deadline(), final_op_.client.status,
                           &status_details, nullptr,
                           final_op_.client.error_string);
     *final_op_.client.status_details =
@@ -1281,7 +1279,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
-      call_->send_deadline_ = *deadline;
+      call_->send_deadline() = *deadline;
     }
   } else {
     if (batch_error_.ok()) {
@@ -1459,8 +1457,8 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         // Ignore any te metadata key value pairs specified.
         send_initial_metadata_.Remove(TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
-        if (is_client() && send_deadline_ != Timestamp::InfFuture()) {
-          send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline_);
+        if (is_client() && send_deadline() != Timestamp::InfFuture()) {
+          send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
