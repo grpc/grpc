@@ -7640,7 +7640,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumEchoRpcs = 5;
   // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
