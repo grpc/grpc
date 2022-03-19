@@ -97,11 +97,11 @@ if args.diff_base:
 
 text = ''
 if old is None:
-    for key, value in cur.items():
+    for key, value in sorted(cur.items()):
         text += '{}: {}\n'.format(key, value)
 else:
     diff_size = 0
-    for key, value in _INTERESTING.items():
+    for key, value in sorted(_INTERESTING.items()):
         if key in cur:
             if key not in old:
                 text += '{}: {}\n'.format(key, value)
