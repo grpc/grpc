@@ -38,8 +38,8 @@ class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
   size_t peer_identity_len() { return peer_identity_.length(); }
 
   // Construct a promise for one call.
-  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> MakeCallPromise(
-      grpc_core::ClientInitialMetadata initial_metadata,
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
+      grpc_core::CallArgs initial_metadata,
       grpc_core::NextPromiseFactory next_promise_factory) override;
 
  private:

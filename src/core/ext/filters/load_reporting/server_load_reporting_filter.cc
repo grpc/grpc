@@ -76,7 +76,7 @@ absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
 
 namespace {
 std::string GetCensusSafeClientIpString(
-    const grpc_core::ClientInitialMetadata& initial_metadata) {
+    const grpc_core::ClientMetadataHandle& initial_metadata) {
   // Find the client URI string.
   auto client_uri_str = initial_metadata->get(grpc_core::PeerString());
   if (!client_uri_str.has_value()) {
@@ -124,7 +124,7 @@ std::string GetCensusSafeClientIpString(
 
 std::string MakeClientIpAndLrToken(
     absl::string_view lr_token,
-    const grpc_core::ClientInitialMetadata& initial_metadata) {
+    const grpc_core::ClientMetadataHandle& initial_metadata) {
   std::string client_ip = GetCensusSafeClientIpString(initial_metadata);
   absl::string_view prefix;
   switch (client_ip.length()) {
@@ -160,25 +160,28 @@ const char* GetStatusTagForStatus(grpc_status_code status) {
 }
 }  // namespace
 
-grpc_core::ArenaPromise<grpc_core::TrailingMetadata>
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 ServerLoadReportingFilter::MakeCallPromise(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
   grpc_core::Slice service_method;
   if (const grpc_core::Slice* path =
-          initial_metadata->get_pointer(grpc_core::HttpPathMetadata())) {
+          call_args.client_initial_metadata->get_pointer(
+              grpc_core::HttpPathMetadata())) {
     service_method = path->Ref();
   }
   std::string target_host;
   if (const grpc_core::Slice* authority =
-          initial_metadata->get_pointer(grpc_core::HttpAuthorityMetadata())) {
+          call_args.client_initial_metadata->get_pointer(
+              grpc_core::HttpAuthorityMetadata())) {
     target_host = absl::AsciiStrToLower(authority->as_string_view());
   }
   std::string client_ip_and_lr_token;
-  auto lb_token = initial_metadata->Take(grpc_core::LbTokenMetadata())
-                      .value_or(grpc_core::Slice());
-  client_ip_and_lr_token =
-      MakeClientIpAndLrToken(lb_token.as_string_view(), initial_metadata);
+  auto lb_token =
+      call_args.client_initial_metadata->Take(grpc_core::LbTokenMetadata())
+          .value_or(grpc_core::Slice());
+  client_ip_and_lr_token = MakeClientIpAndLrToken(
+      lb_token.as_string_view(), call_args.client_initial_metadata);
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureStartCount(), 1}},
       {{::grpc::load_reporter::TagKeyToken(),
@@ -187,41 +190,19 @@ ServerLoadReportingFilter::MakeCallPromise(
         {target_host.data(), target_host.length()}},
        {::grpc::load_reporter::TagKeyUserId(),
         {peer_identity_.data(), peer_identity_.length()}}});
-  return grpc_core::ArenaPromise<grpc_core::TrailingMetadata>(grpc_core::Seq(
-      // Call down the stack
-      next_promise_factory(std::move(initial_metadata)),
-      // And then record the call result
-      [this, client_ip_and_lr_token,
-       target_host](grpc_core::TrailingMetadata trailing_metadata) {
-        const auto& costs =
-            trailing_metadata->Take(grpc_core::LbCostBinMetadata());
-        for (const auto& cost : costs) {
-          opencensus::stats::Record(
-              {{::grpc::load_reporter::MeasureOtherCallMetric(), cost.cost}},
-              {{::grpc::load_reporter::TagKeyToken(),
-                {client_ip_and_lr_token.data(),
-                 client_ip_and_lr_token.length()}},
-               {::grpc::load_reporter::TagKeyHost(),
-                {target_host.data(), target_host.length()}},
-               {::grpc::load_reporter::TagKeyUserId(),
-                {peer_identity_.data(), peer_identity_.length()}},
-               {::grpc::load_reporter::TagKeyMetricName(),
-                {cost.name.data(), cost.name.length()}}});
-        }
-        grpc_core::GetContext<grpc_core::CallFinalization>()->Add(
-            [this, client_ip_and_lr_token,
-             target_host](const grpc_call_final_info* final_info) {
-              if (final_info == nullptr) return;
+  return grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>(
+      grpc_core::Seq(
+          // Call down the stack
+          next_promise_factory(std::move(call_args)),
+          // And then record the call result
+          [this, client_ip_and_lr_token,
+           target_host](grpc_core::ServerMetadataHandle trailing_metadata) {
+            const auto& costs =
+                trailing_metadata->Take(grpc_core::LbCostBinMetadata());
+            for (const auto& cost : costs) {
               opencensus::stats::Record(
-                  {{::grpc::load_reporter::MeasureEndCount(), 1},
-                   {::grpc::load_reporter::MeasureEndBytesSent(),
-                    final_info->stats.transport_stream_stats.outgoing
-                        .data_bytes},
-                   {::grpc::load_reporter::MeasureEndBytesReceived(),
-                    final_info->stats.transport_stream_stats.incoming
-                        .data_bytes},
-                   {::grpc::load_reporter::MeasureEndLatencyMs(),
-                    gpr_time_to_millis(final_info->stats.latency)}},
+                  {{::grpc::load_reporter::MeasureOtherCallMetric(),
+                    cost.cost}},
                   {{::grpc::load_reporter::TagKeyToken(),
                     {client_ip_and_lr_token.data(),
                      client_ip_and_lr_token.length()}},
@@ -229,11 +210,35 @@ ServerLoadReportingFilter::MakeCallPromise(
                     {target_host.data(), target_host.length()}},
                    {::grpc::load_reporter::TagKeyUserId(),
                     {peer_identity_.data(), peer_identity_.length()}},
-                   {::grpc::load_reporter::TagKeyStatus(),
-                    GetStatusTagForStatus(final_info->final_status)}});
-            });
-        return grpc_core::Immediate(std::move(trailing_metadata));
-      }));
+                   {::grpc::load_reporter::TagKeyMetricName(),
+                    {cost.name.data(), cost.name.length()}}});
+            }
+            grpc_core::GetContext<grpc_core::CallFinalization>()->Add(
+                [this, client_ip_and_lr_token,
+                 target_host](const grpc_call_final_info* final_info) {
+                  if (final_info == nullptr) return;
+                  opencensus::stats::Record(
+                      {{::grpc::load_reporter::MeasureEndCount(), 1},
+                       {::grpc::load_reporter::MeasureEndBytesSent(),
+                        final_info->stats.transport_stream_stats.outgoing
+                            .data_bytes},
+                       {::grpc::load_reporter::MeasureEndBytesReceived(),
+                        final_info->stats.transport_stream_stats.incoming
+                            .data_bytes},
+                       {::grpc::load_reporter::MeasureEndLatencyMs(),
+                        gpr_time_to_millis(final_info->stats.latency)}},
+                      {{::grpc::load_reporter::TagKeyToken(),
+                        {client_ip_and_lr_token.data(),
+                         client_ip_and_lr_token.length()}},
+                       {::grpc::load_reporter::TagKeyHost(),
+                        {target_host.data(), target_host.length()}},
+                       {::grpc::load_reporter::TagKeyUserId(),
+                        {peer_identity_.data(), peer_identity_.length()}},
+                       {::grpc::load_reporter::TagKeyStatus(),
+                        GetStatusTagForStatus(final_info->final_status)}});
+                });
+            return grpc_core::Immediate(std::move(trailing_metadata));
+          }));
 }
 
 namespace {
