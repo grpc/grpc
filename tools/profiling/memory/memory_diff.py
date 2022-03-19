@@ -70,6 +70,7 @@ def _run():
                 '--benchmark=50000',
             ] + extra_args)
         except subprocess.CalledProcessError as e:
+            print('Error running benchmark:', e)
             continue
         for line in output.splitlines():
             for key, (pattern, conversion) in _INTERESTING.items():
