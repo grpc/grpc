@@ -101,7 +101,7 @@ if old is None:
     for key, value in sorted(cur.items()):
         text += '{}: {}\n'.format(key, value)
 else:
-    print (cur, old)
+    print(cur, old)
     diff_size = 0
     for scenario in _SCENARIOS.keys():
         for key, value in sorted(_INTERESTING.items()):
