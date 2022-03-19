@@ -49,6 +49,11 @@ _INTERESTING = {
         (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
 }
 
+_SCENARIOS = {
+    'default': [],
+    'minstack': ['--minstack'],
+}
+
 
 def _run():
     """Build with Bazel, then run, and extract interesting lines from the output."""
@@ -56,17 +61,21 @@ def _run():
         'tools/bazel', 'build', '-c', 'opt',
         'test/core/memory_usage/memory_usage_test'
     ])
-    output = subprocess.check_output([
-        'bazel-bin/test/core/memory_usage/memory_usage_test',
-        '--warmup=10000',
-        '--benchmark=50000',
-    ])
     ret = {}
-    for line in output.splitlines():
-        for key, (pattern, conversion) in _INTERESTING.items():
-            m = re.match(pattern, line)
-            if m:
-                ret[key] = conversion(m.group(1))
+    for scenario, extra_args in _SCENARIOS.items():
+        try:
+            output = subprocess.check_output([
+                'bazel-bin/test/core/memory_usage/memory_usage_test',
+                '--warmup=10000',
+                '--benchmark=50000',
+            ] + extra_args)
+        except subprocess.CalledProcessError as e:
+            continue
+        for line in output.splitlines():
+            for key, (pattern, conversion) in _INTERESTING.items():
+                m = re.match(pattern, line)
+                if m:
+                    ret[scenario + ': ' + key] = conversion(m.group(1))
     return ret
 
 
@@ -97,7 +106,7 @@ else:
             if key not in new:
                 text += '{}: {}\n'.format(key, value)
             else:
-                diff_size += cur[key] - new[key]
+                diff_size += new[key] - cur[key]
                 text += '{}: {} -> {}\n'.format(key, cur[key], new[key])
 
     print("DIFF_SIZE: %f" % diff_size)
