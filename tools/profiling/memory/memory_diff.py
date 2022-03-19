@@ -80,7 +80,7 @@ def _run():
 
 
 cur = _run()
-new = None
+old = None
 
 print(cur)
 
@@ -90,24 +90,24 @@ if args.diff_base:
     # checkout the diff base (="old")
     subprocess.check_call(['git', 'checkout', args.diff_base])
     try:
-        new = _run()
+        old = _run()
     finally:
-        # restore the original revision (="new")
+        # restore the original revision (="cur")
         subprocess.check_call(['git', 'checkout', where_am_i])
 
 text = ''
-if new is None:
+if old is None:
     for key, value in cur.items():
         text += '{}: {}\n'.format(key, value)
 else:
     diff_size = 0
     for key, value in _INTERESTING.items():
         if key in cur:
-            if key not in new:
+            if key not in old:
                 text += '{}: {}\n'.format(key, value)
             else:
-                diff_size += new[key] - cur[key]
-                text += '{}: {} -> {}\n'.format(key, cur[key], new[key])
+                diff_size += cur[key] - old[key]
+                text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
 
     print("DIFF_SIZE: %f" % diff_size)
     check_on_pr.label_increase_decrease_on_pr('per-call-memory', diff_size, 64)
