@@ -17,33 +17,13 @@ package(default_visibility = ["//visibility:public"])
 
 py_test(
     name = "_reflection_servicer_test",
-    size = "small",
+    size = "medium",
     srcs = ["_reflection_servicer_test.py"],
     imports = ["../../"],
     main = "_reflection_servicer_test.py",
     python_version = "PY3",
     deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
-        "//src/proto/grpc/testing/proto2:empty2_extensions_proto",
-        "//src/proto/grpc/testing/proto2:empty2_proto",
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
-        "//src/python/grpcio_tests/tests/unit:test_common",
-        requirement("protobuf"),
-    ],
-)
-
-py_test(
-    name = "_reflection_client_test",
-    size = "small",
-    srcs = ["_reflection_client_test.py"],
-    imports = ["../../"],
-    main = "_reflection_client_test.py",
-    python_version = "PY3",
-    deps = [
-        "//src/proto/grpc/testing:empty_py_pb2",
-        "//src/proto/grpc/testing:py_messages_proto",
-        "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/proto/grpc/testing/proto2:empty2_extensions_proto",
         "//src/proto/grpc/testing/proto2:empty2_proto",
         "//src/python/grpcio/grpc:grpcio",

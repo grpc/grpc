@@ -359,3 +359,18 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "call_push_pull_test",
+    srcs = ["call_push_pull_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    language = "c++",
+    uses_polling = False,
+    deps = [
+        "//:call_push_pull",
+        "//test/core/util:grpc_suppressions",
+    ],
+)

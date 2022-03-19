@@ -49,9 +49,9 @@ grpc_service_account_jwt_access_credentials::
   gpr_mu_destroy(&cache_mu_);
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_service_account_jwt_access_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
@@ -106,7 +106,7 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
 grpc_service_account_jwt_access_credentials::
     grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                                 gpr_timespec token_lifetime)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_JWT), key_(key) {
+    : key_(key) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     gpr_log(GPR_INFO,
@@ -116,6 +116,10 @@ grpc_service_account_jwt_access_credentials::
   }
   jwt_lifetime_ = token_lifetime;
   gpr_mu_init(&cache_mu_);
+}
+
+const char* grpc_service_account_jwt_access_credentials::Type() {
+  return "Jwt";
 }
 
 grpc_core::RefCountedPtr<grpc_call_credentials>

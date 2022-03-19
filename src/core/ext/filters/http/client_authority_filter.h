@@ -37,9 +37,8 @@ class ClientAuthorityFilter final : public ChannelFilter {
       const grpc_channel_args* args, ChannelFilter::Args);
 
   // Construct a promise for one call.
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) override;
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
   explicit ClientAuthorityFilter(Slice default_authority)

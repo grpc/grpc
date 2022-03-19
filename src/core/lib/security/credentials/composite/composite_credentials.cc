@@ -37,24 +37,30 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
 
-namespace grpc_core {
-const char kCredentialsTypeComposite[] = "composite";
-}  // namespace grpc_core
+//
+// grpc_composite_channel_credentials
+//
+
+const char* grpc_composite_channel_credentials::type() const {
+  return "Composite";
+}
 
 /* -- Composite call credentials. -- */
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_composite_call_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
   auto self = Ref();
   return TrySeqIter(
       inner_.begin(), inner_.end(), std::move(initial_metadata),
       [self, args](const grpc_core::RefCountedPtr<grpc_call_credentials>& creds,
-                   grpc_core::ClientInitialMetadata initial_metadata) {
+                   grpc_core::ClientMetadataHandle initial_metadata) {
         return creds->GetRequestMetadata(std::move(initial_metadata), args);
       });
 }
+
+const char* grpc_composite_call_credentials::Type() { return "Composite"; }
 
 std::string grpc_composite_call_credentials::debug_string() {
   std::vector<std::string> outputs;
@@ -89,12 +95,11 @@ void grpc_composite_call_credentials::push_to_inner(
 
 grpc_composite_call_credentials::grpc_composite_call_credentials(
     grpc_core::RefCountedPtr<grpc_call_credentials> creds1,
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds2)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) {
+    grpc_core::RefCountedPtr<grpc_call_credentials> creds2) {
   const bool creds1_is_composite =
-      strcmp(creds1->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
+      creds1->type() == grpc_composite_call_credentials::Type();
   const bool creds2_is_composite =
-      strcmp(creds2->type(), GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE) == 0;
+      creds2->type() == grpc_composite_call_credentials::Type();
   const size_t size = get_creds_array_size(creds1.get(), creds1_is_composite) +
                       get_creds_array_size(creds2.get(), creds2_is_composite);
   inner_.reserve(size);

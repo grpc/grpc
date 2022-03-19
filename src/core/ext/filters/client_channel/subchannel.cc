@@ -38,6 +38,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
@@ -487,14 +488,14 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   void StartHealthCheckingLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(subchannel_->mu_) {
     GPR_ASSERT(health_check_client_ == nullptr);
-    health_check_client_ = MakeOrphanable<HealthCheckClient>(
+    health_check_client_ = MakeHealthCheckClient(
         health_check_service_name_, subchannel_->connected_subchannel_,
         subchannel_->pollset_set_, subchannel_->channelz_node_, Ref());
   }
 
   WeakRefCountedPtr<Subchannel> subchannel_;
   std::string health_check_service_name_;
-  OrphanablePtr<HealthCheckClient> health_check_client_;
+  OrphanablePtr<SubchannelStreamClient> health_check_client_;
   grpc_connectivity_state state_;
   absl::Status status_;
   ConnectivityStateWatcherList watcher_list_;
@@ -966,11 +967,10 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilder builder("subchannel");
+  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL);
   builder.SetChannelArgs(connecting_result_.channel_args)
       .SetTransport(connecting_result_.transport);
-  if (!CoreConfiguration::Get().channel_init().CreateStack(
-          &builder, GRPC_CLIENT_SUBCHANNEL)) {
+  if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
   grpc_channel_stack* stk;

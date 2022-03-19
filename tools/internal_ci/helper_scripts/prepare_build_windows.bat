@@ -12,6 +12,9 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
+@rem allow timing of how long the script takes to run.
+echo "!TIME!: prepare_build_windows.bat started"
+
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python3.7
 @rem set path to CMake
@@ -39,9 +42,15 @@ netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 @rem Install nasm (required for boringssl assembly optimized build as boringssl no long supports yasm)
 @rem Downloading from GCS should be very reliables when on a GCP VM.
 mkdir C:\nasm
-curl -sSL -o C:\nasm\nasm.exe https://storage.googleapis.com/grpc-build-helper/nasm-2.15.05/nasm.exe || goto :error
+curl -sSL --fail -o C:\nasm\nasm.exe https://storage.googleapis.com/grpc-build-helper/nasm-2.15.05/nasm.exe || goto :error
 set PATH=C:\nasm;%PATH%
 nasm
+
+@rem Install ccache
+mkdir C:\ccache
+curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.6-windows-64/ccache.exe || goto :error
+set PATH=C:\ccache;%PATH%
+ccache --version
 
 @rem Only install C# dependencies if we are running C# tests
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
@@ -62,7 +71,8 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
 @rem Only install Python interpreters if we are running Python tests
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
-    powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
+  echo "!TIME!: invoking install_python_interpreters.ps1"
+  powershell -File tools\internal_ci\helper_scripts\install_python_interpreters.ps1 || goto :error
 )
 
 @rem Needed for uploading test results to bigquery
@@ -70,7 +80,9 @@ python -m pip install google-api-python-client oauth2client six==1.16.0 || goto 
 
 git submodule update --init || goto :error
 
+echo "!TIME!: prepare_build_windows.bat exiting with success"
 goto :EOF
 
 :error
+echo "!TIME!: prepare_build_windows.bat exiting with error"
 exit /b 1

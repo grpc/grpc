@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -723,7 +724,7 @@ class IsolatedCallFixture : public TrackCounters {
     const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr);
-    grpc_core::ChannelStackBuilder builder("phony");
+    grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
     builder.SetTarget("phony_target");
     builder.SetChannelArgs(args);
     builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);

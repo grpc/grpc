@@ -395,7 +395,15 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
+  const char* type() const override { return "fake"; }
+
  private:
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   CertDataMap cert_data_map_;
 };
@@ -1988,6 +1996,30 @@ TEST_P(BasicTest, Vanilla) {
             channel_->GetLoadBalancingPolicyName());
 }
 
+// Tests that the client can handle resource wrapped in a Resource message.
+TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
+  balancer_->ads_service()->set_wrap_resources(true);
+  const size_t kNumRpcsPerAddress = 100;
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("xds_cluster_manager_experimental",
+            channel_->GetLoadBalancingPolicyName());
+}
+
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   const size_t kNumRpcsPerAddress = 100;
   auto endpoints = CreateEndpointsForBackends();
@@ -2437,6 +2469,18 @@ TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   balancer_->Start();
   // Wait for client to see backend 1.
   WaitForBackend(1);
+}
+
+TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
+  const std::string kErrorMessage = "test forced ADS stream failure";
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  auto status = SendRpc();
+  gpr_log(GPR_INFO,
+          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
+          status.error_code(), status.error_message().c_str());
+  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
 }
 
 using GlobalXdsClientTest = BasicTest;
@@ -7550,13 +7594,11 @@ class XdsSecurityTest : public BasicTest {
     constexpr int kRetryCount = 100;
     int num_tries = 0;
     for (; num_tries < kRetryCount; num_tries++) {
-      // Give some time for the updates to propagate.
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      // Restart the servers to force a reconnection so that previously
+      // connected subchannels are not used for the RPC.
+      ShutdownBackend(0);
+      StartBackend(0);
       if (test_expects_failure) {
-        // Restart the servers to force a reconnection so that previously
-        // connected subchannels are not used for the RPC.
-        ShutdownBackend(0);
-        StartBackend(0);
         if (SendRpc().ok()) {
           gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
           continue;
@@ -10515,21 +10557,8 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  // Test an RPC with a different method type
-  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
-  ClientContext context;
-  context.set_wait_for_ready(true);
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-  context.set_cacheable(true);
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  Status status = stub->Echo(&context, request, &response);
-  EXPECT_EQ(status.error_code(), GetParam().rbac_action() == RBAC_Action_DENY
-                                     ? grpc::StatusCode::OK
-                                     : grpc::StatusCode::PERMISSION_DENIED)
-      << status.error_code() << ", " << status.error_message() << ", "
-      << status.error_details() << ", " << context.debug_error_string();
+  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
+  // this should be modified to test that they are NOT accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
@@ -10547,26 +10576,13 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
-  // Send a cacheable RPC so that GET method is used
-  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
-  ClientContext context;
-  context.set_wait_for_ready(true);
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-  context.set_cacheable(true);
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  Status status = stub->Echo(&context, request, &response);
-  EXPECT_EQ(status.error_code(), GetParam().rbac_action() == RBAC_Action_ALLOW
-                                     ? grpc::StatusCode::OK
-                                     : grpc::StatusCode::PERMISSION_DENIED)
-      << status.error_code() << ", " << status.error_message() << ", "
-      << status.error_details() << ", " << context.debug_error_string();
-  // Test an RPC with a different method type
+  // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting GET requests in the future, this
+  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
@@ -10584,26 +10600,13 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
-  // Send an idempotent RPC so that PUT method is used
-  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
-  ClientContext context;
-  context.set_wait_for_ready(true);
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-  context.set_idempotent(true);
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  Status status = stub->Echo(&context, request, &response);
-  EXPECT_EQ(status.error_code(), GetParam().rbac_action() == RBAC_Action_ALLOW
-                                     ? grpc::StatusCode::OK
-                                     : grpc::StatusCode::PERMISSION_DENIED)
-      << status.error_code() << ", " << status.error_message() << ", "
-      << status.error_details() << ", " << context.debug_error_string();
-  // Test an RPC with a different method type
+  // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting PUT requests in the future, this
+  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
@@ -10858,21 +10861,8 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  // Test an RPC with a different method type
-  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
-  ClientContext context;
-  context.set_wait_for_ready(true);
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-  context.set_cacheable(true);
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  Status status = stub->Echo(&context, request, &response);
-  EXPECT_EQ(status.error_code(), GetParam().rbac_action() == RBAC_Action_DENY
-                                     ? grpc::StatusCode::OK
-                                     : grpc::StatusCode::PERMISSION_DENIED)
-      << status.error_code() << ", " << status.error_message() << ", "
-      << status.error_details() << ", " << context.debug_error_string();
+  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
+  // this should be modified to test that they are NOT accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
@@ -10890,25 +10880,13 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
-  // Send a cacheable RPC so that GET method is used
-  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
-  ClientContext context;
-  context.set_wait_for_ready(true);
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-  context.set_cacheable(true);
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  Status status = stub->Echo(&context, request, &response);
-  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_ALLOW ? status.ok()
-                                                            : !status.ok())
-      << status.error_code() << ", " << status.error_message() << ", "
-      << status.error_details() << ", " << context.debug_error_string();
-  // Test an RPC with a different method type
+  // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting GET requests in the future, this
+  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
@@ -10926,25 +10904,13 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
-  // Send an idempotent RPC so that PUT method is used
-  auto stub = grpc::testing::EchoTestService::NewStub(CreateInsecureChannel());
-  ClientContext context;
-  context.set_wait_for_ready(true);
-  context.set_deadline(grpc_timeout_milliseconds_to_deadline(2000));
-  context.set_idempotent(true);
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  Status status = stub->Echo(&context, request, &response);
-  EXPECT_TRUE(GetParam().rbac_action() == RBAC_Action_ALLOW ? status.ok()
-                                                            : !status.ok())
-      << status.error_code() << ", " << status.error_message() << ", "
-      << status.error_details() << ", " << context.debug_error_string();
-  // Test an RPC with a different method type
+  // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
+  // TODO(yashykt): When we start supporting PUT requests in the future, this
+  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {

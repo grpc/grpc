@@ -55,7 +55,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(grpc_error_handle error)
+    virtual void OnError(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -269,7 +269,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class Notifier;
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error_handle error)
+  void NotifyOnErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
