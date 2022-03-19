@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -80,12 +80,12 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a26c29a65814dc5054c87ea24b8a49088"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a26c29a65814dc5054c87ea24b8a49088">ServerStreamingHandler</a> (std::function&lt;::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(ServiceType *, ::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, const RequestType *, <a class="el" href="classgrpc_1_1_server_writer.html">ServerWriter</a>&lt; ResponseType &gt; *)&gt; func, ServiceType *service)</td></tr>
-<tr class="separator:a26c29a65814dc5054c87ea24b8a49088"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e00591c33b38170ea7e44fb51e5b632"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a3e00591c33b38170ea7e44fb51e5b632">ServerStreamingHandler</a> (std::function&lt; <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(ServiceType *, <a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, const RequestType *, <a class="el" href="classgrpc_1_1_server_writer.html">ServerWriter</a>&lt; ResponseType &gt; *)&gt; func, ServiceType *service)</td></tr>
+<tr class="separator:a3e00591c33b38170ea7e44fb51e5b632"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c932932aaccfa13c7777bbcdfa3f89e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a1c932932aaccfa13c7777bbcdfa3f89e">RunHandler</a> (const HandlerParameter &amp;param) final</td></tr>
 <tr class="separator:a1c932932aaccfa13c7777bbcdfa3f89e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30d647f61abf6c340b4efffca51306ae"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a30d647f61abf6c340b4efffca51306ae">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void **) final</td></tr>
-<tr class="separator:a30d647f61abf6c340b4efffca51306ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32e0e5d7f3e8e906ae4c13ece77d228a"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a32e0e5d7f3e8e906ae4c13ece77d228a">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void **) final</td></tr>
+<tr class="separator:a32e0e5d7f3e8e906ae4c13ece77d228a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class ServiceType, class RequestType, class ResponseType&gt;<br />
@@ -93,8 +93,8 @@ class grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, Respo
 
 <p>A wrapper class of an application provided server streaming handler. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a26c29a65814dc5054c87ea24b8a49088"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a26c29a65814dc5054c87ea24b8a49088">&#9670;&nbsp;</a></span>ServerStreamingHandler()</h2>
+<a id="a3e00591c33b38170ea7e44fb51e5b632"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3e00591c33b38170ea7e44fb51e5b632">&#9670;&nbsp;</a></span>ServerStreamingHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -107,7 +107,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html">grpc::internal::ServerStreamingHandler</a>&lt; ServiceType, RequestType, ResponseType &gt;::<a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html">ServerStreamingHandler</a> </td>
           <td>(</td>
-          <td class="paramtype">std::function&lt;::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(ServiceType *, ::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, const RequestType *, <a class="el" href="classgrpc_1_1_server_writer.html">ServerWriter</a>&lt; ResponseType &gt; *)&gt;&#160;</td>
+          <td class="paramtype">std::function&lt; <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(ServiceType *, <a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, const RequestType *, <a class="el" href="classgrpc_1_1_server_writer.html">ServerWriter</a>&lt; ResponseType &gt; *)&gt;&#160;</td>
           <td class="paramname"><em>func</em>, </td>
         </tr>
         <tr>
@@ -132,8 +132,8 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a30d647f61abf6c340b4efffca51306ae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30d647f61abf6c340b4efffca51306ae">&#9670;&nbsp;</a></span>Deserialize()</h2>
+<a id="a32e0e5d7f3e8e906ae4c13ece77d228a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a32e0e5d7f3e8e906ae4c13ece77d228a">&#9670;&nbsp;</a></span>Deserialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -158,7 +158,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *&#160;</td>
           <td class="paramname"><em>status</em>, </td>
         </tr>
         <tr>
@@ -217,7 +217,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

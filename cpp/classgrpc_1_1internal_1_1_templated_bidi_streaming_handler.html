@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -80,8 +80,8 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ad7465b1527871fc17e1daaff9c6b9c69"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#ad7465b1527871fc17e1daaff9c6b9c69">TemplatedBidiStreamingHandler</a> (std::function&lt;::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, Streamer *)&gt; func)</td></tr>
-<tr class="separator:ad7465b1527871fc17e1daaff9c6b9c69"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44cadc5e3b3f12873694c3e425e6cb35"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a44cadc5e3b3f12873694c3e425e6cb35">TemplatedBidiStreamingHandler</a> (std::function&lt; <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, Streamer *)&gt; func)</td></tr>
+<tr class="separator:a44cadc5e3b3f12873694c3e425e6cb35"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5170e31524b287b4d1dda277ff45ab85"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html#a5170e31524b287b4d1dda277ff45ab85">RunHandler</a> (const HandlerParameter &amp;param) final</td></tr>
 <tr class="separator:a5170e31524b287b4d1dda277ff45ab85"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -92,8 +92,8 @@ class grpc::internal::TemplatedBidiStreamingHandler&lt; Streamer, WriteNeeded &g
 <p>A wrapper class of an application provided bidi-streaming handler. </p>
 <p>This also applies to server-streamed implementation of a unary method with the additional requirement that such methods must have done a write for status to be ok Since this is used by more than 1 class, the service is not passed in. Instead, it is expected to be an implicitly-captured argument of func (through bind or something along those lines) </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="ad7465b1527871fc17e1daaff9c6b9c69"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad7465b1527871fc17e1daaff9c6b9c69">&#9670;&nbsp;</a></span>TemplatedBidiStreamingHandler()</h2>
+<a id="a44cadc5e3b3f12873694c3e425e6cb35"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a44cadc5e3b3f12873694c3e425e6cb35">&#9670;&nbsp;</a></span>TemplatedBidiStreamingHandler()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -106,7 +106,7 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html">grpc::internal::TemplatedBidiStreamingHandler</a>&lt; Streamer, WriteNeeded &gt;::<a class="el" href="classgrpc_1_1internal_1_1_templated_bidi_streaming_handler.html">TemplatedBidiStreamingHandler</a> </td>
           <td>(</td>
-          <td class="paramtype">std::function&lt;::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, Streamer *)&gt;&#160;</td>
+          <td class="paramtype">std::function&lt; <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>(<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *, Streamer *)&gt;&#160;</td>
           <td class="paramname"><em>func</em></td><td>)</td>
           <td></td>
         </tr>
@@ -156,7 +156,7 @@ template&lt;class Streamer , bool WriteNeeded&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

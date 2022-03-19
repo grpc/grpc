@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">22.0.0</span>
+   &#160;<span id="projectnumber">23.0.0</span>
    </div>
   </td>
  </tr>
@@ -90,7 +90,8 @@ Data Fields</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].">grpc_slice</a> s, if initialized, represents the byte range s.bytes[0..s.length-1]. </p>
 <p>It can have an associated ref count which has a destruction routine to be run when the ref count reaches zero (see <a class="el" href="slice_8h.html#a85704b2e5f1c8d70e728e86ad6d1ca0a" title="Create a slice pointing at some data.">grpc_slice_new()</a> and grp_slice_unref()). Multiple <a class="el" href="structgrpc__slice.html" title="A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].">grpc_slice</a> values may share a ref count.</p>
-<p>If the slice does not have a refcount, it represents an inlined small piece of data that is copied by value. </p>
+<p>If the slice does not have a refcount, it represents an inlined small piece of data that is copied by value.</p>
+<p>As a special case, a slice can be given refcount == uintptr_t(1), meaning that the slice represents external data that is not refcounted. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="a935f767d484585d016725be83e34917c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a935f767d484585d016725be83e34917c">&#9670;&nbsp;</a></span>data</h2>
@@ -126,7 +127,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

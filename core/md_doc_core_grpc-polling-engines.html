@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">22.0.0</span>
+   &#160;<span id="projectnumber">23.0.0</span>
    </div>
   </td>
  </tr>
@@ -145,7 +145,7 @@ grpc_pollset</h3>
 </ul>
 </li>
 <li><b>grpc_pollset_work</b><ul>
-<li>Signature: <code>grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_millis deadline)</code> &gt; <b>NOTE</b>: <code>grpc_pollset_work()</code> requires the pollset mutex to be locked before calling it. Shortly after calling <code>grpc_pollset_work()</code>, the function populates the <code>*worker</code> pointer (among other things) and releases the mutex. Once <code>grpc_pollset_work()</code> returns, the <code>*worker</code> pointer is <b>invalid</b> and should not be used anymore. See the code in <code>completion_queue.cc</code> to see how this is used.</li>
+<li>Signature: <code>grpc_pollset_work(grpc_pollset* ps, grpc_pollset_worker** worker, grpc_core::Timestamp deadline)</code> &gt; <b>NOTE</b>: <code>grpc_pollset_work()</code> requires the pollset mutex to be locked before calling it. Shortly after calling <code>grpc_pollset_work()</code>, the function populates the <code>*worker</code> pointer (among other things) and releases the mutex. Once <code>grpc_pollset_work()</code> returns, the <code>*worker</code> pointer is <b>invalid</b> and should not be used anymore. See the code in <code>completion_queue.cc</code> to see how this is used.</li>
 <li>Poll the fds in the pollset for events AND return when ANY of the following is true:<ul>
 <li>Deadline expired</li>
 <li>Some fds in the pollset were found to be readable/writable/error and those associated closures were ‘scheduled’ (but not necessarily executed)</li>
@@ -244,7 +244,7 @@ Other polling engine implementations (poll and windows polling engine)</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

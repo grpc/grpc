@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -95,10 +95,10 @@ Public Member Functions</h2></td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_channel_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_channel_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></td></tr>
 <tr class="memitem:a3f5145d4778aa952540dc9983cefe13f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a3f5145d4778aa952540dc9983cefe13f">~ChannelInterface</a> ()</td></tr>
 <tr class="separator:a3f5145d4778aa952540dc9983cefe13f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2ffa0dffc84f1fe38084c0993c4ca50 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ad2ffa0dffc84f1fe38084c0993c4ca50 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ad2ffa0dffc84f1fe38084c0993c4ca50">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, ::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, void *tag)</td></tr>
-<tr class="memdesc:ad2ffa0dffc84f1fe38084c0993c4ca50 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#ad2ffa0dffc84f1fe38084c0993c4ca50">More...</a><br /></td></tr>
-<tr class="separator:ad2ffa0dffc84f1fe38084c0993c4ca50 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acceaaf0fecba5037b4a967e5f4e4a6a8 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:acceaaf0fecba5037b4a967e5f4e4a6a8 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#acceaaf0fecba5037b4a967e5f4e4a6a8">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, <a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, void *tag)</td></tr>
+<tr class="memdesc:acceaaf0fecba5037b4a967e5f4e4a6a8 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#acceaaf0fecba5037b4a967e5f4e4a6a8">More...</a><br /></td></tr>
+<tr class="separator:acceaaf0fecba5037b4a967e5f4e4a6a8 inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">WaitForStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline)</td></tr>
 <tr class="memdesc:a70567e7ea3d1a967ecf5ecdc220ac27e inherit pub_methods_classgrpc_1_1_channel_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking wait for channel state change or <em>deadline</em> expiration.  <a href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">More...</a><br /></td></tr>
@@ -110,22 +110,20 @@ Public Member Functions</h2></td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_call_hook"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_call_hook')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_call_hook.html">grpc::internal::CallHook</a></td></tr>
 <tr class="memitem:a351f3060b7d6378dabcec53d21842487 inherit pub_methods_classgrpc_1_1internal_1_1_call_hook"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_hook.html#a351f3060b7d6378dabcec53d21842487">~CallHook</a> ()</td></tr>
 <tr class="separator:a351f3060b7d6378dabcec53d21842487 inherit pub_methods_classgrpc_1_1internal_1_1_call_hook"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1c14655572215f6256fa0dfee7f138bc inherit pub_methods_classgrpc_1_1internal_1_1_call_hook"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_call_hook.html#a1c14655572215f6256fa0dfee7f138bc">PerformOpsOnCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_call_op_set_interface.html">CallOpSetInterface</a> *ops, <a class="el" href="classgrpc_1_1internal_1_1_call.html">Call</a> *call)=0</td></tr>
-<tr class="separator:a1c14655572215f6256fa0dfee7f138bc inherit pub_methods_classgrpc_1_1internal_1_1_call_hook"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#ad26a823fee699f97244d581f400fe39a">::grpc::internal::BlockingUnaryCallImpl</a></td></tr>
-<tr class="separator:ad26a823fee699f97244d581f400fe39a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff72cbe60223459c55fb667b78a6dd14"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#aff72cbe60223459c55fb667b78a6dd14">::grpc::testing::ChannelTestPeer</a></td></tr>
-<tr class="separator:aff72cbe60223459c55fb667b78a6dd14"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a9a23a8cfcee9fd9658ecd8bb1a3193ac">::grpc::internal::InterceptedChannel</a></td></tr>
-<tr class="separator:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69dd8b84bff711806854a149798d2fd4"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:a69dd8b84bff711806854a149798d2fd4"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a69dd8b84bff711806854a149798d2fd4">grpc::internal::BlockingUnaryCallImpl</a></td></tr>
+<tr class="separator:a69dd8b84bff711806854a149798d2fd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ad6cc7f4e47402b2107b774ff87a903"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a3ad6cc7f4e47402b2107b774ff87a903">grpc::testing::ChannelTestPeer</a></td></tr>
+<tr class="separator:a3ad6cc7f4e47402b2107b774ff87a903"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cb18cf931d1547d15ee896524cd0f72"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a9cb18cf931d1547d15ee896524cd0f72">grpc::internal::InterceptedChannel</a></td></tr>
+<tr class="separator:a9cb18cf931d1547d15ee896524cd0f72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afeee855c9424fd530c4aa98bce518243"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#afeee855c9424fd530c4aa98bce518243">experimental::ChannelResetConnectionBackoff</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel)</td></tr>
 <tr class="separator:afeee855c9424fd530c4aa98bce518243"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a456a9ce71dd36d84ee8d348302a446a1"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a456a9ce71dd36d84ee8d348302a446a1">grpc::CreateChannelInternal</a> (const std::string &amp;host, <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *c_channel, std::vector&lt; std::unique_ptr&lt; ::<a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">grpc::experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
-<tr class="separator:a456a9ce71dd36d84ee8d348302a446a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f120c1d321b62e7645bc4c63b95e357"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a0f120c1d321b62e7645bc4c63b95e357">grpc::CreateChannelInternal</a> (const std::string &amp;host, <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *c_channel, std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">grpc::experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
+<tr class="separator:a0f120c1d321b62e7645bc4c63b95e357"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Channels represent a connection to an endpoint. Created by <em>CreateChannel</em>. </p>
@@ -226,74 +224,6 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="ad26a823fee699f97244d581f400fe39a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad26a823fee699f97244d581f400fe39a">&#9670;&nbsp;</a></span>::grpc::internal::BlockingUnaryCallImpl</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;class InputMessage , class OutputMessage &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a9a23a8cfcee9fd9658ecd8bb1a3193ac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9a23a8cfcee9fd9658ecd8bb1a3193ac">&#9670;&nbsp;</a></span>::grpc::internal::InterceptedChannel</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html">grpc::internal::InterceptedChannel</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aff72cbe60223459c55fb667b78a6dd14"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aff72cbe60223459c55fb667b78a6dd14">&#9670;&nbsp;</a></span>::grpc::testing::ChannelTestPeer</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class ::grpc::testing::ChannelTestPeer</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="afeee855c9424fd530c4aa98bce518243"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#afeee855c9424fd530c4aa98bce518243">&#9670;&nbsp;</a></span>experimental::ChannelResetConnectionBackoff</h2>
 
@@ -320,8 +250,8 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 
 </div>
 </div>
-<a id="a456a9ce71dd36d84ee8d348302a446a1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a456a9ce71dd36d84ee8d348302a446a1">&#9670;&nbsp;</a></span>grpc::CreateChannelInternal</h2>
+<a id="a0f120c1d321b62e7645bc4c63b95e357"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0f120c1d321b62e7645bc4c63b95e357">&#9670;&nbsp;</a></span>grpc::CreateChannelInternal</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -344,7 +274,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::vector&lt; std::unique_ptr&lt; ::<a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">grpc::experimental::ClientInterceptorFactoryInterface</a> &gt;&gt;&#160;</td>
+          <td class="paramtype">std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">grpc::experimental::ClientInterceptorFactoryInterface</a> &gt;&gt;&#160;</td>
           <td class="paramname"><em>interceptor_creators</em>&#160;</td>
         </tr>
         <tr>
@@ -362,13 +292,81 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 
 </div>
 </div>
+<a id="a69dd8b84bff711806854a149798d2fd4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69dd8b84bff711806854a149798d2fd4">&#9670;&nbsp;</a></span>grpc::internal::BlockingUnaryCallImpl</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class InputMessage , class OutputMessage &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a9cb18cf931d1547d15ee896524cd0f72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9cb18cf931d1547d15ee896524cd0f72">&#9670;&nbsp;</a></span>grpc::internal::InterceptedChannel</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html">grpc::internal::InterceptedChannel</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a3ad6cc7f4e47402b2107b774ff87a903"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ad6cc7f4e47402b2107b774ff87a903">&#9670;&nbsp;</a></span>grpc::testing::ChannelTestPeer</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class grpc::testing::ChannelTestPeer</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpcpp/<a class="el" href="grpcpp_2channel_8h_source.html">channel.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

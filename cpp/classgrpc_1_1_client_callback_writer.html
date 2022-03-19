@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -84,10 +84,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af3a03f936ba64735150438535773564a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69d2f64b4387ca5a6f12e868f51e7c91"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#a69d2f64b4387ca5a6f12e868f51e7c91">Write</a> (const Request *req)</td></tr>
 <tr class="separator:a69d2f64b4387ca5a6f12e868f51e7c91"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3deb6f96ee3f569c3787e654abc6692c"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#a3deb6f96ee3f569c3787e654abc6692c">Write</a> (const Request *req, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)=0</td></tr>
-<tr class="separator:a3deb6f96ee3f569c3787e654abc6692c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad66732dcb470cd4b85e96e9bc9545084"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#ad66732dcb470cd4b85e96e9bc9545084">WriteLast</a> (const Request *req, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
-<tr class="separator:ad66732dcb470cd4b85e96e9bc9545084"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4e56cf39bfc43ac57623892d9776bb3"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#aa4e56cf39bfc43ac57623892d9776bb3">Write</a> (const Request *req, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)=0</td></tr>
+<tr class="separator:aa4e56cf39bfc43ac57623892d9776bb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a131a2587e29f53cfd05807ae615578cd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#a131a2587e29f53cfd05807ae615578cd">WriteLast</a> (const Request *req, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
+<tr class="separator:a131a2587e29f53cfd05807ae615578cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1fcb234f67a44bf7fa3facce48f4e6f8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#a1fcb234f67a44bf7fa3facce48f4e6f8">WritesDone</a> ()=0</td></tr>
 <tr class="separator:a1fcb234f67a44bf7fa3facce48f4e6f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac22c9e349d17f82ac9c3777ff2732a46"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_callback_writer.html#ac22c9e349d17f82ac9c3777ff2732a46">AddHold</a> (int holds)=0</td></tr>
@@ -273,8 +273,8 @@ template&lt;class Request &gt; </div>
 
 </div>
 </div>
-<a id="a3deb6f96ee3f569c3787e654abc6692c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3deb6f96ee3f569c3787e654abc6692c">&#9670;&nbsp;</a></span>Write() <span class="overload">[2/2]</span></h2>
+<a id="aa4e56cf39bfc43ac57623892d9776bb3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa4e56cf39bfc43ac57623892d9776bb3">&#9670;&nbsp;</a></span>Write() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -293,7 +293,7 @@ template&lt;class Request &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
           <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
@@ -309,12 +309,12 @@ template&lt;class Request &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a680a3e5cc6b491409a353ac3c8c2a15d">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae19ce4bc00b941273ae5f3f67071c80a">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>.</p>
 
 </div>
 </div>
-<a id="ad66732dcb470cd4b85e96e9bc9545084"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad66732dcb470cd4b85e96e9bc9545084">&#9670;&nbsp;</a></span>WriteLast()</h2>
+<a id="a131a2587e29f53cfd05807ae615578cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a131a2587e29f53cfd05807ae615578cd">&#9670;&nbsp;</a></span>WriteLast()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -333,7 +333,7 @@ template&lt;class Request &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
           <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
@@ -386,7 +386,7 @@ template&lt;class Request &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

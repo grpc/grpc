@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">22.0.0</span>
+   &#160;<span id="projectnumber">23.0.0</span>
    </div>
   </td>
  </tr>
@@ -299,7 +299,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga523b3b4f16b1016108cbeee9ef81fd50"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, inhibits health checking (which may be enabled via the service config.)  <a href="group__grpc__arg__keys.html#ga523b3b4f16b1016108cbeee9ef81fd50">More...</a><br /></td></tr>
 <tr class="separator:ga523b3b4f16b1016108cbeee9ef81fd50"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga247ed6771077938be12ab24790a95732"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga247ed6771077938be12ab24790a95732">GRPC_ARG_DNS_ENABLE_SRV_QUERIES</a>&#160;&#160;&#160;&quot;grpc.dns_enable_srv_queries&quot;</td></tr>
-<tr class="memdesc:ga247ed6771077938be12ab24790a95732"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, the channel's resolver is allowed to query for SRV records.  <a href="group__grpc__arg__keys.html#ga247ed6771077938be12ab24790a95732">More...</a><br /></td></tr>
+<tr class="memdesc:ga247ed6771077938be12ab24790a95732"><td class="mdescLeft">&#160;</td><td class="mdescRight">If enabled, the channel's DNS resolver queries for SRV records.  <a href="group__grpc__arg__keys.html#ga247ed6771077938be12ab24790a95732">More...</a><br /></td></tr>
 <tr class="separator:ga247ed6771077938be12ab24790a95732"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad0e9ad7630f67bcd1d631435860a53d4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.dns_ares_query_timeout&quot;</td></tr>
 <tr class="memdesc:gad0e9ad7630f67bcd1d631435860a53d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, determines an upper bound on the number of milliseconds that the c-ares based DNS resolver will wait on queries before cancelling them.  <a href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">More...</a><br /></td></tr>
@@ -468,8 +468,8 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>If set, the channel's resolver is allowed to query for SRV records. </p>
-<p>For example, this is useful as a way to enable the "grpclb" load balancing policy. Note that this only works with the "ares" DNS resolver, and isn't supported by the "native" DNS resolver. </p>
+<p>If enabled, the channel's DNS resolver queries for SRV records. </p>
+<p>This is useful only when using the "grpclb" load balancing policy, as described in the following documents: <a href="https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md">https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md</a> <a href="https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md">https://github.com/grpc/proposal/blob/master/A24-lb-policy-config.md</a> <a href="https://github.com/grpc/proposal/blob/master/A26-grpclb-selection.md">https://github.com/grpc/proposal/blob/master/A26-grpclb-selection.md</a> Note that this works only with the "ares" DNS resolver; it isn't supported by the "native" DNS resolver. </p>
 
 </div>
 </div>
@@ -619,7 +619,7 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Enables retry functionality. </p>
-<p>Defaults to true. When enabled, configurable retries are enabled when they are configured via the service config. For details, see: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> NOTE: Transparent retries are not yet implemented. When they are implemented, they will also be enabled by this arg. NOTE: Hedging functionality is not yet implemented, so those fields in the service config will currently be ignored. See also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below. </p>
+<p>Defaults to true. When enabled, transparent retries will be performed as appropriate, and configurable retries are enabled when they are configured via the service config. For details, see: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> NOTE: Hedging functionality is not yet implemented, so those fields in the service config will currently be ignored. See also the GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING arg below. </p>
 
 </div>
 </div>
@@ -1720,7 +1720,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

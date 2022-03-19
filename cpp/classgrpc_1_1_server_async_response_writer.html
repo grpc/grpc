@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -80,17 +80,17 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a93eb3a2aa321c37af84d9c06eb7f9abd"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a93eb3a2aa321c37af84d9c06eb7f9abd">ServerAsyncResponseWriter</a> (::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *ctx)</td></tr>
-<tr class="separator:a93eb3a2aa321c37af84d9c06eb7f9abd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a22cb95d07a8e365eb4a14a10dced5975"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a22cb95d07a8e365eb4a14a10dced5975">ServerAsyncResponseWriter</a> (<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *ctx)</td></tr>
+<tr class="separator:a22cb95d07a8e365eb4a14a10dced5975"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a451ba3cd9093168a6becd137b1720834"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a451ba3cd9093168a6becd137b1720834">SendInitialMetadata</a> (void *tag) override</td></tr>
 <tr class="memdesc:a451ba3cd9093168a6becd137b1720834"><td class="mdescLeft">&#160;</td><td class="mdescRight">See <em>ServerAsyncStreamingInterface::SendInitialMetadata</em> for semantics.  <a href="classgrpc_1_1_server_async_response_writer.html#a451ba3cd9093168a6becd137b1720834">More...</a><br /></td></tr>
 <tr class="separator:a451ba3cd9093168a6becd137b1720834"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0788486b59d78038f176fd6eb400f9c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#ab0788486b59d78038f176fd6eb400f9c">Finish</a> (const W &amp;msg, const ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status, void *tag)</td></tr>
-<tr class="memdesc:ab0788486b59d78038f176fd6eb400f9c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and request notification when the server has sent the appropriate signals to the client to end the call.  <a href="classgrpc_1_1_server_async_response_writer.html#ab0788486b59d78038f176fd6eb400f9c">More...</a><br /></td></tr>
-<tr class="separator:ab0788486b59d78038f176fd6eb400f9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae632911731f347395150c24a02dc204f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#ae632911731f347395150c24a02dc204f">FinishWithError</a> (const ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status, void *tag)</td></tr>
-<tr class="memdesc:ae632911731f347395150c24a02dc204f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished with a non-OK status, and request notification for when the server has finished sending the appropriate signals to the client to end the call.  <a href="classgrpc_1_1_server_async_response_writer.html#ae632911731f347395150c24a02dc204f">More...</a><br /></td></tr>
-<tr class="separator:ae632911731f347395150c24a02dc204f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15d487147beb4fa08759775d6e264fa8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#a15d487147beb4fa08759775d6e264fa8">Finish</a> (const W &amp;msg, const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status, void *tag)</td></tr>
+<tr class="memdesc:a15d487147beb4fa08759775d6e264fa8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and request notification when the server has sent the appropriate signals to the client to end the call.  <a href="classgrpc_1_1_server_async_response_writer.html#a15d487147beb4fa08759775d6e264fa8">More...</a><br /></td></tr>
+<tr class="separator:a15d487147beb4fa08759775d6e264fa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab55a9677c391aa90bcf511a0ed1c3ded"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_response_writer.html#ab55a9677c391aa90bcf511a0ed1c3ded">FinishWithError</a> (const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;status, void *tag)</td></tr>
+<tr class="memdesc:ab55a9677c391aa90bcf511a0ed1c3ded"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished with a non-OK status, and request notification for when the server has finished sending the appropriate signals to the client to end the call.  <a href="classgrpc_1_1_server_async_response_writer.html#ab55a9677c391aa90bcf511a0ed1c3ded">More...</a><br /></td></tr>
+<tr class="separator:ab55a9677c391aa90bcf511a0ed1c3ded"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_server_async_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_server_async_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">grpc::internal::ServerAsyncStreamingInterface</a></td></tr>
 <tr class="memitem:aeace2295f3792ce24975361c300d641a inherit pub_methods_classgrpc_1_1internal_1_1_server_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#aeace2295f3792ce24975361c300d641a">~ServerAsyncStreamingInterface</a> ()</td></tr>
 <tr class="separator:aeace2295f3792ce24975361c300d641a inherit pub_methods_classgrpc_1_1internal_1_1_server_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -101,8 +101,8 @@ class grpc::ServerAsyncResponseWriter&lt; W &gt;</h3>
 
 <p>Async server-side API for handling unary calls, where the single response message sent to the client is of type <em>W</em>. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a93eb3a2aa321c37af84d9c06eb7f9abd"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a93eb3a2aa321c37af84d9c06eb7f9abd">&#9670;&nbsp;</a></span>ServerAsyncResponseWriter()</h2>
+<a id="a22cb95d07a8e365eb4a14a10dced5975"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a22cb95d07a8e365eb4a14a10dced5975">&#9670;&nbsp;</a></span>ServerAsyncResponseWriter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -115,7 +115,7 @@ template&lt;class W &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_server_async_response_writer.html">grpc::ServerAsyncResponseWriter</a>&lt; W &gt;::<a class="el" href="classgrpc_1_1_server_async_response_writer.html">ServerAsyncResponseWriter</a> </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *&#160;</td>
           <td class="paramname"><em>ctx</em></td><td>)</td>
           <td></td>
         </tr>
@@ -130,8 +130,8 @@ template&lt;class W &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ab0788486b59d78038f176fd6eb400f9c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab0788486b59d78038f176fd6eb400f9c">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="a15d487147beb4fa08759775d6e264fa8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a15d487147beb4fa08759775d6e264fa8">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -150,7 +150,7 @@ template&lt;class W &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;&#160;</td>
           <td class="paramname"><em>status</em>, </td>
         </tr>
         <tr>
@@ -185,12 +185,13 @@ template&lt;class W &gt; </div>
 <p>Side effect:</p><ul>
 <li>also sends initial metadata if not already sent (using the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with this call).</li>
 </ul>
-<p>Note: if <em>status</em> has a non-OK code, then <em>msg</em> will not be sent, and the client will receive only the status with possible trailing metadata. </p>
+<p>Note: if <em>status</em> has a non-OK code, then <em>msg</em> will not be sent, and the client will receive only the status with possible trailing metadata.</p>
+<p>gRPC doesn't take ownership or a reference to msg and status, so it is safe to deallocate them once the Finish operation is complete (i.e. a result arrives in the completion queue). </p>
 
 </div>
 </div>
-<a id="ae632911731f347395150c24a02dc204f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae632911731f347395150c24a02dc204f">&#9670;&nbsp;</a></span>FinishWithError()</h2>
+<a id="ab55a9677c391aa90bcf511a0ed1c3ded"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab55a9677c391aa90bcf511a0ed1c3ded">&#9670;&nbsp;</a></span>FinishWithError()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -203,7 +204,7 @@ template&lt;class W &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1_server_async_response_writer.html">grpc::ServerAsyncResponseWriter</a>&lt; W &gt;::FinishWithError </td>
           <td>(</td>
-          <td class="paramtype">const ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;&#160;</td>
           <td class="paramname"><em>status</em>, </td>
         </tr>
         <tr>
@@ -238,8 +239,9 @@ template&lt;class W &gt; </div>
   </dd>
 </dl>
 <p>Side effect:</p><ul>
-<li>also sends initial metadata if not already sent (using the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with this call). </li>
+<li>also sends initial metadata if not already sent (using the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext or CallbackServerContext allows the code implementing a service handler to:">ServerContext</a></em> associated with this call).</li>
 </ul>
+<p>gRPC doesn't take ownership or a reference to status, so it is safe to deallocate them once the Finish operation is complete (i.e. a result arrives in the completion queue). </p>
 
 </div>
 </div>
@@ -288,7 +290,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

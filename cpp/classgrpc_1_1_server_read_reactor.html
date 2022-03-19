@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -91,8 +91,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4f766571244828db27c670ae5f28d068"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aebf68c8d6cdd9a92c4741fb43d05d128"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_read_reactor.html#aebf68c8d6cdd9a92c4741fb43d05d128">StartRead</a> (Request *req) ABSL_LOCKS_EXCLUDED(reader_mu_)</td></tr>
 <tr class="separator:aebf68c8d6cdd9a92c4741fb43d05d128"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b90e604f5d6264a117ca5d0e6609465"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_read_reactor.html#a2b90e604f5d6264a117ca5d0e6609465">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(reader_mu_)</td></tr>
-<tr class="separator:a2b90e604f5d6264a117ca5d0e6609465"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b482b70e68641a854543c46869c88ee"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_read_reactor.html#a1b482b70e68641a854543c46869c88ee">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(reader_mu_)</td></tr>
+<tr class="separator:a1b482b70e68641a854543c46869c88ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af5732a605279da840b23579124ab44e2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_read_reactor.html#af5732a605279da840b23579124ab44e2">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:af5732a605279da840b23579124ab44e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_read_reactor.html#af5732a605279da840b23579124ab44e2">More...</a><br /></td></tr>
 <tr class="separator:af5732a605279da840b23579124ab44e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -169,8 +169,8 @@ template&lt;class Request &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a2b90e604f5d6264a117ca5d0e6609465"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2b90e604f5d6264a117ca5d0e6609465">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="a1b482b70e68641a854543c46869c88ee"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b482b70e68641a854543c46869c88ee">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -183,7 +183,7 @@ template&lt;class Request &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1_server_read_reactor.html">grpc::ServerReadReactor</a>&lt; Request &gt;::Finish </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td>
           <td class="paramname"><em>s</em></td><td>)</td>
           <td></td>
         </tr>
@@ -397,7 +397,7 @@ template&lt;class Request &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
