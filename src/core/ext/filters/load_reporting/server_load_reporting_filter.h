@@ -39,7 +39,7 @@ class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
 
   // Construct a promise for one call.
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs initial_metadata,
+      grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override;
 
  private:
