@@ -103,13 +103,15 @@ if old is None:
 else:
     print (cur, old)
     diff_size = 0
-    for key, value in sorted(_INTERESTING.items()):
-        if key in cur:
-            if key not in old:
-                text += '{}: {}\n'.format(key, value)
-            else:
-                diff_size += cur[key] - old[key]
-                text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
+    for scenario in _SCENARIOS.keys():
+        for key, value in sorted(_INTERESTING.items()):
+            key = scenario + ': ' + key
+            if key in cur:
+                if key not in old:
+                    text += '{}: {}\n'.format(key, value)
+                else:
+                    diff_size += cur[key] - old[key]
+                    text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
 
     print("DIFF_SIZE: %f" % diff_size)
     check_on_pr.label_increase_decrease_on_pr('per-call-memory', diff_size, 64)
