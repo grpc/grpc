@@ -133,6 +133,9 @@ class Call : public CppImplOf<Call, grpc_call> {
   void PropagateCancellationToChildren();
 
   Timestamp send_deadline() const { return send_deadline_; }
+  void set_send_deadline(Timestamp send_deadline) {
+    send_deadline_ = send_deadline;
+  }
 
  private:
   Arena* const arena_;
@@ -1279,7 +1282,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
     if (deadline.has_value() && !call->is_client()) {
-      call_->send_deadline() = *deadline;
+      call_->set_send_deadline(*deadline);
     }
   } else {
     if (batch_error_.ok()) {
