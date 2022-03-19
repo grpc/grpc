@@ -108,7 +108,7 @@ else:
             key = scenario + ': ' + key
             if key in cur:
                 if key not in old:
-                    text += '{}: {}\n'.format(key, value)
+                    text += '{}: {}\n'.format(key, cur[key])
                 else:
                     diff_size += cur[key] - old[key]
                     text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
