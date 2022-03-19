@@ -108,8 +108,7 @@ class CSharpPackage:
                                      '..', '..', '..')
             environ['EXTERNAL_GIT_ROOT'] = repo_root
             return create_jobspec(self.name, ['bash', build_script],
-                                  environ=environ,
-                                  shell=True)
+                                  environ=environ)
 
     def __str__(self):
         return self.name
