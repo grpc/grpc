@@ -39,7 +39,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
@@ -53,6 +52,7 @@
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/status_util.h"
@@ -1046,7 +1046,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
             this, owning_stack_);
   }
   // Start backup polling.
-  grpc_client_channel_start_backup_polling(interested_parties_);
+  grpc_core::BackupPoller::Get()->StartPolling(interested_parties_);
   // Check client channel factory.
   if (client_channel_factory_ == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1122,7 +1122,7 @@ ClientChannel::~ClientChannel() {
   DestroyResolverAndLbPolicyLocked();
   grpc_channel_args_destroy(channel_args_);
   // Stop backup polling.
-  grpc_client_channel_stop_backup_polling(interested_parties_);
+  grpc_core::BackupPoller::Get()->StopPolling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_ERROR_UNREF(disconnect_error_);
 }

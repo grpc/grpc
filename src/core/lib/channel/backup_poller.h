@@ -21,22 +21,35 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <thread>
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_client_channel_backup_poll_interval_ms);
+namespace grpc_core {
+class BackupPoller {
+ public:
+  static BackupPoller* Get();
 
-/* Initializes backup polling. */
-void grpc_client_channel_global_init_backup_polling();
+  void StartPolling(grpc_pollset_set* interested_parties);
+  void StopPolling(grpc_pollset_set* interested_parties);
 
-/* Starts polling \a interested_parties periodically in the timer thread. */
-void grpc_client_channel_start_backup_polling(
-    grpc_pollset_set* interested_parties);
+  BackupPoller(const BackupPoller&) = delete;
+  BackupPoller& operator=(const BackupPoller&) = delete;
 
-/* Stops polling \a interested_parties. */
-void grpc_client_channel_stop_backup_polling(
-    grpc_pollset_set* interested_parties);
+ private:
+  BackupPoller();
+  ~BackupPoller();
+  class Poller;
+
+  void Run();
+
+  Mutex mu_;
+  int interested_parties_ ABSL_GUARDED_BY(mu_) = 0;
+  Poller* poller_ ABSL_GUARDED_BY(mu_) = nullptr;
+};
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H */

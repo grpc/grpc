@@ -36,8 +36,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
@@ -351,10 +351,6 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // Make sure that we will have an active poller on all client-side fd's that
-  // are capable of sending settings frames with window updates etc., even in
-  // the case that we don't have an active RPC operation on the fd.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       new TransportTargetWindowEstimatesMocker();
   grpc::testing::TestEnvironment env(argc, argv);

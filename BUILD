@@ -1877,6 +1877,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/backoff/backoff.cc",
+        "src/core/lib/channel/backup_poller.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder_impl.cc",
         "src/core/lib/channel/channel_trace.cc",
@@ -2016,6 +2017,7 @@ grpc_cc_library(
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
         "src/core/lib/backoff/backoff.h",
+        "src/core/lib/channel/backup_poller.h",
         "src/core/lib/channel/call_finalization.h",
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
@@ -2456,7 +2458,6 @@ grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backend_metric.cc",
-        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
@@ -2484,7 +2485,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backend_metric.h",
-        "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",

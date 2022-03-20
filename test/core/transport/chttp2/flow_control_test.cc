@@ -38,7 +38,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/channel/backup_poller.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/channel.h"
@@ -364,10 +364,6 @@ TEST_F(FlowControlTest, TestWindowSizeUpdatesDoNotCauseStalledStreams) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // Make sure that we will have an active poller on all client-side fd's that
-  // are capable of sending and receiving even in the case that we don't have an
-  // active RPC operation on the fd.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   grpc_core::chttp2::g_test_only_transport_flow_control_window_check = true;
   g_target_initial_window_size_mocker = new TransportTargetWindowSizeMocker();
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =

@@ -24,7 +24,6 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
@@ -42,7 +41,6 @@ void grpc_client_channel_init(void) {
   grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
   grpc_core::ProxyMapperRegistry::Init();
   grpc_core::RegisterHttpProxyMapper();
-  grpc_client_channel_global_init_backup_polling();
 }
 
 void grpc_client_channel_shutdown(void) {
