@@ -54,20 +54,15 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 
 namespace {
 
-Duration GetClientIdleTimeout(const grpc_channel_args* args) {
-  auto millis = std::max(
-      grpc_channel_arg_get_integer(
-          grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
-          {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}),
-      MIN_IDLE_TIMEOUT_MS);
-  if (millis == INT_MAX) return Duration::Infinity();
-  return Duration::Milliseconds(millis);
+Duration GetClientIdleTimeout(const ChannelArgs& args) {
+  return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
+      .value_or(Duration::Milliseconds(DEFAULT_IDLE_TIMEOUT_MS));
 }
 
 class ClientIdleFilter : public ChannelFilter {
  public:
   static absl::StatusOr<ClientIdleFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args filter_args);
+      ChannelArgs args, ChannelFilter::Args filter_args);
   ~ClientIdleFilter() override = default;
 
   ClientIdleFilter(const ClientIdleFilter&) = delete;
@@ -108,7 +103,7 @@ class ClientIdleFilter : public ChannelFilter {
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
-    const grpc_channel_args* args, ChannelFilter::Args filter_args) {
+    ChannelArgs args, ChannelFilter::Args filter_args) {
   ClientIdleFilter filter(filter_args.channel_stack(),
                           GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
@@ -190,7 +185,8 @@ void RegisterClientIdleFilter(CoreConfiguration::Builder* builder) {
       [](ChannelStackBuilder* builder) {
         const grpc_channel_args* channel_args = builder->channel_args();
         if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
+            GetClientIdleTimeout(ChannelArgs::FromC(channel_args)) !=
+                Duration::Infinity()) {
           builder->PrependFilter(&grpc_client_idle_filter, nullptr);
         }
         return true;

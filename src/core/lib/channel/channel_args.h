@@ -33,6 +33,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
@@ -160,6 +161,8 @@ class ChannelArgs {
   T* GetPointer(absl::string_view name) const {
     return static_cast<T*>(GetVoidPointer(name));
   }
+  absl::optional<Duration> GetDurationFromIntMillis(
+      absl::string_view name) const;
 
   // Object based get/set.
   // Deal with the common case that we set a pointer to an object under
