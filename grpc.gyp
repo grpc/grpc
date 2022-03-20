@@ -372,7 +372,6 @@
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
         'src/core/ext/filters/client_channel/backend_metric.cc',
-        'src/core/ext/filters/client_channel/backup_poller.cc',
         'src/core/ext/filters/client_channel/channel_connectivity.cc',
         'src/core/ext/filters/client_channel/client_channel.cc',
         'src/core/ext/filters/client_channel/client_channel_channelz.cc',
@@ -769,6 +768,7 @@
         'src/core/lib/address_utils/parse_address.cc',
         'src/core/lib/address_utils/sockaddr_utils.cc',
         'src/core/lib/backoff/backoff.cc',
+        'src/core/lib/channel/backup_poller.cc',
         'src/core/lib/channel/channel_args.cc',
         'src/core/lib/channel/channel_args_preconditioning.cc',
         'src/core/lib/channel/channel_stack.cc',
@@ -1127,7 +1127,6 @@
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
         'src/core/ext/filters/client_channel/backend_metric.cc',
-        'src/core/ext/filters/client_channel/backup_poller.cc',
         'src/core/ext/filters/client_channel/channel_connectivity.cc',
         'src/core/ext/filters/client_channel/client_channel.cc',
         'src/core/ext/filters/client_channel/client_channel_channelz.cc',
@@ -1236,6 +1235,7 @@
         'src/core/lib/address_utils/parse_address.cc',
         'src/core/lib/address_utils/sockaddr_utils.cc',
         'src/core/lib/backoff/backoff.cc',
+        'src/core/lib/channel/backup_poller.cc',
         'src/core/lib/channel/channel_args.cc',
         'src/core/lib/channel/channel_args_preconditioning.cc',
         'src/core/lib/channel/channel_stack.cc',

@@ -1046,7 +1046,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
             this, owning_stack_);
   }
   // Start backup polling.
-  grpc_core::BackupPoller::Get()->StartPolling(interested_parties_);
+  BackupPoller::Get()->StartPolling(interested_parties_);
   // Check client channel factory.
   if (client_channel_factory_ == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -1122,7 +1122,7 @@ ClientChannel::~ClientChannel() {
   DestroyResolverAndLbPolicyLocked();
   grpc_channel_args_destroy(channel_args_);
   // Stop backup polling.
-  grpc_core::BackupPoller::Get()->StopPolling(interested_parties_);
+  BackupPoller::Get()->StopPolling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_ERROR_UNREF(disconnect_error_);
 }
