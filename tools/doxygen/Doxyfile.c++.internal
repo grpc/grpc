@@ -1054,8 +1054,6 @@ include/grpcpp/xds_server_builder.h \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/client_channel/backend_metric.cc \
 src/core/ext/filters/client_channel/backend_metric.h \
-src/core/ext/filters/client_channel/backup_poller.cc \
-src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
 src/core/ext/filters/client_channel/client_channel.cc \
 src/core/ext/filters/client_channel/client_channel.h \
@@ -1872,6 +1870,8 @@ src/core/lib/address_utils/sockaddr_utils.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
+src/core/lib/channel/backup_poller.cc \
+src/core/lib/channel/backup_poller.h \
 src/core/lib/channel/call_finalization.h \
 src/core/lib/channel/call_tracer.h \
 src/core/lib/channel/channel_args.cc \

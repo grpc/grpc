@@ -215,7 +215,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
 
     ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
-                      'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
@@ -636,6 +635,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.h',
+                      'src/core/lib/channel/backup_poller.h',
                       'src/core/lib/channel/call_finalization.h',
                       'src/core/lib/channel/call_tracer.h',
                       'src/core/lib/channel/channel_args.h',
@@ -1041,7 +1041,6 @@ Pod::Spec.new do |s|
                       'third_party/xxhash/xxhash.h'
 
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
-                              'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
                               'src/core/ext/filters/client_channel/client_channel_factory.h',
@@ -1444,6 +1443,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
+                              'src/core/lib/channel/backup_poller.h',
                               'src/core/lib/channel/call_finalization.h',
                               'src/core/lib/channel/call_tracer.h',
                               'src/core/lib/channel/channel_args.h',

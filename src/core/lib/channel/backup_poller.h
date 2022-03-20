@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_BACKUP_POLLER_H
+#define GRPC_CORE_LIB_CHANNEL_BACKUP_POLLER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -52,4 +52,4 @@ class BackupPoller {
 };
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_BACKUP_POLLER_H */
