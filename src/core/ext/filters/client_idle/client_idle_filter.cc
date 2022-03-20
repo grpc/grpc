@@ -35,9 +35,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// TODO(juanlishen): The idle filter is disabled in client channel by default
-// due to b/143502997. Try to fix the bug and enable the filter by default.
-#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
 // The user input idle timeout smaller than this would be capped to it.
 #define MIN_IDLE_TIMEOUT_MS (1 /*second*/ * 1000)
 
@@ -55,8 +52,10 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
+  // TODO(juanlishen): The idle filter is disabled in client channel by default
+  // due to b/143502997. Try to fix the bug and enable the filter by default.
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(Duration::Milliseconds(DEFAULT_IDLE_TIMEOUT_MS));
+      .value_or(Duration::Infinity());
 }
 
 class ClientIdleFilter : public ChannelFilter {
