@@ -479,6 +479,14 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
+    } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+      GRPC_CHTTP2_IF_TRACING(gpr_log(
+          GPR_INFO,
+          "transport:%p SERVER peer:%s Final GOAWAY sent. Ignoring new "
+          "grpc_chttp2_stream request id=%d, last grpc_chttp2_stream id=%d",
+          t, t->peer_string.c_str(), t->incoming_stream_id,
+          t->last_new_stream_id));
+      return init_header_skip_frame_parser(t, priority_type);
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
