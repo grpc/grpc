@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -119,14 +119,16 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa96dfc3eceb841fb2b5416222561684c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#aa96dfc3eceb841fb2b5416222561684c">clear_last_message</a> ()</td></tr>
 <tr class="memdesc:aa96dfc3eceb841fb2b5416222561684c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears flag indicating that this is the last message in a stream, disabling coalescing.  <a href="classgrpc_1_1_write_options.html#aa96dfc3eceb841fb2b5416222561684c">More...</a><br /></td></tr>
 <tr class="separator:aa96dfc3eceb841fb2b5416222561684c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#aaa5f7fcba7816c5d6b41b3e62b2b9b58">set_write_through</a> ()</td></tr>
-<tr class="memdesc:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Guarantee that all bytes have been written to the socket before completing this write (usually writes are completed when they pass flow control).  <a href="classgrpc_1_1_write_options.html#aaa5f7fcba7816c5d6b41b3e62b2b9b58">More...</a><br /></td></tr>
-<tr class="separator:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1031b0d61c166df4f2699f56fbba3d0f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a1031b0d61c166df4f2699f56fbba3d0f">is_write_through</a> () const</td></tr>
-<tr class="separator:a1031b0d61c166df4f2699f56fbba3d0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7d08d7bc3a62cc4cfe8499d4bd70e0d7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">is_last_message</a> () const</td></tr>
 <tr class="memdesc:a7d08d7bc3a62cc4cfe8499d4bd70e0d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get value for the flag indicating that this is the last message, and should be coalesced with trailing metadata.  <a href="classgrpc_1_1_write_options.html#a7d08d7bc3a62cc4cfe8499d4bd70e0d7">More...</a><br /></td></tr>
 <tr class="separator:a7d08d7bc3a62cc4cfe8499d4bd70e0d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#aaa5f7fcba7816c5d6b41b3e62b2b9b58">set_write_through</a> ()</td></tr>
+<tr class="memdesc:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="mdescLeft">&#160;</td><td class="mdescRight">Guarantee that all bytes have been written to the socket before completing this write (usually writes are completed when they pass flow control).  <a href="classgrpc_1_1_write_options.html#aaa5f7fcba7816c5d6b41b3e62b2b9b58">More...</a><br /></td></tr>
+<tr class="separator:aaa5f7fcba7816c5d6b41b3e62b2b9b58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5355c88989456f2e24e85e0ba8116705"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a5355c88989456f2e24e85e0ba8116705">clear_write_through</a> ()</td></tr>
+<tr class="separator:a5355c88989456f2e24e85e0ba8116705"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1031b0d61c166df4f2699f56fbba3d0f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_write_options.html#a1031b0d61c166df4f2699f56fbba3d0f">is_write_through</a> () const</td></tr>
+<tr class="separator:a1031b0d61c166df4f2699f56fbba3d0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Per-message write options. </p>
@@ -289,6 +291,31 @@ Public Member Functions</h2></td></tr>
 
 <p>Clears flag for the disabling of compression for the next message write. </p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="grpc__types_8h.html#ae09000181671f031ed0e319ed557da4e" title="Force compression to be disabled for a particular write (start_write/add_metadata).">GRPC_WRITE_NO_COMPRESS</a> </dd></dl>
+
+</div>
+</div>
+<a id="a5355c88989456f2e24e85e0ba8116705"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5355c88989456f2e24e85e0ba8116705">&#9670;&nbsp;</a></span>clear_write_through()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_write_options.html">WriteOptions</a>&amp; grpc::WriteOptions::clear_write_through </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -596,7 +623,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

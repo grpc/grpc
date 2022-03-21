@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -112,6 +112,15 @@ Properties</h2></td></tr>
 <tr class="memitem:ac39bb383754ef889b82f7447c110c8ec"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_mutable_call_options.html#ac39bb383754ef889b82f7447c110c8ec">retryEnabled</a></td></tr>
 <tr class="memdesc:ac39bb383754ef889b82f7447c110c8ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable/Disable gRPC call's retry feature.  <a href="interface_g_r_p_c_mutable_call_options.html#ac39bb383754ef889b82f7447c110c8ec">More...</a><br /></td></tr>
 <tr class="separator:ac39bb383754ef889b82f7447c110c8ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac9e9950cdbd704e41257f41078c700c0"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_mutable_call_options.html#ac9e9950cdbd704e41257f41078c700c0">maxRetryInterval</a></td></tr>
+<tr class="memdesc:ac9e9950cdbd704e41257f41078c700c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum interval in seconds between two consecutive retries.  <a href="interface_g_r_p_c_mutable_call_options.html#ac9e9950cdbd704e41257f41078c700c0">More...</a><br /></td></tr>
+<tr class="separator:ac9e9950cdbd704e41257f41078c700c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae7ff7a8e2d9819489ea3f403a0670fd8"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_mutable_call_options.html#ae7ff7a8e2d9819489ea3f403a0670fd8">minRetryInterval</a></td></tr>
+<tr class="memdesc:ae7ff7a8e2d9819489ea3f403a0670fd8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum interval in seconds between two consecutive retries.  <a href="interface_g_r_p_c_mutable_call_options.html#ae7ff7a8e2d9819489ea3f403a0670fd8">More...</a><br /></td></tr>
+<tr class="separator:ae7ff7a8e2d9819489ea3f403a0670fd8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ca4b5236ac65e0cead6f843f2ae67da"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_mutable_call_options.html#a6ca4b5236ac65e0cead6f843f2ae67da">retryFactor</a></td></tr>
+<tr class="memdesc:a6ca4b5236ac65e0cead6f843f2ae67da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Multiplier used to increase the interval between retries.  <a href="interface_g_r_p_c_mutable_call_options.html#a6ca4b5236ac65e0cead6f843f2ae67da">More...</a><br /></td></tr>
+<tr class="separator:a6ca4b5236ac65e0cead6f843f2ae67da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa30b0c153497cfd48b2a20921f1d1df5"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_mutable_call_options.html#aa30b0c153497cfd48b2a20921f1d1df5">keepaliveInterval</a></td></tr>
 <tr class="separator:aa30b0c153497cfd48b2a20921f1d1df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9636fdae2c3a6f79a97b9f148d060359"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_mutable_call_options.html#a9636fdae2c3a6f79a97b9f148d060359">keepaliveTimeout</a></td></tr>
@@ -186,6 +195,15 @@ Properties</h2></td></tr>
 <tr class="memitem:a5f8f4bbb48dab6d80d6117333e618c39 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a5f8f4bbb48dab6d80d6117333e618c39">retryEnabled</a></td></tr>
 <tr class="memdesc:a5f8f4bbb48dab6d80d6117333e618c39 inherit properties_interface_g_r_p_c_call_options"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable/Disable gRPC call's retry feature.  <a href="interface_g_r_p_c_call_options.html#a5f8f4bbb48dab6d80d6117333e618c39">More...</a><br /></td></tr>
 <tr class="separator:a5f8f4bbb48dab6d80d6117333e618c39 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aade1add5c02dda8d3050c03372f81c18 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#aade1add5c02dda8d3050c03372f81c18">maxRetryInterval</a></td></tr>
+<tr class="memdesc:aade1add5c02dda8d3050c03372f81c18 inherit properties_interface_g_r_p_c_call_options"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum interval in seconds between two consecutive retries.  <a href="interface_g_r_p_c_call_options.html#aade1add5c02dda8d3050c03372f81c18">More...</a><br /></td></tr>
+<tr class="separator:aade1add5c02dda8d3050c03372f81c18 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71cc36ed61a0a991aa2273f40f5ea9e5 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a71cc36ed61a0a991aa2273f40f5ea9e5">minRetryInterval</a></td></tr>
+<tr class="memdesc:a71cc36ed61a0a991aa2273f40f5ea9e5 inherit properties_interface_g_r_p_c_call_options"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum interval in seconds between two consecutive retries.  <a href="interface_g_r_p_c_call_options.html#a71cc36ed61a0a991aa2273f40f5ea9e5">More...</a><br /></td></tr>
+<tr class="separator:a71cc36ed61a0a991aa2273f40f5ea9e5 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a658ed2a443512dacbfd871ea5c7a03b9 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a658ed2a443512dacbfd871ea5c7a03b9">retryFactor</a></td></tr>
+<tr class="memdesc:a658ed2a443512dacbfd871ea5c7a03b9 inherit properties_interface_g_r_p_c_call_options"><td class="mdescLeft">&#160;</td><td class="mdescRight">Multiplier used to increase the interval between retries.  <a href="interface_g_r_p_c_call_options.html#a658ed2a443512dacbfd871ea5c7a03b9">More...</a><br /></td></tr>
+<tr class="separator:a658ed2a443512dacbfd871ea5c7a03b9 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a28c443631bf8c35ed130b6b3d09ccb32 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a28c443631bf8c35ed130b6b3d09ccb32">keepaliveInterval</a></td></tr>
 <tr class="separator:a28c443631bf8c35ed130b6b3d09ccb32 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0717bcb368a2618f057ae9a2a4d75fb inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#aa0717bcb368a2618f057ae9a2a4d75fb">keepaliveTimeout</a></td></tr>
@@ -226,14 +244,6 @@ Properties</h2></td></tr>
 <tr class="memitem:a337151c941a8fcf367939acd8a21dadc inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSUInteger&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a337151c941a8fcf367939acd8a21dadc">channelOptionsHash</a></td></tr>
 <tr class="memdesc:a337151c941a8fcf367939acd8a21dadc inherit properties_interface_g_r_p_c_call_options"><td class="mdescLeft">&#160;</td><td class="mdescRight">Hash for channel options.  <a href="interface_g_r_p_c_call_options.html#a337151c941a8fcf367939acd8a21dadc">More...</a><br /></td></tr>
 <tr class="separator:a337151c941a8fcf367939acd8a21dadc inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aade1add5c02dda8d3050c03372f81c18 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#aade1add5c02dda8d3050c03372f81c18">maxRetryInterval</a></td></tr>
-<tr class="separator:aade1add5c02dda8d3050c03372f81c18 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71cc36ed61a0a991aa2273f40f5ea9e5 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSTimeInterval&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a71cc36ed61a0a991aa2273f40f5ea9e5">minRetryInterval</a></td></tr>
-<tr class="separator:a71cc36ed61a0a991aa2273f40f5ea9e5 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d0f0135954e50c8912e2d20c032ac78 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">NSUInteger&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a5d0f0135954e50c8912e2d20c032ac78">retryCount</a></td></tr>
-<tr class="separator:a5d0f0135954e50c8912e2d20c032ac78 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a658ed2a443512dacbfd871ea5c7a03b9 inherit properties_interface_g_r_p_c_call_options"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interface_g_r_p_c_call_options.html#a658ed2a443512dacbfd871ea5c7a03b9">retryFactor</a></td></tr>
-<tr class="separator:a658ed2a443512dacbfd871ea5c7a03b9 inherit properties_interface_g_r_p_c_call_options"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -261,7 +271,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -286,7 +296,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -311,7 +321,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -336,7 +346,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -361,7 +371,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -386,7 +396,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -408,7 +418,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -430,7 +440,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -452,7 +462,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -478,7 +488,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -502,7 +512,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -527,7 +537,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -552,7 +562,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -574,10 +584,60 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac9e9950cdbd704e41257f41078c700c0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac9e9950cdbd704e41257f41078c700c0">&#9670;&nbsp;</a></span>maxRetryInterval</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (NSTimeInterval) maxRetryInterval</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Maximum interval in seconds between two consecutive retries. </p>
+<p>Pass 0 to use default. Internal-only property used for GTMSessionFetcher transport retry policy. </p>
+
+</div>
+</div>
+<a id="ae7ff7a8e2d9819489ea3f403a0670fd8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae7ff7a8e2d9819489ea3f403a0670fd8">&#9670;&nbsp;</a></span>minRetryInterval</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (NSTimeInterval) minRetryInterval</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Minimum interval in seconds between two consecutive retries. </p>
+<p>Pass 0 to use default. Internal-only property used for GTMSessionFetcher transport retry policy. </p>
 
 </div>
 </div>
@@ -596,7 +656,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -621,7 +681,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -645,7 +705,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -669,7 +729,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -694,7 +754,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -719,13 +779,38 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
 <p>Enable/Disable gRPC call's retry feature. </p>
 <p>The default is enabled. For details of this feature refer to <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> </p>
+
+</div>
+</div>
+<a id="a6ca4b5236ac65e0cead6f843f2ae67da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ca4b5236ac65e0cead6f843f2ae67da">&#9670;&nbsp;</a></span>retryFactor</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">- (double) retryFactor</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Multiplier used to increase the interval between retries. </p>
+<p>Pass 0 to use default. Internal-only property used for GTMSessionFetcher transport retry policy. </p>
 
 </div>
 </div>
@@ -744,7 +829,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -770,7 +855,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -795,7 +880,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -821,7 +906,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">assign</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">assign</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -847,7 +932,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -871,7 +956,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">atomic</span><span class="mlabel">copy</span></span>  </td>
+<span class="mlabels"><span class="mlabel">read</span><span class="mlabel">write</span><span class="mlabel">nonatomic</span><span class="mlabel">copy</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -886,7 +971,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:40:02 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:58 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

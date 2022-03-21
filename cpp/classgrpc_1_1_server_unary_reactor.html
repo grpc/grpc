@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -86,9 +86,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85bd17f22f5761bc12f6d0e177573785"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a85bd17f22f5761bc12f6d0e177573785">StartSendInitialMetadata</a> () ABSL_LOCKS_EXCLUDED(call_mu_)</td></tr>
 <tr class="memdesc:a85bd17f22f5761bc12f6d0e177573785"><td class="mdescLeft">&#160;</td><td class="mdescRight">StartSendInitialMetadata is exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_unary_reactor.html#a85bd17f22f5761bc12f6d0e177573785">More...</a><br /></td></tr>
 <tr class="separator:a85bd17f22f5761bc12f6d0e177573785"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aecad1fe27376db90a2548ef4272757ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#aecad1fe27376db90a2548ef4272757ff">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(call_mu_)</td></tr>
-<tr class="memdesc:aecad1fe27376db90a2548ef4272757ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish is similar to <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail.  <a href="classgrpc_1_1_server_unary_reactor.html#aecad1fe27376db90a2548ef4272757ff">More...</a><br /></td></tr>
-<tr class="separator:aecad1fe27376db90a2548ef4272757ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38c5487abe04278f3ac81ea9b1ff4e1e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a38c5487abe04278f3ac81ea9b1ff4e1e">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(call_mu_)</td></tr>
+<tr class="memdesc:a38c5487abe04278f3ac81ea9b1ff4e1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish is similar to <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail.  <a href="classgrpc_1_1_server_unary_reactor.html#a38c5487abe04278f3ac81ea9b1ff4e1e">More...</a><br /></td></tr>
+<tr class="separator:a38c5487abe04278f3ac81ea9b1ff4e1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2664153e7ee31b30f99b2753c42d591b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a2664153e7ee31b30f99b2753c42d591b">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:a2664153e7ee31b30f99b2753c42d591b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_unary_reactor.html#a2664153e7ee31b30f99b2753c42d591b">More...</a><br /></td></tr>
 <tr class="separator:a2664153e7ee31b30f99b2753c42d591b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -159,8 +159,8 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aecad1fe27376db90a2548ef4272757ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aecad1fe27376db90a2548ef4272757ff">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="a38c5487abe04278f3ac81ea9b1ff4e1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38c5487abe04278f3ac81ea9b1ff4e1e">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -171,7 +171,7 @@ Friends</h2></td></tr>
         <tr>
           <td class="memname">void grpc::ServerUnaryReactor::Finish </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td>
           <td class="paramname"><em>s</em></td><td>)</td>
           <td></td>
         </tr>
@@ -326,7 +326,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -143,18 +143,12 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a2350ef1b38c4f69d0ff8510dcbe40072"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a></td></tr>
 <tr class="memdesc:a2350ef1b38c4f69d0ff8510dcbe40072"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; grpc_call_credentials object.  <a href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">More...</a><br /></td></tr>
 <tr class="separator:a2350ef1b38c4f69d0ff8510dcbe40072"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a></td></tr>
-<tr class="memdesc:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; grpc_channel_credentials object.  <a href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">More...</a><br /></td></tr>
-<tr class="separator:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a81799db566912702502c280b163b12bc"><td class="memItemLeft" align="right" valign="top">typedef <a class="el" href="grpc__security__constants_8h.html#a90c47ae1d8c33145342170fe615fa68c">grpc_ssl_roots_override_result</a>(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a81799db566912702502c280b163b12bc">grpc_ssl_roots_override_callback</a>) (char **pem_root_certs)</td></tr>
 <tr class="memdesc:a81799db566912702502c280b163b12bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback for getting the SSL roots override from the application.  <a href="grpc__security_8h.html#a81799db566912702502c280b163b12bc">More...</a><br /></td></tr>
 <tr class="separator:a81799db566912702502c280b163b12bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08c13ff956af9e64b514c4af434faba2"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a08c13ff956af9e64b514c4af434faba2">grpc_credentials_plugin_metadata_cb</a>) (void *user_data, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *creds_md, size_t num_creds_md, <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, const char *error_details)</td></tr>
 <tr class="memdesc:a08c13ff956af9e64b514c4af434faba2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Callback function to be called by the metadata credentials plugin implementation when the metadata is ready.  <a href="grpc__security_8h.html#a08c13ff956af9e64b514c4af434faba2">More...</a><br /></td></tr>
 <tr class="separator:a08c13ff956af9e64b514c4af434faba2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa724192e56fdc03827846f16752deccc"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a></td></tr>
-<tr class="memdesc:aa724192e56fdc03827846f16752deccc"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; grpc_server_credentials object.  <a href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">More...</a><br /></td></tr>
-<tr class="separator:aa724192e56fdc03827846f16752deccc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acb8bbd3a6006aee7f7b254d4a91d914f"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f">grpc_ssl_server_certificate_config</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f">grpc_ssl_server_certificate_config</a></td></tr>
 <tr class="memdesc:acb8bbd3a6006aee7f7b254d4a91d914f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Server certificate config object holds the server's public certificates and associated private keys, as well as any CA certificates needed for client certificate validation (if applicable).  <a href="grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f">More...</a><br /></td></tr>
 <tr class="separator:acb8bbd3a6006aee7f7b254d4a91d914f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -241,21 +235,18 @@ Functions</h2></td></tr>
 <tr class="memitem:aeb21611154f3defe05e4eac4cc25af5a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aeb21611154f3defe05e4eac4cc25af5a">grpc_call_credentials_release</a> (<a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *creds)</td></tr>
 <tr class="memdesc:aeb21611154f3defe05e4eac4cc25af5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a call credentials object.  <a href="grpc__security_8h.html#aeb21611154f3defe05e4eac4cc25af5a">More...</a><br /></td></tr>
 <tr class="separator:aeb21611154f3defe05e4eac4cc25af5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5a32645c900c2b50bc89fa11ebdc5a07">grpc_channel_credentials_release</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *creds)</td></tr>
-<tr class="memdesc:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a channel credentials object.  <a href="grpc__security_8h.html#a5a32645c900c2b50bc89fa11ebdc5a07">More...</a><br /></td></tr>
-<tr class="separator:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42f9cca6c01fb5d8c03c4c1e1b0fbf82"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a42f9cca6c01fb5d8c03c4c1e1b0fbf82">grpc_google_default_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *call_credentials)</td></tr>
+<tr class="memitem:a42f9cca6c01fb5d8c03c4c1e1b0fbf82"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a42f9cca6c01fb5d8c03c4c1e1b0fbf82">grpc_google_default_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *call_credentials)</td></tr>
 <tr class="memdesc:a42f9cca6c01fb5d8c03c4c1e1b0fbf82"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates default credentials to connect to a google gRPC service.  <a href="grpc__security_8h.html#a42f9cca6c01fb5d8c03c4c1e1b0fbf82">More...</a><br /></td></tr>
 <tr class="separator:a42f9cca6c01fb5d8c03c4c1e1b0fbf82"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44c23e47832d9cc27bb56822d66bf436"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a44c23e47832d9cc27bb56822d66bf436">grpc_set_ssl_roots_override_callback</a> (<a class="el" href="grpc__security_8h.html#a81799db566912702502c280b163b12bc">grpc_ssl_roots_override_callback</a> cb)</td></tr>
 <tr class="memdesc:a44c23e47832d9cc27bb56822d66bf436"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a callback to override the default TLS/SSL roots.  <a href="grpc__security_8h.html#a44c23e47832d9cc27bb56822d66bf436">More...</a><br /></td></tr>
 <tr class="separator:a44c23e47832d9cc27bb56822d66bf436"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7440216a2192f7c5ecadf5704e7c7bda"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7440216a2192f7c5ecadf5704e7c7bda">grpc_ssl_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, const <a class="el" href="structverify__peer__options.html">verify_peer_options</a> *verify_options, void *reserved)</td></tr>
+<tr class="memitem:a7440216a2192f7c5ecadf5704e7c7bda"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7440216a2192f7c5ecadf5704e7c7bda">grpc_ssl_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, const <a class="el" href="structverify__peer__options.html">verify_peer_options</a> *verify_options, void *reserved)</td></tr>
 <tr class="memdesc:a7440216a2192f7c5ecadf5704e7c7bda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deprecated in favor of grpc_ssl_server_credentials_create_ex.  <a href="grpc__security_8h.html#a7440216a2192f7c5ecadf5704e7c7bda">More...</a><br /></td></tr>
 <tr class="separator:a7440216a2192f7c5ecadf5704e7c7bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57e477a6fdd9a6a66cc37614701d9088"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a57e477a6fdd9a6a66cc37614701d9088">grpc_ssl_credentials_create_ex</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, const <a class="el" href="structgrpc__ssl__verify__peer__options.html">grpc_ssl_verify_peer_options</a> *verify_options, void *reserved)</td></tr>
+<tr class="memitem:a57e477a6fdd9a6a66cc37614701d9088"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a57e477a6fdd9a6a66cc37614701d9088">grpc_ssl_credentials_create_ex</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, const <a class="el" href="structgrpc__ssl__verify__peer__options.html">grpc_ssl_verify_peer_options</a> *verify_options, void *reserved)</td></tr>
 <tr class="separator:a57e477a6fdd9a6a66cc37614701d9088"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e4b35968eac741831a708224e207348"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8e4b35968eac741831a708224e207348">grpc_composite_channel_credentials_create</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *channel_creds, <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *call_creds, void *reserved)</td></tr>
+<tr class="memitem:a8e4b35968eac741831a708224e207348"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8e4b35968eac741831a708224e207348">grpc_composite_channel_credentials_create</a> (<a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *channel_creds, <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *call_creds, void *reserved)</td></tr>
 <tr class="memdesc:a8e4b35968eac741831a708224e207348"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a composite channel credentials object.  <a href="grpc__security_8h.html#a8e4b35968eac741831a708224e207348">More...</a><br /></td></tr>
 <tr class="separator:a8e4b35968eac741831a708224e207348"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fb84795d5b0306006fdb8d316262a82"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5fb84795d5b0306006fdb8d316262a82">grpc_composite_call_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *creds1, <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *creds2, void *reserved)</td></tr>
@@ -293,22 +284,16 @@ Functions</h2></td></tr>
 <tr class="memitem:a510d270c67754176117dcc384cb3d44f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a510d270c67754176117dcc384cb3d44f">grpc_metadata_credentials_create_from_plugin</a> (<a class="el" href="structgrpc__metadata__credentials__plugin.html">grpc_metadata_credentials_plugin</a> plugin, <a class="el" href="grpc__security__constants_8h.html#a3c3165c49cd7a359ddb8656aae7e9dd6">grpc_security_level</a> min_security_level, void *reserved)</td></tr>
 <tr class="memdesc:a510d270c67754176117dcc384cb3d44f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a credentials object from a plugin with a specified minimum security level.  <a href="grpc__security_8h.html#a510d270c67754176117dcc384cb3d44f">More...</a><br /></td></tr>
 <tr class="separator:a510d270c67754176117dcc384cb3d44f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acad1744e2cdf6f9f11723c3450874ca7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#acad1744e2cdf6f9f11723c3450874ca7">grpc_secure_channel_create</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *creds, const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args, void *reserved)</td></tr>
-<tr class="memdesc:acad1744e2cdf6f9f11723c3450874ca7"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Secure channel creation.  <a href="grpc__security_8h.html#acad1744e2cdf6f9f11723c3450874ca7">More...</a><br /></td></tr>
-<tr class="separator:acad1744e2cdf6f9f11723c3450874ca7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8d8e443300d9a94fa5fe7ef76c77fd38"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8d8e443300d9a94fa5fe7ef76c77fd38">grpc_server_credentials_release</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds)</td></tr>
-<tr class="memdesc:a8d8e443300d9a94fa5fe7ef76c77fd38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a server_credentials object.  <a href="grpc__security_8h.html#a8d8e443300d9a94fa5fe7ef76c77fd38">More...</a><br /></td></tr>
-<tr class="separator:a8d8e443300d9a94fa5fe7ef76c77fd38"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0fbb46fa71b635516037e6b265f937f5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f">grpc_ssl_server_certificate_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a0fbb46fa71b635516037e6b265f937f5">grpc_ssl_server_certificate_config_create</a> (const char *pem_root_certs, const <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs)</td></tr>
 <tr class="memdesc:a0fbb46fa71b635516037e6b265f937f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a grpc_ssl_server_certificate_config object.  <a href="grpc__security_8h.html#a0fbb46fa71b635516037e6b265f937f5">More...</a><br /></td></tr>
 <tr class="separator:a0fbb46fa71b635516037e6b265f937f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a077c39db13d0211eac9c6a952882bc31"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a077c39db13d0211eac9c6a952882bc31">grpc_ssl_server_certificate_config_destroy</a> (<a class="el" href="grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f">grpc_ssl_server_certificate_config</a> *config)</td></tr>
 <tr class="memdesc:a077c39db13d0211eac9c6a952882bc31"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys a grpc_ssl_server_certificate_config object.  <a href="grpc__security_8h.html#a077c39db13d0211eac9c6a952882bc31">More...</a><br /></td></tr>
 <tr class="separator:a077c39db13d0211eac9c6a952882bc31"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adde6c7d191f88997fd82fd8b54f9420e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#adde6c7d191f88997fd82fd8b54f9420e">grpc_ssl_server_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs, int force_client_auth, void *reserved)</td></tr>
+<tr class="memitem:adde6c7d191f88997fd82fd8b54f9420e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#adde6c7d191f88997fd82fd8b54f9420e">grpc_ssl_server_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs, int force_client_auth, void *reserved)</td></tr>
 <tr class="memdesc:adde6c7d191f88997fd82fd8b54f9420e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deprecated in favor of grpc_ssl_server_credentials_create_ex.  <a href="grpc__security_8h.html#adde6c7d191f88997fd82fd8b54f9420e">More...</a><br /></td></tr>
 <tr class="separator:adde6c7d191f88997fd82fd8b54f9420e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f8a4204d09f2b10a3986d25b6583a08"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5f8a4204d09f2b10a3986d25b6583a08">grpc_ssl_server_credentials_create_ex</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs, <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a> client_certificate_request, void *reserved)</td></tr>
+<tr class="memitem:a5f8a4204d09f2b10a3986d25b6583a08"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5f8a4204d09f2b10a3986d25b6583a08">grpc_ssl_server_credentials_create_ex</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs, <a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a> client_certificate_request, void *reserved)</td></tr>
 <tr class="memdesc:a5f8a4204d09f2b10a3986d25b6583a08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deprecated in favor of grpc_ssl_server_credentials_create_with_options.  <a href="grpc__security_8h.html#a5f8a4204d09f2b10a3986d25b6583a08">More...</a><br /></td></tr>
 <tr class="separator:a5f8a4204d09f2b10a3986d25b6583a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a019828123e4b76b8a13f7d8045396d28"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8">grpc_ssl_server_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a019828123e4b76b8a13f7d8045396d28">grpc_ssl_server_credentials_create_options_using_config</a> (<a class="el" href="grpc__security__constants_8h.html#a29ffe63a8bb3b4945ecab42d82758f09">grpc_ssl_client_certificate_request_type</a> client_certificate_request, <a class="el" href="grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f">grpc_ssl_server_certificate_config</a> *certificate_config)</td></tr>
@@ -320,16 +305,13 @@ Functions</h2></td></tr>
 <tr class="memitem:aa22779b6b4ffefc0efdaf8de4c8314a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa22779b6b4ffefc0efdaf8de4c8314a8">grpc_ssl_server_credentials_options_destroy</a> (<a class="el" href="grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8">grpc_ssl_server_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:aa22779b6b4ffefc0efdaf8de4c8314a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroys a grpc_ssl_server_credentials_options object.  <a href="grpc__security_8h.html#aa22779b6b4ffefc0efdaf8de4c8314a8">More...</a><br /></td></tr>
 <tr class="separator:aa22779b6b4ffefc0efdaf8de4c8314a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aec838ac89bd393040f0c88dad25a72ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aec838ac89bd393040f0c88dad25a72ca">grpc_ssl_server_credentials_create_with_options</a> (<a class="el" href="grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8">grpc_ssl_server_credentials_options</a> *options)</td></tr>
+<tr class="memitem:aec838ac89bd393040f0c88dad25a72ca"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aec838ac89bd393040f0c88dad25a72ca">grpc_ssl_server_credentials_create_with_options</a> (<a class="el" href="grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8">grpc_ssl_server_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:aec838ac89bd393040f0c88dad25a72ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an SSL server_credentials object using the provided options struct.  <a href="grpc__security_8h.html#aec838ac89bd393040f0c88dad25a72ca">More...</a><br /></td></tr>
 <tr class="separator:aec838ac89bd393040f0c88dad25a72ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53278c0894e787a5f3bb1092d0fdc3f6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a53278c0894e787a5f3bb1092d0fdc3f6">grpc_server_add_secure_http2_port</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, const char *addr, <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds)</td></tr>
-<tr class="memdesc:a53278c0894e787a5f3bb1092d0fdc3f6"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Server-side secure ports.  <a href="grpc__security_8h.html#a53278c0894e787a5f3bb1092d0fdc3f6">More...</a><br /></td></tr>
-<tr class="separator:a53278c0894e787a5f3bb1092d0fdc3f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab065a653f78111065e91a579fd2ce2d2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab065a653f78111065e91a579fd2ce2d2">grpc_call_set_credentials</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *creds)</td></tr>
 <tr class="memdesc:ab065a653f78111065e91a579fd2ce2d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Call specific credentials.  <a href="grpc__security_8h.html#ab065a653f78111065e91a579fd2ce2d2">More...</a><br /></td></tr>
 <tr class="separator:ab065a653f78111065e91a579fd2ce2d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a37da13e43ccc9b19e9f1a6051feaedc3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a37da13e43ccc9b19e9f1a6051feaedc3">grpc_server_credentials_set_auth_metadata_processor</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds, <a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a> processor)</td></tr>
+<tr class="memitem:a37da13e43ccc9b19e9f1a6051feaedc3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a37da13e43ccc9b19e9f1a6051feaedc3">grpc_server_credentials_set_auth_metadata_processor</a> (<a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds, <a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a> processor)</td></tr>
 <tr class="separator:a37da13e43ccc9b19e9f1a6051feaedc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adfe1c1af2f1ad4c241748f77b7f83585"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#adfe1c1af2f1ad4c241748f77b7f83585">grpc_alts_credentials_client_options_create</a> (void)</td></tr>
 <tr class="memdesc:adfe1c1af2f1ad4c241748f77b7f83585"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a grpc ALTS credentials client options instance.  <a href="grpc__security_8h.html#adfe1c1af2f1ad4c241748f77b7f83585">More...</a><br /></td></tr>
@@ -343,16 +325,16 @@ Functions</h2></td></tr>
 <tr class="memitem:a3a78f4ff1575a2c9e4a3d547b9aa2bb0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">grpc_alts_credentials_options_destroy</a> (<a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:a3a78f4ff1575a2c9e4a3d547b9aa2bb0"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method destroys a grpc_alts_credentials_options instance by de-allocating all of its occupied memory.  <a href="grpc__security_8h.html#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">More...</a><br /></td></tr>
 <tr class="separator:a3a78f4ff1575a2c9e4a3d547b9aa2bb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ade3f89f1532e030b8f2afcf0df17b2fe">grpc_alts_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
+<tr class="memitem:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ade3f89f1532e030b8f2afcf0df17b2fe">grpc_alts_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates an ALTS channel credential object.  <a href="grpc__security_8h.html#ade3f89f1532e030b8f2afcf0df17b2fe">More...</a><br /></td></tr>
 <tr class="separator:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">grpc_alts_server_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
+<tr class="memitem:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">grpc_alts_server_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates an ALTS server credential object.  <a href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">More...</a><br /></td></tr>
 <tr class="separator:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6c5c11ac702b466c9dd0773cff01e72f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a6c5c11ac702b466c9dd0773cff01e72f">grpc_local_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
+<tr class="memitem:a6c5c11ac702b466c9dd0773cff01e72f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a6c5c11ac702b466c9dd0773cff01e72f">grpc_local_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
 <tr class="memdesc:a6c5c11ac702b466c9dd0773cff01e72f"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Local channel/server credentials &mdash;  <a href="grpc__security_8h.html#a6c5c11ac702b466c9dd0773cff01e72f">More...</a><br /></td></tr>
 <tr class="separator:a6c5c11ac702b466c9dd0773cff01e72f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39e8a41f7f9a8d7587343964b18fc464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a39e8a41f7f9a8d7587343964b18fc464">grpc_local_server_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
+<tr class="memitem:a39e8a41f7f9a8d7587343964b18fc464"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a39e8a41f7f9a8d7587343964b18fc464">grpc_local_server_credentials_create</a> (<a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a> type)</td></tr>
 <tr class="memdesc:a39e8a41f7f9a8d7587343964b18fc464"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a local server credential object.  <a href="grpc__security_8h.html#a39e8a41f7f9a8d7587343964b18fc464">More...</a><br /></td></tr>
 <tr class="separator:a39e8a41f7f9a8d7587343964b18fc464"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2cc13f6f55eeada1179a10e4f57aa8ec"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a5221eaf9ffa015b04d60d0005cf9b279">grpc_tls_identity_pairs</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2cc13f6f55eeada1179a10e4f57aa8ec">grpc_tls_identity_pairs_create</a> ()</td></tr>
@@ -421,22 +403,22 @@ Functions</h2></td></tr>
 <tr class="memitem:a8650518e6108ff6ed8624e0c00f8a55c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8650518e6108ff6ed8624e0c00f8a55c">grpc_tls_certificate_verifier_cancel</a> (<a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_tls_certificate_verifier</a> *verifier, <a class="el" href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a> *request)</td></tr>
 <tr class="memdesc:a8650518e6108ff6ed8624e0c00f8a55c"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a8650518e6108ff6ed8624e0c00f8a55c">More...</a><br /></td></tr>
 <tr class="separator:a8650518e6108ff6ed8624e0c00f8a55c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a823a0fe621fd8b638e560d84fac6fcee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a823a0fe621fd8b638e560d84fac6fcee">grpc_tls_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
+<tr class="memitem:a823a0fe621fd8b638e560d84fac6fcee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a823a0fe621fd8b638e560d84fac6fcee">grpc_tls_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:a823a0fe621fd8b638e560d84fac6fcee"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a823a0fe621fd8b638e560d84fac6fcee">More...</a><br /></td></tr>
 <tr class="separator:a823a0fe621fd8b638e560d84fac6fcee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">grpc_tls_server_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
+<tr class="memitem:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">grpc_tls_server_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options)</td></tr>
 <tr class="memdesc:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">More...</a><br /></td></tr>
 <tr class="separator:a1ef8332e1edf68afd4cf5a8dda804de7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2fca0d468d66e9c1ef29ff759c9f4b5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ac2fca0d468d66e9c1ef29ff759c9f4b5">grpc_insecure_credentials_create</a> ()</td></tr>
-<tr class="memdesc:ac2fca0d468d66e9c1ef29ff759c9f4b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#ac2fca0d468d66e9c1ef29ff759c9f4b5">More...</a><br /></td></tr>
-<tr class="separator:ac2fca0d468d66e9c1ef29ff759c9f4b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad5e5e1d427ec072d5b9f0d89614070f0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ad5e5e1d427ec072d5b9f0d89614070f0">grpc_insecure_server_credentials_create</a> ()</td></tr>
-<tr class="memdesc:ad5e5e1d427ec072d5b9f0d89614070f0"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#ad5e5e1d427ec072d5b9f0d89614070f0">More...</a><br /></td></tr>
-<tr class="separator:ad5e5e1d427ec072d5b9f0d89614070f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abc5db1c10eab731ca32f825c877fd5ce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">grpc_xds_credentials_create</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *fallback_credentials)</td></tr>
+<tr class="memitem:a1102618931ed9019fcd46ea420d0d61e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a1102618931ed9019fcd46ea420d0d61e">grpc_insecure_credentials_create</a> ()</td></tr>
+<tr class="memdesc:a1102618931ed9019fcd46ea420d0d61e"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a1102618931ed9019fcd46ea420d0d61e">More...</a><br /></td></tr>
+<tr class="separator:a1102618931ed9019fcd46ea420d0d61e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13c18c9718b925cea457878eb93c4eea"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a13c18c9718b925cea457878eb93c4eea">grpc_insecure_server_credentials_create</a> ()</td></tr>
+<tr class="memdesc:a13c18c9718b925cea457878eb93c4eea"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a13c18c9718b925cea457878eb93c4eea">More...</a><br /></td></tr>
+<tr class="separator:a13c18c9718b925cea457878eb93c4eea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc5db1c10eab731ca32f825c877fd5ce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">grpc_xds_credentials_create</a> (<a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *fallback_credentials)</td></tr>
 <tr class="memdesc:abc5db1c10eab731ca32f825c877fd5ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#abc5db1c10eab731ca32f825c877fd5ce">More...</a><br /></td></tr>
 <tr class="separator:abc5db1c10eab731ca32f825c877fd5ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8c174b05503f727c5c020f0a6464da19"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8c174b05503f727c5c020f0a6464da19">grpc_xds_server_credentials_create</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *fallback_credentials)</td></tr>
+<tr class="memitem:a8c174b05503f727c5c020f0a6464da19"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a8c174b05503f727c5c020f0a6464da19">grpc_xds_server_credentials_create</a> (<a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *fallback_credentials)</td></tr>
 <tr class="memdesc:a8c174b05503f727c5c020f0a6464da19"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__security_8h.html#a8c174b05503f727c5c020f0a6464da19">More...</a><br /></td></tr>
 <tr class="separator:a8c174b05503f727c5c020f0a6464da19"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7baf4df54030f3d5c7afb562e6cecf4d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a0a971586c2e177c739bfe180ef440d21">grpc_authorization_policy_provider</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7baf4df54030f3d5c7afb562e6cecf4d">grpc_authorization_policy_provider_static_data_create</a> (const char *authz_policy, <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *code, const char **error_details)</td></tr>
@@ -448,6 +430,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a5367215eba06ef320f4999abc378e663"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5367215eba06ef320f4999abc378e663">grpc_authorization_policy_provider_release</a> (<a class="el" href="grpc__security_8h.html#a0a971586c2e177c739bfe180ef440d21">grpc_authorization_policy_provider</a> *provider)</td></tr>
 <tr class="memdesc:a5367215eba06ef320f4999abc378e663"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL - Subject to change.  <a href="grpc__security_8h.html#a5367215eba06ef320f4999abc378e663">More...</a><br /></td></tr>
 <tr class="separator:a5367215eba06ef320f4999abc378e663"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a50f8a772b8c673a67b7c640e51b840da"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a50f8a772b8c673a67b7c640e51b840da">grpc_tls_credentials_options_set_tls_session_key_log_file_path</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, const char *path)</td></tr>
+<tr class="memdesc:a50f8a772b8c673a67b7c640e51b840da"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; TLS session key logging.  <a href="grpc__security_8h.html#a50f8a772b8c673a67b7c640e51b840da">More...</a><br /></td></tr>
+<tr class="separator:a50f8a772b8c673a67b7c640e51b840da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -566,25 +551,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ab4ed40ea84a2f70ffd81a84bd8ee634b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab4ed40ea84a2f70ffd81a84bd8ee634b">&#9670;&nbsp;</a></span>grpc_channel_credentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>&mdash; grpc_channel_credentials object. </p>
-<p>&mdash;</p>
-<p>A channel credentials object represents a way to authenticate a client on a channel. <br  />
- </p>
-
-</div>
-</div>
 <a id="a08c13ff956af9e64b514c4af434faba2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a08c13ff956af9e64b514c4af434faba2">&#9670;&nbsp;</a></span>grpc_credentials_plugin_metadata_cb</h2>
 
@@ -627,25 +593,6 @@ Functions</h2></td></tr>
 <li>status is GRPC_STATUS_OK for success or a specific status for an error. Common error status for auth metadata processing is either GRPC_STATUS_UNAUTHENTICATED in case of an authentication failure or GRPC_STATUS PERMISSION_DENIED in case of an authorization failure.</li>
 <li>error_details gives details about the error. May be NULL. </li>
 </ul>
-
-</div>
-</div>
-<a id="aa724192e56fdc03827846f16752deccc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa724192e56fdc03827846f16752deccc">&#9670;&nbsp;</a></span>grpc_server_credentials</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>&mdash; grpc_server_credentials object. </p>
-<p>&mdash;</p>
-<p>A server credentials object represents a way to authenticate a server. <br  />
- </p>
 
 </div>
 </div>
@@ -950,7 +897,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_alts_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_alts_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -1020,7 +967,7 @@ Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_alts_server_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_alts_server_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -1113,7 +1060,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>&ndash; The following auth context methods should only be called by a server metadata </p>
-<h2><a class="anchor" id="autotoc_md260"></a>
+<h2><a class="anchor" id="autotoc_md256"></a>
 processor to set properties extracted from auth metadata.</h2>
 <p>Add a property. </p>
 
@@ -1392,8 +1339,8 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>EXPERIMENTAL - Subject to change. </p>
-<p>Creates a grpc_authorization_policy_provider by watching for SDK authorization policy changes in filesystem.</p><ul>
-<li>authz_policy is the file path of SDK authorization policy.</li>
+<p>Creates a grpc_authorization_policy_provider by watching for gRPC authorization policy changes in filesystem.</p><ul>
+<li>authz_policy is the file path of gRPC authorization policy.</li>
 <li>refresh_interval_sec is the amount of time the internal thread would wait before checking for file updates.</li>
 <li>code is the error status code on failure. On success, it equals GRPC_STATUS_OK.</li>
 <li>error_details contains details about the error if any. If the initialization is successful, it will be null. Caller must use gpr_free to destroy this string. </li>
@@ -1455,8 +1402,8 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>EXPERIMENTAL - Subject to change. </p>
-<p>Creates a grpc_authorization_policy_provider using SDK authorization policy from static string.</p><ul>
-<li>authz_policy is the input SDK authorization policy.</li>
+<p>Creates a grpc_authorization_policy_provider using gRPC authorization policy from static string.</p><ul>
+<li>authz_policy is the input gRPC authorization policy.</li>
 <li>code is the error status code on failure. On success, it equals GRPC_STATUS_OK.</li>
 <li>error_details contains details about the error if any. If the initialization is successful, it will be null. Caller must use gpr_free to destroy this string. </li>
 </ul>
@@ -1536,27 +1483,6 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
-<a id="a5a32645c900c2b50bc89fa11ebdc5a07"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a32645c900c2b50bc89fa11ebdc5a07">&#9670;&nbsp;</a></span>grpc_channel_credentials_release()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_channel_credentials_release </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
-          <td class="paramname"><em>creds</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Releases a channel credentials object. </p>
-<p>The creator of the credentials object is responsible for its release. </p>
-
-</div>
-</div>
 <a id="a5fb84795d5b0306006fdb8d316262a82"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5fb84795d5b0306006fdb8d316262a82">&#9670;&nbsp;</a></span>grpc_composite_call_credentials_create()</h2>
 
@@ -1601,9 +1527,9 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_composite_channel_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_composite_channel_credentials_create </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
           <td class="paramname"><em>channel_creds</em>, </td>
         </tr>
         <tr>
@@ -1693,7 +1619,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_google_default_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_google_default_credentials_create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *&#160;</td>
           <td class="paramname"><em>call_credentials</em></td><td>)</td>
@@ -1778,14 +1704,14 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
-<a id="ac2fca0d468d66e9c1ef29ff759c9f4b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac2fca0d468d66e9c1ef29ff759c9f4b5">&#9670;&nbsp;</a></span>grpc_insecure_credentials_create()</h2>
+<a id="a1102618931ed9019fcd46ea420d0d61e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1102618931ed9019fcd46ea420d0d61e">&#9670;&nbsp;</a></span>grpc_insecure_credentials_create()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_insecure_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_insecure_credentials_create </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -1798,14 +1724,14 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
-<a id="ad5e5e1d427ec072d5b9f0d89614070f0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad5e5e1d427ec072d5b9f0d89614070f0">&#9670;&nbsp;</a></span>grpc_insecure_server_credentials_create()</h2>
+<a id="a13c18c9718b925cea457878eb93c4eea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a13c18c9718b925cea457878eb93c4eea">&#9670;&nbsp;</a></span>grpc_insecure_server_credentials_create()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_insecure_server_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_insecure_server_credentials_create </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -1825,7 +1751,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_local_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_local_credentials_create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
           <td class="paramname"><em>type</em></td><td>)</td>
@@ -1850,7 +1776,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_local_server_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_local_server_credentials_create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11">grpc_local_connect_type</a>&#160;</td>
           <td class="paramname"><em>type</em></td><td>)</td>
@@ -1922,107 +1848,6 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
-<a id="acad1744e2cdf6f9f11723c3450874ca7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acad1744e2cdf6f9f11723c3450874ca7">&#9670;&nbsp;</a></span>grpc_secure_channel_create()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a>* grpc_secure_channel_create </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
-          <td class="paramname"><em>creds</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>target</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *&#160;</td>
-          <td class="paramname"><em>args</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>reserved</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>&mdash; Secure channel creation. </p>
-<p>&mdash; Creates a secure channel using the passed-in credentials. Additional channel level configuration MAY be provided by <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a>, though the expectation is that most clients will want to simply pass NULL. The user data in 'args' need only live through the invocation of this function. However, if any args of the 'pointer' type are passed, then the referenced vtable must be maintained by the caller until grpc_channel_destroy terminates. See <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a> definition for more on this. </p>
-
-</div>
-</div>
-<a id="a53278c0894e787a5f3bb1092d0fdc3f6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a53278c0894e787a5f3bb1092d0fdc3f6">&#9670;&nbsp;</a></span>grpc_server_add_secure_http2_port()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_server_add_secure_http2_port </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *&#160;</td>
-          <td class="paramname"><em>server</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>addr</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
-          <td class="paramname"><em>creds</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>&mdash; Server-side secure ports. </p>
-<p>&mdash; Add a HTTP2 over an encrypted link over tcp listener. Returns bound port number on success, 0 on failure. REQUIRES: server not started </p>
-
-</div>
-</div>
-<a id="a8d8e443300d9a94fa5fe7ef76c77fd38"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d8e443300d9a94fa5fe7ef76c77fd38">&#9670;&nbsp;</a></span>grpc_server_credentials_release()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_server_credentials_release </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
-          <td class="paramname"><em>creds</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Releases a server_credentials object. </p>
-<p>The creator of the server_credentials object is responsible for its release. </p>
-
-</div>
-</div>
 <a id="a37da13e43ccc9b19e9f1a6051feaedc3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a37da13e43ccc9b19e9f1a6051feaedc3">&#9670;&nbsp;</a></span>grpc_server_credentials_set_auth_metadata_processor()</h2>
 
@@ -2032,7 +1857,7 @@ processor to set properties extracted from auth metadata.</h2>
         <tr>
           <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_server_credentials_set_auth_metadata_processor </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
           <td class="paramname"><em>creds</em>, </td>
         </tr>
         <tr>
@@ -2120,7 +1945,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_ssl_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_ssl_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>pem_root_certs</em>, </td>
@@ -2169,7 +1994,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_ssl_credentials_create_ex </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_ssl_credentials_create_ex </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>pem_root_certs</em>, </td>
@@ -2271,7 +2096,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_ssl_server_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_ssl_server_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>pem_root_certs</em>, </td>
@@ -2325,7 +2150,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_ssl_server_credentials_create_ex </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_ssl_server_credentials_create_ex </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>pem_root_certs</em>, </td>
@@ -2446,7 +2271,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_ssl_server_credentials_create_with_options </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_ssl_server_credentials_create_with_options </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8">grpc_ssl_server_credentials_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -2829,7 +2654,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_tls_credentials_create </td>
+          <td class="memname"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_tls_credentials_create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -3081,6 +2906,40 @@ processor to set properties extracted from auth metadata.</h2>
 
 </div>
 </div>
+<a id="a50f8a772b8c673a67b7c640e51b840da"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a50f8a772b8c673a67b7c640e51b840da">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_tls_session_key_log_file_path()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_tls_credentials_options_set_tls_session_key_log_file_path </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>path</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; TLS session key logging. </p>
+<p>&mdash; Experimental API to control tls session key logging. Tls session key logging is expected to be used only for debugging purposes and never in production. Tls session key logging is only enabled when: At least one grpc_tls_credentials_options object is assigned a tls session key logging file path using the API specified below. EXPERIMENTAL API - Subject to change. Configures a grpc_tls_credentials_options object with tls session key logging capability. TLS channels using these credentials have tls session key logging enabled.</p><ul>
+<li>options is the grpc_tls_credentials_options object</li>
+<li>path is a string pointing to the location where TLS session keys would be stored. </li>
+</ul>
+
+</div>
+</div>
 <a id="a2a1bd0a20897756471d19c9adff72338"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2a1bd0a20897756471d19c9adff72338">&#9670;&nbsp;</a></span>grpc_tls_credentials_options_set_verify_server_cert()</h2>
 
@@ -3239,7 +3098,7 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_tls_server_credentials_create </td>
+          <td class="memname"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_tls_server_credentials_create </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
           <td class="paramname"><em>options</em></td><td>)</td>
@@ -3260,9 +3119,9 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_xds_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_xds_credentials_create </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
           <td class="paramname"><em>fallback_credentials</em></td><td>)</td>
           <td></td>
         </tr>
@@ -3283,9 +3142,9 @@ processor to set properties extracted from auth metadata.</h2>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_xds_server_credentials_create </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_xds_server_credentials_create </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
           <td class="paramname"><em>fallback_credentials</em></td><td>)</td>
           <td></td>
         </tr>
@@ -3302,7 +3161,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:10 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

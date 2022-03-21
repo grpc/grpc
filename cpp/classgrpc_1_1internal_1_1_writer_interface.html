@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -82,15 +82,15 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a0f3bb9c5625b43d600d33d2bf8c17b60"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a0f3bb9c5625b43d600d33d2bf8c17b60">~WriterInterface</a> ()</td></tr>
 <tr class="separator:a0f3bb9c5625b43d600d33d2bf8c17b60"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8a0facf00dd7edb34f0ebb0247001449"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a8a0facf00dd7edb34f0ebb0247001449">Write</a> (const W &amp;msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)=0</td></tr>
-<tr class="memdesc:a8a0facf00dd7edb34f0ebb0247001449"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to write <em>msg</em> to the stream with <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em>.  <a href="classgrpc_1_1internal_1_1_writer_interface.html#a8a0facf00dd7edb34f0ebb0247001449">More...</a><br /></td></tr>
-<tr class="separator:a8a0facf00dd7edb34f0ebb0247001449"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4cc701404d686efa9a84c55225379392"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a4cc701404d686efa9a84c55225379392">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)=0</td></tr>
+<tr class="memdesc:a4cc701404d686efa9a84c55225379392"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to write <em>msg</em> to the stream with <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em>.  <a href="classgrpc_1_1internal_1_1_writer_interface.html#a4cc701404d686efa9a84c55225379392">More...</a><br /></td></tr>
+<tr class="separator:a4cc701404d686efa9a84c55225379392"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89d051f5c00ede4469cfb216bd05b594"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a89d051f5c00ede4469cfb216bd05b594">Write</a> (const W &amp;msg)</td></tr>
 <tr class="memdesc:a89d051f5c00ede4469cfb216bd05b594"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block to write <em>msg</em> to the stream with default write options.  <a href="classgrpc_1_1internal_1_1_writer_interface.html#a89d051f5c00ede4469cfb216bd05b594">More...</a><br /></td></tr>
 <tr class="separator:a89d051f5c00ede4469cfb216bd05b594"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab43631883751b02971d5a1467cf1022b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#ab43631883751b02971d5a1467cf1022b">WriteLast</a> (const W &amp;msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
-<tr class="memdesc:ab43631883751b02971d5a1467cf1022b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em>.  <a href="classgrpc_1_1internal_1_1_writer_interface.html#ab43631883751b02971d5a1467cf1022b">More...</a><br /></td></tr>
-<tr class="separator:ab43631883751b02971d5a1467cf1022b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa857008614002bdd127d1c9ed4dcd519"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#aa857008614002bdd127d1c9ed4dcd519">WriteLast</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
+<tr class="memdesc:aa857008614002bdd127d1c9ed4dcd519"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em>.  <a href="classgrpc_1_1internal_1_1_writer_interface.html#aa857008614002bdd127d1c9ed4dcd519">More...</a><br /></td></tr>
+<tr class="separator:aa857008614002bdd127d1c9ed4dcd519"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;class W&gt;<br />
@@ -164,8 +164,8 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="a8a0facf00dd7edb34f0ebb0247001449"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8a0facf00dd7edb34f0ebb0247001449">&#9670;&nbsp;</a></span>Write() <span class="overload">[2/2]</span></h2>
+<a id="a4cc701404d686efa9a84c55225379392"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4cc701404d686efa9a84c55225379392">&#9670;&nbsp;</a></span>Write() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -184,7 +184,7 @@ template&lt;class W &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
           <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
@@ -211,12 +211,12 @@ template&lt;class W &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><em>true</em> on success, <em>false</em> when the stream has been closed. </dd></dl>
 
-<p>Implemented in <a class="el" href="classgrpc_1_1_server_reader_writer.html#a5f9a047e87d6a75dd3fa54da87e08517">grpc::ServerReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_split_streamer.html#a41df67e7b770ee9a32b55bf8e09ca76f">grpc::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1_server_unary_streamer.html#ac355fc19dd2c254ce10543789237bae6">grpc::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>.</p>
+<p>Implemented in <a class="el" href="classgrpc_1_1_server_reader_writer.html#a618c59431cf84e0ad9aba8c5b60aa9f7">grpc::ServerReaderWriter&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_server_split_streamer.html#a45eeff531859cc70a750b626baa3a104">grpc::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1_server_unary_streamer.html#a933263a9b7d9ce79bb49c4f0feab7ba1">grpc::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>.</p>
 
 </div>
 </div>
-<a id="ab43631883751b02971d5a1467cf1022b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab43631883751b02971d5a1467cf1022b">&#9670;&nbsp;</a></span>WriteLast()</h2>
+<a id="aa857008614002bdd127d1c9ed4dcd519"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa857008614002bdd127d1c9ed4dcd519">&#9670;&nbsp;</a></span>WriteLast()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -235,7 +235,7 @@ template&lt;class W &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
           <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
@@ -269,7 +269,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

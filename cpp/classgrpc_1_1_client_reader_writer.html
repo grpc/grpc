@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -89,13 +89,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aa8887778273bea6ad32ffea3a6105699"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#aa8887778273bea6ad32ffea3a6105699">Read</a> (R *msg) override</td></tr>
 <tr class="memdesc:aa8887778273bea6ad32ffea3a6105699"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ReaderInterface.Read</em> method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#aa8887778273bea6ad32ffea3a6105699">More...</a><br /></td></tr>
 <tr class="separator:aa8887778273bea6ad32ffea3a6105699"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69f0f8fe8f1ef4af10b48dff6939db76"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a69f0f8fe8f1ef4af10b48dff6939db76">Write</a> (const W &amp;msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) override</td></tr>
-<tr class="separator:a69f0f8fe8f1ef4af10b48dff6939db76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33069a93ec83956d1042ac12c28143b5"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a33069a93ec83956d1042ac12c28143b5">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) override</td></tr>
+<tr class="separator:a33069a93ec83956d1042ac12c28143b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a183f35c478b847e939c76cb20c69a359"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a183f35c478b847e939c76cb20c69a359">WritesDone</a> () override</td></tr>
 <tr class="separator:a183f35c478b847e939c76cb20c69a359"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03f8b51174549e061dd082d5a6e6e283"><td class="memItemLeft" align="right" valign="top">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a03f8b51174549e061dd082d5a6e6e283">Finish</a> () override</td></tr>
-<tr class="memdesc:a03f8b51174549e061dd082d5a6e6e283"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ClientStreamingInterface.Finish method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#a03f8b51174549e061dd082d5a6e6e283">More...</a><br /></td></tr>
-<tr class="separator:a03f8b51174549e061dd082d5a6e6e283"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fe28c9fa3d01f716c9e453245b69b17"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_reader_writer.html#a0fe28c9fa3d01f716c9e453245b69b17">Finish</a> () override</td></tr>
+<tr class="memdesc:a0fe28c9fa3d01f716c9e453245b69b17"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the ClientStreamingInterface.Finish method for semantics.  <a href="classgrpc_1_1_client_reader_writer.html#a0fe28c9fa3d01f716c9e453245b69b17">More...</a><br /></td></tr>
+<tr class="separator:a0fe28c9fa3d01f716c9e453245b69b17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -108,8 +108,8 @@ class grpc::ClientReaderWriter&lt; W, R &gt;</h3>
 
 <p>Synchronous (blocking) client-side API for bi-directional streaming RPCs, where the outgoing message stream coming from the client has messages of type <em>W</em>, and the incoming messages stream coming from the server has messages of type <em>R</em>. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a03f8b51174549e061dd082d5a6e6e283"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a03f8b51174549e061dd082d5a6e6e283">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="a0fe28c9fa3d01f716c9e453245b69b17"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0fe28c9fa3d01f716c9e453245b69b17">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -120,7 +120,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> <a class="el" href="classgrpc_1_1_client_reader_writer.html">grpc::ClientReaderWriter</a>&lt; W, R &gt;::Finish </td>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> <a class="el" href="classgrpc_1_1_client_reader_writer.html">grpc::ClientReaderWriter</a>&lt; W, R &gt;::Finish </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -230,8 +230,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="a69f0f8fe8f1ef4af10b48dff6939db76"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69f0f8fe8f1ef4af10b48dff6939db76">&#9670;&nbsp;</a></span>Write()</h2>
+<a id="a33069a93ec83956d1042ac12c28143b5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33069a93ec83956d1042ac12c28143b5">&#9670;&nbsp;</a></span>Write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -250,7 +250,7 @@ template&lt;class W , class R &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
           <td class="paramname"><em>options</em>&#160;</td>
         </tr>
         <tr>
@@ -327,7 +327,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

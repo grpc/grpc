@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -103,6 +103,12 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
+<tr class="memitem:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a></td></tr>
+<tr class="memdesc:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; grpc_channel_credentials object.  <a href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">More...</a><br /></td></tr>
+<tr class="separator:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa724192e56fdc03827846f16752deccc"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a></td></tr>
+<tr class="memdesc:aa724192e56fdc03827846f16752deccc"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; grpc_server_credentials object.  <a href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">More...</a><br /></td></tr>
+<tr class="separator:aa724192e56fdc03827846f16752deccc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c7dd742606d0ac388aff5cada9b14aa"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a></td></tr>
 <tr class="separator:a4c7dd742606d0ac388aff5cada9b14aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -223,9 +229,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a573dd68a1ef6a69eac510197589b3c8d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a573dd68a1ef6a69eac510197589b3c8d">grpc_channel_reset_connect_backoff</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel)</td></tr>
 <tr class="memdesc:a573dd68a1ef6a69eac510197589b3c8d"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="grpc_8h.html#a573dd68a1ef6a69eac510197589b3c8d">More...</a><br /></td></tr>
 <tr class="separator:a573dd68a1ef6a69eac510197589b3c8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af41ff1c02a6c4bcf59d6b38daa95d5e4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#af41ff1c02a6c4bcf59d6b38daa95d5e4">grpc_insecure_channel_create</a> (const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args, void *reserved)</td></tr>
-<tr class="memdesc:af41ff1c02a6c4bcf59d6b38daa95d5e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a client channel to 'target'.  <a href="grpc_8h.html#af41ff1c02a6c4bcf59d6b38daa95d5e4">More...</a><br /></td></tr>
-<tr class="separator:af41ff1c02a6c4bcf59d6b38daa95d5e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a5a32645c900c2b50bc89fa11ebdc5a07">grpc_channel_credentials_release</a> (<a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *creds)</td></tr>
+<tr class="memdesc:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a channel credentials object.  <a href="grpc_8h.html#a5a32645c900c2b50bc89fa11ebdc5a07">More...</a><br /></td></tr>
+<tr class="separator:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d8e443300d9a94fa5fe7ef76c77fd38"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a8d8e443300d9a94fa5fe7ef76c77fd38">grpc_server_credentials_release</a> (<a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds)</td></tr>
+<tr class="memdesc:a8d8e443300d9a94fa5fe7ef76c77fd38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a server_credentials object.  <a href="grpc_8h.html#a8d8e443300d9a94fa5fe7ef76c77fd38">More...</a><br /></td></tr>
+<tr class="separator:a8d8e443300d9a94fa5fe7ef76c77fd38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa6850defface5ee932aa63cb903e2e5d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#aa6850defface5ee932aa63cb903e2e5d">grpc_channel_create</a> (const char *target, <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *creds, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args)</td></tr>
+<tr class="memdesc:aa6850defface5ee932aa63cb903e2e5d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a secure channel using the passed-in credentials.  <a href="grpc_8h.html#aa6850defface5ee932aa63cb903e2e5d">More...</a><br /></td></tr>
+<tr class="separator:aa6850defface5ee932aa63cb903e2e5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab70a06437661ce737e0c4823cbbd73f3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab70a06437661ce737e0c4823cbbd73f3">grpc_lame_client_channel_create</a> (const char *target, <a class="el" href="grpc_2impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> error_code, const char *error_message)</td></tr>
 <tr class="memdesc:ab70a06437661ce737e0c4823cbbd73f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a lame client: this client fails every operation attempted on it.  <a href="grpc_8h.html#ab70a06437661ce737e0c4823cbbd73f3">More...</a><br /></td></tr>
 <tr class="separator:ab70a06437661ce737e0c4823cbbd73f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -270,9 +282,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a66a2114a45b1ad85c3f8b2da73be747c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a66a2114a45b1ad85c3f8b2da73be747c">grpc_server_set_config_fetcher</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, <a class="el" href="grpc_8h.html#a4c7dd742606d0ac388aff5cada9b14aa">grpc_server_config_fetcher</a> *config_fetcher)</td></tr>
 <tr class="memdesc:a66a2114a45b1ad85c3f8b2da73be747c"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL.  <a href="grpc_8h.html#a66a2114a45b1ad85c3f8b2da73be747c">More...</a><br /></td></tr>
 <tr class="separator:a66a2114a45b1ad85c3f8b2da73be747c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5ca4074294f4acbc5cf8c16208a871fc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a5ca4074294f4acbc5cf8c16208a871fc">grpc_server_add_insecure_http2_port</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, const char *addr)</td></tr>
-<tr class="memdesc:a5ca4074294f4acbc5cf8c16208a871fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a HTTP2 over plaintext over tcp listener.  <a href="grpc_8h.html#a5ca4074294f4acbc5cf8c16208a871fc">More...</a><br /></td></tr>
-<tr class="separator:a5ca4074294f4acbc5cf8c16208a871fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb80cf9392873a8f338a78ed7a05483b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#adb80cf9392873a8f338a78ed7a05483b">grpc_server_add_http2_port</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, const char *addr, <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds)</td></tr>
+<tr class="memdesc:adb80cf9392873a8f338a78ed7a05483b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a HTTP2 over an encrypted link over tcp listener.  <a href="grpc_8h.html#adb80cf9392873a8f338a78ed7a05483b">More...</a><br /></td></tr>
+<tr class="separator:adb80cf9392873a8f338a78ed7a05483b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab2213d7fae4c33c47c824266f268859c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ab2213d7fae4c33c47c824266f268859c">grpc_server_start</a> (<a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server)</td></tr>
 <tr class="memdesc:ab2213d7fae4c33c47c824266f268859c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start a server - tells all listeners to start listening.  <a href="grpc_8h.html#ab2213d7fae4c33c47c824266f268859c">More...</a><br /></td></tr>
 <tr class="separator:ab2213d7fae4c33c47c824266f268859c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -358,6 +370,24 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
+<a id="ab4ed40ea84a2f70ffd81a84bd8ee634b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4ed40ea84a2f70ffd81a84bd8ee634b">&#9670;&nbsp;</a></span>grpc_channel_credentials</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> <a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; grpc_channel_credentials object. </p>
+<p>&mdash;</p>
+<p>A channel credentials object represents a way to authenticate a client on a channel. Different types of channel credentials are declared in <a class="el" href="grpc__security_8h.html">grpc_security.h</a>. </p>
+
+</div>
+</div>
 <a id="a4c7dd742606d0ac388aff5cada9b14aa"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4c7dd742606d0ac388aff5cada9b14aa">&#9670;&nbsp;</a></span>grpc_server_config_fetcher</h2>
 
@@ -369,6 +399,24 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa724192e56fdc03827846f16752deccc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa724192e56fdc03827846f16752deccc">&#9670;&nbsp;</a></span>grpc_server_credentials</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> <a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; grpc_server_credentials object. </p>
+<p>&mdash;</p>
+<p>A server credentials object represents a way to authenticate a server. Different types of server credentials are declared in <a class="el" href="grpc__security_8h.html">grpc_security.h</a>. </p>
 
 </div>
 </div>
@@ -788,6 +836,43 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="aa6850defface5ee932aa63cb903e2e5d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa6850defface5ee932aa63cb903e2e5d">&#9670;&nbsp;</a></span>grpc_channel_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a>* grpc_channel_create </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
+          <td class="paramname"><em>creds</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a secure channel using the passed-in credentials. </p>
+<p>Additional channel level configuration MAY be provided by <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a>, though the expectation is that most clients will want to simply pass NULL. The user data in 'args' need only live through the invocation of this function. However, if any args of the 'pointer' type are passed, then the referenced vtable must be maintained by the caller until grpc_channel_destroy terminates. See <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a> definition for more on this. </p>
+
+</div>
+</div>
 <a id="a9686ae95702f8d696c134d3a3e02fa97"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9686ae95702f8d696c134d3a3e02fa97">&#9670;&nbsp;</a></span>grpc_channel_create_call()</h2>
 
@@ -913,6 +998,27 @@ Functions</h2></td></tr>
 
 <p>Create a call given a handle returned from grpc_channel_register_call. </p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="grpc_8h.html#a9686ae95702f8d696c134d3a3e02fa97" title="Create a call given a grpc_channel, in order to call &#39;method&#39;.">grpc_channel_create_call</a>. </dd></dl>
+
+</div>
+</div>
+<a id="a5a32645c900c2b50bc89fa11ebdc5a07"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5a32645c900c2b50bc89fa11ebdc5a07">&#9670;&nbsp;</a></span>grpc_channel_credentials_release()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_channel_credentials_release </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td>
+          <td class="paramname"><em>creds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Releases a channel credentials object. </p>
+<p>The creator of the credentials object is responsible for its release. </p>
 
 </div>
 </div>
@@ -1702,43 +1808,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="af41ff1c02a6c4bcf59d6b38daa95d5e4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af41ff1c02a6c4bcf59d6b38daa95d5e4">&#9670;&nbsp;</a></span>grpc_insecure_channel_create()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a>* grpc_insecure_channel_create </td>
-          <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>target</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *&#160;</td>
-          <td class="paramname"><em>args</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>reserved</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Create a client channel to 'target'. </p>
-<p>Additional channel level configuration MAY be provided by <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a>, though the expectation is that most clients will want to simply pass NULL. The user data in 'args' need only live through the invocation of this function. However, if any args of the 'pointer' type are passed, then the referenced vtable must be maintained by the caller until grpc_channel_destroy terminates. See <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a> definition for more on this. </p>
-
-</div>
-</div>
 <a id="a63ace3b4e161d0b5667a5d11dfd602dc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a63ace3b4e161d0b5667a5d11dfd602dc">&#9670;&nbsp;</a></span>grpc_is_binary_header()</h2>
 
@@ -2023,14 +2092,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a5ca4074294f4acbc5cf8c16208a871fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5ca4074294f4acbc5cf8c16208a871fc">&#9670;&nbsp;</a></span>grpc_server_add_insecure_http2_port()</h2>
+<a id="adb80cf9392873a8f338a78ed7a05483b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb80cf9392873a8f338a78ed7a05483b">&#9670;&nbsp;</a></span>grpc_server_add_http2_port()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_server_add_insecure_http2_port </td>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_server_add_http2_port </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *&#160;</td>
           <td class="paramname"><em>server</em>, </td>
@@ -2039,7 +2108,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>addr</em>&#160;</td>
+          <td class="paramname"><em>addr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
+          <td class="paramname"><em>creds</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -2049,7 +2124,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Add a HTTP2 over plaintext over tcp listener. </p>
+<p>Add a HTTP2 over an encrypted link over tcp listener. </p>
 <p>Returns bound port number on success, 0 on failure. REQUIRES: server not started </p>
 
 </div>
@@ -2155,6 +2230,27 @@ Functions</h2></td></tr>
 
 <p>Create a server. </p>
 <p>Additional configuration for each incoming channel can be specified with args. If no additional configuration is needed, args can be NULL. The user data in 'args' need only live through the invocation of this function. However, if any args of the 'pointer' type are passed, then the referenced vtable must be maintained by the caller until grpc_server_destroy terminates. See <a class="el" href="structgrpc__channel__args.html" title="An array of arguments that can be passed around.">grpc_channel_args</a> definition for more on this. </p>
+
+</div>
+</div>
+<a id="a8d8e443300d9a94fa5fe7ef76c77fd38"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8d8e443300d9a94fa5fe7ef76c77fd38">&#9670;&nbsp;</a></span>grpc_server_credentials_release()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_server_credentials_release </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
+          <td class="paramname"><em>creds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Releases a server_credentials object. </p>
+<p>The creator of the server_credentials object is responsible for its release. </p>
 
 </div>
 </div>
@@ -2585,7 +2681,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:10 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

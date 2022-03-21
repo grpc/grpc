@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -102,15 +102,15 @@ $(function() {
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
 <div class="line"><a name="l00033"></a><span class="lineno"><a class="line" href="namespacegrpc.html">   33</a></span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc.html">grpc</a> {</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html">   35</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_alarm.html">Alarm</a> : <span class="keyword">private</span> <a class="code" href="classgrpc_1_1_grpc_library_codegen.html">::grpc::GrpcLibraryCodegen</a> {</div>
+<div class="line"><a name="l00035"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html">   35</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_alarm.html">Alarm</a> : <span class="keyword">private</span> <a class="code" href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a> {</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">Alarm</a>();</div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#a6c20836a5cd364d77e69e1fa5db58a61">~Alarm</a>() <span class="keyword">override</span>;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#a5d6a1d58b1c1ba695f0633fb402ad7f3">   51</a></span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#a5d6a1d58b1c1ba695f0633fb402ad7f3">Alarm</a>(::<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq, <span class="keyword">const</span> T&amp; deadline, <span class="keywordtype">void</span>* tag) : <a class="code" href="classgrpc_1_1_alarm.html">Alarm</a>() {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    SetInternal(cq, ::<a class="code" href="classgrpc_1_1_time_point.html">grpc::TimePoint&lt;T&gt;</a>(deadline).raw_time(), tag);</div>
+<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#abb65060e32d24d9f68fb61fee029cab0">   51</a></span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#abb65060e32d24d9f68fb61fee029cab0">Alarm</a>(<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq, <span class="keyword">const</span> T&amp; deadline, <span class="keywordtype">void</span>* tag) : <a class="code" href="classgrpc_1_1_alarm.html">Alarm</a>() {</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    SetInternal(cq, <a class="code" href="classgrpc_1_1_time_point.html">grpc::TimePoint&lt;T&gt;</a>(deadline).raw_time(), tag);</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  }</div>
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="comment">//</span></div>
@@ -118,8 +118,8 @@ $(function() {
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="comment">// setting an immediate deadline. Such usage allows synchronizing an external</span></div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="comment">// event with an application&#39;s \a grpc::CompletionQueue::Next loop.</span></div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#abb9d93f77976356ddf8b79963be2c110">   64</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_alarm.html#abb9d93f77976356ddf8b79963be2c110">Set</a>(::<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq, <span class="keyword">const</span> T&amp; deadline, <span class="keywordtype">void</span>* tag) {</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    SetInternal(cq, ::<a class="code" href="classgrpc_1_1_time_point.html">grpc::TimePoint&lt;T&gt;</a>(deadline).raw_time(), tag);</div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#a35c1f947d8fdfb40afc71d2074604156">   64</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_alarm.html#a35c1f947d8fdfb40afc71d2074604156">Set</a>(<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq, <span class="keyword">const</span> T&amp; deadline, <span class="keywordtype">void</span>* tag) {</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    SetInternal(cq, <a class="code" href="classgrpc_1_1_time_point.html">grpc::TimePoint&lt;T&gt;</a>(deadline).raw_time(), tag);</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  }</div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <a class="code" href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">Alarm</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_alarm.html">Alarm</a>&amp;) = <span class="keyword">delete</span>;</div>
@@ -136,20 +136,19 @@ $(function() {
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="classgrpc_1_1_alarm.html#a5b29185d7ce797eac4cb4b33e2ce4be2">   88</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_alarm.html#a5b29185d7ce797eac4cb4b33e2ce4be2">Set</a>(<span class="keyword">const</span> T&amp; deadline, std::function&lt;<span class="keywordtype">void</span>(<span class="keywordtype">bool</span>)&gt; f) {</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    SetInternal(::<a class="code" href="classgrpc_1_1_time_point.html">grpc::TimePoint&lt;T&gt;</a>(deadline).raw_time(), std::move(f));</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    SetInternal(<a class="code" href="classgrpc_1_1_time_point.html">grpc::TimePoint&lt;T&gt;</a>(deadline).raw_time(), std::move(f));</div>
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  }</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160; </div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  <span class="keywordtype">void</span> SetInternal(::<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq, <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline,</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;                   <span class="keywordtype">void</span>* tag);</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;  <span class="keywordtype">void</span> SetInternal(<a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline, std::function&lt;<span class="keywordtype">void</span>(<span class="keywordtype">bool</span>)&gt; f);</div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html">::grpc::internal::CompletionQueueTag</a>* alarm_;</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;};</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor">#endif  // GRPCPP_ALARM_H</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;  <span class="keywordtype">void</span> SetInternal(<a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq, <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline, <span class="keywordtype">void</span>* tag);</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;  <span class="keywordtype">void</span> SetInternal(<a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline, std::function&lt;<span class="keywordtype">void</span>(<span class="keywordtype">bool</span>)&gt; f);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_completion_queue_tag.html">grpc::internal::CompletionQueueTag</a>* alarm_;</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;};</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="preprocessor">#endif  // GRPCPP_ALARM_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1_grpc_library_codegen_html"><div class="ttname"><a href="classgrpc_1_1_grpc_library_codegen.html">grpc::GrpcLibraryCodegen</a></div><div class="ttdoc">Classes that require gRPC to be initialized should inherit from this class.</div><div class="ttdef"><b>Definition:</b> grpc_library.h:40</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2time_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2time_8h.html">time.h</a></div></div>
@@ -157,10 +156,11 @@ $(function() {
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="aclassgrpc_1_1_alarm_html_a6117d8709dc1468d0111f29abb84aa6d"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a6117d8709dc1468d0111f29abb84aa6d">grpc::Alarm::Alarm</a></div><div class="ttdeci">Alarm(Alarm &amp;&amp;rhs) noexcept</div><div class="ttdoc">Alarms are movable.</div><div class="ttdef"><b>Definition:</b> alarm.h:73</div></div>
 <div class="ttc" id="aclassgrpc_1_1_alarm_html_ac17293fbf6f3a256e743c55ce66eac00"><div class="ttname"><a href="classgrpc_1_1_alarm.html#ac17293fbf6f3a256e743c55ce66eac00">grpc::Alarm::operator=</a></div><div class="ttdeci">Alarm &amp; operator=(Alarm &amp;&amp;rhs) noexcept</div><div class="ttdef"><b>Definition:</b> alarm.h:74</div></div>
-<div class="ttc" id="aclassgrpc_1_1_alarm_html_abb9d93f77976356ddf8b79963be2c110"><div class="ttname"><a href="classgrpc_1_1_alarm.html#abb9d93f77976356ddf8b79963be2c110">grpc::Alarm::Set</a></div><div class="ttdeci">void Set(::grpc::CompletionQueue *cq, const T &amp;deadline, void *tag)</div><div class="ttdoc">Trigger an alarm instance on completion queue cq at the specified time.</div><div class="ttdef"><b>Definition:</b> alarm.h:64</div></div>
 <div class="ttc" id="aclassgrpc_1_1_alarm_html_a57837c6b6d75f622c056b3050cf000fb"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a57837c6b6d75f622c056b3050cf000fb">grpc::Alarm::Cancel</a></div><div class="ttdeci">void Cancel()</div><div class="ttdoc">Cancel a completion queue alarm.</div></div>
 <div class="ttc" id="agrpc_8h_html"><div class="ttname"><a href="grpc_8h.html">grpc.h</a></div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2completion__queue__tag_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2completion__queue__tag_8h.html">completion_queue_tag.h</a></div></div>
+<div class="ttc" id="aclassgrpc_1_1_alarm_html_a35c1f947d8fdfb40afc71d2074604156"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a35c1f947d8fdfb40afc71d2074604156">grpc::Alarm::Set</a></div><div class="ttdeci">void Set(grpc::CompletionQueue *cq, const T &amp;deadline, void *tag)</div><div class="ttdoc">Trigger an alarm instance on completion queue cq at the specified time.</div><div class="ttdef"><b>Definition:</b> alarm.h:64</div></div>
+<div class="ttc" id="aclassgrpc_1_1_alarm_html_abb65060e32d24d9f68fb61fee029cab0"><div class="ttname"><a href="classgrpc_1_1_alarm.html#abb65060e32d24d9f68fb61fee029cab0">grpc::Alarm::Alarm</a></div><div class="ttdeci">Alarm(grpc::CompletionQueue *cq, const T &amp;deadline, void *tag)</div><div class="ttdoc">DEPRECATED: Create and set a completion queue alarm instance associated to cq.</div><div class="ttdef"><b>Definition:</b> alarm.h:51</div></div>
 <div class="ttc" id="aclassgrpc_1_1_alarm_html_a49ce7f2934d753389bd192574c509302"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a49ce7f2934d753389bd192574c509302">grpc::Alarm::Alarm</a></div><div class="ttdeci">Alarm()</div><div class="ttdoc">Create an unset completion queue alarm.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_alarm_html"><div class="ttname"><a href="classgrpc_1_1_alarm.html">grpc::Alarm</a></div><div class="ttdef"><b>Definition:</b> alarm.h:35</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_completion_queue_tag_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_completion_queue_tag.html">grpc::internal::CompletionQueueTag</a></div><div class="ttdoc">An interface allowing implementors to process and filter event tags.</div><div class="ttdef"><b>Definition:</b> completion_queue_tag.h:28</div></div>
@@ -172,10 +172,9 @@ $(function() {
 <div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> gpr_types.h:49</div></div>
 <div class="ttc" id="aclassgrpc_1_1_alarm_html_a5b29185d7ce797eac4cb4b33e2ce4be2"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a5b29185d7ce797eac4cb4b33e2ce4be2">grpc::Alarm::Set</a></div><div class="ttdeci">void Set(const T &amp;deadline, std::function&lt; void(bool)&gt; f)</div><div class="ttdoc">Set an alarm to invoke callback f.</div><div class="ttdef"><b>Definition:</b> alarm.h:88</div></div>
 <div class="ttc" id="aclassgrpc_1_1_time_point_html"><div class="ttname"><a href="classgrpc_1_1_time_point.html">grpc::TimePoint</a></div><div class="ttdoc">If you are trying to use CompletionQueue::AsyncNext with a time class that isn't either gpr_timespec ...</div><div class="ttdef"><b>Definition:</b> time.h:42</div></div>
-<div class="ttc" id="aclassgrpc_1_1_alarm_html_a5d6a1d58b1c1ba695f0633fb402ad7f3"><div class="ttname"><a href="classgrpc_1_1_alarm.html#a5d6a1d58b1c1ba695f0633fb402ad7f3">grpc::Alarm::Alarm</a></div><div class="ttdeci">Alarm(::grpc::CompletionQueue *cq, const T &amp;deadline, void *tag)</div><div class="ttdoc">DEPRECATED: Create and set a completion queue alarm instance associated to cq.</div><div class="ttdef"><b>Definition:</b> alarm.h:51</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:09 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -729,15 +729,15 @@ references:
   commentId: T:Grpc.Core.AuthContext
   fullName: Grpc.Core.AuthContext
   nameWithType: AuthContext
-- uid: Grpc.Core.AuthContext.#ctor(System.String,System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{Grpc.Core.AuthProperty}})
-  name: AuthContext(String, Dictionary<String, List<AuthProperty>>)
-  href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext__ctor_System_String_System_Collections_Generic_Dictionary_System_String_System_Collections_Generic_List_Grpc_Core_AuthProperty___
-  commentId: M:Grpc.Core.AuthContext.#ctor(System.String,System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{Grpc.Core.AuthProperty}})
-  name.vb: AuthContext(String, Dictionary(Of String, List(Of AuthProperty)))
-  fullName: Grpc.Core.AuthContext.AuthContext(System.String, System.Collections.Generic.Dictionary<System.String, System.Collections.Generic.List<Grpc.Core.AuthProperty>>)
-  fullName.vb: Grpc.Core.AuthContext.AuthContext(System.String, System.Collections.Generic.Dictionary(Of System.String, System.Collections.Generic.List(Of Grpc.Core.AuthProperty)))
-  nameWithType: AuthContext.AuthContext(String, Dictionary<String, List<AuthProperty>>)
-  nameWithType.vb: AuthContext.AuthContext(String, Dictionary(Of String, List(Of AuthProperty)))
+- uid: Grpc.Core.AuthContext.#ctor(System.Nullable{System.String},System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{Grpc.Core.AuthProperty}})
+  name: AuthContext(Nullable<String>, Dictionary<String, List<AuthProperty>>)
+  href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext__ctor_System_Nullable_System_String__System_Collections_Generic_Dictionary_System_String_System_Collections_Generic_List_Grpc_Core_AuthProperty___
+  commentId: M:Grpc.Core.AuthContext.#ctor(System.Nullable{System.String},System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{Grpc.Core.AuthProperty}})
+  name.vb: AuthContext(Nullable(Of String), Dictionary(Of String, List(Of AuthProperty)))
+  fullName: Grpc.Core.AuthContext.AuthContext(System.Nullable<System.String>, System.Collections.Generic.Dictionary<System.String, System.Collections.Generic.List<Grpc.Core.AuthProperty>>)
+  fullName.vb: Grpc.Core.AuthContext.AuthContext(System.Nullable(Of System.String), System.Collections.Generic.Dictionary(Of System.String, System.Collections.Generic.List(Of Grpc.Core.AuthProperty)))
+  nameWithType: AuthContext.AuthContext(Nullable<String>, Dictionary<String, List<AuthProperty>>)
+  nameWithType.vb: AuthContext.AuthContext(Nullable(Of String), Dictionary(Of String, List(Of AuthProperty)))
 - uid: Grpc.Core.AuthContext.#ctor*
   name: AuthContext
   href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext__ctor_
@@ -996,12 +996,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallCredentials.FromInterceptor
   nameWithType: CallCredentials.FromInterceptor
-- uid: Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase,System.Object)
-  name: InternalPopulateConfiguration(CallCredentialsConfiguratorBase, Object)
-  href: api/Grpc.Core.CallCredentials.html#Grpc_Core_CallCredentials_InternalPopulateConfiguration_Grpc_Core_CallCredentialsConfiguratorBase_System_Object_
-  commentId: M:Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase,System.Object)
-  fullName: Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase, System.Object)
-  nameWithType: CallCredentials.InternalPopulateConfiguration(CallCredentialsConfiguratorBase, Object)
+- uid: Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase,System.Nullable{System.Object})
+  name: InternalPopulateConfiguration(CallCredentialsConfiguratorBase, Nullable<Object>)
+  href: api/Grpc.Core.CallCredentials.html#Grpc_Core_CallCredentials_InternalPopulateConfiguration_Grpc_Core_CallCredentialsConfiguratorBase_System_Nullable_System_Object__
+  commentId: M:Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase,System.Nullable{System.Object})
+  name.vb: InternalPopulateConfiguration(CallCredentialsConfiguratorBase, Nullable(Of Object))
+  fullName: Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase, System.Nullable<System.Object>)
+  fullName.vb: Grpc.Core.CallCredentials.InternalPopulateConfiguration(Grpc.Core.CallCredentialsConfiguratorBase, System.Nullable(Of System.Object))
+  nameWithType: CallCredentials.InternalPopulateConfiguration(CallCredentialsConfiguratorBase, Nullable<Object>)
+  nameWithType.vb: CallCredentials.InternalPopulateConfiguration(CallCredentialsConfiguratorBase, Nullable(Of Object))
 - uid: Grpc.Core.CallCredentials.InternalPopulateConfiguration*
   name: InternalPopulateConfiguration
   href: api/Grpc.Core.CallCredentials.html#Grpc_Core_CallCredentials_InternalPopulateConfiguration_
@@ -1015,12 +1018,15 @@ references:
   commentId: T:Grpc.Core.CallCredentialsConfiguratorBase
   fullName: Grpc.Core.CallCredentialsConfiguratorBase
   nameWithType: CallCredentialsConfiguratorBase
-- uid: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Object,Grpc.Core.AsyncAuthInterceptor)
-  name: SetAsyncAuthInterceptorCredentials(Object, AsyncAuthInterceptor)
-  href: api/Grpc.Core.CallCredentialsConfiguratorBase.html#Grpc_Core_CallCredentialsConfiguratorBase_SetAsyncAuthInterceptorCredentials_System_Object_Grpc_Core_AsyncAuthInterceptor_
-  commentId: M:Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Object,Grpc.Core.AsyncAuthInterceptor)
-  fullName: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Object, Grpc.Core.AsyncAuthInterceptor)
-  nameWithType: CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(Object, AsyncAuthInterceptor)
+- uid: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Nullable{System.Object},Grpc.Core.AsyncAuthInterceptor)
+  name: SetAsyncAuthInterceptorCredentials(Nullable<Object>, AsyncAuthInterceptor)
+  href: api/Grpc.Core.CallCredentialsConfiguratorBase.html#Grpc_Core_CallCredentialsConfiguratorBase_SetAsyncAuthInterceptorCredentials_System_Nullable_System_Object__Grpc_Core_AsyncAuthInterceptor_
+  commentId: M:Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Nullable{System.Object},Grpc.Core.AsyncAuthInterceptor)
+  name.vb: SetAsyncAuthInterceptorCredentials(Nullable(Of Object), AsyncAuthInterceptor)
+  fullName: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Nullable<System.Object>, Grpc.Core.AsyncAuthInterceptor)
+  fullName.vb: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(System.Nullable(Of System.Object), Grpc.Core.AsyncAuthInterceptor)
+  nameWithType: CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(Nullable<Object>, AsyncAuthInterceptor)
+  nameWithType.vb: CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials(Nullable(Of Object), AsyncAuthInterceptor)
 - uid: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials*
   name: SetAsyncAuthInterceptorCredentials
   href: api/Grpc.Core.CallCredentialsConfiguratorBase.html#Grpc_Core_CallCredentialsConfiguratorBase_SetAsyncAuthInterceptorCredentials_
@@ -1028,15 +1034,15 @@ references:
   isSpec: "True"
   fullName: Grpc.Core.CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials
   nameWithType: CallCredentialsConfiguratorBase.SetAsyncAuthInterceptorCredentials
-- uid: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Object,System.Collections.Generic.IReadOnlyList{Grpc.Core.CallCredentials})
-  name: SetCompositeCredentials(Object, IReadOnlyList<CallCredentials>)
-  href: api/Grpc.Core.CallCredentialsConfiguratorBase.html#Grpc_Core_CallCredentialsConfiguratorBase_SetCompositeCredentials_System_Object_System_Collections_Generic_IReadOnlyList_Grpc_Core_CallCredentials__
-  commentId: M:Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Object,System.Collections.Generic.IReadOnlyList{Grpc.Core.CallCredentials})
-  name.vb: SetCompositeCredentials(Object, IReadOnlyList(Of CallCredentials))
-  fullName: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Object, System.Collections.Generic.IReadOnlyList<Grpc.Core.CallCredentials>)
-  fullName.vb: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Object, System.Collections.Generic.IReadOnlyList(Of Grpc.Core.CallCredentials))
-  nameWithType: CallCredentialsConfiguratorBase.SetCompositeCredentials(Object, IReadOnlyList<CallCredentials>)
-  nameWithType.vb: CallCredentialsConfiguratorBase.SetCompositeCredentials(Object, IReadOnlyList(Of CallCredentials))
+- uid: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Nullable{System.Object},System.Collections.Generic.IReadOnlyList{Grpc.Core.CallCredentials})
+  name: SetCompositeCredentials(Nullable<Object>, IReadOnlyList<CallCredentials>)
+  href: api/Grpc.Core.CallCredentialsConfiguratorBase.html#Grpc_Core_CallCredentialsConfiguratorBase_SetCompositeCredentials_System_Nullable_System_Object__System_Collections_Generic_IReadOnlyList_Grpc_Core_CallCredentials__
+  commentId: M:Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Nullable{System.Object},System.Collections.Generic.IReadOnlyList{Grpc.Core.CallCredentials})
+  name.vb: SetCompositeCredentials(Nullable(Of Object), IReadOnlyList(Of CallCredentials))
+  fullName: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Nullable<System.Object>, System.Collections.Generic.IReadOnlyList<Grpc.Core.CallCredentials>)
+  fullName.vb: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials(System.Nullable(Of System.Object), System.Collections.Generic.IReadOnlyList(Of Grpc.Core.CallCredentials))
+  nameWithType: CallCredentialsConfiguratorBase.SetCompositeCredentials(Nullable<Object>, IReadOnlyList<CallCredentials>)
+  nameWithType.vb: CallCredentialsConfiguratorBase.SetCompositeCredentials(Nullable(Of Object), IReadOnlyList(Of CallCredentials))
 - uid: Grpc.Core.CallCredentialsConfiguratorBase.SetCompositeCredentials*
   name: SetCompositeCredentials
   href: api/Grpc.Core.CallCredentialsConfiguratorBase.html#Grpc_Core_CallCredentialsConfiguratorBase_SetCompositeCredentials_

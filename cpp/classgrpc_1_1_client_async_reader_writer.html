@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -94,24 +94,24 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a07bcc3a0737c3bee3ef50def89af5fc7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a07bcc3a0737c3bee3ef50def89af5fc7">Write</a> (const W &amp;msg, void *tag) override</td></tr>
 <tr class="memdesc:a07bcc3a0737c3bee3ef50def89af5fc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> with identifying tag <em>tag</em>.  <a href="classgrpc_1_1_client_async_reader_writer.html#a07bcc3a0737c3bee3ef50def89af5fc7">More...</a><br /></td></tr>
 <tr class="separator:a07bcc3a0737c3bee3ef50def89af5fc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65e446f92d97e2e6bb79f420d485c683"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a65e446f92d97e2e6bb79f420d485c683">Write</a> (const W &amp;msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, void *tag) override</td></tr>
-<tr class="memdesc:a65e446f92d97e2e6bb79f420d485c683"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="classgrpc_1_1_client_async_reader_writer.html#a65e446f92d97e2e6bb79f420d485c683">More...</a><br /></td></tr>
-<tr class="separator:a65e446f92d97e2e6bb79f420d485c683"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1fcfdafd13485034fd92bd5967037d25"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a1fcfdafd13485034fd92bd5967037d25">Write</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, void *tag) override</td></tr>
+<tr class="memdesc:a1fcfdafd13485034fd92bd5967037d25"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="classgrpc_1_1_client_async_reader_writer.html#a1fcfdafd13485034fd92bd5967037d25">More...</a><br /></td></tr>
+<tr class="separator:a1fcfdafd13485034fd92bd5967037d25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3e090a0801f6bc524f959cd93e4cddc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">WritesDone</a> (void *tag) override</td></tr>
 <tr class="memdesc:af3e090a0801f6bc524f959cd93e4cddc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Signal the client is done with the writes (half-close the client stream).  <a href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">More...</a><br /></td></tr>
 <tr class="separator:af3e090a0801f6bc524f959cd93e4cddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a953d61a2b25473bb76c7038b940b87aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a953d61a2b25473bb76c7038b940b87aa">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void *tag) override</td></tr>
-<tr class="memdesc:a953d61a2b25473bb76c7038b940b87aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ClientAsyncStreamingInterface.Finish</em> method for semantics.  <a href="classgrpc_1_1_client_async_reader_writer.html#a953d61a2b25473bb76c7038b940b87aa">More...</a><br /></td></tr>
-<tr class="separator:a953d61a2b25473bb76c7038b940b87aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb288c3e106a091b6f18f84fd9f6941c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *status, void *tag) override</td></tr>
+<tr class="memdesc:abb288c3e106a091b6f18f84fd9f6941c"><td class="mdescLeft">&#160;</td><td class="mdescRight">See the <em>ClientAsyncStreamingInterface.Finish</em> method for semantics.  <a href="classgrpc_1_1_client_async_reader_writer.html#abb288c3e106a091b6f18f84fd9f6941c">More...</a><br /></td></tr>
+<tr class="separator:abb288c3e106a091b6f18f84fd9f6941c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_client_async_streaming_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_client_async_streaming_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html">grpc::internal::ClientAsyncStreamingInterface</a></td></tr>
 <tr class="memitem:a5691ad84f8160a3eb10131f1f5de4708 inherit pub_methods_classgrpc_1_1internal_1_1_client_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#a5691ad84f8160a3eb10131f1f5de4708">~ClientAsyncStreamingInterface</a> ()</td></tr>
 <tr class="separator:a5691ad84f8160a3eb10131f1f5de4708 inherit pub_methods_classgrpc_1_1internal_1_1_client_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_async_writer_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html">grpc::internal::AsyncWriterInterface&lt; W &gt;</a></td></tr>
 <tr class="memitem:a8ad846091252c112c4db0b41965e5a4c inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#a8ad846091252c112c4db0b41965e5a4c">~AsyncWriterInterface</a> ()</td></tr>
 <tr class="separator:a8ad846091252c112c4db0b41965e5a4c inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8dbc8f388cb8e79f587b821fd7d64ce7 inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#a8dbc8f388cb8e79f587b821fd7d64ce7">WriteLast</a> (const W &amp;msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, void *tag)</td></tr>
-<tr class="memdesc:a8dbc8f388cb8e79f587b821fd7d64ce7 inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="classgrpc_1_1internal_1_1_async_writer_interface.html#a8dbc8f388cb8e79f587b821fd7d64ce7">More...</a><br /></td></tr>
-<tr class="separator:a8dbc8f388cb8e79f587b821fd7d64ce7 inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a587a753da8313124338ec82d7f4c6e1e inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#a587a753da8313124338ec82d7f4c6e1e">WriteLast</a> (const W &amp;msg, <a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, void *tag)</td></tr>
+<tr class="memdesc:a587a753da8313124338ec82d7f4c6e1e inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the writing of <em>msg</em> and coalesce it with the writing of trailing metadata, using <a class="el" href="classgrpc_1_1_write_options.html" title="Per-message write options.">WriteOptions</a> <em>options</em> with identifying tag <em>tag</em>.  <a href="classgrpc_1_1internal_1_1_async_writer_interface.html#a587a753da8313124338ec82d7f4c6e1e">More...</a><br /></td></tr>
+<tr class="separator:a587a753da8313124338ec82d7f4c6e1e inherit pub_methods_classgrpc_1_1internal_1_1_async_writer_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_async_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_async_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html">grpc::internal::AsyncReaderInterface&lt; R &gt;</a></td></tr>
 <tr class="memitem:a18fe4235232864c8770a562cc2aa1f3c inherit pub_methods_classgrpc_1_1internal_1_1_async_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_async_reader_interface.html#a18fe4235232864c8770a562cc2aa1f3c">~AsyncReaderInterface</a> ()</td></tr>
 <tr class="separator:a18fe4235232864c8770a562cc2aa1f3c inherit pub_methods_classgrpc_1_1internal_1_1_async_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,8 +134,8 @@ class grpc::ClientAsyncReaderWriter&lt; W, R &gt;</h3>
 
 <p>Async client-side interface for bi-directional streaming, where the outgoing message stream going to the server has messages of type <em>W</em>, and the incoming message stream coming from the server has messages of type <em>R</em>. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="a953d61a2b25473bb76c7038b940b87aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a953d61a2b25473bb76c7038b940b87aa">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="abb288c3e106a091b6f18f84fd9f6941c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abb288c3e106a091b6f18f84fd9f6941c">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -148,7 +148,7 @@ template&lt;class W , class R &gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classgrpc_1_1_client_async_reader_writer.html">grpc::ClientAsyncReaderWriter</a>&lt; W, R &gt;::Finish </td>
           <td>(</td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *&#160;</td>
           <td class="paramname"><em>status</em>, </td>
         </tr>
         <tr>
@@ -175,7 +175,7 @@ template&lt;class W , class R &gt; </div>
 <li>the <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to:">ClientContext</a></em> associated with this call is updated with possible initial and trailing metadata sent from the server. </li>
 </ul>
 
-<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#a0c4fd4be2228fa196ae446502828e23a">grpc::internal::ClientAsyncStreamingInterface</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#ae8f1fe0da69c54e01559115c408aa447">grpc::internal::ClientAsyncStreamingInterface</a>.</p>
 
 </div>
 </div>
@@ -373,8 +373,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="a65e446f92d97e2e6bb79f420d485c683"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a65e446f92d97e2e6bb79f420d485c683">&#9670;&nbsp;</a></span>Write() <span class="overload">[1/2]</span></h2>
+<a id="a1fcfdafd13485034fd92bd5967037d25"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1fcfdafd13485034fd92bd5967037d25">&#9670;&nbsp;</a></span>Write() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -393,7 +393,7 @@ template&lt;class W , class R &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a>&#160;</td>
           <td class="paramname"><em>options</em>, </td>
         </tr>
         <tr>
@@ -427,7 +427,7 @@ template&lt;class W , class R &gt; </div>
   </dd>
 </dl>
 
-<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#a9fef3a3ceb6be3a140ef4a8ad33c6c75">grpc::internal::AsyncWriterInterface&lt; W &gt;</a>.</p>
+<p>Implements <a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#a03f8532dfbd6c82c7d1fed5bc6e79d79">grpc::internal::AsyncWriterInterface&lt; W &gt;</a>.</p>
 
 </div>
 </div>
@@ -552,7 +552,7 @@ template&lt;class W , class R &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

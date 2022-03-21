@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.44.0</span>
+   &#160;<span id="projectnumber">1.45.0</span>
    </div>
   </td>
  </tr>
@@ -86,10 +86,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a68e987e7b87ca5a2668419736f9ee9b1"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">GetState</a> (bool try_to_connect)=0</td></tr>
 <tr class="memdesc:a68e987e7b87ca5a2668419736f9ee9b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the current channel state.  <a href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">More...</a><br /></td></tr>
 <tr class="separator:a68e987e7b87ca5a2668419736f9ee9b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ad2ffa0dffc84f1fe38084c0993c4ca50">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, ::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, void *tag)</td></tr>
-<tr class="memdesc:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#ad2ffa0dffc84f1fe38084c0993c4ca50">More...</a><br /></td></tr>
-<tr class="separator:ad2ffa0dffc84f1fe38084c0993c4ca50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acceaaf0fecba5037b4a967e5f4e4a6a8"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:acceaaf0fecba5037b4a967e5f4e4a6a8"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#acceaaf0fecba5037b4a967e5f4e4a6a8">NotifyOnStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline, <a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *cq, void *tag)</td></tr>
+<tr class="memdesc:acceaaf0fecba5037b4a967e5f4e4a6a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the <em>tag</em> on <em>cq</em> when the channel state is changed or <em>deadline</em> expires.  <a href="classgrpc_1_1_channel_interface.html#acceaaf0fecba5037b4a967e5f4e4a6a8">More...</a><br /></td></tr>
+<tr class="separator:acceaaf0fecba5037b4a967e5f4e4a6a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a70567e7ea3d1a967ecf5ecdc220ac27e"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">WaitForStateChange</a> (<a class="el" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed, T deadline)</td></tr>
 <tr class="memdesc:a70567e7ea3d1a967ecf5ecdc220ac27e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking wait for channel state change or <em>deadline</em> expiration.  <a href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">More...</a><br /></td></tr>
@@ -101,49 +101,49 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:ade499098cc91745c1c87147d7a7fb7bf"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
-<tr class="memitem:ade499098cc91745c1c87147d7a7fb7bf"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ade499098cc91745c1c87147d7a7fb7bf">::grpc::ClientReader</a></td></tr>
-<tr class="separator:ade499098cc91745c1c87147d7a7fb7bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
-<tr class="memitem:a4498fada67d531d99a8642f47d746544"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a4498fada67d531d99a8642f47d746544">::grpc::ClientWriter</a></td></tr>
-<tr class="separator:a4498fada67d531d99a8642f47d746544"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
-<tr class="memitem:a6d5659aa24edba057895be774e2752ec"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a6d5659aa24edba057895be774e2752ec">::grpc::ClientReaderWriter</a></td></tr>
-<tr class="separator:a6d5659aa24edba057895be774e2752ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2175726e9cbee09a493f40e1c3b5b088"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
-<tr class="memitem:a2175726e9cbee09a493f40e1c3b5b088"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a2175726e9cbee09a493f40e1c3b5b088">::grpc::internal::ClientAsyncReaderFactory</a></td></tr>
-<tr class="separator:a2175726e9cbee09a493f40e1c3b5b088"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa160cb54356482ee5c40511fe76b4c9d"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
-<tr class="memitem:aa160cb54356482ee5c40511fe76b4c9d"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#aa160cb54356482ee5c40511fe76b4c9d">::grpc::internal::ClientAsyncWriterFactory</a></td></tr>
-<tr class="separator:aa160cb54356482ee5c40511fe76b4c9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c87e7adb535c485a4bc8e7215fab4a4"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
-<tr class="memitem:a7c87e7adb535c485a4bc8e7215fab4a4"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a7c87e7adb535c485a4bc8e7215fab4a4">::grpc::internal::ClientAsyncReaderWriterFactory</a></td></tr>
-<tr class="separator:a7c87e7adb535c485a4bc8e7215fab4a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1276dd3b0504721eced67f15c36ac888"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a1276dd3b0504721eced67f15c36ac888">::grpc::internal::ClientAsyncResponseReaderHelper</a></td></tr>
-<tr class="separator:a1276dd3b0504721eced67f15c36ac888"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a12a368febde8b86808b24295c04c7b34"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
-<tr class="memitem:a12a368febde8b86808b24295c04c7b34"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a12a368febde8b86808b24295c04c7b34">::grpc::internal::ClientCallbackReaderWriterFactory</a></td></tr>
-<tr class="separator:a12a368febde8b86808b24295c04c7b34"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aac76a68caa02d284d9352eb3b8ed04fe"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
-<tr class="memitem:aac76a68caa02d284d9352eb3b8ed04fe"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#aac76a68caa02d284d9352eb3b8ed04fe">::grpc::internal::ClientCallbackReaderFactory</a></td></tr>
-<tr class="separator:aac76a68caa02d284d9352eb3b8ed04fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe439612681a46aabf8cb5c1c8f0a170"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
-<tr class="memitem:abe439612681a46aabf8cb5c1c8f0a170"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#abe439612681a46aabf8cb5c1c8f0a170">::grpc::internal::ClientCallbackWriterFactory</a></td></tr>
-<tr class="separator:abe439612681a46aabf8cb5c1c8f0a170"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee23b219653dea5f3fef55176aca3509"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#aee23b219653dea5f3fef55176aca3509">::grpc::internal::ClientCallbackUnaryFactory</a></td></tr>
-<tr class="separator:aee23b219653dea5f3fef55176aca3509"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:ad26a823fee699f97244d581f400fe39a"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ad26a823fee699f97244d581f400fe39a">::grpc::internal::BlockingUnaryCallImpl</a></td></tr>
-<tr class="separator:ad26a823fee699f97244d581f400fe39a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a039f3a4023eccbecbb5c9925722e9ef7">::grpc::internal::CallbackUnaryCallImpl</a></td></tr>
-<tr class="separator:a039f3a4023eccbecbb5c9925722e9ef7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afdfab4a69fd00ee5bffe02b9fd2718a2"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#afdfab4a69fd00ee5bffe02b9fd2718a2">::grpc::internal::RpcMethod</a></td></tr>
-<tr class="separator:afdfab4a69fd00ee5bffe02b9fd2718a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac8c9786b36d074059b306ff1d1d90453"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ac8c9786b36d074059b306ff1d1d90453">::grpc::experimental::DelegatingChannel</a></td></tr>
-<tr class="separator:ac8c9786b36d074059b306ff1d1d90453"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a9a23a8cfcee9fd9658ecd8bb1a3193ac">::grpc::internal::InterceptedChannel</a></td></tr>
-<tr class="separator:a9a23a8cfcee9fd9658ecd8bb1a3193ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aee711c9a07af906c6fb2473ad58e0f41"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
+<tr class="memitem:aee711c9a07af906c6fb2473ad58e0f41"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#aee711c9a07af906c6fb2473ad58e0f41">grpc::ClientReader</a></td></tr>
+<tr class="separator:aee711c9a07af906c6fb2473ad58e0f41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac811a50025862448a0fddb0b95881400"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
+<tr class="memitem:ac811a50025862448a0fddb0b95881400"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ac811a50025862448a0fddb0b95881400">grpc::ClientWriter</a></td></tr>
+<tr class="separator:ac811a50025862448a0fddb0b95881400"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea6678f60bd2a400a7f043c7fd315ee3"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
+<tr class="memitem:aea6678f60bd2a400a7f043c7fd315ee3"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#aea6678f60bd2a400a7f043c7fd315ee3">grpc::ClientReaderWriter</a></td></tr>
+<tr class="separator:aea6678f60bd2a400a7f043c7fd315ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a998a6090ba3032af48d6f1ceeaafc0d6"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
+<tr class="memitem:a998a6090ba3032af48d6f1ceeaafc0d6"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a998a6090ba3032af48d6f1ceeaafc0d6">grpc::internal::ClientAsyncReaderFactory</a></td></tr>
+<tr class="separator:a998a6090ba3032af48d6f1ceeaafc0d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42a01bfe9a196b4a16a94d96cf6105f0"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
+<tr class="memitem:a42a01bfe9a196b4a16a94d96cf6105f0"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a42a01bfe9a196b4a16a94d96cf6105f0">grpc::internal::ClientAsyncWriterFactory</a></td></tr>
+<tr class="separator:a42a01bfe9a196b4a16a94d96cf6105f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9b5e42f1879bcb999e31b47a623d461"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
+<tr class="memitem:ad9b5e42f1879bcb999e31b47a623d461"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ad9b5e42f1879bcb999e31b47a623d461">grpc::internal::ClientAsyncReaderWriterFactory</a></td></tr>
+<tr class="separator:ad9b5e42f1879bcb999e31b47a623d461"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c566ee98d2e8abcc72ec94d01148b22"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a4c566ee98d2e8abcc72ec94d01148b22">grpc::internal::ClientAsyncResponseReaderHelper</a></td></tr>
+<tr class="separator:a4c566ee98d2e8abcc72ec94d01148b22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e07c50be01eba855d9dbd948112a4d8"><td class="memTemplParams" colspan="2">template&lt;class W , class R &gt; </td></tr>
+<tr class="memitem:a9e07c50be01eba855d9dbd948112a4d8"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a9e07c50be01eba855d9dbd948112a4d8">grpc::internal::ClientCallbackReaderWriterFactory</a></td></tr>
+<tr class="separator:a9e07c50be01eba855d9dbd948112a4d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ce127e1cc4f6999be699d7a1733103e"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
+<tr class="memitem:a6ce127e1cc4f6999be699d7a1733103e"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a6ce127e1cc4f6999be699d7a1733103e">grpc::internal::ClientCallbackReaderFactory</a></td></tr>
+<tr class="separator:a6ce127e1cc4f6999be699d7a1733103e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f68bc12cd76c3dc01917cf83ec57be5"><td class="memTemplParams" colspan="2">template&lt;class W &gt; </td></tr>
+<tr class="memitem:a4f68bc12cd76c3dc01917cf83ec57be5"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a4f68bc12cd76c3dc01917cf83ec57be5">grpc::internal::ClientCallbackWriterFactory</a></td></tr>
+<tr class="separator:a4f68bc12cd76c3dc01917cf83ec57be5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac452f85d7d4e395144d7167d22b94c3a"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#ac452f85d7d4e395144d7167d22b94c3a">grpc::internal::ClientCallbackUnaryFactory</a></td></tr>
+<tr class="separator:ac452f85d7d4e395144d7167d22b94c3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69dd8b84bff711806854a149798d2fd4"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:a69dd8b84bff711806854a149798d2fd4"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a69dd8b84bff711806854a149798d2fd4">grpc::internal::BlockingUnaryCallImpl</a></td></tr>
+<tr class="separator:a69dd8b84bff711806854a149798d2fd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92aca219290344b2da2560d1b9878b9f"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:a92aca219290344b2da2560d1b9878b9f"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a92aca219290344b2da2560d1b9878b9f">grpc::internal::CallbackUnaryCallImpl</a></td></tr>
+<tr class="separator:a92aca219290344b2da2560d1b9878b9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fc74b5fc84fcb524eaac6bfcd5767b2"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a3fc74b5fc84fcb524eaac6bfcd5767b2">grpc::internal::RpcMethod</a></td></tr>
+<tr class="separator:a3fc74b5fc84fcb524eaac6bfcd5767b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af675f2c216dfa6964f4a62a865aec278"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#af675f2c216dfa6964f4a62a865aec278">grpc::experimental::DelegatingChannel</a></td></tr>
+<tr class="separator:af675f2c216dfa6964f4a62a865aec278"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cb18cf931d1547d15ee896524cd0f72"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a9cb18cf931d1547d15ee896524cd0f72">grpc::internal::InterceptedChannel</a></td></tr>
+<tr class="separator:a9cb18cf931d1547d15ee896524cd0f72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Codegen interface for <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">grpc::Channel</a></em>. </p>
@@ -205,8 +205,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="ad2ffa0dffc84f1fe38084c0993c4ca50"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad2ffa0dffc84f1fe38084c0993c4ca50">&#9670;&nbsp;</a></span>NotifyOnStateChange()</h2>
+<a id="acceaaf0fecba5037b4a967e5f4e4a6a8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acceaaf0fecba5037b4a967e5f4e4a6a8">&#9670;&nbsp;</a></span>NotifyOnStateChange()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -231,7 +231,7 @@ template&lt;typename T &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">::<a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *&#160;</td>
           <td class="paramname"><em>cq</em>, </td>
         </tr>
         <tr>
@@ -330,8 +330,8 @@ template&lt;typename T &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Friends And Related Function Documentation</h2>
-<a id="ade499098cc91745c1c87147d7a7fb7bf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade499098cc91745c1c87147d7a7fb7bf">&#9670;&nbsp;</a></span>::grpc::ClientReader</h2>
+<a id="aee711c9a07af906c6fb2473ad58e0f41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aee711c9a07af906c6fb2473ad58e0f41">&#9670;&nbsp;</a></span>grpc::ClientReader</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -342,7 +342,7 @@ template&lt;class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_client_reader.html">grpc::ClientReader</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_client_reader.html">grpc::ClientReader</a></td>
         </tr>
       </table>
   </td>
@@ -354,8 +354,8 @@ template&lt;class R &gt; </div>
 
 </div>
 </div>
-<a id="a6d5659aa24edba057895be774e2752ec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6d5659aa24edba057895be774e2752ec">&#9670;&nbsp;</a></span>::grpc::ClientReaderWriter</h2>
+<a id="aea6678f60bd2a400a7f043c7fd315ee3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aea6678f60bd2a400a7f043c7fd315ee3">&#9670;&nbsp;</a></span>grpc::ClientReaderWriter</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -366,7 +366,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_client_reader_writer.html">grpc::ClientReaderWriter</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_client_reader_writer.html">grpc::ClientReaderWriter</a></td>
         </tr>
       </table>
   </td>
@@ -378,8 +378,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="a4498fada67d531d99a8642f47d746544"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4498fada67d531d99a8642f47d746544">&#9670;&nbsp;</a></span>::grpc::ClientWriter</h2>
+<a id="ac811a50025862448a0fddb0b95881400"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac811a50025862448a0fddb0b95881400">&#9670;&nbsp;</a></span>grpc::ClientWriter</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -390,7 +390,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1_client_writer.html">grpc::ClientWriter</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_client_writer.html">grpc::ClientWriter</a></td>
         </tr>
       </table>
   </td>
@@ -402,8 +402,8 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="ac8c9786b36d074059b306ff1d1d90453"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac8c9786b36d074059b306ff1d1d90453">&#9670;&nbsp;</a></span>::grpc::experimental::DelegatingChannel</h2>
+<a id="af675f2c216dfa6964f4a62a865aec278"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af675f2c216dfa6964f4a62a865aec278">&#9670;&nbsp;</a></span>grpc::experimental::DelegatingChannel</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -412,7 +412,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html">grpc::experimental::DelegatingChannel</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html">grpc::experimental::DelegatingChannel</a></td>
         </tr>
       </table>
   </td>
@@ -424,8 +424,8 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="ad26a823fee699f97244d581f400fe39a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad26a823fee699f97244d581f400fe39a">&#9670;&nbsp;</a></span>::grpc::internal::BlockingUnaryCallImpl</h2>
+<a id="a69dd8b84bff711806854a149798d2fd4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a69dd8b84bff711806854a149798d2fd4">&#9670;&nbsp;</a></span>grpc::internal::BlockingUnaryCallImpl</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -436,7 +436,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html">grpc::internal::BlockingUnaryCallImpl</a></td>
         </tr>
       </table>
   </td>
@@ -448,8 +448,8 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 
 </div>
 </div>
-<a id="a039f3a4023eccbecbb5c9925722e9ef7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a039f3a4023eccbecbb5c9925722e9ef7">&#9670;&nbsp;</a></span>::grpc::internal::CallbackUnaryCallImpl</h2>
+<a id="a92aca219290344b2da2560d1b9878b9f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a92aca219290344b2da2560d1b9878b9f">&#9670;&nbsp;</a></span>grpc::internal::CallbackUnaryCallImpl</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -460,7 +460,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_callback_unary_call_impl.html">grpc::internal::CallbackUnaryCallImpl</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_callback_unary_call_impl.html">grpc::internal::CallbackUnaryCallImpl</a></td>
         </tr>
       </table>
   </td>
@@ -472,8 +472,8 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 
 </div>
 </div>
-<a id="a2175726e9cbee09a493f40e1c3b5b088"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2175726e9cbee09a493f40e1c3b5b088">&#9670;&nbsp;</a></span>::grpc::internal::ClientAsyncReaderFactory</h2>
+<a id="a998a6090ba3032af48d6f1ceeaafc0d6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a998a6090ba3032af48d6f1ceeaafc0d6">&#9670;&nbsp;</a></span>grpc::internal::ClientAsyncReaderFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -484,7 +484,7 @@ template&lt;class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html">grpc::internal::ClientAsyncReaderFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_factory.html">grpc::internal::ClientAsyncReaderFactory</a></td>
         </tr>
       </table>
   </td>
@@ -496,8 +496,8 @@ template&lt;class R &gt; </div>
 
 </div>
 </div>
-<a id="a7c87e7adb535c485a4bc8e7215fab4a4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7c87e7adb535c485a4bc8e7215fab4a4">&#9670;&nbsp;</a></span>::grpc::internal::ClientAsyncReaderWriterFactory</h2>
+<a id="ad9b5e42f1879bcb999e31b47a623d461"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9b5e42f1879bcb999e31b47a623d461">&#9670;&nbsp;</a></span>grpc::internal::ClientAsyncReaderWriterFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -508,7 +508,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html">grpc::internal::ClientAsyncReaderWriterFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_async_reader_writer_factory.html">grpc::internal::ClientAsyncReaderWriterFactory</a></td>
         </tr>
       </table>
   </td>
@@ -520,8 +520,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="a1276dd3b0504721eced67f15c36ac888"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1276dd3b0504721eced67f15c36ac888">&#9670;&nbsp;</a></span>::grpc::internal::ClientAsyncResponseReaderHelper</h2>
+<a id="a4c566ee98d2e8abcc72ec94d01148b22"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c566ee98d2e8abcc72ec94d01148b22">&#9670;&nbsp;</a></span>grpc::internal::ClientAsyncResponseReaderHelper</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -530,7 +530,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_helper.html">grpc::internal::ClientAsyncResponseReaderHelper</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_async_response_reader_helper.html">grpc::internal::ClientAsyncResponseReaderHelper</a></td>
         </tr>
       </table>
   </td>
@@ -542,8 +542,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="aa160cb54356482ee5c40511fe76b4c9d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa160cb54356482ee5c40511fe76b4c9d">&#9670;&nbsp;</a></span>::grpc::internal::ClientAsyncWriterFactory</h2>
+<a id="a42a01bfe9a196b4a16a94d96cf6105f0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a42a01bfe9a196b4a16a94d96cf6105f0">&#9670;&nbsp;</a></span>grpc::internal::ClientAsyncWriterFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -554,7 +554,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_async_writer_factory.html">grpc::internal::ClientAsyncWriterFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_async_writer_factory.html">grpc::internal::ClientAsyncWriterFactory</a></td>
         </tr>
       </table>
   </td>
@@ -566,8 +566,8 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="aac76a68caa02d284d9352eb3b8ed04fe"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aac76a68caa02d284d9352eb3b8ed04fe">&#9670;&nbsp;</a></span>::grpc::internal::ClientCallbackReaderFactory</h2>
+<a id="a6ce127e1cc4f6999be699d7a1733103e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ce127e1cc4f6999be699d7a1733103e">&#9670;&nbsp;</a></span>grpc::internal::ClientCallbackReaderFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -578,7 +578,7 @@ template&lt;class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_factory.html">grpc::internal::ClientCallbackReaderFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_factory.html">grpc::internal::ClientCallbackReaderFactory</a></td>
         </tr>
       </table>
   </td>
@@ -590,8 +590,8 @@ template&lt;class R &gt; </div>
 
 </div>
 </div>
-<a id="a12a368febde8b86808b24295c04c7b34"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a12a368febde8b86808b24295c04c7b34">&#9670;&nbsp;</a></span>::grpc::internal::ClientCallbackReaderWriterFactory</h2>
+<a id="a9e07c50be01eba855d9dbd948112a4d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e07c50be01eba855d9dbd948112a4d8">&#9670;&nbsp;</a></span>grpc::internal::ClientCallbackReaderWriterFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -602,7 +602,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_factory.html">grpc::internal::ClientCallbackReaderWriterFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_factory.html">grpc::internal::ClientCallbackReaderWriterFactory</a></td>
         </tr>
       </table>
   </td>
@@ -614,8 +614,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="aee23b219653dea5f3fef55176aca3509"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aee23b219653dea5f3fef55176aca3509">&#9670;&nbsp;</a></span>::grpc::internal::ClientCallbackUnaryFactory</h2>
+<a id="ac452f85d7d4e395144d7167d22b94c3a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac452f85d7d4e395144d7167d22b94c3a">&#9670;&nbsp;</a></span>grpc::internal::ClientCallbackUnaryFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -624,7 +624,7 @@ template&lt;class W , class R &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_factory.html">grpc::internal::ClientCallbackUnaryFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_factory.html">grpc::internal::ClientCallbackUnaryFactory</a></td>
         </tr>
       </table>
   </td>
@@ -636,8 +636,8 @@ template&lt;class W , class R &gt; </div>
 
 </div>
 </div>
-<a id="abe439612681a46aabf8cb5c1c8f0a170"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abe439612681a46aabf8cb5c1c8f0a170">&#9670;&nbsp;</a></span>::grpc::internal::ClientCallbackWriterFactory</h2>
+<a id="a4f68bc12cd76c3dc01917cf83ec57be5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4f68bc12cd76c3dc01917cf83ec57be5">&#9670;&nbsp;</a></span>grpc::internal::ClientCallbackWriterFactory</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -648,7 +648,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_factory.html">grpc::internal::ClientCallbackWriterFactory</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_factory.html">grpc::internal::ClientCallbackWriterFactory</a></td>
         </tr>
       </table>
   </td>
@@ -660,8 +660,8 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="a9a23a8cfcee9fd9658ecd8bb1a3193ac"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9a23a8cfcee9fd9658ecd8bb1a3193ac">&#9670;&nbsp;</a></span>::grpc::internal::InterceptedChannel</h2>
+<a id="a9cb18cf931d1547d15ee896524cd0f72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9cb18cf931d1547d15ee896524cd0f72">&#9670;&nbsp;</a></span>grpc::internal::InterceptedChannel</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -670,7 +670,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html">grpc::internal::InterceptedChannel</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html">grpc::internal::InterceptedChannel</a></td>
         </tr>
       </table>
   </td>
@@ -682,8 +682,8 @@ template&lt;class W &gt; </div>
 
 </div>
 </div>
-<a id="afdfab4a69fd00ee5bffe02b9fd2718a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afdfab4a69fd00ee5bffe02b9fd2718a2">&#9670;&nbsp;</a></span>::grpc::internal::RpcMethod</h2>
+<a id="a3fc74b5fc84fcb524eaac6bfcd5767b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3fc74b5fc84fcb524eaac6bfcd5767b2">&#9670;&nbsp;</a></span>grpc::internal::RpcMethod</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -692,7 +692,7 @@ template&lt;class W &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">friend class ::<a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></td>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html">grpc::internal::RpcMethod</a></td>
         </tr>
       </table>
   </td>
@@ -710,7 +710,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Feb 17 2022 12:39:35 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
