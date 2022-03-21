@@ -17,6 +17,9 @@
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -24,25 +27,32 @@ namespace grpc_core {
 
 namespace {
 
-class ServerConfigSelectorFilter {
+class ServerConfigSelectorFilter final : public ChannelFilter {
  public:
-  static absl::StatusOr<ServerConfigSelectorFilter> Create(
-      const grpc_channel_args* args);
+  ~ServerConfigSelectorFilter() override;
 
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory);
+  ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
+  ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
+      delete;
+  ServerConfigSelectorFilter(ServerConfigSelectorFilter&&) = default;
+  ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
+
+  static absl::StatusOr<ServerConfigSelectorFilter> Create(
+      const grpc_channel_args* args, ChannelFilter::Args);
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&mu_);
-    return config_selector_.value();
+    MutexLock lock(&state_->mu);
+    return state_->config_selector.value();
   }
 
  private:
   struct State {
-    Mutex mu_;
+    Mutex mu;
     absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-        config_selector_ ABSL_GUARDED_BY(mu_);
+        config_selector ABSL_GUARDED_BY(mu);
   };
   class ServerConfigSelectorWatcher
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
@@ -51,8 +61,8 @@ class ServerConfigSelectorFilter {
         : chand_(chand) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&chand_->mu_);
-      chand_->config_selector_ = std::move(update);
+      MutexLock lock(&chand_->state_->mu);
+      chand_->state_->config_selector = std::move(update);
     }
 
    private:
@@ -62,13 +72,13 @@ class ServerConfigSelectorFilter {
   explicit ServerConfigSelectorFilter(
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider);
-  ~ServerConfigSelectorFilter();
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
+  std::unique_ptr<State> state_;
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
-    const grpc_channel_args* args) {
+    const grpc_channel_args* args, ChannelFilter::Args) {
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
       ServerConfigSelectorProvider::GetFromChannelArgs(*args);
   if (server_config_selector_provider == nullptr) {
@@ -86,10 +96,10 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
       absl::make_unique<ServerConfigSelectorWatcher>(this);
   auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
-  MutexLock lock(&mu_);
+  MutexLock lock(&state_->mu);
   // It's possible for the watcher to have already updated config_selector_
-  if (!config_selector_.has_value()) {
-    config_selector_ = std::move(config_selector);
+  if (!state_->config_selector.has_value()) {
+    state_->config_selector = std::move(config_selector);
   }
 }
 
@@ -97,21 +107,21 @@ ServerConfigSelectorFilter::~ServerConfigSelectorFilter() {
   server_config_selector_provider_->CancelWatch();
 }
 
-ArenaPromise<TrailingMetadata> ServerConfigSelectorFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto sel = config_selector();
-  if (!sel.ok()) return Immediate(sel.status());
-  auto call_config = sel.value()->GetCallConfig(calld->recv_initial_metadata_);
+  if (!sel.ok()) return Immediate(ServerMetadataHandle(sel.status()));
+  auto call_config =
+      sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
   if (call_config.error != GRPC_ERROR_NONE) {
-    return absl::UnavailableError(grpc_error_std_string(call_config.error));
+    return Immediate(ServerMetadataHandle(
+        absl::UnavailableError(grpc_error_std_string(call_config.error))));
   }
-  GetContext<
-      grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA] =
-      GetContext<Arena>()->New<ServiceConfigCallData>(
-          std::move(call_config.service_config), call_config.method_configs,
-          {});
-  return next_promise_factory(std::move(initial_metadata));
+  GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+      .value = GetContext<Arena>()->New<ServiceConfigCallData>(
+      std::move(call_config.service_config), call_config.method_configs,
+      ServiceConfigCallData::CallAttributes{});
+  return next_promise_factory(std::move(call_args));
 }
 
 }  // namespace
