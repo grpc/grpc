@@ -112,7 +112,7 @@ BackupPoller::Poller::~Poller() {
   {
     ExecCtx exec_ctx;
     grpc_closure* done = GRPC_CLOSURE_CREATE(
-        [](void* arg, grpc_error* error) {
+        [](void* arg, grpc_error*) {
           static_cast<PollsetShutdown*>(arg)->Unref();
         },
         p, nullptr);
