@@ -49,6 +49,8 @@ bazel build -- //... "${EXCLUDED_TARGETS[@]}"
 # Project root.
 
 realpath $(dirname "$0")/../../.. || true
+pwd || true
+tree . || true
 
 cd "$(dirname "$0")"/../../../test/distrib/bazel/cpp/
 
