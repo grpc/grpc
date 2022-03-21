@@ -227,7 +227,7 @@ class ServerContextBase {
     return *client_metadata_.map();
   }
 
-  /// Return the compression algorithm to be used by the server call.
+  /// Return the compression level to be used by the server call.
   grpc_compression_level compression_level() const {
     return compression_level_;
   }
