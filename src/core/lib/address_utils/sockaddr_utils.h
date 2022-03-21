@@ -60,11 +60,13 @@ int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 
 // Converts a sockaddr into a newly-allocated human-readable string.
 //
-// Currently, only the AF_INET and AF_INET6 families are recognized.
+// Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
 // If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-// displayed as plain IPv4.
+// displayed as plain IPv4. Sets is_error to true if it fails to recognize the
+// address when not null.
 std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
-                                    bool normalize) GRPC_MUST_USE_RESULT;
+                                    bool normalize, bool* is_error = nullptr)
+    GRPC_MUST_USE_RESULT;
 
 /* Returns the URI string corresponding to \a addr */
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);

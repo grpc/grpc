@@ -183,7 +183,7 @@ void grpc_sockaddr_make_wildcard6(int port,
 }
 
 std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
-                                    bool normalize) {
+                                    bool normalize, bool* is_error) {
   const int save_errno = errno;
   grpc_resolved_address addr_normalized;
   if (normalize && grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
@@ -191,6 +191,31 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   }
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (is_error != nullptr) *is_error = false;
+  std::string out;
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  if (addr->sa_family == GRPC_AF_UNIX) {
+    const sockaddr_un* addr_un = reinterpret_cast<const sockaddr_un*>(addr);
+    bool abstract = addr_un->sun_path[0] == '\0';
+    if (abstract) {
+      int len = resolved_addr->len - sizeof(addr->sa_family);
+      if (len <= 0) {
+        if (is_error != nullptr) *is_error = true;
+        return absl::StrFormat("(Empty UDS abstract path)");
+      }
+      out = std::string(addr_un->sun_path, len);
+    } else {
+      int maxlen = sizeof(addr_un->sun_path);
+      if (strnlen(addr_un->sun_path, maxlen) == maxlen) {
+        if (is_error != nullptr) *is_error = true;
+        return absl::StrFormat("(UDS path is not null-terminated)");
+      }
+      out = std::string(addr_un->sun_path);
+    }
+    return out;
+  }
+#endif
+
   const void* ip = nullptr;
   int port = 0;
   uint32_t sin6_scope_id = 0;
@@ -207,7 +232,6 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
     sin6_scope_id = addr6->sin6_scope_id;
   }
   char ntop_buf[GRPC_INET6_ADDRSTRLEN];
-  std::string out;
   if (ip != nullptr && grpc_inet_ntop(addr->sa_family, ip, ntop_buf,
                                       sizeof(ntop_buf)) != nullptr) {
     if (sin6_scope_id != 0) {
@@ -220,6 +244,7 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
     }
   } else {
     out = absl::StrFormat("(sockaddr family=%d)", addr->sa_family);
+    if (is_error != nullptr) *is_error = true;
   }
   /* This is probably redundant, but we wouldn't want to log the wrong error. */
   errno = save_errno;

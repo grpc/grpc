@@ -20,6 +20,9 @@
 
 #include <errno.h>
 #include <string.h>
+#ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
+#endif
 
 #include <gtest/gtest.h>
 
@@ -161,14 +164,21 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
 
 TEST(SockAddrUtilsTest, SockAddrToString) {
   errno = 0x7EADBEEF;
+  bool is_error;
 
   grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input4, false), "192.0.2.1:12345");
+  is_error = true;
+  EXPECT_EQ(grpc_sockaddr_to_string(&input4, false, &is_error),
+            "192.0.2.1:12345");
+  EXPECT_FALSE(is_error);
   EXPECT_EQ(grpc_sockaddr_to_string(&input4, true), "192.0.2.1:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input4), "ipv4:192.0.2.1:12345");
 
   grpc_resolved_address input6 = MakeAddr6(kIPv6, sizeof(kIPv6));
-  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false), "[2001:db8::1]:12345");
+  is_error = true;
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, false, &is_error),
+            "[2001:db8::1]:12345");
+  EXPECT_FALSE(is_error);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true), "[2001:db8::1]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1]:12345");
 
@@ -201,9 +211,60 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
   memset(&phony, 0, sizeof(phony));
   grpc_sockaddr* phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
   phony_addr->sa_family = 123;
-  EXPECT_EQ(grpc_sockaddr_to_string(&phony, false), "(sockaddr family=123)");
-  EXPECT_EQ(grpc_sockaddr_to_string(&phony, true), "(sockaddr family=123)");
+  is_error = false;
+  EXPECT_EQ(grpc_sockaddr_to_string(&phony, false, &is_error),
+            "(sockaddr family=123)");
+  EXPECT_TRUE(is_error);
+  is_error = false;
+  EXPECT_EQ(grpc_sockaddr_to_string(&phony, true, &is_error),
+            "(sockaddr family=123)");
+  EXPECT_TRUE(is_error);
   EXPECT_TRUE(grpc_sockaddr_to_uri(&phony).empty());
+
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  grpc_resolved_address inputun;
+  struct sockaddr_un* sock_un = reinterpret_cast<struct sockaddr_un*>(&inputun);
+  ASSERT_EQ(grpc_core::UnixSockaddrPopulate("/some/unix/path", &inputun),
+            GRPC_ERROR_NONE);
+  is_error = true;
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true, &is_error),
+            "/some/unix/path");
+  EXPECT_FALSE(is_error);
+
+  std::string max_filepath(sizeof(sock_un->sun_path) - 1, 'x');
+  ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
+            GRPC_ERROR_NONE);
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true), max_filepath);
+
+  ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
+            GRPC_ERROR_NONE);
+  sock_un->sun_path[sizeof(sockaddr_un::sun_path) - 1] = 'x';
+  is_error = false;
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true, &is_error),
+            "(UDS path is not null-terminated)");
+  EXPECT_TRUE(is_error);
+
+  ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("some_unix_path", &inputun),
+            GRPC_ERROR_NONE);
+  is_error = true;
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true, &is_error),
+            absl::StrCat(std::string(1, '\0'), "some_unix_path"));
+  EXPECT_FALSE(is_error);
+
+  std::string max_abspath(sizeof(sock_un->sun_path) - 1, '\0');
+  ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate(max_abspath, &inputun),
+            GRPC_ERROR_NONE);
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true),
+            absl::StrCat(std::string(1, '\0'), max_abspath));
+
+  ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("", &inputun),
+            GRPC_ERROR_NONE);
+  inputun.len = sizeof(sock_un->sun_family);
+  is_error = false;
+  EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true, &is_error),
+            "(Empty UDS abstract path)");
+  EXPECT_TRUE(is_error);
+#endif
 }
 
 TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
