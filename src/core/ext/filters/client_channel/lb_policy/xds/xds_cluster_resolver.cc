@@ -706,26 +706,32 @@ void XdsClusterResolverLb::UpdatePriorityList(
   // Construct new list of children.
   std::vector<size_t> priority_child_numbers;
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
+gpr_log(GPR_INFO, "FINDING CHILD NUMBER FOR PRIORITY %" PRIuPTR, priority);
     const auto& localities = priority_list[priority].localities;
     absl::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
     for (const auto& p : localities) {
       XdsLocalityName* locality_name = p.first;
+gpr_log(GPR_INFO, "  CHECKING LOCALITY: %s", locality_name->AsHumanReadableString().c_str());
       if (!child_number.has_value()) {
+gpr_log(GPR_INFO, "    CHILD NOT FOUND YET, CHECKING FOR LOCALITY IN PREVIOUS UPDATE");
         auto it = locality_child_map.find(locality_name);
         if (it != locality_child_map.end()) {
           child_number = it->second;
+gpr_log(GPR_INFO, "      LOCALITY FOUND IN PREVIOUS UPDATE, REUSING CHILD NUMBER %" PRIuPTR, *child_number);
           locality_child_map.erase(it);
           // Remove localities that *used* to be in this child number, so
           // that we don't incorrectly reuse this child number for a
           // subsequent priority.
           for (XdsLocalityName* old_locality :
                child_locality_map[*child_number]) {
+gpr_log(GPR_INFO, "      REMOVING OTHER LOCALITIES FROM THIS CHILD FROM PREVIOUS UPDATES: %s", old_locality->AsHumanReadableString().c_str());
             locality_child_map.erase(old_locality);
           }
         }
       } else {
+gpr_log(GPR_INFO, "    CHILD ALREADY FOUND, REMOVING NEW LOCALITY FROM MAP");
         // Remove all localities that are now in this child number, so
         // that we don't accidentally reuse this child number for a
         // subsequent priority.
@@ -734,10 +740,13 @@ void XdsClusterResolverLb::UpdatePriorityList(
     }
     // If we didn't find an existing child number, assign a new one.
     if (!child_number.has_value()) {
+gpr_log(GPR_INFO, "  DID NOT REUSE ANY CHILD NUMBER, CHOOSING A NEW ONE");
       for (child_number = 0;
            child_locality_map.find(*child_number) != child_locality_map.end();
            ++(*child_number)) {
+gpr_log(GPR_INFO, "    CHILD NUMBER %" PRIuPTR " FOUND IN MAP", *child_number);
       }
+gpr_log(GPR_INFO, "  USING CHILD NUMBER %" PRIuPTR, *child_number);
       // Add entry so we know that the child number is in use.
       // (Don't need to add the list of localities, since we won't use them.)
       child_locality_map[*child_number];
