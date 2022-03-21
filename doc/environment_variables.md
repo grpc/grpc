@@ -106,8 +106,6 @@ some configuration as environment variables that can be set.
   - call_combiner - traces call combiner state
   - closure - tracks closure creation, scheduling, and completion
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-    Also traces epoll fd create()/close() calls in epollex polling engine
-    traces epoll-fd creation/close calls for epollex polling engine
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine

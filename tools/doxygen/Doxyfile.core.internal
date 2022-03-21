@@ -1839,8 +1839,6 @@ src/core/lib/iomgr/ev_apple.cc \
 src/core/lib/iomgr/ev_apple.h \
 src/core/lib/iomgr/ev_epoll1_linux.cc \
 src/core/lib/iomgr/ev_epoll1_linux.h \
-src/core/lib/iomgr/ev_epollex_linux.cc \
-src/core/lib/iomgr/ev_epollex_linux.h \
 src/core/lib/iomgr/ev_poll_posix.cc \
 src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.cc \
@@ -1888,8 +1886,6 @@ src/core/lib/iomgr/iomgr_internal.h \
 src/core/lib/iomgr/iomgr_posix.cc \
 src/core/lib/iomgr/iomgr_posix_cfstream.cc \
 src/core/lib/iomgr/iomgr_windows.cc \
-src/core/lib/iomgr/is_epollexclusive_available.cc \
-src/core/lib/iomgr/is_epollexclusive_available.h \
 src/core/lib/iomgr/load_file.cc \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
@@ -1931,7 +1927,6 @@ src/core/lib/iomgr/socket_utils_posix.h \
 src/core/lib/iomgr/socket_utils_windows.cc \
 src/core/lib/iomgr/socket_windows.cc \
 src/core/lib/iomgr/socket_windows.h \
-src/core/lib/iomgr/sys_epoll_wrapper.h \
 src/core/lib/iomgr/tcp_client.cc \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_cfstream.cc \

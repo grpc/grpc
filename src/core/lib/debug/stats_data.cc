@@ -41,8 +41,6 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "pollset_kick_wakeup_fd",
     "pollset_kick_wakeup_cv",
     "pollset_kick_own_thread",
-    "syscall_epoll_ctl",
-    "pollset_fd_cache_hits",
     "histogram_slow_lookups",
     "syscall_write",
     "syscall_read",
@@ -147,9 +145,6 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "polling wakeup (only valid for epoll1 right now)",
     "How many times could a polling wakeup be satisfied by keeping the waking "
     "thread awake? (only valid for epoll1 right now)",
-    "Number of epoll_ctl calls made (only valid for epollex right now)",
-    "Number of epoll_ctl calls skipped because the fd was cached as already "
-    "being added.  (only valid for epollex right now)",
     "Number of times histogram increments went through the slow (binary "
     "search) path",
     "Number of write syscalls (or equivalent - eg sendmsg) made by this "
@@ -281,7 +276,6 @@ const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams whose payload was written per TCP write",
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
-    // NOLINTNEXTLINE(bugprone-suspicious-missing-comma)
     "How many completion queues were checked looking for a CQ that had "
     "requested the incoming call",
 };

@@ -63,7 +63,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epoll1', 'poll'],
+    'linux': ['epoll1', 'poll'],
     'mac': ['poll'],
 }
 
@@ -1341,20 +1341,6 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-def _has_epollexclusive():
-    binary = 'cmake/build/check_epollexclusive'
-    if not os.path.exists(binary):
-        return False
-    try:
-        subprocess.check_call(binary)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
-    except OSError as e:
-        # For languages other than C and Windows the binary won't exist
-        return False
-
-
 class BuildAndRunError(object):
     """Represents error type in _build_and_run."""
 
@@ -1383,12 +1369,6 @@ def _build_and_run(check_cancelled,
             report_utils.render_junit_xml_report(
                 resultset, xml_report, suite_name=args.report_suite_name)
         return []
-
-    if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
-            platform_string()]:
-        print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
-        _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
     # start antagonists
     antagonists = [
