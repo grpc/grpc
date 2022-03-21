@@ -68,11 +68,11 @@ struct channel_data {
      max_connection_idle */
   grpc_timer max_idle_timer;
   /* Allowed max time a channel may have no outstanding rpcs */
-  grpc_millis max_connection_idle;
+  grpc_core::Duration max_connection_idle;
   /* Allowed max time a channel may exist */
-  grpc_millis max_connection_age;
+  grpc_core::Duration max_connection_age;
   /* Allowed grace period after the channel reaches its max age */
-  grpc_millis max_connection_age_grace;
+  grpc_core::Duration max_connection_age_grace;
   /* Closure to run when the channel's idle duration reaches max_connection_idle
      and should be closed gracefully */
   grpc_closure max_idle_timer_cb;
@@ -142,7 +142,8 @@ struct channel_data {
      For 2, 7    :  See decrease_call_count() function
      For 4, 6    :  See increase_call_count() function */
   gpr_atm idle_state;
-  /* Time when the channel finished its last outstanding call, in grpc_millis */
+  /* Time when the channel finished its last outstanding call, in
+   * grpc_core::Timestamp */
   gpr_atm last_enter_idle_time_millis;
 };
 }  // namespace
@@ -179,7 +180,9 @@ static void decrease_call_count(channel_data* chand) {
   /* Enter idle */
   if (gpr_atm_full_fetch_add(&chand->call_count, -1) == 1) {
     gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis,
-                             (gpr_atm)grpc_core::ExecCtx::Get()->Now());
+                             (gpr_atm)grpc_core::ExecCtx::Get()
+                                 ->Now()
+                                 .milliseconds_after_process_epoch());
     while (true) {
       gpr_atm idle_state = gpr_atm_acq_load(&chand->idle_state);
       switch (idle_state) {
@@ -286,12 +289,10 @@ static void start_max_age_grace_timer_after_goaway_op(
     grpc_core::MutexLock lock(&chand->max_age_timer_mu);
     chand->max_age_grace_timer_pending = true;
     GRPC_CHANNEL_STACK_REF(chand->channel_stack, "max_age max_age_grace_timer");
-    grpc_timer_init(&chand->max_age_grace_timer,
-                    chand->max_connection_age_grace == GRPC_MILLIS_INF_FUTURE
-                        ? GRPC_MILLIS_INF_FUTURE
-                        : grpc_core::ExecCtx::Get()->Now() +
-                              chand->max_connection_age_grace,
-                    &chand->force_close_max_age_channel);
+    grpc_timer_init(
+        &chand->max_age_grace_timer,
+        grpc_core::ExecCtx::Get()->Now() + chand->max_connection_age_grace,
+        &chand->force_close_max_age_channel);
   }
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack,
                            "max_age start_max_age_grace_timer_after_goaway_op");
@@ -332,11 +333,13 @@ static void max_idle_timer_cb(void* arg, grpc_error_handle error) {
         case MAX_IDLE_STATE_SEEN_ENTER_IDLE:
           GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                                  "max_age max_idle_timer");
-          grpc_timer_init(&chand->max_idle_timer,
-                          static_cast<grpc_millis>(gpr_atm_no_barrier_load(
-                              &chand->last_enter_idle_time_millis)) +
-                              chand->max_connection_idle,
-                          &chand->max_idle_timer_cb);
+          grpc_timer_init(
+              &chand->max_idle_timer,
+              grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+                  gpr_atm_no_barrier_load(
+                      &chand->last_enter_idle_time_millis)) +
+                  chand->max_connection_idle,
+              &chand->max_idle_timer_cb);
           /* idle_state may have already been set to
              MAX_IDLE_STATE_SEEN_EXIT_IDLE by increase_call_count(), in this
              case, we don't need to set it to MAX_IDLE_STATE_TIMER_SET */
@@ -399,8 +402,8 @@ static void force_close_max_age_channel(void* arg, grpc_error_handle error) {
    connection storms. Note that the MAX_CONNECTION_AGE option without jitter
    would not create connection storms by itself, but if there happened to be a
    connection storm it could cause it to repeat at a fixed period. */
-static grpc_millis
-add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
+static grpc_core::Duration
+add_random_max_connection_age_jitter_and_convert_to_duration(int value) {
   /* generate a random number between 1 - MAX_CONNECTION_AGE_JITTER and
      1 + MAX_CONNECTION_AGE_JITTER */
   double multiplier = rand() * MAX_CONNECTION_AGE_JITTER * 2.0 / RAND_MAX +
@@ -408,9 +411,11 @@ add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
   double result = multiplier * value;
   /* INT_MAX - 0.5 converts the value to float, so that result will not be
      cast to int implicitly before the comparison. */
-  return result > (static_cast<double>(GRPC_MILLIS_INF_FUTURE)) - 0.5
-             ? GRPC_MILLIS_INF_FUTURE
-             : static_cast<grpc_millis>(result);
+  return result > (static_cast<double>(
+                      grpc_core::Duration::Infinity().millis())) -
+                      0.5
+             ? grpc_core::Duration::Infinity()
+             : grpc_core::Duration::Milliseconds(result);
 }
 
 /* Constructor for call_data. */
@@ -436,15 +441,17 @@ static grpc_error_handle max_age_init_channel_elem(
   new (chand) channel_data();
   chand->channel_stack = args->channel_stack;
   chand->max_connection_age =
-      add_random_max_connection_age_jitter_and_convert_to_grpc_millis(
+      add_random_max_connection_age_jitter_and_convert_to_duration(
           DEFAULT_MAX_CONNECTION_AGE_MS);
   chand->max_connection_age_grace =
       DEFAULT_MAX_CONNECTION_AGE_GRACE_MS == INT_MAX
-          ? GRPC_MILLIS_INF_FUTURE
-          : DEFAULT_MAX_CONNECTION_AGE_GRACE_MS;
-  chand->max_connection_idle = DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
-                                   ? GRPC_MILLIS_INF_FUTURE
-                                   : DEFAULT_MAX_CONNECTION_IDLE_MS;
+          ? grpc_core::Duration::Infinity()
+          : grpc_core::Duration::Milliseconds(
+                DEFAULT_MAX_CONNECTION_AGE_GRACE_MS);
+  chand->max_connection_idle =
+      DEFAULT_MAX_CONNECTION_IDLE_MS == INT_MAX
+          ? grpc_core::Duration::Infinity()
+          : grpc_core::Duration::Milliseconds(DEFAULT_MAX_CONNECTION_IDLE_MS);
   chand->idle_state = MAX_IDLE_STATE_INIT;
   gpr_atm_no_barrier_store(&chand->last_enter_idle_time_millis, GPR_ATM_MIN);
   for (size_t i = 0; i < args->channel_args->num_args; ++i) {
@@ -453,21 +460,22 @@ static grpc_error_handle max_age_init_channel_elem(
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i], MAX_CONNECTION_AGE_INTEGER_OPTIONS);
       chand->max_connection_age =
-          add_random_max_connection_age_jitter_and_convert_to_grpc_millis(
-              value);
+          add_random_max_connection_age_jitter_and_convert_to_duration(value);
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i],
           {DEFAULT_MAX_CONNECTION_AGE_GRACE_MS, 0, INT_MAX});
       chand->max_connection_age_grace =
-          value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
+          value == INT_MAX ? grpc_core::Duration::Infinity()
+                           : grpc_core::Duration::Milliseconds(value);
     } else if (0 == strcmp(args->channel_args->args[i].key,
                            GRPC_ARG_MAX_CONNECTION_IDLE_MS)) {
       const int value = grpc_channel_arg_get_integer(
           &args->channel_args->args[i], MAX_CONNECTION_IDLE_INTEGER_OPTIONS);
       chand->max_connection_idle =
-          value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
+          value == INT_MAX ? grpc_core::Duration::Infinity()
+                           : grpc_core::Duration::Milliseconds(value);
     }
   }
   GRPC_CLOSURE_INIT(&chand->max_idle_timer_cb, max_idle_timer_cb, chand,
@@ -487,7 +495,7 @@ static grpc_error_handle max_age_init_channel_elem(
                     start_max_age_grace_timer_after_goaway_op, chand,
                     grpc_schedule_on_exec_ctx);
 
-  if (chand->max_connection_age != GRPC_MILLIS_INF_FUTURE) {
+  if (chand->max_connection_age != grpc_core::Duration::Infinity()) {
     /* When the channel reaches its max age, we send down an op with
        goaway_error set.  However, we can't send down any ops until after the
        channel stack is fully initialized.  If we start the timer here, we have
@@ -505,7 +513,7 @@ static grpc_error_handle max_age_init_channel_elem(
   /* Initialize the number of calls as 1, so that the max_idle_timer will not
      start until start_max_idle_timer_after_init is invoked. */
   gpr_atm_rel_store(&chand->call_count, 1);
-  if (chand->max_connection_idle != GRPC_MILLIS_INF_FUTURE) {
+  if (chand->max_connection_idle != grpc_core::Duration::Infinity()) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_idle_timer_after_init");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION,

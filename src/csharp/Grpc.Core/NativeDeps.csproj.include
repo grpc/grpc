@@ -1,16 +1,5 @@
 <!-- Ensures that native libraries are copied to the output directory for Exe targets -->
 <Project>
-
-  <PropertyGroup Condition=" '$(NativeDependenciesConfiguration)' == '' ">
-    <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Debug' ">Debug</NativeDependenciesConfiguration>
-    <NativeDependenciesConfiguration Condition=" '$(Configuration)' == 'Release' ">Release</NativeDependenciesConfiguration>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(NativeDependenciesConfigurationUnix)' == '' ">
-    <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'Debug' ">dbg</NativeDependenciesConfigurationUnix>
-    <NativeDependenciesConfigurationUnix Condition=" '$(Configuration)' == 'Release' ">opt</NativeDependenciesConfigurationUnix>
-  </PropertyGroup>
-
   <!-- Autodetect platform -->
   <PropertyGroup Condition=" '$(OS)' != 'Unix' ">
     <NativeDepsPlatform>Windows</NativeDepsPlatform>

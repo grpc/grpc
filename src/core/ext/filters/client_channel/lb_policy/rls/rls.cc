@@ -43,6 +43,7 @@
 #include "absl/strings/strip.h"
 #include "upb/upb.hpp"
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -54,6 +55,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -67,6 +69,7 @@
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -86,17 +89,17 @@ const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
 const char* kRlsHeaderKey = "X-Google-RLS-Data";
 
-const grpc_millis kDefaultLookupServiceTimeout = 10000;
-const grpc_millis kMaxMaxAge = 5 * 60 * GPR_MS_PER_SEC;
-const grpc_millis kMinExpirationTime = 5 * GPR_MS_PER_SEC;
-const grpc_millis kCacheBackoffInitial = 1 * GPR_MS_PER_SEC;
+const Duration kDefaultLookupServiceTimeout = Duration::Seconds(10);
+const Duration kMaxMaxAge = Duration::Minutes(5);
+const Duration kMinExpirationTime = Duration::Seconds(5);
+const Duration kCacheBackoffInitial = Duration::Seconds(1);
 const double kCacheBackoffMultiplier = 1.6;
 const double kCacheBackoffJitter = 0.2;
-const grpc_millis kCacheBackoffMax = 120 * GPR_MS_PER_SEC;
-const grpc_millis kDefaultThrottleWindowSizeMs = 30 * GPR_MS_PER_SEC;
-const float kDefaultThrottleRatioForSuccesses = 2.0;
+const Duration kCacheBackoffMax = Duration::Minutes(2);
+const Duration kDefaultThrottleWindowSize = Duration::Seconds(30);
+const double kDefaultThrottleRatioForSuccesses = 2.0;
 const int kDefaultThrottlePadding = 8;
-const grpc_millis kCacheCleanupTimerInterval = 60 * GPR_MS_PER_SEC;
+const Duration kCacheCleanupTimerInterval = Duration::Minutes(1);
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
 // Parsed RLS LB policy configuration.
@@ -115,18 +118,20 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   struct RouteLookupConfig {
     KeyBuilderMap key_builder_map;
     std::string lookup_service;
-    grpc_millis lookup_service_timeout = 0;
-    grpc_millis max_age = 0;
-    grpc_millis stale_age = 0;
+    Duration lookup_service_timeout;
+    Duration max_age;
+    Duration stale_age;
     int64_t cache_size_bytes = 0;
     std::string default_target;
   };
 
-  RlsLbConfig(RouteLookupConfig route_lookup_config, Json child_policy_config,
+  RlsLbConfig(RouteLookupConfig route_lookup_config,
+              std::string rls_channel_service_config, Json child_policy_config,
               std::string child_policy_config_target_field_name,
               RefCountedPtr<LoadBalancingPolicy::Config>
                   default_child_policy_parsed_config)
       : route_lookup_config_(std::move(route_lookup_config)),
+        rls_channel_service_config_(std::move(rls_channel_service_config)),
         child_policy_config_(std::move(child_policy_config)),
         child_policy_config_target_field_name_(
             std::move(child_policy_config_target_field_name)),
@@ -141,16 +146,19 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
   const std::string& lookup_service() const {
     return route_lookup_config_.lookup_service;
   }
-  grpc_millis lookup_service_timeout() const {
+  Duration lookup_service_timeout() const {
     return route_lookup_config_.lookup_service_timeout;
   }
-  grpc_millis max_age() const { return route_lookup_config_.max_age; }
-  grpc_millis stale_age() const { return route_lookup_config_.stale_age; }
+  Duration max_age() const { return route_lookup_config_.max_age; }
+  Duration stale_age() const { return route_lookup_config_.stale_age; }
   int64_t cache_size_bytes() const {
     return route_lookup_config_.cache_size_bytes;
   }
   const std::string& default_target() const {
     return route_lookup_config_.default_target;
+  }
+  const std::string& rls_channel_service_config() const {
+    return rls_channel_service_config_;
   }
   const Json& child_policy_config() const { return child_policy_config_; }
   const std::string& child_policy_config_target_field_name() const {
@@ -163,6 +171,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 
  private:
   RouteLookupConfig route_lookup_config_;
+  std::string rls_channel_service_config_;
   Json child_policy_config_;
   std::string child_policy_config_target_field_name_;
   RefCountedPtr<LoadBalancingPolicy::Config>
@@ -353,15 +362,15 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return status_;
       }
-      grpc_millis backoff_time() const
+      Timestamp backoff_time() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return backoff_time_;
       }
-      grpc_millis backoff_expiration_time() const
+      Timestamp backoff_expiration_time() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return backoff_expiration_time_;
       }
-      grpc_millis data_expiration_time() const
+      Timestamp data_expiration_time() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return data_expiration_time_;
       }
@@ -369,11 +378,10 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return header_data_;
       }
-      grpc_millis stale_time() const
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
+      Timestamp stale_time() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return stale_time_;
       }
-      grpc_millis min_expiration_time() const
+      Timestamp min_expiration_time() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return min_expiration_time_;
       }
@@ -414,7 +422,7 @@ class RlsLb : public LoadBalancingPolicy {
      private:
       class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
        public:
-        BackoffTimer(RefCountedPtr<Entry> entry, grpc_millis backoff_time);
+        BackoffTimer(RefCountedPtr<Entry> entry, Timestamp backoff_time);
 
         // Note: We are forced to disable lock analysis here because
         // Orphan() is called by OrphanablePtr<>, which cannot have lock
@@ -437,22 +445,21 @@ class RlsLb : public LoadBalancingPolicy {
       // Backoff states
       absl::Status status_ ABSL_GUARDED_BY(&RlsLb::mu_);
       std::unique_ptr<BackOff> backoff_state_ ABSL_GUARDED_BY(&RlsLb::mu_);
-      grpc_millis backoff_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-          GRPC_MILLIS_INF_PAST;
-      grpc_millis backoff_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-          GRPC_MILLIS_INF_PAST;
+      Timestamp backoff_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          Timestamp::InfPast();
+      Timestamp backoff_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          Timestamp::InfPast();
       OrphanablePtr<BackoffTimer> backoff_timer_;
 
       // RLS response states
       std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policy_wrappers_
           ABSL_GUARDED_BY(&RlsLb::mu_);
       std::string header_data_ ABSL_GUARDED_BY(&RlsLb::mu_);
-      grpc_millis data_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-          GRPC_MILLIS_INF_PAST;
-      grpc_millis stale_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
-          GRPC_MILLIS_INF_PAST;
+      Timestamp data_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
+          Timestamp::InfPast();
+      Timestamp stale_time_ ABSL_GUARDED_BY(&RlsLb::mu_) = Timestamp::InfPast();
 
-      grpc_millis min_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      Timestamp min_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_);
       Cache::Iterator lru_iterator_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
@@ -510,8 +517,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Contains throttling logic for RLS requests.
   class RlsChannel : public InternallyRefCounted<RlsChannel> {
    public:
-    RlsChannel(RefCountedPtr<RlsLb> lb_policy, const std::string& target,
-               const grpc_channel_args* parent_channel_args);
+    explicit RlsChannel(RefCountedPtr<RlsLb> lb_policy);
 
     // Shuts down the channel.
     void Orphan() override;
@@ -558,10 +564,10 @@ class RlsLb : public LoadBalancingPolicy {
     class Throttle {
      public:
       explicit Throttle(
-          int window_size_ms = kDefaultThrottleWindowSizeMs,
+          Duration window_size = kDefaultThrottleWindowSize,
           float ratio_for_successes = kDefaultThrottleRatioForSuccesses,
           int padding = kDefaultThrottlePadding)
-          : window_size_ms_(window_size_ms),
+          : window_size_(window_size),
             ratio_for_successes_(ratio_for_successes),
             padding_(padding) {}
 
@@ -571,16 +577,16 @@ class RlsLb : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
-      grpc_millis window_size_ms_;
-      float ratio_for_successes_;
+      Duration window_size_;
+      double ratio_for_successes_;
       int padding_;
       std::mt19937 rng_{std::random_device()()};
 
-      // Logged timestamps of requests.
-      std::deque<grpc_millis> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      // Logged timestamp of requests.
+      std::deque<Timestamp> requests_ ABSL_GUARDED_BY(&RlsLb::mu_);
 
       // Logged timestamps of failures.
-      std::deque<grpc_millis> failures_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      std::deque<Timestamp> failures_ ABSL_GUARDED_BY(&RlsLb::mu_);
     };
 
     RefCountedPtr<RlsLb> lb_policy_;
@@ -633,7 +639,7 @@ class RlsLb : public LoadBalancingPolicy {
     std::string stale_header_data_;
 
     // RLS call state.
-    grpc_millis deadline_;
+    Timestamp deadline_;
     grpc_closure call_start_cb_;
     grpc_closure call_complete_cb_;
     grpc_call* call_ = nullptr;
@@ -983,7 +989,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     gpr_log(GPR_INFO, "[rlslb %p] picker=%p: request keys: %s",
             lb_policy_.get(), this, key.ToString().c_str());
   }
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   MutexLock lock(&lb_policy_->mu_);
   if (lb_policy_->is_shutdown_) {
     return PickResult::Fail(
@@ -1069,7 +1075,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
 //
 
 RlsLb::Cache::Entry::BackoffTimer::BackoffTimer(RefCountedPtr<Entry> entry,
-                                                grpc_millis backoff_time)
+                                                Timestamp backoff_time)
     : entry_(std::move(entry)) {
   GRPC_CLOSURE_INIT(&backoff_timer_callback_, OnBackoffTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "BackoffTimer").release();
@@ -1203,17 +1209,17 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {
-  backoff_time_ = GRPC_MILLIS_INF_PAST;
+  backoff_time_ = Timestamp::InfPast();
   backoff_timer_.reset();
 }
 
 bool RlsLb::Cache::Entry::ShouldRemove() const {
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   return data_expiration_time_ < now && backoff_expiration_time_ < now;
 }
 
 bool RlsLb::Cache::Entry::CanEvict() const {
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   return min_expiration_time_ < now;
 }
 
@@ -1239,7 +1245,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
       backoff_state_ = MakeCacheEntryBackoff();
     }
     backoff_time_ = backoff_state_->NextAttemptTime();
-    grpc_millis now = ExecCtx::Get()->Now();
+    Timestamp now = ExecCtx::Get()->Now();
     backoff_expiration_time_ = now + (backoff_time_ - now) * 2;
     backoff_timer_ = MakeOrphanable<BackoffTimer>(
         Ref(DEBUG_LOCATION, "BackoffTimer"), backoff_time_);
@@ -1248,13 +1254,13 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
   }
   // Request succeeded, so store the result.
   header_data_ = std::move(response.header_data);
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   data_expiration_time_ = now + lb_policy_->config_->max_age();
   stale_time_ = now + lb_policy_->config_->stale_age();
   status_ = absl::OkStatus();
   backoff_state_.reset();
-  backoff_time_ = GRPC_MILLIS_INF_PAST;
-  backoff_expiration_time_ = GRPC_MILLIS_INF_PAST;
+  backoff_time_ = Timestamp::InfPast();
+  backoff_expiration_time_ = Timestamp::InfPast();
   // Check if we need to update this list of targets.
   bool targets_changed = [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
     if (child_policy_wrappers_.size() != response.targets.size()) return true;
@@ -1314,7 +1320,7 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   lb_policy_->Ref(DEBUG_LOCATION, "CacheCleanupTimer").release();
   GRPC_CLOSURE_INIT(&timer_callback_, OnCleanupTimer, this, nullptr);
   grpc_timer_init(&cleanup_timer_, now + kCacheCleanupTimerInterval,
@@ -1377,7 +1383,7 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
   Cache* cache = static_cast<Cache*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   cache->lb_policy_->work_serializer()->Run(
       [cache, error]() {
         RefCountedPtr<RlsLb> lb_policy(cache->lb_policy_);
@@ -1397,7 +1403,7 @@ void RlsLb::Cache::OnCleanupTimer(void* arg, grpc_error_handle error) {
             ++it;
           }
         }
-        grpc_millis now = ExecCtx::Get()->Now();
+        Timestamp now = ExecCtx::Get()->Now();
         lb_policy.release();
         grpc_timer_init(&cache->cleanup_timer_,
                         now + kCacheCleanupTimerInterval,
@@ -1466,11 +1472,11 @@ void RlsLb::RlsChannel::StateWatcher::OnConnectivityStateChange(
 //
 
 bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
-  grpc_millis now = ExecCtx::Get()->Now();
-  while (!requests_.empty() && now - requests_.front() > window_size_ms_) {
+  Timestamp now = ExecCtx::Get()->Now();
+  while (!requests_.empty() && now - requests_.front() > window_size_) {
     requests_.pop_front();
   }
-  while (!failures_.empty() && now - failures_.front() > window_size_ms_) {
+  while (!failures_.empty() && now - failures_.front() > window_size_) {
     failures_.pop_front();
   }
   // Compute probability of throttling.
@@ -1494,7 +1500,7 @@ bool RlsLb::RlsChannel::Throttle::ShouldThrottle() {
 }
 
 void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   requests_.push_back(now);
   if (!success) failures_.push_back(now);
 }
@@ -1503,9 +1509,7 @@ void RlsLb::RlsChannel::Throttle::RegisterResponse(bool success) {
 // RlsLb::RlsChannel
 //
 
-RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
-                              const std::string& target,
-                              const grpc_channel_args* parent_channel_args)
+RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     : InternallyRefCounted<RlsChannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace) ? "RlsChannel" : nullptr),
       lb_policy_(std::move(lb_policy)) {
@@ -1513,7 +1517,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   // TODO(roth): Once we eliminate insecure builds, get this via a
   // method on the helper instead of digging through channel args.
   grpc_channel_credentials* creds =
-      grpc_channel_credentials_find_in_args(parent_channel_args);
+      grpc_channel_credentials_find_in_args(lb_policy_->channel_args_);
   // Use the parent channel's authority.
   std::string authority(lb_policy_->channel_control_helper()->GetAuthority());
   absl::InlinedVector<grpc_arg, 3> args = {
@@ -1528,18 +1532,29 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
   // from the parent channel by default and then having a giant
   // exclude list of args to strip out, like we do in grpclb.)
   const char* fake_security_expected_targets = grpc_channel_args_find_string(
-      parent_channel_args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+      lb_policy_->channel_args_, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
   if (fake_security_expected_targets != nullptr) {
     args.push_back(grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
         const_cast<char*>(fake_security_expected_targets)));
   }
+  // Add service config args if needed.
+  const std::string& service_config =
+      lb_policy_->config_->rls_channel_service_config();
+  if (!service_config.empty()) {
+    args.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+        const_cast<char*>(service_config.c_str())));
+    args.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 1));
+  }
   grpc_channel_args rls_channel_args = {args.size(), args.data()};
-  channel_ = grpc_secure_channel_create(creds, target.c_str(),
-                                        &rls_channel_args, nullptr);
+  channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
+                                 creds, &rls_channel_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
-            lb_policy_.get(), this, channel_, target.c_str());
+            lb_policy_.get(), this, channel_,
+            lb_policy_->config_->lookup_service().c_str());
   }
   if (channel_ != nullptr) {
     // Set up channelz linkage.
@@ -1547,7 +1562,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy,
         grpc_channel_get_channelz_node(channel_);
     channelz::ChannelNode* parent_channelz_node =
         grpc_channel_args_find_pointer<channelz::ChannelNode>(
-            parent_channel_args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+            lb_policy_->channel_args_, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
       parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
       parent_channelz_node_ = parent_channelz_node->Ref();
@@ -1673,7 +1688,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
     MutexLock lock(&lb_policy_->mu_);
     if (lb_policy_->is_shutdown_) return;
   }
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   deadline_ = now + lb_policy_->config_->lookup_service_timeout();
   grpc_metadata_array_init(&recv_initial_metadata_);
   grpc_metadata_array_init(&recv_trailing_metadata_);
@@ -1713,7 +1728,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
   auto* request = static_cast<RlsRequest*>(arg);
-  GRPC_ERROR_REF(error);
+  (void)GRPC_ERROR_REF(error);
   request->lb_policy_->work_serializer()->Run(
       [request, error]() {
         request->OnRlsCallCompleteLocked(error);
@@ -1783,17 +1798,18 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
   grpc_lookup_v1_RouteLookupRequest* req =
       grpc_lookup_v1_RouteLookupRequest_new(arena.ptr());
   grpc_lookup_v1_RouteLookupRequest_set_target_type(
-      req, upb_strview_make(kGrpc, sizeof(kGrpc) - 1));
+      req, upb_StringView_FromDataAndSize(kGrpc, sizeof(kGrpc) - 1));
   for (const auto& kv : key_.key_map) {
     grpc_lookup_v1_RouteLookupRequest_key_map_set(
-        req, upb_strview_make(kv.first.data(), kv.first.size()),
-        upb_strview_make(kv.second.data(), kv.second.size()), arena.ptr());
+        req, upb_StringView_FromDataAndSize(kv.first.data(), kv.first.size()),
+        upb_StringView_FromDataAndSize(kv.second.data(), kv.second.size()),
+        arena.ptr());
   }
   grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
   if (!stale_header_data_.empty()) {
     grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(
-        req,
-        upb_strview_make(stale_header_data_.data(), stale_header_data_.size()));
+        req, upb_StringView_FromDataAndSize(stale_header_data_.data(),
+                                            stale_header_data_.size()));
   }
   size_t len;
   char* buf =
@@ -1821,7 +1837,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
     return response_info;
   }
   size_t num_targets;
-  const upb_strview* targets_strview =
+  const upb_StringView* targets_strview =
       grpc_lookup_v1_RouteLookupResponse_targets(response, &num_targets);
   if (num_targets == 0) {
     response_info.status =
@@ -1833,7 +1849,7 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
     response_info.targets.emplace_back(targets_strview[i].data,
                                        targets_strview[i].size);
   }
-  upb_strview header_data_strview =
+  upb_StringView header_data_strview =
       grpc_lookup_v1_RouteLookupResponse_header_data(response);
   response_info.header_data =
       std::string(header_data_strview.data, header_data_strview.size);
@@ -1930,8 +1946,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     if (old_config == nullptr ||
         config_->lookup_service() != old_config->lookup_service()) {
       rls_channel_ =
-          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"),
-                                     config_->lookup_service(), channel_args_);
+          MakeOrphanable<RlsChannel>(Ref(DEBUG_LOCATION, "RlsChannel"));
     }
     // Resize cache if needed.
     if (old_config == nullptr ||
@@ -2331,7 +2346,8 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
   // Parse lookupService.
   if (ParseJsonObjectField(json, "lookupService",
                            &route_lookup_config.lookup_service, &error_list)) {
-    if (!ResolverRegistry::IsValidTarget(route_lookup_config.lookup_service)) {
+    if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
+            route_lookup_config.lookup_service)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:lookupService error:must be valid gRPC target URI"));
     }
@@ -2451,6 +2467,26 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
           ParseRouteLookupConfig(*route_lookup_config_json, &child_error);
       if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
     }
+    // Parse routeLookupChannelServiceConfig.
+    std::string rls_channel_service_config;
+    const Json::Object* rls_channel_service_config_json_obj = nullptr;
+    if (ParseJsonObjectField(config.object_value(),
+                             "routeLookupChannelServiceConfig",
+                             &rls_channel_service_config_json_obj, &error_list,
+                             /*required=*/false)) {
+      grpc_error_handle child_error = GRPC_ERROR_NONE;
+      Json rls_channel_service_config_json(
+          *rls_channel_service_config_json_obj);
+      rls_channel_service_config = rls_channel_service_config_json.Dump();
+      auto service_config = MakeRefCounted<ServiceConfigImpl>(
+          /*args=*/nullptr, rls_channel_service_config,
+          std::move(rls_channel_service_config_json), &child_error);
+      if (child_error != GRPC_ERROR_NONE) {
+        error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "field:routeLookupChannelServiceConfig", &child_error, 1));
+        GRPC_ERROR_UNREF(child_error);
+      }
+    }
     // Parse childPolicyConfigTargetFieldName.
     std::string child_policy_config_target_field_name;
     if (ParseJsonObjectField(
@@ -2487,7 +2523,8 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR(
         "errors parsing RLS LB policy config", &error_list);
     return MakeRefCounted<RlsLbConfig>(
-        std::move(route_lookup_config), std::move(child_policy_config),
+        std::move(route_lookup_config), std::move(rls_channel_service_config),
+        std::move(child_policy_config),
         std::move(child_policy_config_target_field_name),
         std::move(default_child_policy_parsed_config));
   }

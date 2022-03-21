@@ -37,7 +37,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
 
 grpc_server_security_connector::grpc_server_security_connector(
-    const char* url_scheme,
+    absl::string_view url_scheme,
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
     : grpc_security_connector(url_scheme),
       server_creds_(std::move(server_creds)) {}
@@ -45,7 +45,7 @@ grpc_server_security_connector::grpc_server_security_connector(
 grpc_server_security_connector::~grpc_server_security_connector() = default;
 
 grpc_channel_security_connector::grpc_channel_security_connector(
-    const char* url_scheme,
+    absl::string_view url_scheme,
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds)
     : grpc_security_connector(url_scheme),
@@ -60,7 +60,7 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
       static_cast<const grpc_channel_security_connector*>(other);
   GPR_ASSERT(channel_creds() != nullptr);
   GPR_ASSERT(other_sc->channel_creds() != nullptr);
-  int c = grpc_core::QsortCompare(channel_creds(), other_sc->channel_creds());
+  int c = channel_creds()->cmp(other_sc->channel_creds());
   if (c != 0) return c;
   return grpc_core::QsortCompare(request_metadata_creds(),
                                  other_sc->request_metadata_creds());

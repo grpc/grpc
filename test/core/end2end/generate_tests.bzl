@@ -16,7 +16,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
-POLLERS = ["epollex", "epoll1", "poll"]
+POLLERS = ["epoll1", "poll"]
 
 def _fixture_options(
         fullstack = True,
@@ -33,7 +33,8 @@ def _fixture_options(
         supports_write_buffering = True,
         client_channel = True,
         supports_msvc = True,
-        flaky_tests = []):
+        flaky_tests = [],
+        tags = []):
     return struct(
         fullstack = fullstack,
         includes_proxy = includes_proxy,
@@ -50,6 +51,7 @@ def _fixture_options(
         supports_msvc = supports_msvc,
         _platforms = _platforms,
         flaky_tests = flaky_tests,
+        tags = tags,
     )
 
 # maps fixture name to whether it requires the security library
@@ -112,6 +114,7 @@ END2END_FIXTURES = {
         secure = True,
         dns_resolver = False,
         _platforms = ["linux", "mac", "posix"],
+        tags = ["requires-net:ipv4", "requires-net:loopback"],
     ),
     "h2_local_ipv6": _fixture_options(
         secure = True,
@@ -132,62 +135,6 @@ END2END_FIXTURES = {
         is_http2 = False,
         supports_write_buffering = False,
         client_channel = False,
-    ),
-}
-
-# maps fixture name to whether it requires the security library
-END2END_NOSEC_FIXTURES = {
-    "h2_compress": _fixture_options(secure = False),
-    "h2_census": _fixture_options(secure = False),
-    # TODO(juanlishen): This is disabled for now, but should be considered to re-enable once we have
-    # decided how the load reporting service should be enabled.
-    #'h2_load_reporting': _fixture_options(),
-    "h2_fakesec": _fixture_options(),
-    "h2_fd": _fixture_options(
-        dns_resolver = False,
-        fullstack = False,
-        client_channel = False,
-        secure = False,
-        _platforms = ["linux", "mac", "posix"],
-        supports_msvc = False,
-    ),
-    "h2_full": _fixture_options(secure = False),
-    "h2_full+pipe": _fixture_options(
-        secure = False,
-        _platforms = ["linux"],
-        supports_msvc = False,
-    ),
-    "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
-    "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
-    "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
-    "h2_sockpair_1byte": _fixture_options(
-        fullstack = False,
-        dns_resolver = False,
-        client_channel = False,
-        secure = False,
-        is_1byte = True,
-    ),
-    "h2_sockpair": _fixture_options(
-        fullstack = False,
-        dns_resolver = False,
-        client_channel = False,
-        secure = False,
-    ),
-    "h2_sockpair+trace": _fixture_options(
-        fullstack = False,
-        dns_resolver = False,
-        tracing = True,
-        secure = False,
-        client_channel = False,
-    ),
-    "h2_ssl": _fixture_options(secure = False),
-    "h2_ssl_cred_reload": _fixture_options(secure = False),
-    "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = False),
-    "h2_uds": _fixture_options(
-        dns_resolver = False,
-        _platforms = ["linux", "mac", "posix"],
-        secure = False,
-        supports_msvc = False,
     ),
 }
 
@@ -266,13 +213,13 @@ END2END_TESTS = {
     "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
+    "grpc_authz": _test_options(secure = True),
     "hpack_size": _test_options(
         proxyable = False,
         traceable = False,
         exclude_inproc = True,
     ),
     "high_initial_seqno": _test_options(),
-    "idempotent_request": _test_options(),
     "invoke_large_request": _test_options(exclude_1byte = True),
     "keepalive_timeout": _test_options(proxyable = False, needs_http2 = True),
     "large_metadata": _test_options(exclude_1byte = True),
@@ -307,6 +254,12 @@ END2END_TESTS = {
         short_name = "retry_cancel3",
         needs_client_channel = True,
     ),
+    "retry_cancel_after_first_attempt_starts": _test_options(
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_cancel4",
+        needs_client_channel = True,
+    ),
     "retry_disabled": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_delay": _test_options(needs_client_channel = True),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
@@ -339,9 +292,11 @@ END2END_TESTS = {
     ),
     "retry_recv_initial_metadata": _test_options(needs_client_channel = True),
     "retry_recv_message": _test_options(needs_client_channel = True),
+    "retry_recv_message_replay": _test_options(needs_client_channel = True),
     "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True),
     "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True),
     "retry_send_op_fails": _test_options(needs_client_channel = True),
+    "retry_send_recv_batch": _test_options(needs_client_channel = True),
     "retry_server_pushback_delay": _test_options(needs_client_channel = True),
     "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
     "retry_streaming": _test_options(needs_client_channel = True),
@@ -354,12 +309,23 @@ END2END_TESTS = {
     ),
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
-    "sdk_authz": _test_options(secure = True),
+    "retry_transparent_goaway": _test_options(needs_client_channel = True),
+    "retry_transparent_not_sent_on_wire": _test_options(
+        needs_client_channel = True,
+    ),
+    "retry_transparent_max_concurrent_streams": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+        # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE
+        # See b/151617965
+        short_name = "retry_transparent_mcs",
+    ),
+    "retry_unref_before_finish": _test_options(needs_client_channel = True),
+    "retry_unref_before_recv": _test_options(needs_client_channel = True),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
     "shutdown_finishes_calls": _test_options(),
     "shutdown_finishes_tags": _test_options(),
-    "simple_cacheable_request": _test_options(),
     "simple_delayed_request": _test_options(needs_fullstack = True),
     "simple_metadata": _test_options(),
     "simple_request": _test_options(),
@@ -461,7 +427,7 @@ def grpc_end2end_tests():
                 "//:gpr",
                 "//test/core/compression:args_utils",
             ],
-            tags = _platform_support_tags(fopt),
+            tags = _platform_support_tags(fopt) + fopt.tags,
         )
 
         for t, topt in END2END_TESTS.items():
@@ -478,7 +444,7 @@ def grpc_end2end_tests():
                     "$(location %s_test)" % f,
                     t,
                 ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
+                tags = ["no_linux"] + _platform_support_tags(fopt) + fopt.tags,
                 flaky = t in fopt.flaky_tests,
             )
 
@@ -494,92 +460,6 @@ def grpc_end2end_tests():
                         t,
                         poller,
                     ],
-                    tags = ["no_mac", "no_windows"],
-                    flaky = t in fopt.flaky_tests,
-                )
-
-# buildifier: disable=unnamed-macro
-def grpc_end2end_nosec_tests():
-    """Instantiates the gRPC end2end no security tests"""
-    grpc_cc_library(
-        name = "end2end_nosec_tests",
-        srcs = ["end2end_nosec_tests.cc", "end2end_test_utils.cc"] + [
-            "tests/%s.cc" % t
-            for t in sorted(END2END_TESTS.keys())
-            if not END2END_TESTS[t].secure
-        ],
-        hdrs = [
-            "tests/cancel_test_helpers.h",
-            "end2end_tests.h",
-        ],
-        language = "C++",
-        testonly = 1,
-        deps = [
-            ":cq_verifier",
-            ":ssl_test_data",
-            ":http_proxy",
-            ":proxy",
-            ":local_util",
-            "//test/core/util:test_lb_policies",
-            "//test/core/compression:args_utils",
-        ],
-    )
-
-    for f, fopt in END2END_NOSEC_FIXTURES.items():
-        if fopt.secure:
-            continue
-        grpc_cc_binary(
-            name = "%s_nosec_test" % f,
-            srcs = ["fixtures/%s.cc" % f],
-            language = "C++",
-            testonly = 1,
-            data = [
-                "//src/core/tsi/test_creds:ca.pem",
-                "//src/core/tsi/test_creds:server1.key",
-                "//src/core/tsi/test_creds:server1.pem",
-            ],
-            deps = [
-                ":end2end_nosec_tests",
-                "//test/core/util:grpc_test_util_unsecure",
-                "//:grpc_unsecure",
-                "//:gpr",
-                "//test/core/compression:args_utils",
-            ],
-            tags = _platform_support_tags(fopt),
-        )
-        for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
-            if not _compatible(fopt, topt):
-                continue
-            if topt.secure:
-                continue
-
-            test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
-                name = "%s_nosec_test@%s" % (f, test_short_name),
-                data = [":%s_nosec_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_nosec_test)" % f,
-                    t,
-                ],
-                tags = ["no_linux"] + _platform_support_tags(fopt),
-                flaky = t in fopt.flaky_tests,
-            )
-
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_nosec_test@%s@poller=%s" %
-                           (f, test_short_name, poller),
-                    data = [":%s_nosec_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    args = [
-                        "$(location %s_nosec_test)" % f,
-                        t,
-                        poller,
-                    ],
-                    tags = ["no_mac", "no_windows"],
+                    tags = ["no_mac", "no_windows"] + fopt.tags,
                     flaky = t in fopt.flaky_tests,
                 )

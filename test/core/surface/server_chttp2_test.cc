@@ -34,7 +34,10 @@
 TEST(ServerChttp2, UnparseableTarget) {
   grpc_channel_args args = {0, nullptr};
   grpc_server* server = grpc_server_create(&args, nullptr);
-  int port = grpc_server_add_insecure_http2_port(server, "[");
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  int port = grpc_server_add_http2_port(server, "[", server_creds);
+  grpc_server_credentials_release(server_creds);
   EXPECT_EQ(port, 0);
   grpc_server_destroy(server);
 }
@@ -50,10 +53,8 @@ TEST(ServerChttp2, AddSamePortTwice) {
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
   std::string addr = grpc_core::JoinHostPort("localhost", port);
-  EXPECT_EQ(grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds),
-            port);
-  EXPECT_EQ(grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds),
-            0);
+  EXPECT_EQ(grpc_server_add_http2_port(server, addr.c_str(), fake_creds), port);
+  EXPECT_EQ(grpc_server_add_http2_port(server, addr.c_str(), fake_creds), 0);
 
   grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server, cq, nullptr);

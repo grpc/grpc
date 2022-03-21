@@ -28,6 +28,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -476,14 +477,15 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    auto* err =
+    grpc_error_handle err =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
     shutdown_locked(m, err);
     GRPC_ERROR_UNREF(err);
     return;
   }
   grpc_timer_init(&m->parent->channel_effects->timer,
-                  m->parent->channel_effects->actions[0].wait_ms +
+                  grpc_core::Duration::Milliseconds(
+                      m->parent->channel_effects->actions[0].wait_ms) +
                       grpc_core::ExecCtx::Get()->Now(),
                   GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
                                       grpc_schedule_on_exec_ctx));

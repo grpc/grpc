@@ -69,6 +69,9 @@ class ChannelData {
   static void Destroy(grpc_channel_element* elem);
 
   int index() const { return index_; }
+  size_t service_config_parser_index() const {
+    return service_config_parser_index_;
+  }
 
  private:
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -76,6 +79,7 @@ class ChannelData {
 
   // The relative index of instances of the same filter.
   int index_;
+  const size_t service_config_parser_index_;
 };
 
 class CallData {
@@ -170,8 +174,10 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
 
 ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args)
-    : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
-                                                       elem)) {}
+    : index_(
+          grpc_channel_stack_filter_instance_number(args->channel_stack, elem)),
+      service_config_parser_index_(
+          FaultInjectionServiceConfigParser::ParserIndex()) {}
 
 // CallData::ResumeBatchCanceller
 
@@ -294,7 +300,7 @@ CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
       args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
-          FaultInjectionServiceConfigParser::ParserIndex()));
+          chand->service_config_parser_index()));
   if (method_params != nullptr) {
     fi_policy_ = method_params->fault_injection_policy(chand->index());
   }
@@ -351,12 +357,13 @@ void CallData::DecideWhetherToInjectFaults(
       }
     }
     if (!fi_policy_->delay_header.empty() &&
-        (copied_policy == nullptr || copied_policy->delay == 0)) {
+        (copied_policy == nullptr ||
+         copied_policy->delay == Duration::Zero())) {
       auto value =
           initial_metadata->GetStringValue(fi_policy_->delay_header, &buffer);
       if (value.has_value()) {
         maybe_copy_policy_func();
-        copied_policy->delay = static_cast<grpc_millis>(
+        copied_policy->delay = Duration::Milliseconds(
             std::max(AsInt<int64_t>(*value).value_or(0), int64_t(0)));
       }
     }
@@ -373,7 +380,7 @@ void CallData::DecideWhetherToInjectFaults(
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
   }
   // Roll the dice
-  delay_request_ = fi_policy_->delay != 0 &&
+  delay_request_ = fi_policy_->delay != Duration::Zero() &&
                    UnderFraction(fi_policy_->delay_percentage_numerator,
                                  fi_policy_->delay_percentage_denominator);
   abort_request_ = fi_policy_->abort_code != GRPC_STATUS_OK &&
@@ -417,7 +424,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
-  grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
+  Timestamp resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);
@@ -484,10 +491,8 @@ extern const grpc_channel_filter FaultInjectionFilterVtable = {
     "fault_injection_filter",
 };
 
-void FaultInjectionFilterInit(void) {
-  FaultInjectionServiceConfigParser::Register();
+void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
+  FaultInjectionServiceConfigParser::Register(builder);
 }
-
-void FaultInjectionFilterShutdown(void) {}
 
 }  // namespace grpc_core

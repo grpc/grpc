@@ -270,7 +270,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
 void grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_millis deadline, grpc_endpoint** ep) {
+    grpc_core::Timestamp deadline, grpc_endpoint** ep) {
   int err;
   do {
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
@@ -325,7 +325,7 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
-                        grpc_millis deadline) {
+                        grpc_core::Timestamp deadline) {
   grpc_resolved_address mapped_addr;
   int fd = -1;
   grpc_error_handle error;

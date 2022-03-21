@@ -29,11 +29,10 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
-void timer_init(grpc_timer* timer, grpc_millis deadline,
+void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
                 grpc_closure* closure) {
   timer->ee_task_handle = GetDefaultEventEngine()->RunAt(
-      grpc_core::ToAbslTime(
-          grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+      grpc_core::ToAbslTime(deadline.as_timespec(GPR_CLOCK_REALTIME)),
       GrpcClosureToCallback(closure));
   timer->closure = closure;
 }
@@ -47,7 +46,7 @@ void timer_cancel(grpc_timer* timer) {
 }
 
 /* Internal API */
-grpc_timer_check_result timer_check(grpc_millis* /* next */) {
+grpc_timer_check_result timer_check(grpc_core::Timestamp* /* next */) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 void timer_list_init() {}

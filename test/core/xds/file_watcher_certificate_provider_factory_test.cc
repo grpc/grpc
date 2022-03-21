@@ -54,7 +54,7 @@ TEST(FileWatcherConfigTest, Basic) {
   EXPECT_EQ(config->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ(config->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ(config->root_cert_file(), kRootCertFile);
-  EXPECT_EQ(config->refresh_interval_ms(), kRefreshInterval * 1000);
+  EXPECT_EQ(config->refresh_interval(), Duration::Seconds(kRefreshInterval));
 }
 
 TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
@@ -74,7 +74,7 @@ TEST(FileWatcherConfigTest, DefaultRefreshInterval) {
   EXPECT_EQ(config->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ(config->private_key_file(), kPrivateKeyFile);
   EXPECT_EQ(config->root_cert_file(), kRootCertFile);
-  EXPECT_EQ(config->refresh_interval_ms(), 600 * 1000);
+  EXPECT_EQ(config->refresh_interval(), Duration::Seconds(600));
 }
 
 TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
@@ -92,7 +92,7 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
   EXPECT_TRUE(config->identity_cert_file().empty());
   EXPECT_TRUE(config->private_key_file().empty());
   EXPECT_EQ(config->root_cert_file(), kRootCertFile);
-  EXPECT_EQ(config->refresh_interval_ms(), 600 * 1000);
+  EXPECT_EQ(config->refresh_interval(), Duration::Seconds(600));
 }
 
 TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
@@ -111,7 +111,7 @@ TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
   EXPECT_EQ(config->identity_cert_file(), kIdentityCertFile);
   EXPECT_EQ(config->private_key_file(), kPrivateKeyFile);
   EXPECT_TRUE(config->root_cert_file().empty());
-  EXPECT_EQ(config->refresh_interval_ms(), 600 * 1000);
+  EXPECT_EQ(config->refresh_interval(), Duration::Seconds(600));
 }
 
 TEST(FileWatcherConfigTest, WrongTypes) {

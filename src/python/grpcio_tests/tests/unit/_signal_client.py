@@ -108,7 +108,19 @@ if __name__ == '__main__':
     parser.add_argument('--exception',
                         help='Whether the signal throws an exception',
                         action='store_true')
+    parser.add_argument('--gevent',
+                        help='Whether to run under gevent.',
+                        action='store_true')
     args = parser.parse_args()
+    if args.gevent:
+        from gevent import monkey
+        import gevent.util
+
+        monkey.patch_all()
+
+        import grpc.experimental.gevent
+        grpc.experimental.gevent.init_gevent()
+
     if args.arity == 'unary' and not args.exception:
         main_unary(args.server)
     elif args.arity == 'streaming' and not args.exception:

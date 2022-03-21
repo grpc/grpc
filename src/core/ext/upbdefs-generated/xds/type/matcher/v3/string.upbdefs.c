@@ -10,8 +10,8 @@
 #include "xds/type/matcher/v3/string.upbdefs.h"
 #include "xds/type/matcher/v3/string.upb.h"
 
-extern upb_def_init xds_type_matcher_v3_regex_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init xds_type_matcher_v3_regex_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[593] = {'\n', ' ', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 's', 't', 'r', 
 'i', 'n', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\023', 'x', 'd', 's', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 
 'e', 'r', '.', 'v', '3', '\032', '\037', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', 
@@ -38,15 +38,15 @@ static const char descriptor[593] = {'\n', ' ', 'x', 'd', 's', '/', 't', 'y', 'p
 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[3] = {
+static _upb_DefPool_Init *deps[3] = {
   &xds_type_matcher_v3_regex_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_type_matcher_v3_string_proto_upbdefinit = {
+_upb_DefPool_Init xds_type_matcher_v3_string_proto_upbdefinit = {
   deps,
   &xds_type_matcher_v3_string_proto_upb_file_layout,
   "xds/type/matcher/v3/string.proto",
-  UPB_STRVIEW_INIT(descriptor, 593)
+  UPB_STRINGVIEW_INIT(descriptor, 593)
 };

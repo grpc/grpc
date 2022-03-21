@@ -167,6 +167,12 @@ class WriteOptions {
     return *this;
   }
 
+  /// Get value for the flag indicating that this is the last message, and
+  /// should be coalesced with trailing metadata.
+  ///
+  /// \sa GRPC_WRITE_LAST_MESSAGE
+  bool is_last_message() const { return last_message_; }
+
   /// Guarantee that all bytes have been written to the socket before completing
   /// this write (usually writes are completed when they pass flow control).
   inline WriteOptions& set_write_through() {
@@ -174,13 +180,12 @@ class WriteOptions {
     return *this;
   }
 
-  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
+  inline WriteOptions& clear_write_through() {
+    ClearBit(GRPC_WRITE_THROUGH);
+    return *this;
+  }
 
-  /// Get value for the flag indicating that this is the last message, and
-  /// should be coalesced with trailing metadata.
-  ///
-  /// \sa GRPC_WRITE_LAST_MESSAGE
-  bool is_last_message() const { return last_message_; }
+  inline bool is_write_through() const { return GetBit(GRPC_WRITE_THROUGH); }
 
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }
@@ -724,7 +729,7 @@ class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
-  void RecvInitialMetadata(::grpc::ClientContext* context) {
+  void RecvInitialMetadata(grpc::ClientContext* context) {
     context->initial_metadata_received_ = true;
     metadata_map_ = &context->recv_initial_metadata_;
   }
@@ -773,7 +778,7 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(::grpc::ClientContext* context, Status* status) {
+  void ClientRecvStatus(grpc::ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -840,7 +845,7 @@ class CallOpClientRecvStatus {
 
  private:
   bool hijacked_ = false;
-  ::grpc::ClientContext* client_context_;
+  grpc::ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
   const char* debug_error_string_;

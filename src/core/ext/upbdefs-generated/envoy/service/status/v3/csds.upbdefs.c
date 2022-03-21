@@ -10,15 +10,15 @@
 #include "envoy/service/status/v3/csds.upbdefs.h"
 #include "envoy/service/status/v3/csds.upb.h"
 
-extern upb_def_init envoy_admin_v3_config_dump_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_node_proto_upbdefinit;
-extern upb_def_init google_api_annotations_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_timestamp_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_admin_v3_config_dump_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_node_proto_upbdefinit;
+extern _upb_DefPool_Init google_api_annotations_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_timestamp_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[2751] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 's', 't', 'a', 't', 'u', 's', '/', 'v', '3', 
 '/', 'c', 's', 'd', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 'v', 'i', 'c', 
 'e', '.', 's', 't', 'a', 't', 'u', 's', '.', 'v', '3', '\032', ' ', 'e', 'n', 'v', 'o', 'y', '/', 'a', 'd', 'm', 'i', 'n', '/', 
@@ -132,7 +132,7 @@ static const char descriptor[2751] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 
 '3', 
 };
 
-static upb_def_init *deps[10] = {
+static _upb_DefPool_Init *deps[10] = {
   &envoy_admin_v3_config_dump_proto_upbdefinit,
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_type_matcher_v3_node_proto_upbdefinit,
@@ -145,9 +145,9 @@ static upb_def_init *deps[10] = {
   NULL
 };
 
-upb_def_init envoy_service_status_v3_csds_proto_upbdefinit = {
+_upb_DefPool_Init envoy_service_status_v3_csds_proto_upbdefinit = {
   deps,
   &envoy_service_status_v3_csds_proto_upb_file_layout,
   "envoy/service/status/v3/csds.proto",
-  UPB_STRVIEW_INIT(descriptor, 2751)
+  UPB_STRINGVIEW_INIT(descriptor, 2751)
 };

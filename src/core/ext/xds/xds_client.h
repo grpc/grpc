@@ -55,7 +55,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(grpc_error_handle error)
+    virtual void OnError(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -194,7 +194,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
-    void StartConnectivityWatchLocked();
+    void StartConnectivityWatchLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void CancelConnectivityWatchLocked();
 
     void SubscribeLocked(const XdsResourceType* type,
@@ -252,7 +253,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    grpc_millis last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = ExecCtx::Get()->Now();
   };
 
   // Load report data.
@@ -268,7 +269,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class Notifier;
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error_handle error)
+  void NotifyOnErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
@@ -293,7 +294,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
-  const grpc_millis request_timeout_;
+  const Duration request_timeout_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;

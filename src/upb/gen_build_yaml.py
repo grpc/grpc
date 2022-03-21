@@ -29,6 +29,9 @@ try:
         'build': 'all',
         'language': 'c',
         'src': [
+            "third_party/upb/third_party/utf8_range/naive.c",
+            "third_party/upb/third_party/utf8_range/range2-neon.c",
+            "third_party/upb/third_party/utf8_range/range2-sse.c",
             "third_party/upb/upb/decode_fast.c",
             "third_party/upb/upb/decode.c",
             "third_party/upb/upb/def.c",
@@ -42,6 +45,7 @@ try:
             "src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c",
         ],
         'headers': [
+            "third_party/upb/third_party/utf8_range/utf8_range.h",
             "third_party/upb/upb/decode_fast.h",
             "third_party/upb/upb/decode_internal.h",
             "third_party/upb/upb/decode.h",

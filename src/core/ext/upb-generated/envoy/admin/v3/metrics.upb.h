@@ -22,7 +22,7 @@ extern "C" {
 
 struct envoy_admin_v3_SimpleMetric;
 typedef struct envoy_admin_v3_SimpleMetric envoy_admin_v3_SimpleMetric;
-extern const upb_msglayout envoy_admin_v3_SimpleMetric_msginit;
+extern const upb_MiniTable envoy_admin_v3_SimpleMetric_msginit;
 
 typedef enum {
   envoy_admin_v3_SimpleMetric_COUNTER = 0,
@@ -30,35 +30,47 @@ typedef enum {
 } envoy_admin_v3_SimpleMetric_Type;
 
 
+
 /* envoy.admin.v3.SimpleMetric */
 
-UPB_INLINE envoy_admin_v3_SimpleMetric *envoy_admin_v3_SimpleMetric_new(upb_arena *arena) {
-  return (envoy_admin_v3_SimpleMetric *)_upb_msg_new(&envoy_admin_v3_SimpleMetric_msginit, arena);
+UPB_INLINE envoy_admin_v3_SimpleMetric* envoy_admin_v3_SimpleMetric_new(upb_Arena* arena) {
+  return (envoy_admin_v3_SimpleMetric*)_upb_Message_New(&envoy_admin_v3_SimpleMetric_msginit, arena);
 }
-UPB_INLINE envoy_admin_v3_SimpleMetric *envoy_admin_v3_SimpleMetric_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_admin_v3_SimpleMetric *ret = envoy_admin_v3_SimpleMetric_new(arena);
+UPB_INLINE envoy_admin_v3_SimpleMetric* envoy_admin_v3_SimpleMetric_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_admin_v3_SimpleMetric* ret = envoy_admin_v3_SimpleMetric_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_admin_v3_SimpleMetric_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_admin_v3_SimpleMetric *envoy_admin_v3_SimpleMetric_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_admin_v3_SimpleMetric *ret = envoy_admin_v3_SimpleMetric_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_admin_v3_SimpleMetric_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_SimpleMetric_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_admin_v3_SimpleMetric_serialize(const envoy_admin_v3_SimpleMetric *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_admin_v3_SimpleMetric_msginit, arena, len);
+UPB_INLINE envoy_admin_v3_SimpleMetric* envoy_admin_v3_SimpleMetric_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_admin_v3_SimpleMetric* ret = envoy_admin_v3_SimpleMetric_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_SimpleMetric_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
 }
-
-UPB_INLINE int32_t envoy_admin_v3_SimpleMetric_type(const envoy_admin_v3_SimpleMetric *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
-UPB_INLINE uint64_t envoy_admin_v3_SimpleMetric_value(const envoy_admin_v3_SimpleMetric *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t); }
-UPB_INLINE upb_strview envoy_admin_v3_SimpleMetric_name(const envoy_admin_v3_SimpleMetric *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_strview); }
+UPB_INLINE char* envoy_admin_v3_SimpleMetric_serialize(const envoy_admin_v3_SimpleMetric* msg, upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_admin_v3_SimpleMetric_msginit, 0, arena, len);
+}
+UPB_INLINE char* envoy_admin_v3_SimpleMetric_serialize_ex(const envoy_admin_v3_SimpleMetric* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_admin_v3_SimpleMetric_msginit, options, arena, len);
+}
+UPB_INLINE int32_t envoy_admin_v3_SimpleMetric_type(const envoy_admin_v3_SimpleMetric* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
+UPB_INLINE uint64_t envoy_admin_v3_SimpleMetric_value(const envoy_admin_v3_SimpleMetric* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t);
+}
+UPB_INLINE upb_StringView envoy_admin_v3_SimpleMetric_name(const envoy_admin_v3_SimpleMetric* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView);
+}
 
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_type(envoy_admin_v3_SimpleMetric *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
@@ -66,11 +78,11 @@ UPB_INLINE void envoy_admin_v3_SimpleMetric_set_type(envoy_admin_v3_SimpleMetric
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_value(envoy_admin_v3_SimpleMetric *msg, uint64_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t) = value;
 }
-UPB_INLINE void envoy_admin_v3_SimpleMetric_set_name(envoy_admin_v3_SimpleMetric *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_strview) = value;
+UPB_INLINE void envoy_admin_v3_SimpleMetric_set_name(envoy_admin_v3_SimpleMetric *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView) = value;
 }
 
-extern const upb_msglayout_file envoy_admin_v3_metrics_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_admin_v3_metrics_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

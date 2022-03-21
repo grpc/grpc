@@ -59,6 +59,7 @@ some configuration as environment variables that can be set.
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
+  - dns_resolver - traces state in the native DNS resolver
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
@@ -81,7 +82,7 @@ some configuration as environment variables that can be set.
   - rls_lb - traces the RLS load balancing policy
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
-  - sdk_authz - traces sdk authorization
+  - grpc_authz_api - traces gRPC authorization
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - subchannel - traces the connectivity state of subchannel
@@ -105,8 +106,6 @@ some configuration as environment variables that can be set.
   - call_combiner - traces call combiner state
   - closure - tracks closure creation, scheduling, and completion
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-    Also traces epoll fd create()/close() calls in epollex polling engine
-    traces epoll-fd creation/close calls for epollex polling engine
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine

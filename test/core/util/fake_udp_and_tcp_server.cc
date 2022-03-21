@@ -21,6 +21,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "test/core/util/port.h"
 
@@ -63,7 +64,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   port_ = grpc_pick_unused_port_or_die();
   udp_socket_ = socket(AF_INET6, SOCK_DGRAM, 0);
   if (udp_socket_ == BAD_SOCKET_RETURN_VAL) {
-    gpr_log(GPR_DEBUG, "Failed to create UDP ipv6 socket: %d", ERRNO);
+    gpr_log(GPR_ERROR, "Failed to create UDP ipv6 socket: %d", ERRNO);
     GPR_ASSERT(0);
   }
   accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
@@ -76,7 +77,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   char val = 1;
   if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
       SOCKET_ERROR) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_ERROR,
             "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:%d, "
             "errno: %d",
             port_, ERRNO);
@@ -99,7 +100,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   int val = 1;
   if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
       0) {
-    gpr_log(GPR_DEBUG, "Failed to set SO_REUSEADDR on socket [::1]:%d", port_);
+    gpr_log(GPR_ERROR, "Failed to set SO_REUSEADDR on socket [::1]:%d", port_);
     GPR_ASSERT(0);
   }
   if (fcntl(udp_socket_, F_SETFL, O_NONBLOCK) != 0) {
@@ -116,9 +117,15 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(port_);
   (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
+  grpc_resolved_address resolved_addr;
+  memcpy(resolved_addr.addr, &addr, sizeof(addr));
+  resolved_addr.len = sizeof(addr);
+  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, false);
+  gpr_log(GPR_INFO, "Fake UDP and TCP server listening on %s",
+          addr_str.c_str());
   if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
            sizeof(addr)) != 0) {
-    gpr_log(GPR_DEBUG, "Failed to bind UDP socket to [::1]:%d", port_);
+    gpr_log(GPR_ERROR, "Failed to bind UDP socket to [::1]:%d", port_);
     GPR_ASSERT(0);
   }
   if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),

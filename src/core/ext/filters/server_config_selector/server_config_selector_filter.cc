@@ -203,7 +203,6 @@ void CallData::RecvInitialMetadataReady(void* user_data,
           config_selector.value()->GetCallConfig(calld->recv_initial_metadata_);
       if (call_config.error != GRPC_ERROR_NONE) {
         calld->error_ = call_config.error;
-        error = call_config.error;  // Does not take a ref
       } else {
         calld->service_config_call_data_ =
             ServiceConfigCallData(std::move(call_config.service_config),
@@ -212,8 +211,13 @@ void CallData::RecvInitialMetadataReady(void* user_data,
             &calld->service_config_call_data_;
       }
     } else {
-      calld->error_ = absl_status_to_grpc_error(config_selector.status());
-      error = calld->error_;
+      calld->error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          config_selector.status().ToString());
+    }
+    if (calld->error_ != GRPC_ERROR_NONE) {
+      calld->error_ = grpc_error_set_int(
+          calld->error_, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      error = calld->error_;  // Does not take a ref
     }
   }
   calld->MaybeResumeRecvTrailingMetadataReady();

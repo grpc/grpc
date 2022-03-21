@@ -18,32 +18,34 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_config_metrics_v3_MetricsServiceConfig_submsgs[2] = {
+static const upb_MiniTable_Sub envoy_config_metrics_v3_MetricsServiceConfig_submsgs[2] = {
   {.submsg = &envoy_config_core_v3_GrpcService_msginit},
   {.submsg = &google_protobuf_BoolValue_msginit},
 };
 
-static const upb_msglayout_field envoy_config_metrics_v3_MetricsServiceConfig__fields[4] = {
-  {1, UPB_SIZE(12, 16), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(16, 24), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(4, 4), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(8, 8), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_config_metrics_v3_MetricsServiceConfig__fields[4] = {
+  {1, UPB_SIZE(12, 16), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 2, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 4), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 8), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_metrics_v3_MetricsServiceConfig_msginit = {
+const upb_MiniTable envoy_config_metrics_v3_MetricsServiceConfig_msginit = {
   &envoy_config_metrics_v3_MetricsServiceConfig_submsgs[0],
   &envoy_config_metrics_v3_MetricsServiceConfig__fields[0],
-  UPB_SIZE(24, 32), 4, _UPB_MSGEXT_NONE, 4, 255,
+  UPB_SIZE(24, 32), 4, upb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_metrics_v3_MetricsServiceConfig_msginit,
 };
 
-const upb_msglayout_file envoy_config_metrics_v3_metrics_service_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_config_metrics_v3_metrics_service_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

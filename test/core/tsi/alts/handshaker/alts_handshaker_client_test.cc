@@ -21,6 +21,7 @@
 #include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -84,12 +85,14 @@ static void validate_target_identities(
   GPR_ASSERT(target_identities_count == 2);
   const grpc_gcp_Identity* identity1 = target_identities[1];
   const grpc_gcp_Identity* identity2 = target_identities[0];
-  GPR_ASSERT(upb_strview_eql(
+  GPR_ASSERT(upb_StringView_IsEqual(
       grpc_gcp_Identity_service_account(identity1),
-      upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1)));
-  GPR_ASSERT(upb_strview_eql(
+      upb_StringView_FromString(
+          ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1)));
+  GPR_ASSERT(upb_StringView_IsEqual(
       grpc_gcp_Identity_service_account(identity2),
-      upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2)));
+      upb_StringView_FromString(
+          ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2)));
 }
 
 /**
@@ -126,7 +129,7 @@ static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
 }
 
 static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
-    grpc_byte_buffer* buffer, upb_arena* arena) {
+    grpc_byte_buffer* buffer, upb_Arena* arena) {
   GPR_ASSERT(buffer != nullptr);
   grpc_byte_buffer_reader bbr;
   GPR_ASSERT(grpc_byte_buffer_reader_init(&bbr, buffer));
@@ -177,15 +180,16 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
       grpc_gcp_HandshakerReq_client_start(req);
   GPR_ASSERT(grpc_gcp_StartClientHandshakeReq_handshake_security_protocol(
                  client_start) == grpc_gcp_ALTS);
-  upb_strview const* application_protocols =
+  upb_StringView const* application_protocols =
       grpc_gcp_StartClientHandshakeReq_application_protocols(client_start,
                                                              nullptr);
-  GPR_ASSERT(upb_strview_eql(application_protocols[0],
-                             upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
-  upb_strview const* record_protocols =
+  GPR_ASSERT(upb_StringView_IsEqual(
+      application_protocols[0],
+      upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
+  upb_StringView const* record_protocols =
       grpc_gcp_StartClientHandshakeReq_record_protocols(client_start, nullptr);
-  GPR_ASSERT(upb_strview_eql(record_protocols[0],
-                             upb_strview_makez(ALTS_RECORD_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   const grpc_gcp_RpcProtocolVersions* rpc_protocol_versions =
       grpc_gcp_StartClientHandshakeReq_rpc_versions(client_start);
   validate_rpc_protocol_versions(rpc_protocol_versions);
@@ -194,9 +198,9 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
       grpc_gcp_StartClientHandshakeReq_target_identities(
           client_start, &target_identities_count);
   validate_target_identities(target_identities, target_identities_count);
-  GPR_ASSERT(upb_strview_eql(
+  GPR_ASSERT(upb_StringView_IsEqual(
       grpc_gcp_StartClientHandshakeReq_target_name(client_start),
-      upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
+      upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
   GPR_ASSERT(grpc_gcp_StartClientHandshakeReq_max_frame_size(client_start) ==
              ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
   GPR_ASSERT(validate_op(client, op, nops, true /* is_start */));
@@ -225,20 +229,21 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartServerHandshakeReq* server_start =
       grpc_gcp_HandshakerReq_server_start(req);
-  upb_strview const* application_protocols =
+  upb_StringView const* application_protocols =
       grpc_gcp_StartServerHandshakeReq_application_protocols(server_start,
                                                              nullptr);
-  GPR_ASSERT(upb_strview_eql(application_protocols[0],
-                             upb_strview_makez(ALTS_APPLICATION_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      application_protocols[0],
+      upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(
                  server_start) == 1);
   grpc_gcp_ServerHandshakeParameters* value;
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
       server_start, grpc_gcp_ALTS, &value));
-  upb_strview const* record_protocols =
+  upb_StringView const* record_protocols =
       grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
-  GPR_ASSERT(upb_strview_eql(record_protocols[0],
-                             upb_strview_makez(ALTS_RECORD_PROTOCOL)));
+  GPR_ASSERT(upb_StringView_IsEqual(
+      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   validate_rpc_protocol_versions(
       grpc_gcp_StartServerHandshakeReq_rpc_versions(server_start));
   GPR_ASSERT(grpc_gcp_StartServerHandshakeReq_max_frame_size(server_start) ==
@@ -263,9 +268,9 @@ static grpc_call_error check_next_success(grpc_call* /*call*/,
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_NextHandshakeMessageReq* next =
       grpc_gcp_HandshakerReq_next(req);
-  GPR_ASSERT(upb_strview_eql(
+  GPR_ASSERT(upb_StringView_IsEqual(
       grpc_gcp_NextHandshakeMessageReq_in_bytes(next),
-      upb_strview_makez(ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME)));
+      upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME)));
   GPR_ASSERT(validate_op(client, op, nops, false /* is_start */));
   return GRPC_CALL_OK;
 }
@@ -308,8 +313,10 @@ static alts_handshaker_client_test_config* create_config() {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
-  config->channel = grpc_insecure_channel_create(
-      ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, nullptr, nullptr);
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
+  config->channel = grpc_channel_create(ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
+                                        creds, nullptr);
+  grpc_channel_credentials_release(creds);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_alts_credentials_options* client_options =
       create_credentials_options(true /* is_client */);

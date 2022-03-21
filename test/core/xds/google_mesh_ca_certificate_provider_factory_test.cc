@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -89,9 +90,9 @@ TEST(GoogleMeshCaConfigTest, Basic) {
   EXPECT_EQ(config->sts_config().actor_token_path, "/etc/secret/sajwt.token");
   EXPECT_EQ(config->sts_config().actor_token_type,
             "urn:ietf:params:oauth:token-type:jwt");
-  EXPECT_EQ(config->timeout(), 20 * 1000);
-  EXPECT_EQ(config->certificate_lifetime(), 400 * 1000);
-  EXPECT_EQ(config->renewal_grace_period(), 100 * 1000);
+  EXPECT_EQ(config->timeout(), Duration::Seconds(20));
+  EXPECT_EQ(config->certificate_lifetime(), Duration::Seconds(400));
+  EXPECT_EQ(config->renewal_grace_period(), Duration::Seconds(100));
   EXPECT_EQ(config->key_size(), 1024);
   EXPECT_EQ(config->location(),
             "https://container.googleapis.com/v1/project/test-project1/"
@@ -140,9 +141,9 @@ TEST(GoogleMeshCaConfigTest, Defaults) {
             "urn:ietf:params:oauth:token-type:jwt");
   EXPECT_EQ(config->sts_config().actor_token_path, "");
   EXPECT_EQ(config->sts_config().actor_token_type, "");
-  EXPECT_EQ(config->timeout(), 10 * 1000);
-  EXPECT_EQ(config->certificate_lifetime(), 24 * 60 * 60 * 1000);
-  EXPECT_EQ(config->renewal_grace_period(), 12 * 60 * 60 * 1000);
+  EXPECT_EQ(config->timeout(), Duration::Seconds(10));
+  EXPECT_EQ(config->certificate_lifetime(), Duration::Hours(24));
+  EXPECT_EQ(config->renewal_grace_period(), Duration::Hours(12));
   EXPECT_EQ(config->key_size(), 2048);
   EXPECT_EQ(config->location(),
             "https://container.googleapis.com/v1/project/test-project1/"

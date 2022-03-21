@@ -28,9 +28,7 @@ RUN apt-get update && apt-get install -y \
 # GCC
 RUN apt-get update && apt-get install -y \
   gcc \
-  gcc-multilib \
   g++ \
-  g++-multilib  \
   && apt-get clean
 
 # libc6
@@ -120,6 +118,9 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 RUN mkdir /var/local/jenkins
 
+
+# Seems required by XDS interop tests.
+RUN python3 -m pip install virtualenv==16.7.9
 
 # Define the default command.
 CMD ["bash"]

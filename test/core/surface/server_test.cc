@@ -44,17 +44,6 @@ void test_register_method_fail(void) {
   method = grpc_server_register_method(
       server, "m", "h", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   GPR_ASSERT(method == nullptr);
-  method_old =
-      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE,
-                                  GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method_old != nullptr);
-  method =
-      grpc_server_register_method(server, "m2", "h2", GRPC_SRM_PAYLOAD_NONE, 0);
-  GPR_ASSERT(method == nullptr);
-  method = grpc_server_register_method(
-      server, "m2", "h2", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-      GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-  GPR_ASSERT(method == nullptr);
   grpc_server_destroy(server);
 }
 
@@ -84,15 +73,21 @@ void test_bind_server_twice(void) {
   std::string addr = absl::StrCat("[::]:", port);
   grpc_server_register_completion_queue(server1, cq, nullptr);
   grpc_server_register_completion_queue(server2, cq, nullptr);
-  GPR_ASSERT(0 ==
-             grpc_server_add_secure_http2_port(server2, addr.c_str(), nullptr));
+  GPR_ASSERT(0 == grpc_server_add_http2_port(server2, addr.c_str(), nullptr));
+  grpc_server_credentials* insecure_creds =
+      grpc_insecure_server_credentials_create();
   GPR_ASSERT(port ==
-             grpc_server_add_insecure_http2_port(server1, addr.c_str()));
-  GPR_ASSERT(0 == grpc_server_add_insecure_http2_port(server2, addr.c_str()));
+             grpc_server_add_http2_port(server1, addr.c_str(), insecure_creds));
+  grpc_server_credentials_release(insecure_creds);
+  grpc_server_credentials* another_insecure_creds =
+      grpc_insecure_server_credentials_create();
+  GPR_ASSERT(0 == grpc_server_add_http2_port(server2, addr.c_str(),
+                                             another_insecure_creds));
+  grpc_server_credentials_release(another_insecure_creds);
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
-  GPR_ASSERT(0 == grpc_server_add_secure_http2_port(server2, addr.c_str(),
-                                                    fake_creds));
+  GPR_ASSERT(0 ==
+             grpc_server_add_http2_port(server2, addr.c_str(), fake_creds));
   grpc_server_credentials_release(fake_creds);
   grpc_server_shutdown_and_notify(server1, cq, nullptr);
   grpc_server_shutdown_and_notify(server2, cq, nullptr);
@@ -112,11 +107,14 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   if (secure) {
     grpc_server_credentials* fake_creds =
         grpc_fake_transport_security_server_credentials_create();
-    GPR_ASSERT(
-        grpc_server_add_secure_http2_port(server, addr.c_str(), fake_creds));
+    GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), fake_creds));
     grpc_server_credentials_release(fake_creds);
   } else {
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr.c_str()));
+    grpc_server_credentials* insecure_creds =
+        grpc_insecure_server_credentials_create();
+    GPR_ASSERT(
+        grpc_server_add_http2_port(server, addr.c_str(), insecure_creds));
+    grpc_server_credentials_release(insecure_creds);
   }
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);

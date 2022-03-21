@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
-  
+FROM debian:11
+
 #=================
 # Basic C core dependencies
 
@@ -28,9 +28,7 @@ RUN apt-get update && apt-get install -y \
 # GCC
 RUN apt-get update && apt-get install -y \
   gcc \
-  gcc-multilib \
   g++ \
-  g++-multilib  \
   && apt-get clean
 
 # libc6
@@ -57,7 +55,6 @@ RUN apt-get update && apt-get install -y \
 
 
 RUN mkdir /var/local/jenkins
-
 
 
 RUN apt-get update && apt-get install -y python3 python3-all-dev python3-pip
@@ -87,3 +84,4 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
+

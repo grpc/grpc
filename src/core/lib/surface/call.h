@@ -49,7 +49,7 @@ typedef struct grpc_call_create_args {
   absl::optional<grpc_core::Slice> path;
   absl::optional<grpc_core::Slice> authority;
 
-  grpc_millis send_deadline;
+  grpc_core::Timestamp send_deadline;
 } grpc_call_create_args;
 
 /* Create a new call based on \a args.

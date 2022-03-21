@@ -80,7 +80,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
   const grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  cs->f->client = grpc_channel_create(
+  cs->f->client = grpc_channel_create_internal(
       "socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
@@ -107,7 +107,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   memset(&f, 0, sizeof(f));
   f.fixture_data = fixture_data;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   fixture_data->ep = grpc_iomgr_create_endpoint_pair("fixture", nullptr);
   return f;
 }

@@ -104,7 +104,7 @@ grpc_error_handle UpstreamTlsContextParse(
   auto* typed_config =
       envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
   if (typed_config != nullptr) {
-    const upb_strview encoded_upstream_tls_context =
+    const upb_StringView encoded_upstream_tls_context =
         google_protobuf_Any_value(typed_config);
     auto* upstream_tls_context =
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_parse(
@@ -241,7 +241,7 @@ grpc_error_handle CdsResourceParse(
           "EDS ConfigSource is not ADS or SELF."));
     }
     // Record EDS service_name (if any).
-    upb_strview service_name =
+    upb_StringView service_name =
         envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(
             eds_cluster_config);
     if (service_name.size != 0) {
@@ -263,7 +263,7 @@ grpc_error_handle CdsResourceParse(
       const envoy_config_cluster_v3_Cluster_CustomClusterType*
           custom_cluster_type =
               envoy_config_cluster_v3_Cluster_cluster_type(cluster);
-      upb_strview type_name =
+      upb_StringView type_name =
           envoy_config_cluster_v3_Cluster_CustomClusterType_name(
               custom_cluster_type);
       if (UpbStringToAbsl(type_name) != "envoy.clusters.aggregate") {
@@ -275,23 +275,24 @@ grpc_error_handle CdsResourceParse(
         const google_protobuf_Any* typed_config =
             envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(
                 custom_cluster_type);
-        const upb_strview aggregate_cluster_config_upb_strview =
+        const upb_StringView aggregate_cluster_config_upb_stringview =
             google_protobuf_Any_value(typed_config);
         const envoy_extensions_clusters_aggregate_v3_ClusterConfig*
             aggregate_cluster_config =
                 envoy_extensions_clusters_aggregate_v3_ClusterConfig_parse(
-                    aggregate_cluster_config_upb_strview.data,
-                    aggregate_cluster_config_upb_strview.size, context.arena);
+                    aggregate_cluster_config_upb_stringview.data,
+                    aggregate_cluster_config_upb_stringview.size,
+                    context.arena);
         if (aggregate_cluster_config == nullptr) {
           errors.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "Can't parse aggregate cluster."));
         } else {
           size_t size;
-          const upb_strview* clusters =
+          const upb_StringView* clusters =
               envoy_extensions_clusters_aggregate_v3_ClusterConfig_clusters(
                   aggregate_cluster_config, &size);
           for (size_t i = 0; i < size; ++i) {
-            const upb_strview cluster = clusters[i];
+            const upb_StringView cluster = clusters[i];
             cds_update->prioritized_cluster_names.emplace_back(
                 UpbStringToStdString(cluster));
           }
@@ -404,10 +405,10 @@ void MaybeLogCluster(const XdsEncodingContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];
-    upb_text_encode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(cluster, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
   }
 }

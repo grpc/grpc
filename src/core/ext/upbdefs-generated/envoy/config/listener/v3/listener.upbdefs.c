@@ -10,21 +10,21 @@
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener.upb.h"
 
-extern upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_socket_option_proto_upbdefinit;
-extern upb_def_init envoy_config_listener_v3_api_listener_proto_upbdefinit;
-extern upb_def_init envoy_config_listener_v3_listener_components_proto_upbdefinit;
-extern upb_def_init envoy_config_listener_v3_udp_listener_config_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init xds_core_v3_collection_entry_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_security_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_accesslog_v3_accesslog_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_socket_option_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_listener_v3_api_listener_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_listener_v3_listener_components_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_listener_v3_udp_listener_config_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_collection_entry_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_security_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[3552] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '/', 'v', 
 '3', '/', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
 'o', 'n', 'f', 'i', 'g', '.', 'l', 'i', 's', 't', 'e', 'n', 'e', 'r', '.', 'v', '3', '\032', ')', 'e', 'n', 'v', 'o', 'y', '/', 
@@ -170,7 +170,7 @@ static const char descriptor[3552] = {'\n', '\'', 'e', 'n', 'v', 'o', 'y', '/', 
 'o', '3', 
 };
 
-static upb_def_init *deps[16] = {
+static _upb_DefPool_Init *deps[16] = {
   &envoy_config_accesslog_v3_accesslog_proto_upbdefinit,
   &envoy_config_core_v3_address_proto_upbdefinit,
   &envoy_config_core_v3_base_proto_upbdefinit,
@@ -189,9 +189,9 @@ static upb_def_init *deps[16] = {
   NULL
 };
 
-upb_def_init envoy_config_listener_v3_listener_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_listener_v3_listener_proto_upbdefinit = {
   deps,
   &envoy_config_listener_v3_listener_proto_upb_file_layout,
   "envoy/config/listener/v3/listener.proto",
-  UPB_STRVIEW_INIT(descriptor, 3552)
+  UPB_STRINGVIEW_INIT(descriptor, 3552)
 };

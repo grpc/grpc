@@ -371,7 +371,7 @@ grpc_error_handle ExtractHttpFilterTypeName(const XdsEncodingContext& context,
   *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
   if (*filter_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
       *filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
-    upb_strview any_value = google_protobuf_Any_value(any);
+    upb_StringView any_value = google_protobuf_Any_value(any);
     const auto* typed_struct = xds_type_v3_TypedStruct_parse(
         any_value.data, any_value.size, context.arena);
     if (typed_struct == nullptr) {

@@ -30,7 +30,8 @@ class TimerState;
 // Must be the first field in the filter's call_data.
 struct grpc_deadline_state {
   grpc_deadline_state(grpc_call_element* elem,
-                      const grpc_call_element_args& args, grpc_millis deadline);
+                      const grpc_call_element_args& args,
+                      grpc_core::Timestamp deadline);
   ~grpc_deadline_state();
 
   // We take a reference to the call stack for the timer callback.
@@ -61,7 +62,7 @@ struct grpc_deadline_state {
 //
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_reset(grpc_call_element* elem,
-                               grpc_millis new_deadline);
+                               grpc_core::Timestamp new_deadline);
 
 // To be called from the client-side filter's start_transport_stream_op_batch()
 // method.  Ensures that the deadline timer is cancelled when the call

@@ -51,15 +51,17 @@ then
   # add a suffix to the nuget's version
   # to avoid confusing the package with a full nuget package.
   # NOTE: adding the suffix must be done AFTER expand_dev_version.sh has run.
-  sed -ibak "s/<\/GrpcCsharpVersion>/.singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
+  sed -ibak "s/<\/GrpcCsharpVersion>/-singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
 fi
 
 dotnet restore Grpc.sln
 
 # To be able to build the Grpc.Core project, we also need to put grpc_csharp_ext to where Grpc.Core.csproj
-# expects it.
+# expects it. Since this script can be run on either linux or mac we copy multiple variants of grpc_csharp_ext.
 mkdir -p ../../cmake/build
 cp nativelibs/csharp_ext_linux_x64/libgrpc_csharp_ext.so ../../cmake/build
+cp nativelibs/csharp_ext_macos_x64/libgrpc_csharp_ext.dylib ../../cmake/build
+cp nativelibs/csharp_ext_windows_x64/grpc_csharp_ext.dll ../../cmake/build
 
 dotnet pack --configuration Release Grpc.Core.Api --output ../../artifacts
 dotnet pack --configuration Release Grpc.Core --output ../../artifacts

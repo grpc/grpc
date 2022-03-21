@@ -90,12 +90,14 @@ INSTANTIATE_TEST_SUITE_P(TimeJump, TimeJumpTest,
 TEST_P(TimeJumpTest, TimerRunning) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
-  grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 3000,
-                  GRPC_CLOSURE_CREATE(
-                      [](void*, grpc_error_handle error) {
-                        GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
-                      },
-                      nullptr, grpc_schedule_on_exec_ctx));
+  grpc_timer_init(
+      &timer,
+      grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(3),
+      GRPC_CLOSURE_CREATE(
+          [](void*, grpc_error_handle error) {
+            GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
+          },
+          nullptr, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   std::ostringstream cmd;
   cmd << "sudo date `date -v" << GetParam() << " \"+%m%d%H%M%y\"`";

@@ -22,59 +22,69 @@ extern "C" {
 
 struct envoy_admin_v3_TapRequest;
 typedef struct envoy_admin_v3_TapRequest envoy_admin_v3_TapRequest;
-extern const upb_msglayout envoy_admin_v3_TapRequest_msginit;
+extern const upb_MiniTable envoy_admin_v3_TapRequest_msginit;
 struct envoy_config_tap_v3_TapConfig;
-extern const upb_msglayout envoy_config_tap_v3_TapConfig_msginit;
+extern const upb_MiniTable envoy_config_tap_v3_TapConfig_msginit;
+
 
 
 /* envoy.admin.v3.TapRequest */
 
-UPB_INLINE envoy_admin_v3_TapRequest *envoy_admin_v3_TapRequest_new(upb_arena *arena) {
-  return (envoy_admin_v3_TapRequest *)_upb_msg_new(&envoy_admin_v3_TapRequest_msginit, arena);
+UPB_INLINE envoy_admin_v3_TapRequest* envoy_admin_v3_TapRequest_new(upb_Arena* arena) {
+  return (envoy_admin_v3_TapRequest*)_upb_Message_New(&envoy_admin_v3_TapRequest_msginit, arena);
 }
-UPB_INLINE envoy_admin_v3_TapRequest *envoy_admin_v3_TapRequest_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_admin_v3_TapRequest *ret = envoy_admin_v3_TapRequest_new(arena);
+UPB_INLINE envoy_admin_v3_TapRequest* envoy_admin_v3_TapRequest_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_admin_v3_TapRequest* ret = envoy_admin_v3_TapRequest_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_admin_v3_TapRequest_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_admin_v3_TapRequest *envoy_admin_v3_TapRequest_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_admin_v3_TapRequest *ret = envoy_admin_v3_TapRequest_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_admin_v3_TapRequest_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_TapRequest_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_admin_v3_TapRequest_serialize(const envoy_admin_v3_TapRequest *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_admin_v3_TapRequest_msginit, arena, len);
+UPB_INLINE envoy_admin_v3_TapRequest* envoy_admin_v3_TapRequest_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_admin_v3_TapRequest* ret = envoy_admin_v3_TapRequest_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_admin_v3_TapRequest_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_admin_v3_TapRequest_serialize(const envoy_admin_v3_TapRequest* msg, upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, 0, arena, len);
+}
+UPB_INLINE char* envoy_admin_v3_TapRequest_serialize_ex(const envoy_admin_v3_TapRequest* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, options, arena, len);
+}
+UPB_INLINE upb_StringView envoy_admin_v3_TapRequest_config_id(const envoy_admin_v3_TapRequest* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+}
+UPB_INLINE bool envoy_admin_v3_TapRequest_has_tap_config(const envoy_admin_v3_TapRequest *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_tap_config(const envoy_admin_v3_TapRequest* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_tap_v3_TapConfig*);
 }
 
-UPB_INLINE upb_strview envoy_admin_v3_TapRequest_config_id(const envoy_admin_v3_TapRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
-UPB_INLINE bool envoy_admin_v3_TapRequest_has_tap_config(const envoy_admin_v3_TapRequest *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_tap_config(const envoy_admin_v3_TapRequest *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_tap_v3_TapConfig*); }
-
-UPB_INLINE void envoy_admin_v3_TapRequest_set_config_id(envoy_admin_v3_TapRequest *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
+UPB_INLINE void envoy_admin_v3_TapRequest_set_config_id(envoy_admin_v3_TapRequest *msg, upb_StringView value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
 UPB_INLINE void envoy_admin_v3_TapRequest_set_tap_config(envoy_admin_v3_TapRequest *msg, struct envoy_config_tap_v3_TapConfig* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_config_tap_v3_TapConfig*) = value;
 }
-UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutable_tap_config(envoy_admin_v3_TapRequest *msg, upb_arena *arena) {
+UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutable_tap_config(envoy_admin_v3_TapRequest *msg, upb_Arena *arena) {
   struct envoy_config_tap_v3_TapConfig* sub = (struct envoy_config_tap_v3_TapConfig*)envoy_admin_v3_TapRequest_tap_config(msg);
   if (sub == NULL) {
-    sub = (struct envoy_config_tap_v3_TapConfig*)_upb_msg_new(&envoy_config_tap_v3_TapConfig_msginit, arena);
+    sub = (struct envoy_config_tap_v3_TapConfig*)_upb_Message_New(&envoy_config_tap_v3_TapConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_admin_v3_TapRequest_set_tap_config(msg, sub);
   }
   return sub;
 }
 
-extern const upb_msglayout_file envoy_admin_v3_tap_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_admin_v3_tap_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

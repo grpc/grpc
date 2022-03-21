@@ -22,55 +22,63 @@ extern "C" {
 
 struct envoy_config_trace_v3_TraceServiceConfig;
 typedef struct envoy_config_trace_v3_TraceServiceConfig envoy_config_trace_v3_TraceServiceConfig;
-extern const upb_msglayout envoy_config_trace_v3_TraceServiceConfig_msginit;
+extern const upb_MiniTable envoy_config_trace_v3_TraceServiceConfig_msginit;
 struct envoy_config_core_v3_GrpcService;
-extern const upb_msglayout envoy_config_core_v3_GrpcService_msginit;
+extern const upb_MiniTable envoy_config_core_v3_GrpcService_msginit;
+
 
 
 /* envoy.config.trace.v3.TraceServiceConfig */
 
-UPB_INLINE envoy_config_trace_v3_TraceServiceConfig *envoy_config_trace_v3_TraceServiceConfig_new(upb_arena *arena) {
-  return (envoy_config_trace_v3_TraceServiceConfig *)_upb_msg_new(&envoy_config_trace_v3_TraceServiceConfig_msginit, arena);
+UPB_INLINE envoy_config_trace_v3_TraceServiceConfig* envoy_config_trace_v3_TraceServiceConfig_new(upb_Arena* arena) {
+  return (envoy_config_trace_v3_TraceServiceConfig*)_upb_Message_New(&envoy_config_trace_v3_TraceServiceConfig_msginit, arena);
 }
-UPB_INLINE envoy_config_trace_v3_TraceServiceConfig *envoy_config_trace_v3_TraceServiceConfig_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_config_trace_v3_TraceServiceConfig *ret = envoy_config_trace_v3_TraceServiceConfig_new(arena);
+UPB_INLINE envoy_config_trace_v3_TraceServiceConfig* envoy_config_trace_v3_TraceServiceConfig_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_trace_v3_TraceServiceConfig* ret = envoy_config_trace_v3_TraceServiceConfig_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_config_trace_v3_TraceServiceConfig_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_config_trace_v3_TraceServiceConfig *envoy_config_trace_v3_TraceServiceConfig_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_config_trace_v3_TraceServiceConfig *ret = envoy_config_trace_v3_TraceServiceConfig_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_config_trace_v3_TraceServiceConfig_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_config_trace_v3_TraceServiceConfig_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_config_trace_v3_TraceServiceConfig_serialize(const envoy_config_trace_v3_TraceServiceConfig *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, arena, len);
+UPB_INLINE envoy_config_trace_v3_TraceServiceConfig* envoy_config_trace_v3_TraceServiceConfig_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_trace_v3_TraceServiceConfig* ret = envoy_config_trace_v3_TraceServiceConfig_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_trace_v3_TraceServiceConfig_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
 }
-
+UPB_INLINE char* envoy_config_trace_v3_TraceServiceConfig_serialize(const envoy_config_trace_v3_TraceServiceConfig* msg, upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, 0, arena, len);
+}
+UPB_INLINE char* envoy_config_trace_v3_TraceServiceConfig_serialize_ex(const envoy_config_trace_v3_TraceServiceConfig* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, options, arena, len);
+}
 UPB_INLINE bool envoy_config_trace_v3_TraceServiceConfig_has_grpc_service(const envoy_config_trace_v3_TraceServiceConfig *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_TraceServiceConfig_grpc_service(const envoy_config_trace_v3_TraceServiceConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_GrpcService*); }
+UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_TraceServiceConfig_grpc_service(const envoy_config_trace_v3_TraceServiceConfig* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_GrpcService*);
+}
 
 UPB_INLINE void envoy_config_trace_v3_TraceServiceConfig_set_grpc_service(envoy_config_trace_v3_TraceServiceConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_GrpcService*) = value;
 }
-UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_TraceServiceConfig_mutable_grpc_service(envoy_config_trace_v3_TraceServiceConfig *msg, upb_arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_TraceServiceConfig_mutable_grpc_service(envoy_config_trace_v3_TraceServiceConfig *msg, upb_Arena *arena) {
   struct envoy_config_core_v3_GrpcService* sub = (struct envoy_config_core_v3_GrpcService*)envoy_config_trace_v3_TraceServiceConfig_grpc_service(msg);
   if (sub == NULL) {
-    sub = (struct envoy_config_core_v3_GrpcService*)_upb_msg_new(&envoy_config_core_v3_GrpcService_msginit, arena);
+    sub = (struct envoy_config_core_v3_GrpcService*)_upb_Message_New(&envoy_config_core_v3_GrpcService_msginit, arena);
     if (!sub) return NULL;
     envoy_config_trace_v3_TraceServiceConfig_set_grpc_service(msg, sub);
   }
   return sub;
 }
 
-extern const upb_msglayout_file envoy_config_trace_v3_service_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_config_trace_v3_service_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

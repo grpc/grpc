@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,6 @@ def create_docker_jobspec(name,
                           verbose_success=False):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
-    environ['RUN_COMMAND'] = shell_command
     environ['ARTIFACTS_OUT'] = 'artifacts/%s' % name
 
     docker_args = []
@@ -43,6 +42,7 @@ def create_docker_jobspec(name,
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
         'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
+        'DOCKER_RUN_SCRIPT_COMMAND': shell_command,
         'OUTPUT_DIR': 'artifacts'
     }
     if extra_docker_args is not None:
@@ -114,6 +114,8 @@ class PythonArtifact:
             # Their build is now much faster, so they can be included
             # in the regular artifact build.
             self.labels.append('linux')
+        if 'musllinux' in platform:
+            self.labels.append('linux')
 
     def pre_build_jobspecs(self):
         return []
@@ -158,6 +160,20 @@ class PythonArtifact:
                 # - they require protoc to run on current architecture
                 # - they only have sdist packages anyway, so it's useless to build them again
                 environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/grpc_artifact_python_%s_%s' %
+                (self.platform, self.arch),
+                'tools/run_tests/artifacts/build_artifact_python.sh',
+                environ=environ,
+                timeout_seconds=60 * 60 * 2)
+        elif 'musllinux' in self.platform:
+            environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
+                self.py_version)
+            environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
+            environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
+            environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
+            environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/grpc_artifact_python_%s_%s' %
@@ -315,7 +331,7 @@ class PHPArtifact:
         if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/test/php73_zts_stretch_{}'.format(self.arch),
+                'tools/dockerfile/test/php73_zts_debian11_{}'.format(self.arch),
                 'tools/run_tests/artifacts/build_artifact_php.sh')
         else:
             return create_jobspec(
@@ -369,8 +385,8 @@ class ProtocArtifact:
                     timeout_seconds=60 * 60,
                     use_workspace=True)
         else:
-            generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
-            environ['generator'] = generator
+            vs_tools_architecture = self.arch  # architecture selector passed to vcvarsall.bat
+            environ['ARCHITECTURE'] = vs_tools_architecture
             return create_jobspec(
                 self.name,
                 ['tools\\run_tests\\artifacts\\build_artifact_protoc.bat'],
@@ -444,6 +460,16 @@ def targets():
         PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
         PythonArtifact('linux_extra', 'armv7', 'cp310-cp310', presubmit=True),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp310-cp310', presubmit=True),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp36-cp36m', presubmit=True),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp37-cp37m'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp38-cp38'),
+        PythonArtifact('musllinux_1_1', 'x64', 'cp39-cp39'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp310-cp310', presubmit=True),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp36-cp36m', presubmit=True),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp37-cp37m'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp38-cp38'),
+        PythonArtifact('musllinux_1_1', 'x86', 'cp39-cp39'),
         PythonArtifact('macos', 'x64', 'python3.6', presubmit=True),
         PythonArtifact('macos', 'x64', 'python3.7'),
         PythonArtifact('macos', 'x64', 'python3.8'),

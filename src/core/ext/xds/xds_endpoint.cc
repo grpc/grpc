@@ -120,11 +120,11 @@ void MaybeLogClusterLoadAssignment(
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
   if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
-    const upb_msgdef* msg_type =
+    const upb_MessageDef* msg_type =
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
             context.symtab);
     char buf[10240];
-    upb_text_encode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(cla, msg_type, nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] ClusterLoadAssignment: %s",
             context.client, buf);
   }

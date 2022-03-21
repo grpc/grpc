@@ -43,12 +43,17 @@ Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
       jint result = env->GetJavaVM(&jvm);
       assert(result == 0);
     }
-    channel = grpc::experimental::CreateBinderChannel(
+    grpc::ChannelArguments ch_args;
+    // This is not required since "grpc.io.action.BIND" is already the default.
+    ch_args.SetString("grpc.binder.custom_android_intent_action_name",
+                      "grpc.io.action.BIND");
+    channel = grpc::experimental::CreateCustomBinderChannel(
         env, application, "io.grpc.binder.cpp.exampleserver",
         "io.grpc.binder.cpp.exampleserver.ExportedEndpointService",
         std::make_shared<
             grpc::experimental::binder::SameSignatureSecurityPolicy>(
-            jvm, application));
+            jvm, application),
+        ch_args);
     return env->NewStringUTF("Clicked 1 time, channel created");
   } else {
     auto stub = helloworld::Greeter::NewStub(channel);
@@ -60,6 +65,9 @@ Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(
     if (status.ok()) {
       return env->NewStringUTF(response.message().c_str());
     }
-    return env->NewStringUTF("Clicked more than 1 time. Status not ok");
+    return env->NewStringUTF(
+        std::string("Clicked more than 1 time. Status not ok " +
+                    std::to_string(status.error_code()))
+            .c_str());
   }
 }

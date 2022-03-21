@@ -12,69 +12,71 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub opencensus_proto_trace_v1_TraceConfig_submsgs[3] = {
+static const upb_MiniTable_Sub opencensus_proto_trace_v1_TraceConfig_submsgs[3] = {
   {.submsg = &opencensus_proto_trace_v1_ConstantSampler_msginit},
   {.submsg = &opencensus_proto_trace_v1_ProbabilitySampler_msginit},
   {.submsg = &opencensus_proto_trace_v1_RateLimitingSampler_msginit},
 };
 
-static const upb_msglayout_field opencensus_proto_trace_v1_TraceConfig__fields[7] = {
-  {1, UPB_SIZE(32, 32), UPB_SIZE(-37, -41), 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(32, 32), UPB_SIZE(-37, -41), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(32, 32), UPB_SIZE(-37, -41), 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(8, 8), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(16, 16), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(24, 24), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field opencensus_proto_trace_v1_TraceConfig__fields[7] = {
+  {1, UPB_SIZE(32, 32), UPB_SIZE(-37, -41), 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(32, 32), UPB_SIZE(-37, -41), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(32, 32), UPB_SIZE(-37, -41), 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(0, 0), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(8, 8), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(16, 16), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(24, 24), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout opencensus_proto_trace_v1_TraceConfig_msginit = {
+const upb_MiniTable opencensus_proto_trace_v1_TraceConfig_msginit = {
   &opencensus_proto_trace_v1_TraceConfig_submsgs[0],
   &opencensus_proto_trace_v1_TraceConfig__fields[0],
-  UPB_SIZE(40, 48), 7, _UPB_MSGEXT_NONE, 7, 255,
+  UPB_SIZE(40, 48), 7, upb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
-static const upb_msglayout_field opencensus_proto_trace_v1_ProbabilitySampler__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 1, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field opencensus_proto_trace_v1_ProbabilitySampler__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 1, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout opencensus_proto_trace_v1_ProbabilitySampler_msginit = {
+const upb_MiniTable opencensus_proto_trace_v1_ProbabilitySampler_msginit = {
   NULL,
   &opencensus_proto_trace_v1_ProbabilitySampler__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_field opencensus_proto_trace_v1_ConstantSampler__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field opencensus_proto_trace_v1_ConstantSampler__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout opencensus_proto_trace_v1_ConstantSampler_msginit = {
+const upb_MiniTable opencensus_proto_trace_v1_ConstantSampler_msginit = {
   NULL,
   &opencensus_proto_trace_v1_ConstantSampler__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout_field opencensus_proto_trace_v1_RateLimitingSampler__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field opencensus_proto_trace_v1_RateLimitingSampler__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout opencensus_proto_trace_v1_RateLimitingSampler_msginit = {
+const upb_MiniTable opencensus_proto_trace_v1_RateLimitingSampler_msginit = {
   NULL,
   &opencensus_proto_trace_v1_RateLimitingSampler__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[4] = {
+static const upb_MiniTable *messages_layout[4] = {
   &opencensus_proto_trace_v1_TraceConfig_msginit,
   &opencensus_proto_trace_v1_ProbabilitySampler_msginit,
   &opencensus_proto_trace_v1_ConstantSampler_msginit,
   &opencensus_proto_trace_v1_RateLimitingSampler_msginit,
 };
 
-const upb_msglayout_file opencensus_proto_trace_v1_trace_config_proto_upb_file_layout = {
+const upb_MiniTable_File opencensus_proto_trace_v1_trace_config_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   4,
+  0,
   0,
 };
 

@@ -18,17 +18,17 @@
 
 namespace grpc_core {
 
-TEST(PromiseTest, Immediate) {
+TEST(SeqTest, Immediate) {
   EXPECT_EQ(Seq([] { return 3; })(), 3);
 }
 
-TEST(PromiseTest, OneThen) {
+TEST(SeqTest, OneThen) {
   auto initial = [] { return 3; };
   auto then = [](int i) { return [i]() { return i + 4; }; };
   EXPECT_EQ(Seq(initial, then)(), Poll<int>(7));
 }
 
-TEST(PromiseTest, TwoTypedThens) {
+TEST(SeqTest, TwoTypedThens) {
   struct A {};
   struct B {};
   struct C {};
@@ -39,7 +39,7 @@ TEST(PromiseTest, TwoTypedThens) {
 }
 
 /* This does not compile, but is useful for testing error messages generated
-TEST(PromiseTest, MisTypedThen) {
+TEST(SeqTest, MisTypedThen) {
   struct A {};
   struct B {};
   auto initial = [] { return A{}; };
@@ -48,14 +48,14 @@ TEST(PromiseTest, MisTypedThen) {
 }
 */
 
-TEST(PromiseTest, TwoThens) {
+TEST(SeqTest, TwoThens) {
   auto initial = [] { return std::string("a"); };
   auto next1 = [](std::string i) { return [i]() { return i + "b"; }; };
   auto next2 = [](std::string i) { return [i]() { return i + "c"; }; };
   EXPECT_EQ(Seq(initial, next1, next2)(), Poll<std::string>("abc"));
 }
 
-TEST(PromiseTest, ThreeThens) {
+TEST(SeqTest, ThreeThens) {
   EXPECT_EQ(Seq([] { return std::string("a"); },
                 [](std::string i) { return [i]() { return i + "b"; }; },
                 [](std::string i) { return [i]() { return i + "c"; }; },
@@ -68,7 +68,7 @@ struct Big {
   void YesItIsUnused() const {}
 };
 
-TEST(PromiseTest, SaneSizes) {
+TEST(SeqTest, SaneSizes) {
   auto x = Big();
   auto p1 = Seq(
       [x] {
@@ -84,6 +84,15 @@ TEST(PromiseTest, SaneSizes) {
       });
   EXPECT_GE(sizeof(p1), sizeof(Big));
   EXPECT_LT(sizeof(p1), 2 * sizeof(Big));
+}
+
+TEST(SeqIterTest, Accumulate) {
+  std::vector<int> v{1, 2, 3, 4, 5};
+  EXPECT_EQ(SeqIter(v.begin(), v.end(), 0,
+                    [](int cur, int next) {
+                      return [cur, next]() { return cur + next; };
+                    })(),
+            Poll<int>(15));
 }
 
 }  // namespace grpc_core

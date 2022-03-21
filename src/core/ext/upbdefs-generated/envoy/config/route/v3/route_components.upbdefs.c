@@ -10,26 +10,26 @@
 #include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_proxy_protocol_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_metadata_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_regex_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_string_proto_upbdefinit;
-extern upb_def_init envoy_type_metadata_v3_metadata_proto_upbdefinit;
-extern upb_def_init envoy_type_tracing_v3_custom_tag_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_range_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init xds_type_matcher_v3_matcher_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_extension_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_proxy_protocol_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_metadata_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_regex_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_string_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_metadata_v3_metadata_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_tracing_v3_custom_tag_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_range_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init xds_type_matcher_v3_matcher_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[20579] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'r', 'o', 'u', 't', 'e', '/', 'v', '3', '/', 'r', 
 'o', 'u', 't', 'e', '_', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 
 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'r', 'o', 'u', 't', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 
@@ -856,7 +856,7 @@ static const char descriptor[20579] = {'\n', ',', 'e', 'n', 'v', 'o', 'y', '/', 
 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[21] = {
+static _upb_DefPool_Init *deps[21] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_core_v3_extension_proto_upbdefinit,
   &envoy_config_core_v3_proxy_protocol_proto_upbdefinit,
@@ -880,9 +880,9 @@ static upb_def_init *deps[21] = {
   NULL
 };
 
-upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_route_v3_route_components_proto_upbdefinit = {
   deps,
   &envoy_config_route_v3_route_components_proto_upb_file_layout,
   "envoy/config/route/v3/route_components.proto",
-  UPB_STRVIEW_INIT(descriptor, 20579)
+  UPB_STRINGVIEW_INIT(descriptor, 20579)
 };

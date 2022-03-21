@@ -37,7 +37,6 @@ static void hs_recv_initial_metadata_ready(void* user_data,
                                            grpc_error_handle err);
 static void hs_recv_trailing_metadata_ready(void* user_data,
                                             grpc_error_handle err);
-static void hs_recv_message_ready(void* user_data, grpc_error_handle err);
 
 namespace {
 
@@ -47,26 +46,14 @@ struct call_data {
     GRPC_CLOSURE_INIT(&recv_initial_metadata_ready,
                       hs_recv_initial_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&recv_message_ready, hs_recv_message_ready, elem,
-                      grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
                       hs_recv_trailing_metadata_ready, elem,
                       grpc_schedule_on_exec_ctx);
   }
 
-  ~call_data() {
-    GRPC_ERROR_UNREF(recv_initial_metadata_ready_error);
-    if (have_read_stream) {
-      read_stream->Orphan();
-    }
-  }
+  ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_ready_error); }
 
   grpc_core::CallCombiner* call_combiner;
-
-  // If we see the recv_message contents in the GET query string, we
-  // store it here.
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> read_stream;
-  bool have_read_stream = false;
 
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
@@ -75,12 +62,6 @@ struct call_data {
   grpc_metadata_batch* recv_initial_metadata = nullptr;
   uint32_t* recv_initial_metadata_flags;
   bool seen_recv_initial_metadata_ready = false;
-
-  // State for intercepting recv_message.
-  grpc_closure* original_recv_message_ready;
-  grpc_closure recv_message_ready;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  bool seen_recv_message_ready = false;
 
   // State for intercepting recv_trailing_metadata
   grpc_closure recv_trailing_metadata_ready;
@@ -115,7 +96,6 @@ static void hs_add_error(const char* error_name, grpc_error_handle* cumulative,
 
 static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                                                      grpc_metadata_batch* b) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
@@ -123,23 +103,9 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   if (method.has_value()) {
     switch (*method) {
       case grpc_core::HttpMethodMetadata::kPost:
-        *calld->recv_initial_metadata_flags &=
-            ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
-              GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
-        break;
-      case grpc_core::HttpMethodMetadata::kPut:
-        *calld->recv_initial_metadata_flags &=
-            ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-        *calld->recv_initial_metadata_flags |=
-            GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
-        break;
-      case grpc_core::HttpMethodMetadata::kGet:
-        *calld->recv_initial_metadata_flags |=
-            GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-        *calld->recv_initial_metadata_flags &=
-            ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
         break;
       case grpc_core::HttpMethodMetadata::kInvalid:
+      case grpc_core::HttpMethodMetadata::kGet:
         hs_add_error(error_name, &error,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Bad method header"));
         break;
@@ -185,38 +151,6 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
                  grpc_error_set_str(
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
                      GRPC_ERROR_STR_KEY, ":path"));
-  } else if (*calld->recv_initial_metadata_flags &
-             GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
-    /* We have a cacheable request made with GET verb. The path contains the
-     * query parameter which is base64 encoded request payload. */
-    static const char kQuerySeparator = '?';
-    /* offset of the character '?' */
-    auto it =
-        std::find(path_slice->begin(), path_slice->end(), kQuerySeparator);
-    if (it != path_slice->end()) {
-      const auto query_start = it - path_slice->begin() + 1;
-      auto query_slice = path_slice->RefSubSlice(
-          query_start, path_slice->size() - query_start);
-
-      /* substitute path metadata with just the path (not query) */
-      auto path_without_query = path_slice->TakeSubSlice(0, query_start - 1);
-      *path_slice = std::move(path_without_query);
-
-      /* decode payload from query and add to the slice buffer to be returned */
-      const int k_url_safe = 1;
-      grpc_slice_buffer read_slice_buffer;
-      grpc_slice_buffer_init(&read_slice_buffer);
-      grpc_slice_buffer_add(
-          &read_slice_buffer,
-          grpc_base64_decode_with_len(
-              reinterpret_cast<const char*>(query_slice.begin()),
-              query_slice.size(), k_url_safe));
-      calld->read_stream.Init(&read_slice_buffer, 0);
-      grpc_slice_buffer_destroy_internal(&read_slice_buffer);
-      calld->have_read_stream = true;
-    } else {
-      gpr_log(GPR_ERROR, "GET request without QUERY");
-    }
   }
 
   if (b->get_pointer(grpc_core::HttpAuthorityMetadata()) == nullptr) {
@@ -249,22 +183,6 @@ static void hs_recv_initial_metadata_ready(void* user_data,
   if (err == GRPC_ERROR_NONE) {
     err = hs_filter_incoming_metadata(elem, calld->recv_initial_metadata);
     calld->recv_initial_metadata_ready_error = GRPC_ERROR_REF(err);
-    if (calld->seen_recv_message_ready) {
-      // We've already seen the recv_message callback, but we previously
-      // deferred it, so we need to return it here.
-      // Replace the recv_message byte stream if needed.
-      if (calld->have_read_stream) {
-        calld->recv_message->reset(calld->read_stream.get());
-        calld->have_read_stream = false;
-      }
-      // Re-enter call combiner for original_recv_message_ready, since the
-      // surface code will release the call combiner for each callback it
-      // receives.
-      GRPC_CALL_COMBINER_START(
-          calld->call_combiner, calld->original_recv_message_ready,
-          GRPC_ERROR_REF(err),
-          "resuming recv_message_ready from recv_initial_metadata_ready");
-    }
   } else {
     (void)GRPC_ERROR_REF(err);
   }
@@ -277,31 +195,6 @@ static void hs_recv_initial_metadata_ready(void* user_data,
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           calld->original_recv_initial_metadata_ready, err);
-}
-
-static void hs_recv_message_ready(void* user_data, grpc_error_handle err) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->seen_recv_message_ready = true;
-  if (calld->seen_recv_initial_metadata_ready) {
-    // We've already seen the recv_initial_metadata callback, so
-    // replace the recv_message byte stream if needed and invoke the
-    // original recv_message callback immediately.
-    if (calld->have_read_stream) {
-      calld->recv_message->reset(calld->read_stream.get());
-      calld->have_read_stream = false;
-    }
-    grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_recv_message_ready,
-                            GRPC_ERROR_REF(err));
-  } else {
-    // We have not yet seen the recv_initial_metadata callback, so we
-    // need to wait to see if this is a GET request.
-    // Note that we release the call combiner here, so that other
-    // callbacks can run.
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner,
-        "pausing recv_message_ready until recv_initial_metadata_ready");
-  }
 }
 
 static void hs_recv_trailing_metadata_ready(void* user_data,
@@ -353,13 +246,6 @@ static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->recv_initial_metadata_ready;
-  }
-
-  if (op->recv_message) {
-    calld->recv_message = op->payload->recv_message.recv_message;
-    calld->original_recv_message_ready =
-        op->payload->recv_message.recv_message_ready;
-    op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
 
   if (op->recv_trailing_metadata) {

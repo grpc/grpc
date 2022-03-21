@@ -10,14 +10,14 @@
 #include "envoy/config/core/v3/config_source.upbdefs.h"
 #include "envoy/config/core/v3/config_source.upb.h"
 
-extern upb_def_init envoy_config_core_v3_grpc_service_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init xds_core_v3_authority_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_grpc_service_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_authority_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[2325] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'c', 'o', 
 'n', 'f', 'i', 'g', '_', 's', 'o', 'u', 'r', 'c', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 
 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\'', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 
@@ -113,7 +113,7 @@ static const char descriptor[2325] = {'\n', '(', 'e', 'n', 'v', 'o', 'y', '/', '
 'v', '3', ';', 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[9] = {
+static _upb_DefPool_Init *deps[9] = {
   &envoy_config_core_v3_grpc_service_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
@@ -125,9 +125,9 @@ static upb_def_init *deps[9] = {
   NULL
 };
 
-upb_def_init envoy_config_core_v3_config_source_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_core_v3_config_source_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_config_source_proto_upb_file_layout,
   "envoy/config/core/v3/config_source.proto",
-  UPB_STRVIEW_INIT(descriptor, 2325)
+  UPB_STRINGVIEW_INIT(descriptor, 2325)
 };

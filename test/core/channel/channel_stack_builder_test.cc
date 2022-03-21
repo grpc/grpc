@@ -23,10 +23,13 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -56,8 +59,10 @@ bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
 
 TEST(ChannelStackBuilderTest, ReplaceFilter) {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_insecure_channel_create("target name isn't used", nullptr, nullptr);
+      grpc_channel_create("target name isn't used", creds, nullptr);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);
@@ -117,6 +122,11 @@ bool AddOriginalFilter(ChannelStackBuilder* builder) {
                            g_original_fn_called = true;
                          });
   return true;
+}
+
+TEST(ChannelStackBuilder, UnknownTarget) {
+  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL);
+  EXPECT_EQ(builder.target(), "unknown");
 }
 
 }  // namespace

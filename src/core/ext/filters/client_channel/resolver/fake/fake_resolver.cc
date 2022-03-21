@@ -32,6 +32,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -359,22 +360,22 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "fake"; }
+
   bool IsValidUri(const URI& /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<FakeResolver>(std::move(args));
   }
-
-  const char* scheme() const override { return "fake"; }
 };
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_fake_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::FakeResolverFactory>());
+void RegisterFakeResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<FakeResolverFactory>());
 }
+
+}  // namespace grpc_core
 
 void grpc_resolver_fake_shutdown() {}

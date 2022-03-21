@@ -287,17 +287,21 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     case TSI_FRAME_PROTECTOR_NONE:
       break;
   }
+  bool has_frame_protector =
+      zero_copy_protector != nullptr || protector != nullptr;
   // If we have a frame protector, create a secure endpoint.
-  if (zero_copy_protector != nullptr || protector != nullptr) {
+  if (has_frame_protector) {
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, &slice, 1);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, &slice, args_->args, 1);
       grpc_slice_unref_internal(slice);
     } else {
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, nullptr, 0);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, nullptr, args_->args, 0);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -308,11 +312,17 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   // Done with handshaker result.
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
-  // Add auth context to channel args.
-  absl::InlinedVector<grpc_arg, 2> args_to_add;
-  args_to_add.push_back(grpc_auth_context_to_arg(auth_context_.get()));
-  auto security = MakeChannelzSecurityFromAuthContext(auth_context_.get());
-  args_to_add.push_back(security->MakeChannelArg());
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      // Add auth context to channel args.
+      grpc_auth_context_to_arg(auth_context_.get()),
+  };
+  RefCountedPtr<channelz::SocketNode::Security> channelz_security;
+  // Add channelz channel args only if frame protector is created.
+  if (has_frame_protector) {
+    channelz_security =
+        MakeChannelzSecurityFromAuthContext(auth_context_.get());
+    args_to_add.push_back(channelz_security->MakeChannelArg());
+  }
   grpc_channel_args* tmp_args = args_->args;
   args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
                                                args_to_add.size());

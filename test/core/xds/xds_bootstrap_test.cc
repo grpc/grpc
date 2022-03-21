@@ -262,9 +262,9 @@ TEST(XdsBootstrapTest, MissingChannelCreds) {
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_THAT(grpc_error_std_string(error),
-              ::testing::ContainsRegex(
-                  "\"field:channel_creds error:does not exist.\""));
+  EXPECT_THAT(
+      grpc_error_std_string(error),
+      ::testing::ContainsRegex("field:channel_creds error:does not exist."));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -335,7 +335,7 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
       ::testing::ContainsRegex("errors parsing \"xds_servers\" array.*"
                                "errors parsing index 0.*"
                                "errors parsing xds server.*"
-                               "\"field:server_uri error:does not exist.\","));
+                               "field:server_uri error:does not exist."));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -358,8 +358,8 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
                   "errors parsing \"xds_servers\" array.*"
                   "errors parsing index 0.*"
                   "errors parsing xds server.*"
-                  "\"field:server_uri error:type should be STRING.*"
-                  "\"field:channel_creds error:type should be ARRAY\""));
+                  "field:server_uri error:type should be STRING.*"
+                  "field:channel_creds error:type should be ARRAY"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -389,8 +389,8 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
                                "errors parsing xds server.*"
                                "errors parsing \"channel_creds\" array.*"
                                "errors parsing index 0.*"
-                               "\"field:type error:type should be STRING.*"
-                               "\"field:config error:type should be OBJECT\""));
+                               "field:type error:type should be STRING.*"
+                               "field:config error:type should be OBJECT"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -555,7 +555,7 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"authorities\".*"
-                  "errors parsing authority xds.example.com\".*"
+                  "errors parsing authority xds.example.com.*"
                   "field must begin with \"xdstp://xds.example.com/\""));
   GRPC_ERROR_UNREF(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
@@ -587,11 +587,11 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("errors parsing \"authorities\".*"
-                               "errors parsing authority xds.example.com\".*"
+                               "errors parsing authority xds.example.com.*"
                                "errors parsing \"xds_servers\" array.*"
                                "errors parsing index 0.*"
                                "errors parsing xds server.*"
-                               "\"field:server_uri error:does not exist.\","));
+                               "field:server_uri error:does not exist."));
   GRPC_ERROR_UNREF(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }

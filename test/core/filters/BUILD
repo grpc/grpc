@@ -27,6 +27,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//:grpc_client_authority_filter",
+        "//test/core/promise:test_context",
         "//test/core/util:grpc_suppressions",
     ],
 )

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,6 @@ def create_docker_jobspec(name,
                           timeout_retries=0):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
-    environ['RUN_COMMAND'] = shell_command
 
     docker_args = []
     for k, v in list(environ.items()):
@@ -37,6 +36,7 @@ def create_docker_jobspec(name,
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,
         'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
+        'DOCKER_RUN_SCRIPT_COMMAND': shell_command,
         'OUTPUT_DIR': 'artifacts'
     }
     jobspec = jobset.JobSpec(
@@ -74,14 +74,15 @@ def create_jobspec(name,
 class CSharpPackage:
     """Builds C# packages."""
 
-    def __init__(self, unity=False):
+    def __init__(self, platform, unity=False):
+        self.platform = platform
         self.unity = unity
-        self.labels = ['package', 'csharp', 'linux']
+        self.labels = ['package', 'csharp', self.platform]
         if unity:
-            self.name = 'csharp_package_unity_linux'
+            self.name = 'csharp_package_unity_%s' % self.platform
             self.labels += ['unity']
         else:
-            self.name = 'csharp_package_nuget_linux'
+            self.name = 'csharp_package_nuget_%s' % self.platform
             self.labels += ['nuget']
 
     def pre_build_jobspecs(self):
@@ -91,20 +92,23 @@ class CSharpPackage:
         del inner_jobs  # arg unused as there is little opportunity for parallelizing
         environ = {
             'GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET':
-                os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET')
+                os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET', '')
         }
-        if self.unity:
+
+        build_script = 'src/csharp/build_unitypackage.sh' if self.unity else 'src/csharp/build_nuget.sh'
+
+        if self.platform == 'linux':
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/test/csharp_debian11_x64',
-                'src/csharp/build_unitypackage.sh',
+                build_script,
                 environ=environ)
         else:
-            return create_docker_jobspec(
-                self.name,
-                'tools/dockerfile/test/csharp_debian11_x64',
-                'src/csharp/build_nuget.sh',
-                environ=environ)
+            repo_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     '..', '..', '..')
+            environ['EXTERNAL_GIT_ROOT'] = repo_root
+            return create_jobspec(self.name, ['bash', build_script],
+                                  environ=environ)
 
     def __str__(self):
         return self.name
@@ -169,8 +173,10 @@ class PHPPackage:
 def targets():
     """Gets list of supported targets"""
     return [
-        CSharpPackage(),
-        CSharpPackage(unity=True),
+        CSharpPackage('linux'),
+        CSharpPackage('linux', unity=True),
+        CSharpPackage('macos'),
+        CSharpPackage('windows'),
         RubyPackage(),
         PythonPackage(),
         PHPPackage()

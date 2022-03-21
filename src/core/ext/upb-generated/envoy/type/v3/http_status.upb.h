@@ -22,7 +22,7 @@ extern "C" {
 
 struct envoy_type_v3_HttpStatus;
 typedef struct envoy_type_v3_HttpStatus envoy_type_v3_HttpStatus;
-extern const upb_msglayout envoy_type_v3_HttpStatus_msginit;
+extern const upb_MiniTable envoy_type_v3_HttpStatus_msginit;
 
 typedef enum {
   envoy_type_v3_Empty = 0,
@@ -85,39 +85,47 @@ typedef enum {
 } envoy_type_v3_StatusCode;
 
 
+
 /* envoy.type.v3.HttpStatus */
 
-UPB_INLINE envoy_type_v3_HttpStatus *envoy_type_v3_HttpStatus_new(upb_arena *arena) {
-  return (envoy_type_v3_HttpStatus *)_upb_msg_new(&envoy_type_v3_HttpStatus_msginit, arena);
+UPB_INLINE envoy_type_v3_HttpStatus* envoy_type_v3_HttpStatus_new(upb_Arena* arena) {
+  return (envoy_type_v3_HttpStatus*)_upb_Message_New(&envoy_type_v3_HttpStatus_msginit, arena);
 }
-UPB_INLINE envoy_type_v3_HttpStatus *envoy_type_v3_HttpStatus_parse(const char *buf, size_t size,
-                        upb_arena *arena) {
-  envoy_type_v3_HttpStatus *ret = envoy_type_v3_HttpStatus_new(arena);
+UPB_INLINE envoy_type_v3_HttpStatus* envoy_type_v3_HttpStatus_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_type_v3_HttpStatus* ret = envoy_type_v3_HttpStatus_new(arena);
   if (!ret) return NULL;
-  if (!upb_decode(buf, size, ret, &envoy_type_v3_HttpStatus_msginit, arena)) return NULL;
-  return ret;
-}
-UPB_INLINE envoy_type_v3_HttpStatus *envoy_type_v3_HttpStatus_parse_ex(const char *buf, size_t size,
-                           const upb_extreg *extreg, int options,
-                           upb_arena *arena) {
-  envoy_type_v3_HttpStatus *ret = envoy_type_v3_HttpStatus_new(arena);
-  if (!ret) return NULL;
-  if (!_upb_decode(buf, size, ret, &envoy_type_v3_HttpStatus_msginit, extreg, options, arena)) {
+  if (upb_Decode(buf, size, ret, &envoy_type_v3_HttpStatus_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
-UPB_INLINE char *envoy_type_v3_HttpStatus_serialize(const envoy_type_v3_HttpStatus *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_type_v3_HttpStatus_msginit, arena, len);
+UPB_INLINE envoy_type_v3_HttpStatus* envoy_type_v3_HttpStatus_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_type_v3_HttpStatus* ret = envoy_type_v3_HttpStatus_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_type_v3_HttpStatus_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
 }
-
-UPB_INLINE int32_t envoy_type_v3_HttpStatus_code(const envoy_type_v3_HttpStatus *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t); }
+UPB_INLINE char* envoy_type_v3_HttpStatus_serialize(const envoy_type_v3_HttpStatus* msg, upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_type_v3_HttpStatus_msginit, 0, arena, len);
+}
+UPB_INLINE char* envoy_type_v3_HttpStatus_serialize_ex(const envoy_type_v3_HttpStatus* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_type_v3_HttpStatus_msginit, options, arena, len);
+}
+UPB_INLINE int32_t envoy_type_v3_HttpStatus_code(const envoy_type_v3_HttpStatus* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+}
 
 UPB_INLINE void envoy_type_v3_HttpStatus_set_code(envoy_type_v3_HttpStatus *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
 }
 
-extern const upb_msglayout_file envoy_type_v3_http_status_proto_upb_file_layout;
+extern const upb_MiniTable_File envoy_type_v3_http_status_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

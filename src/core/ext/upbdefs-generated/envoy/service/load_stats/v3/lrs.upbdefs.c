@@ -10,11 +10,11 @@
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_endpoint_v3_load_report_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
 static const char descriptor[1040] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 's', 'e', 'r', 'v', 'i', 'c', 'e', '/', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 
 's', '/', 'v', '3', '/', 'l', 'r', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\033', 'e', 'n', 'v', 'o', 'y', '.', 's', 'e', 'r', 
 'v', 'i', 'c', 'e', '.', 'l', 'o', 'a', 'd', '_', 's', 't', 'a', 't', 's', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', 
@@ -59,7 +59,7 @@ static const char descriptor[1040] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', '
 '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[6] = {
+static _upb_DefPool_Init *deps[6] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_endpoint_v3_load_report_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
@@ -68,9 +68,9 @@ static upb_def_init *deps[6] = {
   NULL
 };
 
-upb_def_init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
+_upb_DefPool_Init envoy_service_load_stats_v3_lrs_proto_upbdefinit = {
   deps,
   &envoy_service_load_stats_v3_lrs_proto_upb_file_layout,
   "envoy/service/load_stats/v3/lrs.proto",
-  UPB_STRVIEW_INIT(descriptor, 1040)
+  UPB_STRINGVIEW_INIT(descriptor, 1040)
 };

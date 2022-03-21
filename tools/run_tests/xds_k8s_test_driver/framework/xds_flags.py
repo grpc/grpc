@@ -123,6 +123,11 @@ TESTING_VERSION = flags.DEFINE_string(
     default="master",
     help="The testing gRPC version branch name. Like master, v1.41.x, v1.37.x")
 
+FORCE_CLEANUP = flags.DEFINE_bool(
+    "force_cleanup",
+    default=False,
+    help="Force resource cleanup, even if not created by this test run")
+
 flags.adopt_module_key_flags(highlighter)
 
 flags.mark_flags_as_required([

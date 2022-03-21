@@ -29,6 +29,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver_registry.h"
@@ -68,8 +69,9 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
     grpc_core::FakeResolverResponseGenerator* response_generator,
     std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
-  grpc_core::ResolverFactory* factory =
-      grpc_core::ResolverRegistry::LookupResolverFactory("fake");
+  grpc_core::ResolverFactory* factory = grpc_core::CoreConfiguration::Get()
+                                            .resolver_registry()
+                                            .LookupResolverFactory("fake");
   grpc_arg generator_arg =
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           response_generator);

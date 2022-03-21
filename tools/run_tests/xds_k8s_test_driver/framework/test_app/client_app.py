@@ -281,7 +281,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         # Mutable state
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
-        self.port_forwarder = None
+        self.port_forwarder: Optional[k8s.PortForwarder] = None
 
     # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(self,
@@ -344,6 +344,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         pod = self.k8s_namespace.list_deployment_pods(self.deployment)[0]
         self._wait_pod_started(pod.metadata.name)
         pod_ip = pod.status.pod_ip
+        rpc_port = self.stats_port
         rpc_host = None
 
         # Experimental, for local debugging.
@@ -352,16 +353,17 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                         pod_ip, self.stats_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=self.stats_port)
-            rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
+            rpc_port = self.port_forwarder.local_port
+            rpc_host = self.port_forwarder.local_address
 
         return XdsTestClient(ip=pod_ip,
-                             rpc_port=self.stats_port,
+                             rpc_port=rpc_port,
                              server_target=server_target,
                              rpc_host=rpc_host)
 
     def cleanup(self, *, force=False, force_namespace=False):
         if self.port_forwarder:
-            self.k8s_namespace.port_forward_stop(self.port_forwarder)
+            self.port_forwarder.close()
             self.port_forwarder = None
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)

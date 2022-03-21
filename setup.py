@@ -161,7 +161,7 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 # without statically linking libstdc++ (which leads to a slight increase in the wheel size).
 # This option is useful when crosscompiling wheels for aarch64 where
 # it's difficult to ensure that the crosscompilation toolchain has a high-enough version
-# of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
+# of GCC (we require >=5.1) but still uses old-enough libstdc++ symbols.
 # TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
 BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', 'False')
@@ -200,8 +200,8 @@ def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
-    cxx = os.environ.get('CXX', 'c++')
-    cpp_test = subprocess.Popen([cxx, '-x', 'c++', '-std=c++11', '-'],
+    cxx = shlex.split(os.environ.get('CXX', 'c++'))
+    cpp_test = subprocess.Popen(cxx + ['-x', 'c++', '-std=c++11', '-'],
                                 stdin=PIPE,
                                 stdout=PIPE,
                                 stderr=PIPE)
@@ -391,10 +391,7 @@ if "win32" in sys.platform:
         # on msvc, but only for 32 bits
         DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
 else:
-    DEFINE_MACROS += (
-        ('HAVE_CONFIG_H', 1),
-        ('GRPC_ENABLE_FORK_SUPPORT', 1),
-    )
+    DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)

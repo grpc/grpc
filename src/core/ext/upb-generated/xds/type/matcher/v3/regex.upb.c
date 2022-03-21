@@ -13,36 +13,38 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub xds_type_matcher_v3_RegexMatcher_submsgs[1] = {
+static const upb_MiniTable_Sub xds_type_matcher_v3_RegexMatcher_submsgs[1] = {
   {.submsg = &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit},
 };
 
-static const upb_msglayout_field xds_type_matcher_v3_RegexMatcher__fields[2] = {
-  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field xds_type_matcher_v3_RegexMatcher__fields[2] = {
+  {1, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout xds_type_matcher_v3_RegexMatcher_msginit = {
+const upb_MiniTable xds_type_matcher_v3_RegexMatcher_msginit = {
   &xds_type_matcher_v3_RegexMatcher_submsgs[0],
   &xds_type_matcher_v3_RegexMatcher__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-const upb_msglayout xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit = {
+const upb_MiniTable xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, _UPB_MSGEXT_NONE, 0, 255,
+  UPB_SIZE(0, 0), 0, upb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[2] = {
+static const upb_MiniTable *messages_layout[2] = {
   &xds_type_matcher_v3_RegexMatcher_msginit,
   &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit,
 };
 
-const upb_msglayout_file xds_type_matcher_v3_regex_proto_upb_file_layout = {
+const upb_MiniTable_File xds_type_matcher_v3_regex_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   2,
+  0,
   0,
 };
 

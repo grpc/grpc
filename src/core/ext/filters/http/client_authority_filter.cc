@@ -40,7 +40,7 @@
 namespace grpc_core {
 
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
-    const grpc_channel_args* args) {
+    const grpc_channel_args* args, ChannelFilter::Args) {
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority_arg == nullptr) {
@@ -57,21 +57,23 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
   return ClientAuthorityFilter(Slice::FromCopiedString(default_authority_str));
 }
 
-ArenaPromise<TrailingMetadata> ClientAuthorityFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> ClientAuthorityFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // If no authority is set, set the default authority.
-  if (initial_metadata->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    initial_metadata->Set(HttpAuthorityMetadata(), default_authority_.Ref());
+  if (call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata()) ==
+      nullptr) {
+    call_args.client_initial_metadata->Set(HttpAuthorityMetadata(),
+                                           default_authority_.Ref());
   }
   // We have no asynchronous work, so we can just ask the next promise to run,
   // passing down initial_metadata.
-  return next_promise_factory(std::move(initial_metadata));
+  return next_promise_factory(std::move(call_args));
 }
 
 namespace {
 const grpc_channel_filter grpc_client_authority_filter =
-    MakePromiseBasedFilter<ClientAuthorityFilter>();
+    MakePromiseBasedFilter<ClientAuthorityFilter, FilterEndpoint::kClient>(
+        "authority");
 
 bool add_client_authority_filter(ChannelStackBuilder* builder) {
   const grpc_channel_args* channel_args = builder->channel_args();

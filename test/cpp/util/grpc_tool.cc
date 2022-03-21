@@ -240,8 +240,7 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
   args.SetInt(GRPC_ARG_MAX_METADATA_SIZE, 10 * 1024 * 1024);
-  return ::grpc::CreateCustomChannel(server_address, cred.GetCredentials(),
-                                     args);
+  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
 }
 
 struct Command {

@@ -10,29 +10,29 @@
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 
-extern upb_def_init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit;
-extern upb_def_init envoy_config_cluster_v3_filter_proto_upbdefinit;
-extern upb_def_init envoy_config_cluster_v3_outlier_detection_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_config_source_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_extension_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_health_check_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_protocol_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_resolver_proto_upbdefinit;
-extern upb_def_init envoy_config_endpoint_v3_endpoint_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init xds_core_v3_collection_entry_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_security_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_cluster_v3_filter_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_cluster_v3_outlier_detection_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_config_source_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_extension_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_health_check_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_protocol_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_resolver_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_endpoint_v3_endpoint_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_collection_entry_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_security_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[11908] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '/', 'v', '3', 
 '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'p', 'r', 'o', 't', 'o', '\022', '\027', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 
 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'v', '3', '\032', '-', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 
@@ -512,7 +512,7 @@ static const char descriptor[11908] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 
 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[24] = {
+static _upb_DefPool_Init *deps[24] = {
   &envoy_config_cluster_v3_circuit_breaker_proto_upbdefinit,
   &envoy_config_cluster_v3_filter_proto_upbdefinit,
   &envoy_config_cluster_v3_outlier_detection_proto_upbdefinit,
@@ -539,9 +539,9 @@ static upb_def_init *deps[24] = {
   NULL
 };
 
-upb_def_init envoy_config_cluster_v3_cluster_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_cluster_v3_cluster_proto_upbdefinit = {
   deps,
   &envoy_config_cluster_v3_cluster_proto_upb_file_layout,
   "envoy/config/cluster/v3/cluster.proto",
-  UPB_STRVIEW_INIT(descriptor, 11908)
+  UPB_STRINGVIEW_INIT(descriptor, 11908)
 };

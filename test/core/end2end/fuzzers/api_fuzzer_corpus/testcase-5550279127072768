@@ -1,0 +1,48 @@
+actions {
+  create_server {
+  }
+}
+actions {
+  create_channel {
+    target: "unix:"
+    channel_args {
+      key: "grpgrpc.max_r+ceivc.max_r+ceiv"
+      str: "http"
+    }
+    channel_actions {
+      add_n_bytes_writable: 34359738368
+      add_n_bytes_readable: 34359738368
+    }
+  }
+}
+actions {
+  create_call {
+    propagation_mask: 2621440
+    method {
+      value: "htth"
+    }
+    host {
+      value: "http"
+      intern: true
+    }
+    timeout: 1935985152
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+        metadata {
+          key {
+            value: "te"
+          }
+          value {
+            value: "invalid-value"
+            intern: true
+          }
+        }
+      }
+    }
+  }
+}
+

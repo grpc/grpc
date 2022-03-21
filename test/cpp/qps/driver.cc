@@ -483,6 +483,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // overriding the qps server target only makes since if there is <= 1
     // servers
     GPR_ASSERT(num_servers <= 1);
+    client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }
   client_config.set_median_latency_collection_interval_millis(

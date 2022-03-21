@@ -18,131 +18,131 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_sub envoy_service_discovery_v3_DiscoveryRequest_submsgs[2] = {
+static const upb_MiniTable_Sub envoy_service_discovery_v3_DiscoveryRequest_submsgs[2] = {
   {.submsg = &envoy_config_core_v3_Node_msginit},
   {.submsg = &google_rpc_Status_msginit},
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_DiscoveryRequest__fields[6] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(28, 56), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(36, 72), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(32, 64), 2, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_DiscoveryRequest__fields[6] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(28, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(36, 72), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(32, 64), 2, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_DiscoveryRequest_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_DiscoveryRequest_msginit = {
   &envoy_service_discovery_v3_DiscoveryRequest_submsgs[0],
   &envoy_service_discovery_v3_DiscoveryRequest__fields[0],
-  UPB_SIZE(40, 80), 6, _UPB_MSGEXT_NONE, 6, 255,
+  UPB_SIZE(40, 80), 6, upb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_service_discovery_v3_DiscoveryResponse_submsgs[2] = {
+static const upb_MiniTable_Sub envoy_service_discovery_v3_DiscoveryResponse_submsgs[2] = {
   {.submsg = &envoy_config_core_v3_ControlPlane_msginit},
   {.submsg = &google_protobuf_Any_msginit},
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_DiscoveryResponse__fields[6] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(32, 64), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(1, 1), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(28, 56), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_DiscoveryResponse__fields[6] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(32, 64), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(1, 1), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(28, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_DiscoveryResponse_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_DiscoveryResponse_msginit = {
   &envoy_service_discovery_v3_DiscoveryResponse_submsgs[0],
   &envoy_service_discovery_v3_DiscoveryResponse__fields[0],
-  UPB_SIZE(40, 80), 6, _UPB_MSGEXT_NONE, 6, 255,
+  UPB_SIZE(40, 80), 6, upb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_service_discovery_v3_DeltaDiscoveryRequest_submsgs[3] = {
+static const upb_MiniTable_Sub envoy_service_discovery_v3_DeltaDiscoveryRequest_submsgs[3] = {
   {.submsg = &envoy_config_core_v3_Node_msginit},
   {.submsg = &envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit},
   {.submsg = &google_rpc_Status_msginit},
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_DeltaDiscoveryRequest__fields[7] = {
-  {1, UPB_SIZE(20, 40), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(28, 56), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(32, 64), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(36, 72), 0, 1, 11, _UPB_MODE_MAP | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(24, 48), 2, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_DeltaDiscoveryRequest__fields[7] = {
+  {1, UPB_SIZE(20, 40), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(28, 56), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(32, 64), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(36, 72), 0, 1, 11, kUpb_FieldMode_Map | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(24, 48), 2, 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit = {
   &envoy_service_discovery_v3_DeltaDiscoveryRequest_submsgs[0],
   &envoy_service_discovery_v3_DeltaDiscoveryRequest__fields[0],
-  UPB_SIZE(40, 80), 7, _UPB_MSGEXT_NONE, 7, 255,
+  UPB_SIZE(40, 80), 7, upb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit = {
   NULL,
   &envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry__fields[0],
-  UPB_SIZE(16, 32), 2, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_service_discovery_v3_DeltaDiscoveryResponse_submsgs[2] = {
+static const upb_MiniTable_Sub envoy_service_discovery_v3_DeltaDiscoveryResponse_submsgs[2] = {
   {.submsg = &envoy_config_core_v3_ControlPlane_msginit},
   {.submsg = &envoy_service_discovery_v3_Resource_msginit},
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_DeltaDiscoveryResponse__fields[6] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(32, 64), 0, 1, 11, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(20, 40), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(36, 72), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(28, 56), 1, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_DeltaDiscoveryResponse__fields[6] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(32, 64), 0, 1, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 40), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(36, 72), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 56), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit = {
   &envoy_service_discovery_v3_DeltaDiscoveryResponse_submsgs[0],
   &envoy_service_discovery_v3_DeltaDiscoveryResponse__fields[0],
-  UPB_SIZE(40, 80), 6, _UPB_MSGEXT_NONE, 2, 255,
+  UPB_SIZE(40, 80), 6, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_msglayout_sub envoy_service_discovery_v3_Resource_submsgs[3] = {
+static const upb_MiniTable_Sub envoy_service_discovery_v3_Resource_submsgs[3] = {
   {.submsg = &envoy_service_discovery_v3_Resource_CacheControl_msginit},
   {.submsg = &google_protobuf_Any_msginit},
   {.submsg = &google_protobuf_Duration_msginit},
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_Resource__fields[6] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(20, 40), 1, 1, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(12, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(32, 64), 0, 0, 9, _UPB_MODE_ARRAY | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(24, 48), 2, 2, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
-  {7, UPB_SIZE(28, 56), 3, 0, 11, _UPB_MODE_SCALAR | (_UPB_REP_PTR << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_Resource__fields[6] = {
+  {1, UPB_SIZE(4, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(20, 40), 1, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {4, UPB_SIZE(32, 64), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 48), 2, 2, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {7, UPB_SIZE(28, 56), 3, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_Resource_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_Resource_msginit = {
   &envoy_service_discovery_v3_Resource_submsgs[0],
   &envoy_service_discovery_v3_Resource__fields[0],
-  UPB_SIZE(40, 80), 6, _UPB_MSGEXT_NONE, 4, 255,
+  UPB_SIZE(40, 80), 6, upb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
-static const upb_msglayout_field envoy_service_discovery_v3_Resource_CacheControl__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 8, _UPB_MODE_SCALAR | (_UPB_REP_1BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_service_discovery_v3_Resource_CacheControl__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_service_discovery_v3_Resource_CacheControl_msginit = {
+const upb_MiniTable envoy_service_discovery_v3_Resource_CacheControl_msginit = {
   NULL,
   &envoy_service_discovery_v3_Resource_CacheControl__fields[0],
-  UPB_SIZE(8, 8), 1, _UPB_MSGEXT_NONE, 1, 255,
+  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[7] = {
+static const upb_MiniTable *messages_layout[7] = {
   &envoy_service_discovery_v3_DiscoveryRequest_msginit,
   &envoy_service_discovery_v3_DiscoveryResponse_msginit,
   &envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit,
@@ -152,10 +152,12 @@ static const upb_msglayout *messages_layout[7] = {
   &envoy_service_discovery_v3_Resource_CacheControl_msginit,
 };
 
-const upb_msglayout_file envoy_service_discovery_v3_discovery_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_service_discovery_v3_discovery_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   7,
+  0,
   0,
 };
 

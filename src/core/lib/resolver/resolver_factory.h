@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
 #define GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H
@@ -41,8 +39,6 @@ class WorkSerializer;
 struct ResolverArgs {
   /// The parsed URI to resolve.
   URI uri;
-  /// The URI string.
-  std::string uri_string;
   /// Channel args to be included in resolver results.
   const grpc_channel_args* args = nullptr;
   /// Used to drive I/O in the name resolution process.
@@ -55,6 +51,12 @@ struct ResolverArgs {
 
 class ResolverFactory {
  public:
+  virtual ~ResolverFactory() {}
+
+  /// Returns the URI scheme that this factory implements.
+  /// Caller does NOT take ownership of result.
+  virtual absl::string_view scheme() const = 0;
+
   /// Returns a bool indicating whether the input uri is valid to create a
   /// resolver.
   virtual bool IsValidUri(const URI& uri) const = 0;
@@ -67,14 +69,8 @@ class ResolverFactory {
   virtual std::string GetDefaultAuthority(const URI& uri) const {
     return std::string(absl::StripPrefix(uri.path(), "/"));
   }
-
-  /// Returns the URI scheme that this factory implements.
-  /// Caller does NOT take ownership of result.
-  virtual const char* scheme() const = 0;
-
-  virtual ~ResolverFactory() {}
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H */
+#endif  // GRPC_CORE_LIB_RESOLVER_RESOLVER_FACTORY_H

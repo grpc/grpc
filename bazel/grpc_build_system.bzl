@@ -31,9 +31,10 @@ load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epoll1", "poll"]
+POLLERS = ["epoll1", "poll"]
 
 def if_not_windows(a):
     return select({
@@ -42,9 +43,10 @@ def if_not_windows(a):
         "//conditions:default": a,
     })
 
-def if_mac(a):
+def if_windows(a):
     return select({
-        "//:mac_x86_64": a,
+        "//:windows": a,
+        "//:windows_msvc": a,
         "//conditions:default": [],
     })
 
@@ -122,7 +124,6 @@ def grpc_cc_library(
         visibility = None,
         alwayslink = 0,
         data = [],
-        use_cfstream = False,
         tags = [],
         linkstatic = False):
     """An internal wrapper around cc_library.
@@ -142,19 +143,14 @@ def grpc_cc_library(
       visibility: The visibility of the target.
       alwayslink: Whether to enable alwayslink on the cc_library.
       data: Data dependencies.
-      use_cfstream: Whether to use cfstream.
       tags: Tags to apply to the rule.
       linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)
     copts = []
-    if use_cfstream:
-        copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
-    linkopts = if_not_windows(["-pthread"])
-    if use_cfstream:
-        linkopts = linkopts + if_mac(["-framework CoreFoundation"])
+    linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
 
     if select_deps:
         for select_deps_entry in select_deps:
@@ -175,6 +171,10 @@ def grpc_cc_library(
                   select({
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
+                      "//conditions:default": [],
+                  }) +
+                  select({
+                      "//:use_abseil_status": ["GRPC_ERROR_IS_ABSEIL_STATUS=1"],
                       "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
@@ -230,26 +230,32 @@ def ios_cc_test(
       tags: The tags to apply to the test.
       **kwargs: All other arguments to apply.
     """
-    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST"
-
     test_lib_ios = name + "_test_lib_ios"
     ios_tags = tags + ["manual", "ios_cc_test"]
+    test_runner = "ios_x86_64_sim_runner_" + name
+    ios_test_runner(
+        name = test_runner,
+        device_type = "iPhone X",
+    )
     if not any([t for t in tags if t.startswith("no_test_ios")]):
         native.objc_library(
             name = test_lib_ios,
             srcs = kwargs.get("srcs"),
             deps = kwargs.get("deps"),
             copts = kwargs.get("copts"),
+            data = kwargs.get("data"),
             tags = ios_tags,
             alwayslink = 1,
             testonly = 1,
         )
-        ios_test_deps = [ios_test_adapter, ":" + test_lib_ios]
+        ios_test_deps = [":" + test_lib_ios]
         ios_unit_test(
             name = name + "_on_ios",
             size = kwargs.get("size"),
+            data = kwargs.get("data"),
             tags = ios_tags,
             minimum_os_version = "9.0",
+            runner = test_runner,
             deps = ios_test_deps,
         )
 
@@ -277,7 +283,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         copts: Add these to the compiler invocation.
         linkstatic: link the binary in static mode
     """
-    copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
@@ -289,7 +294,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "data": data,
         "deps": deps + _get_external_deps(external_deps),
         "copts": GRPC_DEFAULT_COPTS + copts,
-        "linkopts": if_not_windows(["-pthread"]),
+        "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,

@@ -13,11 +13,11 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -85,6 +85,12 @@ class MessageLayout {
 
   Size message_size() const { return size_; }
 
+  int hasbit_count() const { return hasbit_count_; }
+  int hasbit_bytes() const { return hasbit_bytes_; }
+
+  // Required fields always have the lowest hasbits.
+  int required_count() const { return required_count_; }
+
   static bool HasHasbit(const google::protobuf::FieldDescriptor* field);
   static SizeAndAlign SizeOfUnwrapped(
       const google::protobuf::FieldDescriptor* field);
@@ -105,9 +111,7 @@ class MessageLayout {
     return iter->second;
   }
 
-  static bool IsPowerOfTwo(size_t val) {
-    return (val & (val - 1)) == 0;
-  }
+  static bool IsPowerOfTwo(size_t val) { return (val & (val - 1)) == 0; }
 
   static size_t Align(size_t val, size_t align) {
     ABSL_ASSERT(IsPowerOfTwo(align));
@@ -126,6 +130,9 @@ class MessageLayout {
       oneof_case_offsets_;
   Size maxalign_;
   Size size_;
+  int hasbit_count_;
+  int hasbit_bytes_;
+  int required_count_;
 };
 
 // Returns fields in order of "hotness", eg. how frequently they appear in
@@ -140,7 +147,8 @@ inline std::vector<const google::protobuf::FieldDescriptor*> FieldHotnessOrder(
   std::sort(fields.begin(), fields.end(),
             [](const google::protobuf::FieldDescriptor* a,
                const google::protobuf::FieldDescriptor* b) {
-              return a->number() < b->number();
+              return std::make_pair(!a->is_required(), a->number()) <
+                     std::make_pair(!b->is_required(), b->number());
             });
   return fields;
 }

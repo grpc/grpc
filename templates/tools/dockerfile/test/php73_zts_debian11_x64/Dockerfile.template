@@ -1,0 +1,46 @@
+%YAML 1.2
+--- |
+  # Copyright 2016 gRPC authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  
+  # debian 11 = "bullseye"
+  FROM php:7.3-zts-bullseye
+  
+  RUN apt-get update && apt-get install -y ${'\\'}
+    autoconf automake build-essential git libtool curl ${'\\'}
+    zlib1g-dev ${'\\'}
+    && apt-get clean
+
+  # install php pthreads from source
+  # TODO(jtattermusch): is this really needed?
+  # See https://github.com/grpc/grpc/pull/23056
+  WORKDIR /tmp
+  RUN git clone https://github.com/krakjoe/pthreads
+  RUN cd pthreads && ${'\\'}
+    phpize && ${'\\'}
+    ./configure && ${'\\'}
+    make && ${'\\'}
+    make install
+
+  <%include file="../../run_tests_python_deps.include"/>
+  <%include file="../../php_common_deps.include"/>
+  <%include file="../../cmake.include"/>
+  <%include file="../../ccache.include"/>
+  <%include file="../../run_tests_addons.include"/>
+
+  # Seems required by XDS interop tests.
+  RUN python3 -m pip install virtualenv==16.7.9
+
+  # Define the default command.
+  CMD ["bash"]

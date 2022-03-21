@@ -177,9 +177,9 @@ class ClientChannel {
     // Adds the watcher to state_tracker_. Consumes the ref that is passed to it
     // from Start().
     void AddWatcherLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_);
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_);
     void RemoveWatcherLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_);
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_);
 
     ClientChannel* chand_;
     grpc_polling_entity pollent_;
@@ -215,43 +215,43 @@ class ClientChannel {
   // work_serializer_.
 
   void OnResolverResultChangedLocked(Resolver::Result result)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void OnResolverErrorLocked(absl::Status status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
       const absl::optional<std::string>& health_check_service_name,
-      Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const grpc_channel_args& args)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,
       const char* reason,
       std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
-      RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateServiceConfigInDataPlaneLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   grpc_error_handle DoPingLocked(grpc_transport_op* op)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void StartTransportOpLocked(grpc_transport_op* op)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   // These methods all require holding resolution_mu_.
   void AddResolverQueuedCall(ResolverQueuedCall* call,
@@ -279,6 +279,7 @@ class ClientChannel {
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
+  const size_t service_config_parser_index_;
 
   //
   // Fields related to name resolution.  Guarded by resolution_mu_.
@@ -310,28 +311,28 @@ class ClientChannel {
   // Fields used in the control plane.  Guarded by work_serializer.
   //
   std::shared_ptr<WorkSerializer> work_serializer_;
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(work_serializer_);
-  OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(work_serializer_);
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(*work_serializer_);
+  OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(*work_serializer_);
   bool previous_resolution_contained_addresses_
-      ABSL_GUARDED_BY(work_serializer_) = false;
+      ABSL_GUARDED_BY(*work_serializer_) = false;
   RefCountedPtr<ServiceConfig> saved_service_config_
-      ABSL_GUARDED_BY(work_serializer_);
+      ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
-      ABSL_GUARDED_BY(work_serializer_);
+      ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
-      ABSL_GUARDED_BY(work_serializer_);
+      ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
-      ABSL_GUARDED_BY(work_serializer_);
+      ABSL_GUARDED_BY(*work_serializer_);
   // The number of SubchannelWrapper instances referencing a given Subchannel.
   std::map<Subchannel*, int> subchannel_refcount_map_
-      ABSL_GUARDED_BY(work_serializer_);
+      ABSL_GUARDED_BY(*work_serializer_);
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_
-      ABSL_GUARDED_BY(work_serializer_);
-  int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
-  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(work_serializer_) =
+      ABSL_GUARDED_BY(*work_serializer_);
+  int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
+  grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_) =
       GRPC_ERROR_NONE;
 
   //
@@ -339,8 +340,8 @@ class ClientChannel {
   // synchronously via get_channel_info().
   //
   Mutex info_mu_;
-  UniquePtr<char> info_lb_policy_name_ ABSL_GUARDED_BY(info_mu_);
-  UniquePtr<char> info_service_config_json_ ABSL_GUARDED_BY(info_mu_);
+  std::string info_lb_policy_name_ ABSL_GUARDED_BY(info_mu_);
+  std::string info_service_config_json_ ABSL_GUARDED_BY(info_mu_);
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -448,7 +449,7 @@ class ClientChannel::LoadBalancedCall
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
   Slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;

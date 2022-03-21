@@ -108,7 +108,7 @@ static void pollset_destroy(grpc_pollset* pollset) {}
 
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
 
@@ -159,7 +159,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     added_worker = 1;
     while (!worker.kicked) {
       if (gpr_cv_wait(&worker.cv, &grpc_polling_mu,
-                      grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
+                      deadline.as_timespec(GPR_CLOCK_REALTIME))) {
         grpc_core::ExecCtx::Get()->InvalidateNow();
         break;
       }

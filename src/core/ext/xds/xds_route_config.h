@@ -205,7 +205,7 @@ class XdsRouteConfigResourceType
                                       absl::string_view serialized_resource,
                                       bool /*is_v2*/) const override;
 
-  void InitUpbSymtab(upb_symtab* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
   }
 };

@@ -301,6 +301,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   GPR_ASSERT(connectivity_state != GRPC_CHANNEL_SHUTDOWN);
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
+    GPR_ASSERT(subchannel_list() == p->subchannel_list_.get());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO,
               "Pick First %p selected subchannel connectivity changed to %s", p,
@@ -409,6 +410,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                     p, p->latest_pending_subchannel_list_.get(),
                     p->subchannel_list_.get());
           }
+          p->selected_ = nullptr;  // owned by p->subchannel_list_
           p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
         }
         // If this is the current subchannel list (either because we were

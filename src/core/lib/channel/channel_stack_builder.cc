@@ -25,6 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/memory.h"
 
@@ -36,7 +37,7 @@ ChannelStackBuilder::~ChannelStackBuilder() {
 
 ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   if (target == nullptr) {
-    target_.clear();
+    target_ = unknown_target();
   } else {
     target_ = target;
   }
@@ -58,50 +59,6 @@ void ChannelStackBuilder::PrependFilter(const grpc_channel_filter* filter,
 void ChannelStackBuilder::AppendFilter(const grpc_channel_filter* filter,
                                        PostInitFunc post_init) {
   stack_.push_back({filter, std::move(post_init)});
-}
-
-grpc_error_handle ChannelStackBuilder::Build(size_t prefix_bytes,
-                                             int initial_refs,
-                                             grpc_iomgr_cb_func destroy,
-                                             void* destroy_arg, void** result) {
-  // create an array of filters
-  std::vector<const grpc_channel_filter*> filters;
-  filters.reserve(stack_.size());
-  for (const auto& elem : stack_) {
-    filters.push_back(elem.filter);
-  }
-
-  // calculate the size of the channel stack
-  size_t channel_stack_size =
-      grpc_channel_stack_size(filters.data(), filters.size());
-
-  // allocate memory, with prefix_bytes followed by channel_stack_size
-  *result = gpr_zalloc(prefix_bytes + channel_stack_size);
-  // fetch a pointer to the channel stack
-  grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
-      static_cast<char*>(*result) + prefix_bytes);
-  // and initialize it
-  grpc_error_handle error = grpc_channel_stack_init(
-      initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
-      filters.data(), filters.size(), args_, transport_, name_.c_str(),
-      channel_stack);
-
-  if (error != GRPC_ERROR_NONE) {
-    grpc_channel_stack_destroy(channel_stack);
-    gpr_free(*result);
-    *result = nullptr;
-    return error;
-  }
-
-  // run post-initialization functions
-  for (size_t i = 0; i < filters.size(); i++) {
-    if (stack_[i].post_init != nullptr) {
-      stack_[i].post_init(channel_stack,
-                          grpc_channel_stack_element(channel_stack, i));
-    }
-  }
-
-  return GRPC_ERROR_NONE;
 }
 
 }  // namespace grpc_core
