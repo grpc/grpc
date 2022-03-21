@@ -95,7 +95,6 @@ BackupPoller::Poller::Poller() {
 }
 
 BackupPoller::Poller::~Poller() {
-  grpc_init();
   shutdown_.store(true);
   struct PollsetShutdown {
     explicit PollsetShutdown(grpc_pollset* pollset) : pollset(pollset) {}
@@ -123,11 +122,9 @@ BackupPoller::Poller::~Poller() {
   }
   thread_.join();
   p->Unref();
-  grpc_shutdown();
 }
 
 void BackupPoller::Poller::Run() {
-  grpc_init();
   while (!shutdown_.load()) {
     ExecCtx exec_ctx;
 
@@ -142,7 +139,6 @@ void BackupPoller::Poller::Run() {
       break;
     }
   }
-  grpc_shutdown();
 }
 
 }  // namespace grpc_core
