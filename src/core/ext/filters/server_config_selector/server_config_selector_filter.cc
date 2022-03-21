@@ -57,16 +57,16 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
   class ServerConfigSelectorWatcher
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
    public:
-    explicit ServerConfigSelectorWatcher(ServerConfigSelectorFilter* chand)
-        : chand_(chand) {}
+    explicit ServerConfigSelectorWatcher(std::shared_ptr<State> state)
+        : state_(state) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&chand_->state_->mu);
-      chand_->state_->config_selector = std::move(update);
+      MutexLock lock(&state_->mu);
+      state_->config_selector = std::move(update);
     }
 
    private:
-    ServerConfigSelectorFilter* chand_;
+    std::shared_ptr<State> state_;
   };
 
   explicit ServerConfigSelectorFilter(
@@ -74,7 +74,7 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
           server_config_selector_provider);
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
-  std::unique_ptr<State> state_;
+  std::shared_ptr<State> state_;
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
@@ -90,10 +90,11 @@ absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
 ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
-          std::move(server_config_selector_provider)) {
+          std::move(server_config_selector_provider)),
+      state_(std::make_shared<State>()) {
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
-      absl::make_unique<ServerConfigSelectorWatcher>(this);
+      absl::make_unique<ServerConfigSelectorWatcher>(state_);
   auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
   MutexLock lock(&state_->mu);
@@ -104,7 +105,9 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
 }
 
 ServerConfigSelectorFilter::~ServerConfigSelectorFilter() {
-  server_config_selector_provider_->CancelWatch();
+  if (server_config_selector_provider_ != nullptr) {
+    server_config_selector_provider_->CancelWatch();
+  }
 }
 
 ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
