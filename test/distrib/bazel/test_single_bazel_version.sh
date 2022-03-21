@@ -45,3 +45,9 @@ export OVERRIDE_BAZEL_VERSION="$VERSION"
 # when running under bazel docker image, the workspace is read only.
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 bazel build -- //... "${EXCLUDED_TARGETS[@]}"
+
+# Project root.
+cd "$(dirname "$0")"/../../..
+cd test/distrib/bazel/cpp/
+
+bazel test //:all
