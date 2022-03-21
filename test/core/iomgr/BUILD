@@ -80,18 +80,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "ev_epollex_linux_test",
-    srcs = ["ev_epollex_linux_test.cc"],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
     language = "C++",
