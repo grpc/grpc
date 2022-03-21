@@ -361,6 +361,14 @@ void grpc_http_request_destroy(grpc_http_request* request) {
   gpr_free(request->path);
 }
 
+void grpc_http_header_destroy(grpc_http_header* header) {
+  if (header != nullptr)
+  {
+    gpr_free(header->key);
+    gpr_free(header->value);
+  }
+}
+
 void grpc_http_response_destroy(grpc_http_response* response) {
   size_t i;
   gpr_free(response->body);
