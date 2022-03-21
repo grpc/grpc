@@ -217,6 +217,15 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, tsi_handshaker** handshaker);
 
+/* Creates a client handshaker with a custom BIO pair.
+ * The default size of each BIO buffer is 0, which translates to 17KB in
+ * boringSSL. */
+tsi_result
+tsi_ssl_client_handshaker_factory_create_handshaker_with_custom_bio_pair(
+    tsi_ssl_client_handshaker_factory* factory,
+    const char* server_name_indication, size_t network_bio_buf_size,
+    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
+
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
 void tsi_ssl_client_handshaker_factory_unref(
@@ -353,6 +362,14 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker);
+
+/* Creates a server handshaker with a custom BIO pair.
+ * The default size of each BIO buffer is 0, which translates to 17KB in
+ * boringSSL. */
+tsi_result
+tsi_ssl_server_handshaker_factory_create_handshaker_with_custom_bio_pair(
+    tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
+    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
 
 /* Decrements reference count of the handshaker factory. Handshaker factory will
  * be destroyed once no references exist. */
