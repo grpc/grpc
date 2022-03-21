@@ -56,6 +56,11 @@ ccache --version
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
   @rem C# prerequisites: Install dotnet SDK
   powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
+
+  @rem Explicitly add default nuget source.
+  @rem (on Kokoro grpc-win2016 workers, the default nuget source is not configured,
+  @rem which results in errors when "dotnet restore" is run)
+  %LOCALAPPDATA%\Microsoft\dotnet\dotnet nuget add source https://api.nuget.org/v3/index.json -n "nuget.org"
 )
 
 @rem Add dotnet on path and disable some unwanted dotnet
