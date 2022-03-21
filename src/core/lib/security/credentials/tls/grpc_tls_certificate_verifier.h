@@ -25,6 +25,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -37,8 +38,6 @@
 struct grpc_tls_certificate_verifier
     : public grpc_core::RefCounted<grpc_tls_certificate_verifier> {
  public:
-  grpc_tls_certificate_verifier() = default;
-
   ~grpc_tls_certificate_verifier() override = default;
   // Verifies the specific request. It can be processed in sync or async mode.
   // If the caller want it to be processed asynchronously, return false
@@ -52,6 +51,28 @@ struct grpc_tls_certificate_verifier
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
+
+  // Compares this grpc_tls_certificate_verifier object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two certificate
+  // verifiers as effectively the same.
+  int Compare(const grpc_tls_certificate_verifier* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = grpc_core::QsortCompare(type(), other->type());
+    if (r != 0) return r;
+    return CompareImpl(other);
+  }
+
+  // The pointer value \a type is used to uniquely identify a verifier
+  // implementation for down-casting purposes. Every verifier implementation
+  // should use a unique string instance, which should be returned by all
+  // instances of that verifier implementation.
+  virtual const char* type() const = 0;
+
+ private:
+  // Implementation for `Compare` method intended to be overridden by
+  // subclasses. Only invoked if `type()` and `other->type()` point to the same
+  // string.
+  virtual int CompareImpl(const grpc_tls_certificate_verifier* other) const = 0;
 };
 
 namespace grpc_core {
@@ -78,12 +99,20 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
     external_verifier_->cancel(external_verifier_->user_data, request);
   }
 
+  const char* type() const override { return "External"; }
+
  private:
-  grpc_tls_certificate_verifier_external* external_verifier_;
+  int CompareImpl(const grpc_tls_certificate_verifier* other) const override {
+    const auto* o = static_cast<const ExternalCertificateVerifier*>(other);
+    return QsortCompare(external_verifier_, o->external_verifier_);
+  }
 
   static void OnVerifyDone(grpc_tls_custom_verification_check_request* request,
                            void* callback_arg, grpc_status_code status,
                            const char* error_details);
+
+  grpc_tls_certificate_verifier_external* external_verifier_;
+
   // Guards members below.
   Mutex mu_;
   // stores each check request and its corresponding callback function.
@@ -99,6 +128,16 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
               std::function<void(absl::Status)> callback,
               absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
+
+  const char* type() const override { return "Hostname"; }
+
+ private:
+  int CompareImpl(
+      const grpc_tls_certificate_verifier* /* other */) const override {
+    // No differentiating factor between different HostNameCertificateVerifier
+    // objects.
+    return 0;
+  }
 };
 
 }  // namespace grpc_core

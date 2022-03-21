@@ -276,18 +276,6 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
-  /// EXPERIMENTAL: Indicate that this request is idempotent.
-  /// By default, RPCs are assumed to <i>not</i> be idempotent.
-  ///
-  /// If true, the gRPC library assumes that it's safe to initiate
-  /// this RPC multiple times.
-  void set_idempotent(bool idempotent) { idempotent_ = idempotent; }
-
-  /// EXPERIMENTAL: Set this request to be cacheable.
-  /// If set, grpc is free to use the HTTP GET verb for sending the request,
-  /// with the possibility of receiving a cached response.
-  void set_cacheable(bool cacheable) { cacheable_ = cacheable; }
-
   /// Trigger wait-for-ready or not on this request.
   /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
   /// If set, if an RPC is made when a channel's connectivity state is
@@ -484,9 +472,7 @@ class ClientContext {
   }
 
   uint32_t initial_metadata_flags() const {
-    return (idempotent_ ? GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST : 0) |
-           (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
-           (cacheable_ ? GRPC_INITIAL_METADATA_CACHEABLE_REQUEST : 0) |
+    return (wait_for_ready_ ? GRPC_INITIAL_METADATA_WAIT_FOR_READY : 0) |
            (wait_for_ready_explicitly_set_
                 ? GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
                 : 0) |
@@ -504,8 +490,6 @@ class ClientContext {
   bool initial_metadata_received_;
   bool wait_for_ready_;
   bool wait_for_ready_explicitly_set_;
-  bool idempotent_;
-  bool cacheable_;
   std::shared_ptr<grpc::Channel> channel_;
   grpc::internal::Mutex mu_;
   grpc_call* call_;

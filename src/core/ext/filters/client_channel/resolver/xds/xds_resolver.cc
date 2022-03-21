@@ -1,23 +1,22 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/random/random.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
@@ -81,7 +80,8 @@ class XdsResolver : public Resolver {
         args_(grpc_channel_args_copy(args.args)),
         interested_parties_(args.pollset_set),
         uri_(std::move(args.uri)),
-        data_plane_authority_(GetDataPlaneAuthority(*args.args, uri_)) {
+        data_plane_authority_(GetDataPlaneAuthority(*args.args, uri_)),
+        channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(
           GPR_INFO,
@@ -121,11 +121,11 @@ class XdsResolver : public Resolver {
           },
           DEBUG_LOCATION);
     }
-    void OnError(grpc_error_handle error) override {
+    void OnError(absl::Status status) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
-          [this, error]() {
-            resolver_->OnError(error);
+          [this, status]() {
+            resolver_->OnError(status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -160,11 +160,11 @@ class XdsResolver : public Resolver {
           },
           DEBUG_LOCATION);
     }
-    void OnError(grpc_error_handle error) override {
+    void OnError(absl::Status status) override {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
-          [this, error]() {
-            resolver_->OnError(error);
+          [this, status]() {
+            resolver_->OnError(status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -303,12 +303,13 @@ class XdsResolver : public Resolver {
 
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
-  void OnError(grpc_error_handle error);
+  void OnError(absl::Status status);
   void OnResourceDoesNotExist();
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
   void MaybeRemoveUnusedClusters();
+  uint64_t channel_id() const { return channel_id_; }
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
@@ -318,6 +319,7 @@ class XdsResolver : public Resolver {
   RefCountedPtr<XdsClient> xds_client_;
   std::string lds_resource_name_;
   std::string data_plane_authority_;
+  uint64_t channel_id_;
 
   ListenerWatcher* listener_watcher_ = nullptr;
   // This will not contain the RouteConfiguration, even if it comes with the
@@ -652,8 +654,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
         break;
       case XdsRouteConfigResource::Route::RouteAction::HashPolicy::CHANNEL_ID:
-        new_hash =
-            static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver_.get()));
+        new_hash = resolver_->channel_id();
         break;
       default:
         GPR_ASSERT(0);
@@ -672,13 +673,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
   }
   if (!hash.has_value()) {
-    // If there is no hash, we just choose a random value as a default.
-    // We cannot directly use the result of rand() as the hash value,
-    // since it is a 32-bit number and not a 64-bit number and will
-    // therefore not be evenly distributed.
-    uint32_t upper = rand();
-    uint32_t lower = rand();
-    hash = (static_cast<uint64_t>(upper) << 32) | lower;
+    hash = absl::Uniform<uint64_t>(absl::BitGen());
   }
   CallConfig call_config;
   if (method_config != nullptr) {
@@ -715,6 +710,7 @@ void XdsResolver::StartLocked() {
     Result result;
     result.service_config = absl::UnavailableError(
         absl::StrCat("Failed to create XdsClient: ", error_message));
+    result.args = grpc_channel_args_copy(args_);
     result_handler_->ReportResult(std::move(result));
     GRPC_ERROR_UNREF(error);
     return;
@@ -729,6 +725,7 @@ void XdsResolver::StartLocked() {
       result.service_config = absl::UnavailableError(
           absl::StrCat("Invalid target URI -- authority not found for %s.",
                        uri_.authority().c_str()));
+      result.args = grpc_channel_args_copy(args_);
       result_handler_->ReportResult(std::move(result));
       return;
     }
@@ -859,7 +856,7 @@ void XdsResolver::OnRouteConfigUpdate(XdsRouteConfigResource rds_update) {
       VirtualHostListIterator(&rds_update.virtual_hosts),
       data_plane_authority_);
   if (!vhost_index.has_value()) {
-    OnError(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+    OnError(absl::UnavailableError(
         absl::StrCat("could not find VirtualHost for ", data_plane_authority_,
                      " in RouteConfiguration")));
     return;
@@ -870,19 +867,16 @@ void XdsResolver::OnRouteConfigUpdate(XdsRouteConfigResource rds_update) {
   GenerateResult();
 }
 
-void XdsResolver::OnError(grpc_error_handle error) {
+void XdsResolver::OnError(absl::Status status) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
-          this, grpc_error_std_string(error).c_str());
-  if (xds_client_ == nullptr) {
-    GRPC_ERROR_UNREF(error);
-    return;
-  }
+          this, status.ToString().c_str());
+  if (xds_client_ == nullptr) return;
   Result result;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config = grpc_error_to_absl_status(error);
+  result.service_config = absl::UnavailableError(
+      absl::StrCat("error obtaining xDS resources: ", status.ToString()));
   result_handler_->ReportResult(std::move(result));
-  GRPC_ERROR_UNREF(error);
 }
 
 void XdsResolver::OnResourceDoesNotExist() {
@@ -946,8 +940,8 @@ void XdsResolver::GenerateResult() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
   if (error != GRPC_ERROR_NONE) {
-    OnError(grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
-                               GRPC_STATUS_UNAVAILABLE));
+    OnError(absl::UnavailableError(grpc_error_std_string(error)));
+    GRPC_ERROR_UNREF(error);
     return;
   }
   Result result;

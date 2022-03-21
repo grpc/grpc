@@ -41,17 +41,16 @@ class ClientAuthFilter final : public ChannelFilter {
                                                  ChannelFilter::Args);
 
   // Construct a promise for one call.
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) override;
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
   ClientAuthFilter(
       RefCountedPtr<grpc_channel_security_connector> security_connector,
       RefCountedPtr<grpc_auth_context> auth_context);
 
-  ArenaPromise<absl::StatusOr<ClientInitialMetadata>> GetCallCredsMetadata(
-      ClientInitialMetadata initial_metadata);
+  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
+      CallArgs call_args);
 
   // Contains refs to security connector and auth context.
   grpc_call_credentials::GetRequestMetadataArgs args_;

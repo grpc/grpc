@@ -43,6 +43,15 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
     GPR_ASSERT(0);
     return nullptr;
   }
+
+  const char* type() const override { return "fake"; }
+
+ private:
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
+                        other);
+  }
 };
 
 class FakeCertificateProviderFactory1 : public CertificateProviderFactory {

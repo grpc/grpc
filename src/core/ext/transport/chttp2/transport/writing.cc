@@ -60,15 +60,15 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     }
     return;
   }
-  if (t->ping_state.pings_before_data_required == 0 &&
+  if (t->is_client && t->ping_state.pings_before_data_required == 0 &&
       t->ping_policy.max_pings_without_data != 0) {
     /* need to receive something of substance before sending a ping again */
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
-      gpr_log(GPR_INFO, "%s: Ping delayed [%s]: too many recent pings: %d/%d",
-              t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
-              t->ping_state.pings_before_data_required,
+      gpr_log(GPR_INFO,
+              "CLIENT: Ping delayed [%s]: too many recent pings: %d/%d",
+              t->peer_string.c_str(), t->ping_state.pings_before_data_required,
               t->ping_policy.max_pings_without_data);
     }
     return;
@@ -79,13 +79,22 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   grpc_core::ExecCtx::Get()->InvalidateNow();
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
 
-  grpc_core::Duration next_allowed_ping_interval =
-      (t->keepalive_permit_without_calls == 0 &&
-       grpc_chttp2_stream_map_size(&t->stream_map) == 0)
-          ? grpc_core::Duration::Hours(2)
-          : grpc_core::Duration::Seconds(
-                1); /* A second is added to deal with network delays and timing
-                       imprecision */
+  grpc_core::Duration next_allowed_ping_interval = grpc_core::Duration::Zero();
+  if (t->is_client) {
+    next_allowed_ping_interval =
+        (t->keepalive_permit_without_calls == 0 &&
+         grpc_chttp2_stream_map_size(&t->stream_map) == 0)
+            ? grpc_core::Duration::Hours(2)
+            : grpc_core::Duration::Seconds(1); /* A second is added to deal with
+                         network delays and timing imprecision */
+  } else {
+    // The gRPC keepalive spec doesn't call for any throttling on the server
+    // side, but we are adding some throttling for protection anyway.
+    next_allowed_ping_interval =
+        t->keepalive_time == grpc_core::Duration::Infinity()
+            ? grpc_core::Duration::Seconds(20)
+            : t->keepalive_time / 2;
+  }
   grpc_core::Timestamp next_allowed_ping =
       t->ping_state.last_ping_sent_time + next_allowed_ping_interval;
 
@@ -96,7 +105,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
       gpr_log(
           GPR_INFO,
-          "%s: Ping delayed [%s]: not enough time elapsed since last ping. "
+          "%s: Ping delayed [%s]: not enough time elapsed since last "
+          "ping. "
           " Last ping %" PRId64 ": Next ping %" PRId64 ": Now %" PRId64,
           t->is_client ? "CLIENT" : "SERVER", t->peer_string.c_str(),
           t->ping_state.last_ping_sent_time.milliseconds_after_process_epoch(),
@@ -114,6 +124,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     }
     return;
   }
+  t->ping_state.last_ping_sent_time = now;
 
   pq->inflight_id = t->ping_ctr;
   t->ping_ctr++;
@@ -124,7 +135,6 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
   grpc_slice_buffer_add(&t->outbuf,
                         grpc_chttp2_ping_create(false, pq->inflight_id));
   GRPC_STATS_INC_HTTP2_PINGS_SENT();
-  t->ping_state.last_ping_sent_time = now;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
       GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {

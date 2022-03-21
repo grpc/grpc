@@ -118,7 +118,6 @@ static void prepare_test(int is_client) {
 }
 
 static void cleanup_test() {
-  grpc_completion_queue* shutdown_cq;
   grpc_call_unref(g_state.call);
   cq_verifier_destroy(g_state.cqv);
   grpc_channel_destroy(g_state.chan);
@@ -127,14 +126,13 @@ static void cleanup_test() {
   grpc_metadata_array_destroy(&g_state.trailing_metadata_recv);
 
   if (!g_state.is_client) {
-    shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_call_unref(g_state.server_call);
-    grpc_server_shutdown_and_notify(g_state.server, shutdown_cq, tag(1000));
-    GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                           grpc_timeout_seconds_to_deadline(5),
-                                           nullptr)
-                   .type == GRPC_OP_COMPLETE);
-    grpc_completion_queue_destroy(shutdown_cq);
+    grpc_server_shutdown_and_notify(g_state.server, g_state.cq, tag(1000));
+    grpc_event ev;
+    do {
+      ev = grpc_completion_queue_next(
+          g_state.cq, grpc_timeout_seconds_to_deadline(5), nullptr);
+    } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
     grpc_server_destroy(g_state.server);
     grpc_call_details_destroy(&g_state.call_details);
     grpc_metadata_array_destroy(&g_state.server_initial_metadata_recv);

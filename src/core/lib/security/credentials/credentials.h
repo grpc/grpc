@@ -48,17 +48,6 @@ typedef enum {
 
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
-  "FakeTransportSecurity"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
-#define GRPC_CREDENTIALS_TYPE_INSECURE "insecure"
-
-#define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
-#define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
-#define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
-#define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
-
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
   "x-goog-iam-authorization-token"
@@ -103,9 +92,6 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
-  explicit grpc_channel_credentials(const char* type) : type_(type) {}
-  ~grpc_channel_credentials() override = default;
-
   // Creates a security connector for the channel. May also create new channel
   // args for the channel to be used in place of the passed in const args if
   // returned non NULL. In that case the caller is responsible for destroying
@@ -143,19 +129,23 @@ struct grpc_channel_credentials
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_channel_credentials types using the same name.
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
 
-  const char* type() const { return type_; }
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
+  virtual const char* type() const = 0;
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
-  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  // Only invoked if `type()` and `other->type()` point to the same string.
   virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
-
-  const char* type_;
 };
 
 // TODO(roth): Once we eliminate insecure builds, find a better way to
@@ -198,16 +188,19 @@ struct grpc_call_credentials
     grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   };
 
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
   explicit grpc_call_credentials(
-      const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
-      : type_(type), min_security_level_(min_security_level) {}
+      : min_security_level_(min_security_level) {}
 
   ~grpc_call_credentials() override = default;
 
   virtual grpc_core::ArenaPromise<
-      absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+      absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) = 0;
 
   virtual grpc_security_level min_security_level() const {
@@ -219,7 +212,9 @@ struct grpc_call_credentials
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = strcmp(type(), other->type());
+    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
+    // against different grpc_call_credentials types using the same name.
+    int r = grpc_core::QsortCompare(type(), other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
@@ -228,14 +223,17 @@ struct grpc_call_credentials
     return "grpc_call_credentials did not provide debug string";
   }
 
-  const char* type() const { return type_; }
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
+  virtual const char* type() const = 0;
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
-  // Only invoked if `type()` and `other->type()` compare equal as strings.
+  // Only invoked if `type()` and `other->type()` point to the same string.
   virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
 
-  const char* type_;
   const grpc_security_level min_security_level_;
 };
 
@@ -252,15 +250,13 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 struct grpc_server_credentials
     : public grpc_core::RefCounted<grpc_server_credentials> {
  public:
-  explicit grpc_server_credentials(const char* type) : type_(type) {}
-
   ~grpc_server_credentials() override { DestroyProcessor(); }
 
   // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* args) = 0;
 
-  const char* type() const { return type_; }
+  virtual const char* type() const = 0;
 
   const grpc_auth_metadata_processor& auth_metadata_processor() const {
     return processor_;
@@ -275,7 +271,6 @@ struct grpc_server_credentials
     }
   }
 
-  const char* type_;
   grpc_auth_metadata_processor processor_ =
       grpc_auth_metadata_processor();  // Zero-initialize the C struct.
 };

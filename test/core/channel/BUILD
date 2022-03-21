@@ -21,6 +21,7 @@ licenses(["notice"])
 grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -126,6 +127,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_finalization_test",
+    srcs = ["call_finalization_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/promise:test_context",
         "//test/core/util:grpc_test_util",
     ],
 )
