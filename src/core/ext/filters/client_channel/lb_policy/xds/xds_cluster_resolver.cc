@@ -692,7 +692,8 @@ void XdsClusterResolverLb::UpdatePriorityList(
   // the old data in priority_list_ and priority_child_numbers_.
   std::map<XdsLocalityName*, size_t /*child_number*/, XdsLocalityName::Less>
       locality_child_map;
-  std::map<size_t, std::set<XdsLocalityName*>> child_locality_map;
+  std::map<size_t, std::set<XdsLocalityName*, XdsLocalityName::Less>>
+      child_locality_map;
   for (size_t priority = 0; priority < priority_list_.size(); ++priority) {
     size_t child_number = priority_child_numbers_[priority];
     const auto& localities = priority_list_[priority].localities;
