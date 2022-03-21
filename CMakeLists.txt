@@ -417,7 +417,6 @@ add_custom_target(plugins
 
 add_custom_target(tools_c
   DEPENDS
-  check_epollexclusive
 )
 
 add_custom_target(tools_cxx
@@ -653,9 +652,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_c endpoint_pair_test)
   add_dependencies(buildtests_c env_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c ev_epollex_linux_test)
-  endif()
   add_dependencies(buildtests_c fake_resolver_test)
   add_dependencies(buildtests_c fake_transport_security_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1881,7 +1877,6 @@ add_library(grpc
   src/core/lib/iomgr/error_cfstream.cc
   src/core/lib/iomgr/ev_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
-  src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -1911,7 +1906,6 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_posix_cfstream.cc
   src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/polling_entity.cc
@@ -2527,7 +2521,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/error_cfstream.cc
   src/core/lib/iomgr/ev_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
-  src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/ev_windows.cc
@@ -2557,7 +2550,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_posix_cfstream.cc
   src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/is_epollexclusive_available.cc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/polling_entity.cc
@@ -4018,32 +4010,6 @@ endif()
 
 
 
-add_executable(check_epollexclusive
-  test/build/check_epollexclusive.c
-)
-
-target_include_directories(check_epollexclusive
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(check_epollexclusive
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-  gpr
-)
-
-
-
 add_executable(gen_hpack_tables
   tools/codegen/core/gen_hpack_tables.cc
 )
@@ -5124,35 +5090,6 @@ target_link_libraries(env_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(ev_epollex_linux_test
-    test/core/iomgr/ev_epollex_linux_test.cc
-  )
-
-  target_include_directories(ev_epollex_linux_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(ev_epollex_linux_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 

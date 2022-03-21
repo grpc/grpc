@@ -18,14 +18,6 @@ settings:
   protobuf_version: 3.19.4
   version: 1.46.0-dev
 targets:
-- name: check_epollexclusive
-  build: tool
-  language: c
-  src:
-  - test/build/check_epollexclusive.c
-  deps:
-  - grpc
-  - gpr
 - name: gen_hpack_tables
   build: tool
   language: c++
