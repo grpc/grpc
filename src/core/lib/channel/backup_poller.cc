@@ -84,10 +84,7 @@ void BackupPoller::StopPolling(grpc_pollset_set* interested_parties) {
   --interested_parties_;
   if (0 == interested_parties_) {
     auto* poller = absl::exchange(poller_, nullptr);
-    std::thread([poller]() {
-      ExecCtx exec_ctx;
-      delete poller;
-    }).detach();
+    std::thread([poller]() { delete poller; }).detach();
   }
 }
 
@@ -98,19 +95,39 @@ BackupPoller::Poller::Poller() {
 }
 
 BackupPoller::Poller::~Poller() {
-  grpc_closure done;
-  gpr_mu_lock(mu_);
-  GRPC_CLOSURE_INIT(
-      &done, [](void*, grpc_error*) {}, nullptr, nullptr);
+  grpc_init();
   shutdown_.store(true);
-  grpc_pollset_shutdown(pollset_, &done);
-  gpr_mu_unlock(mu_);
+  struct PollsetShutdown {
+    explicit PollsetShutdown(grpc_pollset* pollset) : pollset(pollset) {}
+    ~PollsetShutdown() {
+      grpc_pollset_destroy(pollset);
+      gpr_free(pollset);
+    }
+    grpc_pollset* const pollset;
+    std::atomic<int> refs{2};
+    void Unref() {
+      if (refs.fetch_sub(1) == 1) delete this;
+    }
+  };
+  PollsetShutdown* p = new PollsetShutdown(pollset_);
+  {
+    ExecCtx exec_ctx;
+    grpc_closure* done = GRPC_CLOSURE_CREATE(
+        [](void* arg, grpc_error* error) {
+          static_cast<PollsetShutdown*>(arg)->Unref();
+        },
+        p, nullptr);
+    gpr_mu_lock(mu_);
+    grpc_pollset_shutdown(pollset_, done);
+    gpr_mu_unlock(mu_);
+  }
   thread_.join();
-  grpc_pollset_destroy(pollset_);
-  gpr_free(pollset_);
+  p->Unref();
+  grpc_shutdown();
 }
 
 void BackupPoller::Poller::Run() {
+  grpc_init();
   while (!shutdown_.load()) {
     ExecCtx exec_ctx;
 
@@ -125,6 +142,7 @@ void BackupPoller::Poller::Run() {
       break;
     }
   }
+  grpc_shutdown();
 }
 
 }  // namespace grpc_core
