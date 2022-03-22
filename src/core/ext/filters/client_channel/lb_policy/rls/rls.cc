@@ -83,7 +83,7 @@ TraceFlag grpc_lb_rls_trace(false, "rls_lb");
 
 namespace {
 
-const char* kRls = "rls";
+const char* kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
 const char* kFakeTargetFieldValue = "fake_target_field_value";
@@ -2530,18 +2530,9 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
   }
 };
 
-bool RlsEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 }  //  namespace
 
 void RlsLbPluginInit() {
-  if (!RlsEnabled()) return;
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<RlsLbFactory>());
 }

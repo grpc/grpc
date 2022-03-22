@@ -513,6 +513,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.h
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-generated/udpa/annotations/security.upb.h
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.h
@@ -647,6 +648,7 @@ libs:
   - src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h
   - src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.h
+  - src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
   - src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.h
   - src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.h
   - src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.h
@@ -682,6 +684,7 @@ libs:
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_cluster.h
+  - src/core/ext/xds/xds_cluster_specifier_plugin.h
   - src/core/ext/xds/xds_common_types.h
   - src/core/ext/xds/xds_endpoint.h
   - src/core/ext/xds/xds_http_fault_filter.h
@@ -1185,6 +1188,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c
   - src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   - src/core/ext/upb-generated/udpa/annotations/security.upb.c
   - src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1319,6 +1323,7 @@ libs:
   - src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c
   - src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c
+  - src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   - src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c
   - src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c
   - src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
@@ -1351,6 +1356,7 @@ libs:
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_cluster.cc
+  - src/core/ext/xds/xds_cluster_specifier_plugin.cc
   - src/core/ext/xds/xds_common_types.cc
   - src/core/ext/xds/xds_endpoint.cc
   - src/core/ext/xds/xds_http_fault_filter.cc
@@ -7131,6 +7137,7 @@ targets:
   headers:
   - test/core/util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lookup/v1/rls.proto
@@ -7140,6 +7147,7 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
+  - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_config
@@ -8355,10 +8363,13 @@ targets:
   headers:
   - src/cpp/server/csds/csds.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -8399,6 +8410,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
   - src/cpp/server/csds/csds.cc
+  - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
