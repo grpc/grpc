@@ -164,6 +164,7 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 ServerLoadReportingFilter::MakeCallPromise(
     grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
+  // Gather up basic facts about the request
   grpc_core::Slice service_method;
   if (const grpc_core::Slice* path =
           call_args.client_initial_metadata->get_pointer(
@@ -182,6 +183,7 @@ ServerLoadReportingFilter::MakeCallPromise(
           .value_or(grpc_core::Slice());
   client_ip_and_lr_token = MakeClientIpAndLrToken(
       lb_token.as_string_view(), call_args.client_initial_metadata);
+  // Record the beginning of the request
   opencensus::stats::Record(
       {{::grpc::load_reporter::MeasureStartCount(), 1}},
       {{::grpc::load_reporter::TagKeyToken(),
@@ -190,6 +192,7 @@ ServerLoadReportingFilter::MakeCallPromise(
         {target_host.data(), target_host.length()}},
        {::grpc::load_reporter::TagKeyUserId(),
         {peer_identity_.data(), peer_identity_.length()}}});
+  // Returned promise runs the rest of the request, then reports costs and records measurements
   return grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>(
       grpc_core::Seq(
           // Call down the stack
@@ -217,6 +220,7 @@ ServerLoadReportingFilter::MakeCallPromise(
                 [this, client_ip_and_lr_token,
                  target_host](const grpc_call_final_info* final_info) {
                   if (final_info == nullptr) return;
+                  // After the last bytes have been placed on the wire we record final measurements
                   opencensus::stats::Record(
                       {{::grpc::load_reporter::MeasureEndCount(), 1},
                        {::grpc::load_reporter::MeasureEndBytesSent(),
