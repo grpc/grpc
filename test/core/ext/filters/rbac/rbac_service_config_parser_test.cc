@@ -410,7 +410,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
           "permissions\\[5\\]" CHILD_ERROR_TAG
           "field:destinationIp error:type should be OBJECT.*"
           "permissions\\[6\\]" CHILD_ERROR_TAG
-          "field:destinationPort error:failed to parse.*"
+          "field:destinationPort error:type should be NUMBER.*"
           "permissions\\[7\\]" CHILD_ERROR_TAG
           "field:metadata error:type should be OBJECT.*"
           "permissions\\[8\\]" CHILD_ERROR_TAG

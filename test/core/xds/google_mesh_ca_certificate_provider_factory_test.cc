@@ -214,7 +214,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
       "  \"certificate_lifetime\": 400,"
       "  \"renewal_grace_period\": 100,"
       "  \"key_type\": 123,"
-      "  \"key_size\": \"1024A\","
+      "  \"key_size\": \"1024\","
       "  \"location\": 123"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -245,7 +245,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
           "field:renewal_grace_period error:type should be STRING of the form "
           "given by google.proto.Duration..*"
           "field:key_type error:type should be STRING.*"
-          "field:key_size error:failed to parse.*"
+          "field:key_size error:type should be NUMBER.*"
           "field:location error:type should be STRING"));
   GRPC_ERROR_UNREF(error);
 }

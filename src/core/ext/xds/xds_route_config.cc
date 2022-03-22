@@ -23,7 +23,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -40,29 +39,18 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
 // TODO(yashykt): Remove once RBAC is no longer experimental
 bool XdsRbacEnabled() {
   char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_RBAC");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
-// TODO(donnadionne): Remove once RLS is no longer experimental
-bool XdsRlsEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
   gpr_free(value);
@@ -224,18 +212,11 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
   if (retry_policy.has_value()) {
     contents.push_back(absl::StrCat("retry_policy=", retry_policy->ToString()));
   }
-  if (action.index() == kClusterIndex) {
-    contents.push_back(
-        absl::StrFormat("Cluster name: %s", absl::get<kClusterIndex>(action)));
-  } else if (action.index() == kWeightedClustersIndex) {
-    auto& action_weighted_clusters = absl::get<kWeightedClustersIndex>(action);
-    for (const ClusterWeight& cluster_weight : action_weighted_clusters) {
-      contents.push_back(cluster_weight.ToString());
-    }
-  } else if (action.index() == kClusterSpecifierPluginIndex) {
-    contents.push_back(
-        absl::StrFormat("Cluster specifier plugin name: %s",
-                        absl::get<kClusterSpecifierPluginIndex>(action)));
+  if (!cluster_name.empty()) {
+    contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
+  }
+  for (const ClusterWeight& cluster_weight : weighted_clusters) {
+    contents.push_back(cluster_weight.ToString());
   }
   if (max_stream_duration.has_value()) {
     contents.push_back(max_stream_duration->ToString());
@@ -277,77 +258,34 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 //
 
 std::string XdsRouteConfigResource::ToString() const {
-  std::vector<std::string> parts;
+  std::vector<std::string> vhosts;
   for (const VirtualHost& vhost : virtual_hosts) {
-    parts.push_back(
+    vhosts.push_back(
         absl::StrCat("vhost={\n"
                      "  domains=[",
                      absl::StrJoin(vhost.domains, ", "),
                      "]\n"
                      "  routes=[\n"));
     for (const XdsRouteConfigResource::Route& route : vhost.routes) {
-      parts.push_back("    {\n");
-      parts.push_back(route.ToString());
-      parts.push_back("\n    }\n");
+      vhosts.push_back("    {\n");
+      vhosts.push_back(route.ToString());
+      vhosts.push_back("\n    }\n");
     }
-    parts.push_back("  ]\n");
-    parts.push_back("  typed_per_filter_config={\n");
+    vhosts.push_back("  ]\n");
+    vhosts.push_back("  typed_per_filter_config={\n");
     for (const auto& p : vhost.typed_per_filter_config) {
       const std::string& name = p.first;
       const auto& config = p.second;
-      parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
+      vhosts.push_back(
+          absl::StrCat("    ", name, "=", config.ToString(), "\n"));
     }
-    parts.push_back("  }\n");
-    parts.push_back("]\n");
+    vhosts.push_back("  }\n");
+    vhosts.push_back("]\n");
   }
-  parts.push_back("cluster_specifier_plugins={\n");
-  for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
-  }
-  parts.push_back("}");
-  return absl::StrJoin(parts, "");
+  return absl::StrJoin(vhosts, "");
 }
 
 namespace {
-
-grpc_error_handle ClusterSpecifierPluginParse(
-    const XdsEncodingContext& context,
-    const envoy_config_route_v3_RouteConfiguration* route_config,
-    XdsRouteConfigResource* rds_update) {
-  size_t num_cluster_specifier_plugins;
-  const envoy_config_route_v3_ClusterSpecifierPlugin* const*
-      cluster_specifier_plugin =
-          envoy_config_route_v3_RouteConfiguration_cluster_specifier_plugins(
-              route_config, &num_cluster_specifier_plugins);
-  for (size_t i = 0; i < num_cluster_specifier_plugins; ++i) {
-    const envoy_config_core_v3_TypedExtensionConfig* extension =
-        envoy_config_route_v3_ClusterSpecifierPlugin_extension(
-            cluster_specifier_plugin[i]);
-    std::string name = UpbStringToStdString(
-        envoy_config_core_v3_TypedExtensionConfig_name(extension));
-    const google_protobuf_Any* any =
-        envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
-    if (any == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "could not obtrain TypedExtensionConfig for plugin config");
-    }
-    absl::string_view plugin_type;
-    grpc_error_handle error =
-        ExtractExtensionTypeName(context, any, &plugin_type);
-    if (error != GRPC_ERROR_NONE) return error;
-    // Find the plugin and generate the policy.
-    auto lb_policy_config =
-        XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
-            plugin_type, google_protobuf_Any_value(any), context.arena,
-            context.symtab);
-    if (!lb_policy_config.ok()) {
-      return absl_status_to_grpc_error(lb_policy_config.status());
-    }
-    rds_update->cluster_specifier_plugin_map[std::move(name)] =
-        std::move(lb_policy_config.value());
-  }
-  return GRPC_ERROR_NONE;
-}
 
 grpc_error_handle RoutePathMatchParse(
     const envoy_config_route_v3_RouteMatch* match,
@@ -585,7 +523,7 @@ grpc_error_handle ParseTypedPerFilterConfig(
       }
     }
     grpc_error_handle error =
-        ExtractExtensionTypeName(context, any, &filter_type);
+        ExtractHttpFilterTypeName(context, any, &filter_type);
     if (error != GRPC_ERROR_NONE) return error;
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
@@ -685,27 +623,19 @@ grpc_error_handle RetryPolicyParse(
 grpc_error_handle RouteActionParse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_Route* route_msg,
-    const std::map<std::string /*cluster_specifier_plugin_name*/,
-                   std::string /*LB policy config*/>&
-        cluster_specifier_plugin_map,
     XdsRouteConfigResource::Route::RouteAction* route, bool* ignore_route) {
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
   // Get the cluster or weighted_clusters in the RouteAction.
   if (envoy_config_route_v3_RouteAction_has_cluster(route_action)) {
-    std::string cluster_name = UpbStringToStdString(
+    route->cluster_name = UpbStringToStdString(
         envoy_config_route_v3_RouteAction_cluster(route_action));
-    if (cluster_name.empty()) {
+    if (route->cluster_name.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster name.");
     }
-    route->action
-        .emplace<XdsRouteConfigResource::Route::RouteAction::kClusterIndex>(
-            std::move(cluster_name));
   } else if (envoy_config_route_v3_RouteAction_has_weighted_clusters(
                  route_action)) {
-    std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
-        action_weighted_clusters;
     const envoy_config_route_v3_WeightedCluster* weighted_cluster =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action);
     uint32_t total_weight = 100;
@@ -752,39 +682,18 @@ grpc_error_handle RouteActionParse(
             &cluster.typed_per_filter_config);
         if (error != GRPC_ERROR_NONE) return error;
       }
-      action_weighted_clusters.emplace_back(std::move(cluster));
+      route->weighted_clusters.emplace_back(std::move(cluster));
     }
     if (total_weight != sum_of_weights) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has incorrect total weight");
     }
-    if (action_weighted_clusters.empty()) {
+    if (route->weighted_clusters.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction weighted_cluster has no valid clusters specified.");
     }
-    route->action = std::move(action_weighted_clusters);
-  } else if (XdsRlsEnabled() &&
-             envoy_config_route_v3_RouteAction_has_cluster_specifier_plugin(
-                 route_action)) {
-    std::string plugin_name = UpbStringToStdString(
-        envoy_config_route_v3_RouteAction_cluster_specifier_plugin(
-            route_action));
-    if (plugin_name.empty()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction cluster contains empty cluster specifier plugin name.");
-    }
-    if (cluster_specifier_plugin_map.find(plugin_name) ==
-        cluster_specifier_plugin_map.end()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction cluster contains cluster specifier plugin name not "
-          "configured.");
-    }
-    route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
-                              kClusterSpecifierPluginIndex>(
-        std::move(plugin_name));
   } else {
-    // No cluster or weighted_clusters or plugin found in RouteAction, ignore
-    // this route.
+    // No cluster or weighted_clusters found in RouteAction, ignore this route.
     *ignore_route = true;
   }
   if (!*ignore_route) {
@@ -899,12 +808,6 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsRouteConfigResource* rds_update) {
-  // Get the cluster spcifier plugins
-  if (XdsRlsEnabled()) {
-    grpc_error_handle error =
-        ClusterSpecifierPluginParse(context, route_config, rds_update);
-    if (error != GRPC_ERROR_NONE) return error;
-  }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
   const envoy_config_route_v3_VirtualHost* const* virtual_hosts =
@@ -959,12 +862,6 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No route found in the virtual host.");
     }
-    // Build a set of cluster_specifier_plugin configured to make sure each is
-    // actually referenced by a route action.
-    std::set<absl::string_view> cluster_specifier_plugins;
-    for (auto& plugin : rds_update->cluster_specifier_plugin_map) {
-      cluster_specifier_plugins.emplace(plugin.first);
-    }
     // Loop over the whole list of routes
     for (size_t j = 0; j < num_routes; ++j) {
       const envoy_config_route_v3_RouteMatch* match =
@@ -992,22 +889,13 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
         auto& route_action =
             absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
-        error = RouteActionParse(context, routes[j],
-                                 rds_update->cluster_specifier_plugin_map,
-                                 &route_action, &ignore_route);
+        error =
+            RouteActionParse(context, routes[j], &route_action, &ignore_route);
         if (error != GRPC_ERROR_NONE) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&
             retry_policy != nullptr) {
           route_action.retry_policy = virtual_host_retry_policy;
-        }
-        // Mark off plugins used in route action.
-        std::string* cluster_specifier_action =
-            absl::get_if<XdsRouteConfigResource::Route::RouteAction::
-                             kClusterSpecifierPluginIndex>(
-                &route_action.action);
-        if (cluster_specifier_action != nullptr) {
-          cluster_specifier_plugins.erase(*cluster_specifier_action);
         }
       } else if (envoy_config_route_v3_Route_has_non_forwarding_action(
                      routes[j])) {
@@ -1029,12 +917,6 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     }
     if (vhost.routes.empty()) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No valid routes specified.");
-    }
-    // For plugins not used in route action, delete from the update to prevent
-    // further use.
-    for (auto& unused_plugin : cluster_specifier_plugins) {
-      rds_update->cluster_specifier_plugin_map.erase(
-          std::string(unused_plugin));
     }
   }
   return GRPC_ERROR_NONE;

@@ -260,7 +260,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c \
     src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
     src/core/ext/upb-generated/udpa/annotations/security.upb.c \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
@@ -395,7 +394,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c \
     src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c \
-    src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c \
@@ -428,7 +426,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
-    src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
     src/core/ext/xds/xds_endpoint.cc \
     src/core/ext/xds/xds_http_fault_filter.cc \
@@ -1153,7 +1150,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/decode_fast.c \
     third_party/upb/upb/def.c \
     third_party/upb/upb/encode.c \
-    third_party/upb/upb/json_encode.c \
     third_party/upb/upb/msg.c \
     third_party/upb/upb/reflection.c \
     third_party/upb/upb/table.c \
@@ -1284,7 +1280,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/opencensus/proto/trace/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/xds/annotations/v3)

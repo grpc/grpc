@@ -30,7 +30,6 @@
 #include "re2/re2.h"
 
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -68,6 +67,8 @@ struct XdsRouteConfigResource {
     std::string ToString() const;
   };
 
+  // TODO(donnadionne): When we can use absl::variant<>, consider using that
+  // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
   struct Route {
     // Matchers for this route.
     struct Matchers {
@@ -129,11 +130,10 @@ struct XdsRouteConfigResource {
       absl::optional<RetryPolicy> retry_policy;
 
       // Action for this route.
-      static constexpr size_t kClusterIndex = 0;
-      static constexpr size_t kWeightedClustersIndex = 1;
-      static constexpr size_t kClusterSpecifierPluginIndex = 2;
-      absl::variant<std::string, std::vector<ClusterWeight>, std::string>
-          action;
+      // TODO(roth): When we can use absl::variant<>, consider using that
+      // here, to enforce the fact that only one of the two fields can be set.
+      std::string cluster_name;
+      std::vector<ClusterWeight> weighted_clusters;
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
       // RouteAction.max_stream_duration.max_stream_duration if the former is
@@ -142,7 +142,9 @@ struct XdsRouteConfigResource {
 
       bool operator==(const RouteAction& other) const {
         return hash_policies == other.hash_policies &&
-               retry_policy == other.retry_policy && action == other.action &&
+               retry_policy == other.retry_policy &&
+               cluster_name == other.cluster_name &&
+               weighted_clusters == other.weighted_clusters &&
                max_stream_duration == other.max_stream_duration;
       }
       std::string ToString() const;
@@ -176,13 +178,9 @@ struct XdsRouteConfigResource {
   };
 
   std::vector<VirtualHost> virtual_hosts;
-  std::map<std::string /*cluster_specifier_plugin_name*/,
-           std::string /*LB policy config*/>
-      cluster_specifier_plugin_map;
 
   bool operator==(const XdsRouteConfigResource& other) const {
-    return virtual_hosts == other.virtual_hosts &&
-           cluster_specifier_plugin_map == other.cluster_specifier_plugin_map;
+    return virtual_hosts == other.virtual_hosts;
   }
   std::string ToString() const;
 
@@ -209,7 +207,6 @@ class XdsRouteConfigResourceType
 
   void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab);
-    XdsClusterSpecifierPluginRegistry::PopulateSymtab(symtab);
   }
 };
 
