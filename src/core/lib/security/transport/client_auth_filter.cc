@@ -204,8 +204,7 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
 }
 
 const grpc_channel_filter ClientAuthFilter::kFilter =
-    MakePromiseBasedFilter<ClientAuthFilter,
-                                      FilterEndpoint::kClient>(
+    MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>(
         "client-auth-filter");
 
 }  // namespace grpc_core
