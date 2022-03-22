@@ -526,13 +526,12 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
     RefCountedPtr<PriorityLb::ChildPriority> child_priority)
     : child_priority_(std::move(child_priority)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[priority_lb %p] child %s (%p): deactivating -- will remove in %"
-        PRId64 "ms",
-        child_priority_->priority_policy_.get(),
-        child_priority_->name_.c_str(), child_priority_.get(),
-        kChildRetentionInterval.millis());
+    gpr_log(GPR_INFO,
+            "[priority_lb %p] child %s (%p): deactivating -- will remove in "
+            "%" PRId64 "ms",
+            child_priority_->priority_policy_.get(),
+            child_priority_->name_.c_str(), child_priority_.get(),
+            kChildRetentionInterval.millis());
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref(DEBUG_LOCATION, "Timer").release();
@@ -591,8 +590,8 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
         GPR_INFO,
         "[priority_lb %p] child %s (%p): starting failover timer for %" PRId64
         "ms",
-        child_priority_->priority_policy_.get(),
-        child_priority_->name_.c_str(), child_priority_.get(),
+        child_priority_->priority_policy_.get(), child_priority_->name_.c_str(),
+        child_priority_.get(),
         child_priority_->priority_policy_->child_failover_timeout_.millis());
   }
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
