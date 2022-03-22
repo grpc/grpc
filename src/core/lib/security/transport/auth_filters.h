@@ -36,7 +36,7 @@ namespace grpc_core {
 // Handles calling out to credentials to fill in metadata per call.
 class ClientAuthFilter final : public ChannelFilter {
  public:
-  const grpc_channel_filter kFilter;
+  static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientAuthFilter> Create(const grpc_channel_args* args,
                                                  ChannelFilter::Args);
