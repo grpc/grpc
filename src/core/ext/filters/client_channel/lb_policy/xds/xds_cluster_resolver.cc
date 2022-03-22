@@ -495,8 +495,8 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
 
 const XdsClusterResolverLbConfig::DiscoveryMechanism&
 XdsClusterResolverLb::DiscoveryMechanismEntry::config() const {
-  return discovery_mechanism->parent()->config_->discovery_mechanisms()[
-      discovery_mechanism->index()];
+  return discovery_mechanism->parent()
+      ->config_->discovery_mechanisms()[discovery_mechanism->index()];
 }
 
 std::string XdsClusterResolverLb::DiscoveryMechanismEntry::GetChildPolicyName(
@@ -504,8 +504,7 @@ std::string XdsClusterResolverLb::DiscoveryMechanismEntry::GetChildPolicyName(
   const size_t child_number = priority_child_numbers[priority];
   const auto& discovery_config = config();
   absl::InlinedVector<absl::string_view, 9> parts = {
-    "{cluster=", discovery_config.cluster_name, ","
-  };
+      "{cluster=", discovery_config.cluster_name, ","};
   if (!discovery_config.eds_service_name.empty()) {
     parts.push_back("eds_service_name=");
     parts.push_back(discovery_config.eds_service_name);
@@ -761,9 +760,9 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
           }
           addresses.emplace_back(
               endpoint
-                  .WithAttribute(kHierarchicalPathAttributeKey,
-                                 MakeHierarchicalPathAttribute(
-                                     hierarchical_path))
+                  .WithAttribute(
+                      kHierarchicalPathAttributeKey,
+                      MakeHierarchicalPathAttribute(hierarchical_path))
                   .WithAttribute(kXdsLocalityNameAttributeKey,
                                  absl::make_unique<XdsLocalityAttribute>(
                                      locality_name->Ref()))
@@ -791,7 +790,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
           discovery_entry.latest_update->priorities[priority];
       Json child_policy;
       if (!discovery_entry.discovery_mechanism->override_child_policy()
-              .empty()) {
+               .empty()) {
         child_policy =
             discovery_entry.discovery_mechanism->override_child_policy();
       } else {
