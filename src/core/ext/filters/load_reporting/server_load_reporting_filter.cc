@@ -192,7 +192,8 @@ ServerLoadReportingFilter::MakeCallPromise(
         {target_host.data(), target_host.length()}},
        {::grpc::load_reporter::TagKeyUserId(),
         {peer_identity_.data(), peer_identity_.length()}}});
-  // Returned promise runs the rest of the request, then reports costs and records measurements
+  // Returned promise runs the rest of the request, then reports costs and
+  // records measurements
   return grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>(
       grpc_core::Seq(
           // Call down the stack
@@ -220,7 +221,8 @@ ServerLoadReportingFilter::MakeCallPromise(
                 [this, client_ip_and_lr_token,
                  target_host](const grpc_call_final_info* final_info) {
                   if (final_info == nullptr) return;
-                  // After the last bytes have been placed on the wire we record final measurements
+                  // After the last bytes have been placed on the wire we record
+                  // final measurements
                   opencensus::stats::Record(
                       {{::grpc::load_reporter::MeasureEndCount(), 1},
                        {::grpc::load_reporter::MeasureEndBytesSent(),
