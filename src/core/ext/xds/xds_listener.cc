@@ -109,8 +109,10 @@ std::string XdsListenerResource::FilterChainData::ToString() const {
 //
 
 std::string XdsListenerResource::FilterChainMap::CidrRange::ToString() const {
+  auto addr_str = grpc_sockaddr_to_string(&address, false);
   return absl::StrCat(
-      "{address_prefix=", grpc_sockaddr_to_string(&address, false),
+      "{address_prefix=",
+      addr_str.ok() ? addr_str.value() : addr_str.status().message(),
       ", prefix_len=", prefix_len, "}");
 }
 
@@ -776,9 +778,13 @@ grpc_error_handle AddFilterChainDataForSourceIpRange(
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.source_prefix_ranges) {
+      auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
+      if (!addr_str.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            std::string(addr_str.status().message()));
+      }
       auto insert_result = source_ip_map->emplace(
-          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
-                       "/", prefix_range.prefix_len),
+          absl::StrCat(addr_str.value(), "/", prefix_range.prefix_len),
           XdsListenerResource::FilterChainMap::SourceIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
@@ -860,9 +866,13 @@ grpc_error_handle AddFilterChainDataForDestinationIpRange(
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.prefix_ranges) {
+      auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
+      if (!addr_str.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            std::string(addr_str.status().message()));
+      }
       auto insert_result = destination_ip_map->emplace(
-          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
-                       "/", prefix_range.prefix_len),
+          absl::StrCat(addr_str.value(), "/", prefix_range.prefix_len),
           InternalFilterChainMap::DestinationIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);

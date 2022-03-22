@@ -526,12 +526,14 @@ static void log_address_sorting_list(const grpc_ares_request* r,
                                      const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
-    std::string addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), true);
+    auto addr_str = grpc_sockaddr_to_string(&addresses[i].address(), true);
     gpr_log(GPR_INFO,
             "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
             "]=%s",
-            r, input_output_str, i, addr_str.c_str());
+            r, input_output_str, i,
+            std::string(addr_str.ok() ? addr_str.value()
+                                      : addr_str.status().message())
+                .c_str());
   }
 }
 

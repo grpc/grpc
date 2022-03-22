@@ -92,8 +92,9 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
       grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
-    std::string addr_str = grpc_sockaddr_to_string(addr, true);
-    std::string name = absl::StrCat("tcp-server-listener:", addr_str);
+    absl::StatusOr<std::string> addr_str = grpc_sockaddr_to_string(addr, true);
+    GPR_ASSERT(addr_str.ok());
+    std::string name = absl::StrCat("tcp-server-listener:", addr_str.value());
     gpr_mu_lock(&s->mu);
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");

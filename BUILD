@@ -1726,6 +1726,8 @@ grpc_cc_library(
         "src/core/lib/address_utils/sockaddr_utils.h",
     ],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],

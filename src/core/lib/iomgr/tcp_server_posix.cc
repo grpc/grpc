@@ -357,7 +357,7 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
 static grpc_error_handle clone_port(grpc_tcp_listener* listener,
                                     unsigned count) {
   grpc_tcp_listener* sp = nullptr;
-  std::string addr_str;
+  absl::StatusOr<std::string> addr_str;
   grpc_error_handle err;
 
   for (grpc_tcp_listener* l = listener->next; l && l->is_sibling; l = l->next) {
@@ -376,6 +376,10 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
+    if (!addr_str.ok()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          std::string(addr_str.status().message()));
+    }
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = listener->next;
     listener->next = sp;
@@ -388,7 +392,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp->fd = fd;
     sp->emfd = grpc_fd_create(
         fd,
-        absl::StrFormat("tcp-server-listener:%s/clone-%d", addr_str.c_str(), i)
+        absl::StrFormat("tcp-server-listener:%s/clone-%d", addr_str->c_str(), i)
             .c_str(),
         true);
     memcpy(&sp->addr, &listener->addr, sizeof(grpc_resolved_address));

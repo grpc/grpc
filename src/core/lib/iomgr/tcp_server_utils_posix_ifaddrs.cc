@@ -133,21 +133,25 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
       err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set port");
       break;
     }
-    std::string addr_str = grpc_sockaddr_to_string(&addr, false);
+    auto addr_str = grpc_sockaddr_to_string(&addr, false);
+    if (!addr_str.ok()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          std::string(addr_str.status().message()));
+    }
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",
-            ifa_name, ifa_it->ifa_flags, addr_str.c_str());
+            ifa_name, ifa_it->ifa_flags, addr_str->c_str());
     /* We could have multiple interfaces with the same address (e.g., bonding),
        so look for duplicates. */
     if (find_listener_with_addr(s, &addr) != nullptr) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
-              addr_str.c_str(), ifa_name);
+              addr_str->c_str(), ifa_name);
       continue;
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
                                         &new_sp)) != GRPC_ERROR_NONE) {
       grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("Failed to add listener: ", addr_str));
+          absl::StrCat("Failed to add listener: ", addr_str.value()));
       err = grpc_error_add_child(root_err, err);
       break;
     } else {

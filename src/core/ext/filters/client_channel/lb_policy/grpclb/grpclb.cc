@@ -534,7 +534,9 @@ std::string GrpcLb::Serverlist::AsText() const {
     } else {
       grpc_resolved_address addr;
       ParseServer(server, &addr);
-      ipport = grpc_sockaddr_to_string(&addr, false);
+      auto addr_str = grpc_sockaddr_to_string(&addr, false);
+      ipport = std::string(addr_str.ok() ? addr_str.value()
+                                         : addr_str.status().message());
     }
     entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
                                       ipport, server.load_balance_token));

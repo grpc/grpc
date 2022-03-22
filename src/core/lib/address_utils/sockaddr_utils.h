@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
@@ -62,11 +63,9 @@ int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 //
 // Currently, only the AF_INET, AF_INET6, and AF_UNIX families are recognized.
 // If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
-// displayed as plain IPv4. Sets is_error to true if it fails to recognize the
-// address when not null.
-std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
-                                    bool normalize, bool* is_error = nullptr)
-    GRPC_MUST_USE_RESULT;
+// displayed as plain IPv4.
+absl::StatusOr<std::string> grpc_sockaddr_to_string(
+    const grpc_resolved_address* addr, bool normalize) GRPC_MUST_USE_RESULT;
 
 /* Returns the URI string corresponding to \a addr */
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
