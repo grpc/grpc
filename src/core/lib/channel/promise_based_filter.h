@@ -64,7 +64,6 @@ class ChannelFilter {
   // structures going forward.
   virtual bool StartTransportOp(grpc_transport_op*) { return false; }
 
- protected:
   virtual ~ChannelFilter() = default;
 };
 

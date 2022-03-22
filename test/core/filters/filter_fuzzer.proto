@@ -21,14 +21,14 @@ message Empty {}
 message ChannelArg {
     string key = 1;
     oneof value {
-        string str = 2;
+        bytes str = 2;
         int64 i = 3;
         uint32 resource_quota = 4;
     }
 }
 
 message Metadatum {
-    string key = 1;
+    bytes key = 1;
     bytes value = 2;
 }
 
@@ -37,16 +37,17 @@ message Metadata {
 }
 
 message Action {
+    uint32 call = 1;
     oneof type {
-        Empty cancel = 1;
-        Metadata receive_initial_metadata = 2;
-        Metadata receive_trailing_metadata = 3;
+        Metadata cancel = 9;
+        Metadata create_call = 10;
+        Metadata receive_initial_metadata = 11;
+        Metadata receive_trailing_metadata = 12;
     }
 }
 
 message Msg {
     string filter = 1;
     repeated ChannelArg channel_args = 2;
-    repeated Metadatum initial_metadata = 3;
     repeated Action actions = 100;
 }

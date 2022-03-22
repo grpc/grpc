@@ -158,7 +158,9 @@ absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
     const grpc_channel_args* args, ChannelFilter::Args) {
   auto* transport =
       grpc_channel_args_find_pointer<grpc_transport>(args, GRPC_ARG_TRANSPORT);
-  GPR_ASSERT(transport != nullptr);
+  if (transport == nullptr) {
+    return absl::InvalidArgumentError("HttpClientFilter needs a transport");
+  }
   return HttpClientFilter(SchemeFromArgs(args),
                           UserAgentFromArgs(args, transport->vtable->name));
 }

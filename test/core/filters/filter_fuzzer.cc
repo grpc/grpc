@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <map>
+
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -25,11 +27,33 @@ bool squelch = true;
 namespace grpc_core {
 namespace {
 
-const grpc_channel_filter* const kFilters[] = {
-    &grpc_core::ClientAuthorityFilter::kFilter,
-    &grpc_core::ClientAuthFilter::kFilter,
-    &grpc_core::HttpClientFilter::kFilter,
-    &grpc_core::GrpcServerAuthzFilter::kFilterVtable,
+struct Filter {
+  absl::string_view name;
+  absl::StatusOr<std::unique_ptr<ChannelFilter>> (*create)(
+      ChannelArgs channel_args, ChannelFilter::Args filter_args);
+
+  template <typename T>
+  static Filter* Make(absl::string_view name) {
+    return new Filter{
+        name,
+        [](ChannelArgs channel_args, ChannelFilter::Args filter_args)
+            -> absl::StatusOr<std::unique_ptr<ChannelFilter>> {
+          auto* args = channel_args.ToC();
+          auto r = T::Create(args, filter_args);
+          grpc_channel_args_destroy(args);
+          if (!r.ok()) return r.status();
+          return std::unique_ptr<ChannelFilter>(new T(std::move(*r)));
+        }};
+  }
+};
+
+#define MAKE_FILTER(name) Filter::Make<name>(#name)
+
+const Filter* const kFilters[] = {
+    MAKE_FILTER(ClientAuthorityFilter),
+    MAKE_FILTER(HttpClientFilter),
+    MAKE_FILTER(ClientAuthFilter),
+    MAKE_FILTER(GrpcServerAuthzFilter),
 };
 
 template <typename FuzzerChannelArgs>
@@ -56,22 +80,59 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args) {
   return args;
 }
 
-const grpc_channel_filter* FindFilter(absl::string_view name) {
+absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
+    absl::string_view name, ChannelArgs channel_args,
+    ChannelFilter::Args filter_args) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(kFilters); ++i) {
-    if (name == kFilters[i]->name) return kFilters[i];
+    if (name == kFilters[i]->name)
+      return kFilters[i]->create(std::move(channel_args), filter_args);
   }
-  return nullptr;
+  return absl::NotFoundError(absl::StrCat("Filter ", name, " not found"));
 }
+
+class FuzzCall {};
+
+class MainLoop {
+ public:
+  MainLoop(std::unique_ptr<ChannelFilter> filter)
+      : filter_(std::move(filter)) {}
+
+  void Run(const filter_fuzzer::Action& action) {
+    switch (action.type_case()) {
+      case filter_fuzzer::Action::TYPE_NOT_SET:
+        break;
+      case filter_fuzzer::Action::kCancel:
+        calls_.erase(action.call());
+        break;
+      case filter_fuzzer::Action::kCreateCall:
+        calls_.emplace(action.call(), absl::make_unique<FuzzCall>());
+        break;
+    }
+    /*
+  auto activity = grpc_core::MakeActivity(
+      [&filter]() {
+        return (*filter)->MakeCallPromise(grpc_core::CallArgs{nullptr, nullptr},
+                                          [](grpc_core::CallArgs) { abort(); })
+      },
+      ExecCtxWakeupScheduler(), [](grpc_core::ServerMetadataHandle) {});
+*/
+  }
+
+ private:
+  std::unique_ptr<ChannelFilter> filter_;
+  std::map<uint32_t, std::unique_ptr<FuzzCall>> calls_;
+};
 
 }  // namespace
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
-  auto* filter = grpc_core::FindFilter(msg.filter());
-  if (filter == nullptr) return;
-  grpc_channel_element elem = {
-      filter, gpr_malloc_aligned(filter->sizeof_channel_data, 16)};
-  auto* channel_args = grpc_core::LoadChannelArgs(msg.channel_args()).ToC();
-
-  grpc_channel_args_destroy(channel_args);
+  auto filter = grpc_core::CreateFilter(
+      msg.filter(), grpc_core::LoadChannelArgs(msg.channel_args()),
+      grpc_core::ChannelFilter::Args());
+  if (!filter.ok()) return;
+  grpc_core::MainLoop main_loop(std::move(*filter));
+  for (const auto& action : msg.actions()) {
+    main_loop.Run(action);
+  }
 }
