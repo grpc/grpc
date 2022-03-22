@@ -98,7 +98,7 @@ class MetadataHandle {
   T* handle_ = nullptr;
 };
 
-// Server metadata type
+// Trailing metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ServerMetadata = grpc_metadata_batch;
 using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
