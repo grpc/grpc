@@ -1205,7 +1205,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/activity.cc )
   s.files += %w( src/core/lib/promise/activity.h )
   s.files += %w( src/core/lib/promise/arena_promise.h )
-  s.files += %w( src/core/lib/promise/call_push_pull.h )
   s.files += %w( src/core/lib/promise/context.h )
   s.files += %w( src/core/lib/promise/detail/basic_seq.h )
   s.files += %w( src/core/lib/promise/detail/promise_factory.h )
