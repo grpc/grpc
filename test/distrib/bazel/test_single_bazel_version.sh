@@ -46,8 +46,6 @@ export OVERRIDE_BAZEL_VERSION="$VERSION"
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 bazel build -- //... "${EXCLUDED_TARGETS[@]}"
 
-find . || true
-
 cd test/distrib/bazel/cpp/
 
 bazel test //:all
