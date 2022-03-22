@@ -1469,7 +1469,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
-    src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
@@ -1499,7 +1498,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
@@ -1964,7 +1962,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/error_cfstream.cc \
     src/core/lib/iomgr/ev_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
-    src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
@@ -1994,7 +1991,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/is_epollexclusive_available.cc \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
