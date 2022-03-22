@@ -394,13 +394,11 @@ def grpc_end2end_tests():
         grpc_cc_binary(
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f] + [
-                "end2end_tests.cc",
                 "end2end_test_utils.cc",
-            ] + ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
-            hdrs = [
-                "tests/cancel_test_helpers.h",
+                "end2end_tests.cc",
                 "end2end_tests.h",
-            ],
+                "tests/cancel_test_helpers.h",
+            ] + ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
             language = "C++",
             testonly = 1,
             data = [
@@ -409,11 +407,9 @@ def grpc_end2end_tests():
                 "//src/core/tsi/test_creds:server1.pem",
             ],
             deps = [
-                ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
-                "//test/core/compression:args_utils",
                 ":cq_verifier",
                 ":ssl_test_data",
                 ":http_proxy",
@@ -445,7 +441,6 @@ def grpc_end2end_tests():
                 ],
                 args = [t],
                 deps = [
-                    ":end2end_tests",
                     "//test/core/util:grpc_test_util",
                     "//:grpc",
                     "//:gpr",
