@@ -14,7 +14,12 @@
 # limitations under the License.
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_binary",
+    "grpc_cc_library",
+    "grpc_cc_test",
+)
 
 def _fixture_options(
         fullstack = True,
@@ -309,9 +314,7 @@ END2END_TESTS = {
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
     "retry_transparent_goaway": _test_options(needs_client_channel = True),
-    "retry_transparent_not_sent_on_wire": _test_options(
-        needs_client_channel = True,
-    ),
+    "retry_transparent_not_sent_on_wire": _test_options(needs_client_channel = True),
     "retry_transparent_max_concurrent_streams": _test_options(
         needs_client_channel = True,
         proxyable = False,
@@ -386,45 +389,38 @@ def _platform_support_tags(fopt):
 # buildifier: disable=unnamed-macro
 def grpc_end2end_tests():
     """Instantiates the gRPC end2end tests."""
-    grpc_cc_library(
-        name = "end2end_tests",
-        srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] +
-               ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
-        hdrs = [
-            "tests/cancel_test_helpers.h",
-            "end2end_tests.h",
-        ],
-        language = "C++",
-        testonly = 1,
-        data = [
-            "//src/core/tsi/test_creds:ca.pem",
-            "//src/core/tsi/test_creds:server1.key",
-            "//src/core/tsi/test_creds:server1.pem",
-        ],
-        deps = [
-            ":cq_verifier",
-            ":ssl_test_data",
-            ":http_proxy",
-            ":proxy",
-            ":local_util",
-            "//test/core/util:test_lb_policies",
-            "//:grpc_authorization_provider",
-            "//test/core/compression:args_utils",
-        ],
-    )
     for f, fopt in END2END_FIXTURES.items():
         # TODO(hork): try removing this to see if we no longer need the raw bin.
         grpc_cc_binary(
             name = "%s_test" % f,
-            srcs = ["fixtures/%s.cc" % f],
+            srcs = ["fixtures/%s.cc" % f] + [
+                "end2end_tests.cc",
+                "end2end_test_utils.cc",
+            ] + ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
+            hdrs = [
+                "tests/cancel_test_helpers.h",
+                "end2end_tests.h",
+            ],
             language = "C++",
             testonly = 1,
-            data = [":end2end_tests"],
+            data = [
+                "//src/core/tsi/test_creds:ca.pem",
+                "//src/core/tsi/test_creds:server1.key",
+                "//src/core/tsi/test_creds:server1.pem",
+            ],
             deps = [
                 ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
+                "//test/core/compression:args_utils",
+                ":cq_verifier",
+                ":ssl_test_data",
+                ":http_proxy",
+                ":proxy",
+                ":local_util",
+                "//test/core/util:test_lb_policies",
+                "//:grpc_authorization_provider",
                 "//test/core/compression:args_utils",
             ],
             tags = _platform_support_tags(fopt) + fopt.tags,
@@ -436,14 +432,30 @@ def grpc_end2end_tests():
             test_short_name = str(t) if not topt.short_name else topt.short_name
             grpc_cc_test(
                 name = "%s_test@%s" % (f, test_short_name),
-                srcs = ["fixtures/%s.cc" % f],
-                data = [":end2end_tests"],
+                srcs = ["fixtures/%s.cc" % f] + [
+                    "end2end_tests.cc",
+                    "end2end_test_utils.cc",
+                    "tests/cancel_test_helpers.h",
+                    "end2end_tests.h",
+                ] + ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
+                data = [
+                    "//src/core/tsi/test_creds:ca.pem",
+                    "//src/core/tsi/test_creds:server1.key",
+                    "//src/core/tsi/test_creds:server1.pem",
+                ],
                 args = [t],
                 deps = [
                     ":end2end_tests",
                     "//test/core/util:grpc_test_util",
                     "//:grpc",
                     "//:gpr",
+                    ":cq_verifier",
+                    ":ssl_test_data",
+                    ":http_proxy",
+                    ":proxy",
+                    ":local_util",
+                    "//test/core/util:test_lb_policies",
+                    "//:grpc_authorization_provider",
                     "//test/core/compression:args_utils",
                 ],
                 tags = _platform_support_tags(fopt) + fopt.tags + [
