@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "auth_filters.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -203,9 +204,9 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
       auth_context->Ref());
 }
 
-}  // namespace grpc_core
-
-const grpc_channel_filter grpc_client_auth_filter =
+const grpc_channel_filter grpc_core::ClientAuthFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<grpc_core::ClientAuthFilter,
                                       grpc_core::FilterEndpoint::kClient>(
         "client-auth-filter");
+
+}  // namespace grpc_core
