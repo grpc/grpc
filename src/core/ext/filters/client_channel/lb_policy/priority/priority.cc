@@ -613,8 +613,8 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
               child_priority_->priority_policy_.get(),
               child_priority_->name_.c_str(), child_priority_.get());
     }
-    grpc_timer_cancel(&timer_);
     timer_pending_ = false;
+    grpc_timer_cancel(&timer_);
   }
   Unref();
 }
