@@ -10941,6 +10941,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(graceful_shutdown_test
   test/core/end2end/cq_verifier.cc
+  test/core/event_engine/event_engine_test_init_libuv.cc
   test/core/transport/chttp2/graceful_shutdown_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
