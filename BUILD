@@ -1905,7 +1905,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_cfstream.cc",
         "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
-        "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
@@ -1924,7 +1923,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
-        "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/polling_entity.cc",
@@ -2046,7 +2044,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
-        "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
@@ -2056,7 +2053,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
-        "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
@@ -2077,7 +2073,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
-        "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -2886,6 +2881,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
         "src/core/ext/xds/xds_common_types.cc",
         "src/core/ext/xds/xds_endpoint.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
@@ -2910,6 +2906,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.h",
         "src/core/ext/xds/xds_common_types.h",
         "src/core/ext/xds/xds_endpoint.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
@@ -2998,6 +2995,8 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
+        "rls_config_upb",
+        "rls_config_upbdefs",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -5372,6 +5371,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "rls_upb",
     deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+)
+
+grpc_upb_proto_library(
+    name = "rls_config_upb",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "rls_config_upbdefs",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

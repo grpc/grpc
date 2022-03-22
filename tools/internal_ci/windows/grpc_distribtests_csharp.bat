@@ -30,6 +30,14 @@ call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
 
+@rem Install Msys2 zip to avoid crash when using cygwin's zip on grpc-win2016 kokoro workers.
+@rem Downloading from GCS should be very reliables when on a GCP VM.
+@rem TODO(jtattermusch): find a better way of making the build_packages step work on windows workers.
+mkdir C:\zip
+curl -sSL --fail -o C:\zip\zip.exe https://storage.googleapis.com/grpc-build-helper/zip-3.0-1-x86_64/zip.exe || goto :error
+set PATH=C:\zip;%PATH%
+zip --version
+
 @rem Build all C# windows artifacts
 python tools/run_tests/task_runner.py -f artifact windows csharp %TASK_RUNNER_EXTRA_FILTERS% -j 4 --inner_jobs 4 -x build_artifacts_csharp/sponge_log.xml || set FAILED=true
 

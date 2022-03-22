@@ -50,6 +50,7 @@ class TlsTypeConstrainer {
 
 #include <pthread.h>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 
