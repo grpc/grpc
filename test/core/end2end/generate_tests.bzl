@@ -435,6 +435,7 @@ def grpc_end2end_tests():
             if not _compatible(fopt, topt):
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
+
             # Include end2end_tests, rather than depend on it, due to complex
             # Visual Studio 2017 bugs with no great solution.
             grpc_cc_test(
