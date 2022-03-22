@@ -1300,8 +1300,6 @@ src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
 src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h \
 src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c \
 src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h \
-src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c \
-src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.h \
 src/core/ext/upb-generated/udpa/annotations/migrate.upb.c \
 src/core/ext/upb-generated/udpa/annotations/migrate.upb.h \
 src/core/ext/upb-generated/udpa/annotations/security.upb.c \
@@ -1570,8 +1568,6 @@ src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c \
 src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.h \
 src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c \
 src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.h \
-src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
-src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.h \
 src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c \
 src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.h \
 src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c \
@@ -1639,8 +1635,6 @@ src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
 src/core/ext/xds/xds_cluster.cc \
 src/core/ext/xds/xds_cluster.h \
-src/core/ext/xds/xds_cluster_specifier_plugin.cc \
-src/core/ext/xds/xds_cluster_specifier_plugin.h \
 src/core/ext/xds/xds_common_types.cc \
 src/core/ext/xds/xds_common_types.h \
 src/core/ext/xds/xds_endpoint.cc \
