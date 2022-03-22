@@ -90,38 +90,6 @@ absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
   return absl::NotFoundError(absl::StrCat("Filter ", name, " not found"));
 }
 
-class FuzzCall {
- public:
-  FuzzCall(ChannelFilter* filter, MemoryAllocator* memory_allocator,
-           const filter_fuzzer::Metadata& client_initial_metadata)
-      : memory_allocator_(memory_allocator) {
-    promise_ = filter->MakeCallPromise(
-        CallArgs{std::move(*LoadMetadata(client_initial_metadata,
-                                         &client_initial_metadata_)),
-                 nullptr},
-        [](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
-          abort();
-        });
-  }
-
- private:
-  template <typename R>
-  absl::optional<MetadataHandle<R>> LoadMetadata(
-      const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
-    if (*out != nullptr) return absl::nullopt;
-    *out = absl::make_unique<R>(arena_.get());
-    for (const auto& md : metadata.metadata()) {
-      (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
-                     [](absl::string_view, const Slice&) {});
-    }
-    return MetadataHandle<R>::TestOnlyWrap(out->get());
-  }
-  MemoryAllocator* const memory_allocator_;
-  ScopedArenaPtr arena_ = MakeScopedArena(32, memory_allocator_);
-  ArenaPromise<ServerMetadataHandle> promise_;
-  std::unique_ptr<ClientMetadata> client_initial_metadata_;
-};
-
 class MainLoop {
  public:
   MainLoop(std::unique_ptr<ChannelFilter> filter, ChannelArgs channel_args)
@@ -138,17 +106,77 @@ class MainLoop {
         calls_.erase(action.call());
         break;
       case filter_fuzzer::Action::kCreateCall:
-        calls_.emplace(action.call(), absl::make_unique<FuzzCall>(
-                                          filter_.get(), &memory_allocator_,
-                                          action.create_call()));
+        calls_.emplace(
+            action.call(),
+            absl::make_unique<Call>(this, action.call(), action.create_call()));
         break;
     }
   }
 
  private:
+  class WakeCall final : public Wakeable {
+   public:
+    WakeCall(MainLoop* main_loop, uint32_t id)
+        : main_loop_(main_loop), id_(id) {}
+    void Wakeup() override {
+      for (const uint32_t already : main_loop_->wakeups_) {
+        if (already == id_) return;
+      }
+      main_loop_->wakeups_.push_back(id_);
+      delete this;
+    }
+    void Drop() override { delete this; }
+
+   private:
+    MainLoop* const main_loop_;
+    uint32_t id_;
+  };
+  class Call final : public Activity {
+   public:
+    Call(MainLoop* main_loop, uint32_t id,
+         const filter_fuzzer::Metadata& client_initial_metadata)
+        : main_loop_(main_loop), id_(id) {
+      promise_ = main_loop_->filter_->MakeCallPromise(
+          CallArgs{std::move(*LoadMetadata(client_initial_metadata,
+                                           &client_initial_metadata_)),
+                   nullptr},
+          [](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
+            abort();
+          });
+    }
+
+    void Orphan() override { abort(); }
+    void ForceImmediateRepoll() override { abort(); }
+    Waker MakeOwningWaker() override {
+      return Waker(new WakeCall(main_loop_, id_));
+    }
+    Waker MakeNonOwningWaker() override {
+      return Waker(new WakeCall(main_loop_, id_));
+    }
+
+   private:
+    template <typename R>
+    absl::optional<MetadataHandle<R>> LoadMetadata(
+        const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
+      if (*out != nullptr) return absl::nullopt;
+      *out = absl::make_unique<R>(arena_.get());
+      for (const auto& md : metadata.metadata()) {
+        (*out)->Append(md.key(), Slice::FromCopiedString(md.value()),
+                       [](absl::string_view, const Slice&) {});
+      }
+      return MetadataHandle<R>::TestOnlyWrap(out->get());
+    }
+    MainLoop* const main_loop_;
+    const uint32_t id_;
+    ScopedArenaPtr arena_ = MakeScopedArena(32, &main_loop_->memory_allocator_);
+    ArenaPromise<ServerMetadataHandle> promise_;
+    std::unique_ptr<ClientMetadata> client_initial_metadata_;
+  };
+
   MemoryAllocator memory_allocator_;
   std::unique_ptr<ChannelFilter> filter_;
-  std::map<uint32_t, std::unique_ptr<FuzzCall>> calls_;
+  std::map<uint32_t, std::unique_ptr<Call>> calls_;
+  std::vector<uint32_t> wakeups_;
 };
 
 }  // namespace
