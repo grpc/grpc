@@ -550,6 +550,7 @@ void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
     timer_pending_ = false;
     grpc_timer_cancel(&timer_);
   }
+  Unref();
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
@@ -615,6 +616,7 @@ void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
     grpc_timer_cancel(&timer_);
     timer_pending_ = false;
   }
+  Unref();
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
