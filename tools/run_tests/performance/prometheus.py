@@ -16,8 +16,8 @@
 
 
 # example usage: python3 prometheus.py --url=http://10.108.4.94:9090
-# --pod_type=driver --pod_type=client --container_name=main
-# --container_name=sidecar 
+# # --pod_type=driver --pod_type=clients --container_name=main
+# # --container_name=sidecar
 import argparse
 import json
 import logging
@@ -88,7 +88,8 @@ class Prometheus:
         return memory_container_name_to_data_list
 
     def fetch_cpu_and_memory_data(
-        self, container_list: List[str], pod_list: List[str]) -> Dict[str, Any]:
+        self, container_list: List[str], pod_dict: Dict[str, List[str]]
+    ) -> Dict[str, Any]:
         """Fetches and process min, max, mean, std for the memory and cpu
         data for each container in the container_list for each pod in
         the pod_list and construct processed data group first by metric
@@ -96,15 +97,27 @@ class Prometheus:
         If a given container does not exit on a pod, it is ignored."""
         container_matcher = construct_container_matcher(container_list)
         processed_data = {}
+        for role, pod_names in pod_dict.items():
+            pod_data = {}
+            for pod in pod_names:
+                container_data = {}
+                for container, data in self._fetch_cpu_for_pod(
+                    container_matcher, pod
+                ).items():
+                    container_data[container] = {}
+                    container_data[container]["cpuSeconds"] = compute_total_cpu_seconds(
+                        data
+                    )
 
-        raw_cpu_data = {}
-        raw_memory_data = {}
-        for pod in pod_list:
-            raw_cpu_data[pod] = self._fetch_cpu_for_pod(container_matcher, pod)
-            raw_memory_data[pod] = self._fetch_memory_for_pod(container_matcher, pod)
+                for container, data in self._fetch_memory_for_pod(
+                    container_matcher, pod
+                ).items():
+                    container_data[container][
+                        "memoryMean"
+                    ] = compute_average_memory_usage(data)
 
-        processed_data["cpu"] = compute_total_cpu_seconds(raw_cpu_data)
-        processed_data["memory"] = compute_average_memory_usage(raw_memory_data)
+                pod_data[pod] = container_data
+            processed_data[role] = pod_data
         return processed_data
 
 
@@ -146,56 +159,35 @@ def get_data_list_from_timeseries(data: Any) -> Dict[str, List[float]]:
     return container_name_to_data_list
 
 
-
-def compute_total_cpu_seconds(
-    cpu_data_dicts: Dict[str, Dict[str, List[float]]]
-) -> Dict[str, Dict[str,float]]:
+def compute_total_cpu_seconds(cpu_data_list: List[float]) -> float:
     """Computes the total cpu seconds by CPUs[end]-CPUs[start]."""
-    pod_name_to_data_dicts = {}
-    for pod_name, pod_data_dicts in cpu_data_dicts.items():
-        container_name_to_processed_data = {}
-        for container_name, data_list in pod_data_dicts.items():
-            container_name_to_processed_data[
-                container_name
-            ] = float(data_list[len(data_list)-1]-data_list[0])
-        pod_name_to_data_dicts[pod_name] = container_name_to_processed_data
+    return cpu_data_list[len(cpu_data_list) - 1] - cpu_data_list[0]
 
-    return pod_name_to_data_dicts
 
-def compute_average_memory_usage(
-    memory_data_dicts: Dict[str, Dict[str, List[float]]]
-) -> Dict[str, Dict[str, float]]:
+def compute_average_memory_usage(memory_data_list: List[float]) -> float:
     """Computes the min, max, mean and standard deviation for
-    given set of data."""
-    pod_name_to_data_dicts = {}
-    for pod_name, pod_data_dicts in memory_data_dicts.items():
-        container_name_to_processed_data = {}
-        for container_name, data_list in pod_data_dicts.items():
-            container_name_to_processed_data[
-                container_name
-            ] = statistics.mean(data_list)
-        pod_name_to_data_dicts[pod_name] = container_name_to_processed_data
-
-    return pod_name_to_data_dicts
+    given list of data."""
+    return statistics.mean(memory_data_list)
 
 
-def construct_pod_list(node_info_file: str, pod_types: List[str]) -> List[str]:
-    """Constructs a list of pod names to be queried."""
+def construct_pod_dict(
+    node_info_file: str, pod_types: List[str]
+) -> Dict[str, List[str]]:
+    """Constructs a dict of pod names keyed by role to be queried."""
     with open(node_info_file, "r") as f:
         pod_names = json.load(f)
-        pod_type_to_name = {"client": [], "driver": [], "server": []}
+        pod_type_to_name = {"clients": [], "driver": [], "servers": []}
 
         for client in pod_names["Clients"]:
-            pod_type_to_name["client"].append(client["Name"])
+            pod_type_to_name["clients"].append(client["Name"])
         for server in pod_names["Servers"]:
-            pod_type_to_name["server"].append(server["Name"])
+            pod_type_to_name["servers"].append(server["Name"])
 
         pod_type_to_name["driver"].append(pod_names["Driver"]["Name"])
 
-    pod_names_to_query = []
+    pod_names_to_query = {}
     for pod_type in pod_types:
-        for each in pod_type_to_name[pod_type]:
-            pod_names_to_query.append(each)
+        pod_names_to_query[pod_type] = pod_type_to_name[pod_type]
     return pod_names_to_query
 
 
@@ -226,7 +218,7 @@ def main() -> None:
         "--pod_type",
         action="append",
         help="Pod type to query the metrics for, the options are driver, client and server",
-        choices=["driver", "client", "server"],
+        choices=["driver", "clients", "servers"],
         required=True,
     )
     argp.add_argument(
@@ -253,20 +245,16 @@ def main() -> None:
 
     with open(args.scenario_result_file, "r") as q:
         scenario_result = json.load(q)
-        start_time = convert_UTC_to_epoch(scenario_result["summary"]["startTime"])
-        end_time = convert_UTC_to_epoch(scenario_result["summary"]["endTime"])
         p = Prometheus(
             url=args.url,
-            start=start_time,
-            end=end_time,
+            start=convert_UTC_to_epoch(scenario_result["summary"]["startTime"]),
+            end=convert_UTC_to_epoch(scenario_result["summary"]["endTime"]),
         )
 
-    test_duration_seconds = float(end_time) - float(start_time)
-    pod_list = construct_pod_list(args.node_info_file, args.pod_type)
+    pod_dict = construct_pod_dict(args.node_info_file, args.pod_type)
     processed_data = p.fetch_cpu_and_memory_data(
-        container_list=args.container_name, pod_list=pod_list
+        container_list=args.container_name, pod_dict=pod_dict
     )
-    processed_data["testDurationSeconds"]=test_duration_seconds
 
     logging.debug(json.dumps(processed_data, sort_keys=True, indent=4))
 
