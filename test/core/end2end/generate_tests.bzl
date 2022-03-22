@@ -389,16 +389,32 @@ def _platform_support_tags(fopt):
 # buildifier: disable=unnamed-macro
 def grpc_end2end_tests():
     """Instantiates the gRPC end2end tests."""
+    grpc_cc_library(
+        name = "end2end_tests",
+        srcs = ["end2end_tests.cc", "end2end_test_utils.cc"] +
+               ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
+        hdrs = [
+            "tests/cancel_test_helpers.h",
+            "end2end_tests.h",
+        ],
+        language = "C++",
+        testonly = 1,
+        deps = [
+            ":cq_verifier",
+            ":ssl_test_data",
+            ":http_proxy",
+            ":proxy",
+            ":local_util",
+            "//test/core/util:test_lb_policies",
+            "//:grpc_authorization_provider",
+            "//test/core/compression:args_utils",
+        ],
+    )
     for f, fopt in END2END_FIXTURES.items():
         # TODO(hork): try removing this to see if we no longer need the raw bin.
         grpc_cc_binary(
             name = "%s_test" % f,
-            srcs = ["fixtures/%s.cc" % f] + [
-                "end2end_test_utils.cc",
-                "end2end_tests.cc",
-                "end2end_tests.h",
-                "tests/cancel_test_helpers.h",
-            ] + ["tests/%s.cc" % t for t in sorted(END2END_TESTS.keys())],
+            srcs = ["fixtures/%s.cc" % f],
             language = "C++",
             testonly = 1,
             data = [
@@ -407,25 +423,20 @@ def grpc_end2end_tests():
                 "//src/core/tsi/test_creds:server1.pem",
             ],
             deps = [
+                ":end2end_tests",
                 "//test/core/util:grpc_test_util",
                 "//:grpc",
                 "//:gpr",
-                ":cq_verifier",
-                ":ssl_test_data",
-                ":http_proxy",
-                ":proxy",
-                ":local_util",
-                "//test/core/util:test_lb_policies",
-                "//:grpc_authorization_provider",
                 "//test/core/compression:args_utils",
             ],
             tags = _platform_support_tags(fopt) + fopt.tags,
         )
-
         for t, topt in END2END_TESTS.items():
             if not _compatible(fopt, topt):
                 continue
             test_short_name = str(t) if not topt.short_name else topt.short_name
+            # Include end2end_tests, rather than depend on it, due to complex
+            # Visual Studio 2017 bugs with no great solution.
             grpc_cc_test(
                 name = "%s_test@%s" % (f, test_short_name),
                 srcs = ["fixtures/%s.cc" % f] + [
