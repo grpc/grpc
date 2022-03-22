@@ -33,13 +33,13 @@ message Metadatum {
 }
 
 message Metadata {
-    repeated Metadatum result = 1;
+    repeated Metadatum metadata = 1;
 }
 
 message Action {
     uint32 call = 1;
     oneof type {
-        Metadata cancel = 9;
+        Empty cancel = 9;
         Metadata create_call = 10;
         Metadata receive_initial_metadata = 11;
         Metadata receive_trailing_metadata = 12;
