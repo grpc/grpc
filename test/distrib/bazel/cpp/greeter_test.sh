@@ -21,8 +21,8 @@ SERVER_TIMEOUT=10
 SERVER_OUTPUT=$(mktemp)
 
 function cleanup() {
-  if [ ! -z "$SERVER_PID" ]; then
-    kill $SERVER_PID
+  if [ -n "$SERVER_PID" ]; then
+    kill "$SERVER_PID"
   fi
 }
 
@@ -34,7 +34,7 @@ function fail() {
 
 function await_server() {
   TIME=0
-  while [ ! -s $SERVER_OUTPUT ]; do
+  while [ ! -s "$SERVER_OUTPUT" ]; do
     if [ "$TIME" == "$SERVER_TIMEOUT" ] ; then
       fail "Server not listening after $SERVER_TIMEOUT seconds."
     fi
@@ -46,12 +46,12 @@ function await_server() {
 
 trap cleanup SIGINT SIGTERM EXIT
 
-./greeter_server >$SERVER_OUTPUT &
+./greeter_server >"$SERVER_OUTPUT" &
 SERVER_PID=$!
 
 SERVER_ADDRESS=$(await_server)
 
-RESPONSE=$(./greeter_client --target=$SERVER_ADDRESS)
+RESPONSE=$(./greeter_client --target="$SERVER_ADDRESS")
 EXPECTED_RESPONSE="Greeter received: Hello world"
 
 if [ "$RESPONSE" != "$EXPECTED_RESPONSE" ]; then

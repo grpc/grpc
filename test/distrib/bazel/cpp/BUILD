@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 licenses(["notice"])
 
 cc_binary(
     name = "greeter_client",
     srcs = ["greeter_client.cc"],
     deps = [
-        "@com_github_grpc_grpc//:grpc++",
         "//protos:helloworld_cc_grpc",
+        "@com_github_grpc_grpc//:grpc++",
     ],
 )
 
@@ -28,9 +27,9 @@ cc_binary(
     name = "greeter_server",
     srcs = ["greeter_server.cc"],
     deps = [
+        "//protos:helloworld_cc_grpc",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_reflection",
-        "//protos:helloworld_cc_grpc",
     ],
 )
 
@@ -40,5 +39,5 @@ sh_test(
     data = [
         ":greeter_client",
         ":greeter_server",
-    ]
+    ],
 )

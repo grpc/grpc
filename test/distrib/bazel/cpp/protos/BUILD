@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
-
-package(default_visibility=["//:__subpackages__"])
-
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("@com_github_grpc_grpc//bazel:grpc_build_system.bzl", "grpc_proto_library")
+
+licenses(["notice"])
+
+package(default_visibility = ["//:__subpackages__"])
 
 proto_library(
     name = "helloworld_proto",
@@ -36,4 +35,3 @@ cc_grpc_library(
     grpc_only = True,
     deps = [":helloworld_cc_proto"],
 )
-
