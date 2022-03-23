@@ -2527,7 +2527,8 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
       : lb_call_(lb_call) {}
 
   const BackendMetricData* GetBackendMetricData() override {
-    if (lb_call_->backend_metric_data_ == nullptr) {
+    if (lb_call_->backend_metric_data_ == nullptr &&
+        lb_call_->recv_trailing_metadata_ != nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
               XEndpointLoadMetricsBinMetadata())) {
         lb_call_->backend_metric_data_ =
