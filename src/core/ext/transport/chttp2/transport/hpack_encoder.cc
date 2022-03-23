@@ -520,6 +520,7 @@ void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
 }
 
 void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   Timeout timeout = Timeout::FromDuration(deadline - ExecCtx::Get()->Now());
   for (auto it = compressor_->previous_timeouts_.begin();
        it != compressor_->previous_timeouts_.end(); ++it) {

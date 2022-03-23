@@ -447,6 +447,7 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);
+    grpc_core::ExecCtx::Get()->InvalidateNow();
     grpc_timer_init(&t->keepalive_ping_timer,
                     grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
@@ -2735,6 +2736,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
       GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                         grpc_schedule_on_exec_ctx);
+      grpc_core::ExecCtx::Get()->InvalidateNow();
       grpc_timer_init(&t->keepalive_ping_timer,
                       grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                       &t->init_keepalive_ping_locked);
@@ -2744,6 +2746,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
     GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
     GRPC_CLOSURE_INIT(&t->init_keepalive_ping_locked, init_keepalive_ping, t,
                       grpc_schedule_on_exec_ctx);
+    grpc_core::ExecCtx::Get()->InvalidateNow();
     grpc_timer_init(&t->keepalive_ping_timer,
                     grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
                     &t->init_keepalive_ping_locked);
