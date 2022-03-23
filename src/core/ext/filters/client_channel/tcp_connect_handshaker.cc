@@ -32,7 +32,7 @@ namespace {
 
 class TCPConnectHandshaker : public Handshaker {
  public:
-  TCPConnectHandshaker(grpc_pollset_set* interested_parties);
+  explicit TCPConnectHandshaker(grpc_pollset_set* interested_parties);
   void Shutdown(grpc_error_handle why) override;
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
