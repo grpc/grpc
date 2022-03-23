@@ -152,9 +152,6 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
   std::string final_status = absl::StatusCodeToString(status_code_);
   tags.emplace_back(ClientStatusTagKey(), final_status);
-  absl::InlinedVector<::opencensus::stats::Measurement, 3> measurements = {
-      {RpcClientServerLatency(),
-       ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))}};
   ::opencensus::stats::Record(
       {{RpcClientSentBytesPerRpc(),
         static_cast<double>(transport_stream_stats->outgoing.data_bytes)},
