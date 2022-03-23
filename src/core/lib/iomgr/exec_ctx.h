@@ -176,30 +176,26 @@ class ExecCtx {
     }
   }
 
-  /** Returns the stored current time relative to start if valid,
-   *  otherwise refreshes the stored time, sets it valid and returns the new
-   *  value.
+  /** Returns the current time relative to start.
+   *  TODO(yashykt): Remove and replace with something not dependent on ExecCtx.
    */
   Timestamp Now();
 
-  /** Invalidates the stored time value. A new time value will be set on calling
-   *  Now().
+  /** Deprecated.
+   *  TODO(yashykt): Remove all instances of this.
    */
-  void InvalidateNow() { now_is_valid_ = false; }
+  void InvalidateNow() {}
 
-  /** To be used only by shutdown code in iomgr */
-  void SetNowIomgrShutdown() {
-    now_ = Timestamp::InfFuture();
-    now_is_valid_ = true;
-  }
+  /** To be used only by shutdown code in iomgr.
+   *  TODO(yashykt): Remove and replace with something not dependent on ExecCtx.
+   */
+  void SetNowIomgrShutdown() { now_ = Timestamp::InfFuture(); }
 
   /** To be used only for testing.
    *  Sets the now value.
+   *  TODO(yashykt): Remove and replace with something not dependent on ExecCtx.
    */
-  void TestOnlySetNow(Timestamp new_val) {
-    now_ = new_val;
-    now_is_valid_ = true;
-  }
+  void TestOnlySetNow(Timestamp new_val) { now_ = new_val; }
 
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
@@ -227,8 +223,7 @@ class ExecCtx {
 
   unsigned starting_cpu_ = std::numeric_limits<unsigned>::max();
 
-  bool now_is_valid_ = false;
-  Timestamp now_;
+  absl::optional<Timestamp> now_;
 
   static GPR_THREAD_LOCAL(ExecCtx*) exec_ctx_;
   ExecCtx* last_exec_ctx_ = Get();

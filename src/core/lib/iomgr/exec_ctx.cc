@@ -88,11 +88,10 @@ bool ExecCtx::Flush() {
 }
 
 Timestamp ExecCtx::Now() {
-  if (!now_is_valid_) {
-    now_ = Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-    now_is_valid_ = true;
+  if (now_.has_value()) {
+    return now_.value();
   }
-  return now_;
+  return Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
