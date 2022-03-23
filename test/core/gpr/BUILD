@@ -88,8 +88,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "string_test",
-    srcs = ["string_test.cc"],
+    name = "spinlock_test",
+    srcs = ["spinlock_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -99,8 +99,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "spinlock_test",
-    srcs = ["spinlock_test.cc"],
+    name = "string_test",
+    srcs = ["string_test.cc"],
     language = "C++",
     uses_polling = False,
     deps = [
@@ -150,6 +150,7 @@ grpc_cc_test(
     srcs = ["useful_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr_platform",

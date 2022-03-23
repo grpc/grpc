@@ -24,6 +24,7 @@ grpc_cc_test(
     srcs = ["avl_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:avl",

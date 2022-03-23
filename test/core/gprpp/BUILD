@@ -95,6 +95,7 @@ grpc_cc_test(
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:bitset",
@@ -107,6 +108,7 @@ grpc_cc_test(
     srcs = ["match_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:match",
@@ -119,6 +121,7 @@ grpc_cc_test(
     srcs = ["overload_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:overload",
@@ -134,6 +137,7 @@ grpc_cc_test(
         "absl/types:optional",
     ],
     language = "C++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:table",
@@ -278,6 +282,7 @@ grpc_cc_test(
     srcs = ["capture_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:capture",
@@ -290,6 +295,7 @@ grpc_cc_test(
     srcs = ["cpp_impl_of_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:cpp_impl_of",
@@ -302,6 +308,7 @@ grpc_cc_test(
     srcs = ["chunked_vector_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    test_each_engine = False,
     uses_polling = False,
     deps = [
         "//:chunked_vector",

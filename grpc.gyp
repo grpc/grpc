@@ -1053,6 +1053,7 @@
         'grpc',
       ],
       'sources': [
+        'test/core/event_engine/test_init.cc',
         'test/core/util/build.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/fuzzer_util.cc',
@@ -1083,9 +1084,11 @@
         'absl/debugging:failure_signal_handler',
         'absl/debugging:stacktrace',
         'absl/debugging:symbolize',
+        'grpc',
         'grpc_unsecure',
       ],
       'sources': [
+        'test/core/event_engine/test_init.cc',
         'test/core/util/build.cc',
         'test/core/util/cmdline.cc',
         'test/core/util/fuzzer_util.cc',
