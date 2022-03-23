@@ -1,5 +1,5 @@
 recursive-include src/python/grpcio/grpc *.c *.h *.inc *.py *.pyx *.pxd *.pxi *.python *.pem
-recursive-exclude src/python/grpcio/grpc/_cython *.so *.pyd
+recursive-exclude src/python/grpcio/grpc/_cython *.so *.pyd *.cpp
 graft src/python/grpcio/grpcio.egg-info
 graft src/core
 graft src/boringssl
