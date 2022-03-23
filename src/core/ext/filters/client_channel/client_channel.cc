@@ -2591,7 +2591,11 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       on_call_destruction_complete_(on_call_destruction_complete),
       call_dispatch_controller_(call_dispatch_controller),
       call_attempt_tracer_(
-          GetCallAttemptTracer(args.context, is_transparent_retry)) {}
+          GetCallAttemptTracer(args.context, is_transparent_retry)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+    gpr_log(GPR_INFO, "chand=%p lb_call=%p: created", chand_, this);
+  }
+}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   GRPC_ERROR_UNREF(cancel_error_);
