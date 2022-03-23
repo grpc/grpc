@@ -312,13 +312,13 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
     else:
         for engine_name, engine in EVENT_ENGINES.items():
             test_name = name + "@engine=" + engine_name
-            test_tags = tags + ["bazel_only"] + engine["tags"]
+            test_tags = tags + engine["tags"] + ["bazel_only"]
             test_args = args + ["--engine=" + engine_name]
             if engine_name == "default":
                 # The poller tests exercise the default engine on Linux.
                 # This test handles other platforms.
                 test_name = name
-                test_tags.append("no_linux")
+                test_tags = tags + engine["tags"] + ["no_linux"]
                 test_args = args
             poller_config.append({
                 "name": test_name,
