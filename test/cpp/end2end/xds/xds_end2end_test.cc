@@ -395,7 +395,15 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
+  const char* type() const override { return "fake"; }
+
  private:
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_tls_certificate_provider*>(this), other);
+  }
+
   grpc_core::RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   CertDataMap cert_data_map_;
 };
@@ -1967,6 +1975,30 @@ class BasicTest : public XdsEnd2endTest {
 // Tests that the balancer sends the correct response to the client, and the
 // client sends RPCs to the backends using the default child policy.
 TEST_P(BasicTest, Vanilla) {
+  const size_t kNumRpcsPerAddress = 100;
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("xds_cluster_manager_experimental",
+            channel_->GetLoadBalancingPolicyName());
+}
+
+// Tests that the client can handle resource wrapped in a Resource message.
+TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
+  balancer_->ads_service()->set_wrap_resources(true);
   const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -7562,13 +7594,11 @@ class XdsSecurityTest : public BasicTest {
     constexpr int kRetryCount = 100;
     int num_tries = 0;
     for (; num_tries < kRetryCount; num_tries++) {
-      // Give some time for the updates to propagate.
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      // Restart the servers to force a reconnection so that previously
+      // connected subchannels are not used for the RPC.
+      ShutdownBackend(0);
+      StartBackend(0);
       if (test_expects_failure) {
-        // Restart the servers to force a reconnection so that previously
-        // connected subchannels are not used for the RPC.
-        ShutdownBackend(0);
-        StartBackend(0);
         if (SendRpc().ok()) {
           gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
           continue;

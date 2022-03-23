@@ -281,9 +281,9 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   delete r;
 }
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   // Check if we can use the cached token.
   absl::optional<grpc_core::Slice> cached_access_token_value;
@@ -328,7 +328,7 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
   }
   return
       [pending_request]()
-          -> grpc_core::Poll<absl::StatusOr<grpc_core::ClientInitialMetadata>> {
+          -> grpc_core::Poll<absl::StatusOr<grpc_core::ClientMetadataHandle>> {
         if (!pending_request->done.load(std::memory_order_acquire)) {
           return grpc_core::Pending{};
         }
@@ -337,8 +337,7 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
 }
 
 grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2),
-      token_expiration_(gpr_inf_past(GPR_CLOCK_MONOTONIC)),
+    : token_expiration_(gpr_inf_past(GPR_CLOCK_MONOTONIC)),
       pollent_(grpc_polling_entity_create_from_pollset_set(
           grpc_pollset_set_create())) {
   gpr_mu_init(&mu_);
@@ -346,6 +345,10 @@ grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
 
 std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
   return "OAuth2TokenFetcherCredentials";
+}
+
+const char* grpc_oauth2_token_fetcher_credentials::type() const {
+  return "Oauth2";
 }
 
 //
@@ -471,6 +474,10 @@ std::string grpc_google_refresh_token_credentials::debug_string() {
   return absl::StrFormat("GoogleRefreshToken{ClientID:%s,%s}",
                          refresh_token_.client_id,
                          grpc_oauth2_token_fetcher_credentials::debug_string());
+}
+
+const char* grpc_google_refresh_token_credentials::type() const {
+  return "GoogleRefreshToken";
 }
 
 static std::string create_loggable_refresh_token(
@@ -696,9 +703,9 @@ grpc_call_credentials* grpc_sts_credentials_create(
 // Oauth2 Access Token credentials.
 //
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_access_token_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, access_token_value_.Ref(),
@@ -706,10 +713,11 @@ grpc_access_token_credentials::GetRequestMetadata(
   return grpc_core::Immediate(std::move(initial_metadata));
 }
 
+const char* grpc_access_token_credentials::Type() { return "AccessToken"; }
+
 grpc_access_token_credentials::grpc_access_token_credentials(
     const char* access_token)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2),
-      access_token_value_(grpc_core::Slice::FromCopiedString(
+    : access_token_value_(grpc_core::Slice::FromCopiedString(
           absl::StrCat("Bearer ", access_token))) {}
 
 std::string grpc_access_token_credentials::debug_string() {

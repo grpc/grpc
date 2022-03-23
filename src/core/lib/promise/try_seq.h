@@ -93,6 +93,22 @@ struct TrySeqTraitsWithSfinae<
     return run_next(std::move(prior));
   }
 };
+template <>
+struct TrySeqTraitsWithSfinae<absl::Status> {
+  using UnwrappedType = void;
+  using WrappedType = absl::Status;
+  template <typename Next>
+  static auto CallFactory(Next* next, absl::Status&&)
+      -> decltype(next->Once()) {
+    return next->Once();
+  }
+  template <typename Result, typename RunNext>
+  static Poll<Result> CheckResultAndRunNext(absl::Status prior,
+                                            RunNext run_next) {
+    if (!prior.ok()) return Result(std::move(prior));
+    return run_next(std::move(prior));
+  }
+};
 
 template <typename T>
 using TrySeqTraits = TrySeqTraitsWithSfinae<T>;

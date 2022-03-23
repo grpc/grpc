@@ -975,6 +975,8 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_channel/subchannel_stream_client.cc \
+src/core/ext/filters/client_channel/subchannel_stream_client.h \
 src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/client_idle/idle_filter_state.cc \
 src/core/ext/filters/client_idle/idle_filter_state.h \
@@ -1672,6 +1674,8 @@ src/core/lib/channel/channel_stack.cc \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.cc \
 src/core/lib/channel/channel_stack_builder.h \
+src/core/lib/channel/channel_stack_builder_impl.cc \
+src/core/lib/channel/channel_stack_builder_impl.h \
 src/core/lib/channel/channel_trace.cc \
 src/core/lib/channel/channel_trace.h \
 src/core/lib/channel/channelz.cc \
@@ -1775,10 +1779,12 @@ src/core/lib/gprpp/global_config_generic.h \
 src/core/lib/gprpp/host_port.cc \
 src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/manual_constructor.h \
+src/core/lib/gprpp/match.h \
 src/core/lib/gprpp/memory.h \
 src/core/lib/gprpp/mpscq.cc \
 src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/orphanable.h \
+src/core/lib/gprpp/overload.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \
@@ -1833,8 +1839,6 @@ src/core/lib/iomgr/ev_apple.cc \
 src/core/lib/iomgr/ev_apple.h \
 src/core/lib/iomgr/ev_epoll1_linux.cc \
 src/core/lib/iomgr/ev_epoll1_linux.h \
-src/core/lib/iomgr/ev_epollex_linux.cc \
-src/core/lib/iomgr/ev_epollex_linux.h \
 src/core/lib/iomgr/ev_poll_posix.cc \
 src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.cc \
@@ -1882,8 +1886,6 @@ src/core/lib/iomgr/iomgr_internal.h \
 src/core/lib/iomgr/iomgr_posix.cc \
 src/core/lib/iomgr/iomgr_posix_cfstream.cc \
 src/core/lib/iomgr/iomgr_windows.cc \
-src/core/lib/iomgr/is_epollexclusive_available.cc \
-src/core/lib/iomgr/is_epollexclusive_available.h \
 src/core/lib/iomgr/load_file.cc \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
@@ -1925,7 +1927,6 @@ src/core/lib/iomgr/socket_utils_posix.h \
 src/core/lib/iomgr/socket_utils_windows.cc \
 src/core/lib/iomgr/socket_windows.cc \
 src/core/lib/iomgr/socket_windows.h \
-src/core/lib/iomgr/sys_epoll_wrapper.h \
 src/core/lib/iomgr/tcp_client.cc \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_cfstream.cc \
@@ -1985,6 +1986,8 @@ src/core/lib/promise/detail/promise_like.h \
 src/core/lib/promise/detail/status.h \
 src/core/lib/promise/detail/switch.h \
 src/core/lib/promise/exec_ctx_wakeup_scheduler.h \
+src/core/lib/promise/intra_activity_waiter.h \
+src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
 src/core/lib/promise/poll.h \
@@ -2065,6 +2068,7 @@ src/core/lib/security/credentials/google_default/google_default_credentials.h \
 src/core/lib/security/credentials/iam/iam_credentials.cc \
 src/core/lib/security/credentials/iam/iam_credentials.h \
 src/core/lib/security/credentials/insecure/insecure_credentials.cc \
+src/core/lib/security/credentials/insecure/insecure_credentials.h \
 src/core/lib/security/credentials/jwt/json_token.cc \
 src/core/lib/security/credentials/jwt/json_token.h \
 src/core/lib/security/credentials/jwt/jwt_credentials.cc \

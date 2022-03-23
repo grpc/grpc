@@ -685,7 +685,8 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld,
   lb_call_ = calld->CreateLoadBalancedCall(&attempt_dispatch_controller_,
                                            is_transparent_retry);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: create lb_call=%p",
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p attempt=%p: created attempt, lb_call=%p",
             calld->chand_, calld, this, lb_call_.get());
   }
   // If per_attempt_recv_timeout is set, start a timer.
@@ -926,7 +927,16 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       has_send_ops = true;
     }
     if (batch->send_message) {
-      if (completed_send_message_count_ < started_send_message_count_) {
+      // Cases where we can't start this send_message op:
+      // - We are currently replaying a previous cached send_message op.
+      // - We have already replayed all send_message ops, including this
+      //   one.  (This can happen if a send_message op is in the same
+      //   batch as a recv op, the send_message op has already completed
+      //   but the recv op hasn't, and then a subsequent batch with another
+      //   recv op is started from the surface.)
+      if (completed_send_message_count_ < started_send_message_count_ ||
+          completed_send_message_count_ ==
+              (calld_->send_messages_.size() + !pending->send_ops_cached)) {
         continue;
       }
       has_send_ops = true;

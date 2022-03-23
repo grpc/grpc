@@ -16,7 +16,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
 
-POLLERS = ["epollex", "epoll1", "poll"]
+POLLERS = ["epoll1", "poll"]
 
 def _fixture_options(
         fullstack = True,
@@ -296,6 +296,7 @@ END2END_TESTS = {
     "retry_recv_trailing_metadata_error": _test_options(needs_client_channel = True),
     "retry_send_initial_metadata_refs": _test_options(needs_client_channel = True),
     "retry_send_op_fails": _test_options(needs_client_channel = True),
+    "retry_send_recv_batch": _test_options(needs_client_channel = True),
     "retry_server_pushback_delay": _test_options(needs_client_channel = True),
     "retry_server_pushback_disabled": _test_options(needs_client_channel = True),
     "retry_streaming": _test_options(needs_client_channel = True),
