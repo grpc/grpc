@@ -13,11 +13,11 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "test/core/event_engine/test_init.h"
+
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
-
-#include "test/core/event_engine/test_init.h"
 
 namespace grpc_event_engine {
 namespace experimental {
