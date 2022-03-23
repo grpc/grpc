@@ -80,7 +80,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     };
     memcpy(&connect_args_.address, args.address, sizeof(grpc_resolved_address));
   }
-
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, args_.channel_args, args_.interested_parties,

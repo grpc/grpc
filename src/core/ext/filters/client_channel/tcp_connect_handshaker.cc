@@ -49,7 +49,7 @@ class TCPConnectHandshaker : public Handshaker {
   // Endpoint and read buffer to destroy after a shutdown.
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
-  grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_closure* on_handshake_done_ = nullptr;
   grpc_pollset_set* interested_parties_ = nullptr;
   HandshakerArgs* args_ = nullptr;
   grpc_closure connected_;
@@ -78,12 +78,8 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
 void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                        grpc_closure* on_handshake_done,
                                        HandshakerArgs* args) {
-  {
-    MutexLock lock(&mu_);
-    on_handshake_done_ = on_handshake_done;
-  }
+  on_handshake_done_ = on_handshake_done;
   args_ = args;
-
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
   // to mu_, this can result in a deadlock (see
@@ -117,7 +113,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       ExecCtx::Run(DEBUG_LOCATION, self->on_handshake_done_, error);
       return;
     }
-
     GPR_ASSERT(self->args_->endpoint != nullptr);
     if (self->args_->connect_args->bind_endpoint_to_pollset) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
