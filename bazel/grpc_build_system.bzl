@@ -337,22 +337,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         return
 
     # -- Tests that exercise the polling system --
-
-    # Base library for all expanded poller & EventEngine tests.
-    base_lib_name = name + "_lib_internal"
-    base_deps = [":" + base_lib_name] + core_deps
-    native.cc_library(
-        name = base_lib_name,
-        testonly = True,
-        srcs = srcs,
-        deps = core_deps,
-        copts = GRPC_DEFAULT_COPTS + copts,
-        linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
-        linkstatic = linkstatic,
-        tags = tags,
-        visibility = ["//visibility:private"],
-    )
-
     # Non-Linux platforms.
     for engine_name, engine in EVENT_ENGINES.items():
         if "no_windows" not in engine["tags"] and "no_mac" not in engine["tags"]:
@@ -363,7 +347,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 test_name += "@engine=" + engine_name
             native.cc_test(
                 name = test_name,
-                deps = base_deps + engine["deps"],
+                srcs = srcs,
+                deps = core_deps + engine["deps"],
                 tags = (tags + engine["tags"] + [
                     "no_linux",  # linux supports multiple pollers
                 ]),
@@ -377,7 +362,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             continue
         native.cc_test(
             name = name + "@poller=" + poller,
-            deps = base_deps + EVENT_ENGINES["default"]["deps"],
+            srcs = srcs,
+            deps = core_deps + EVENT_ENGINES["default"]["deps"],
             tags = (tags + EVENT_ENGINES["default"]["tags"] + [
                 "no_windows",
                 "no_mac",
@@ -394,7 +380,8 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             continue
         native.cc_test(
             name = name + "@poller=" + POLLERS[0] + "@engine=" + engine_name,
-            deps = base_deps + engine["deps"],
+            srcs = srcs,
+            deps = core_deps + engine["deps"],
             tags = (tags + engine["tags"] + [
                 "no_windows",
                 "no_mac",
