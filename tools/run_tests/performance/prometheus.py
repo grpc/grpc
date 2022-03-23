@@ -245,16 +245,19 @@ def main() -> None:
 
     with open(args.scenario_result_file, "r") as q:
         scenario_result = json.load(q)
+        start_time = convert_UTC_to_epoch(scenario_result["summary"]["startTime"])
+        end_time = convert_UTC_to_epoch(scenario_result["summary"]["endTime"])
         p = Prometheus(
             url=args.url,
-            start=convert_UTC_to_epoch(scenario_result["summary"]["startTime"]),
-            end=convert_UTC_to_epoch(scenario_result["summary"]["endTime"]),
+            start=start_time,
+            end=end_time,
         )
 
     pod_dict = construct_pod_dict(args.node_info_file, args.pod_type)
     processed_data = p.fetch_cpu_and_memory_data(
         container_list=args.container_name, pod_dict=pod_dict
     )
+    processed_data["testDurationSeconds"] = float(end_time) - float(start_time)
 
     logging.debug(json.dumps(processed_data, sort_keys=True, indent=4))
 
