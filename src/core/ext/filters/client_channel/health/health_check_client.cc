@@ -26,40 +26,14 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
-
-#define HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS 1
-#define HEALTH_CHECK_RECONNECT_BACKOFF_MULTIPLIER 1.6
-#define HEALTH_CHECK_RECONNECT_MAX_BACKOFF_SECONDS 120
-#define HEALTH_CHECK_RECONNECT_JITTER 0.2
 
 namespace grpc_core {
 
 TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 
 namespace {
-
-// Returns true if healthy.
-absl::StatusOr<bool> DecodeResponse(char* message, size_t size) {
-  // If message is empty, assume unhealthy.
-  if (size == 0) {
-    return absl::InvalidArgumentError("health check response was empty");
-  }
-  // Deserialize message.
-  upb::Arena arena;
-  auto* response_struct = grpc_health_v1_HealthCheckResponse_parse(
-      reinterpret_cast<char*>(message), size, arena.ptr());
-  if (response_struct == nullptr) {
-    // Can't parse message; assume unhealthy.
-    return absl::InvalidArgumentError("cannot parse health check response");
-  }
-  int32_t status = grpc_health_v1_HealthCheckResponse_status(response_struct);
-  return status == grpc_health_v1_HealthCheckResponse_SERVING;
-}
 
 class HealthStreamEventHandler
     : public SubchannelStreamClient::CallEventHandler {
@@ -101,18 +75,22 @@ class HealthStreamEventHandler
     return request_slice;
   }
 
-  void RecvMessageReadyLocked(SubchannelStreamClient* client, char* message,
-                              size_t size) override {
-    auto healthy = DecodeResponse(message, size);
+  absl::Status RecvMessageReadyLocked(
+      SubchannelStreamClient* client,
+      absl::string_view serialized_message) override {
+    auto healthy = DecodeResponse(serialized_message);
     if (!healthy.ok()) {
       SetHealthStatusLocked(client, GRPC_CHANNEL_TRANSIENT_FAILURE,
                             healthy.status().ToString().c_str());
-    } else if (!*healthy) {
+      return healthy.status();
+    }
+    if (!*healthy) {
       SetHealthStatusLocked(client, GRPC_CHANNEL_TRANSIENT_FAILURE,
                             "backend unhealthy");
     } else {
       SetHealthStatusLocked(client, GRPC_CHANNEL_READY, "OK");
     }
+    return absl::OkStatus();
   }
 
   void RecvTrailingMetadataReadyLocked(SubchannelStreamClient* client,
@@ -132,6 +110,21 @@ class HealthStreamEventHandler
   }
 
  private:
+  // Returns true if healthy.
+  static absl::StatusOr<bool> DecodeResponse(
+      absl::string_view serialized_message) {
+    // Deserialize message.
+    upb::Arena arena;
+    auto* response = grpc_health_v1_HealthCheckResponse_parse(
+        serialized_message.data(), serialized_message.size(), arena.ptr());
+    if (response == nullptr) {
+      // Can't parse message; assume unhealthy.
+      return absl::InvalidArgumentError("cannot parse health check response");
+    }
+    int32_t status = grpc_health_v1_HealthCheckResponse_status(response);
+    return status == grpc_health_v1_HealthCheckResponse_SERVING;
+  }
+
   void SetHealthStatusLocked(SubchannelStreamClient* client,
                              grpc_connectivity_state state,
                              const char* reason) {

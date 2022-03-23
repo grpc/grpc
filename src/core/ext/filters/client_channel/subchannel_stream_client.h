@@ -21,6 +21,9 @@
 
 #include <atomic>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -73,8 +76,8 @@ class SubchannelStreamClient
     virtual grpc_slice EncodeSendMessageLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_) = 0;
     // Called whenever a message is received from the server.
-    virtual void RecvMessageReadyLocked(SubchannelStreamClient* client,
-                                        char* message, size_t size)
+    virtual absl::Status RecvMessageReadyLocked(
+        SubchannelStreamClient* client, absl::string_view serialized_message)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_) = 0;
     // Called when a stream fails.
     virtual void RecvTrailingMetadataReadyLocked(SubchannelStreamClient* client,
