@@ -141,33 +141,28 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  if (recv_trailing_metadata != nullptr) {
-    FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time_);
+  status_code_ = status.code();
+  if (recv_trailing_metadata == nullptr || transport_stream_stats == nullptr) {
+    return;
   }
+  uint64_t elapsed_time = 0;
+  FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
-  status_code_ = status.code();
   std::string final_status = absl::StatusCodeToString(status_code_);
   tags.emplace_back(ClientStatusTagKey(), final_status);
   absl::InlinedVector<::opencensus::stats::Measurement, 3> measurements = {
       {RpcClientServerLatency(),
-       ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))}};
-  if (transport_stream_stats != nullptr) {
-    ::opencensus::stats::Record(
-        {{RpcClientSentBytesPerRpc(),
-          static_cast<double>(transport_stream_stats->outgoing.data_bytes)},
-         {RpcClientReceivedBytesPerRpc(),
-          static_cast<double>(transport_stream_stats->incoming.data_bytes)},
-         {RpcClientServerLatency(),
-          ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))}},
-        tags);
-  } else {
-    ::opencensus::stats::Record(
-        {{RpcClientServerLatency(),
-          ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))}},
-        tags);
-  }
+       ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))}};
+  ::opencensus::stats::Record(
+      {{RpcClientSentBytesPerRpc(),
+        static_cast<double>(transport_stream_stats->outgoing.data_bytes)},
+       {RpcClientReceivedBytesPerRpc(),
+        static_cast<double>(transport_stream_stats->incoming.data_bytes)},
+       {RpcClientServerLatency(),
+        ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))}},
+      tags);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(

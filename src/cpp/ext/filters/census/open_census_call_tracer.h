@@ -63,8 +63,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     CensusContext context_;
     // Start time (for measuring latency).
     absl::Time start_time_;
-    // Server elapsed time in nanoseconds.
-    uint64_t elapsed_time_ = 0;
     // Number of messages in this RPC.
     uint64_t recv_message_count_ = 0;
     uint64_t sent_message_count_ = 0;
