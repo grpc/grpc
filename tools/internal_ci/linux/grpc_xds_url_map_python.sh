@@ -111,6 +111,7 @@ run_test() {
     --test_arg="--flagfile=config/url-map.cfg" \
     --test_arg="--testing_version=$(echo \"$KOKORO_JOB_NAME\" | sed -E 's|^grpc/core/([^/]+)/.*|\1|')" \
     --test_arg="--xml_output_file=\"${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml\"" \
+    --python_version="PY3" \
     --test_output=all
   set +x
 }

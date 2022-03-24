@@ -36,12 +36,6 @@ ExpectedResult = xds_url_map_testcase.ExpectedResult
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
 
-
-import sys
-logger.error(sys.orig_argv)
-logger.error(sys.version_info)
-logger.error(sys.path)
-
 # The first batch of RPCs don't count towards the result of test case. They are
 # meant to prove the communication between driver and client is fine.
 _NUM_RPCS = 10
@@ -370,4 +364,7 @@ class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 if __name__ == '__main__':
+
+    import sys
+    raise Exception((sys.orig_argv, sys.version_info, sys.path))
     absltest.main()
