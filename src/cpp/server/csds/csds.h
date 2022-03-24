@@ -25,7 +25,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
+#include "envoy/service/status/v3/csds.grpc.pb.h"
 
 namespace grpc {
 namespace xds {
