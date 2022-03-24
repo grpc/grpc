@@ -23,10 +23,10 @@ test_suite(
     name = "basic_lb_tests",
     tests = [
         "affinity_test",
+        "change_backend_service_test",
         "failover_test",
         "remove_neg_test",
         "round_robin_test",
-        "change_backend_service_test",
     ],
 )
 
