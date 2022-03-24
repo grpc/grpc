@@ -63,7 +63,7 @@ class ExternalAccountCredentials
   struct HTTPRequestContext {
     HTTPRequestContext(grpc_polling_entity* pollent, Timestamp deadline)
         : pollent(pollent), deadline(deadline) {}
-    ~HTTPRequestContext() {grpc_http_response_destroy(&response);}
+    ~HTTPRequestContext() { grpc_http_response_destroy(&response); }
 
     // Contextual parameters passed from
     // grpc_oauth2_token_fetcher_credentials::fetch_oauth2().

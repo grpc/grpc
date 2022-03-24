@@ -53,7 +53,7 @@ typedef int (*grpc_httpcli_post_override)(
 typedef int (*grpc_httpcli_put_override)(
     const grpc_http_request* request, const char* host, const char* path,
     const char* body_bytes, size_t body_size, grpc_core::Timestamp deadline,
-    grpc_closure* on_complete, grpc_http_response* response);   
+    grpc_closure* on_complete, grpc_http_response* response);
 
 namespace grpc_core {
 

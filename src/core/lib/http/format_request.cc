@@ -97,8 +97,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_http_request* request,
 }
 
 grpc_slice grpc_httpcli_format_put_request(const grpc_http_request* request,
-                                            const char* host,
-                                            const char* path) {
+                                           const char* host, const char* path) {
   std::vector<std::string> out;
   out.push_back("PUT ");
   fill_common_header(request, host, path, true, &out);

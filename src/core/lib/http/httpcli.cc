@@ -118,8 +118,8 @@ OrphanablePtr<HttpRequest> HttpRequest::Put(
     test_only_generate_response = [request, uri, deadline, on_done,
                                    response]() {
       g_put_override(request, uri.authority().c_str(), uri.path().c_str(),
-                      request->body, request->body_length, deadline, on_done,
-                      response);
+                     request->body, request->body_length, deadline, on_done,
+                     response);
     };
   }
   std::string name =

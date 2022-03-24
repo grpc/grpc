@@ -260,7 +260,8 @@ const char valid_aws_imdsv2_external_account_creds_options_credential_source[] =
     "{\"environment_id\":\"aws1\","
     "\"region_url\":\"https://foo.com:5555/region_url\","
     "\"url\":\"https://foo.com:5555/url\","
-    "\"imdsv2_session_token_url\":\"https://foo.com:5555/imdsv2_session_token_url\","
+    "\"imdsv2_session_token_url\":\"https://foo.com:5555/"
+    "imdsv2_session_token_url\","
     "\"regional_cred_verification_url\":\"https://foo.com:5555/"
     "regional_cred_verification_url_{region}\"}";
 
@@ -771,11 +772,13 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
   return 1;
 }
 
-int httpcli_put_should_not_be_called(
-    const grpc_http_request* /*request*/, const char* /*host*/,
-    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
-    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
-    grpc_http_response* /*response*/) {
+int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
+                                     const char* /*host*/, const char* /*path*/,
+                                     const char* /*body_bytes*/,
+                                     size_t /*body_size*/,
+                                     grpc_core::Timestamp /*deadline*/,
+                                     grpc_closure* /*on_done*/,
+                                     grpc_http_response* /*response*/) {
   GPR_ASSERT("HTTP PUT should not be called" == nullptr);
   return 1;
 }
@@ -1716,8 +1719,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
   /* Simulate a successful detection of metadata server. */
   HttpRequest::SetOverride(
       default_creds_metadata_server_detection_httpcli_get_success_override,
-      httpcli_post_should_not_be_called,
-      httpcli_put_should_not_be_called);
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(nullptr));
@@ -1759,8 +1761,7 @@ TEST(CredentialsTest, TestNoGoogleDefaultCreds) {
   g_test_is_on_gce = false;
   HttpRequest::SetOverride(
       default_creds_gce_detection_httpcli_get_failure_override,
-      httpcli_post_should_not_be_called,
-      httpcli_put_should_not_be_called);
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   /* Simulate a successful detection of GCE. */
   GPR_ASSERT(grpc_google_default_credentials_create(nullptr) == nullptr);
   /* Try a second one. GCE detection should occur again. */
@@ -1785,8 +1786,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   g_test_is_on_gce = true;
   HttpRequest::SetOverride(
       default_creds_metadata_server_detection_httpcli_get_success_override,
-      httpcli_post_should_not_be_called,
-      httpcli_put_should_not_be_called);
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds));
@@ -1833,8 +1833,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
   g_test_is_on_gce = true;
   HttpRequest::SetOverride(
       default_creds_metadata_server_detection_httpcli_get_success_override,
-      httpcli_post_should_not_be_called,
-      httpcli_put_should_not_be_called);
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds.release()));
@@ -2355,20 +2354,13 @@ int aws_external_account_creds_httpcli_get_success(
 }
 
 int aws_imdsv2_external_account_creds_httpcli_get_success(
-    const grpc_http_request* request, const char* host,
-    const char* path, Timestamp deadline, grpc_closure* on_done,
-    grpc_http_response* response) {
+    const grpc_http_request* request, const char* host, const char* path,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response) {
   GPR_ASSERT(request->hdr_count == 1);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token") == 0);
   GPR_ASSERT(strcmp(request->hdrs[0].value, aws_imdsv2_session_token) == 0);
   return aws_external_account_creds_httpcli_get_success(
-    request,
-    host,
-    path,
-    deadline,
-    on_done,
-    response
-  );
+      request, host, path, deadline, on_done, response);
 }
 
 int aws_imdsv2_external_account_creds_httpcli_put_success(
@@ -2376,7 +2368,8 @@ int aws_imdsv2_external_account_creds_httpcli_put_success(
     const char* body, size_t body_size, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   GPR_ASSERT(request->hdr_count == 1);
-  GPR_ASSERT(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token-ttl-seconds") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[0].key,
+                    "x-aws-ec2-metadata-token-ttl-seconds") == 0);
   GPR_ASSERT(strcmp(request->hdrs[0].value, "300") == 0);
   GPR_ASSERT(strcmp(path, "/imdsv2_session_token_url") == 0);
   *response = http_response(200, aws_imdsv2_session_token);
@@ -2972,7 +2965,8 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
-      valid_aws_imdsv2_external_account_creds_options_credential_source, &error);
+      valid_aws_imdsv2_external_account_creds_options_credential_source,
+      &error);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
@@ -2993,9 +2987,10 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
-  HttpRequest::SetOverride(aws_imdsv2_external_account_creds_httpcli_get_success,
-                           aws_external_account_creds_httpcli_post_success,
-                           aws_imdsv2_external_account_creds_httpcli_put_success);
+  HttpRequest::SetOverride(
+      aws_imdsv2_external_account_creds_httpcli_get_success,
+      aws_external_account_creds_httpcli_post_success,
+      aws_imdsv2_external_account_creds_httpcli_put_success);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();

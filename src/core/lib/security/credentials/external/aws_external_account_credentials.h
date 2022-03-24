@@ -45,7 +45,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
 
   void RetrieveImdsV2SessionToken();
   static void OnRetrieveImdsV2SessionToken(void* arg, grpc_error_handle error);
-  void OnRetrieveImdsV2SessionTokenInternal(grpc_error_handle error);  
+  void OnRetrieveImdsV2SessionTokenInternal(grpc_error_handle error);
 
   void RetrieveRoleName();
   static void OnRetrieveRoleName(void* arg, grpc_error_handle error);
@@ -59,7 +59,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   void FinishRetrieveSubjectToken(std::string subject_token,
                                   grpc_error_handle error);
 
-  void AddHeaders(grpc_http_request* request);                                  
+  void AddHeaders(grpc_http_request* request);
 
   std::string audience_;
   OrphanablePtr<HttpRequest> http_request_;

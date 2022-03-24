@@ -36,8 +36,9 @@ const char* kAccessKeyIdEnvVar = "AWS_ACCESS_KEY_ID";
 const char* kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
 const char* kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
 // const char* kImdsV2SessionTokenHeader = "x-aws-ec2-metadata-token";
-// const char* kImdsV2SessionTokenTTLHeader = "x-aws-ec2-metadata-token-ttl-seconds";
-// const char* kImdsV2SessionTokenTTL = "300";
+// const char* kImdsV2SessionTokenTTLHeader =
+// "x-aws-ec2-metadata-token-ttl-seconds"; const char* kImdsV2SessionTokenTTL =
+// "300";
 
 std::string UrlEncode(const absl::string_view& s) {
   const char* hex = "0123456789ABCDEF";
@@ -122,8 +123,8 @@ AwsExternalAccountCredentials::AwsExternalAccountCredentials(
     return;
   }
   regional_cred_verification_url_ = it->second.string_value();
-  it = options.credential_source.object_value().find(
-      "imdsv2_session_token_url");
+  it =
+      options.credential_source.object_value().find("imdsv2_session_token_url");
   if (it != options.credential_source.object_value().end() &&
       it->second.type() == Json::Type::STRING) {
     imdsv2_session_token_url_ = it->second.string_value();
@@ -142,16 +143,15 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-  if (imdsv2_session_token_url_.empty()){
+  if (imdsv2_session_token_url_.empty()) {
     if (signer_ != nullptr) {
       BuildSubjectToken();
     } else {
       RetrieveRegion();
     }
-  }
-  else{
+  } else {
     RetrieveImdsV2SessionToken();
-  }  
+  }
 }
 
 void AwsExternalAccountCredentials::RetrieveImdsV2SessionToken() {
@@ -159,16 +159,18 @@ void AwsExternalAccountCredentials::RetrieveImdsV2SessionToken() {
   if (!uri.ok()) {
     return;
   }
-  grpc_http_header* headers = static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
+  grpc_http_header* headers =
+      static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
   headers[0].key = gpr_strdup("x-aws-ec2-metadata-token-ttl-seconds");
   headers[0].value = gpr_strdup("300");
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
-  request.hdr_count=1;
-  request.hdrs=headers;
+  request.hdr_count = 1;
+  request.hdrs = headers;
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
-  GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveImdsV2SessionToken, this, nullptr);
+  GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveImdsV2SessionToken, this,
+                    nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -197,7 +199,8 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
     FinishRetrieveSubjectToken("", error);
     return;
   }
-  imdsv2_session_token_ = std::string(ctx_->response.body, ctx_->response.body_length);
+  imdsv2_session_token_ =
+      std::string(ctx_->response.body, ctx_->response.body_length);
 
   if (signer_ != nullptr) {
     BuildSubjectToken();
@@ -207,13 +210,13 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
 }
 
 void AwsExternalAccountCredentials::AddHeaders(grpc_http_request* request) {
-  if (!imdsv2_session_token_.empty())
-  {
-    grpc_http_header* headers = static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
+  if (!imdsv2_session_token_.empty()) {
+    grpc_http_header* headers =
+        static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");
     headers[0].value = gpr_strdup(imdsv2_session_token_.c_str());
-    request->hdr_count=1;
-    request->hdrs=headers;
+    request->hdr_count = 1;
+    request->hdrs = headers;
   }
 }
 
