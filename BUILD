@@ -229,6 +229,7 @@ GRPCXX_SRCS = [
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
+    "src/cpp/server/orca/orca_service.cc",
     "src/cpp/server/server_builder.cc",
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
@@ -305,6 +306,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
+    "include/grpcpp/ext/orca_service.h",
     "include/grpcpp/generic/async_generic_service.h",
     "include/grpcpp/generic/generic_stub.h",
     "include/grpcpp/grpcpp.h",
@@ -4783,7 +4785,11 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
+        "protobuf_duration_upb",
+        "xds_orca_upb",
+        "xds_orca_service_upb",
         "ref_counted",
+        "time",
         "useful",
     ],
 )
@@ -5341,6 +5347,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_orca_service_upb",
+    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(
