@@ -264,6 +264,15 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 }
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
+  // If we were cancelled prior to receiving this callback, we should simply
+  // forward the callback up with the same error.
+  if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
+    if (grpc_closure* call_closure =
+            absl::exchange(original_recv_trailing_metadata_ready_, nullptr)) {
+      Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_REF(error));
+    }
+    return;
+  }
   // If there was an error, we'll put that into the trailing metadata and
   // proceed as if there was not.
   if (error != GRPC_ERROR_NONE) {
