@@ -144,6 +144,7 @@ class MainLoop {
           [](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
             abort();
           });
+      Step();
     }
 
     void Orphan() override { abort(); }
@@ -167,10 +168,18 @@ class MainLoop {
       }
       return MetadataHandle<R>::TestOnlyWrap(out->get());
     }
+
+    void Step() {
+      if (!promise_.has_value()) return;
+      auto r = (*promise_)();
+      if (absl::holds_alternative<Pending>(r)) return;
+      promise_.reset();
+    }
+
     MainLoop* const main_loop_;
     const uint32_t id_;
     ScopedArenaPtr arena_ = MakeScopedArena(32, &main_loop_->memory_allocator_);
-    ArenaPromise<ServerMetadataHandle> promise_;
+    absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
   };
 
