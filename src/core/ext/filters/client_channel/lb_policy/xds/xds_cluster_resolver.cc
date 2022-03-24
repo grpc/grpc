@@ -788,17 +788,6 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
           for (const auto& p : localities) {
             XdsLocalityName* locality_name = p.first;
             const auto& locality = p.second;
-            // Construct JSON object containing locality name.
-            Json::Object locality_name_json;
-            if (!locality_name->region().empty()) {
-              locality_name_json["region"] = locality_name->region();
-            }
-            if (!locality_name->zone().empty()) {
-              locality_name_json["zone"] = locality_name->zone();
-            }
-            if (!locality_name->sub_zone().empty()) {
-              locality_name_json["sub_zone"] = locality_name->sub_zone();
-            }
             // Add weighted target entry.
             weighted_targets[locality_name->AsHumanReadableString()] =
                 Json::Object{
