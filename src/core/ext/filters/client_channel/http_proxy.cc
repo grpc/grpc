@@ -168,6 +168,12 @@ class HttpProxyMapper : public ProxyMapperInterface {
         for (size_t i = 0; i < num_no_proxy_hosts; i++) {
           char* no_proxy_entry = no_proxy_hosts[i];
           size_t no_proxy_len = strlen(no_proxy_entry);
+          if (no_proxy_len == 0) {
+            gpr_log(GPR_ERROR,
+                    "Found empty host \'\' in no_proxy list. The list is "
+                    "potentially malformed. Ignoring empty entry.");
+            continue;
+          }
           if (no_proxy_len <= uri_len &&
               gpr_stricmp(no_proxy_entry,
                           &(server_host.c_str()[uri_len - no_proxy_len])) ==
