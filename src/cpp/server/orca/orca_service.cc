@@ -209,7 +209,7 @@ void OrcaService::SetAllNamedUtilization(
 }
 
 ServerGenericBidiReactor* OrcaService::CreateReactor(
-    GenericCallbackServerContext* ctx) {
+    GenericCallbackServerContext* /*ctx*/) {
   return new Reactor(this);
 }
 

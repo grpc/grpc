@@ -65,7 +65,7 @@ class OrcaService : public CallbackGenericService {
   class Reactor;
 
   ServerGenericBidiReactor* CreateReactor(
-      GenericCallbackServerContext* ctx) override;
+      GenericCallbackServerContext* /*ctx*/) override;
 
   const int min_report_duration_ms_;
 
