@@ -36,6 +36,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -50,18 +51,174 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-struct async_connect {
-  gpr_mu mu;
-  grpc_fd* fd;
-  grpc_timer alarm;
-  grpc_closure on_alarm;
-  int refs;
-  grpc_closure write_closure;
-  grpc_pollset_set* interested_parties;
-  std::string addr_str;
-  grpc_endpoint** ep;
-  grpc_closure* closure;
-  grpc_channel_args* channel_args;
+class AsyncConnect {
+ public:
+  AsyncConnect(grpc_fd* fd, grpc_pollset_set* interested_parties,
+               const grpc_resolved_address* addr, grpc_endpoint** ep,
+               grpc_closure* closure, const grpc_channel_args* channel_args,
+               const grpc_core::Timestamp& deadline)
+      : fd_(fd),
+        refs_(2),
+        interested_parties_(interested_parties),
+        addr_str_(grpc_sockaddr_to_uri(addr)),
+        ep_(ep),
+        closure_(closure),
+        channel_args_(grpc_channel_args_copy(channel_args)) {
+    GRPC_CLOSURE_INIT(&write_closure_, OnWritable, this,
+                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_alarm_, OnAlarm, this, grpc_schedule_on_exec_ctx);
+
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
+              addr_str_.c_str(), fd_);
+    }
+
+    mu_.Lock();
+    grpc_timer_init(&alarm_, deadline, &on_alarm_);
+    grpc_fd_notify_on_write(fd_, &write_closure_);
+    mu_.Unlock();
+  }
+
+  ~AsyncConnect() { grpc_channel_args_destroy(channel_args_); }
+
+ private:
+  static void OnAlarm(void* acp, grpc_error_handle error) {
+    int done;
+    AsyncConnect* ac = static_cast<AsyncConnect*>(acp);
+    ac->mu_.Lock();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+              ac->addr_str_.c_str(), grpc_error_std_string(error).c_str());
+    }
+    if (ac->fd_ != nullptr) {
+      grpc_fd_shutdown(
+          ac->fd_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
+    }
+    done = (--ac->refs_ == 0);
+    ac->mu_.Unlock();
+    if (done) {
+      delete ac;
+    }
+  }
+
+  static void OnWritable(void* acp, grpc_error_handle error) {
+    AsyncConnect* ac = static_cast<AsyncConnect*>(acp);
+    int so_error = 0;
+    socklen_t so_error_size;
+    int err;
+    int done;
+    grpc_endpoint** ep = ac->ep_;
+    grpc_closure* closure = ac->closure_;
+    grpc_fd* fd;
+    std::string addr_str = ac->addr_str_;
+
+    (void)GRPC_ERROR_REF(error);
+
+    ac->mu_.Lock();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
+              ac->addr_str_.c_str(), grpc_error_std_string(error).c_str());
+    }
+    GPR_ASSERT(ac->fd_);
+    fd = ac->fd_;
+    ac->fd_ = nullptr;
+    ac->mu_.Unlock();
+
+    grpc_timer_cancel(&ac->alarm_);
+
+    ac->mu_.Lock();
+    if (error != GRPC_ERROR_NONE) {
+      error = grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR,
+                                 "Timeout occurred");
+      goto finish;
+    }
+
+    do {
+      so_error_size = sizeof(so_error);
+      err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error,
+                       &so_error_size);
+    } while (err < 0 && errno == EINTR);
+    if (err < 0) {
+      error = GRPC_OS_ERROR(errno, "getsockopt");
+      goto finish;
+    }
+
+    switch (so_error) {
+      case 0:
+        grpc_pollset_set_del_fd(ac->interested_parties_, fd);
+        *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args_,
+                                             ac->addr_str_);
+        fd = nullptr;
+        break;
+      case ENOBUFS:
+        /* We will get one of these errors if we have run out of
+           memory in the kernel for the data structures allocated
+           when you connect a socket.  If this happens it is very
+           likely that if we wait a little bit then try again the
+           connection will work (since other programs or this
+           program will close their network connections and free up
+           memory).  This does _not_ indicate that there is anything
+           wrong with the server we are connecting to, this is a
+           local problem.
+
+           If you are looking at this code, then chances are that
+           your program or another program on the same computer
+           opened too many network connections.  The "easy" fix:
+           don't do that! */
+        gpr_log(GPR_ERROR, "kernel out of buffers");
+        ac->mu_.Unlock();
+        grpc_fd_notify_on_write(fd, &ac->write_closure_);
+        return;
+      case ECONNREFUSED:
+        /* This error shouldn't happen for anything other than connect(). */
+        error = GRPC_OS_ERROR(so_error, "connect");
+        break;
+      default:
+        /* We don't really know which syscall triggered the problem here,
+           so punt by reporting getsockopt(). */
+        error = GRPC_OS_ERROR(so_error, "getsockopt(SO_ERROR)");
+        break;
+    }
+
+  finish:
+    if (fd != nullptr) {
+      grpc_pollset_set_del_fd(ac->interested_parties_, fd);
+      grpc_fd_orphan(fd, nullptr, nullptr, "tcp_client_orphan");
+      fd = nullptr;
+    }
+    done = (--ac->refs_ == 0);
+    ac->mu_.Unlock();
+    if (error != GRPC_ERROR_NONE) {
+      std::string str;
+      bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
+      GPR_ASSERT(ret);
+      std::string description =
+          absl::StrCat("Failed to connect to remote host: ", str);
+      error =
+          grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
+      error =
+          grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
+    }
+    if (done) {
+      delete ac;
+    }
+    // Push async connect closure to the executor since this may actually be
+    // called during the shutdown process, in which case a deadlock could form
+    // between the core shutdown mu and the connector mu (b/188239051)
+    grpc_core::Executor::Run(closure, error);
+  }
+
+  grpc_core::Mutex mu_;
+  grpc_fd* fd_ ABSL_GUARDED_BY(&mu_);
+  grpc_timer alarm_ ABSL_GUARDED_BY(&mu_);
+  grpc_closure on_alarm_ ABSL_GUARDED_BY(&mu_);
+  int refs_ ABSL_GUARDED_BY(&mu_);
+  grpc_closure write_closure_ ABSL_GUARDED_BY(&mu_);
+  grpc_pollset_set* interested_parties_ ABSL_GUARDED_BY(&mu_);
+  std::string const addr_str_;
+  grpc_endpoint** const ep_;
+  grpc_closure* const closure_;
+  grpc_channel_args* channel_args_ ABSL_GUARDED_BY(&mu_);
 };
 
 static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
@@ -101,140 +258,10 @@ done:
   return err;
 }
 
-static void tc_on_alarm(void* acp, grpc_error_handle error) {
-  int done;
-  async_connect* ac = static_cast<async_connect*>(acp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
-  }
-  gpr_mu_lock(&ac->mu);
-  if (ac->fd != nullptr) {
-    grpc_fd_shutdown(
-        ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
-  }
-  done = (--ac->refs == 0);
-  gpr_mu_unlock(&ac->mu);
-  if (done) {
-    gpr_mu_destroy(&ac->mu);
-    grpc_channel_args_destroy(ac->channel_args);
-    delete ac;
-  }
-}
-
 grpc_endpoint* grpc_tcp_client_create_from_fd(
     grpc_fd* fd, const grpc_channel_args* channel_args,
     absl::string_view addr_str) {
   return grpc_tcp_create(fd, channel_args, addr_str);
-}
-
-static void on_writable(void* acp, grpc_error_handle error) {
-  async_connect* ac = static_cast<async_connect*>(acp);
-  int so_error = 0;
-  socklen_t so_error_size;
-  int err;
-  int done;
-  grpc_endpoint** ep = ac->ep;
-  grpc_closure* closure = ac->closure;
-  std::string addr_str = ac->addr_str;
-  grpc_fd* fd;
-
-  (void)GRPC_ERROR_REF(error);
-
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
-            ac->addr_str.c_str(), grpc_error_std_string(error).c_str());
-  }
-
-  gpr_mu_lock(&ac->mu);
-  GPR_ASSERT(ac->fd);
-  fd = ac->fd;
-  ac->fd = nullptr;
-  gpr_mu_unlock(&ac->mu);
-
-  grpc_timer_cancel(&ac->alarm);
-
-  gpr_mu_lock(&ac->mu);
-  if (error != GRPC_ERROR_NONE) {
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
-    goto finish;
-  }
-
-  do {
-    so_error_size = sizeof(so_error);
-    err = getsockopt(grpc_fd_wrapped_fd(fd), SOL_SOCKET, SO_ERROR, &so_error,
-                     &so_error_size);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
-    error = GRPC_OS_ERROR(errno, "getsockopt");
-    goto finish;
-  }
-
-  switch (so_error) {
-    case 0:
-      grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      *ep = grpc_tcp_client_create_from_fd(fd, ac->channel_args, ac->addr_str);
-      fd = nullptr;
-      break;
-    case ENOBUFS:
-      /* We will get one of these errors if we have run out of
-         memory in the kernel for the data structures allocated
-         when you connect a socket.  If this happens it is very
-         likely that if we wait a little bit then try again the
-         connection will work (since other programs or this
-         program will close their network connections and free up
-         memory).  This does _not_ indicate that there is anything
-         wrong with the server we are connecting to, this is a
-         local problem.
-
-         If you are looking at this code, then chances are that
-         your program or another program on the same computer
-         opened too many network connections.  The "easy" fix:
-         don't do that! */
-      gpr_log(GPR_ERROR, "kernel out of buffers");
-      gpr_mu_unlock(&ac->mu);
-      grpc_fd_notify_on_write(fd, &ac->write_closure);
-      return;
-    case ECONNREFUSED:
-      /* This error shouldn't happen for anything other than connect(). */
-      error = GRPC_OS_ERROR(so_error, "connect");
-      break;
-    default:
-      /* We don't really know which syscall triggered the problem here,
-         so punt by reporting getsockopt(). */
-      error = GRPC_OS_ERROR(so_error, "getsockopt(SO_ERROR)");
-      break;
-  }
-
-finish:
-  if (fd != nullptr) {
-    grpc_pollset_set_del_fd(ac->interested_parties, fd);
-    grpc_fd_orphan(fd, nullptr, nullptr, "tcp_client_orphan");
-    fd = nullptr;
-  }
-  done = (--ac->refs == 0);
-  gpr_mu_unlock(&ac->mu);
-  if (error != GRPC_ERROR_NONE) {
-    std::string str;
-    bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
-    GPR_ASSERT(ret);
-    std::string description =
-        absl::StrCat("Failed to connect to remote host: ", str);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
-    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
-  }
-  if (done) {
-    // This is safe even outside the lock, because "done", the sentinel, is
-    // populated *inside* the lock.
-    gpr_mu_destroy(&ac->mu);
-    grpc_channel_args_destroy(ac->channel_args);
-    delete ac;
-  }
-  // Push async connect closure to the executor since this may actually be
-  // called during the shutdown process, in which case a deadlock could form
-  // between the core shutdown mu and the connector mu (b/188239051)
-  grpc_core::Executor::Run(closure, error);
 }
 
 grpc_error_handle grpc_tcp_client_prepare_fd(
@@ -297,28 +324,8 @@ void grpc_tcp_client_create_from_prepared_fd(
 
   grpc_pollset_set_add_fd(interested_parties, fdobj);
 
-  async_connect* ac = new async_connect();
-  ac->closure = closure;
-  ac->ep = ep;
-  ac->fd = fdobj;
-  ac->interested_parties = interested_parties;
-  ac->addr_str = grpc_sockaddr_to_uri(addr);
-  gpr_mu_init(&ac->mu);
-  ac->refs = 2;
-  GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
-                    grpc_schedule_on_exec_ctx);
-  ac->channel_args = grpc_channel_args_copy(channel_args);
-
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
-            ac->addr_str.c_str(), fdobj);
-  }
-
-  gpr_mu_lock(&ac->mu);
-  GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
-  grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
-  gpr_mu_unlock(&ac->mu);
+  new AsyncConnect(fdobj, interested_parties, addr, ep, closure, channel_args,
+                   deadline);
 }
 
 static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
