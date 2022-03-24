@@ -36,11 +36,6 @@ from framework.helpers import retryers
 from framework.helpers import skips
 from framework.test_app import client_app
 
-import sys
-print(sys.orig_argv)
-print(sys.version_info)
-print(sys.path)
-
 # Load existing flags
 flags.adopt_module_key_flags(xds_k8s_testcase)
 flags.adopt_module_key_flags(xds_url_map_test_resources)
