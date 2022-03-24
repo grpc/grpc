@@ -159,7 +159,6 @@ using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
 using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
 using ::grpc::lookup::v1::RouteLookupConfig;
-using ::grpc::lookup::v1::RouteLookupRequest;
 
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
