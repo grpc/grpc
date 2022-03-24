@@ -30,13 +30,16 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
+from dataclasses import asdict
+from dataclasses import dataclass
+from dataclasses import field
 import os
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
-import yaml
+
 import build_cleaner
-from dataclasses import asdict, dataclass, field
+import yaml
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
