@@ -76,8 +76,8 @@ class HealthStreamEventHandler
   }
 
   absl::Status RecvMessageReadyLocked(
-      SubchannelStreamClient* client, absl::string_view serialized_message)
-          override {
+      SubchannelStreamClient* client,
+      absl::string_view serialized_message) override {
     auto healthy = DecodeResponse(serialized_message);
     if (!healthy.ok()) {
       SetHealthStatusLocked(client, GRPC_CHANNEL_TRANSIENT_FAILURE,

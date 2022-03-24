@@ -45,6 +45,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/time:time",
     ],
     language = "C++",
     tags = ["no_windows"],

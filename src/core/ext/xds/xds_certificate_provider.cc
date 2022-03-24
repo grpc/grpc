@@ -263,6 +263,8 @@ XdsCertificateProvider::~XdsCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
 }
 
+const char* XdsCertificateProvider::type() const { return "Xds"; }
+
 bool XdsCertificateProvider::ProvidesRootCerts(const std::string& cert_name) {
   MutexLock lock(&mu_);
   auto it = certificate_state_map_.find(cert_name);
