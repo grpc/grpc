@@ -679,8 +679,9 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) {
   }
 }
 
+/* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 4
-static grpc_error_handle tcp_do_read(grpc_tcp* tcp) {
+static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
@@ -743,10 +744,12 @@ static grpc_error_handle tcp_do_read(grpc_tcp* tcp) {
       if (errno == EAGAIN) {
         finish_estimate(tcp);
         tcp->inq = 0;
+        return false;
       } else {
         grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
+        return true;
       }
-      return tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
     }
     if (read_bytes == 0) {
       /* 0 read size ==> end of stream
@@ -755,8 +758,9 @@ static grpc_error_handle tcp_do_read(grpc_tcp* tcp) {
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
       grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-      return tcp_annotate_error(
+      *error = tcp_annotate_error(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
+      return true;
     }
 
     GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
@@ -815,7 +819,8 @@ static grpc_error_handle tcp_do_read(grpc_tcp* tcp) {
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
   }
-  return GRPC_ERROR_NONE;
+  *error = GRPC_ERROR_NONE;
+  return true;
 }
 
 static void maybe_make_read_slices(grpc_tcp* tcp) {
@@ -852,15 +857,10 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_error_handle tcp_read_error;
   if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
     maybe_make_read_slices(tcp);
-    tcp_read_error = tcp_do_read(tcp);
-    if (tcp_read_error != GRPC_ERROR_NONE) {
-      intptr_t error_no;
-      if (grpc_error_get_int(tcp_read_error, GRPC_ERROR_INT_ERRNO, &error_no) &&
-          error_no == EAGAIN) {
-        /* We've consumed the edge, request a new one */
-        notify_on_read(tcp);
-        return;
-      }
+    if (!tcp_do_read(tcp, &tcp_read_error)) {
+      /* We've consumed the edge, request a new one */
+      notify_on_read(tcp);
+      return;
     }
     tcp_trace_read(tcp, tcp_read_error);
   } else {
