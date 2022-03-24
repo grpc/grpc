@@ -1,7 +1,7 @@
 ---
 name: Report a gRPC C++ bug
 about: Create a report to help us improve
-labels: kind/bug, priority/P2, lang/c++
+labels: kind/bug, priority/P2, lang/c++, untriaged
 assignees: markdroth
 
 ---
