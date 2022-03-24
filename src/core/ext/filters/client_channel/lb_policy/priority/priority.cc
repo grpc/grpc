@@ -207,8 +207,6 @@ class PriorityLb : public LoadBalancingPolicy {
         grpc_connectivity_state state, const absl::Status& status,
         std::unique_ptr<SubchannelPicker> picker);
 
-    void StartFailoverTimerLocked();
-
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
     bool ignore_reresolution_requests_ = false;
@@ -660,7 +658,7 @@ PriorityLb::ChildPriority::ChildPriority(
             priority_policy_.get(), name_.c_str(), this);
   }
   // Start the failover timer.
-  StartFailoverTimerLocked();
+  failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
 }
 
 void PriorityLb::ChildPriority::Orphan() {
@@ -739,7 +737,7 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(
 
 void PriorityLb::ChildPriority::ExitIdleLocked() {
   if (connectivity_state_ == GRPC_CHANNEL_IDLE && failover_timer_ == nullptr) {
-    StartFailoverTimerLocked();
+    failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
   }
   child_policy_->ExitIdleLocked();
 }
@@ -769,10 +767,6 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   }
   // Notify the parent policy.
   priority_policy_->HandleChildConnectivityStateChangeLocked(this);
-}
-
-void PriorityLb::ChildPriority::StartFailoverTimerLocked() {
-  failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
 }
 
 void PriorityLb::ChildPriority::DeactivateLocked() {
