@@ -219,7 +219,7 @@ typedef struct {
   "grpc.http2.min_ping_interval_without_data_ms"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can we send before needing to send a
+/** How many pings can the client send before needing to send a
    data/header frame? (0 indicates that an infinite number of
    pings can be sent without sending a data frame or header frame) */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
@@ -241,8 +241,8 @@ typedef struct {
     not receive the ping ack, it will close the transport. Int valued,
     milliseconds. */
 #define GRPC_ARG_KEEPALIVE_TIMEOUT_MS "grpc.keepalive_timeout_ms"
-/** Is it permissible to send keepalive pings without any outstanding streams.
-    Int valued, 0(false)/1(true). */
+/** Is it permissible to send keepalive pings from the client without any
+   outstanding streams. Int valued, 0(false)/1(true). */
 #define GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS \
   "grpc.keepalive_permit_without_calls"
 /** Default authority to pass if none specified on call construction. A string.

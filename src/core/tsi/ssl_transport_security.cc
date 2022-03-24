@@ -1939,8 +1939,16 @@ static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   factory->key_logger->LogSessionKeys(ssl_context, info);
 }
 
+// This callback is invoked when the CRL has been verified and will soft-fail
+// errors in verification depending on certain error types.
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
+  if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
+    gpr_log(
+        GPR_INFO,
+        "Certificate verification failed to get CRL files. Ignoring error.");
+    return 1;
+  }
   if (cert_error != 0) {
     gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
   }

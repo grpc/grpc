@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/promise/promise.h"
@@ -98,8 +99,8 @@ ClientAuthFilter::ClientAuthFilter(
     RefCountedPtr<grpc_auth_context> auth_context)
     : args_{std::move(security_connector), std::move(auth_context)} {}
 
-ArenaPromise<absl::StatusOr<ClientInitialMetadata>>
-ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
+ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
+    CallArgs call_args) {
   auto* ctx = static_cast<grpc_client_security_context*>(
       GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY].value);
   grpc_call_credentials* channel_call_creds =
@@ -108,8 +109,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
 
   if (channel_call_creds == nullptr && !call_creds_has_md) {
     /* Skip sending metadata altogether. */
-    return Immediate(
-        absl::StatusOr<ClientInitialMetadata>(std::move(initial_metadata)));
+    return Immediate(absl::StatusOr<CallArgs>(std::move(call_args)));
   }
 
   RefCountedPtr<grpc_call_credentials> creds;
@@ -148,12 +148,20 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
         "transfer call credential."));
   }
 
-  return creds->GetRequestMetadata(std::move(initial_metadata), &args_);
+  auto client_initial_metadata = std::move(call_args.client_initial_metadata);
+  return TrySeq(
+      creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+      Capture(
+          [](CallArgs* rest_of_args, ClientMetadataHandle new_metadata) {
+            rest_of_args->client_initial_metadata = std::move(new_metadata);
+            return Immediate<absl::StatusOr<CallArgs>>(
+                absl::StatusOr<CallArgs>(std::move(*rest_of_args)));
+          },
+          std::move(call_args)));
 }
 
-ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto* legacy_ctx = GetContext<grpc_call_context_element>();
   if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {
     legacy_ctx[GRPC_CONTEXT_SECURITY].value =
@@ -166,13 +174,14 @@ ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
       legacy_ctx[GRPC_CONTEXT_SECURITY].value)
       ->auth_context = args_.auth_context;
 
-  auto* host = initial_metadata->get_pointer(HttpAuthorityMetadata());
+  auto* host =
+      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
   if (host == nullptr) {
-    return next_promise_factory(std::move(initial_metadata));
+    return next_promise_factory(std::move(call_args));
   }
   return TrySeq(args_.security_connector->CheckCallHost(
                     host->as_string_view(), args_.auth_context.get()),
-                GetCallCredsMetadata(std::move(initial_metadata)),
+                GetCallCredsMetadata(std::move(call_args)),
                 next_promise_factory);
 }
 

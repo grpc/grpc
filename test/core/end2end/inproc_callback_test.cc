@@ -216,7 +216,6 @@ static grpc_end2end_test_fixture inproc_create_fixture(
   g_shutdown_callback = new ShutdownCallback();
   f.cq =
       grpc_completion_queue_create_for_callback(g_shutdown_callback, nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -269,13 +268,9 @@ static void drain_cq(grpc_completion_queue* /*cq*/) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(
-      f->server, f->shutdown_cq,
-      reinterpret_cast<void*>(static_cast<intptr_t>(1000)));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->shutdown_cq, (void*)((intptr_t)1000),
-                                  grpc_timeout_seconds_to_deadline(5), nullptr)
-          .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1));
+  expect_tag(1, true);
+  verify_tags(five_seconds_from_now());
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -293,7 +288,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void simple_request_body(grpc_end2end_test_config /* config */,

@@ -53,12 +53,16 @@ some configuration as environment variables that can be set.
   - channel - traces operations on the C core channel stack
   - channel_stack - traces the set of filters in a channel stack upon
     construction
-  - client_channel_call - traces client channel call batch activity
-  - client_channel_routing - traces client channel call routing, including
+  - client_channel - traces client channel control plane activity, including
     resolver and load balancing policy interaction
+  - client_channel_call - traces client channel call activity related to name
+    resolution
+  - client_channel_lb_call - traces client channel call activity related
+    to load balancing picking
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
+  - dns_resolver - traces state in the native DNS resolver
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
@@ -105,8 +109,6 @@ some configuration as environment variables that can be set.
   - call_combiner - traces call combiner state
   - closure - tracks closure creation, scheduling, and completion
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-    Also traces epoll fd create()/close() calls in epollex polling engine
-    traces epoll-fd creation/close calls for epollex polling engine
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
   - polling_api - traces the api calls to polling engine

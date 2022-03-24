@@ -38,8 +38,8 @@ class grpc_service_account_jwt_access_credentials
                                               gpr_timespec token_lifetime);
   ~grpc_service_account_jwt_access_credentials() override;
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
-  GetRequestMetadata(grpc_core::ClientInitialMetadata initial_metadata,
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) override;
 
   const gpr_timespec& jwt_lifetime() const { return jwt_lifetime_; }
@@ -51,6 +51,10 @@ class grpc_service_account_jwt_access_credentials
         absl::FormatTime(absl::FromUnixMicros(
             static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
   };
+
+  static const char* Type();
+
+  const char* type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

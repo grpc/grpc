@@ -36,6 +36,7 @@ void RegisterTestPickArgsLoadBalancingPolicy(
     TestPickArgsCallback cb, const char* delegate_policy_name = "pick_first");
 
 struct TrailingMetadataArgsSeen {
+  absl::Status status;
   const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
       backend_metric_data;
   MetadataVector metadata;
