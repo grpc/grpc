@@ -501,21 +501,8 @@ XdsClusterResolverLb::DiscoveryMechanismEntry::config() const {
 
 std::string XdsClusterResolverLb::DiscoveryMechanismEntry::GetChildPolicyName(
     size_t priority) const {
-  const size_t child_number = priority_child_numbers[priority];
-  const auto& discovery_config = config();
-  absl::InlinedVector<absl::string_view, 9> parts = {
-      "{cluster=", discovery_config.cluster_name, ","};
-  if (!discovery_config.eds_service_name.empty()) {
-    parts.push_back("eds_service_name=");
-    parts.push_back(discovery_config.eds_service_name);
-    parts.push_back(",");
-  } else if (!discovery_config.dns_hostname.empty()) {
-    parts.push_back("dns_hostname=");
-    parts.push_back(discovery_config.dns_hostname);
-    parts.push_back(",");
-  }
-  parts.push_back("child_number=");
-  return absl::StrCat(absl::StrJoin(parts, ""), child_number, "}");
+  return absl::StrCat("{cluster=", config().cluster_name,
+                      ", child_number=", priority_child_numbers[priority], "}");
 }
 
 //
