@@ -17,8 +17,8 @@ set -ex
 
 cd "$(dirname "$0")"
 
-# Ignore comment lines.
-VERSIONS=$(grep -v '#' supported_versions.txt)
+# TODO(jtattermusch): make build work with bazel 2.2.0 and bazel 1.2.1 if that's reasonably simple.
+VERSIONS=$(cat supported_versions.txt)
 
 FAILED_VERSIONS=""
 for VERSION in $VERSIONS; do

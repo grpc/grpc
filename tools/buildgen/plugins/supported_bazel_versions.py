@@ -20,10 +20,6 @@ def _get_supported_bazel_versions():
     versions = []
     with open(_SUPPORTED_VERSIONS_FILE, "r") as f:
         for line in f:
-            # Ignore comments
-            raw_line = line.strip()
-            if not raw_line or raw_line.startswith("#"):
-                continue
             versions.append(line.strip())
     return versions
 
