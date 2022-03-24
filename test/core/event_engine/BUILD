@@ -48,6 +48,6 @@ cc_library(
     srcs = ["test_init.cc"],
     hdrs = ["test_init.h"],
     deps = [
-        "//:grpc",
+        "//:grpc_base",
     ],
 )
