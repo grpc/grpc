@@ -29,7 +29,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_ruby_artifact_rc
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
-# Build all ruby linux artifacts (this step actually builds all the binary wheels and source archives)
+# Build all ruby linux artifacts (this step actually builds all the native and source gems)
 tools/run_tests/task_runner.py -f artifact linux ruby ${TASK_RUNNER_EXTRA_FILTERS} -j 6 --inner_jobs 6 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # Ruby "build_package" step is basically just a passthough for the "grpc" gems, so it's enough to just
