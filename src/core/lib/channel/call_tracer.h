@@ -59,9 +59,12 @@ class CallTracer {
     virtual void RecordReceivedInitialMetadata(
         grpc_metadata_batch* recv_initial_metadata, uint32_t flags) = 0;
     virtual void RecordReceivedMessage(const ByteStream& recv_message) = 0;
+    // If the call was cancelled before the recv_trailing_metadata op
+    // was started, recv_trailing_metadata and transport_stream_stats
+    // will be null.
     virtual void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats& transport_stream_stats) = 0;
+        const grpc_transport_stream_stats* transport_stream_stats) = 0;
     virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
