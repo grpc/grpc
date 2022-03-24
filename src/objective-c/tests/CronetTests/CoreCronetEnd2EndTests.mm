@@ -192,8 +192,9 @@ static char *roots_filename;
 }
 
 - (void)testIndividualCase:(char *)test_case {
+  char *argv[] = {(char *)"h2_ssl", test_case};
   for (int i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(2, {(char *)"h2_ssl", test_case}, configs[i]);
+    grpc_end2end_tests(2, argv, configs[i]);
   }
 }
 
