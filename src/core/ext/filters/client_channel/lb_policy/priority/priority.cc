@@ -180,7 +180,7 @@ class PriorityLb : public LoadBalancingPolicy {
       RefCountedPtr<ChildPriority> child_priority_;
       grpc_timer timer_;
       grpc_closure on_timer_;
-      bool timer_pending_ = false;
+      bool timer_pending_ = true;
     };
 
     class FailoverTimer : public InternallyRefCounted<FailoverTimer> {
@@ -196,7 +196,7 @@ class PriorityLb : public LoadBalancingPolicy {
       RefCountedPtr<ChildPriority> child_priority_;
       grpc_timer timer_;
       grpc_closure on_timer_;
-      bool timer_pending_ = false;
+      bool timer_pending_ = true;
     };
 
     // Methods for dealing with the child policy.
@@ -535,7 +535,6 @@ PriorityLb::ChildPriority::DeactivationTimer::DeactivationTimer(
   Ref(DEBUG_LOCATION, "Timer").release();
   grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
                   &on_timer_);
-  timer_pending_ = true;
 }
 
 void PriorityLb::ChildPriority::DeactivationTimer::Orphan() {
@@ -600,7 +599,6 @@ PriorityLb::ChildPriority::FailoverTimer::FailoverTimer(
       ExecCtx::Get()->Now() +
           child_priority_->priority_policy_->child_failover_timeout_,
       &on_timer_);
-  timer_pending_ = true;
 }
 
 void PriorityLb::ChildPriority::FailoverTimer::Orphan() {
