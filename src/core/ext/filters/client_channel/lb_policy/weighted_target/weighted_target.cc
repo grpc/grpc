@@ -197,8 +197,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     bool seen_failure_since_ready_ = false;
 
     OrphanablePtr<DelayedRemovalTimer> delayed_removal_timer_;
-
-    bool shutdown_ = false;
   };
 
   ~WeightedTargetLb() override;
@@ -450,8 +448,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimer(
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE && timer_pending_ &&
-      !weighted_child_->shutdown_ && weighted_child_->weight_ == 0) {
+  if (error == GRPC_ERROR_NONE && timer_pending_) {
     timer_pending_ = false;
     weighted_child_->weighted_target_policy_->targets_.erase(
         weighted_child_->name_);
@@ -499,7 +496,6 @@ void WeightedTargetLb::WeightedChild::Orphan() {
   // the child.
   picker_wrapper_.reset();
   delayed_removal_timer_.reset();
-  shutdown_ = true;
   Unref();
 }
 
