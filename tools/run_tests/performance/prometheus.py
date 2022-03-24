@@ -16,8 +16,8 @@
 
 
 # example usage: python3 prometheus.py --url=http://10.108.4.94:9090
-# # --pod_type=driver --pod_type=clients --container_name=main
-# # --container_name=sidecar
+# --pod_type=driver --pod_type=clients --container_name=main
+# --container_name=sidecar
 import argparse
 import json
 import logging
