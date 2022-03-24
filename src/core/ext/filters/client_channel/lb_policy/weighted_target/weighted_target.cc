@@ -436,6 +436,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
     timer_pending_ = false;
     grpc_timer_cancel(&timer_);
   }
+  Unref();
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimer(
