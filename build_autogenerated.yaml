@@ -5235,7 +5235,12 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/udpa/xds/data/orca/v3/orca_load_report.proto
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -8481,24 +8486,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
-  - src/proto/grpc/testing/xds/v3/address.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/cluster.proto
-  - src/proto/grpc/testing/xds/v3/config_source.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/endpoint.proto
-  - src/proto/grpc/testing/xds/v3/extension.proto
-  - src/proto/grpc/testing/xds/v3/listener.proto
-  - src/proto/grpc/testing/xds/v3/load_report.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/proto/grpc/testing/xds/v3/range.proto
-  - src/proto/grpc/testing/xds/v3/regex.proto
-  - src/proto/grpc/testing/xds/v3/route.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -8585,6 +8572,7 @@ targets:
   - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
   - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
   - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
@@ -8602,6 +8590,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
@@ -8657,6 +8646,8 @@ targets:
   - third_party/envoy-api/envoy/type/v3/semantic_version.proto
   - third_party/envoy-api/envoy/type/v3/token_bucket.proto
   - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
@@ -8974,19 +8965,18 @@ external_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
   - https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
 - destination: third_party/opencensus-proto/src
-  hash: 27b7982d3ab3a0a66e09d997bbb373e1c83a48abad6da09bbc866428f443a727
+  hash: b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
   proto_prefix: third_party/opencensus-proto/src/
-  strip_prefix: opencensus-proto-4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89/src
+  strip_prefix: opencensus-proto-0.3.0/src
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89.tar.gz
-  - https://github.com/census-instrumentation/opencensus-proto/archive/4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+  - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/protoc-gen-validate
-  hash: dd4962e4a9e8388a4fbc5c33e64d73bdb222f103e4bad40ca5535f81c2c606c2
+  hash: 1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
   proto_prefix: third_party/protoc-gen-validate/
-  strip_prefix: protoc-gen-validate-59da36e59fef2267fc2b1849a05159e3ecdf24f3
+  strip_prefix: protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/protoc-gen-validate/archive/59da36e59fef2267fc2b1849a05159e3ecdf24f3.tar.gz
-  - https://github.com/envoyproxy/protoc-gen-validate/archive/59da36e59fef2267fc2b1849a05159e3ecdf24f3.tar.gz
+  - https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
 - destination: third_party/udpa
   hash: 5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
   proto_prefix: third_party/udpa/

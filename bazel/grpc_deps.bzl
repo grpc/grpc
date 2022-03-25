@@ -441,6 +441,7 @@ def grpc_deps():
         http_archive(
             name = "com_envoyproxy_protoc_gen_validate",
             strip_prefix = "protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69",
+            sha256 = "1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47",
             urls = [
                 "https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz",
             ],
