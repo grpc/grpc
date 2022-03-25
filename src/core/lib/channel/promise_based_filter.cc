@@ -79,6 +79,8 @@ struct ClientCallData::RecvInitialMetadata final {
     kInitial,
     // No op seen, but we have a latch that would like to modify it when we do
     kGotLatch,
+    // Responded to trailing metadata prior to getting a recv_initial_metadata
+    kRespondedToTrailingMetadataPriorToHook,
     // Hooked, no latch yet
     kHookedWaitingForLatch,
     // Hooked, latch seen
@@ -132,6 +134,7 @@ class ClientCallData::PollContext {
         case RecvInitialMetadata::kHookedAndGotLatch:
         case RecvInitialMetadata::kCompleteWaitingForLatch:
         case RecvInitialMetadata::kResponded:
+        case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
           break;
         case RecvInitialMetadata::kCompleteAndGotLatch:
           self_->recv_initial_metadata_->state =
@@ -176,11 +179,38 @@ class ClientCallData::PollContext {
             } else {
               destroy_md = false;
             }
+            gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s", self_->recv_trailing_metadata_->DebugString().c_str());
             self_->recv_trailing_state_ = RecvTrailingState::kResponded;
             call_closures_.Add(
                 absl::exchange(self_->original_recv_trailing_metadata_ready_,
                                nullptr),
                 GRPC_ERROR_NONE, "wake_inside_combiner:recv_trailing_ready:1");
+            if (self_->recv_initial_metadata_ != nullptr) {
+              switch (self_->recv_initial_metadata_->state) {
+                case RecvInitialMetadata::kInitial:
+                case RecvInitialMetadata::kGotLatch:
+                  self_->recv_initial_metadata_->state = RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook;
+                  break;
+                case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+                  abort(); // not reachable
+                  break;
+                case RecvInitialMetadata::kHookedWaitingForLatch:
+                case RecvInitialMetadata::kHookedAndGotLatch:
+                case RecvInitialMetadata::kResponded:
+                case RecvInitialMetadata::kCompleteAndGotLatch:
+                case RecvInitialMetadata::kCompleteAndSetLatch:
+                  break;
+                case RecvInitialMetadata::kCompleteWaitingForLatch:
+                  self_->recv_initial_metadata_->state =
+                      RecvInitialMetadata::kResponded;
+                  call_closures_.Add(
+                      absl::exchange(
+                          self_->recv_initial_metadata_->original_on_ready,
+                          nullptr),
+                      GRPC_ERROR_CANCELLED,
+                      "wake_inside_combiner:recv_initial_metadata_ready");
+              }
+            }
           } else {
             GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) !=
                        GRPC_STATUS_OK);
@@ -199,9 +229,14 @@ class ClientCallData::PollContext {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
                 case RecvInitialMetadata::kGotLatch:
+                  self_->recv_initial_metadata_->state = RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook;
+                  break;
                 case RecvInitialMetadata::kHookedWaitingForLatch:
                 case RecvInitialMetadata::kHookedAndGotLatch:
                 case RecvInitialMetadata::kResponded:
+                  break;
+                case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+                  abort(); // not reachable
                   break;
                 case RecvInitialMetadata::kCompleteWaitingForLatch:
                 case RecvInitialMetadata::kCompleteAndGotLatch:
@@ -250,6 +285,7 @@ class ClientCallData::PollContext {
         // that up. (note: that situation isn't possible once we finish the
         // promise transition).
         if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
+          gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s", self_->recv_trailing_metadata_->DebugString().c_str());
           self_->recv_trailing_state_ = RecvTrailingState::kResponded;
           call_closures_.Add(
               absl::exchange(self_->original_recv_trailing_metadata_ready_,
@@ -388,6 +424,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   }
 
   if (recv_initial_metadata_ != nullptr && batch->recv_initial_metadata) {
+    bool hook = true;
     switch (recv_initial_metadata_->state) {
       case RecvInitialMetadata::kInitial:
         recv_initial_metadata_->state =
@@ -395,6 +432,9 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
         break;
       case RecvInitialMetadata::kGotLatch:
         recv_initial_metadata_->state = RecvInitialMetadata::kHookedAndGotLatch;
+        break;
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
+        hook = false;
         break;
       case RecvInitialMetadata::kHookedWaitingForLatch:
       case RecvInitialMetadata::kHookedAndGotLatch:
@@ -404,17 +444,19 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
       case RecvInitialMetadata::kResponded:
         abort();  // unreachable
     }
-    auto cb = [](void* ptr, grpc_error_handle error) {
-      ClientCallData* self = static_cast<ClientCallData*>(ptr);
-      self->RecvInitialMetadataReady(error);
-    };
-    recv_initial_metadata_->metadata =
-        batch->payload->recv_initial_metadata.recv_initial_metadata;
-    recv_initial_metadata_->original_on_ready =
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    GRPC_CLOSURE_INIT(&recv_initial_metadata_->on_ready, cb, this, nullptr);
-    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &recv_initial_metadata_->on_ready;
+    if (hook) {
+      auto cb = [](void* ptr, grpc_error_handle error) {
+        ClientCallData* self = static_cast<ClientCallData*>(ptr);
+        self->RecvInitialMetadataReady(error);
+      };
+      recv_initial_metadata_->metadata =
+          batch->payload->recv_initial_metadata.recv_initial_metadata;
+      recv_initial_metadata_->original_on_ready =
+          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
+      GRPC_CLOSURE_INIT(&recv_initial_metadata_->on_ready, cb, this, nullptr);
+      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
+          &recv_initial_metadata_->on_ready;
+    }
   }
 
   // send_initial_metadata: seeing this triggers the start of the promise part
@@ -506,6 +548,7 @@ void ClientCallData::Cancel(grpc_error_handle error) {
         break;
       case RecvInitialMetadata::kInitial:
       case RecvInitialMetadata::kGotLatch:
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
       case RecvInitialMetadata::kHookedWaitingForLatch:
       case RecvInitialMetadata::kHookedAndGotLatch:
       case RecvInitialMetadata::kResponded:
@@ -548,6 +591,7 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
     case RecvInitialMetadata::kCompleteAndGotLatch:
     case RecvInitialMetadata::kCompleteAndSetLatch:
     case RecvInitialMetadata::kResponded:
+    case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
       abort();  // unreachable
   }
   if (error != GRPC_ERROR_NONE) {
@@ -616,6 +660,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
       case RecvInitialMetadata::kCompleteAndGotLatch:
       case RecvInitialMetadata::kCompleteAndSetLatch:
       case RecvInitialMetadata::kResponded:
+      case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
         abort();  // unreachable
     }
   } else {
