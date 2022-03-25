@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTIL_H
-#define GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTIL_H
+#ifndef GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTILS_H
+#define GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTILS_H
 
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -33,4 +33,4 @@ grpc_resolved_address* grpc_resolved_address_from_arg(const grpc_arg* arg);
                                                       
 }  // namespace grpc_core
 
-#endif // GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTIL_H 
+#endif // GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTILS_H 
