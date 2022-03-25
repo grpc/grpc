@@ -899,8 +899,9 @@ class CSharpLanguage(object):
             self._docker_distro = 'debian11'
 
     def test_specs(self):
-        with open('src/csharp/tests.json') as f:
-            tests_by_assembly = json.load(f)
+        # instead of loading the tests from src/csharp/tests.json (which has been deleted)
+        # simply pretend that C# has no tests.
+        tests_by_assembly = {}
 
         msbuild_config = _MSBUILD_CONFIG[self.config.build_config]
         nunit_args = ['--labels=All', '--noresult', '--workers=1']
