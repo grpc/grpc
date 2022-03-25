@@ -170,8 +170,6 @@ class ClientCallData::PollContext {
             } else {
               destroy_md = false;
             }
-            gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s",
-                    self_->recv_trailing_metadata_->DebugString().c_str());
             self_->recv_trailing_state_ = RecvTrailingState::kResponded;
             call_closures_.Add(
                 absl::exchange(self_->original_recv_trailing_metadata_ready_,
@@ -281,8 +279,6 @@ class ClientCallData::PollContext {
         // that up. (note: that situation isn't possible once we finish the
         // promise transition).
         if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
-          gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s",
-                  self_->recv_trailing_metadata_->DebugString().c_str());
           self_->recv_trailing_state_ = RecvTrailingState::kResponded;
           call_closures_.Add(
               absl::exchange(self_->original_recv_trailing_metadata_ready_,
