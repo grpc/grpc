@@ -115,15 +115,6 @@ class ClientCallData::PollContext {
   PollContext& operator=(const PollContext&) = delete;
 
   void Run() {
-    gpr_log(
-        GPR_ERROR,
-        "%p PollContext::Run: send_initial_state=%d, recv_trailing_state=%d, "
-        "recv_initial_state=%d",
-        self_, self_->send_initial_state_, self_->recv_trailing_state_,
-        self_->recv_initial_metadata_ == nullptr
-            ? -1
-            : self_->recv_initial_metadata_->state);
-
     GPR_ASSERT(have_scoped_activity_);
     repoll_ = false;
     if (self_->server_initial_metadata_latch() != nullptr) {
@@ -409,13 +400,6 @@ void ClientCallData::ForceImmediateRepoll() {
 void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   // Fake out the activity based context.
   ScopedContext context(this);
-
-  gpr_log(
-      GPR_ERROR,
-      "%p StartBatch: send_initial_state=%d, recv_trailing_state=%d, "
-      "recv_initial_state=%d",
-      this, send_initial_state_, recv_trailing_state_,
-      recv_initial_metadata_ == nullptr ? -1 : recv_initial_metadata_->state);
 
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.

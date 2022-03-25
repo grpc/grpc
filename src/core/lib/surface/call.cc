@@ -1821,20 +1821,17 @@ grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
 
 grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
                                       size_t nops, void* tag, void* reserved) {
-  gpr_log(GPR_ERROR,
-          "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, "
-          "reserved=%p)",
-          call, ops, (unsigned long)nops, tag, reserved);
+  GRPC_API_TRACE(
+      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, "
+      "reserved=%p)",
+      5, (call, ops, (unsigned long)nops, tag, reserved));
 
   if (reserved != nullptr) {
-    abort();
     return GRPC_CALL_ERROR;
   } else {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
-    auto e = grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
-    gpr_log(GPR_ERROR, "grpc_call_start_batch(call=%p) --> %d", call, e);
-    return e;
+    return grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
   }
 }
 
