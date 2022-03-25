@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -71,7 +71,11 @@ class TestMetadataFilterMatchAll(xds_url_map_testcase.XdsUrlMapTestCase):
             'priority': 1,
             'matchRules': [{
                 'prefixMatch':
-                    '/grpc.testing.TestService/Unary',
+                    '/grpc.testing.TestService/Empty',
+                'headerMatches': [{
+                    'headerName': _TEST_METADATA_KEY,
+                    'exactMatch': _TEST_METADATA_VALUE_EMPTY
+                }],
                 'metadataFilters': [{
                     'filterMatchCriteria': 'MATCH_ALL',
                     'filterLabels': match_labels
@@ -86,19 +90,25 @@ class TestMetadataFilterMatchAll(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertEqual(len(xds_config.rds['virtualHosts'][0]['routes']), 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
-            "/grpc.testing.TestService/Unary")
+            "/grpc.testing.TestService/Empty")
+        self.assertEqual(
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
+            [0]['name'], _TEST_METADATA_KEY)
+        self.assertEqual(
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
+            [0]['exactMatch'], _TEST_METADATA_VALUE_EMPTY)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
             "")
-        logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
+                                                   rpc_types=[RpcTypeEmptyCall],
+                                                   metadata=_TEST_METADATA,
                                                    num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
-            rpc_distribution.unary_call_alternative_service_rpc_count)
+            rpc_distribution.empty_call_alternative_service_rpc_count)
 
 
 class TestMetadataFilterMatchAny(xds_url_map_testcase.XdsUrlMapTestCase):
@@ -141,7 +151,6 @@ class TestMetadataFilterMatchAny(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
             "")
-        logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,
@@ -192,7 +201,6 @@ class TestMetadataFilterMatchAnyAndAll(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
             "")
-        logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,
@@ -254,7 +262,6 @@ class TestMetadataFilterMatchMultipleRules(
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][2]['match']['prefix'],
             "")
-        logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,
