@@ -28,7 +28,7 @@ bool squelch = true;
 namespace grpc_core {
 namespace {
 
-static const grpc_transport_vtable kFakeTransportVTable = {
+const grpc_transport_vtable kFakeTransportVTable = {
     // sizeof_stream
     0,
     // name
@@ -36,10 +36,10 @@ static const grpc_transport_vtable kFakeTransportVTable = {
     // init_stream
     [](grpc_transport* self, grpc_stream* stream,
        grpc_stream_refcount* refcount, const void* server_data,
-       grpc_core::Arena* arena) -> int { abort(); },
+       Arena* arena) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata)
-        -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
+    [](grpc_transport* self, ClientMetadataHandle initial_metadata)
+        -> ArenaPromise<ServerMetadataHandle> {
       abort();
     },
     // set_pollset
@@ -158,7 +158,7 @@ class MainLoop {
         filter_(std::move(filter)) {}
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
-    for (auto id: absl::exchange(wakeups_, {})) {
+    for (auto id : absl::exchange(wakeups_, {})) {
       if (auto* call = GetCall(id)) call->Wakeup();
     }
     switch (action.type_case()) {
@@ -175,7 +175,8 @@ class MainLoop {
       case filter_fuzzer::Action::kReceiveTrailingMetadata:
         if (auto* call = GetCall(action.call())) {
           call->RecvTrailingMetadata(action.receive_trailing_metadata());
-        } break;
+        }
+        break;
     }
   }
 
