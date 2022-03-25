@@ -1,4 +1,0 @@
-<Project>
-  <Import Project="build\dependencies.props" />
-  <Import Project="build\common.props" />
-</Project>
