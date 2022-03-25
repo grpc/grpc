@@ -83,8 +83,6 @@ def _run():
 cur = _run()
 old = None
 
-print(cur)
-
 if args.diff_base:
     where_am_i = subprocess.check_output(
         ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
@@ -98,6 +96,7 @@ if args.diff_base:
 
 text = ''
 if old is None:
+    print(cur)
     for key, value in sorted(cur.items()):
         text += '{}: {}\n'.format(key, value)
 else:
