@@ -653,8 +653,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker_factory.h',
                       'src/core/lib/channel/handshaker_registry.h',
                       'src/core/lib/channel/promise_based_filter.h',
-                      'src/core/lib/channel/status_util.h',
                       'src/core/lib/channel/resolved_address_utils.h',
+                      'src/core/lib/channel/status_util.h',
                       'src/core/lib/compression/compression_internal.h',
                       'src/core/lib/compression/message_compress.h',
                       'src/core/lib/config/core_configuration.h',
@@ -1460,7 +1460,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/handshaker_factory.h',
                               'src/core/lib/channel/handshaker_registry.h',
                               'src/core/lib/channel/promise_based_filter.h',
-                              'src/core/lib/channel/resolved_address_utils.h'
+                              'src/core/lib/channel/resolved_address_utils.h',
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',

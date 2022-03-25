@@ -192,6 +192,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_stream_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_stream_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/tcp_connect_handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/tcp_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/idle_filter_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/idle_filter_state.h" role="src" />
@@ -901,6 +903,8 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/resolved_address_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/resolved_address_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />

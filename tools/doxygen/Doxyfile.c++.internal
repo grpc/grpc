@@ -1153,6 +1153,8 @@ src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/client_channel/subchannel_stream_client.cc \
 src/core/ext/filters/client_channel/subchannel_stream_client.h \
+src/core/ext/filters/client_channel/tcp_connect_handshaker.cc \
+src/core/ext/filters/client_channel/tcp_connect_handshaker.h \
 src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/client_idle/idle_filter_state.cc \
 src/core/ext/filters/client_idle/idle_filter_state.h \
@@ -1900,6 +1902,8 @@ src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
+src/core/lib/channel/resolved_address_utils.cc \
+src/core/lib/channel/resolved_address_utils.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/compression.cc \
