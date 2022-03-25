@@ -529,8 +529,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
-  void AddDataWatcher(
-      RefCountedPtr<DataWatcherInterface> watcher) override
+  void AddDataWatcher(RefCountedPtr<DataWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     watcher->SetSubchannel(subchannel_.get());
     data_watchers_.push_back(std::move(watcher));
@@ -2573,7 +2572,7 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
 
     LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-        AllocateBackendMetricData() override {
+    AllocateBackendMetricData() override {
       return arena_->New<
           LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
     }

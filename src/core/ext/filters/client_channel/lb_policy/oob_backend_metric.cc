@@ -18,12 +18,12 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 
-#include <grpc/status.h>
-
-#include "upb/upb.hpp"
 #include "google/protobuf/duration.upb.h"
+#include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
+
+#include <grpc/status.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
@@ -218,12 +218,12 @@ class OrcaProducer::OrcaStreamEventHandler
         : producer_(std::move(producer)) {}
 
     LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-        AllocateBackendMetricData() override {
+    AllocateBackendMetricData() override {
       return &backend_metric_data_;
     }
 
     char* AllocateString(size_t size) override {
-      char *string = static_cast<char*>(gpr_malloc(size));
+      char* string = static_cast<char*>(gpr_malloc(size));
       string_storage_.emplace_back(string);
       return string;
     }
@@ -265,9 +265,7 @@ OrcaProducer::OrcaProducer(RefCountedPtr<Subchannel> subchannel)
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
   subchannel_->WatchConnectivityState(
-      connected_subchannel_ == nullptr
-          ? GRPC_CHANNEL_IDLE
-          : GRPC_CHANNEL_READY,
+      connected_subchannel_ == nullptr ? GRPC_CHANNEL_IDLE : GRPC_CHANNEL_READY,
       /*health_check_service_name=*/absl::nullopt,
       std::move(connectivity_watcher));
 }
@@ -321,9 +319,7 @@ void OrcaProducer::StartStreamLocked() {
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       connected_subchannel_, subchannel_->pollset_set(),
       absl::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
-      GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace)
-          ? "OrcaClient"
-          : nullptr);
+      GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace) ? "OrcaClient" : nullptr);
 }
 
 void OrcaProducer::NotifyWatchers(

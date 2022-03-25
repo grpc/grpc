@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {

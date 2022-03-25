@@ -30,7 +30,7 @@ class BackendMetricAllocatorInterface {
   virtual ~BackendMetricAllocatorInterface() = default;
 
   virtual LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-      AllocateBackendMetricData() = 0;
+  AllocateBackendMetricData() = 0;
 
   virtual char* AllocateString(size_t size) = 0;
 };

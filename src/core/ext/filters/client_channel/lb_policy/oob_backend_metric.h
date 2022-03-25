@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 
 namespace grpc_core {
 
