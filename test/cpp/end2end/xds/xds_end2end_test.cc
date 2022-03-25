@@ -42,6 +42,23 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
+#include "envoy/api/v2/discovery.grpc.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "envoy/service/discovery/v2/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/discovery.grpc.pb.h"
+#include "envoy/service/load_stats/v2/lrs.grpc.pb.h"
+#include "envoy/service/load_stats/v3/lrs.grpc.pb.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -83,25 +100,6 @@
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
@@ -113,8 +111,9 @@
 #include "test/cpp/util/tls_test_utils.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
+#include "envoy/service/status/v3/csds.grpc.pb.h"
+
 #include "src/cpp/server/csds/csds.h"
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 #endif  // DISABLED_XDS_PROTO_IN_CC
 
 namespace grpc {
@@ -128,10 +127,10 @@ using ::envoy::admin::v3::ClientResourceStatus;
 #endif  // DISABLED_XDS_PROTO_IN_CC
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
-using ::envoy::config::cluster::v3::CustomClusterType;
-using ::envoy::config::cluster::v3::RoutingPriority;
+using ::envoy::config::cluster::v3::Cluster_CustomClusterType;
+using ::envoy::config::core::v3::HealthStatus;
+using ::envoy::config::core::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::rbac::v3::Policy;
@@ -6405,7 +6404,7 @@ TEST_P(CdsTest, AggregateClusterType) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -6459,7 +6458,7 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -6523,7 +6522,7 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -6586,7 +6585,7 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kLogicalDNSClusterName);
@@ -6632,7 +6631,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
 // the feature is not yet supported.
 TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters("cluster1");
