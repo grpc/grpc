@@ -15,15 +15,5 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
-
-mkdir -p cmake/build
-pushd cmake/build
-
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON ../..
-make -j"${GRPC_RUN_TESTS_JOBS}" grpc_csharp_ext
-
-popd
-pushd src/csharp
-
-dotnet build --configuration "$MSBUILD_CONFIG" Grpc.sln
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).
