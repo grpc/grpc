@@ -59,8 +59,8 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {
-    'GRPC_VERBOSITY': 'DEBUG',
-    'GRPC_TRACE': 'api',
+#    'GRPC_VERBOSITY': 'DEBUG',
+#    'GRPC_TRACE': 'api',
 }
 
 _POLLING_STRATEGIES = {
