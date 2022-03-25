@@ -38,8 +38,7 @@ static const grpc_transport_vtable kFakeTransportVTable = {
        grpc_stream_refcount* refcount, const void* server_data,
        grpc_core::Arena* arena) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata,
-       grpc_core::NextPromiseFactory next_promise_factory)
+    [](grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata)
         -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
       abort();
     },
@@ -186,17 +185,21 @@ class MainLoop {
     MainLoop* const main_loop_;
     uint32_t id_;
   };
+
   class Call final : public Activity {
    public:
     Call(MainLoop* main_loop, uint32_t id,
          const filter_fuzzer::Metadata& client_initial_metadata)
         : main_loop_(main_loop), id_(id) {
+      ScopedContext context(this);
       promise_ = main_loop_->filter_->MakeCallPromise(
           CallArgs{std::move(*LoadMetadata(client_initial_metadata,
                                            &client_initial_metadata_)),
                    nullptr},
-          [](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
-            abort();
+          [this](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
+            return [this]() -> Poll<ServerMetadataHandle> {
+              return CheckCompletion();
+            };
           });
       Step();
     }
@@ -211,6 +214,12 @@ class MainLoop {
     }
 
    private:
+    class ScopedContext : public promise_detail::Context<Arena> {
+     public:
+      explicit ScopedContext(Call* call_data)
+          : promise_detail::Context<Arena>(call_data->arena_.get()) {}
+    };
+
     template <typename R>
     absl::optional<MetadataHandle<R>> LoadMetadata(
         const filter_fuzzer::Metadata& metadata, std::unique_ptr<R>* out) {
@@ -230,11 +239,20 @@ class MainLoop {
       promise_.reset();
     }
 
+    Poll<ServerMetadataHandle> CheckCompletion() {
+      if (server_trailing_metadata_ != nullptr) {
+        return ServerMetadataHandle::TestOnlyWrap(
+            server_trailing_metadata_.get());
+      }
+      return Pending{};
+    }
+
     MainLoop* const main_loop_;
     const uint32_t id_;
     ScopedArenaPtr arena_ = MakeScopedArena(32, &main_loop_->memory_allocator_);
     absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
+    std::unique_ptr<ServerMetadata> server_trailing_metadata_;
   };
 
   MemoryAllocator memory_allocator_;
