@@ -36,10 +36,12 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 _NUM_RPCS = 150
 _TEST_METADATA_KEY = 'xds_md'
 _TEST_METADATA_VALUE_EMPTY = 'empty_ytpme'
-_TEST_METADATA = (
-  (RpcTypeEmptyCall, _TEST_METADATA_KEY, _TEST_METADATA_VALUE_EMPTY),
-)
-match_labels = [{'name': 'TRAFFICDIRECTOR_NETWORK_NAME', 'value': 'default-vpc'}]
+_TEST_METADATA = ((RpcTypeEmptyCall, _TEST_METADATA_KEY,
+                   _TEST_METADATA_VALUE_EMPTY),)
+match_labels = [{
+    'name': 'TRAFFICDIRECTOR_NETWORK_NAME',
+    'value': 'default-vpc'
+}]
 not_match_labels = [{'name': 'fake', 'value': 'fail'}]
 
 
@@ -68,7 +70,8 @@ class TestMetadataFilterMatchAll(xds_url_map_testcase.XdsUrlMapTestCase):
         }, {
             'priority': 1,
             'matchRules': [{
-                'prefixMatch': '/grpc.testing.TestService/Unary',
+                'prefixMatch':
+                    '/grpc.testing.TestService/Unary',
                 'metadataFilters': [{
                     'filterMatchCriteria': 'MATCH_ALL',
                     'filterLabels': match_labels
@@ -82,11 +85,11 @@ class TestMetadataFilterMatchAll(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(len(xds_config.rds['virtualHosts'][0]['routes']), 2)
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
-          "/grpc.testing.TestService/Unary")
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
+            "/grpc.testing.TestService/Unary")
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
-          "")
+            xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
+            "")
         logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -118,7 +121,8 @@ class TestMetadataFilterMatchAny(xds_url_map_testcase.XdsUrlMapTestCase):
         }, {
             'priority': 1,
             'matchRules': [{
-                'prefixMatch': '/grpc.testing.TestService/Unary',
+                'prefixMatch':
+                    '/grpc.testing.TestService/Unary',
                 'metadataFilters': [{
                     'filterMatchCriteria': 'MATCH_ANY',
                     'filterLabels': not_match_labels + match_labels
@@ -132,11 +136,11 @@ class TestMetadataFilterMatchAny(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(len(xds_config.rds['virtualHosts'][0]['routes']), 2)
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
-          "/grpc.testing.TestService/Unary")
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
+            "/grpc.testing.TestService/Unary")
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
-          "")
+            xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
+            "")
         logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -168,7 +172,8 @@ class TestMetadataFilterMatchAnyAndAll(xds_url_map_testcase.XdsUrlMapTestCase):
         }, {
             'priority': 1,
             'matchRules': [{
-                'prefixMatch': '/grpc.testing.TestService/Unary',
+                'prefixMatch':
+                    '/grpc.testing.TestService/Unary',
                 'metadataFilters': [{
                     'filterMatchCriteria': 'MATCH_ANY',
                     'filterLabels': not_match_labels + match_labels
@@ -182,11 +187,11 @@ class TestMetadataFilterMatchAnyAndAll(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(len(xds_config.rds['virtualHosts'][0]['routes']), 2)
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
-          "/grpc.testing.TestService/Unary")
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
+            "/grpc.testing.TestService/Unary")
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
-          "")
+            xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
+            "")
         logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -211,8 +216,8 @@ class TestMetadataFilterMatchMultipleRules(
                 'prefixMatch':
                     '/',
                 'headerMatches': [{
-                      'headerName': _TEST_METADATA_KEY,
-                      'exactMatch': _TEST_METADATA_VALUE_EMPTY
+                    'headerName': _TEST_METADATA_KEY,
+                    'exactMatch': _TEST_METADATA_VALUE_EMPTY
                 }],
                 'metadataFilters': [{
                     'filterMatchCriteria': 'MATCH_ANY',
@@ -223,7 +228,8 @@ class TestMetadataFilterMatchMultipleRules(
         }, {
             'priority': 1,
             'matchRules': [{
-                'prefixMatch': '/grpc.testing.TestService/Unary',
+                'prefixMatch':
+                    '/grpc.testing.TestService/Unary',
                 'metadataFilters': [{
                     'filterMatchCriteria': 'MATCH_ALL',
                     'filterLabels': match_labels
@@ -237,17 +243,17 @@ class TestMetadataFilterMatchMultipleRules(
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(len(xds_config.rds['virtualHosts'][0]['routes']), 3)
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
-          [0]['name'], _TEST_METADATA_KEY)
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
+            [0]['name'], _TEST_METADATA_KEY)
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
-          [0]['exactMatch'], _TEST_METADATA_VALUE_EMPTY)
+            xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
+            [0]['exactMatch'], _TEST_METADATA_VALUE_EMPTY)
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
-          "/grpc.testing.TestService/Unary")
+            xds_config.rds['virtualHosts'][0]['routes'][1]['match']['prefix'],
+            "/grpc.testing.TestService/Unary")
         self.assertEqual(
-          xds_config.rds['virtualHosts'][0]['routes'][2]['match']['prefix'],
-          "")
+            xds_config.rds['virtualHosts'][0]['routes'][2]['match']['prefix'],
+            "")
         logger.info('config:%s', xds_config)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
