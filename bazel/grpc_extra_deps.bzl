@@ -13,7 +13,7 @@
 # limitations under the License.
 """Loads the dependencies necessary for the external repositories defined in grpc_deps.bzl."""
 
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
 load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
