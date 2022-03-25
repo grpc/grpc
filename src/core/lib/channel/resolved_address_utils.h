@@ -19,8 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTIL_H
 #define GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTIL_H
 
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "include/grpc/impl/codegen/grpc_types.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
