@@ -23,12 +23,11 @@
 #include <string>
 
 #include "absl/status/statusor.h"
+#include "envoy/service/status/v3/csds.grpc.pb.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/impl/codegen/slice.h>
-
-#include "envoy/service/status/v3/csds.grpc.pb.h"
 
 namespace grpc {
 namespace xds {

@@ -22,10 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
+#include "envoy/service/status/v3/csds.grpc.pb.h"
 
 #include <grpcpp/grpcpp.h>
-
-#include "envoy/service/status/v3/csds.grpc.pb.h"
 
 namespace grpc {
 namespace xds {

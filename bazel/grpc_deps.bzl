@@ -366,10 +366,10 @@ def grpc_deps():
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            sha256 = "dbf5a9ef855684f84cac2e7ae7886c5a001d4f66ae23f6904da0faaaef0d61fc",
+            sha256 = "f2dcd210c7095febe54b804bb1cd3a58fe8435a909db2ec04e31542631cf715c",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
-                "https://github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.31.0.zip",
+                "https://github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.31.0.zip",
             ],
         )
 
@@ -419,34 +419,33 @@ def grpc_deps():
     if "bazel_gazelle" not in native.existing_rules():
         http_archive(
             name = "bazel_gazelle",
-            sha256 = "d987004a72697334a095bbaa18d615804a28280201a50ed6c234c40ccc41e493",
-            strip_prefix = "bazel-gazelle-0.19.1",
+            sha256 = "de69a09dc70417580aabf20a28619bb3ef60d038470c7cf8442fafcf627c21cb",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/bazel-gazelle/archive/v0.19.1.tar.gz",
-                "https://github.com/bazelbuild/bazel-gazelle/archive/v0.19.1.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
+                "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.24.0/bazel-gazelle-v0.24.0.tar.gz",
             ],
         )
 
     if "opencensus_proto" not in native.existing_rules():
         http_archive(
             name = "opencensus_proto",
-            sha256 = "27b7982d3ab3a0a66e09d997bbb373e1c83a48abad6da09bbc866428f443a727",
-            strip_prefix = "opencensus-proto-4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89/src",
+            sha256 = "b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0",
+            strip_prefix = "opencensus-proto-0.3.0/src",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89.tar.gz",
-                "https://github.com/census-instrumentation/opencensus-proto/archive/4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz",
+                "https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz",
             ],
         )
 
     if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
         http_archive(
             name = "com_envoyproxy_protoc_gen_validate",
-            sha256 = "dd4962e4a9e8388a4fbc5c33e64d73bdb222f103e4bad40ca5535f81c2c606c2",
-            strip_prefix = "protoc-gen-validate-59da36e59fef2267fc2b1849a05159e3ecdf24f3",
+            strip_prefix = "protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/protoc-gen-validate/archive/59da36e59fef2267fc2b1849a05159e3ecdf24f3.tar.gz",
-                "https://github.com/envoyproxy/protoc-gen-validate/archive/59da36e59fef2267fc2b1849a05159e3ecdf24f3.tar.gz",
+                "https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz",
             ],
+            patches = ["@com_github_grpc_grpc//third_party:protoc-gen-validate.patch"],
+            patch_args = ["-p1"],
         )
 
     if "com_github_cncf_udpa" not in native.existing_rules():

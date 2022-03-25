@@ -26,16 +26,27 @@
 #include <gtest/gtest.h>
 
 #include "absl/types/optional.h"
+#include "envoy/api/v2/discovery.grpc.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "envoy/service/discovery/v2/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/discovery.grpc.pb.h"
+#include "envoy/service/load_stats/v2/lrs.grpc.pb.h"
+#include "envoy/service/load_stats/v3/lrs.grpc.pb.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
