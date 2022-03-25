@@ -28,6 +28,6 @@ done
 
 if [ "$FAILED_VERSIONS" != "" ]
 then
-  echo "Bazel distribtest failed: Failed to build with bazel versions ${FAILED_VERSIONS}"
+  echo "Bazel distribtest failed: Failing versions: ${FAILED_VERSIONS}"
   exit 1
 fi
