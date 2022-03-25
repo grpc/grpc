@@ -173,6 +173,8 @@
   doc: Number of HTTP2 writes initiated due to 'transport_flow_control'
 - counter: http2_initiate_write_due_to_send_settings
   doc: Number of HTTP2 writes initiated due to 'send_settings'
+- counter: http2_initiate_write_due_to_settings_ack
+  doc: Number of HTTP2 writes initiated due to 'settings_ack'
 - counter: http2_initiate_write_due_to_bdp_estimator_ping
   doc: Number of HTTP2 writes initiated due to 'bdp_estimator_ping'
 - counter: http2_initiate_write_due_to_flow_control_unstalled_by_setting
