@@ -569,6 +569,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/orca_service.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/path.proto
 )
 protobuf_generate_grpc_cpp(
@@ -927,6 +930,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx mock_test)
   add_dependencies(buildtests_cxx nonblocking_test)
   add_dependencies(buildtests_cxx observable_test)
+  add_dependencies(buildtests_cxx orca_service_end2end_test)
   add_dependencies(buildtests_cxx orphanable_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx overload_test)
@@ -2903,6 +2907,7 @@ add_library(grpc++
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -3041,6 +3046,7 @@ foreach(_hdr
   include/grpcpp/create_channel_binder.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/ext/orca_service.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
   include/grpcpp/grpcpp.h
@@ -3562,6 +3568,7 @@ add_library(grpc++_unsecure
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -3697,6 +3704,7 @@ foreach(_hdr
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_posix.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/ext/orca_service.h
   include/grpcpp/generic/async_generic_service.h
   include/grpcpp/generic/generic_stub.h
   include/grpcpp/grpcpp.h
@@ -7969,6 +7977,7 @@ add_executable(binder_transport_test
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -9833,6 +9842,7 @@ add_executable(endpoint_binder_pool_test
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -10241,6 +10251,7 @@ add_executable(fake_binder_test
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -13002,6 +13013,49 @@ target_link_libraries(observable_test
   absl::statusor
   absl::variant
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(orca_service_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h
+  test/cpp/end2end/orca_service_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(orca_service_end2end_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(orca_service_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
 )
 
 
@@ -16257,6 +16311,7 @@ add_executable(transport_stream_receiver_test
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -16599,6 +16654,7 @@ add_executable(wire_reader_test
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -16690,6 +16746,7 @@ add_executable(wire_writer_test
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
+  src/cpp/server/orca/orca_service.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
