@@ -26,6 +26,19 @@
 
 namespace grpc_core {
 
+// Interface for LB policies to access out-of-band backend metric data
+// from a subchannel.  The data is reported from via an ORCA stream
+// established on the subchannel whenever an LB policy registers a
+// watcher.
+//
+// To use this, an LB policy will implement its own subclass of
+// OobBackendMetricWatcher, which will receive backend metric data as it
+// is sent by the server.  It will then register that watcher with the
+// subchannel like this:
+//   subchannel->AddDataWatcher(
+//       MakeOobBackendMetricWatcher(
+//           MakeRefCounted<MyOobBackendMetricWatcherSubclass>(...)));
+
 class OobBackendMetricWatcher {
  public:
   virtual ~OobBackendMetricWatcher() = default;
@@ -35,7 +48,6 @@ class OobBackendMetricWatcher {
           backend_metric_data) = 0;
 };
 
-// FIXME: document, and consider better name
 RefCountedPtr<SubchannelInterface::DataWatcherInterface>
 MakeOobBackendMetricWatcher(Duration report_interval,
                             std::unique_ptr<OobBackendMetricWatcher> watcher);
