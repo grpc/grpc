@@ -19,6 +19,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 #include "src/core/lib/security/transport/auth_filters.h"
+#include "src/core/lib/transport/transport_impl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/filters/filter_fuzzer.pb.h"
 
@@ -26,6 +27,42 @@ bool squelch = true;
 
 namespace grpc_core {
 namespace {
+
+static const grpc_transport_vtable kFakeTransportVTable = {
+    // sizeof_stream
+    0,
+    // name
+    "fake_transport",
+    // init_stream
+    [](grpc_transport* self, grpc_stream* stream,
+       grpc_stream_refcount* refcount, const void* server_data,
+       grpc_core::Arena* arena) -> int { abort(); },
+    // make_call_promise
+    [](grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata,
+       grpc_core::NextPromiseFactory next_promise_factory)
+        -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
+      abort();
+    },
+    // set_pollset
+    [](grpc_transport* self, grpc_stream* stream, grpc_pollset* pollset) {
+      abort();
+    },
+    // set_pollset_set
+    [](grpc_transport* self, grpc_stream* stream,
+       grpc_pollset_set* pollset_set) { abort(); },
+    // perform_stream_op
+    [](grpc_transport* self, grpc_stream* stream,
+       grpc_transport_stream_op_batch* op) { abort(); },
+    // perform_op
+    [](grpc_transport* self, grpc_transport_op* op) { abort(); },
+    // destroy_stream
+    [](grpc_transport* self, grpc_stream* stream,
+       grpc_closure* then_schedule_closure) { abort(); },
+    // destroy
+    [](grpc_transport* self) { abort(); },
+    // get_endpoint
+    [](grpc_transport* self) -> grpc_endpoint* { abort(); },
+};
 
 struct Filter {
   absl::string_view name;
@@ -56,8 +93,14 @@ const Filter* const kFilters[] = {
     MAKE_FILTER(GrpcServerAuthzFilter),
 };
 
+struct GlobalObjects {
+  ResourceQuotaRefPtr resource_quota = MakeResourceQuota("test");
+  grpc_transport transport{&kFakeTransportVTable};
+};
+
 template <typename FuzzerChannelArgs>
-ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args) {
+ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
+                            GlobalObjects* globals) {
   ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
   for (const auto& arg : fuzz_args) {
     switch (arg.value_case()) {
@@ -69,12 +112,23 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args) {
       case filter_fuzzer::ChannelArg::kI:
         args = args.Set(arg.key(), arg.i());
         break;
-      case filter_fuzzer::ChannelArg::kResourceQuota: {
-        auto rq = MakeResourceQuota("test");
-        rq->memory_quota()->SetSize(arg.resource_quota());
-        args = args.SetObject(std::move(rq));
+      case filter_fuzzer::ChannelArg::kResourceQuota:
+        if (arg.key() != ResourceQuota::ChannelArgName()) break;
+        args = args.SetObject(globals->resource_quota);
         break;
-      }
+      case filter_fuzzer::ChannelArg::kTransport: {
+        if (arg.key() != GRPC_ARG_TRANSPORT) break;
+        static const grpc_arg_pointer_vtable vtable = {
+            // copy
+            [](void* p) { return p; },
+            // destroy
+            [](void*) {},
+            // cmp
+            [](void* a, void* b) { return QsortCompare(a, b); },
+        };
+        args = args.Set(GRPC_ARG_TRANSPORT,
+                        ChannelArgs::Pointer(&globals->transport, &vtable));
+      } break;
     }
   }
   return args;
@@ -99,7 +153,7 @@ class MainLoop {
                               ->CreateMemoryAllocator("test")),
         filter_(std::move(filter)) {}
 
-  void Run(const filter_fuzzer::Action& action) {
+  void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
     switch (action.type_case()) {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
@@ -193,12 +247,13 @@ class MainLoop {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
-  auto channel_args = grpc_core::LoadChannelArgs(msg.channel_args());
+  grpc_core::GlobalObjects globals;
+  auto channel_args = grpc_core::LoadChannelArgs(msg.channel_args(), &globals);
   auto filter = grpc_core::CreateFilter(msg.filter(), channel_args,
                                         grpc_core::ChannelFilter::Args());
   if (!filter.ok()) return;
   grpc_core::MainLoop main_loop(std::move(*filter), channel_args);
   for (const auto& action : msg.actions()) {
-    main_loop.Run(action);
+    main_loop.Run(action, &globals);
   }
 }

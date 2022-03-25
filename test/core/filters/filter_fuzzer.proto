@@ -23,7 +23,8 @@ message ChannelArg {
     oneof value {
         bytes str = 2;
         int64 i = 3;
-        uint32 resource_quota = 4;
+        Empty resource_quota = 4;
+        Empty transport = 5;
     }
 }
 
@@ -43,6 +44,7 @@ message Action {
         Metadata create_call = 10;
         Metadata receive_initial_metadata = 11;
         Metadata receive_trailing_metadata = 12;
+        uint32 set_memory_quota = 13;
     }
 }
 
