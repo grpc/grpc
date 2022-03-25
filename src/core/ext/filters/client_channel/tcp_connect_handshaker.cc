@@ -23,6 +23,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/channel/resolved_address_utils.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 
@@ -52,6 +53,8 @@ class TCPConnectHandshaker : public Handshaker {
   grpc_closure* on_handshake_done_ = nullptr;
   grpc_pollset_set* interested_parties_ = nullptr;
   HandshakerArgs* args_ = nullptr;
+  bool bind_endpoint_to_pollset_ = false;
+  grpc_resolved_address addr_;
   grpc_closure connected_;
 };
 
@@ -80,6 +83,18 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                        HandshakerArgs* args) {
   on_handshake_done_ = on_handshake_done;
   args_ = args;
+
+  const grpc_arg* addr_arg = grpc_channel_args_find(
+      args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
+  
+  grpc_resolved_address* resolved_address = grpc_resolved_address_from_arg(addr_arg);
+  GPR_ASSERT(resolved_address != nullptr);
+
+  memcpy(&addr_, grpc_resolved_address_from_arg(addr_arg), sizeof(grpc_resolved_address));
+  
+  bind_endpoint_to_pollset_ = grpc_channel_args_find_bool(
+      args->args, GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, false);
+
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
   // to mu_, this can result in a deadlock (see
@@ -88,8 +103,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
   grpc_tcp_client_connect(&connected_, &args->endpoint, interested_parties_,
-                          args->args, &args->connect_args->address,
-                          args->connect_args->deadline);
+                          args->args, &addr_, args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
@@ -114,7 +128,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       return;
     }
     GPR_ASSERT(self->args_->endpoint != nullptr);
-    if (self->args_->connect_args->bind_endpoint_to_pollset) {
+    if (self->bind_endpoint_to_pollset_) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
                                        self->interested_parties_);
     }

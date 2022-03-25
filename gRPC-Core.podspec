@@ -971,6 +971,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_server_config_fetcher.cc',
                       'src/core/lib/address_utils/parse_address.cc',
                       'src/core/lib/address_utils/parse_address.h',
+                      'src/core/lib/address_utils/resolved_address_utils.cc',
+                      'src/core/lib/address_utils/resolved_address_utils.h'
                       'src/core/lib/address_utils/sockaddr_utils.cc',
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
@@ -1004,6 +1006,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/handshaker_registry.h',
                       'src/core/lib/channel/promise_based_filter.cc',
                       'src/core/lib/channel/promise_based_filter.h',
+                      'src/core/lib/channel/resolved_address_utils.h'
+                      'src/core/lib/channel/resolved_address_utils.cc'
                       'src/core/lib/channel/status_util.cc',
                       'src/core/lib/channel/status_util.h',
                       'src/core/lib/compression/compression.cc',
@@ -2058,6 +2062,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/handshaker_factory.h',
                               'src/core/lib/channel/handshaker_registry.h',
                               'src/core/lib/channel/promise_based_filter.h',
+                              'src/core/lib/channel/resolved_address_utils.h'
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
                               'src/core/lib/compression/message_compress.h',

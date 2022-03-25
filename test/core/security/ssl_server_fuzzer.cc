@@ -97,9 +97,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
     sc->add_handshakers(nullptr, nullptr, handshake_mgr.get());
-    grpc_core::ConnectionArgs connect_args = {.deadline = deadline};
     handshake_mgr->DoHandshake(mock_endpoint, nullptr /* channel_args */,
-                               &connect_args, nullptr /* acceptor */,
+                               deadline, nullptr /* acceptor */,
                                on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 

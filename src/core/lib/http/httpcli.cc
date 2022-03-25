@@ -35,6 +35,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/resolved_address_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
@@ -150,10 +151,6 @@ HttpRequest::HttpRequest(
                     grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
-  connect_args_ = {
-      .bind_endpoint_to_pollset = false,
-      .deadline = deadline_,
-  };
   // Create the DNS resolver. We'll start resolving when Start is called.
   dns_request_ = GetDNSResolver()->ResolveName(
       uri_.authority(), uri_.scheme(), pollset_set_,
@@ -276,15 +273,16 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
     g_test_only_on_handshake_done_intercept(req.get());
   }
   MutexLock lock(&req->mu_);
-  req->handshake_mgr_.reset();
   req->own_endpoint_ = true;
   if (req->cancelled_) {
     // Handshake finished after the request was cancelled.
     // As we already finished and the on_done_ callback was called, nothing
     // to do here.
+    req->handshake_mgr_.reset();
     return;
   }
   if (error != GRPC_ERROR_NONE) {
+    req->handshake_mgr_.reset();
     req->NextAddress(GRPC_ERROR_REF(error));
     return;
   }
@@ -293,11 +291,7 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   grpc_slice_buffer_destroy_internal(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
-  if (req->cancelled_) {
-    req->NextAddress(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "HTTP request cancelled during security handshake"));
-    return;
-  }
+  req->handshake_mgr_.reset();
   req->StartWrite();
 }
 
@@ -313,11 +307,18 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
         "failed to create security connector", &overall_error_, 1));
     return;
   }
-  grpc_arg security_connector_arg = grpc_security_connector_to_arg(sc.get());
+
+  memcpy(&current_address_, addr, sizeof(grpc_resolved_address));
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      grpc_security_connector_to_arg(sc.get()),
+      grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
+                                   &current_address_),
+  };
+
   const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector
                                          : channel_args_,
-      &security_connector_arg, 1);
+      args_to_add.data(), args_to_add.size());
   grpc_channel_args_destroy(new_args_from_connector);
   // Start the handshake
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
@@ -327,8 +328,8 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   grpc_endpoint* ep = ep_;
   ep_ = nullptr;
   own_endpoint_ = false;
-  memcpy(&connect_args_.address, addr, sizeof(grpc_resolved_address));
-  handshake_mgr_->DoHandshake(ep, new_args, &connect_args_,
+
+  handshake_mgr_->DoHandshake(ep, new_args, deadline_,
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);
   sc.reset(DEBUG_LOCATION, "httpcli");

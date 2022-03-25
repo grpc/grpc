@@ -52,7 +52,6 @@ class Chttp2Connector : public SubchannelConnector {
 
   Mutex mu_;
   Args args_;
-  ConnectionArgs connect_args_;
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
@@ -64,6 +63,7 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_timeout_;
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
+  grpc_resolved_address resolved_address_;
 };
 
 }  // namespace grpc_core

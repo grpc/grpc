@@ -34,6 +34,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/channel/resolved_address_utils.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -75,20 +76,27 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     result_ = result;
     notify_ = notify;
     GPR_ASSERT(endpoint_ == nullptr);
-    connect_args_ = ConnectionArgs{
-        .bind_endpoint_to_pollset = true,
-        .deadline = args.deadline,
-    };
-    memcpy(&connect_args_.address, args.address, sizeof(grpc_resolved_address));
+    memcpy(&resolved_address_, args.address, sizeof(grpc_resolved_address));
   }
+
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
+                                   &resolved_address_),
+      grpc_channel_arg_integer_create(
+          (char*)GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1),
+  };
+  grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
+      args_.channel_args, args_to_add.data(), args_to_add.size());
+
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_CLIENT, args_.channel_args, args_.interested_parties,
+      HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
 
   Ref().release();  // Ref held by OnHandshakeDone().
-  handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, &connect_args_,
+  handshake_mgr_->DoHandshake(endpoint_, channel_args, args.deadline,
                               nullptr /* acceptor */, OnHandshakeDone, this);
+  grpc_channel_args_destroy(channel_args);
   endpoint_ = nullptr;  // Endpoint handed off to handshake manager.
 }
 

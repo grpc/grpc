@@ -195,7 +195,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
-  grpc_core::ConnectionArgs connect_args_;
   grpc_endpoint* ep_ = nullptr;
   grpc_closure* on_done_;
   ResourceQuotaRefPtr resource_quota_;
@@ -208,6 +207,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
+  grpc_resolved_address current_address_;
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
   int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
