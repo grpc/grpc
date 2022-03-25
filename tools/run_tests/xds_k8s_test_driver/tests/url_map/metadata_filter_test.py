@@ -35,13 +35,20 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 
 _NUM_RPCS = 150
 _TEST_METADATA_KEY = 'xds_md'
-_TEST_METADATA_VALUE_UNARY = 'unary_yranu'
 _TEST_METADATA_VALUE_EMPTY = 'empty_ytpme'
-match_labels = [{'name': 'TRAFFICDIRECTOR_NETWORK_NAME', 'value': 'default'}]
+_TEST_METADATA = (
+  (RpcTypeEmptyCall, _TEST_METADATA_KEY, _TEST_METADATA_VALUE_EMPTY),
+)
+match_labels = [{'name': 'TRAFFICDIRECTOR_NETWORK_NAME', 'value': 'default-vpc'}]
 not_match_labels = [{'name': 'fake', 'value': 'fail'}]
 
 
 class TestMetadataFilterMatchAll(xds_url_map_testcase.XdsUrlMapTestCase):
+    """" The test url-map has two routeRules: the higher priority routes to
+    the default backends, but is supposed to be filtered out by TD because
+    of non-matching metadata filters. The lower priority routes to alternative
+    backends and metadata filter matches. Thus, it verifies that TD evaluates
+    metadata filters correctly."""
 
     @staticmethod
     def url_map_change(
@@ -245,11 +252,12 @@ class TestMetadataFilterMatchMultipleRules(
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
+                                                   rpc_types=[RpcTypeEmptyCall],
+                                                   metadata=_TEST_METADATA,
                                                    num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
-            rpc_distribution.unary_call_alternative_service_rpc_count)
+            rpc_distribution.empty_call_alternative_service_rpc_count)
 
 
 if __name__ == '__main__':
