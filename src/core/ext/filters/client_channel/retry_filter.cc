@@ -2163,7 +2163,8 @@ RetryFilter::CallData::~CallData() {
 
 void RetryFilter::CallData::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) &&
+      !GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from surface: %s",
             chand_, this, grpc_transport_stream_op_batch_string(batch).c_str());
   }

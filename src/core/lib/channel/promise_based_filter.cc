@@ -179,7 +179,8 @@ class ClientCallData::PollContext {
             } else {
               destroy_md = false;
             }
-            gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s", self_->recv_trailing_metadata_->DebugString().c_str());
+            gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s",
+                    self_->recv_trailing_metadata_->DebugString().c_str());
             self_->recv_trailing_state_ = RecvTrailingState::kResponded;
             call_closures_.Add(
                 absl::exchange(self_->original_recv_trailing_metadata_ready_,
@@ -189,10 +190,12 @@ class ClientCallData::PollContext {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
                 case RecvInitialMetadata::kGotLatch:
-                  self_->recv_initial_metadata_->state = RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook;
+                  self_->recv_initial_metadata_->state = RecvInitialMetadata::
+                      kRespondedToTrailingMetadataPriorToHook;
                   break;
-                case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-                  abort(); // not reachable
+                case RecvInitialMetadata::
+                    kRespondedToTrailingMetadataPriorToHook:
+                  abort();  // not reachable
                   break;
                 case RecvInitialMetadata::kHookedWaitingForLatch:
                 case RecvInitialMetadata::kHookedAndGotLatch:
@@ -229,14 +232,16 @@ class ClientCallData::PollContext {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
                 case RecvInitialMetadata::kGotLatch:
-                  self_->recv_initial_metadata_->state = RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook;
+                  self_->recv_initial_metadata_->state = RecvInitialMetadata::
+                      kRespondedToTrailingMetadataPriorToHook;
                   break;
                 case RecvInitialMetadata::kHookedWaitingForLatch:
                 case RecvInitialMetadata::kHookedAndGotLatch:
                 case RecvInitialMetadata::kResponded:
                   break;
-                case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
-                  abort(); // not reachable
+                case RecvInitialMetadata::
+                    kRespondedToTrailingMetadataPriorToHook:
+                  abort();  // not reachable
                   break;
                 case RecvInitialMetadata::kCompleteWaitingForLatch:
                 case RecvInitialMetadata::kCompleteAndGotLatch:
@@ -285,7 +290,8 @@ class ClientCallData::PollContext {
         // that up. (note: that situation isn't possible once we finish the
         // promise transition).
         if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
-          gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s", self_->recv_trailing_metadata_->DebugString().c_str());
+          gpr_log(GPR_DEBUG, "Respond to trailing metadata: %s",
+                  self_->recv_trailing_metadata_->DebugString().c_str());
           self_->recv_trailing_state_ = RecvTrailingState::kResponded;
           call_closures_.Add(
               absl::exchange(self_->original_recv_trailing_metadata_ready_,
@@ -720,9 +726,13 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 }
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
+  // If we were cancelled prior to receiving this callback, we should simply
+  // forward the callback up with the same error.
   if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
-    Closure::Run(DEBUG_LOCATION, original_recv_trailing_metadata_ready_,
-                 GRPC_ERROR_REF(cancelled_error_));
+    if (grpc_closure* call_closure =
+            absl::exchange(original_recv_trailing_metadata_ready_, nullptr)) {
+      Closure::Run(DEBUG_LOCATION, call_closure, GRPC_ERROR_REF(error));
+    }
     return;
   }
   // If there was an error, we'll put that into the trailing metadata and
