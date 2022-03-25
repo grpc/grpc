@@ -158,6 +158,9 @@ class MainLoop {
         filter_(std::move(filter)) {}
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
+    for (auto id: absl::exchange(wakeups_, {})) {
+      if (auto* call = GetCall(id)) call->Wakeup();
+    }
     switch (action.type_case()) {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
@@ -227,6 +230,11 @@ class MainLoop {
         LoadMetadata(metadata, &server_trailing_metadata_);
       }
       MakeOwningWaker().Wakeup();
+    }
+
+    void Wakeup() {
+      ScopedContext context(this);
+      Step();
     }
 
    private:
