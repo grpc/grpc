@@ -318,11 +318,102 @@ include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
+include(cmake/download_archive.cmake)
+
+# Setup external proto library at third_party/envoy-api with 2 download URLs
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/ff47e0a4bd03c0580305f9b138cc7937b63f7900.tar.gz
+    1f3f109c8e3dba3d413f6ecc99ca0047ef10b94564f42ca126fee7531790d064
+    data-plane-api-ff47e0a4bd03c0580305f9b138cc7937b63f7900
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
+    https://github.com/envoyproxy/data-plane-api/archive/ff47e0a4bd03c0580305f9b138cc7937b63f7900.tar.gz
+    1f3f109c8e3dba3d413f6ecc99ca0047ef10b94564f42ca126fee7531790d064
+    data-plane-api-ff47e0a4bd03c0580305f9b138cc7937b63f7900
+  )
+endif()
+# Setup external proto library at third_party/googleapis with 2 download URLs
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
+    5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
+    googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
+    https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
+    5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
+    googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
+  )
+endif()
+# Setup external proto library at third_party/opencensus-proto/src with 2 download URLs
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
+    opencensus-proto-0.3.0/src
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
+    https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
+    opencensus-proto-0.3.0/src
+  )
+endif()
+# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
+    https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
+    1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
+    protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
+  )
+endif()
+# Setup external proto library at third_party/udpa with 2 download URLs
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/udpa)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/udpa.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/udpa
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
+    5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
+    xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/udpa)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/udpa.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/udpa
+    https://github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
+    5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
+    xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+  )
+endif()
 
 if(WIN32)
   set(_gRPC_BASELIB_LIBRARIES ws2_32 crypt32)
 endif()
 
+# Create directory for proto source files
+set(_gRPC_PROTO_SRCS_DIR ${CMAKE_BINARY_DIR}/protos)
+file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR})
 # Create directory for generated .proto files
 set(_gRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
@@ -333,49 +424,59 @@ file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
 #   Add custom commands to process ``.proto`` files to C++ using protoc and
 #   GRPC plugin::
 #
-#     protobuf_generate_grpc_cpp [<ARGN>...]
+#     protobuf_generate_grpc_cpp <FILE_LOCATION> <IMPORT_PATH>
 #
-#   ``ARGN``
-#     ``.proto`` files
+#   ``FILE_LOCATION``
+#     The relative path of the ``.proto`` file to the project root
+#   ``IMPORT_PATH``
+#     The proto import path that itself expected to be placed in. For
+#     example, a "bar.proto" file wants to be imported as
+#     `import "foo/bar.proto"`. Then we should place it under
+#     "<ProtoBuf_Include_Path>/foo/bar.proto" instead of
+#     "<ProtoBuf_Include_Path>/third_party/foo/bar.proto". This ensures
+#     correct symbol being generated and C++ include path being correct.
+#     More info can be found at https://github.com/grpc/grpc/pull/25272.
 #
-function(protobuf_generate_grpc_cpp)
-  if(NOT ARGN)
+function(protobuf_generate_grpc_cpp FILE_LOCATION IMPORT_PATH)
+  if(NOT FILE_LOCATION)
     message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
     return()
   endif()
 
   set(_protobuf_include_path -I . -I ${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR})
-  foreach(FIL ${ARGN})
-    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-    get_filename_component(FIL_WE ${FIL} NAME_WE)
-    file(RELATIVE_PATH REL_FIL ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL})
-    get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
-    set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+  # compute the relative path
+  get_filename_component(ABS_FIL ${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH} ABSOLUTE)
+  get_filename_component(FIL_WE ${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH} NAME_WE)
+  file(RELATIVE_PATH REL_FIL ${_gRPC_PROTO_SRCS_DIR} ${ABS_FIL})
+  get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
+  set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+  # copy the proto file to a centralized location
+  file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION} DESTINATION ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
 
-    #if cross-compiling, find host plugin
-    if(CMAKE_CROSSCOMPILING)
-      find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
-    else()
-      set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
-    endif()
+  #if cross-compiling, find host plugin
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
+  else()
+    set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+  endif()
 
-    add_custom_command(
-      OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
-      COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
-           --cpp_out=${_gRPC_PROTO_GENS_DIR}
-           --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
-           ${_protobuf_include_path}
-           ${REL_FIL}
-      DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} ${_gRPC_CPP_PLUGIN}
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
-      VERBATIM)
-  endforeach()
+  add_custom_command(
+    OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
+           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
+           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
+           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
+           "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
+    COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
+         --cpp_out=${_gRPC_PROTO_GENS_DIR}
+         --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
+         ${_protobuf_include_path}
+         ${REL_FIL}
+    DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
+    WORKING_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}
+    COMMENT "Running gRPC C++ protocol buffer compiler for ${IMPORT_PATH}"
+    VERBATIM)
 endfunction()
 
 # These options allow users to enable or disable the building of the various
@@ -428,181 +529,181 @@ add_custom_target(tools
   DEPENDS tools_c tools_cxx)
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
+  src/proto/grpc/channelz/channelz.proto src/proto/grpc/channelz/channelz.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/core/stats.proto
+  src/proto/grpc/core/stats.proto src/proto/grpc/core/stats.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/health/v1/health.proto
+  src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
+  src/proto/grpc/lb/v1/load_balancer.proto src/proto/grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lookup/v1/rls.proto
+  src/proto/grpc/lookup/v1/rls.proto src/proto/grpc/lookup/v1/rls.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lookup/v1/rls_config.proto
+  src/proto/grpc/lookup/v1/rls_config.proto src/proto/grpc/lookup/v1/rls_config.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/reflection/v1alpha/reflection.proto
+  src/proto/grpc/reflection/v1alpha/reflection.proto src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/status/status.proto
+  src/proto/grpc/status/status.proto src/proto/grpc/status/status.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
+  src/proto/grpc/testing/benchmark_service.proto src/proto/grpc/testing/benchmark_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
+  src/proto/grpc/testing/control.proto src/proto/grpc/testing/control.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  src/proto/grpc/testing/duplicate/echo_duplicate.proto src/proto/grpc/testing/duplicate/echo_duplicate.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  src/proto/grpc/testing/echo.proto src/proto/grpc/testing/echo.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  src/proto/grpc/testing/echo_messages.proto src/proto/grpc/testing/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  src/proto/grpc/testing/empty.proto src/proto/grpc/testing/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  src/proto/grpc/testing/messages.proto src/proto/grpc/testing/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
+  src/proto/grpc/testing/payloads.proto src/proto/grpc/testing/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
+  src/proto/grpc/testing/report_qps_scenario_service.proto src/proto/grpc/testing/report_qps_scenario_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/simple_messages.proto
+  src/proto/grpc/testing/simple_messages.proto src/proto/grpc/testing/simple_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
+  src/proto/grpc/testing/stats.proto src/proto/grpc/testing/stats.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  src/proto/grpc/testing/test.proto src/proto/grpc/testing/test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
+  src/proto/grpc/testing/worker_service.proto src/proto/grpc/testing/worker_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/ads_for_test.proto
+  src/proto/grpc/testing/xds/ads_for_test.proto src/proto/grpc/testing/xds/ads_for_test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/cds_for_test.proto
+  src/proto/grpc/testing/xds/cds_for_test.proto src/proto/grpc/testing/xds/cds_for_test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/eds_for_test.proto
+  src/proto/grpc/testing/xds/eds_for_test.proto src/proto/grpc/testing/xds/eds_for_test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/lds_rds_for_test.proto
+  src/proto/grpc/testing/xds/lds_rds_for_test.proto src/proto/grpc/testing/xds/lds_rds_for_test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/lrs_for_test.proto
+  src/proto/grpc/testing/xds/lrs_for_test.proto src/proto/grpc/testing/xds/lrs_for_test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/address.proto
+  src/proto/grpc/testing/xds/v3/address.proto src/proto/grpc/testing/xds/v3/address.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/ads.proto
+  src/proto/grpc/testing/xds/v3/ads.proto src/proto/grpc/testing/xds/v3/ads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  src/proto/grpc/testing/xds/v3/aggregate_cluster.proto src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/base.proto
+  src/proto/grpc/testing/xds/v3/base.proto src/proto/grpc/testing/xds/v3/base.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/cluster.proto
+  src/proto/grpc/testing/xds/v3/cluster.proto src/proto/grpc/testing/xds/v3/cluster.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/config_dump.proto
+  src/proto/grpc/testing/xds/v3/config_dump.proto src/proto/grpc/testing/xds/v3/config_dump.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/config_source.proto
+  src/proto/grpc/testing/xds/v3/config_source.proto src/proto/grpc/testing/xds/v3/config_source.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/csds.proto
+  src/proto/grpc/testing/xds/v3/csds.proto src/proto/grpc/testing/xds/v3/csds.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/discovery.proto
+  src/proto/grpc/testing/xds/v3/discovery.proto src/proto/grpc/testing/xds/v3/discovery.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/endpoint.proto
+  src/proto/grpc/testing/xds/v3/endpoint.proto src/proto/grpc/testing/xds/v3/endpoint.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/expr.proto
+  src/proto/grpc/testing/xds/v3/expr.proto src/proto/grpc/testing/xds/v3/expr.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/extension.proto
+  src/proto/grpc/testing/xds/v3/extension.proto src/proto/grpc/testing/xds/v3/extension.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/fault.proto
+  src/proto/grpc/testing/xds/v3/fault.proto src/proto/grpc/testing/xds/v3/fault.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/fault_common.proto
+  src/proto/grpc/testing/xds/v3/fault_common.proto src/proto/grpc/testing/xds/v3/fault_common.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  src/proto/grpc/testing/xds/v3/http_connection_manager.proto src/proto/grpc/testing/xds/v3/http_connection_manager.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  src/proto/grpc/testing/xds/v3/http_filter_rbac.proto src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/listener.proto
+  src/proto/grpc/testing/xds/v3/listener.proto src/proto/grpc/testing/xds/v3/listener.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/load_report.proto
+  src/proto/grpc/testing/xds/v3/load_report.proto src/proto/grpc/testing/xds/v3/load_report.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/lrs.proto
+  src/proto/grpc/testing/xds/v3/lrs.proto src/proto/grpc/testing/xds/v3/lrs.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/metadata.proto
+  src/proto/grpc/testing/xds/v3/metadata.proto src/proto/grpc/testing/xds/v3/metadata.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  src/proto/grpc/testing/xds/v3/orca_load_report.proto src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/path.proto
+  src/proto/grpc/testing/xds/v3/path.proto src/proto/grpc/testing/xds/v3/path.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/percent.proto
+  src/proto/grpc/testing/xds/v3/percent.proto src/proto/grpc/testing/xds/v3/percent.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/protocol.proto
+  src/proto/grpc/testing/xds/v3/protocol.proto src/proto/grpc/testing/xds/v3/protocol.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/range.proto
+  src/proto/grpc/testing/xds/v3/range.proto src/proto/grpc/testing/xds/v3/range.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/rbac.proto
+  src/proto/grpc/testing/xds/v3/rbac.proto src/proto/grpc/testing/xds/v3/rbac.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/regex.proto
+  src/proto/grpc/testing/xds/v3/regex.proto src/proto/grpc/testing/xds/v3/regex.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/route.proto
+  src/proto/grpc/testing/xds/v3/route.proto src/proto/grpc/testing/xds/v3/route.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/router.proto
+  src/proto/grpc/testing/xds/v3/router.proto src/proto/grpc/testing/xds/v3/router.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/string.proto
+  src/proto/grpc/testing/xds/v3/string.proto src/proto/grpc/testing/xds/v3/string.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/tls.proto
+  src/proto/grpc/testing/xds/v3/tls.proto src/proto/grpc/testing/xds/v3/tls.proto
 )
 protobuf_generate_grpc_cpp(
-  test/core/tsi/alts/fake_handshaker/handshaker.proto
+  test/core/tsi/alts/fake_handshaker/handshaker.proto test/core/tsi/alts/fake_handshaker/handshaker.proto
 )
 protobuf_generate_grpc_cpp(
-  test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
 
 if(gRPC_BUILD_TESTS)
