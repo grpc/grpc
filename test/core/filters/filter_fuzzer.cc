@@ -102,21 +102,12 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
                             GlobalObjects* globals) {
   ChannelArgs args = ChannelArgs().SetObject(ResourceQuota::Default());
   for (const auto& arg : fuzz_args) {
-    switch (arg.value_case()) {
-      case filter_fuzzer::ChannelArg::VALUE_NOT_SET:
-        break;
-      case filter_fuzzer::ChannelArg::kStr:
-        args = args.Set(arg.key(), arg.str());
-        break;
-      case filter_fuzzer::ChannelArg::kI:
-        args = args.Set(arg.key(), arg.i());
-        break;
-      case filter_fuzzer::ChannelArg::kResourceQuota:
-        if (arg.key() != ResourceQuota::ChannelArgName()) break;
+    if (arg.key() == ResourceQuota::ChannelArgName()) {
+      if (arg.value_case() == filter_fuzzer::ChannelArg::kResourceQuota) {
         args = args.SetObject(globals->resource_quota);
-        break;
-      case filter_fuzzer::ChannelArg::kTransport: {
-        if (arg.key() != GRPC_ARG_TRANSPORT) break;
+      }
+    } else if (arg.key() == GRPC_ARG_TRANSPORT) {
+      if (arg.value_case() == filter_fuzzer::ChannelArg::kTransport) {
         static const grpc_arg_pointer_vtable vtable = {
             // copy
             [](void* p) { return p; },
@@ -127,7 +118,21 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
         };
         args = args.Set(GRPC_ARG_TRANSPORT,
                         ChannelArgs::Pointer(&globals->transport, &vtable));
-      } break;
+      }
+    } else {
+      switch (arg.value_case()) {
+        case filter_fuzzer::ChannelArg::VALUE_NOT_SET:
+          break;
+        case filter_fuzzer::ChannelArg::kStr:
+          args = args.Set(arg.key(), arg.str());
+          break;
+        case filter_fuzzer::ChannelArg::kI:
+          args = args.Set(arg.key(), arg.i());
+          break;
+        case filter_fuzzer::ChannelArg::kResourceQuota:
+        case filter_fuzzer::ChannelArg::kTransport:
+          break;
+      }
     }
   }
   return args;
