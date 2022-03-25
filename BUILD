@@ -4786,11 +4786,11 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "protobuf_duration_upb",
-        "xds_orca_upb",
-        "xds_orca_service_upb",
         "ref_counted",
         "time",
         "useful",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
     ],
 )
 
@@ -4824,11 +4824,11 @@ grpc_cc_library(
         "grpc_transport_inproc",
         "grpc_unsecure",
         "protobuf_duration_upb",
-        "xds_orca_upb",
-        "xds_orca_service_upb",
         "ref_counted",
         "time",
         "useful",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
     ],
 )
 
