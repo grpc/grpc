@@ -169,6 +169,10 @@ class MainLoop {
             action.call(),
             absl::make_unique<Call>(this, action.call(), action.create_call()));
         break;
+      case filter_fuzzer::Action::kReceiveTrailingMetadata:
+        if (auto* call = GetCall(action.call())) {
+          call->RecvTrailingMetadata(action.receive_trailing_metadata());
+        } break;
     }
   }
 
@@ -218,6 +222,13 @@ class MainLoop {
       return Waker(new WakeCall(main_loop_, id_));
     }
 
+    void RecvTrailingMetadata(const filter_fuzzer::Metadata& metadata) {
+      if (server_trailing_metadata_ != nullptr) {
+        LoadMetadata(metadata, &server_trailing_metadata_);
+      }
+      MakeOwningWaker().Wakeup();
+    }
+
    private:
     class ScopedContext : public promise_detail::Context<Arena> {
      public:
@@ -259,6 +270,12 @@ class MainLoop {
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
   };
+
+  Call* GetCall(uint32_t id) {
+    auto it = calls_.find(id);
+    if (it == calls_.end()) return nullptr;
+    return it->second.get();
+  }
 
   MemoryAllocator memory_allocator_;
   std::unique_ptr<ChannelFilter> filter_;
