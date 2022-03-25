@@ -59,8 +59,7 @@ _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(_ROOT)
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {
-#    'GRPC_VERBOSITY': 'DEBUG',
-#    'GRPC_TRACE': 'api',
+    'GRPC_VERBOSITY': 'DEBUG',
 }
 
 _POLLING_STRATEGIES = {
@@ -73,7 +72,7 @@ def platform_string():
     return jobset.platform_string()
 
 
-_DEFAULT_TIMEOUT_SECONDS = 60
+_DEFAULT_TIMEOUT_SECONDS = 5 * 60
 _PRE_BUILD_STEP_TIMEOUT_SECONDS = 10 * 60
 
 
