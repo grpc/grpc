@@ -13,7 +13,7 @@
 # limitations under the License.
 """Retrieves supported bazel versions from plaintext file."""
 
-_SUPPORTED_VERSIONS_FILE = "test/distrib/bazel/supported_versions.txt"
+_SUPPORTED_VERSIONS_FILE = "bazel/supported_versions.txt"
 
 
 def _get_supported_bazel_versions():

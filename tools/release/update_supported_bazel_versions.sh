@@ -43,4 +43,4 @@ while read -r MAJOR_VERSION; do
   SUPPORTED_VERSIONS="$SUPPORTED_VERSIONS$LATEST_PATCH\n"
 done<<<"$MAJOR_VERSIONS"
 
-printf "$SUPPORTED_VERSIONS" | tee test/distrib/bazel/supported_versions.txt
+printf "$SUPPORTED_VERSIONS" | tee bazel/supported_versions.txt
