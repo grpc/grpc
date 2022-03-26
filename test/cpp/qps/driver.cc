@@ -25,6 +25,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "google/protobuf/timestamp.pb.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -32,7 +34,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 
-#include "google/protobuf/timestamp.pb.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
@@ -575,9 +576,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Start a run
   gpr_log(GPR_INFO, "Starting");
 
-  google::protobuf::Timestamp start_timestamp;
-  start_timestamp.set_seconds(time(NULL));
-  start_timestamp.set_nanos(0);
+  auto start_time = time(NULL);
 
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
@@ -630,9 +629,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   bool client_finish_first =
       (client_config.rpc_type() != STREAMING_FROM_SERVER);
 
-  google::protobuf::Timestamp end_timestamp;
-  end_timestamp.set_seconds(time(NULL));
-  end_timestamp.set_nanos(0);
+  auto end_time = time(NULL);
 
   FinishClients(clients, client_mark);
 
@@ -662,8 +659,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   }
 
   // Fill in start and end time for the test scenario
-  result->mutable_summary()->mutable_start_time()->CopyFrom(start_timestamp);
-  result->mutable_summary()->mutable_end_time()->CopyFrom(end_timestamp);
+  result->mutable_summary()->mutable_start_time()->set_seconds(start_time);
+  result->mutable_summary()->mutable_end_time()->set_seconds(end_time);
 
   postprocess_scenario_result(result.get());
   return result;
