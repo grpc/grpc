@@ -57,7 +57,7 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   const char* type() override { return kProducerType; }
 
   // Adds and removes watchers.
-  void AddWatcher(WeakRefCountedPtr<OrcaWatcher> watcher);
+  void AddWatcher(OrcaWatcher* watcher);
   void RemoveWatcher(OrcaWatcher* watcher);
 
  private:
@@ -67,10 +67,10 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   // Returns the minimum requested reporting interval across all watchers.
   Duration GetMinIntervalLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-  // Starts a new stream.
+  // Starts a new stream if we have a connected subchannel.
   // Called whenever the reporting interval changes or the subchannel
   // transitions to state READY.
-  void StartStreamLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+  void MaybeStartStreamLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   // Handles a connectivity state change on the subchannel.
   void OnConnectivityStateChange(grpc_connectivity_state state);
@@ -84,34 +84,29 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;
-  // TODO(roth): Use std::set<> instead once we can use C++14 heterogenous
-  // map lookups.
-  std::map<OrcaWatcher*, WeakRefCountedPtr<OrcaWatcher>> watcher_map_
-      ABSL_GUARDED_BY(mu_);
+  std::set<OrcaWatcher*> watchers_ ABSL_GUARDED_BY(mu_);
   Duration report_interval_ ABSL_GUARDED_BY(mu_) = Duration::Infinity();
   OrphanablePtr<SubchannelStreamClient> stream_client_ ABSL_GUARDED_BY(mu_);
 };
 
 // This watcher is returned to the LB policy and added to the
 // client channel SubchannelWrapper.
-class OrcaWatcher : public SubchannelInterface::DataWatcherInterface {
+class OrcaWatcher : public InternalSubchannelDataWatcherInterface {
  public:
   OrcaWatcher(Duration report_interval,
               std::unique_ptr<OobBackendMetricWatcher> watcher)
       : report_interval_(report_interval), watcher_(std::move(watcher)) {}
-
-  void Orphan() override;
+  ~OrcaWatcher() override;
 
   Duration report_interval() const { return report_interval_; }
+  OobBackendMetricWatcher* watcher() const { return watcher_.get(); }
 
   // When the client channel sees this wrapper, it will pass it the real
   // subchannel to use.
   void SetSubchannel(Subchannel* subchannel) override;
 
-  OobBackendMetricWatcher* watcher() const { return watcher_.get(); }
-
  private:
-  Duration report_interval_;
+  const Duration report_interval_;
   std::unique_ptr<OobBackendMetricWatcher> watcher_;
   RefCountedPtr<OrcaProducer> producer_;
 };
@@ -280,21 +275,21 @@ void OrcaProducer::Orphan() {
   subchannel_->RemoveDataProducer(this);
 }
 
-void OrcaProducer::AddWatcher(WeakRefCountedPtr<OrcaWatcher> watcher) {
+void OrcaProducer::AddWatcher(OrcaWatcher* watcher) {
   MutexLock lock(&mu_);
+  watchers_.insert(watcher);
   Duration watcher_interval = watcher->report_interval();
-  watcher_map_[watcher.get()] = std::move(watcher);
   if (watcher_interval < report_interval_) {
     report_interval_ = watcher_interval;
     stream_client_.reset();
-    StartStreamLocked();
+    MaybeStartStreamLocked();
   }
 }
 
 void OrcaProducer::RemoveWatcher(OrcaWatcher* watcher) {
   MutexLock lock(&mu_);
-  watcher_map_.erase(watcher);
-  if (watcher_map_.empty()) {
+  watchers_.erase(watcher);
+  if (watchers_.empty()) {
     stream_client_.reset();
     return;
   }
@@ -302,20 +297,21 @@ void OrcaProducer::RemoveWatcher(OrcaWatcher* watcher) {
   if (new_interval < report_interval_) {
     report_interval_ = new_interval;
     stream_client_.reset();
-    StartStreamLocked();
+    MaybeStartStreamLocked();
   }
 }
 
 Duration OrcaProducer::GetMinIntervalLocked() const {
   Duration duration = Duration::Infinity();
-  for (const auto& p : watcher_map_) {
-    Duration watcher_interval = p.first->report_interval();
+  for (OrcaWatcher* watcher : watchers_) {
+    Duration watcher_interval = watcher->report_interval();
     if (watcher_interval < duration) duration = watcher_interval;
   }
   return duration;
 }
 
-void OrcaProducer::StartStreamLocked() {
+void OrcaProducer::MaybeStartStreamLocked() {
+  if (connected_subchannel_ == nullptr) return;
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       connected_subchannel_, subchannel_->pollset_set(),
       absl::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
@@ -330,8 +326,8 @@ void OrcaProducer::NotifyWatchers(
             this);
   }
   MutexLock lock(&mu_);
-  for (const auto& p : watcher_map_) {
-    p.first->watcher()->OnBackendMetricReport(backend_metric_data);
+  for (OrcaWatcher* watcher : watchers_) {
+    watcher->watcher()->OnBackendMetricReport(backend_metric_data);
   }
 }
 
@@ -339,7 +335,7 @@ void OrcaProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
   MutexLock lock(&mu_);
   if (state == GRPC_CHANNEL_READY) {
     connected_subchannel_ = subchannel_->connected_subchannel();
-    if (!watcher_map_.empty()) StartStreamLocked();
+    if (!watchers_.empty()) MaybeStartStreamLocked();
   } else {
     connected_subchannel_.reset();
     stream_client_.reset();
@@ -350,11 +346,8 @@ void OrcaProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
 // OrcaWatcher
 //
 
-void OrcaWatcher::Orphan() {
-  if (producer_ != nullptr) {
-    producer_->RemoveWatcher(this);
-    producer_.reset();
-  }
+OrcaWatcher::~OrcaWatcher() {
+  if (producer_ != nullptr) producer_->RemoveWatcher(this);
 }
 
 void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
@@ -367,15 +360,15 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
     producer_ = MakeRefCounted<OrcaProducer>(subchannel->Ref());
   }
   // Register ourself with the producer.
-  producer_->AddWatcher(WeakRef());
+  producer_->AddWatcher(this);
 }
 
 }  // namespace
 
-RefCountedPtr<SubchannelInterface::DataWatcherInterface>
+std::unique_ptr<SubchannelInterface::DataWatcherInterface>
 MakeOobBackendMetricWatcher(Duration report_interval,
                             std::unique_ptr<OobBackendMetricWatcher> watcher) {
-  return MakeRefCounted<OrcaWatcher>(report_interval, std::move(watcher));
+  return absl::make_unique<OrcaWatcher>(report_interval, std::move(watcher));
 }
 
 }  // namespace grpc_core

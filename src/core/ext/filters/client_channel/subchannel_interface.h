@@ -47,7 +47,10 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   // Opaque interface for watching data of a particular type for this
   // subchannel.
-  class DataWatcherInterface;
+  class DataWatcherInterface {
+   public:
+    virtual ~DataWatcherInterface() = default;
+  };
 
   explicit SubchannelInterface(const char* trace = nullptr)
       : RefCounted<SubchannelInterface>(trace) {}
@@ -90,7 +93,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   virtual void ResetBackoff() = 0;
 
   // Registers a new data watcher.
-  virtual void AddDataWatcher(RefCountedPtr<DataWatcherInterface> watcher) = 0;
+  virtual void AddDataWatcher(
+      std::unique_ptr<DataWatcherInterface> watcher) = 0;
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
   virtual const grpc_channel_args* channel_args() = 0;
@@ -125,8 +129,9 @@ class DelegatingSubchannel : public SubchannelInterface {
   const grpc_channel_args* channel_args() override {
     return wrapped_subchannel_->channel_args();
   }
-
-  void AddDataWatcher(RefCountedPtr<DataWatcherInterface> watcher) override;
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override {
+    wrapped_subchannel_->AddDataWatcher(std::move(watcher));
+  }
 
  private:
   RefCountedPtr<SubchannelInterface> wrapped_subchannel_;

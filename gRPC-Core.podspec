@@ -290,7 +290,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc',
                       'src/core/ext/filters/client_channel/subchannel.cc',
                       'src/core/ext/filters/client_channel/subchannel.h',
-                      'src/core/ext/filters/client_channel/subchannel_interface.cc',
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_interface_internal.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',

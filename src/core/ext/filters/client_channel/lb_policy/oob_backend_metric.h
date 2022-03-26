@@ -48,7 +48,7 @@ class OobBackendMetricWatcher {
           backend_metric_data) = 0;
 };
 
-RefCountedPtr<SubchannelInterface::DataWatcherInterface>
+std::unique_ptr<SubchannelInterface::DataWatcherInterface>
 MakeOobBackendMetricWatcher(Duration report_interval,
                             std::unique_ptr<OobBackendMetricWatcher> watcher);
 

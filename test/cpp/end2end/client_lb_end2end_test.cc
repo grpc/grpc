@@ -46,6 +46,7 @@
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -363,7 +364,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
-    experimental::OrcaService orca_service_(OrcaService::Options());
+    std::unique_ptr<experimental::OrcaService> orca_service_;
     std::unique_ptr<std::thread> thread_;
 
     grpc::internal::Mutex mu_;
@@ -390,12 +391,15 @@ class ClientLbEnd2endTest : public ::testing::Test {
     void Serve(const std::string& server_host) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
+// FIXME: can't register same instance with more than one server???
+      orca_service_ = absl::make_unique<experimental::OrcaService>(
+          experimental::OrcaService::Options());
       ServerBuilder builder;
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
       builder.RegisterService(&service_);
-      orca_service_.Register(&builder);
+      orca_service_->Register(&builder);
       server_ = builder.BuildAndStart();
       grpc::internal::MutexLock lock(&mu_);
       server_ready_ = true;
@@ -1820,14 +1824,14 @@ xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
     const grpc_core::LoadBalancingPolicy::BackendMetricAccessor
         ::BackendMetricData& backend_metric_data) {
   xds::data::orca::v3::OrcaLoadReport load_report;
-  load_report.set_cpu_utilization(backend_metric_data->cpu_utilization);
-  load_report.set_mem_utilization(backend_metric_data->mem_utilization);
-  load_report.set_rps(backend_metric_data->requests_per_second);
-  for (const auto& p : backend_metric_data->request_cost) {
+  load_report.set_cpu_utilization(backend_metric_data.cpu_utilization);
+  load_report.set_mem_utilization(backend_metric_data.mem_utilization);
+  load_report.set_rps(backend_metric_data.requests_per_second);
+  for (const auto& p : backend_metric_data.request_cost) {
     std::string name(p.first);
     (*load_report.mutable_request_cost())[name] = p.second;
   }
-  for (const auto& p : backend_metric_data->utilization) {
+  for (const auto& p : backend_metric_data.utilization) {
     std::string name(p.first);
     (*load_report.mutable_utilization())[name] = p.second;
   }
@@ -2170,7 +2174,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
   static void TearDownTestCase() { grpc_shutdown(); }
 
-  absl::optional<BackendMetricReport> GetBackendMetricReport() const {
+  absl::optional<BackendMetricReport> GetBackendMetricReport() {
     grpc::internal::MutexLock lock(&mu_);
     if (backend_metric_reports_.empty()) return absl::nullopt;
     auto result = std::move(backend_metric_reports_.front());
@@ -2201,9 +2205,9 @@ TEST_F(OobBackendMetricTest, Basic) {
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
-  servers_[0].orca_service_.SetCpuUtilization(0.1);
-  servers_[0].orca_service_.SetMemoryUtilization(0.2);
-  servers_[0].orca_service_.SetNamedUtilization(kMetricName, 0.3);
+  servers_[0]->orca_service_->SetCpuUtilization(0.1);
+  servers_[0]->orca_service_->SetMemoryUtilization(0.2);
+  servers_[0]->orca_service_->SetNamedUtilization(kMetricName, 0.3);
   // Start client.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel =
@@ -2219,7 +2223,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
-      EXPECT_EQ(report->first, servers_[0].port_);
+      EXPECT_EQ(report->first, servers_[0]->port_);
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
       EXPECT_THAT(report->second.utilization(), ::testing::UnorderedElementsAre(
@@ -2232,14 +2236,14 @@ TEST_F(OobBackendMetricTest, Basic) {
   // Note that the server may send a new report while we're updating these,
   // so we set them in reverse order, so that we know we'll get all new
   // data once we see a report with the new CPU utilization value.
-  servers_[0].orca_service_.SetNamedUtilization(kMetricName, 0.6);
-  servers_[0].orca_service_.SetMemoryUtilization(0.5);
-  servers_[0].orca_service_.SetCpuUtilization(0.4);
+  servers_[0]->orca_service_->SetNamedUtilization(kMetricName, 0.6);
+  servers_[0]->orca_service_->SetMemoryUtilization(0.5);
+  servers_[0]->orca_service_->SetCpuUtilization(0.4);
   // Wait for client to see new report.
   for (size_t i = 0; i < 5; ++i) {
     auto report = GetBackendMetricReport();
     if (report.has_value()) {
-      EXPECT_EQ(report->first, servers_[0].port_);
+      EXPECT_EQ(report->first, servers_[0]->port_);
       if (report->second.cpu_utilization() != 0.1) {
         EXPECT_EQ(report->second.cpu_utilization(), 0.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);

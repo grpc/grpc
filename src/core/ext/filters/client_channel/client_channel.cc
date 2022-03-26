@@ -529,10 +529,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
-  void AddDataWatcher(RefCountedPtr<DataWatcherInterface> watcher) override
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-    watcher->SetSubchannel(subchannel_.get());
-    data_watchers_.push_back(std::move(watcher));
+    std::unique_ptr<InternalSubchannelDataWatcherInterface> internal_watcher(
+        static_cast<InternalSubchannelDataWatcherInterface*>(
+            watcher.release()));
+    internal_watcher->SetSubchannel(subchannel_.get());
+    data_watchers_.push_back(std::move(internal_watcher));
   }
 
   const grpc_channel_args* channel_args() override {
@@ -675,8 +678,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
-  std::vector<RefCountedPtr<DataWatcherInterface>> data_watchers_
-      ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::vector<std::unique_ptr<InternalSubchannelDataWatcherInterface>>
+      data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
 //

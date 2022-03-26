@@ -23,18 +23,13 @@
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace grpc_core {
 
-// Interface for watching data of a particular type for this subchannel.
-// Implementations will generally define their own type-specific methods.
-// FIXME: does this actually need to be DualRefCounted?  Or even
-// RefCounted at all?  Maybe it can just be single-owner.  Need to
-// consider how LB policy will set this as it creates a new subchannel
-// list for each address list update from its parent.
-class SubchannelInterface::DataWatcherInterface
-    : public DualRefCounted<SubchannelInterface::DataWatcherInterface> {
+// Internal interface for watching data of a particular type for this
+// subchannel.
+class InternalSubchannelDataWatcherInterface
+    : public SubchannelInterface::DataWatcherInterface {
  public:
   // Tells the watcher which subchannel to register itself with.
   virtual void SetSubchannel(Subchannel* subchannel) = 0;
