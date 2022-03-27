@@ -158,7 +158,7 @@ class MainLoop {
         filter_(std::move(filter)) {}
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
-    for (auto id: absl::exchange(wakeups_, {})) {
+    for (auto id : absl::exchange(wakeups_, {})) {
       if (auto* call = GetCall(id)) call->Wakeup();
     }
     switch (action.type_case()) {
@@ -172,10 +172,16 @@ class MainLoop {
             action.call(),
             absl::make_unique<Call>(this, action.call(), action.create_call()));
         break;
+      case filter_fuzzer::Action::kReceiveInitialMetadata:
+        if (auto* call = GetCall(action.call())) {
+          call->RecvInitialMetadata(action.receive_initial_metadata());
+        }
+        break;
       case filter_fuzzer::Action::kReceiveTrailingMetadata:
         if (auto* call = GetCall(action.call())) {
           call->RecvTrailingMetadata(action.receive_trailing_metadata());
-        } break;
+        }
+        break;
     }
   }
 
@@ -204,11 +210,19 @@ class MainLoop {
          const filter_fuzzer::Metadata& client_initial_metadata)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
+      auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
       promise_ = main_loop_->filter_->MakeCallPromise(
           CallArgs{std::move(*LoadMetadata(client_initial_metadata,
                                            &client_initial_metadata_)),
-                   nullptr},
+                   server_initial_metadata},
           [this](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
+            if (server_initial_metadata_.get()) {
+              call_args.server_initial_metadata->Set(
+                  server_initial_metadata_.get());
+            } else {
+              unset_incoming_server_initial_metadata_latch_ =
+                  call_args.server_initial_metadata;
+            }
             return [this]() -> Poll<ServerMetadataHandle> {
               return CheckCompletion();
             };
@@ -217,19 +231,28 @@ class MainLoop {
     }
 
     void Orphan() override { abort(); }
-    void ForceImmediateRepoll() override { abort(); }
+    void ForceImmediateRepoll() override { context_->set_continue(); }
     Waker MakeOwningWaker() override {
       return Waker(new WakeCall(main_loop_, id_));
     }
-    Waker MakeNonOwningWaker() override {
-      return Waker(new WakeCall(main_loop_, id_));
+    Waker MakeNonOwningWaker() override { return MakeOwningWaker(); }
+
+    void RecvInitialMetadata(const filter_fuzzer::Metadata& metadata) {
+      if (server_initial_metadata_ == nullptr) {
+        LoadMetadata(metadata, &server_initial_metadata_);
+        if (auto* latch = absl::exchange(
+                unset_incoming_server_initial_metadata_latch_, nullptr)) {
+          ScopedContext context(this);
+          latch->Set(server_initial_metadata_.get());
+        }
+      }
     }
 
     void RecvTrailingMetadata(const filter_fuzzer::Metadata& metadata) {
-      if (server_trailing_metadata_ != nullptr) {
+      if (server_trailing_metadata_ == nullptr) {
         LoadMetadata(metadata, &server_trailing_metadata_);
+        server_trailing_metadata_waker_.Wakeup();
       }
-      MakeOwningWaker().Wakeup();
     }
 
     void Wakeup() {
@@ -238,10 +261,29 @@ class MainLoop {
     }
 
    private:
-    class ScopedContext : public promise_detail::Context<Arena> {
+    class ScopedContext : public ScopedActivity,
+                          public promise_detail::Context<Arena> {
      public:
-      explicit ScopedContext(Call* call_data)
-          : promise_detail::Context<Arena>(call_data->arena_.get()) {}
+      explicit ScopedContext(Call* call)
+          : ScopedActivity(call),
+            promise_detail::Context<Arena>(call->arena_.get()),
+            call_(call) {
+        GPR_ASSERT(call_->context_ == nullptr);
+        call_->context_ = this;
+      }
+      ~ScopedContext() {
+        while (bool step = absl::exchange(continue_, false)) {
+          call_->Step();
+        }
+        GPR_ASSERT(call_->context_ == this);
+        call_->context_ = nullptr;
+      }
+
+      void set_continue() { continue_ = true; }
+
+     private:
+      Call* const call_;
+      bool continue_ = false;
     };
 
     template <typename R>
@@ -268,6 +310,7 @@ class MainLoop {
         return ServerMetadataHandle::TestOnlyWrap(
             server_trailing_metadata_.get());
       }
+      server_trailing_metadata_waker_ = MakeOwningWaker();
       return Pending{};
     }
 
@@ -276,7 +319,12 @@ class MainLoop {
     ScopedArenaPtr arena_ = MakeScopedArena(32, &main_loop_->memory_allocator_);
     absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
+    std::unique_ptr<ServerMetadata> server_initial_metadata_;
+    Latch<ServerMetadata*>* unset_incoming_server_initial_metadata_latch_ =
+        nullptr;
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
+    Waker server_trailing_metadata_waker_;
+    ScopedContext* context_ = nullptr;
   };
 
   Call* GetCall(uint32_t id) {

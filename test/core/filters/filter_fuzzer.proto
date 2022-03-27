@@ -37,6 +37,12 @@ message Metadata {
     repeated Metadatum metadata = 1;
 }
 
+message GlobalObjectAction {
+    oneof type {
+        Empty set_resource_quota = 1;
+    }
+}
+
 message Action {
     uint32 call = 1;
     oneof type {
@@ -44,7 +50,7 @@ message Action {
         Metadata create_call = 10;
         Metadata receive_initial_metadata = 11;
         Metadata receive_trailing_metadata = 12;
-        uint32 set_memory_quota = 13;
+        GlobalObjectAction global_object_action = 13;
     }
 }
 
