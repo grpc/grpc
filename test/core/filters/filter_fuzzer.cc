@@ -28,7 +28,7 @@ bool squelch = true;
 namespace grpc_core {
 namespace {
 
-static const grpc_transport_vtable kFakeTransportVTable = {
+const grpc_transport_vtable kFakeTransportVTable = {
     // sizeof_stream
     0,
     // name
@@ -36,12 +36,10 @@ static const grpc_transport_vtable kFakeTransportVTable = {
     // init_stream
     [](grpc_transport* self, grpc_stream* stream,
        grpc_stream_refcount* refcount, const void* server_data,
-       grpc_core::Arena* arena) -> int { abort(); },
+       Arena* arena) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata)
-        -> grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> {
-      abort();
-    },
+    [](grpc_transport* self, ClientMetadataHandle initial_metadata)
+        -> ArenaPromise<ServerMetadataHandle> { abort(); },
     // set_pollset
     [](grpc_transport* self, grpc_stream* stream, grpc_pollset* pollset) {
       abort();
