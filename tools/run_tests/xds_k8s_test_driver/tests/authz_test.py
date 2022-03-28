@@ -36,7 +36,7 @@ _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
 # still a new process and so probably interpreted. The server on one run
 # processed 225 RPCs a second, so with the client configured for 25 qps this is
 # 40 seconds worth of buffering before starting to drain the backlog.
-_SETTLE_DURATION = datetime.timedelta(seconds=120)
+_SETTLE_DURATION = datetime.timedelta(seconds=5)
 _SAMPLE_DURATION = datetime.timedelta(seconds=0.5)
 
 
