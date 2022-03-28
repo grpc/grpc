@@ -40,9 +40,9 @@ def grpc_bad_ssl_tests():
     )
     for t in BAD_SSL_TESTS:
         grpc_cc_binary(
-            name="bad_ssl_%s_server" % t,
-            srcs=["servers/%s.cc" % t],
-            deps=[":bad_ssl_test_server"],
+            name = "bad_ssl_%s_server" % t,
+            srcs = ["servers/%s.cc" % t],
+            deps = [":bad_ssl_test_server"],
         )
         grpc_cc_test(
             name = "bad_ssl_%s_test" % t,

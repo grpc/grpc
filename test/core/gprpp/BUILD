@@ -45,7 +45,7 @@ grpc_cc_test(
     srcs = ["fork_test.cc"],
     language = "C++",
     tags = ["no_windows"],
-    uses_event_engine = True, # engines should behave appropriately on Fork
+    uses_event_engine = True,  # engines should behave appropriately on Fork
     uses_polling = False,
     deps = [
         "//:gpr",
