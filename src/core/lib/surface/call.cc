@@ -71,13 +71,95 @@ namespace grpc_core {
 
 class Call : public CppImplOf<Call, grpc_call> {
  public:
-  ~Call() {
+  Arena* arena() { return arena_; }
+  bool is_client() const { return is_client_; }
+
+  virtual void ContextSet(grpc_context_index elem, void* value,
+                          void (*destroy)(void* value)) = 0;
+  virtual void* ContextGet(grpc_context_index elem) const = 0;
+  virtual bool Completed() = 0;
+  void CancelWithStatus(grpc_status_code status, const char* description);
+  virtual void CancelWithError(grpc_error_handle error) = 0;
+  virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
+  virtual char* GetPeer() = 0;
+  virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
+                                     void* notify_tag,
+                                     bool is_notify_tag_closure) = 0;
+  virtual bool failed_before_recv_message() const = 0;
+  virtual bool is_trailers_only() const = 0;
+  virtual void ExternalRef() = 0;
+  virtual void ExternalUnref() = 0;
+  virtual void InternalRef(const char* reason) = 0;
+  virtual void InternalUnref(const char* reason) = 0;
+
+  virtual grpc_compression_algorithm test_only_compression_algorithm() = 0;
+  virtual uint32_t test_only_message_flags() = 0;
+  virtual uint32_t test_only_encodings_accepted_by_peer() = 0;
+  virtual grpc_compression_algorithm compression_for_level(
+      grpc_compression_level level) = 0;
+
+  // This should return nullptr for the promise stack (and alternative means
+  // for that functionality be invented)
+  virtual grpc_call_stack* call_stack() = 0;
+
+ protected:
+  Call(Arena* arena, bool is_client, Timestamp send_deadline)
+      : arena_(arena), send_deadline_(send_deadline), is_client_(is_client) {
+    GPR_DEBUG_ASSERT(arena_ != nullptr);
+  }
+  ~Call() = default;
+
+  struct ParentCall {
+    Mutex child_list_mu;
+    Call* first_child ABSL_GUARDED_BY(child_list_mu) = nullptr;
+  };
+
+  struct ChildCall {
+    explicit ChildCall(Call* parent) : parent(parent) {}
+    Call* parent;
+    /** siblings: children of the same parent form a list, and this list is
+       protected under
+        parent->mu */
+    Call* sibling_next = nullptr;
+    Call* sibling_prev = nullptr;
+  };
+
+  ParentCall* GetOrCreateParentCall();
+  ParentCall* parent_call();
+
+  absl::Status InitParent(Call* parent, uint32_t propagation_mask);
+  void PublishToParent(Call* parent);
+  void MaybeUnpublishFromParent();
+  void PropagateCancellationToChildren();
+
+  Timestamp send_deadline() const { return send_deadline_; }
+  void set_send_deadline(Timestamp send_deadline) {
+    send_deadline_ = send_deadline;
+  }
+
+ private:
+  Arena* const arena_;
+  std::atomic<ParentCall*> parent_call_{nullptr};
+  ChildCall* child_ = nullptr;
+  Timestamp send_deadline_;
+  const bool is_client_;
+  // flag indicating that cancellation is inherited
+  bool cancellation_is_inherited_ = false;
+};
+
+class FilterStackCall final : public Call {
+ public:
+  ~FilterStackCall() {
     for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
       if (context_[i].destroy) {
         context_[i].destroy(context_[i].value);
       }
     }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info_.error_string)));
+  }
+
+  bool Completed() override {
+    return gpr_atm_acq_load(&received_final_op_atm_) != 0;
   }
 
   // TODO(ctiller): return absl::StatusOr<SomeSmartPointer<Call>>?
@@ -88,10 +170,7 @@ class Call : public CppImplOf<Call, grpc_call> {
     return FromCallStack(grpc_call_stack_from_top_element(elem));
   }
 
-  Arena* arena() const { return arena_; }
-  bool is_client() const { return is_client_; }
-
-  grpc_call_stack* call_stack() {
+  grpc_call_stack* call_stack() override {
     return reinterpret_cast<grpc_call_stack*>(
         reinterpret_cast<char*>(this) +
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(*this)));
@@ -103,49 +182,56 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   CallCombiner* call_combiner() { return &call_combiner_; }
 
-  void CancelWithStatus(grpc_status_code status, const char* description);
-  void CancelWithError(grpc_error_handle error);
-  void SetCompletionQueue(grpc_completion_queue* cq);
-  char* GetPeer();
+  void CancelWithError(grpc_error_handle error) override;
+  void SetCompletionQueue(grpc_completion_queue* cq) override;
+  char* GetPeer() override;
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
-                             bool is_notify_tag_closure);
-
-  void ExternalRef() { ext_ref_.Ref(); }
-  void ExternalUnref();
+                             bool is_notify_tag_closure) override;
+  void ExternalRef() override { ext_ref_.Ref(); }
+  void ExternalUnref() override;
+  void InternalRef(const char* reason) override {
+    GRPC_CALL_STACK_REF(call_stack(), reason);
+  }
+  void InternalUnref(const char* reason) override {
+    GRPC_CALL_STACK_UNREF(call_stack(), reason);
+  }
 
   void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void* value));
-  void* ContextGet(grpc_context_index elem) const {
+                  void (*destroy)(void* value)) override;
+  void* ContextGet(grpc_context_index elem) const override {
     return context_[elem].value;
   }
 
   grpc_compression_algorithm compression_for_level(
-      grpc_compression_level level) {
+      grpc_compression_level level) override {
     return encodings_accepted_by_peer_.CompressionAlgorithmForLevel(level);
   }
 
-  bool is_trailers_only() const {
+  bool is_trailers_only() const override {
     bool result = is_trailers_only_;
     GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.empty());
     return result;
   }
 
-  bool failed_before_recv_message() const {
+  bool failed_before_recv_message() const override {
     return call_failed_before_recv_message_;
   }
 
-  grpc_compression_algorithm test_only_compression_algorithm() {
+  grpc_compression_algorithm test_only_compression_algorithm() override {
     return incoming_compression_algorithm_;
   }
 
-  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+  uint32_t test_only_message_flags() override {
+    return test_only_last_message_flags_;
+  }
 
-  uint32_t test_only_encodings_accepted_by_peer() {
+  uint32_t test_only_encodings_accepted_by_peer() override {
     return encodings_accepted_by_peer_.ToLegacyBitmask();
   }
 
   static size_t InitialSizeEstimate() {
-    return sizeof(Call) + sizeof(BatchControl) * kMaxConcurrentBatches;
+    return sizeof(FilterStackCall) +
+           sizeof(BatchControl) * kMaxConcurrentBatches;
   }
 
  private:
@@ -164,7 +250,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   static constexpr gpr_atm kRecvInitialMetadataFirst = 1;
 
   struct BatchControl {
-    Call* call_ = nullptr;
+    FilterStackCall* call_ = nullptr;
     grpc_transport_stream_op_batch op_;
     /* Share memory for cq_completion and notify_tag as they are never needed
        simultaneously. Each byte used in this data structure count as six bytes
@@ -208,40 +294,19 @@ class Call : public CppImplOf<Call, grpc_call> {
     void FinishBatch(grpc_error_handle error);
   };
 
-  struct ParentCall {
-    Mutex child_list_mu;
-    Call* first_child ABSL_GUARDED_BY(child_list_mu) = nullptr;
-  };
-
-  struct ChildCall {
-    explicit ChildCall(Call* parent) : parent(parent) {}
-    Call* parent;
-    /** siblings: children of the same parent form a list, and this list is
-       protected under
-        parent->mu */
-    Call* sibling_next = nullptr;
-    Call* sibling_prev = nullptr;
-  };
-
-  Call(Arena* arena, const grpc_call_create_args& args)
-      : arena_(arena),
+  FilterStackCall(Arena* arena, const grpc_call_create_args& args)
+      : Call(arena, args.server_transport_data == nullptr, args.send_deadline),
         cq_(args.cq),
         channel_(args.channel),
-        is_client_(args.server_transport_data == nullptr),
-        stream_op_payload_(context_) {
-    GPR_DEBUG_ASSERT(arena_ != nullptr);
-  }
+        stream_op_payload_(context_) {}
 
   static void ReleaseCall(void* call, grpc_error_handle);
   static void DestroyCall(void* call, grpc_error_handle);
 
-  ParentCall* GetOrCreateParentCall();
-  ParentCall* parent_call();
-
-  static Call* FromCallStack(grpc_call_stack* call_stack) {
-    return reinterpret_cast<Call*>(
+  static FilterStackCall* FromCallStack(grpc_call_stack* call_stack) {
+    return reinterpret_cast<FilterStackCall*>(
         reinterpret_cast<char*>(call_stack) -
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)));
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)));
   }
 
   void ExecuteBatch(grpc_transport_stream_op_batch* batch,
@@ -260,21 +325,14 @@ class Call : public CppImplOf<Call, grpc_call> {
                           grpc_error_handle batch_error);
 
   RefCount ext_ref_;
-  Arena* const arena_;
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
   grpc_channel* channel_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
-  std::atomic<ParentCall*> parent_call_{nullptr};
-  ChildCall* child_ = nullptr;
 
-  /* client or server call */
-  bool is_client_;
   /** has grpc_call_unref been called */
   bool destroy_called_ = false;
-  /** flag indicating that cancellation is inherited */
-  bool cancellation_is_inherited_ = false;
   // Trailers-only response status
   bool is_trailers_only_ = false;
   /** which ops are in-flight */
@@ -291,10 +349,10 @@ class Call : public CppImplOf<Call, grpc_call> {
   grpc_transport_stream_op_batch_payload stream_op_payload_;
 
   /* first idx: is_receiving, second idx: is_trailing */
-  grpc_metadata_batch send_initial_metadata_{arena_};
-  grpc_metadata_batch send_trailing_metadata_{arena_};
-  grpc_metadata_batch recv_initial_metadata_{arena_};
-  grpc_metadata_batch recv_trailing_metadata_{arena_};
+  grpc_metadata_batch send_initial_metadata_{arena()};
+  grpc_metadata_batch send_trailing_metadata_{arena()};
+  grpc_metadata_batch recv_initial_metadata_{arena()};
+  grpc_metadata_batch recv_trailing_metadata_{arena()};
 
   /* Buffered read metadata waiting to be returned to the application.
      Element 0 is initial metadata, element 1 is trailing metadata. */
@@ -316,8 +374,6 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
-
-  Timestamp send_deadline_;
 
   ManualConstructor<SliceBufferByteStream> sending_stream_;
 
@@ -388,8 +444,59 @@ Call::ParentCall* Call::parent_call() {
   return parent_call_.load(std::memory_order_acquire);
 }
 
-grpc_error_handle Call::Create(grpc_call_create_args* args,
-                               grpc_call** out_call) {
+absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
+  child_ = arena()->New<ChildCall>(parent);
+
+  parent->InternalRef("child");
+  GPR_ASSERT(is_client_);
+  GPR_ASSERT(!parent->is_client_);
+
+  if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
+    send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
+  }
+  /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
+   * GRPC_PROPAGATE_STATS_CONTEXT */
+  /* TODO(ctiller): This should change to use the appropriate census start_op
+   * call. */
+  if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
+    if (0 == (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
+      return absl::UnknownError(
+          "Census tracing propagation requested without Census context "
+          "propagation");
+    }
+    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
+               nullptr);
+  } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
+    return absl::UnknownError(
+        "Census context propagation requested without Census tracing "
+        "propagation");
+  }
+  if (propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
+    cancellation_is_inherited_ = true;
+  }
+  return absl::OkStatus();
+}
+
+void Call::PublishToParent(Call* parent) {
+  ChildCall* cc = child_;
+  ParentCall* pc = parent->GetOrCreateParentCall();
+  MutexLock lock(&pc->child_list_mu);
+  if (pc->first_child == nullptr) {
+    pc->first_child = this;
+    cc->sibling_next = cc->sibling_prev = this;
+  } else {
+    cc->sibling_next = pc->first_child;
+    cc->sibling_prev = pc->first_child->child_->sibling_prev;
+    cc->sibling_next->child_->sibling_prev =
+        cc->sibling_prev->child_->sibling_next = this;
+  }
+  if (parent->Completed()) {
+    CancelWithError(GRPC_ERROR_CANCELLED);
+  }
+}
+
+grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
+                                          grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
@@ -404,25 +511,25 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
   };
 
   Arena* arena;
-  Call* call;
+  FilterStackCall* call;
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack =
       grpc_channel_get_channel_stack(args->channel);
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
-  size_t call_and_stack_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)) +
-                               channel_stack->call_stack_size;
   size_t call_alloc_size =
-      call_and_stack_size + (args->parent ? sizeof(ChildCall) : 0);
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
+      channel_stack->call_stack_size;
 
   std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
       initial_size, call_alloc_size, &*args->channel->allocator);
   arena = arena_with_call.first;
-  call = new (arena_with_call.second) Call(arena, *args);
+  call = new (arena_with_call.second) FilterStackCall(arena, *args);
   GPR_DEBUG_ASSERT(FromC(call->c_ptr()) == call);
+  GPR_DEBUG_ASSERT(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
-  if (call->is_client_) {
+  if (call->is_client()) {
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
     call->final_op_.client.error_string = nullptr;
@@ -440,76 +547,26 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
     call->final_op_.server.core_server = args->server;
   }
 
-  Timestamp send_deadline = args->send_deadline;
-  bool immediately_cancel = false;
-
   Call* parent = Call::FromC(args->parent);
   if (parent != nullptr) {
-    call->child_ = new (reinterpret_cast<char*>(arena_with_call.second) +
-                        call_and_stack_size) ChildCall(parent);
-
-    GRPC_CALL_INTERNAL_REF(args->parent, "child");
-    GPR_ASSERT(call->is_client_);
-    GPR_ASSERT(!parent->is_client_);
-
-    if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
-      send_deadline = std::min(send_deadline, parent->send_deadline_);
-    }
-    /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
-     * GRPC_PROPAGATE_STATS_CONTEXT */
-    /* TODO(ctiller): This should change to use the appropriate census start_op
-     * call. */
-    if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
-      if (0 == (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
-        add_init_error(&error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "Census tracing propagation requested "
-                                   "without Census context propagation"));
-      }
-      grpc_call_context_set(call->c_ptr(), GRPC_CONTEXT_TRACING,
-                            parent->context_[GRPC_CONTEXT_TRACING].value,
-                            nullptr);
-    } else if (args->propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
-      add_init_error(&error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                 "Census context propagation requested "
-                                 "without Census tracing propagation"));
-    }
-    if (args->propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
-      call->cancellation_is_inherited_ = true;
-      if (gpr_atm_acq_load(&parent->received_final_op_atm_)) {
-        immediately_cancel = true;
-      }
-    }
+    add_init_error(&error, absl_status_to_grpc_error(call->InitParent(
+                               parent, args->propagation_mask)));
   }
-  call->send_deadline_ = send_deadline;
   /* initial refcount dropped by grpc_call_unref */
   grpc_call_element_args call_args = {
       call->call_stack(), args->server_transport_data,
       call->context_,     path,
-      call->start_time_,  send_deadline,
-      call->arena_,       &call->call_combiner_};
+      call->start_time_,  call->send_deadline(),
+      call->arena(),      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
   if (parent != nullptr) {
-    ChildCall* cc = call->child_;
-    ParentCall* pc = parent->GetOrCreateParentCall();
-    MutexLock lock(&pc->child_list_mu);
-    if (pc->first_child == nullptr) {
-      pc->first_child = call;
-      cc->sibling_next = cc->sibling_prev = call;
-    } else {
-      cc->sibling_next = pc->first_child;
-      cc->sibling_prev = pc->first_child->child_->sibling_prev;
-      cc->sibling_next->child_->sibling_prev =
-          cc->sibling_prev->child_->sibling_next = call;
-    }
+    call->PublishToParent(parent);
   }
 
   if (error != GRPC_ERROR_NONE) {
     call->CancelWithError(GRPC_ERROR_REF(error));
-  }
-  if (immediately_cancel) {
-    call->CancelWithError(GRPC_ERROR_CANCELLED);
   }
   if (args->cq != nullptr) {
     GPR_ASSERT(args->pollset_set_alternative == nullptr &&
@@ -528,7 +585,7 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
                                                &call->pollent_);
   }
 
-  if (call->is_client_) {
+  if (call->is_client()) {
     channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(call->channel_);
     if (channelz_channel != nullptr) {
@@ -547,7 +604,7 @@ grpc_error_handle Call::Create(grpc_call_create_args* args,
   return error;
 }
 
-void Call::SetCompletionQueue(grpc_completion_queue* cq) {
+void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
   GPR_ASSERT(cq);
 
   if (grpc_polling_entity_pollset_set(&pollent_) != nullptr) {
@@ -560,18 +617,18 @@ void Call::SetCompletionQueue(grpc_completion_queue* cq) {
   grpc_call_stack_set_pollset_or_pollset_set(call_stack(), &pollent_);
 }
 
-void Call::ReleaseCall(void* call, grpc_error_handle /*error*/) {
-  auto* c = static_cast<Call*>(call);
+void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
+  auto* c = static_cast<FilterStackCall*>(call);
   grpc_channel* channel = c->channel_;
-  Arena* arena = c->arena_;
-  c->~Call();
+  Arena* arena = c->arena();
+  c->~FilterStackCall();
   grpc_channel_update_call_size_estimate(channel, arena->Destroy());
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
-void Call::DestroyCall(void* call, grpc_error_handle /*error*/) {
+void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("destroy_call", 0);
-  auto* c = static_cast<Call*>(call);
+  auto* c = static_cast<FilterStackCall*>(call);
   c->recv_initial_metadata_.Clear();
   c->recv_trailing_metadata_.Clear();
   c->receiving_stream_.reset();
@@ -584,7 +641,7 @@ void Call::DestroyCall(void* call, grpc_error_handle /*error*/) {
   }
 
   grpc_error_handle status_error = c->status_error_.get();
-  grpc_error_get_status(status_error, c->send_deadline_,
+  grpc_error_get_status(status_error, c->send_deadline(),
                         &c->final_info_.final_status, nullptr, nullptr,
                         &(c->final_info_.error_string));
   c->status_error_.set(GRPC_ERROR_NONE);
@@ -595,32 +652,36 @@ void Call::DestroyCall(void* call, grpc_error_handle /*error*/) {
                                             grpc_schedule_on_exec_ctx));
 }
 
-void Call::ExternalUnref() {
+void Call::MaybeUnpublishFromParent() {
+  ChildCall* cc = child_;
+  if (cc == nullptr) return;
+
+  ParentCall* pc = cc->parent->parent_call();
+  {
+    MutexLock lock(&pc->child_list_mu);
+    if (this == pc->first_child) {
+      pc->first_child = cc->sibling_next;
+      if (this == pc->first_child) {
+        pc->first_child = nullptr;
+      }
+    }
+    cc->sibling_prev->child_->sibling_next = cc->sibling_next;
+    cc->sibling_next->child_->sibling_prev = cc->sibling_prev;
+  }
+  cc->parent->InternalUnref("child");
+}
+
+void FilterStackCall::ExternalUnref() {
   if (GPR_LIKELY(!ext_ref_.Unref())) return;
 
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
 
-  ChildCall* cc = child_;
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
 
   GRPC_API_TRACE("grpc_call_unref(c=%p)", 1, (this));
 
-  if (cc) {
-    ParentCall* pc = cc->parent->parent_call();
-    {
-      MutexLock lock(&pc->child_list_mu);
-      if (this == pc->first_child) {
-        pc->first_child = cc->sibling_next;
-        if (this == pc->first_child) {
-          pc->first_child = nullptr;
-        }
-      }
-      cc->sibling_prev->child_->sibling_next = cc->sibling_next;
-      cc->sibling_next->child_->sibling_prev = cc->sibling_prev;
-    }
-    GRPC_CALL_INTERNAL_UNREF(cc->parent->c_ptr(), "child");
-  }
+  MaybeUnpublishFromParent();
 
   GPR_ASSERT(!destroy_called_);
   destroy_called_ = true;
@@ -635,10 +696,10 @@ void Call::ExternalUnref() {
     // holding to the call stack.
     call_combiner_.SetNotifyOnCancel(nullptr);
   }
-  GRPC_CALL_INTERNAL_UNREF(c_ptr(), "destroy");
+  InternalUnref("destroy");
 }
 
-char* Call::GetPeer() {
+char* FilterStackCall::GetPeer() {
   char* peer_string = reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
   if (peer_string != nullptr) return gpr_strdup(peer_string);
   peer_string = grpc_channel_get_target(channel_);
@@ -648,15 +709,16 @@ char* Call::GetPeer() {
 
 // start_batch_closure points to a caller-allocated closure to be used
 // for entering the call combiner.
-void Call::ExecuteBatch(grpc_transport_stream_op_batch* batch,
-                        grpc_closure* start_batch_closure) {
+void FilterStackCall::ExecuteBatch(grpc_transport_stream_op_batch* batch,
+                                   grpc_closure* start_batch_closure) {
   // This is called via the call combiner to start sending a batch down
   // the filter stack.
   auto execute_batch_in_call_combiner = [](void* arg, grpc_error_handle) {
     GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
     grpc_transport_stream_op_batch* batch =
         static_cast<grpc_transport_stream_op_batch*>(arg);
-    Call* call = static_cast<Call*>(batch->handler_private.extra_arg);
+    auto* call =
+        static_cast<FilterStackCall*>(batch->handler_private.extra_arg);
     grpc_call_element* elem = call->call_elem(0);
     GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
     elem->filter->start_transport_stream_op_batch(elem, batch);
@@ -670,7 +732,7 @@ void Call::ExecuteBatch(grpc_transport_stream_op_batch* batch,
 
 namespace {
 struct CancelState {
-  Call* call;
+  FilterStackCall* call;
   grpc_closure start_batch;
   grpc_closure finish_batch;
 };
@@ -682,16 +744,16 @@ static void done_termination(void* arg, grpc_error_handle /*error*/) {
   CancelState* state = static_cast<CancelState*>(arg);
   GRPC_CALL_COMBINER_STOP(state->call->call_combiner(),
                           "on_complete for cancel_stream op");
-  GRPC_CALL_INTERNAL_UNREF(state->call->c_ptr(), "termination");
+  state->call->InternalUnref("termination");
   delete state;
 }
 
-void Call::CancelWithError(grpc_error_handle error) {
+void FilterStackCall::CancelWithError(grpc_error_handle error) {
   if (!gpr_atm_rel_cas(&cancelled_with_error_, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
   }
-  GRPC_CALL_INTERNAL_REF(c_ptr(), "termination");
+  InternalRef("termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
   // combiner.  This ensures that the cancel_stream batch can be sent
@@ -717,14 +779,14 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
       GRPC_ERROR_INT_GRPC_STATUS, status));
 }
 
-void Call::SetFinalStatus(grpc_error_handle error) {
+void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
-    gpr_log(GPR_DEBUG, "set_final_status %s", is_client_ ? "CLI" : "SVR");
+    gpr_log(GPR_DEBUG, "set_final_status %s", is_client() ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
   }
-  if (is_client_) {
+  if (is_client()) {
     std::string status_details;
-    grpc_error_get_status(error, send_deadline_, final_op_.client.status,
+    grpc_error_get_status(error, send_deadline(), final_op_.client.status,
                           &status_details, nullptr,
                           final_op_.client.error_string);
     *final_op_.client.status_details =
@@ -756,8 +818,9 @@ void Call::SetFinalStatus(grpc_error_handle error) {
   }
 }
 
-bool Call::PrepareApplicationMetadata(size_t count, grpc_metadata* metadata,
-                                      bool is_trailing) {
+bool FilterStackCall::PrepareApplicationMetadata(size_t count,
+                                                 grpc_metadata* metadata,
+                                                 bool is_trailing) {
   grpc_metadata_batch* batch =
       is_trailing ? &send_trailing_metadata_ : &send_initial_metadata_;
   for (size_t i = 0; i < count; i++) {
@@ -843,9 +906,10 @@ class PublishToAppEncoder {
 };
 }  // namespace
 
-void Call::PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing) {
+void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
+                                         bool is_trailing) {
   if (b->count() == 0) return;
-  if (!is_client_ && is_trailing) return;
+  if (!is_client() && is_trailing) return;
   if (is_trailing && buffered_metadata_[1] == nullptr) return;
   GPR_TIMER_SCOPE("publish_app_metadata", 0);
   grpc_metadata_array* dest;
@@ -860,7 +924,7 @@ void Call::PublishAppMetadata(grpc_metadata_batch* b, bool is_trailing) {
   b->Encode(&encoder);
 }
 
-void Call::RecvInitialFilter(grpc_metadata_batch* b) {
+void FilterStackCall::RecvInitialFilter(grpc_metadata_batch* b) {
   incoming_compression_algorithm_ =
       b->Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE);
   encodings_accepted_by_peer_ =
@@ -869,8 +933,8 @@ void Call::RecvInitialFilter(grpc_metadata_batch* b) {
   PublishAppMetadata(b, false);
 }
 
-void Call::RecvTrailingFilter(grpc_metadata_batch* b,
-                              grpc_error_handle batch_error) {
+void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
+                                         grpc_error_handle batch_error) {
   if (batch_error != GRPC_ERROR_NONE) {
     SetFinalStatus(batch_error);
   } else {
@@ -896,7 +960,7 @@ void Call::RecvTrailingFilter(grpc_metadata_batch* b,
       }
       SetFinalStatus(GRPC_ERROR_REF(error));
       GRPC_ERROR_UNREF(error);
-    } else if (!is_client_) {
+    } else if (!is_client()) {
       SetFinalStatus(GRPC_ERROR_NONE);
     } else {
       gpr_log(GPR_DEBUG,
@@ -945,7 +1009,8 @@ size_t BatchSlotForOp(grpc_op_type type) {
 }
 }  // namespace
 
-Call::BatchControl* Call::ReuseOrAllocateBatchControl(const grpc_op* ops) {
+FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
+    const grpc_op* ops) {
   size_t slot_idx = BatchSlotForOp(ops[0].op);
   BatchControl** pslot = &active_batches_[slot_idx];
   BatchControl* bctl;
@@ -958,7 +1023,7 @@ Call::BatchControl* Call::ReuseOrAllocateBatchControl(const grpc_op* ops) {
     bctl->op_ = {};
     new (&bctl->batch_error_) AtomicError();
   } else {
-    bctl = arena_->New<BatchControl>();
+    bctl = arena()->New<BatchControl>();
     *pslot = bctl;
   }
   bctl->call_ = this;
@@ -966,9 +1031,28 @@ Call::BatchControl* Call::ReuseOrAllocateBatchControl(const grpc_op* ops) {
   return bctl;
 }
 
-void Call::BatchControl::PostCompletion() {
-  Call* next_child_call;
-  Call* call = call_;
+void Call::PropagateCancellationToChildren() {
+  ParentCall* pc = parent_call();
+  if (pc != nullptr) {
+    Call* child;
+    MutexLock lock(&pc->child_list_mu);
+    child = pc->first_child;
+    if (child != nullptr) {
+      do {
+        Call* next_child_call = child->child_->sibling_next;
+        if (child->cancellation_is_inherited_) {
+          child->InternalRef("propagate_cancel");
+          child->CancelWithError(GRPC_ERROR_CANCELLED);
+          child->InternalUnref("propagate_cancel");
+        }
+        child = next_child_call;
+      } while (child != pc->first_child);
+    }
+  }
+}
+
+void FilterStackCall::BatchControl::PostCompletion() {
+  FilterStackCall* call = call_;
   grpc_error_handle error = GRPC_ERROR_REF(batch_error_.get());
 
   if (op_.send_initial_metadata) {
@@ -989,23 +1073,7 @@ void Call::BatchControl::PostCompletion() {
   if (op_.recv_trailing_metadata) {
     /* propagate cancellation to any interested children */
     gpr_atm_rel_store(&call->received_final_op_atm_, 1);
-    ParentCall* pc = call->parent_call();
-    if (pc != nullptr) {
-      Call* child;
-      MutexLock lock(&pc->child_list_mu);
-      child = pc->first_child;
-      if (child != nullptr) {
-        do {
-          next_child_call = child->child_->sibling_next;
-          if (child->cancellation_is_inherited_) {
-            GRPC_CALL_INTERNAL_REF(child->c_ptr(), "propagate_cancel");
-            child->CancelWithError(GRPC_ERROR_CANCELLED);
-            GRPC_CALL_INTERNAL_UNREF(child->c_ptr(), "propagate_cancel");
-          }
-          child = next_child_call;
-        } while (child != pc->first_child);
-      }
-    }
+    call->PropagateCancellationToChildren();
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
   }
@@ -1022,7 +1090,7 @@ void Call::BatchControl::PostCompletion() {
     Closure::Run(DEBUG_LOCATION,
                  static_cast<grpc_closure*>(completion_data_.notify_tag.tag),
                  error);
-    GRPC_CALL_INTERNAL_UNREF(call->c_ptr(), "completion");
+    call->InternalUnref("completion");
   } else {
     /* unrefs error */
     grpc_cq_end_op(
@@ -1031,21 +1099,21 @@ void Call::BatchControl::PostCompletion() {
           BatchControl* bctl = static_cast<BatchControl*>(user_data);
           Call* call = bctl->call_;
           bctl->call_ = nullptr;
-          GRPC_CALL_INTERNAL_UNREF(call->c_ptr(), "completion");
+          call->InternalUnref("completion");
         },
         this, &completion_data_.cq_completion);
   }
 }
 
-void Call::BatchControl::FinishStep() {
+void FilterStackCall::BatchControl::FinishStep() {
   if (GPR_UNLIKELY(completed_batch_step())) {
     PostCompletion();
   }
 }
 
-void Call::BatchControl::ContinueReceivingSlices() {
+void FilterStackCall::BatchControl::ContinueReceivingSlices() {
   grpc_error_handle error;
-  Call* call = call_;
+  FilterStackCall* call = call_;
   for (;;) {
     size_t remaining = call->receiving_stream_->length() -
                        (*call->receiving_buffer_)->data.raw.slice_buffer.length;
@@ -1077,8 +1145,9 @@ void Call::BatchControl::ContinueReceivingSlices() {
   }
 }
 
-void Call::BatchControl::ReceivingSliceReady(grpc_error_handle error) {
-  Call* call = call_;
+void FilterStackCall::BatchControl::ReceivingSliceReady(
+    grpc_error_handle error) {
+  FilterStackCall* call = call_;
   bool release_error = false;
 
   if (error == GRPC_ERROR_NONE) {
@@ -1109,8 +1178,8 @@ void Call::BatchControl::ReceivingSliceReady(grpc_error_handle error) {
   }
 }
 
-void Call::BatchControl::ProcessDataAfterMetadata() {
-  Call* call = call_;
+void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
+  FilterStackCall* call = call_;
   if (call->receiving_stream_ == nullptr) {
     *call->receiving_buffer_ = nullptr;
     call->receiving_message_ = false;
@@ -1134,8 +1203,9 @@ void Call::BatchControl::ProcessDataAfterMetadata() {
   }
 }
 
-void Call::BatchControl::ReceivingStreamReady(grpc_error_handle error) {
-  Call* call = call_;
+void FilterStackCall::BatchControl::ReceivingStreamReady(
+    grpc_error_handle error) {
+  FilterStackCall* call = call_;
   if (error != GRPC_ERROR_NONE) {
     call->receiving_stream_.reset();
     if (batch_error_.ok()) {
@@ -1153,7 +1223,7 @@ void Call::BatchControl::ReceivingStreamReady(grpc_error_handle error) {
   }
 }
 
-void Call::HandleCompressionAlgorithmDisabled(
+void FilterStackCall::HandleCompressionAlgorithmDisabled(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
@@ -1163,7 +1233,7 @@ void Call::HandleCompressionAlgorithmDisabled(
   CancelWithStatus(GRPC_STATUS_UNIMPLEMENTED, error_msg.c_str());
 }
 
-void Call::HandleCompressionAlgorithmNotAccepted(
+void FilterStackCall::HandleCompressionAlgorithmNotAccepted(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
@@ -1173,8 +1243,8 @@ void Call::HandleCompressionAlgorithmNotAccepted(
           algo_name, encodings_accepted_by_peer_.ToString().c_str());
 }
 
-void Call::BatchControl::ValidateFilteredMetadata() {
-  Call* call = call_;
+void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
+  FilterStackCall* call = call_;
 
   const grpc_compression_options compression_options =
       grpc_channel_compression_options(call->channel_);
@@ -1196,9 +1266,9 @@ void Call::BatchControl::ValidateFilteredMetadata() {
   }
 }
 
-void Call::BatchControl::ReceivingInitialMetadataReady(
+void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     grpc_error_handle error) {
-  Call* call = call_;
+  FilterStackCall* call = call_;
 
   GRPC_CALL_COMBINER_STOP(call->call_combiner(), "recv_initial_metadata_ready");
 
@@ -1211,8 +1281,8 @@ void Call::BatchControl::ReceivingInitialMetadataReady(
     ValidateFilteredMetadata();
 
     absl::optional<Timestamp> deadline = md->get(GrpcTimeoutMetadata());
-    if (deadline.has_value() && !call->is_client_) {
-      call_->send_deadline_ = *deadline;
+    if (deadline.has_value() && !call->is_client()) {
+      call_->set_send_deadline(*deadline);
     }
   } else {
     if (batch_error_.ok()) {
@@ -1255,7 +1325,7 @@ void Call::BatchControl::ReceivingInitialMetadataReady(
   FinishStep();
 }
 
-void Call::BatchControl::ReceivingTrailingMetadataReady(
+void FilterStackCall::BatchControl::ReceivingTrailingMetadataReady(
     grpc_error_handle error) {
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(),
                           "recv_trailing_metadata_ready");
@@ -1264,7 +1334,7 @@ void Call::BatchControl::ReceivingTrailingMetadataReady(
   FinishStep();
 }
 
-void Call::BatchControl::FinishBatch(grpc_error_handle error) {
+void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
   GRPC_CALL_COMBINER_STOP(call_->call_combiner(), "on_complete");
   if (batch_error_.ok()) {
     batch_error_.set(error);
@@ -1275,8 +1345,9 @@ void Call::BatchControl::FinishBatch(grpc_error_handle error) {
   FinishStep();
 }
 
-grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
-                                 void* notify_tag, bool is_notify_tag_closure) {
+grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
+                                            void* notify_tag,
+                                            bool is_notify_tag_closure) {
   GPR_TIMER_SCOPE("call_start_batch", 0);
 
   size_t i;
@@ -1365,7 +1436,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           }
         }
         // Currently, only server side supports compression level setting.
-        if (level_set && !is_client_) {
+        if (level_set && !is_client()) {
           const grpc_compression_algorithm calgo =
               encodings_accepted_by_peer_.CompressionAlgorithmForLevel(
                   effective_compression_level);
@@ -1389,14 +1460,14 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
         // Ignore any te metadata key value pairs specified.
         send_initial_metadata_.Remove(TeMetadata());
         /* TODO(ctiller): just make these the same variable? */
-        if (is_client_ && send_deadline_ != Timestamp::InfFuture()) {
-          send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline_);
+        if (is_client() && send_deadline() != Timestamp::InfFuture()) {
+          send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
         }
         stream_op_payload->send_initial_metadata.send_initial_metadata =
             &send_initial_metadata_;
         stream_op_payload->send_initial_metadata.send_initial_metadata_flags =
             op->flags;
-        if (is_client_) {
+        if (is_client()) {
           stream_op_payload->send_initial_metadata.peer_string = &peer_string_;
         }
         has_send_ops = true;
@@ -1438,7 +1509,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (!is_client_) {
+        if (!is_client()) {
           error = GRPC_CALL_ERROR_NOT_ON_SERVER;
           goto done_with_error;
         }
@@ -1459,7 +1530,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (is_client_) {
+        if (is_client()) {
           error = GRPC_CALL_ERROR_NOT_ON_CLIENT;
           goto done_with_error;
         }
@@ -1544,7 +1615,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
             &recv_initial_metadata_;
         stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
             &receiving_initial_metadata_ready_;
-        if (is_client_) {
+        if (is_client()) {
           stream_op_payload->recv_initial_metadata.trailing_metadata_available =
               &is_trailers_only_;
         } else {
@@ -1592,7 +1663,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (!is_client_) {
+        if (!is_client()) {
           error = GRPC_CALL_ERROR_NOT_ON_SERVER;
           goto done_with_error;
         }
@@ -1631,7 +1702,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
           error = GRPC_CALL_ERROR_INVALID_FLAGS;
           goto done_with_error;
         }
-        if (is_client_) {
+        if (is_client()) {
           error = GRPC_CALL_ERROR_NOT_ON_CLIENT;
           goto done_with_error;
         }
@@ -1661,7 +1732,7 @@ grpc_call_error Call::StartBatch(const grpc_op* ops, size_t nops,
     }
   }
 
-  GRPC_CALL_INTERNAL_REF(c_ptr(), "completion");
+  InternalRef("completion");
   if (!is_notify_tag_closure) {
     GPR_ASSERT(grpc_cq_begin_op(cq_, notify_tag));
   }
@@ -1712,8 +1783,8 @@ done_with_error:
   goto done;
 }
 
-void Call::ContextSet(grpc_context_index elem, void* value,
-                      void (*destroy)(void*)) {
+void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
+                                 void (*destroy)(void*)) {
   if (context_[elem].destroy) {
     context_[elem].destroy(context_[elem].value);
   }
@@ -1729,31 +1800,17 @@ void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
 }
 
 size_t grpc_call_get_initial_size_estimate() {
-  return grpc_core::Call::InitialSizeEstimate();
+  return grpc_core::FilterStackCall::InitialSizeEstimate();
 }
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
-  return grpc_core::Call::Create(args, out_call);
+  return grpc_core::FilterStackCall::Create(args, out_call);
 }
 
 void grpc_call_set_completion_queue(grpc_call* call,
                                     grpc_completion_queue* cq) {
   grpc_core::Call::FromC(call)->SetCompletionQueue(cq);
-}
-
-#ifndef NDEBUG
-#define REF_REASON reason
-#define REF_ARG , const char* reason
-#else
-#define REF_REASON ""
-#define REF_ARG
-#endif
-void grpc_call_internal_ref(grpc_call* c REF_ARG) {
-  GRPC_CALL_STACK_REF(grpc_core::Call::FromC(c)->call_stack(), REF_REASON);
-}
-void grpc_call_internal_unref(grpc_call* c REF_ARG) {
-  GRPC_CALL_STACK_UNREF(grpc_core::Call::FromC(c)->call_stack(), REF_REASON);
 }
 
 void grpc_call_ref(grpc_call* c) { grpc_core::Call::FromC(c)->ExternalRef(); }
@@ -1767,7 +1824,7 @@ char* grpc_call_get_peer(grpc_call* call) {
 }
 
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element) {
-  return grpc_core::Call::FromTopElem(surface_element)->c_ptr();
+  return grpc_core::FilterStackCall::FromTopElem(surface_element)->c_ptr();
 }
 
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {

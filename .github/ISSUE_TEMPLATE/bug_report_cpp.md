@@ -1,8 +1,8 @@
 ---
 name: Report a gRPC C++ bug
 about: Create a report to help us improve
-labels: kind/bug, priority/P2, lang/c++
-assignees: markdroth
+labels: kind/bug, priority/P2, lang/c++, untriaged
+assignees: nicolasnoble
 
 ---
 

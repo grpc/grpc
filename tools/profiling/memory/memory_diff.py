@@ -49,6 +49,11 @@ _INTERESTING = {
         (rb'server call memory usage: ([0-9\.]+) bytes per call', float),
 }
 
+_SCENARIOS = {
+    'default': [],
+    'minstack': ['--minstack'],
+}
+
 
 def _run():
     """Build with Bazel, then run, and extract interesting lines from the output."""
@@ -56,24 +61,27 @@ def _run():
         'tools/bazel', 'build', '-c', 'opt',
         'test/core/memory_usage/memory_usage_test'
     ])
-    output = subprocess.check_output([
-        'bazel-bin/test/core/memory_usage/memory_usage_test',
-        '--warmup=10000',
-        '--benchmark=50000',
-    ])
     ret = {}
-    for line in output.splitlines():
-        for key, (pattern, conversion) in _INTERESTING.items():
-            m = re.match(pattern, line)
-            if m:
-                ret[key] = conversion(m.group(1))
+    for scenario, extra_args in _SCENARIOS.items():
+        try:
+            output = subprocess.check_output([
+                'bazel-bin/test/core/memory_usage/memory_usage_test',
+                '--warmup=10000',
+                '--benchmark=50000',
+            ] + extra_args)
+        except subprocess.CalledProcessError as e:
+            print('Error running benchmark:', e)
+            continue
+        for line in output.splitlines():
+            for key, (pattern, conversion) in _INTERESTING.items():
+                m = re.match(pattern, line)
+                if m:
+                    ret[scenario + ': ' + key] = conversion(m.group(1))
     return ret
 
 
 cur = _run()
-new = None
-
-print(cur)
+old = None
 
 if args.diff_base:
     where_am_i = subprocess.check_output(
@@ -81,24 +89,28 @@ if args.diff_base:
     # checkout the diff base (="old")
     subprocess.check_call(['git', 'checkout', args.diff_base])
     try:
-        new = _run()
+        old = _run()
     finally:
-        # restore the original revision (="new")
+        # restore the original revision (="cur")
         subprocess.check_call(['git', 'checkout', where_am_i])
 
 text = ''
-if new is None:
-    for key, value in cur.items():
+if old is None:
+    print(cur)
+    for key, value in sorted(cur.items()):
         text += '{}: {}\n'.format(key, value)
 else:
+    print(cur, old)
     diff_size = 0
-    for key, value in _INTERESTING.items():
-        if key in cur:
-            if key not in new:
-                text += '{}: {}\n'.format(key, value)
-            else:
-                diff_size += cur[key] - new[key]
-                text += '{}: {} -> {}\n'.format(key, cur[key], new[key])
+    for scenario in _SCENARIOS.keys():
+        for key, value in sorted(_INTERESTING.items()):
+            key = scenario + ': ' + key
+            if key in cur:
+                if key not in old:
+                    text += '{}: {}\n'.format(key, cur[key])
+                else:
+                    diff_size += cur[key] - old[key]
+                    text += '{}: {} -> {}\n'.format(key, old[key], cur[key])
 
     print("DIFF_SIZE: %f" % diff_size)
     check_on_pr.label_increase_decrease_on_pr('per-call-memory', diff_size, 64)
