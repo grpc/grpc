@@ -152,7 +152,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   grpc_timer timer_ ABSL_GUARDED_BY(&timer_mu_);
   grpc_closure on_timer_;
 
-  grpc_core::Duration report_interval_ = grpc_core::Duration::Minutes(1);
+  grpc_core::Duration report_interval_;
   ByteBuffer response_;
 };
 
