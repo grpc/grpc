@@ -51,6 +51,7 @@ grpc_cc_test(
     srcs = ["parse_address_with_named_scope_id_test.cc"],
     language = "C++",
     tags = ["no_windows"],
+    uses_event_engine = True,  # uses getaddrinfo
     uses_polling = False,
     deps = [
         "//:gpr",

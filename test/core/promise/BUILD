@@ -370,6 +370,7 @@ grpc_cc_test(
         "absl/synchronization",
     ],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "test_wakeup_schedulers",
@@ -388,6 +389,7 @@ grpc_cc_test(
         "absl/status",
     ],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:call_push_pull",

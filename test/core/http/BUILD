@@ -124,6 +124,7 @@ grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

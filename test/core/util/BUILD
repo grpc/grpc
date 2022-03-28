@@ -115,6 +115,7 @@ grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",
@@ -143,6 +144,7 @@ grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",
@@ -185,6 +187,7 @@ grpc_cc_test(
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",

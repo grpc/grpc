@@ -24,6 +24,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc++",
@@ -37,6 +38,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc++",
@@ -51,6 +53,7 @@ grpc_cc_test(
         "gtest",
         "protobuf",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc++",

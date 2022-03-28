@@ -39,6 +39,7 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "avl_fuzzer.proto",
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:avl",
