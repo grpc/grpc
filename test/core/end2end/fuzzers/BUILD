@@ -27,7 +27,7 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "api_fuzzer.proto",
     tags = ["no_windows"],
-    uses_event_engine = True,
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -43,7 +43,7 @@ grpc_fuzzer(
     corpus = "client_fuzzer_corpus",
     language = "C++",
     tags = ["no_windows"],
-    uses_event_engine = True,
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -58,7 +58,7 @@ grpc_fuzzer(
     corpus = "server_fuzzer_corpus",
     language = "C++",
     tags = ["no_windows"],
-    uses_event_engine = True,
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
