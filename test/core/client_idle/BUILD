@@ -25,7 +25,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "c++",
-    test_each_engine = False,
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:idle_filter_state",

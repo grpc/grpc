@@ -262,7 +262,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclude_pollers, test_each_engine):
+def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
     """Common logic used to parameterize tests for every poller and EventEngine.
 
     Args:
@@ -272,7 +272,7 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
         tags: base tags
         args: base args
         exclude_pollers: list of poller names to exclude for this set of tests.
-        test_each_engine: set to False if the test is not sensitive to
+        uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
 
     Returns:
@@ -299,7 +299,7 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
 
     # Now generate one test for each subsequent EventEngine, all using the
     # default poller.
-    if not test_each_engine:
+    if not uses_event_engine:
         # The poller tests exercise the default engine on Linux. This test
         # handles other platforms.
         poller_config.append({
@@ -329,7 +329,7 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
             })
     return poller_config
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], test_each_engine = True):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -353,7 +353,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         copts: Add these to the compiler invocation.
         linkstatic: link the binary in static mode
         exclude_pollers: list of poller names to exclude for this set of tests.
-        test_each_engine: set to False if the test is not sensitive to
+        uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
     """
     if language.upper() == "C":
@@ -395,7 +395,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         )
         return
 
-    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, core_deps, tags, args, exclude_pollers, test_each_engine):
+    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
         native.cc_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
@@ -450,7 +450,7 @@ def grpc_generate_one_off_targets():
 def grpc_generate_objc_one_off_targets():
     pass
 
-def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], test_each_engine = True):
+def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
     """Execute an sh_test for every <poller> x <EventEngine> combination
 
     Args:
@@ -469,7 +469,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         shard_count: The number of shards for this test.
         flaky: Whether this test is flaky.
         exclude_pollers: list of poller names to exclude for this set of tests.
-        test_each_engine: set to False if the test is not sensitive to
+        uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
     """
     test_args = {
@@ -490,7 +490,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         )
         return
 
-    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, [], tags, args, exclude_pollers, test_each_engine):
+    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
         native.sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
