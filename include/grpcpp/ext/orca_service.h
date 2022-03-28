@@ -20,7 +20,8 @@
 #include <map>
 #include <string>
 
-#include <grpcpp/impl/codegen/async_generic_service.h>
+#include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server_builder.h>
 
@@ -29,7 +30,7 @@ namespace experimental {
 
 // RPC service implementation for supplying out-of-band backend
 // utilization metrics to clients.
-class OrcaService : public CallbackGenericService {
+class OrcaService : public Service {
  public:
   struct Options {
     // Minimum report interval.  If a client requests an interval lower
@@ -43,10 +44,7 @@ class OrcaService : public CallbackGenericService {
     }
   };
 
-  explicit OrcaService(Options options)
-      : min_report_duration_ms_(options.min_report_duration_ms) {}
-
-  void Register(ServerBuilder* builder);
+  explicit OrcaService(Options options);
 
   // Sets or removes the CPU utilization value to be reported to clients.
   void SetCpuUtilization(double cpu_utilization);
@@ -63,9 +61,6 @@ class OrcaService : public CallbackGenericService {
 
  private:
   class Reactor;
-
-  ServerGenericBidiReactor* CreateReactor(
-      GenericCallbackServerContext* /*ctx*/) override;
 
   const int min_report_duration_ms_;
 

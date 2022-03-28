@@ -20,6 +20,7 @@
 #include "xds/service/orca/v3/orca.upb.h"
 
 #include <grpcpp/ext/orca_service.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -31,23 +32,15 @@ namespace experimental {
 // OrcaService::Reactor
 //
 
-class OrcaService::Reactor : public ServerGenericBidiReactor,
+class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
                              public grpc_core::RefCounted<Reactor> {
  public:
-  explicit Reactor(OrcaService* service) : service_(service) {
+  explicit Reactor(OrcaService* service, const ByteBuffer* request_buffer)
+      : service_(service) {
     GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-    StartRead(&request_);
-  }
-
-  void OnReadDone(bool ok) override {
-    if (!ok) {
-      Finish(Status(StatusCode::UNKNOWN, "read failed"));
-      return;
-    }
     // Get slice from request.
     Slice slice;
-    request_.DumpToSingleSlice(&slice);
-    request_.Clear();
+    request_buffer->DumpToSingleSlice(&slice);
     // Parse request proto.
     upb::Arena arena;
     xds_service_orca_v3_OrcaLoadReportRequest* request =
@@ -160,7 +153,6 @@ class OrcaService::Reactor : public ServerGenericBidiReactor,
   grpc_closure on_timer_;
 
   grpc_core::Duration report_interval_ = grpc_core::Duration::Minutes(1);
-  ByteBuffer request_;
   ByteBuffer response_;
 };
 
@@ -168,8 +160,16 @@ class OrcaService::Reactor : public ServerGenericBidiReactor,
 // OrcaService
 //
 
-void OrcaService::Register(ServerBuilder* builder) {
-  builder->RegisterCallbackGenericService(this);
+OrcaService::OrcaService(OrcaService::Options options)
+    : min_report_duration_ms_(options.min_report_duration_ms) {
+  AddMethod(new internal::RpcServiceMethod(
+      "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
+      internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));
+  MarkMethodCallback(
+      0, new internal::CallbackServerStreamingHandler<ByteBuffer, ByteBuffer>(
+             [this](CallbackServerContext* /*ctx*/, const ByteBuffer* request) {
+               return new Reactor(this, request);
+             }));
 }
 
 void OrcaService::SetCpuUtilization(double cpu_utilization) {
@@ -206,11 +206,6 @@ void OrcaService::SetAllNamedUtilization(
     std::map<std::string, double> named_utilization) {
   grpc::internal::MutexLock lock(&mu_);
   named_utilization_ = std::move(named_utilization);
-}
-
-ServerGenericBidiReactor* OrcaService::CreateReactor(
-    GenericCallbackServerContext* /*ctx*/) {
-  return new Reactor(this);
 }
 
 }  // namespace experimental
