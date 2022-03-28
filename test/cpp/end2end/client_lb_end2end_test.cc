@@ -1819,8 +1819,8 @@ TEST_F(ClientLbPickArgsTest, Basic) {
 }
 
 xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
-    const grpc_core::LoadBalancingPolicy::BackendMetricAccessor
-        ::BackendMetricData& backend_metric_data) {
+    const grpc_core::LoadBalancingPolicy::BackendMetricAccessor::
+        BackendMetricData& backend_metric_data) {
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(backend_metric_data.cpu_utilization);
   load_report.set_mem_utilization(backend_metric_data.mem_utilization);
@@ -2183,8 +2183,8 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
  private:
   static void BackendMetricCallback(
       grpc_core::ServerAddress address,
-      const grpc_core::LoadBalancingPolicy::BackendMetricAccessor
-          ::BackendMetricData& backend_metric_data) {
+      const grpc_core::LoadBalancingPolicy::BackendMetricAccessor::
+          BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
     grpc::internal::MutexLock lock(&current_test_instance_->mu_);
@@ -2208,8 +2208,7 @@ TEST_F(OobBackendMetricTest, Basic) {
   servers_[0]->orca_service_.SetNamedUtilization(kMetricName, 0.3);
   // Start client.
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel =
-      BuildChannel("oob_backend_metric_test_lb", response_generator);
+  auto channel = BuildChannel("oob_backend_metric_test_lb", response_generator);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Send an OK RPC.
@@ -2224,8 +2223,9 @@ TEST_F(OobBackendMetricTest, Basic) {
       EXPECT_EQ(report->first, servers_[0]->port_);
       EXPECT_EQ(report->second.cpu_utilization(), 0.1);
       EXPECT_EQ(report->second.mem_utilization(), 0.2);
-      EXPECT_THAT(report->second.utilization(), ::testing::UnorderedElementsAre(
-          ::testing::Pair(kMetricName, 0.3)));
+      EXPECT_THAT(
+          report->second.utilization(),
+          ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.3)));
       break;
     }
     gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
@@ -2245,9 +2245,9 @@ TEST_F(OobBackendMetricTest, Basic) {
       if (report->second.cpu_utilization() != 0.1) {
         EXPECT_EQ(report->second.cpu_utilization(), 0.4);
         EXPECT_EQ(report->second.mem_utilization(), 0.5);
-        EXPECT_THAT(report->second.utilization(),
-                    ::testing::UnorderedElementsAre(
-                        ::testing::Pair(kMetricName, 0.6)));
+        EXPECT_THAT(
+            report->second.utilization(),
+            ::testing::UnorderedElementsAre(::testing::Pair(kMetricName, 0.6)));
         break;
       }
     }

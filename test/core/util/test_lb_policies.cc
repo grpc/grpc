@@ -21,8 +21,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
@@ -583,12 +583,11 @@ class OobBackendMetricTestLoadBalancingPolicy
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         ServerAddress address, const grpc_channel_args& args) override {
-      auto subchannel = parent_->channel_control_helper()->CreateSubchannel(
-          address, args);
+      auto subchannel =
+          parent_->channel_control_helper()->CreateSubchannel(address, args);
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
-          grpc_core::Duration::Seconds(1),
-          absl::make_unique<BackendMetricWatcher>(std::move(address),
-                                                  parent_)));
+          Duration::Seconds(1), absl::make_unique<BackendMetricWatcher>(
+                                    std::move(address), parent_)));
       return subchannel;
     }
 

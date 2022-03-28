@@ -50,7 +50,7 @@ class OrcaWatcher;
 // registered watchers.
 class OrcaProducer : public Subchannel::DataProducerInterface {
  public:
-  OrcaProducer(RefCountedPtr<Subchannel> subchannel);
+  explicit OrcaProducer(RefCountedPtr<Subchannel> subchannel);
 
   void Orphan() override;
 
