@@ -136,7 +136,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     auto addr_str = grpc_sockaddr_to_string(&addr, false);
     if (!addr_str.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          std::string(addr_str.status().message()));
+          std::string(addr_str.status().ToString()));
     }
     gpr_log(GPR_DEBUG,
             "Adding local addr from interface %s flags 0x%x to server: %s",

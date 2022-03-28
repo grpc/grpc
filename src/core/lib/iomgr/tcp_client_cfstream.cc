@@ -140,11 +140,11 @@ static void OnOpen(void* arg, grpc_error_handle error) {
 
 static void ParseResolvedAddress(const grpc_resolved_address* addr,
                                  CFStringRef* host, int* port) {
-  auto host_port = grpc_sockaddr_to_string_or_errormsg(addr, true);
+  auto host_port = grpc_sockaddr_to_string(addr, true);
   std::string host_string;
   std::string port_string;
   grpc_core::SplitHostPort(
-      host_port.ok() ? host_port.value() : host_port.status().message(),
+      host_port.ok() ? host_port.value() : host_port.status().ToString(),
       &host_string, &port_string);
   *host = CFStringCreateWithCString(NULL, host_string.c_str(),
                                     kCFStringEncodingUTF8);

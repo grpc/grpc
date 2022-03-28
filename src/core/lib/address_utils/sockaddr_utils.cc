@@ -43,12 +43,13 @@
 #endif
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-static std::string grpc_sockaddr_to_uri_unix_if_possible(
+static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
-    return "";
+    return absl::InvalidArgumentError(
+        absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
   }
   const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
   if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
@@ -61,9 +62,9 @@ static std::string grpc_sockaddr_to_uri_unix_if_possible(
   return absl::StrCat("unix:", unix_addr->sun_path);
 }
 #else
-static std::string grpc_sockaddr_to_uri_unix_if_possible(
+static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* /* addr */) {
-  return "";
+  absl::StrCat("Unix socket is not supported.");
 }
 #endif
 
@@ -249,8 +250,11 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
   return out;
 }
 
-std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
-  if (resolved_addr->len == 0) return "";
+absl::StatusOr<std::string> grpc_sockaddr_to_uri(
+    const grpc_resolved_address* resolved_addr) {
+  if (resolved_addr->len == 0) {
+    return absl::InvalidArgumentError("Empty address");
+  }
   grpc_resolved_address addr_normalized;
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;
@@ -259,14 +263,9 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
-
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
-  std::string uri_str;
-  if (scheme != nullptr) {
-    uri_str = absl::StrCat(scheme, ":",
-                           path.ok() ? path.value() : path.status().message());
-  }
-  return uri_str;
+  if (!path.ok()) return path;
+  return absl::StrCat(scheme, ":", path.value());
 }
 
 const char* grpc_sockaddr_get_uri_scheme(

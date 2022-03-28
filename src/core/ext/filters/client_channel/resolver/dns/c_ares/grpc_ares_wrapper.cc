@@ -532,7 +532,7 @@ static void log_address_sorting_list(const grpc_ares_request* r,
             "]=%s",
             r, input_output_str, i,
             std::string(addr_str.ok() ? addr_str.value()
-                                      : addr_str.status().message())
+                                      : addr_str.status().ToString())
                 .c_str());
   }
 }

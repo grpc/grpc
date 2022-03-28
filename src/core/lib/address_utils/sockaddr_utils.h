@@ -69,7 +69,8 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
     const grpc_resolved_address* addr, bool normalize) GRPC_MUST_USE_RESULT;
 
 /* Returns the URI string corresponding to \a addr */
-std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
+absl::StatusOr<std::string> grpc_sockaddr_to_uri(
+    const grpc_resolved_address* addr);
 
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);

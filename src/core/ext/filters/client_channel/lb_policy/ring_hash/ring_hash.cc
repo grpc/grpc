@@ -315,7 +315,6 @@ RingHash::Ring::Ring(RingHash* parent,
         const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
     auto addr_str = grpc_sockaddr_to_string(&sd->address().address(), false);
-    if (!addr_str.ok()) continue;
     AddressWeight address_weight;
     address_weight.address = std::string(addr_str.value());
     if (weight_attribute != nullptr) {
@@ -326,7 +325,6 @@ RingHash::Ring::Ring(RingHash* parent,
     address_weights.push_back(std::move(address_weight));
   }
   GPR_ASSERT(sum > 0);
-
   // Calculating normalized weights and find min and max.
   double min_normalized_weight = 1.0;
   double max_normalized_weight = 0.0;
