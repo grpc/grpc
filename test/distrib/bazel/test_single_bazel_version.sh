@@ -41,7 +41,19 @@ EXCLUDED_TARGETS=(
   "-//examples/android/binder/..."
 )
 
+FAILED_TESTS=""
+
 export OVERRIDE_BAZEL_VERSION="$VERSION"
 # when running under bazel docker image, the workspace is read only.
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
-bazel build -- //... "${EXCLUDED_TARGETS[@]}"
+bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
+
+cd test/distrib/bazel/cpp/
+
+bazel test //:all || FAILED_TESTS="${FAILED_TESTS}C++ Distribtest"
+
+if [ "$FAILED_TESTS" != "" ]
+then
+  echo "Failed tests at version ${VERSION}: ${FAILED_TESTS}"
+  exit 1
+fi

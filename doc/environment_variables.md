@@ -53,9 +53,12 @@ some configuration as environment variables that can be set.
   - channel - traces operations on the C core channel stack
   - channel_stack - traces the set of filters in a channel stack upon
     construction
-  - client_channel_call - traces client channel call batch activity
-  - client_channel_routing - traces client channel call routing, including
+  - client_channel - traces client channel control plane activity, including
     resolver and load balancing policy interaction
+  - client_channel_call - traces client channel call activity related to name
+    resolution
+  - client_channel_lb_call - traces client channel call activity related
+    to load balancing picking
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - cronet - traces state in the cronet transport engine
