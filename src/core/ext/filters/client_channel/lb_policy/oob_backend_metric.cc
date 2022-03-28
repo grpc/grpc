@@ -195,7 +195,15 @@ class OrcaProducer::OrcaStreamEventHandler
   void RecvTrailingMetadataReadyLocked(SubchannelStreamClient* /*client*/,
                                        grpc_status_code status) override {
     if (status == GRPC_STATUS_UNIMPLEMENTED) {
-      gpr_log(GPR_ERROR, "Orca stream returned UNIMPLEMENTED; disabling");
+      static const char kErrorMessage[] =
+          "Orca stream returned UNIMPLEMENTED; disabling";
+      gpr_log(GPR_ERROR, kErrorMessage);
+      auto* channelz_node = producer_->subchannel_->channelz_node();
+      if (channelz_node != nullptr) {
+        channelz_node->AddTraceEvent(
+            channelz::ChannelTrace::Error,
+            grpc_slice_from_static_string(kErrorMessage));
+      }
     }
   }
 
