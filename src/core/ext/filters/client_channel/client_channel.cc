@@ -2427,6 +2427,7 @@ class ClientChannel::LoadBalancedCall::Metadata
   explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
 
   void Add(absl::string_view key, absl::string_view value) override {
+    if (batch_ == nullptr) return;
     // Gross, egregious hack to support legacy grpclb behavior.
     // TODO(ctiller): Use a promise context for this once that plumbing is done.
     if (key == GrpcLbClientStatsMetadata::key()) {
@@ -2447,6 +2448,7 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
       override {
+    if (batch_ == nullptr) return {};
     Encoder encoder;
     batch_->Encode(&encoder);
     return encoder.Take();
@@ -2454,6 +2456,7 @@ class ClientChannel::LoadBalancedCall::Metadata
 
   absl::optional<absl::string_view> Lookup(absl::string_view key,
                                            std::string* buffer) const override {
+    if (batch_ == nullptr) return absl::nullopt;
     return batch_->GetStringValue(key, buffer);
   }
 
@@ -2524,7 +2527,8 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
       : lb_call_(lb_call) {}
 
   const BackendMetricData* GetBackendMetricData() override {
-    if (lb_call_->backend_metric_data_ == nullptr) {
+    if (lb_call_->backend_metric_data_ == nullptr &&
+        lb_call_->recv_trailing_metadata_ != nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
               XEndpointLoadMetricsBinMetadata())) {
         lb_call_->backend_metric_data_ =
@@ -2594,6 +2598,12 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
 }
 
 void ClientChannel::LoadBalancedCall::Orphan() {
+  // If the recv_trailing_metadata op was never started, then notify
+  // about call completion here, as best we can.  We assume status
+  // CANCELLED in this case.
+  if (recv_trailing_metadata_ == nullptr) {
+    RecordCallCompletion(absl::CancelledError("call cancelled"));
+  }
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer_ != nullptr) {
     gpr_timespec latency =
@@ -2905,22 +2915,7 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
         status = absl::Status(static_cast<absl::StatusCode>(code), message);
       }
     }
-    // If we have a tracer, notify it.
-    if (self->call_attempt_tracer_ != nullptr) {
-      self->call_attempt_tracer_->RecordReceivedTrailingMetadata(
-          status, self->recv_trailing_metadata_,
-          *self->transport_stream_stats_);
-    }
-    // If the LB policy requested a callback for trailing metadata, invoke
-    // the callback.
-    if (self->lb_subchannel_call_tracker_ != nullptr) {
-      Metadata trailing_metadata(self->recv_trailing_metadata_);
-      BackendMetricAccessor backend_metric_accessor(self);
-      LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-          status, &trailing_metadata, &backend_metric_accessor};
-      self->lb_subchannel_call_tracker_->Finish(args);
-      self->lb_subchannel_call_tracker_.reset();
-    }
+    self->RecordCallCompletion(status);
   }
   // Chain to original callback.
   if (self->failure_error_ != GRPC_ERROR_NONE) {
@@ -2931,6 +2926,25 @@ void ClientChannel::LoadBalancedCall::RecvTrailingMetadataReady(
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
                error);
+}
+
+void ClientChannel::LoadBalancedCall::RecordCallCompletion(
+    absl::Status status) {
+  // If we have a tracer, notify it.
+  if (call_attempt_tracer_ != nullptr) {
+    call_attempt_tracer_->RecordReceivedTrailingMetadata(
+        status, recv_trailing_metadata_, transport_stream_stats_);
+  }
+  // If the LB policy requested a callback for trailing metadata, invoke
+  // the callback.
+  if (lb_subchannel_call_tracker_ != nullptr) {
+    Metadata trailing_metadata(recv_trailing_metadata_);
+    BackendMetricAccessor backend_metric_accessor(this);
+    LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+        status, &trailing_metadata, &backend_metric_accessor};
+    lb_subchannel_call_tracker_->Finish(args);
+    lb_subchannel_call_tracker_.reset();
+  }
 }
 
 void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
