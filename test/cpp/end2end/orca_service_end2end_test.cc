@@ -95,7 +95,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
         absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    orca_service_.Register(&builder);
+    builder.RegisterService(&orca_service_);
     server_ = builder.BuildAndStart();
     gpr_log(GPR_INFO, "server started on %s", server_address_.c_str());
     auto channel = CreateChannel(server_address, InsecureChannelCredentials());
