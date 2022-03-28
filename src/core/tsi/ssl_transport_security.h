@@ -209,19 +209,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   - server_name_indication indicates the name of the server the client is
     trying to connect to which will be relayed to the server using the SNI
     extension.
+  - network_bio_buf_size and ssl_bio_buf_size represent BIO pair buffers used in
+    SSL. The buffer size being 0 translates to 17KB in boringSSL.
   - handshaker is the address of the handshaker pointer to be created.
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* factory,
-    const char* server_name_indication, tsi_handshaker** handshaker);
-
-/* Creates a client handshaker with a custom BIO pair.
- * The default size of each BIO buffer is 0, which translates to 17KB in
- * boringSSL. */
-tsi_result
-tsi_ssl_client_handshaker_factory_create_handshaker_with_custom_bio_pair(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
@@ -356,18 +350,13 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
 /* Creates a server handshaker.
   - factory is the factory from which the handshaker will be created.
+  - network_bio_buf_size and ssl_bio_buf_size represent BIO pair buffers used in
+    SSL. The buffer size being 0 translates to 17KB in boringSSL.
   - handshaker is the address of the handshaker pointer to be created.
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker);
-
-/* Creates a server handshaker with a custom BIO pair.
- * The default size of each BIO buffer is 0, which translates to 17KB in
- * boringSSL. */
-tsi_result
-tsi_ssl_server_handshaker_factory_create_handshaker_with_custom_bio_pair(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
 

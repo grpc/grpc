@@ -77,7 +77,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     tsi_handshaker* handshaker = nullptr;
     if (handshaker_factory_ != nullptr) {
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
-          handshaker_factory_, secure_peer_name_, &handshaker);
+          handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
+          /*ssl_bio_buf_size=*/0, &handshaker);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
                 tsi_result_to_string(result));

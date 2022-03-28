@@ -1771,21 +1771,13 @@ static int select_protocol_list(const unsigned char** out,
 
 /* --- tsi_ssl_client_handshaker_factory methods implementation. --- */
 
-tsi_result
-tsi_ssl_client_handshaker_factory_create_handshaker_with_custom_bio_pair(
+tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, &factory->base, handshaker);
-}
-
-tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
-    tsi_ssl_client_handshaker_factory* factory,
-    const char* server_name_indication, tsi_handshaker** handshaker) {
-  return tsi_ssl_client_handshaker_factory_create_handshaker_with_custom_bio_pair(
-      factory, server_name_indication, 0, 0, handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -1818,8 +1810,7 @@ static int client_handshaker_factory_npn_callback(
 
 /* --- tsi_ssl_server_handshaker_factory methods implementation. --- */
 
-tsi_result
-tsi_ssl_server_handshaker_factory_create_handshaker_with_custom_bio_pair(
+tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
   if (factory->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
@@ -1828,11 +1819,6 @@ tsi_ssl_server_handshaker_factory_create_handshaker_with_custom_bio_pair(
   return create_tsi_ssl_handshaker(factory->ssl_contexts[0], 0, nullptr,
                                    network_bio_buf_size, ssl_bio_buf_size,
                                    &factory->base, handshaker);
-}
-tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
-    tsi_ssl_server_handshaker_factory* factory, tsi_handshaker** handshaker) {
-  return tsi_ssl_server_handshaker_factory_create_handshaker_with_custom_bio_pair(
-      factory, 0, 0, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(

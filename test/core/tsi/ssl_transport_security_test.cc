@@ -173,17 +173,17 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
                  &server_options, &ssl_fixture->server_handshaker_factory) ==
              TSI_OK);
   /* Create server and client handshakers. */
-  GPR_ASSERT(
-      tsi_ssl_client_handshaker_factory_create_handshaker_with_custom_bio_pair(
-          ssl_fixture->client_handshaker_factory,
-          ssl_fixture->server_name_indication,
-          ssl_fixture->network_bio_buf_size, ssl_fixture->ssl_bio_buf_size,
-          &ssl_fixture->base.client_handshaker) == TSI_OK);
-  GPR_ASSERT(
-      tsi_ssl_server_handshaker_factory_create_handshaker_with_custom_bio_pair(
-          ssl_fixture->server_handshaker_factory,
-          ssl_fixture->network_bio_buf_size, ssl_fixture->ssl_bio_buf_size,
-          &ssl_fixture->base.server_handshaker) == TSI_OK);
+  GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
+                 ssl_fixture->client_handshaker_factory,
+                 ssl_fixture->server_name_indication,
+                 ssl_fixture->network_bio_buf_size,
+                 ssl_fixture->ssl_bio_buf_size,
+                 &ssl_fixture->base.client_handshaker) == TSI_OK);
+  GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
+                 ssl_fixture->server_handshaker_factory,
+                 ssl_fixture->network_bio_buf_size,
+                 ssl_fixture->ssl_bio_buf_size,
+                 &ssl_fixture->base.server_handshaker) == TSI_OK);
 }
 
 static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
