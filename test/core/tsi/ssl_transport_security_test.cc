@@ -813,8 +813,8 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
 
   for (i = 0; i < 3; ++i) {
     GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
-                   client_handshaker_factory, "google.com", &handshaker[i]) ==
-               TSI_OK);
+                   client_handshaker_factory, "google.com", 0, 0,
+                   &handshaker[i]) == TSI_OK);
   }
 
   tsi_handshaker_destroy(handshaker[1]);
@@ -858,7 +858,7 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
 
   for (i = 0; i < 3; ++i) {
     GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
-                   server_handshaker_factory, &handshaker[i]) == TSI_OK);
+                   server_handshaker_factory, 0, 0, &handshaker[i]) == TSI_OK);
   }
 
   tsi_handshaker_destroy(handshaker[1]);
