@@ -20,10 +20,13 @@
 #include <map>
 #include <string>
 
+#include "absl/types/optional.h"
+
 #include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server_builder.h>
+#include <grpcpp/support/slice.h>
 
 namespace grpc {
 namespace experimental {
@@ -62,12 +65,15 @@ class OrcaService : public Service {
  private:
   class Reactor;
 
+  Slice GetOrCreateSerializedResponse();
+
   const int min_report_duration_ms_;
 
   grpc::internal::Mutex mu_;
   double cpu_utilization_ ABSL_GUARDED_BY(&mu_) = -1;
   double memory_utilization_ ABSL_GUARDED_BY(&mu_) = -1;
   std::map<std::string, double> named_utilization_ ABSL_GUARDED_BY(&mu_);
+  absl::optional<Slice> response_slice_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace experimental

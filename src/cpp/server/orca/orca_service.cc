@@ -86,30 +86,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
  private:
   void SendResponse() {
-    upb::Arena arena;
-    xds_data_orca_v3_OrcaLoadReport* response =
-        xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
-    {
-      grpc::internal::MutexLock lock(&service_->mu_);
-      if (service_->cpu_utilization_ != -1) {
-        xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(
-            response, service_->cpu_utilization_);
-      }
-      if (service_->memory_utilization_ != -1) {
-        xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(
-            response, service_->memory_utilization_);
-      }
-      for (const auto& p : service_->named_utilization_) {
-        xds_data_orca_v3_OrcaLoadReport_utilization_set(
-            response,
-            upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
-            p.second, arena.ptr());
-      }
-    }
-    size_t buf_length;
-    char* buf = xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(),
-                                                          &buf_length);
-    Slice response_slice(buf, buf_length);
+    Slice response_slice = service_->GetOrCreateSerializedResponse();
     ByteBuffer response_buffer(&response_slice, 1);
     response_.Swap(&response_buffer);
     StartWrite(&response_);
@@ -175,37 +152,72 @@ OrcaService::OrcaService(OrcaService::Options options)
 void OrcaService::SetCpuUtilization(double cpu_utilization) {
   grpc::internal::MutexLock lock(&mu_);
   cpu_utilization_ = cpu_utilization;
+  response_slice_.reset();
 }
 
 void OrcaService::DeleteCpuUtilization() {
   grpc::internal::MutexLock lock(&mu_);
   cpu_utilization_ = -1;
+  response_slice_.reset();
 }
 
 void OrcaService::SetMemoryUtilization(double memory_utilization) {
   grpc::internal::MutexLock lock(&mu_);
   memory_utilization_ = memory_utilization;
+  response_slice_.reset();
 }
 
 void OrcaService::DeleteMemoryUtilization() {
   grpc::internal::MutexLock lock(&mu_);
   memory_utilization_ = -1;
+  response_slice_.reset();
 }
 
 void OrcaService::SetNamedUtilization(std::string name, double utilization) {
   grpc::internal::MutexLock lock(&mu_);
   named_utilization_[std::move(name)] = utilization;
+  response_slice_.reset();
 }
 
 void OrcaService::DeleteNamedUtilization(const std::string& name) {
   grpc::internal::MutexLock lock(&mu_);
   named_utilization_.erase(name);
+  response_slice_.reset();
 }
 
 void OrcaService::SetAllNamedUtilization(
     std::map<std::string, double> named_utilization) {
   grpc::internal::MutexLock lock(&mu_);
   named_utilization_ = std::move(named_utilization);
+  response_slice_.reset();
+}
+
+Slice OrcaService::GetOrCreateSerializedResponse() {
+  grpc::internal::MutexLock lock(&mu_);
+  if (!response_slice_.has_value()) {
+    upb::Arena arena;
+    xds_data_orca_v3_OrcaLoadReport* response =
+        xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
+    if (cpu_utilization_ != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_cpu_utilization(response,
+                                                          cpu_utilization_);
+    }
+    if (memory_utilization_ != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
+                                                          memory_utilization_);
+    }
+    for (const auto& p : named_utilization_) {
+      xds_data_orca_v3_OrcaLoadReport_utilization_set(
+          response,
+          upb_StringView_FromDataAndSize(p.first.data(), p.first.size()),
+          p.second, arena.ptr());
+    }
+    size_t buf_length;
+    char* buf = xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(),
+                                                          &buf_length);
+    response_slice_.emplace(buf, buf_length);
+  }
+  return Slice(*response_slice_);
 }
 
 }  // namespace experimental
