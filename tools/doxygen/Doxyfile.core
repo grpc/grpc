@@ -762,6 +762,7 @@ WARN_LOGFILE           =
 
 INPUT                  = doc/PROTOCOL-HTTP2.md \
 doc/PROTOCOL-WEB.md \
+doc/bazel_support.md \
 doc/binary-logging.md \
 doc/c-style-guide.md \
 doc/command_line_tool.md \
