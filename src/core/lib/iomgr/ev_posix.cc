@@ -126,12 +126,12 @@ const grpc_event_engine_vtable* init_non_polling(bool explicit_request) {
 // environment variable if that variable is set (which should be a
 // comma-separated list of one or more event engine names)
 static event_engine_factory g_factories[] = {
-    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
-    {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
-    {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
-    {"poll", grpc_init_poll_posix},       {"none", init_non_polling},
-    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_HEAD_CUSTOM, nullptr},      {ENGINE_HEAD_CUSTOM, nullptr},
+    {ENGINE_HEAD_CUSTOM, nullptr},      {ENGINE_HEAD_CUSTOM, nullptr},
+    {"epoll1", grpc_init_epoll1_linux}, {"epollex", grpc_init_epollex_linux},
+    {"poll", grpc_init_poll_posix},     {"none", init_non_polling},
+    {ENGINE_TAIL_CUSTOM, nullptr},      {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},      {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
