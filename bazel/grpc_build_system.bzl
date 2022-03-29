@@ -296,7 +296,9 @@ def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclud
         })
 
     # Now generate one test for each subsequent EventEngine, all using the
-    # default poller.
+    # default poller. These tests will have `@engine=<name>` appended to the
+    # test target name. If a test target name has no `@engine=<name>` component,
+    # that indicates that the default EventEngine is being used.
     if not uses_event_engine:
         # The poller tests exercise the default engine on Linux. This test
         # handles other platforms.
