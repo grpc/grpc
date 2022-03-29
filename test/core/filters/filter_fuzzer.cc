@@ -401,6 +401,8 @@ class MainLoop {
       if (!promise_.has_value()) return;
       auto r = (*promise_)();
       if (absl::holds_alternative<Pending>(r)) return;
+      ServerMetadataHandle md = std::move(absl::get<ServerMetadataHandle>(r));
+      if (md.get() != server_trailing_metadata_.get()) md->~ServerMetadata();
       promise_.reset();
     }
 
