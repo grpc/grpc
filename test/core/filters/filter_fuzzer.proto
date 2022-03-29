@@ -18,6 +18,10 @@ package filter_fuzzer;
 
 message Empty {}
 
+message AuthContext {}
+
+message AuthorizationPolicyProvider {}
+
 message ChannelArg {
     string key = 1;
     oneof value {
@@ -25,6 +29,9 @@ message ChannelArg {
         int64 i = 3;
         Empty resource_quota = 4;
         Empty transport = 5;
+        Empty channel_security_connector = 6;
+        AuthContext auth_context = 7;
+        AuthorizationPolicyProvider authorization_policy_provider = 8;
     }
 }
 

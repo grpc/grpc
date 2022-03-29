@@ -61,6 +61,44 @@ const grpc_transport_vtable kFakeTransportVTable = {
     [](grpc_transport* self) -> grpc_endpoint* { abort(); },
 };
 
+class FakeChannelSecurityConnector final
+    : public grpc_channel_security_connector {
+ public:
+  FakeChannelSecurityConnector()
+      : grpc_channel_security_connector("fake", nullptr, nullptr) {}
+
+  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  grpc_closure* on_peer_checked) override {
+    abort();
+  }
+
+  void cancel_check_peer(grpc_closure* on_peer_checked,
+                         grpc_error_handle error) override {
+    abort();
+  }
+
+  int cmp(const grpc_security_connector* other) const override { abort(); }
+
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) override {
+    abort();
+  }
+
+  void add_handshakers(const grpc_channel_args* args,
+                       grpc_pollset_set* interested_parties,
+                       grpc_core::HandshakeManager* handshake_mgr) override {
+    abort();
+  }
+};
+
+struct GlobalObjects {
+  ResourceQuotaRefPtr resource_quota = MakeResourceQuota("test");
+  grpc_transport transport{&kFakeTransportVTable};
+  RefCountedPtr<FakeChannelSecurityConnector> channel_security_connector{
+      MakeRefCounted<FakeChannelSecurityConnector>()};
+};
+
 struct Filter {
   absl::string_view name;
   absl::StatusOr<std::unique_ptr<ChannelFilter>> (*create)(
@@ -81,11 +119,6 @@ struct Filter {
   }
 };
 
-struct GlobalObjects {
-  ResourceQuotaRefPtr resource_quota = MakeResourceQuota("test");
-  grpc_transport transport{&kFakeTransportVTable};
-};
-
 #define MAKE_FILTER(name) Filter::Make<name>(#name)
 
 const Filter* const kFilters[] = {
@@ -94,7 +127,6 @@ const Filter* const kFilters[] = {
     MAKE_FILTER(ClientAuthFilter),
     MAKE_FILTER(GrpcServerAuthzFilter),
 };
-
 
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
@@ -118,6 +150,52 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
         args = args.Set(GRPC_ARG_TRANSPORT,
                         ChannelArgs::Pointer(&globals->transport, &vtable));
       }
+    } else if (arg.key() == GRPC_ARG_SECURITY_CONNECTOR) {
+      if (arg.value_case() ==
+          filter_fuzzer::ChannelArg::kChannelSecurityConnector) {
+        static const grpc_arg_pointer_vtable vtable = {
+            // copy
+            [](void* p) { return p; },
+            // destroy
+            [](void*) {},
+            // cmp
+            [](void* a, void* b) { return QsortCompare(a, b); },
+        };
+        args =
+            args.Set(GRPC_ARG_SECURITY_CONNECTOR,
+                     ChannelArgs::Pointer(
+                         globals->channel_security_connector.get(), &vtable));
+      }
+    } else if (arg.key() == GRPC_AUTH_CONTEXT_ARG) {
+      if (arg.value_case() == filter_fuzzer::ChannelArg::kAuthContext) {
+        static const grpc_arg_pointer_vtable vtable = {
+            // copy
+            [](void* p) { return p; },
+            // destroy
+            [](void*) {},
+            // cmp
+            [](void* a, void* b) { return QsortCompare(a, b); },
+        };
+        args = args.Set(
+            GRPC_AUTH_CONTEXT_ARG,
+            ChannelArgs::Pointer(globals->auth_context.get(), &vtable));
+      }
+    } else if (arg.key() == GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) {
+      if (arg.value_case() ==
+          filter_fuzzer::ChannelArg::kAuthorizationPolicyProvider) {
+        static const grpc_arg_pointer_vtable vtable = {
+            // copy
+            [](void* p) { return p; },
+            // destroy
+            [](void*) {},
+            // cmp
+            [](void* a, void* b) { return QsortCompare(a, b); },
+        };
+        args = args.Set(
+            GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+            ChannelArgs::Pointer(globals->authorization_policy_provider.get(),
+                                 &vtable));
+      }
     } else {
       switch (arg.value_case()) {
         case filter_fuzzer::ChannelArg::VALUE_NOT_SET:
@@ -130,6 +208,9 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
           break;
         case filter_fuzzer::ChannelArg::kResourceQuota:
         case filter_fuzzer::ChannelArg::kTransport:
+        case filter_fuzzer::ChannelArg::kChannelSecurityConnector:
+        case filter_fuzzer::ChannelArg::kAuthContext:
+        case filter_fuzzer::ChannelArg::kAuthorizationPolicyProvider:
           break;
       }
     }
@@ -226,6 +307,7 @@ class MainLoop {
               return CheckCompletion();
             };
           });
+      abort();
       Step();
     }
 
