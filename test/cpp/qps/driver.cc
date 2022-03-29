@@ -576,7 +576,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Start a run
   gpr_log(GPR_INFO, "Starting");
 
-  auto start_time = time(NULL);
+  auto start_time = time(nullptr);
 
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
@@ -629,7 +629,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   bool client_finish_first =
       (client_config.rpc_type() != STREAMING_FROM_SERVER);
 
-  auto end_time = time(NULL);
+  auto end_time = time(nullptr);
 
   FinishClients(clients, client_mark);
 
