@@ -172,7 +172,6 @@ class ClientCallData::PollContext {
         Poll<ServerMetadataHandle> poll = self_->promise_();
         if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
           auto* md = UnwrapMetadata(std::move(*r));
-          gpr_log(GPR_DEBUG, "finish promise: %s", md->DebugString().c_str());
           bool destroy_md = true;
           if (self_->recv_trailing_state_ == RecvTrailingState::kComplete) {
             if (self_->recv_trailing_metadata_ != md) {
@@ -579,14 +578,6 @@ void ClientCallData::StartPromise() {
 }
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
-  gpr_log(
-      GPR_ERROR,
-      "%p RecvInitialMetadataReady: send_initial_state=%d, "
-      "recv_trailing_state=%d, "
-      "recv_initial_state=%d error=%s",
-      this, send_initial_state_, recv_trailing_state_,
-      recv_initial_metadata_ == nullptr ? -1 : recv_initial_metadata_->state,
-      grpc_error_std_string(error).c_str());
   ScopedContext context(this);
   switch (recv_initial_metadata_->state) {
     case RecvInitialMetadata::kHookedWaitingForLatch:
