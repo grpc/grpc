@@ -82,7 +82,12 @@ class FakeChannelSecurityConnector final
 
   grpc_core::ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override {
-    abort();
+    uint32_t qry = next_check_call_host_qry_++;
+    return [this, qry]() -> Poll<absl::Status> {
+      auto it = check_call_host_results_.find(qry);
+      if (it == check_call_host_results_.end()) return Pending{};
+      return it->second;
+    };
   }
 
   void add_handshakers(const grpc_channel_args* args,
@@ -90,6 +95,16 @@ class FakeChannelSecurityConnector final
                        grpc_core::HandshakeManager* handshake_mgr) override {
     abort();
   }
+
+  void FinishCheckCallHost(uint32_t qry, absl::Status status) {
+    check_call_host_results_.emplace(qry, std::move(status));
+    check_call_host_wakers_[qry].Wakeup();
+  }
+
+ private:
+  uint32_t next_check_call_host_qry_ = 0;
+  std::map<uint32_t, Waker> check_call_host_wakers_;
+  std::map<uint32_t, absl::Status> check_call_host_results_;
 };
 
 class ConstAuthorizationEngine final : public AuthorizationEngine {
@@ -122,6 +137,21 @@ struct GlobalObjects {
   grpc_transport transport{&kFakeTransportVTable};
   RefCountedPtr<FakeChannelSecurityConnector> channel_security_connector{
       MakeRefCounted<FakeChannelSecurityConnector>()};
+
+  void Perform(const filter_fuzzer::GlobalObjectAction& action) {
+    switch (action.type_case()) {
+      case filter_fuzzer::GlobalObjectAction::kSetResourceQuota:
+        resource_quota->memory_quota()->SetSize(action.set_resource_quota());
+        break;
+      case filter_fuzzer::GlobalObjectAction::kFinishCheckCallHost:
+        channel_security_connector->FinishCheckCallHost(
+            action.finish_check_call_host().qry(),
+            absl::Status(
+                absl::StatusCode(action.finish_check_call_host().status()),
+                action.finish_check_call_host().message()));
+        break;
+    }
+  }
 };
 
 struct Filter {
@@ -244,7 +274,13 @@ class MainLoop {
                               ->CreateMemoryAllocator("test")),
         filter_(std::move(filter)) {}
 
+  ~MainLoop() {
+    ExecCtx exec_ctx;
+    calls_.clear();
+  }
+
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
+    ExecCtx exec_ctx;
     for (auto id : absl::exchange(wakeups_, {})) {
       if (auto* call = GetCall(id)) call->Wakeup();
     }
@@ -269,6 +305,8 @@ class MainLoop {
           call->RecvTrailingMetadata(action.receive_trailing_metadata());
         }
         break;
+      case filter_fuzzer::Action::kGlobalObjectAction:
+        globals->Perform(action.global_object_action());
     }
   }
 

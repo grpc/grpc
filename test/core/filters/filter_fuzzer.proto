@@ -54,9 +54,16 @@ message Metadata {
     repeated Metadatum metadata = 1;
 }
 
+message FinishCheckCallHost {
+    uint32 qry = 1;
+    uint32 status = 2;
+    string message = 3;
+}
+
 message GlobalObjectAction {
     oneof type {
-        Empty set_resource_quota = 1;
+        uint32 set_resource_quota = 1;
+        FinishCheckCallHost finish_check_call_host = 2;
     }
 }
 
