@@ -109,7 +109,7 @@ class FakeChannelSecurityConnector final
 
 class ConstAuthorizationEngine final : public AuthorizationEngine {
  public:
-  ConstAuthorizationEngine(AuthorizationEngine::Decision decision)
+  explicit ConstAuthorizationEngine(AuthorizationEngine::Decision decision)
       : decision_(decision) {}
 
   Decision Evaluate(const EvaluateArgs& args) const override {
@@ -123,7 +123,7 @@ class ConstAuthorizationEngine final : public AuthorizationEngine {
 class FakeAuthorizationPolicyProvider final
     : public grpc_authorization_policy_provider {
  public:
-  FakeAuthorizationPolicyProvider(AuthorizationEngines engines)
+  explicit FakeAuthorizationPolicyProvider(AuthorizationEngines engines)
       : engines_(engines) {}
   void Orphan() override {}
   AuthorizationEngines engines() override { return engines_; }
@@ -355,7 +355,7 @@ class MainLoop {
       Step();
     }
 
-    ~Call() {
+    ~Call() override {
       for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
         if (legacy_context_[i].destroy != nullptr) {
           legacy_context_[i].destroy(legacy_context_[i].value);
