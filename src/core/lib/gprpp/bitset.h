@@ -153,6 +153,18 @@ class BitSet {
     return true;
   }
 
+  template <typename Int>
+  typename std::enable_if<std::is_unsigned<Int>::value &&
+                              (sizeof(Int) * 8 >= kTotalBits),
+                          Int>::type
+  ToInt() const {
+    Int result = 0;
+    for (size_t i = 0; i < kTotalBits; i++) {
+      if (is_set(i)) result |= (Int(1) << i);
+    }
+    return result;
+  }
+
  private:
   // Given a bit index, return which unit it's stored in.
   static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }
