@@ -2163,8 +2163,9 @@ void XdsClient::ResetBackoff() {
 void XdsClient::NotifyOnErrorLocked(absl::Status status) {
   const auto* node = bootstrap_->node();
   if (node != nullptr) {
-    status = absl::Status(status.code(), absl::StrCat(
-        status.message(), " (node ID:", bootstrap_->node()->id, ")"));
+    status = absl::Status(
+        status.code(), absl::StrCat(status.message(),
+                                    " (node ID:", bootstrap_->node()->id, ")"));
   }
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (const auto& a : authority_state_map_) {     // authority
@@ -2193,8 +2194,9 @@ void XdsClient::NotifyWatchersOnErrorLocked(
     absl::Status status) {
   const auto* node = bootstrap_->node();
   if (node != nullptr) {
-    status = absl::Status(status.code(), absl::StrCat(
-        status.message(), " (node ID:", bootstrap_->node()->id, ")"));
+    status = absl::Status(
+        status.code(), absl::StrCat(status.message(),
+                                    " (node ID:", bootstrap_->node()->id, ")"));
   }
   work_serializer_.Schedule(
       [watchers, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
