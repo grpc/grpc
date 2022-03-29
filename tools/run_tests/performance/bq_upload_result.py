@@ -250,7 +250,7 @@ def _populate_node_metadata_from_file(scenario_result, node_info_file):
 
 def _populate_prometheus_query_results_from_file(scenario_result,
                                                  prometheus_query_result_file):
-    """Populate the results from prometheus query to Bigquery table """
+    """Populate the results from Prometheus query to Bigquery table """
     if os.access(prometheus_query_result_file, os.R_OK):
         with open(prometheus_query_result_file, 'r', encoding='utf8') as f:
             file_query_results = json.loads(f.read())
