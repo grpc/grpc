@@ -19,13 +19,13 @@
 # --url=http://prometheus.prometheus.svc.cluster.local:9090
 # --pod_type=driver --pod_type=clients --container_name=main
 # --container_name=sidecar
-"""Perform prometheus range queries to obtain cpu and memory data.
+"""Perform Prometheus range queries to obtain cpu and memory data.
 
 This module performs range queries through Prometheus API to obtain
-total cpu seconds and memory during a tets run for given container
+total cpu seconds and memory during a test run for given container
 in given pods. The cpu data obtained is total cpu second used within
-given period of time. The memory data was the instant memory at the
-query time.
+given period of time. The memory data was instant memory usage at
+the query time.
 """
 import argparse
 import json
@@ -38,8 +38,7 @@ import requests
 
 
 class Prometheus:
-    """Objects which holds the start and end time, query URL
-    for a query."""
+    """Objects which holds the start time, end time and query URL."""
 
     def __init__(
         self,
@@ -53,10 +52,10 @@ class Prometheus:
 
     def _fetch_by_query(self, query: str) -> Dict[str, Any]:
         """Fetches the given query with time range.
-        
-        Fetch the given query within a time range. The pulling 
+
+        Fetch the given query within a time range. The pulling
         interval is every 5s, the actual data from the query is
-        a time serier.
+        a time series.
         """
         resp = requests.get(
             self.url + '/api/v1/query_range',
@@ -75,7 +74,7 @@ class Prometheus:
         """Fetches the cpu data for each pod.
 
         Fetch total cpu seconds during the time range specified in the Prometheus instance
-        for a pod. After obtain the cpu seconds, the data are trimmed from time serier to
+        for a pod. After obtain the cpu seconds, the data are trimmed from time series to
         a data list and saved in the Dict that keyed by the container names.
 
         Args:
@@ -96,7 +95,7 @@ class Prometheus:
         """Fetches memory data for each pod.
 
         Fetch total memory data during the time range specified in the Prometheus instance
-        for a pod. After obtain the memory data, the data are trimmed from time serier to
+        for a pod. After obtain the memory data, the data are trimmed from time series to
         a data list and saved in the Dict that keyed by the container names.
 
         Args:
@@ -118,13 +117,13 @@ class Prometheus:
     def fetch_cpu_and_memory_data(
             self, container_list: List[str],
             pod_dict: Dict[str, List[str]]) -> Dict[str, Any]:
-        """Fetch total cpu seconds and memory data for a multiple pods.
+        """Fetch total cpu seconds and memory data for multiple pods.
 
         Args:
             container_list: A list of container names to fetch the data for.
-            pod_dict: the pods to fetch data for, the pod_dict is keyed by 
+            pod_dict: the pods to fetch data for, the pod_dict is keyed by
                       role of the pod: clients, driver and servers. The values
-                      for the pod_dict are the list of pod names that consist 
+                      for the pod_dict are the list of pod names that consist
                       the same role specified in the key.
         """
         container_matcher = construct_container_matcher(container_list)
@@ -168,7 +167,7 @@ def construct_container_matcher(container_list: List[str]) -> str:
 
 def get_data_list_from_timeseries(data: Any) -> Dict[str, List[float]]:
     """Constructs a Dict as keys are the container names and
-    values are a list of data taken from given timeserie data."""
+    values are a list of data taken from given timeseries data."""
     if data['status'] != 'success':
         raise Exception('command failed: ' + data['status'] + str(data))
     if data['data']['resultType'] != 'matrix':
@@ -178,10 +177,10 @@ def get_data_list_from_timeseries(data: Any) -> Dict[str, List[float]]:
     container_name_to_data_list = {}
     for res in data["data"]["result"]:
         container_name = res["metric"]["container"]
-        container_data_timeserie = res["values"]
+        container_data_timeseries = res["values"]
 
         container_data = []
-        for d in container_data_timeserie:
+        for d in container_data_timeseries:
             container_data.append(float(d[1]))
         container_name_to_data_list[container_name] = container_data
     return container_name_to_data_list
@@ -193,15 +192,15 @@ def compute_total_cpu_seconds(cpu_data_list: List[float]) -> float:
 
 
 def compute_average_memory_usage(memory_data_list: List[float]) -> float:
-    """Computes the mean and for given list of data."""
+    """Computes the mean and for a given list of data."""
     return statistics.mean(memory_data_list)
 
 
 def construct_pod_dict(node_info_file: str,
                        pod_types: List[str]) -> Dict[str, List[str]]:
     """Constructs a dict of pod names to be queried.
-    
-    Args: 
+
+    Args:
         node_info_file: The file path contains the pod names to query.
             The pods' names are put into a Dict of list that keyed by the 
             role name: clients, servers and driver.
@@ -224,7 +223,7 @@ def construct_pod_dict(node_info_file: str,
 
 
 def convert_UTC_to_epoch(utc_timestamp: str) -> str:
-    """Converts a utc timstamp string to epoch time string."""
+    """Converts a utc timestamp string to epoch time string."""
     parsed_time = parser.parse(utc_timestamp)
     epoch = parsed_time.strftime('%s')
     return epoch
