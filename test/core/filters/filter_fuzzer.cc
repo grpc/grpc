@@ -68,7 +68,7 @@ class FakeChannelSecurityConnector final
       : grpc_channel_security_connector("fake", nullptr, nullptr) {}
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     abort();
   }
@@ -80,7 +80,7 @@ class FakeChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other) const override { abort(); }
 
-  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+  ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override {
     uint32_t qry = next_check_call_host_qry_++;
     return [this, qry]() -> Poll<absl::Status> {
@@ -92,7 +92,7 @@ class FakeChannelSecurityConnector final
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* interested_parties,
-                       grpc_core::HandshakeManager* handshake_mgr) override {
+                       HandshakeManager* handshake_mgr) override {
     abort();
   }
 
@@ -341,7 +341,7 @@ class MainLoop {
                                            &client_initial_metadata_)),
                    server_initial_metadata},
           [this](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
-            if (server_initial_metadata_.get()) {
+            if (server_initial_metadata_) {
               call_args.server_initial_metadata->Set(
                   server_initial_metadata_.get());
             } else {
