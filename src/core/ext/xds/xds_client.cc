@@ -683,17 +683,11 @@ void XdsClient::ChannelState::RetryableCall<T>::Orphan() {
 
 template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnCallFinishedLocked() {
-  const bool seen_response = calld_->seen_response();
+  // If we saw a response on the current stream, reset backoff.
+  if (calld_->seen_response()) backoff_.Reset();
   calld_.reset();
-  if (seen_response) {
-    // If we lost connection to the xds server, reset backoff and restart the
-    // call immediately.
-    backoff_.Reset();
-    StartNewCallLocked();
-  } else {
-    // If we failed to connect to the xds server, retry later.
-    StartRetryTimerLocked();
-  }
+  // Start retry timer.
+  StartRetryTimerLocked();
 }
 
 template <typename T>
