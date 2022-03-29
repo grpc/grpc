@@ -34,6 +34,7 @@
 
 ABSL_FLAG(int, warmup, 100, "Warmup iterations");
 ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
+ABSL_FLAG(bool, minstack, false, "Use minimal stack");
 
 class Subprocess {
  public:
@@ -74,15 +75,16 @@ int main(int argc, char** argv) {
   /* start the server */
   Subprocess svr({absl::StrCat(root, "/memory_usage_server",
                                gpr_subprocess_binary_extension()),
-                  "--bind", grpc_core::JoinHostPort("::", port), "--nosecure"});
+                  "--bind", grpc_core::JoinHostPort("::", port), "--nosecure",
+                  absl::StrCat("--minstack=", absl::GetFlag(FLAGS_minstack))});
 
   /* start the client */
-  Subprocess cli(
-      {absl::StrCat(root, "/memory_usage_client",
-                    gpr_subprocess_binary_extension()),
-       "--target", grpc_core::JoinHostPort("127.0.0.1", port),
-       absl::StrCat("--warmup=", absl::GetFlag(FLAGS_warmup)),
-       absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_benchmark))});
+  Subprocess cli({absl::StrCat(root, "/memory_usage_client",
+                               gpr_subprocess_binary_extension()),
+                  "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+                  absl::StrCat("--warmup=", absl::GetFlag(FLAGS_warmup)),
+                  absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_benchmark)),
+                  absl::StrCat("--minstack=", absl::GetFlag(FLAGS_minstack))});
 
   /* wait for completion */
   if ((status = cli.Join()) != 0) {

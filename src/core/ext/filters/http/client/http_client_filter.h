@@ -30,7 +30,7 @@ class HttpClientFilter : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<HttpClientFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args filter_args);
+      ChannelArgs args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(

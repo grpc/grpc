@@ -19,6 +19,7 @@ syntax = "proto3";
 package envoy.config.route.v3;
 
 import "src/proto/grpc/testing/xds/v3/base.proto";
+import "src/proto/grpc/testing/xds/v3/extension.proto";
 import "src/proto/grpc/testing/xds/v3/regex.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 import "src/proto/grpc/testing/xds/v3/range.proto";
@@ -268,6 +269,13 @@ message RouteAction {
     // :ref:`traffic splitting <config_http_conn_man_route_table_traffic_splitting_split>`
     // for additional documentation.
     WeightedCluster weighted_clusters = 3;
+
+    // Name of the cluster specifier plugin to use to determine the cluster for
+    // requests on this route. The plugin name must be defined in the associated
+    // :ref:`envoy_v3_api_field_config.route.v3.RouteConfiguration.cluster_specifier_plugins`
+    // in the
+    // :ref:`envoy_v3_api_field_config.core.v3.TypedExtensionConfig.name` field.
+    string cluster_specifier_plugin = 37;
   }
 
   message HashPolicy {
@@ -435,6 +443,12 @@ message HeaderMatcher {
 message QueryParameterMatcher {
 }
 
+// Configuration for a cluster specifier plugin.
+message ClusterSpecifierPlugin {
+  // The name of the plugin and its opaque configuration.
+  core.v3.TypedExtensionConfig extension = 1;
+}
+
 // [#protodoc-title: HTTP route configuration]
 // * Routing :ref:`architecture overview <arch_overview_http_routing>`
 // * HTTP :ref:`router filter <config_http_filters_router>`
@@ -449,6 +463,11 @@ message RouteConfiguration {
 
   // An array of virtual hosts that make up the route table.
   repeated VirtualHost virtual_hosts = 2;
+
+  // A list of plugins and their configurations which may be used by a
+  // :ref:`envoy_v3_api_field_config.route.v3.RouteAction.cluster_specifier_plugin`
+  // within the route. All *extension.name* fields in this list must be unique.
+  repeated ClusterSpecifierPlugin cluster_specifier_plugins = 12;
 }
 
 message RedirectAction {
