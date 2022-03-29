@@ -317,6 +317,14 @@ class MainLoop {
       Step();
     }
 
+    ~Call() {
+      for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+        if (legacy_context_[i].destroy != nullptr) {
+          legacy_context_[i].destroy(legacy_context_[i].value);
+        }
+      }
+    }
+
     void Orphan() override { abort(); }
     void ForceImmediateRepoll() override { context_->set_continue(); }
     Waker MakeOwningWaker() override {
@@ -348,12 +356,16 @@ class MainLoop {
     }
 
    private:
-    class ScopedContext : public ScopedActivity,
-                          public promise_detail::Context<Arena> {
+    class ScopedContext
+        : public ScopedActivity,
+          public promise_detail::Context<Arena>,
+          public promise_detail::Context<grpc_call_context_element> {
      public:
       explicit ScopedContext(Call* call)
           : ScopedActivity(call),
             promise_detail::Context<Arena>(call->arena_.get()),
+            promise_detail::Context<grpc_call_context_element>(
+                call->legacy_context_),
             call_(call) {
         GPR_ASSERT(call_->context_ == nullptr);
         call_->context_ = this;
@@ -412,6 +424,7 @@ class MainLoop {
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
     Waker server_trailing_metadata_waker_;
     ScopedContext* context_ = nullptr;
+    grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
   };
 
   Call* GetCall(uint32_t id) {
