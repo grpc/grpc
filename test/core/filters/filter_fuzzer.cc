@@ -81,6 +81,11 @@ struct Filter {
   }
 };
 
+struct GlobalObjects {
+  ResourceQuotaRefPtr resource_quota = MakeResourceQuota("test");
+  grpc_transport transport{&kFakeTransportVTable};
+};
+
 #define MAKE_FILTER(name) Filter::Make<name>(#name)
 
 const Filter* const kFilters[] = {
@@ -90,10 +95,6 @@ const Filter* const kFilters[] = {
     MAKE_FILTER(GrpcServerAuthzFilter),
 };
 
-struct GlobalObjects {
-  ResourceQuotaRefPtr resource_quota = MakeResourceQuota("test");
-  grpc_transport transport{&kFakeTransportVTable};
-};
 
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
