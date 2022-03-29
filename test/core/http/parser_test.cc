@@ -271,9 +271,8 @@ int main(int argc, char** argv) {
                   "0\r\n"
                   "abc: xyz\r\n"
                   "\r\n",
-                  200,
-                  "HTTP Trailers are also supported.",
-                  "Transfer-Encoding", "chunked", "abc", "xyz", NULL);
+                  200, "HTTP Trailers are also supported.", "Transfer-Encoding",
+                  "chunked", "abc", "xyz", NULL);
     test_request_succeeds(split_modes[i],
                           "GET / HTTP/1.0\r\n"
                           "\r\n",
