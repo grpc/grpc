@@ -15,16 +15,17 @@
 # limitations under the License.
 
 # A script to fetch total cpu seconds and memory data from prometheus.
-# example usage: python3 prometheus.py --url=http://<promethues-url>
+# example usage: python3 prometheus.py
+# --url=http://prometheus.prometheus.svc.cluster.local:9090
 # --pod_type=driver --pod_type=clients --container_name=main
 # --container_name=sidecar
-"""Perform prometheus range queries to obtain cpu and memory data. 
+"""Perform prometheus range queries to obtain cpu and memory data.
 
 This module performs range queries through Prometheus API to obtain
-total cpu seconds and memory during a tets run for given container 
+total cpu seconds and memory during a tets run for given container
 in given pods. The cpu data obtained is total cpu second used within
-given period of time. The memory data was the instant memory at the 
-query time. 
+given period of time. The memory data was the instant memory at the
+query time.
 """
 import argparse
 import json
@@ -72,11 +73,11 @@ class Prometheus:
     def _fetch_cpu_for_pod(self, container_matcher: str,
                            pod_name: str) -> Dict[str, List[float]]:
         """Fetches the cpu data for each pod.
-        
+
         Fetch total cpu seconds during the time range specified in the Prometheus instance
         for a pod. After obtain the cpu seconds, the data are trimmed from time serier to
         a data list and saved in the Dict that keyed by the container names.
-        
+
         Args:
             container_matcher:  A string consist one or more container name separated by |.
         """
@@ -93,11 +94,11 @@ class Prometheus:
     def _fetch_memory_for_pod(self, container_matcher: str,
                               pod_name: str) -> Dict[str, List[float]]:
         """Fetches memory data for each pod.
-        
+
         Fetch total memory data during the time range specified in the Prometheus instance
         for a pod. After obtain the memory data, the data are trimmed from time serier to
         a data list and saved in the Dict that keyed by the container names.
-        
+
         Args:
             container_matcher:  A string consist one or more container name separated by |.
         """
@@ -293,8 +294,7 @@ def main() -> None:
     logging.debug(json.dumps(processed_data, sort_keys=True, indent=4))
 
     with open(args.export_file_name, 'w', encoding='utf8') as export_file:
-        json.dump(processed_data, export_file, sort_keys=True, indent=4, encoding='utf8')
-
+        json.dump(processed_data, export_file, sort_keys=True, indent=4)
 
 if __name__ == '__main__':
     main()
