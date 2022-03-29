@@ -611,7 +611,8 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
         call_combiner(),
         absl::exchange(recv_initial_metadata_->original_on_ready, nullptr),
         GRPC_ERROR_REF(error), "propagate cancellation");
-  } else if (send_initial_state_ == SendInitialState::kCancelled) {
+  } else if (send_initial_state_ == SendInitialState::kCancelled ||
+             recv_trailing_state_ == RecvTrailingState::kResponded) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     GRPC_CALL_COMBINER_START(
         call_combiner(),
