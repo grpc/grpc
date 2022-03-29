@@ -314,7 +314,6 @@ class MainLoop {
               return CheckCompletion();
             };
           });
-      abort();
       Step();
     }
 
