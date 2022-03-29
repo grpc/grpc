@@ -11618,6 +11618,25 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
               ::testing::HasSubstr("sparse priority list"));
 }
 
+// Tests that EDS client should send a NACK if the EDS update contains
+// multiple instances of the same locality in the same priority.
+TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality0", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       0},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  const auto response_state = WaitForEdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(
+                  "duplicate locality {region=\"xds_default_locality_region\", "
+                  "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
+                  "found in priority 0"));
+}
+
 // In most of our tests, we use different names for different resource
 // types, to make sure that there are no cut-and-paste errors in the code
 // that cause us to look at data for the wrong resource type.  So we add
