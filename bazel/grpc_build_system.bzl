@@ -37,9 +37,7 @@ load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl
 POLLERS = ["epoll1", "poll"]
 
 # The set of known EventEngines to test
-EVENT_ENGINES = {
-    "default": {"tags": []},  # must not include tag "no_linux"
-}
+EVENT_ENGINES = {"default": {"tags": []}}
 
 def if_not_windows(a):
     return select({
