@@ -30,11 +30,11 @@ query time.
 import argparse
 import json
 import logging
-import requests
 import statistics
+from typing import Any, Dict, List
 
 from dateutil import parser
-from typing import Any, Dict, List
+import requests
 
 
 class Prometheus:
@@ -295,6 +295,7 @@ def main() -> None:
 
     with open(args.export_file_name, 'w', encoding='utf8') as export_file:
         json.dump(processed_data, export_file, sort_keys=True, indent=4)
+
 
 if __name__ == '__main__':
     main()
