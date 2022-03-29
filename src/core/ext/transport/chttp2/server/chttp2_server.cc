@@ -748,10 +748,8 @@ void Chttp2ServerListener::Start(
   if (server_->config_fetcher() != nullptr) {
     auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
-    auto addr_str = grpc_sockaddr_to_string(&resolved_address_, false);
     server_->config_fetcher()->StartWatch(
-        std::string(addr_str.ok() ? addr_str.value()
-                                  : addr_str.status().ToString()),
+        grpc_sockaddr_to_string(&resolved_address_, false).value(),
         std::move(watcher));
   } else {
     {

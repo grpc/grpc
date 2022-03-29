@@ -205,7 +205,7 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
       }
       out = std::string(addr_un->sun_path, len);
     } else {
-      int maxlen = sizeof(addr_un->sun_path);
+      size_t maxlen = sizeof(addr_un->sun_path);
       if (strnlen(addr_un->sun_path, maxlen) == maxlen) {
         return absl::InvalidArgumentError("UDS path is not null-terminated");
       }
