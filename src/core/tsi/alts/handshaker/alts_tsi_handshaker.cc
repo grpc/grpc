@@ -447,7 +447,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       GPR_ASSERT(handshaker->client == nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
-        gpr_log(GPR_ERROR, "TSI handshake shutdown");
+        gpr_log(GPR_INFO, "TSI handshake shutdown");
         return TSI_HANDSHAKE_SHUTDOWN;
       }
     }
@@ -532,7 +532,7 @@ static tsi_result handshaker_next(
   {
     grpc_core::MutexLock lock(&handshaker->mu);
     if (handshaker->shutdown) {
-      gpr_log(GPR_ERROR, "TSI handshake shutdown");
+      gpr_log(GPR_INFO, "TSI handshake shutdown");
       return TSI_HANDSHAKE_SHUTDOWN;
     }
   }
