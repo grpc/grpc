@@ -92,6 +92,13 @@ class FakeChannelSecurityConnector final
   }
 };
 
+class FakeAuthorizationPolicyProvider final
+    : public grpc_authorization_policy_provider {
+ public:
+  void Orphan() override {}
+  AuthorizationEngines engines() override { abort(); }
+};
+
 struct GlobalObjects {
   ResourceQuotaRefPtr resource_quota = MakeResourceQuota("test");
   grpc_transport transport{&kFakeTransportVTable};
@@ -110,9 +117,7 @@ struct Filter {
         name,
         [](ChannelArgs channel_args, ChannelFilter::Args filter_args)
             -> absl::StatusOr<std::unique_ptr<ChannelFilter>> {
-          auto* args = channel_args.ToC();
-          auto r = T::Create(args, filter_args);
-          grpc_channel_args_destroy(args);
+          auto r = T::Create(channel_args, filter_args);
           if (!r.ok()) return r.status();
           return std::unique_ptr<ChannelFilter>(new T(std::move(*r)));
         }};
@@ -139,62 +144,22 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
       }
     } else if (arg.key() == GRPC_ARG_TRANSPORT) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kTransport) {
-        static const grpc_arg_pointer_vtable vtable = {
-            // copy
-            [](void* p) { return p; },
-            // destroy
-            [](void*) {},
-            // cmp
-            [](void* a, void* b) { return QsortCompare(a, b); },
-        };
-        args = args.Set(GRPC_ARG_TRANSPORT,
-                        ChannelArgs::Pointer(&globals->transport, &vtable));
+        args = args.SetObject(&globals->transport);
       }
     } else if (arg.key() == GRPC_ARG_SECURITY_CONNECTOR) {
       if (arg.value_case() ==
           filter_fuzzer::ChannelArg::kChannelSecurityConnector) {
-        static const grpc_arg_pointer_vtable vtable = {
-            // copy
-            [](void* p) { return p; },
-            // destroy
-            [](void*) {},
-            // cmp
-            [](void* a, void* b) { return QsortCompare(a, b); },
-        };
-        args =
-            args.Set(GRPC_ARG_SECURITY_CONNECTOR,
-                     ChannelArgs::Pointer(
-                         globals->channel_security_connector.get(), &vtable));
+        args = args.SetObject(globals->channel_security_connector);
       }
     } else if (arg.key() == GRPC_AUTH_CONTEXT_ARG) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kAuthContext) {
-        static const grpc_arg_pointer_vtable vtable = {
-            // copy
-            [](void* p) { return p; },
-            // destroy
-            [](void*) {},
-            // cmp
-            [](void* a, void* b) { return QsortCompare(a, b); },
-        };
-        args = args.Set(
-            GRPC_AUTH_CONTEXT_ARG,
-            ChannelArgs::Pointer(globals->auth_context.get(), &vtable));
+        args = args.SetObject(MakeRefCounted<grpc_auth_context>());
       }
     } else if (arg.key() == GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) {
       if (arg.value_case() ==
           filter_fuzzer::ChannelArg::kAuthorizationPolicyProvider) {
-        static const grpc_arg_pointer_vtable vtable = {
-            // copy
-            [](void* p) { return p; },
-            // destroy
-            [](void*) {},
-            // cmp
-            [](void* a, void* b) { return QsortCompare(a, b); },
-        };
-        args = args.Set(
-            GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
-            ChannelArgs::Pointer(globals->authorization_policy_provider.get(),
-                                 &vtable));
+        args =
+            args.SetObject(MakeRefCounted<FakeAuthorizationPolicyProvider>());
       }
     } else {
       switch (arg.value_case()) {

@@ -26,6 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -66,6 +67,23 @@ struct ChannelArgTypeTraits<
           return QsortCompare(*static_cast<const T*>(p1),
                               *static_cast<const T*>(p2));
         },
+    };
+    return &tbl;
+  };
+};
+
+template <typename T>
+struct ChannelArgTypeTraits<T,
+                            absl::void_t<typename T::RawPointerChannelArgTag>> {
+  static void* TakeUnownedPointer(T* p) { return p; }
+  static const grpc_arg_pointer_vtable* VTable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return p; },
+        // destroy
+        [](void*) {},
+        // compare
+        [](void* p1, void* p2) { return QsortCompare(p1, p2); },
     };
     return &tbl;
   };
@@ -142,7 +160,7 @@ class ChannelArgs {
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
-                   decltype(ChannelArgTypeTraits<T>::vtable())>::value,
+                   decltype(ChannelArgTypeTraits<T>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, T* value) const {
     return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
