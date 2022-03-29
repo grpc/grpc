@@ -92,11 +92,29 @@ class FakeChannelSecurityConnector final
   }
 };
 
+class ConstAuthorizationEngine final : public AuthorizationEngine {
+ public:
+  ConstAuthorizationEngine(AuthorizationEngine::Decision decision)
+      : decision_(decision) {}
+
+  Decision Evaluate(const EvaluateArgs& args) const override {
+    return decision_;
+  }
+
+ private:
+  Decision decision_;
+};
+
 class FakeAuthorizationPolicyProvider final
     : public grpc_authorization_policy_provider {
  public:
+  FakeAuthorizationPolicyProvider(AuthorizationEngines engines)
+      : engines_(engines) {}
   void Orphan() override {}
-  AuthorizationEngines engines() override { abort(); }
+  AuthorizationEngines engines() override { return engines_; }
+
+ private:
+  AuthorizationEngines engines_;
 };
 
 struct GlobalObjects {
@@ -124,14 +142,25 @@ struct Filter {
   }
 };
 
-#define MAKE_FILTER(name) Filter::Make<name>(#name)
-
-const Filter* const kFilters[] = {
-    MAKE_FILTER(ClientAuthorityFilter),
-    MAKE_FILTER(HttpClientFilter),
-    MAKE_FILTER(ClientAuthFilter),
-    MAKE_FILTER(GrpcServerAuthzFilter),
-};
+RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
+    const filter_fuzzer::AuthorizationEngine& engine) {
+  switch (engine.engine_case()) {
+    case filter_fuzzer::AuthorizationEngine::kAlwaysAllow:
+      return MakeRefCounted<ConstAuthorizationEngine>(
+          AuthorizationEngine::Decision{
+              AuthorizationEngine::Decision::Type::kAllow,
+              engine.always_allow()});
+    case filter_fuzzer::AuthorizationEngine::kAlwaysDeny:
+      return MakeRefCounted<ConstAuthorizationEngine>(
+          AuthorizationEngine::Decision{
+              AuthorizationEngine::Decision::Type::kDeny,
+              engine.always_deny()});
+    case filter_fuzzer::AuthorizationEngine::ENGINE_NOT_SET:
+      break;
+  }
+  return MakeRefCounted<ConstAuthorizationEngine>(AuthorizationEngine::Decision{
+      AuthorizationEngine::Decision::Type::kAllow, engine.always_allow()});
+}
 
 template <typename FuzzerChannelArgs>
 ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
@@ -153,13 +182,17 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
       }
     } else if (arg.key() == GRPC_AUTH_CONTEXT_ARG) {
       if (arg.value_case() == filter_fuzzer::ChannelArg::kAuthContext) {
-        args = args.SetObject(MakeRefCounted<grpc_auth_context>());
+        args = args.SetObject(MakeRefCounted<grpc_auth_context>(nullptr));
       }
     } else if (arg.key() == GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) {
       if (arg.value_case() ==
           filter_fuzzer::ChannelArg::kAuthorizationPolicyProvider) {
-        args =
-            args.SetObject(MakeRefCounted<FakeAuthorizationPolicyProvider>());
+        args = args.SetObject(MakeRefCounted<FakeAuthorizationPolicyProvider>(
+            grpc_authorization_policy_provider::AuthorizationEngines{
+                LoadAuthorizationEngine(
+                    arg.authorization_policy_provider().allow_engine()),
+                LoadAuthorizationEngine(
+                    arg.authorization_policy_provider().deny_engine())}));
       }
     } else {
       switch (arg.value_case()) {
@@ -182,6 +215,15 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
   }
   return args;
 }
+
+#define MAKE_FILTER(name) Filter::Make<name>(#name)
+
+const Filter* const kFilters[] = {
+    MAKE_FILTER(ClientAuthorityFilter),
+    MAKE_FILTER(HttpClientFilter),
+    MAKE_FILTER(ClientAuthFilter),
+    MAKE_FILTER(GrpcServerAuthzFilter),
+};
 
 absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
     absl::string_view name, ChannelArgs channel_args,

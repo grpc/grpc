@@ -20,7 +20,17 @@ message Empty {}
 
 message AuthContext {}
 
-message AuthorizationPolicyProvider {}
+message AuthorizationEngine {
+    oneof engine {
+        string always_allow = 1;
+        string always_deny = 2;
+    }
+}
+
+message AuthorizationPolicyProvider {
+    AuthorizationEngine allow_engine = 1;
+    AuthorizationEngine deny_engine = 2;
+}
 
 message ChannelArg {
     string key = 1;
