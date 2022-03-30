@@ -185,14 +185,14 @@ ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
                 next_promise_factory);
 }
 
-absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
-    const grpc_channel_args* args, ChannelFilter::Args) {
-  grpc_security_connector* sc = grpc_security_connector_find_in_args(args);
+absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(ChannelArgs args,
+                                                          ChannelFilter::Args) {
+  auto* sc = args.GetObject<grpc_security_connector>();
   if (sc == nullptr) {
     return absl::InvalidArgumentError(
         "Security connector missing from client auth filter args");
   }
-  grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
+  auto* auth_context = args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
     return absl::InvalidArgumentError(
         "Auth context missing from client auth filter args");

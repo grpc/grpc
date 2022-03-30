@@ -26,6 +26,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -41,6 +42,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -123,6 +125,7 @@ grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -138,6 +141,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine")
+grpc_package(
+    name = "test/core/event_engine",
+    visibility = "tests",
+)
 
 grpc_cc_test(
     name = "endpoint_config_test",
@@ -37,5 +40,14 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_init",
+    srcs = ["test_init.cc"],
+    hdrs = ["test_init.h"],
+    deps = [
+        "//:grpc_base",
     ],
 )

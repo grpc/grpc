@@ -2499,6 +2499,8 @@ TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
           status.error_code(), status.error_message().c_str());
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
 }
 
 using GlobalXdsClientTest = BasicTest;
@@ -11660,6 +11662,25 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
               ::testing::HasSubstr("sparse priority list"));
 }
 
+// Tests that EDS client should send a NACK if the EDS update contains
+// multiple instances of the same locality in the same priority.
+TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality0", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       0},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  const auto response_state = WaitForEdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(
+                  "duplicate locality {region=\"xds_default_locality_region\", "
+                  "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
+                  "found in priority 0"));
+}
+
 // In most of our tests, we use different names for different resource
 // types, to make sure that there are no cut-and-paste errors in the code
 // that cause us to look at data for the wrong resource type.  So we add
@@ -14265,7 +14286,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
