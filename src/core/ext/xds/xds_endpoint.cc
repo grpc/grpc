@@ -202,7 +202,7 @@ grpc_error_handle LocalityParse(
   std::string region =
       UpbStringToStdString(envoy_config_core_v3_Locality_region(locality));
   std::string zone =
-      UpbStringToStdString(envoy_config_core_v3_Locality_region(locality));
+      UpbStringToStdString(envoy_config_core_v3_Locality_zone(locality));
   std::string sub_zone =
       UpbStringToStdString(envoy_config_core_v3_Locality_sub_zone(locality));
   output_locality->name = MakeRefCounted<XdsLocalityName>(
@@ -285,11 +285,18 @@ grpc_error_handle EdsResourceParse(
     if (locality.lb_weight == 0) continue;
     // Make sure prorities is big enough. Note that they might not
     // arrive in priority order.
-    while (eds_update->priorities.size() < priority + 1) {
-      eds_update->priorities.emplace_back();
+    if (eds_update->priorities.size() < priority + 1) {
+      eds_update->priorities.resize(priority + 1);
     }
-    eds_update->priorities[priority].localities.emplace(locality.name.get(),
-                                                        std::move(locality));
+    auto& locality_map = eds_update->priorities[priority].localities;
+    auto it = locality_map.find(locality.name.get());
+    if (it != locality_map.end()) {
+      errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "duplicate locality ", locality.name->AsHumanReadableString(),
+          " found in priority ", priority)));
+    } else {
+      locality_map.emplace(locality.name.get(), std::move(locality));
+    }
   }
   for (const auto& priority : eds_update->priorities) {
     if (priority.localities.empty()) {

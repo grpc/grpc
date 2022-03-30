@@ -159,12 +159,12 @@ class CrlSslTransportSecurityTest
                     &server_options, &server_handshaker_factory_),
                 TSI_OK);
       // Create server and client handshakers.
-      EXPECT_EQ(
-          tsi_ssl_client_handshaker_factory_create_handshaker(
-              client_handshaker_factory_, nullptr, &base_.client_handshaker),
-          TSI_OK);
+      EXPECT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                    client_handshaker_factory_, nullptr, 0, 0,
+                    &base_.client_handshaker),
+                TSI_OK);
       EXPECT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                    server_handshaker_factory_, &base_.server_handshaker),
+                    server_handshaker_factory_, 0, 0, &base_.server_handshaker),
                 TSI_OK);
     }
 
