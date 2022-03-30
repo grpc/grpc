@@ -178,6 +178,12 @@ class ChannelArgs {
   T* GetObject() {
     return GetPointer<T>(T::ChannelArgName());
   }
+  template <typename T>
+  RefCountedPtr<T> GetObjectRef() {
+    auto* p = GetObject<T>();
+    if (p == nullptr) return nullptr;
+    return p->Ref();
+  }
 
   bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
   bool operator==(const ChannelArgs& other) const {

@@ -25,15 +25,17 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/lame_client.h"
 
+namespace grpc_core {
 namespace {
 
-bool IsLameChannel(grpc_channel* channel) {
+bool IsLameChannel(Channel* channel) {
   grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+      grpc_channel_stack_last_element(channel->channel_stack());
   return elem->filter == &grpc_lame_filter;
 }
 
 }  // namespace
+}  // namespace grpc_core
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect) {
@@ -81,9 +83,11 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   StateWatcher(grpc_channel* channel, grpc_completion_queue* cq, void* tag,
                grpc_connectivity_state last_observed_state,
                gpr_timespec deadline)
-      : channel_(channel), cq_(cq), tag_(tag), state_(last_observed_state) {
+      : channel_(Channel::FromC(channel)->Ref()),
+        cq_(cq),
+        tag_(tag),
+        state_(last_observed_state) {
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
-    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
     GRPC_CLOSURE_INIT(&on_timeout_, TimeoutComplete, this, nullptr);
     ClientChannel* client_channel = ClientChannel::GetFromChannel(channel);
@@ -112,10 +116,6 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     client_channel->AddExternalConnectivityWatcher(
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
         &on_complete_, watcher_timer_init_state->closure());
-  }
-
-  ~StateWatcher() override {
-    GRPC_CHANNEL_INTERNAL_UNREF(channel_, "watch_channel_connectivity");
   }
 
  private:
@@ -184,7 +184,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     self->WeakUnref();
   }
 
-  grpc_channel* channel_;
+  RefCountedPtr<Channel> channel_;
   grpc_completion_queue* cq_;
   void* tag_;
 
