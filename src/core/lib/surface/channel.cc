@@ -27,8 +27,6 @@
 
 #include <atomic>
 
-#include "channel.h"
-
 #include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -51,6 +49,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
 
