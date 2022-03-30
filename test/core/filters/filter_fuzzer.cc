@@ -268,13 +268,12 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
 #define MAKE_FILTER(name) Filter::Make<name>(#name)
 
 const Filter* const kFilters[] = {
-    MAKE_FILTER(ClientAuthorityFilter),
-    MAKE_FILTER(HttpClientFilter),
-    MAKE_FILTER(ClientAuthFilter),
-    MAKE_FILTER(GrpcServerAuthzFilter),
-    MAKE_FILTER(MaxAgeFilter),
-    MAKE_FILTER(ClientIdleFilter),
+    MAKE_FILTER(ClientAuthorityFilter),     MAKE_FILTER(HttpClientFilter),
+    MAKE_FILTER(ClientAuthFilter),          MAKE_FILTER(GrpcServerAuthzFilter),
     MAKE_FILTER(ServerLoadReportingFilter),
+    // The following need channel stacks, and that's not figured out yet
+    // MAKE_FILTER(MaxAgeFilter),
+    // MAKE_FILTER(ClientIdleFilter),
 };
 
 absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
