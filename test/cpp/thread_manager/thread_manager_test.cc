@@ -183,7 +183,7 @@ TEST_P(ThreadManagerTest, TestThreadQuota) {
 
 int main(int argc, char** argv) {
   std::srand(std::time(nullptr));
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
 
   grpc_init();

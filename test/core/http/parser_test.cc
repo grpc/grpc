@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {

@@ -158,6 +158,9 @@ def massage_qps_stats(scenario_result):
                 "core_http2_initiate_write_due_to_send_settings"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_initiate_write_due_to_send_settings")
             stats[
+                "core_http2_initiate_write_due_to_settings_ack"] = massage_qps_stats_helpers.counter(
+                    core_stats, "http2_initiate_write_due_to_settings_ack")
+            stats[
                 "core_http2_initiate_write_due_to_bdp_estimator_ping"] = massage_qps_stats_helpers.counter(
                     core_stats,
                     "http2_initiate_write_due_to_bdp_estimator_ping")

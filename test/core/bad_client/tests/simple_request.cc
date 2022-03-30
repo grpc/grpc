@@ -122,7 +122,7 @@ static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   /* basic request: check that things are working */

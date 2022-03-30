@@ -385,7 +385,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // Handshake succeeeds when the server has grpc-exp as the ALPN preference.
   GPR_ASSERT(client_ssl_test(const_cast<char*>("grpc-exp")));
   // Handshake succeeeds when the server has h2 as the ALPN preference. This

@@ -159,6 +159,7 @@ json_run_localhost_batch()
 grpc_cc_test(
     name = "qps_interarrival_test",
     srcs = ["qps_interarrival_test.cc"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":histogram",

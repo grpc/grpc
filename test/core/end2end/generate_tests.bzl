@@ -14,9 +14,12 @@
 # limitations under the License.
 """Generates the appropriate build.json data for all the end2end tests."""
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library")
-
-POLLERS = ["epoll1", "poll"]
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_binary",
+    "grpc_cc_library",
+    "grpc_sh_test",
+)
 
 def _fixture_options(
         fullstack = True,
@@ -67,6 +70,7 @@ END2END_FIXTURES = {
         fullstack = False,
         client_channel = False,
         _platforms = ["linux", "mac", "posix"],
+        tags = ["no_test_ios"],
     ),
     "h2_full": _fixture_options(),
     "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
@@ -310,9 +314,7 @@ END2END_TESTS = {
     "retry_throttled": _test_options(needs_client_channel = True),
     "retry_too_many_attempts": _test_options(needs_client_channel = True),
     "retry_transparent_goaway": _test_options(needs_client_channel = True),
-    "retry_transparent_not_sent_on_wire": _test_options(
-        needs_client_channel = True,
-    ),
+    "retry_transparent_not_sent_on_wire": _test_options(needs_client_channel = True),
     "retry_transparent_max_concurrent_streams": _test_options(
         needs_client_channel = True,
         proxyable = False,
@@ -408,10 +410,10 @@ def grpc_end2end_tests():
             "//test/core/compression:args_utils",
         ],
     )
-
     for f, fopt in END2END_FIXTURES.items():
+        bin_name = "%s_test" % f
         grpc_cc_binary(
-            name = "%s_test" % f,
+            name = bin_name,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
             testonly = 1,
@@ -429,37 +431,18 @@ def grpc_end2end_tests():
             ],
             tags = _platform_support_tags(fopt) + fopt.tags,
         )
-
         for t, topt in END2END_TESTS.items():
-            #print(_compatible(fopt, topt), f, t, fopt, topt)
             if not _compatible(fopt, topt):
                 continue
-
             test_short_name = str(t) if not topt.short_name else topt.short_name
-            native.sh_test(
+            grpc_sh_test(
                 name = "%s_test@%s" % (f, test_short_name),
-                data = [":%s_test" % f],
-                srcs = ["end2end_test.sh"],
-                args = [
-                    "$(location %s_test)" % f,
-                    t,
+                srcs = ["run.sh"],
+                data = [":" + bin_name],
+                args = ["$(location %s)" % bin_name, t],
+                tags = _platform_support_tags(fopt) + fopt.tags + [
+                    "no_test_ios",
                 ],
-                tags = ["no_linux"] + _platform_support_tags(fopt) + fopt.tags,
                 flaky = t in fopt.flaky_tests,
+                exclude_pollers = topt.exclude_pollers,
             )
-
-            for poller in POLLERS:
-                if poller in topt.exclude_pollers:
-                    continue
-                native.sh_test(
-                    name = "%s_test@%s@poller=%s" % (f, test_short_name, poller),
-                    data = [":%s_test" % f],
-                    srcs = ["end2end_test.sh"],
-                    args = [
-                        "$(location %s_test)" % f,
-                        t,
-                        poller,
-                    ],
-                    tags = ["no_mac", "no_windows"] + fopt.tags,
-                    flaky = t in fopt.flaky_tests,
-                )

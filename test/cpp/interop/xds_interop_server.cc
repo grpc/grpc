@@ -159,7 +159,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   char* hostname = grpc_gethostname();
   if (hostname == nullptr) {
