@@ -14,6 +14,8 @@
 
 #include <map>
 
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
@@ -392,8 +394,8 @@ class MainLoop {
         // Don't pass final info thing if we were cancelled.
         if (promise_.has_value()) final_info_.reset();
         std::unique_ptr<grpc_call_final_info> final_info;
-        if (final_info_.get()) {
-          final_info.reset(new grpc_call_final_info);
+        if (final_info_) {
+          final_info = absl::make_unique<grpc_call_final_info>();
           final_info->final_status =
               static_cast<grpc_status_code>(final_info_->status());
           final_info->error_string = final_info_->error_string().c_str();
@@ -453,7 +455,7 @@ class MainLoop {
     }
 
     void SetFinalInfo(filter_fuzzer::FinalInfo final_info) {
-      final_info_.reset(new filter_fuzzer::FinalInfo(final_info));
+      final_info_ = absl::make_unique<filter_fuzzer::FinalInfo>(final_info);
     }
 
    private:
