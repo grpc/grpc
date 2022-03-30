@@ -2730,10 +2730,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "call_push_pull",
         "config",
         "gpr_base",
         "grpc_base",
         "grpc_message_size_filter",
+        "seq",
         "slice",
     ],
 )
