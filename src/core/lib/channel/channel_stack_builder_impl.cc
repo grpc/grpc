@@ -22,8 +22,6 @@
 
 #include <string.h>
 
-#include "channel_stack.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 

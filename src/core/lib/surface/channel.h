@@ -90,7 +90,7 @@ struct CallRegistrationTable {
 class Channel : public RefCounted<Channel>,
                 public CppImplOf<Channel, grpc_channel> {
  public:
-  ~Channel();
+  ~Channel() override;
 
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
       const char* target, ChannelArgs args,
