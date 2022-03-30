@@ -44,7 +44,7 @@ class XdsClusterSpecifierPluginImpl {
   virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
 
   // Returns the LB policy config in JSON form.
-  virtual absl::StatusOr<Json> GenerateLoadBalancingPolicyConfig(
+  virtual absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
       upb_StringView serialized_plugin_config, upb_Arena* arena,
       upb_DefPool* symtab) const = 0;
 };
@@ -53,7 +53,7 @@ class XdsRouteLookupClusterSpecifierPlugin
     : public XdsClusterSpecifierPluginImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
 
-  absl::StatusOr<Json> GenerateLoadBalancingPolicyConfig(
+  absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
       upb_StringView serialized_plugin_config, upb_Arena* arena,
       upb_DefPool* symtab) const override;
 };
@@ -64,12 +64,10 @@ class XdsClusterSpecifierPluginRegistry {
       std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
       absl::string_view config_proto_type_name);
 
-  static void PopulateSymtab(upb_DefPool* symtab);
+  static const XdsClusterSpecifierPluginImpl* GetPluginForType(
+      absl::string_view config_proto_type_name);
 
-  static absl::StatusOr<std::string> GenerateLoadBalancingPolicyConfig(
-      absl::string_view proto_type_name,
-      upb_StringView serialized_plugin_config, upb_Arena* arena,
-      upb_DefPool* symtab);
+  static void PopulateSymtab(upb_DefPool* symtab);
 
   // Global init and shutdown.
   static void Init();

@@ -304,6 +304,10 @@ std::string XdsRouteConfigResource::ToString() const {
   for (const auto& it : cluster_specifier_plugin_map) {
     parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
   }
+  parts.push_back("ignored_cluster_specifier_plugins={\n");
+  for (const auto& it : ignored_cluster_specifier_plugin_set) {
+    parts.push_back(it);
+  }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
 }
@@ -335,11 +339,22 @@ grpc_error_handle ClusterSpecifierPluginParse(
     grpc_error_handle error =
         ExtractExtensionTypeName(context, any, &plugin_type);
     if (error != GRPC_ERROR_NONE) return error;
+    bool is_optional = true;
+    // bool is_optional =
+    // envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(cluster_specifier_plugin[i]);
+    const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
+        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+    if (cluster_specifier_plugin_impl == nullptr) {
+      if (is_optional) {
+        gpr_log(GPR_INFO, "donna in new case");
+        rds_update->ignored_cluster_specifier_plugin_set.emplace(name);
+        continue;
+      }
+    }
     // Find the plugin and generate the policy.
     auto lb_policy_config =
-        XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
-            plugin_type, google_protobuf_Any_value(any), context.arena,
-            context.symtab);
+        cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
+            google_protobuf_Any_value(any), context.arena, context.symtab);
     if (!lb_policy_config.ok()) {
       return absl_status_to_grpc_error(lb_policy_config.status());
     }
@@ -688,6 +703,7 @@ grpc_error_handle RouteActionParse(
     const std::map<std::string /*cluster_specifier_plugin_name*/,
                    std::string /*LB policy config*/>&
         cluster_specifier_plugin_map,
+    const std::set<std::string>& ignored_cluster_specifier_plugin_set,
     XdsRouteConfigResource::Route::RouteAction* route, bool* ignore_route) {
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
@@ -773,15 +789,20 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster specifier plugin name.");
     }
-    if (cluster_specifier_plugin_map.find(plugin_name) ==
+    if (cluster_specifier_plugin_map.find(plugin_name) !=
         cluster_specifier_plugin_map.end()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction cluster contains cluster specifier plugin name not "
-          "configured.");
+      route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
+                                kClusterSpecifierPluginIndex>(
+          std::move(plugin_name));
+    } else {
+      if (ignored_cluster_specifier_plugin_set.find(plugin_name) ==
+          ignored_cluster_specifier_plugin_set.end()) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "RouteAction cluster contains cluster specifier plugin name not "
+            "configured.");
+      }
+      *ignore_route = true;
     }
-    route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
-                              kClusterSpecifierPluginIndex>(
-        std::move(plugin_name));
   } else {
     // No cluster or weighted_clusters or plugin found in RouteAction, ignore
     // this route.
@@ -992,9 +1013,10 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
         auto& route_action =
             absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
-        error = RouteActionParse(context, routes[j],
-                                 rds_update->cluster_specifier_plugin_map,
-                                 &route_action, &ignore_route);
+        error = RouteActionParse(
+            context, routes[j], rds_update->cluster_specifier_plugin_map,
+            rds_update->ignored_cluster_specifier_plugin_set, &route_action,
+            &ignore_route);
         if (error != GRPC_ERROR_NONE) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&

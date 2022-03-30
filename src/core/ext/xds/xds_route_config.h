@@ -179,10 +179,13 @@ struct XdsRouteConfigResource {
   std::map<std::string /*cluster_specifier_plugin_name*/,
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map;
+  std::set<std::string> ignored_cluster_specifier_plugin_set;
 
   bool operator==(const XdsRouteConfigResource& other) const {
     return virtual_hosts == other.virtual_hosts &&
-           cluster_specifier_plugin_map == other.cluster_specifier_plugin_map;
+           cluster_specifier_plugin_map == other.cluster_specifier_plugin_map &&
+           ignored_cluster_specifier_plugin_set ==
+               other.ignored_cluster_specifier_plugin_set;
   }
   std::string ToString() const;
 
