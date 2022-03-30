@@ -28,19 +28,18 @@
 
 namespace grpc_core {
 
-class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
+class ServerLoadReportingFilter : public ChannelFilter {
  public:
-  static absl::StatusOr<ServerLoadReportingFilter> Create(
-      grpc_core::ChannelArgs args, grpc_core::ChannelFilter::Args);
+  static absl::StatusOr<ServerLoadReportingFilter> Create(ChannelArgs args,
+                                                          ChannelFilter::Args);
 
   // Getters.
   const char* peer_identity() { return peer_identity_.c_str(); }
   size_t peer_identity_len() { return peer_identity_.length(); }
 
   // Construct a promise for one call.
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-      grpc_core::CallArgs call_args,
-      grpc_core::NextPromiseFactory next_promise_factory) override;
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
   // The peer's authenticated identity.
