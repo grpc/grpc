@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_idle/idle_filter_state.h"
+#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 
 #include <assert.h>
 

@@ -53,7 +53,7 @@ bazel build --define=use_strict_warning=true --define=use_abseil_status=true \
 bazel build //test/cpp/end2end:end2end_test --define=grpc_no_xds=true
 # Test that builds that need xDS do not build with --define=grpc_no_xds=true
 EXIT_CODE=0
-bazel build //test/cpp/end2end:xds_end2end_test --define=grpc_no_xds=true || EXIT_CODE=$?
+bazel build //test/cpp/end2end/xds:xds_end2end_test --define=grpc_no_xds=true || EXIT_CODE=$?
 if [ $EXIT_CODE -eq 0 ]
 then
 	echo "Building xds_end2end_test succeeded even with --define=grpc_no_xds=true"
