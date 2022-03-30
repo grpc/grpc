@@ -67,6 +67,20 @@ message GlobalObjectAction {
     }
 }
 
+message TransportOneWayStats {
+    uint64 framing_bytes = 1;
+    uint64 data_bytes = 2;
+    uint64 header_bytes = 3;
+}
+
+message FinalInfo {
+    uint32 status = 1;
+    string error_string = 2;
+    uint64 latency_us = 3;
+    TransportOneWayStats incoming = 4;
+    TransportOneWayStats outgoing = 5;
+}
+
 message Action {
     uint32 call = 1;
     oneof type {
@@ -76,6 +90,7 @@ message Action {
         Metadata receive_trailing_metadata = 12;
         GlobalObjectAction global_object_action = 13;
         uint64 advance_time_microseconds = 14;
+        FinalInfo set_final_info = 15;
     }
 }
 

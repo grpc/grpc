@@ -332,6 +332,11 @@ class MainLoop {
           call->RecvTrailingMetadata(action.receive_trailing_metadata());
         }
         break;
+      case filter_fuzzer::Action::kSetFinalInfo:
+        if (auto* call = GetCall(action.call())) {
+          call->SetFinalInfo(action.set_final_info());
+        }
+        break;
       case filter_fuzzer::Action::kGlobalObjectAction:
         globals->Perform(action.global_object_action());
     }
@@ -383,6 +388,34 @@ class MainLoop {
     }
 
     ~Call() override {
+      {
+        ScopedContext context(this);
+        // Don't pass final info thing if we were cancelled.
+        if (promise_.has_value()) final_info_.reset();
+        std::unique_ptr<grpc_call_final_info> final_info;
+        if (final_info_.get()) {
+          final_info.reset(new grpc_call_final_info);
+          final_info->final_status =
+              static_cast<grpc_status_code>(final_info_->status());
+          final_info->error_string = final_info_->error_string().c_str();
+          final_info->stats.latency =
+              gpr_time_from_micros(final_info_->latency_us(), GPR_TIMESPAN);
+          auto transport_stream_stats_from_proto =
+              [](const filter_fuzzer::TransportOneWayStats& stats) {
+                grpc_transport_one_way_stats s;
+                s.framing_bytes = stats.framing_bytes();
+                s.data_bytes = stats.data_bytes();
+                s.header_bytes = stats.header_bytes();
+                return s;
+              };
+          final_info->stats.transport_stream_stats.incoming =
+              transport_stream_stats_from_proto(final_info_->incoming());
+          final_info->stats.transport_stream_stats.outgoing =
+              transport_stream_stats_from_proto(final_info_->outgoing());
+        }
+        finalization_.Run(final_info.get());
+      }
+
       for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
         if (legacy_context_[i].destroy != nullptr) {
           legacy_context_[i].destroy(legacy_context_[i].value);
@@ -420,17 +453,23 @@ class MainLoop {
       Step();
     }
 
+    void SetFinalInfo(filter_fuzzer::FinalInfo final_info) {
+      final_info_.reset(new filter_fuzzer::FinalInfo(final_info));
+    }
+
    private:
     class ScopedContext
         : public ScopedActivity,
           public promise_detail::Context<Arena>,
-          public promise_detail::Context<grpc_call_context_element> {
+          public promise_detail::Context<grpc_call_context_element>,
+          public promise_detail::Context<CallFinalization> {
      public:
       explicit ScopedContext(Call* call)
           : ScopedActivity(call),
             promise_detail::Context<Arena>(call->arena_.get()),
             promise_detail::Context<grpc_call_context_element>(
                 call->legacy_context_),
+            promise_detail::Context<CallFinalization>(&call->finalization_),
             call_(call) {
         GPR_ASSERT(call_->context_ == nullptr);
         call_->context_ = this;
@@ -484,12 +523,14 @@ class MainLoop {
     const uint32_t id_;
     ScopedArenaPtr arena_ = MakeScopedArena(32, &main_loop_->memory_allocator_);
     absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;
+    std::unique_ptr<filter_fuzzer::FinalInfo> final_info_;
     std::unique_ptr<ClientMetadata> client_initial_metadata_;
     std::unique_ptr<ServerMetadata> server_initial_metadata_;
     Latch<ServerMetadata*>* unset_incoming_server_initial_metadata_latch_ =
         nullptr;
     std::unique_ptr<ServerMetadata> server_trailing_metadata_;
     Waker server_trailing_metadata_waker_;
+    CallFinalization finalization_;
     ScopedContext* context_ = nullptr;
     grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
   };
