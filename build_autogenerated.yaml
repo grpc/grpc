@@ -1659,6 +1659,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/event_engine/test_init.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -1681,6 +1682,7 @@ libs:
   - test/core/util/tls_utils.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -1712,6 +1714,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/event_engine/test_init.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -1733,6 +1736,7 @@ libs:
   - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -6301,19 +6305,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: interop_test
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/interop/interop_test.cc
-  deps:
-  - grpc++_test_config
-  - grpc++_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: join_test
   gtest: true
   build: test
@@ -8260,6 +8251,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/test_init.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -8284,6 +8276,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc

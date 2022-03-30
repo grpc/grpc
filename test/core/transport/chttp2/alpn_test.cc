@@ -50,7 +50,7 @@ static void test_alpn_grpc_before_h2(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_alpn_success();
   test_alpn_failure();
   test_alpn_grpc_before_h2();

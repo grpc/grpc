@@ -1052,7 +1052,7 @@ void ssl_tsi_test_do_handshake_with_custom_bio_pair() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   const size_t number_tls_versions = 2;
   const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,

@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
   size_t roots_size = strlen(test_root_cert);
   char* roots_filename;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   /* Set the SSL roots env var. */
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
