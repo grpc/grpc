@@ -258,35 +258,39 @@ def _populate_prometheus_query_results_from_file(scenario_result,
             scenario_result['testDurationSeconds'] = file_query_results[
                 'testDurationSeconds']
             clientsPrometheusData = []
-            for client_name, client_data in file_query_results['clients'].items(
-            ):
-                clientPrometheusData = {'name': client_name}
-                containersPrometheusData = []
-                for container_name, container_data in client_data.items():
-                    containerPrometheusData = {
-                        'name': container_name,
-                        'cpuSeconds': container_data['cpuSeconds'],
-                        'memoryMean': container_data['memoryMean'],
-                    }
-                    containersPrometheusData.append(containerPrometheusData)
-                clientPrometheusData['containers'] = containersPrometheusData
-                clientsPrometheusData.append(clientPrometheusData)
-            scenario_result['clientsPrometheusData'] = clientsPrometheusData
+            if 'clients' in file_query_results:
+                for client_name, client_data in file_query_results[
+                        'clients'].items():
+                    clientPrometheusData = {'name': client_name}
+                    containersPrometheusData = []
+                    for container_name, container_data in client_data.items():
+                        containerPrometheusData = {
+                            'name': container_name,
+                            'cpuSeconds': container_data['cpuSeconds'],
+                            'memoryMean': container_data['memoryMean'],
+                        }
+                        containersPrometheusData.append(containerPrometheusData)
+                    clientPrometheusData[
+                        'containers'] = containersPrometheusData
+                    clientsPrometheusData.append(clientPrometheusData)
+                scenario_result['clientsPrometheusData'] = clientsPrometheusData
 
             serversPrometheusData = []
-            for server_name, server_data in file_query_results['servers'].items(
-            ):
-                serverPrometheusData = {'name': server_name}
-                containersPrometheusData = []
-                for container_name, container_data in server_data.items():
-                    containerPrometheusData = {
-                        'name': container_name,
-                        'cpuSeconds': container_data['cpuSeconds'],
-                        'memoryMean': container_data['memoryMean'],
-                    }
-                    containersPrometheusData.append(containerPrometheusData)
-                serverPrometheusData['containers'] = containersPrometheusData
-                serversPrometheusData.append(serverPrometheusData)
+            if 'servers' in file_query_results:
+                for server_name, server_data in file_query_results[
+                        'servers'].items():
+                    serverPrometheusData = {'name': server_name}
+                    containersPrometheusData = []
+                    for container_name, container_data in server_data.items():
+                        containerPrometheusData = {
+                            'name': container_name,
+                            'cpuSeconds': container_data['cpuSeconds'],
+                            'memoryMean': container_data['memoryMean'],
+                        }
+                        containersPrometheusData.append(containerPrometheusData)
+                    serverPrometheusData[
+                        'containers'] = containersPrometheusData
+                    serversPrometheusData.append(serverPrometheusData)
             scenario_result['serversPrometheusData'] = serversPrometheusData
 
 
@@ -329,7 +333,7 @@ else:
                                         args.file_to_upload,
                                         args.metadata_file_to_upload,
                                         args.node_info_file_to_upload,
-                                        args.prometheus_query_results_file)
+                                        args.prometheus_query_results_to_upload)
 print('Successfully uploaded %s, %s, %s and %s to BigQuery.\n' %
       (args.file_to_upload, args.metadata_file_to_upload,
        args.node_info_file_to_upload, args.prometheus_query_results_to_upload))
