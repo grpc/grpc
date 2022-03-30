@@ -42,6 +42,7 @@ grpc_proto_library(
     name = "control_proto",
     srcs = ["control.proto"],
     has_services = False,
+    well_known_protos = True,
     deps = [
         "payloads_proto",
         "stats_proto",
@@ -277,6 +278,7 @@ proto_library(
     deps = [
         ":payloads_descriptor",
         ":stats_descriptor",
+        "@com_google_protobuf//:timestamp_proto",
     ],
 )
 
