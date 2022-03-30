@@ -33,6 +33,8 @@ class ClientChannelFactory {
   virtual RefCountedPtr<Subchannel> CreateSubchannel(
       const grpc_resolved_address& address, const grpc_channel_args* args) = 0;
 
+  static absl::string_view ChannelArgName();
+
   // Returns a channel arg containing the specified factory.
   static grpc_arg CreateChannelArg(ClientChannelFactory* factory);
 

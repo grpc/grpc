@@ -169,6 +169,7 @@ class ChannelArgs {
   }
   absl::optional<Duration> GetDurationFromIntMillis(
       absl::string_view name) const;
+  absl::optional<bool> GetBool(absl::string_view name) const;
 
   // Object based get/set.
   // Deal with the common case that we set a pointer to an object under
@@ -197,6 +198,12 @@ class ChannelArgs {
   bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
   bool operator==(const ChannelArgs& other) const {
     return args_ == other.args_;
+  }
+
+  // Helpers for commonly accessed things
+
+  bool WantMinimalStack() const {
+    return GetBool(GRPC_ARG_MINIMAL_STACK).value_or(false);
   }
 
  private:

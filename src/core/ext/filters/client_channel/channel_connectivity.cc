@@ -100,7 +100,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       // channel.  In that case, connectivity state will never change (it
       // will always be TRANSIENT_FAILURE), so we don't actually start a
       // watch, but we are hiding that fact from the application.
-      if (!grpc_core::IsLameChannel(grpc_core::Channel::FromC(channel))) {
+      if (!IsLameChannel(Channel::FromC(channel))) {
         // Ref from object creation is held by timer callback.
         StartTimer(Timestamp::FromTimespecRoundUp(deadline));
         return;

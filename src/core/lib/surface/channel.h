@@ -98,7 +98,7 @@ class Channel : public RefCounted<Channel>,
       grpc_transport* optional_transport);
 
   static absl::StatusOr<RefCountedPtr<Channel>> CreateWithBuilder(
-      grpc_core::ChannelStackBuilder* builder);
+      ChannelStackBuilder* builder);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
 
@@ -136,8 +136,8 @@ class Channel : public RefCounted<Channel>,
   const grpc_compression_options compression_options_;
   std::atomic<size_t> call_size_estimate_;
   CallRegistrationTable registration_table_;
-  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node_;
-  grpc_core::MemoryAllocator allocator_;
+  RefCountedPtr<channelz::ChannelNode> channelz_node_;
+  MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
 };

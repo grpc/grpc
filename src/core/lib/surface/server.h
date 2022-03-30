@@ -97,7 +97,7 @@ class Server : public InternallyRefCounted<Server>,
     virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
-  explicit Server(const grpc_channel_args* args);
+  explicit Server(ChannelArgs args);
   ~Server() override;
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
@@ -192,12 +192,13 @@ class Server : public InternallyRefCounted<Server>,
     ChannelData() = default;
     ~ChannelData();
 
-    void InitTransport(RefCountedPtr<Server> server, Channel* channel,
-                       size_t cq_idx, grpc_transport* transport,
+    void InitTransport(RefCountedPtr<Server> server,
+                       RefCountedPtr<Channel> channel, size_t cq_idx,
+                       grpc_transport* transport,
                        intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
-    Channel* channel() const { return channel_; }
+    Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
@@ -219,7 +220,7 @@ class Server : public InternallyRefCounted<Server>,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    Channel* channel_;
+    RefCountedPtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
@@ -411,7 +412,7 @@ class Server : public InternallyRefCounted<Server>,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
-  grpc_channel_args* const channel_args_;
+  const grpc_channel_args* const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 

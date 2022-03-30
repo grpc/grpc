@@ -53,7 +53,7 @@ ChannelStackBuilderImpl::Build() {
   auto* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_stack_size));
 
-  const grpc_channel_args* final_args;
+  ChannelArgs final_args = channel_args();
   if (transport() != nullptr) {
     static const grpc_arg_pointer_vtable vtable = {
         // copy
@@ -63,14 +63,12 @@ ChannelStackBuilderImpl::Build() {
         // cmp
         [](void* a, void* b) { return QsortCompare(a, b); },
     };
-    grpc_arg arg = grpc_channel_arg_pointer_create(
-        const_cast<char*>(GRPC_ARG_TRANSPORT), transport(), &vtable);
-    final_args = grpc_channel_args_copy_and_add(channel_args(), &arg, 1);
-  } else {
-    final_args = channel_args();
+    final_args = final_args.Set(GRPC_ARG_TRANSPORT,
+                                ChannelArgs::Pointer(transport(), &vtable));
   }
 
   // and initialize it
+  const grpc_channel_args* c_args = final_args.ToC();
   grpc_error_handle error = grpc_channel_stack_init(
       1,
       [](void* p, grpc_error_handle) {
@@ -78,12 +76,9 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, filters.data(), filters.size(), final_args, name(),
+      channel_stack, filters.data(), filters.size(), c_args, name(),
       channel_stack);
-
-  if (final_args != channel_args()) {
-    grpc_channel_args_destroy(final_args);
-  }
+  grpc_channel_args_destroy(c_args);
 
   if (error != GRPC_ERROR_NONE) {
     grpc_channel_stack_destroy(channel_stack);

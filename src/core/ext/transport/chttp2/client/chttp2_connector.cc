@@ -344,29 +344,19 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
-                            grpc_error_handle* error) {
+absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
+                                                     ChannelArgs args) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
-    if (error != nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel target is NULL");
-    }
-    return nullptr;
+    return absl::InvalidArgumentError("channel target is NULL");
   }
   // Add channel arg containing the server URI.
   std::string canonical_target =
       CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
           target);
-  grpc_arg arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_SERVER_URI),
-      const_cast<char*>(canonical_target.c_str()));
-  const char* to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  grpc_channel* channel = grpc_channel_create_internal(
-      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, error);
-  grpc_channel_args_destroy(new_args);
-  return channel;
+  return Channel::Create(target,
+                         args.Set(GRPC_ARG_SERVER_URI, canonical_target),
+                         GRPC_CLIENT_CHANNEL, nullptr);
 }
 
 }  // namespace
