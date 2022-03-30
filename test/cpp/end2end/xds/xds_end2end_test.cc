@@ -2499,6 +2499,8 @@ TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
           status.error_code(), status.error_message().c_str());
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
 }
 
 using GlobalXdsClientTest = BasicTest;

@@ -561,7 +561,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;
   TestOp test_op_data;
-  const int kArenaSize = 4096;
+  const int kArenaSize = 32 * 1024 * 1024;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
   grpc_call_element_args call_args{
       call_stack,
@@ -617,7 +617,8 @@ typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
     ServerDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+typedef Fixture<&grpc_core::HttpClientFilter::kFilter,
+                CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
