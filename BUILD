@@ -2599,6 +2599,9 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
     ],
+    hdrs = [
+        "src/core/ext/filters/channel_idle/channel_idle_filter.h",
+    ],
     deps = [
         "capture",
         "config",

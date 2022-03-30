@@ -75,6 +75,7 @@ message Action {
         Metadata receive_initial_metadata = 11;
         Metadata receive_trailing_metadata = 12;
         GlobalObjectAction global_object_action = 13;
+        uint64 advance_time_microseconds = 14;
     }
 }
 
