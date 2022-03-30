@@ -140,6 +140,8 @@ struct GlobalObjects {
 
   void Perform(const filter_fuzzer::GlobalObjectAction& action) {
     switch (action.type_case()) {
+      case filter_fuzzer::GlobalObjectAction::TYPE_NOT_SET:
+        break;
       case filter_fuzzer::GlobalObjectAction::kSetResourceQuota:
         resource_quota->memory_quota()->SetSize(action.set_resource_quota());
         break;

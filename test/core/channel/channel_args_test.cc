@@ -75,7 +75,9 @@ TEST(ChannelArgsTest, StoreRefCountedPtr) {
   struct Test : public RefCounted<Test> {
     explicit Test(int n) : n(n) {}
     int n;
-    bool operator<(const Test& rhs) const { return n < rhs.n; }
+    static int ChannelArgsCompare(const Test* a, const Test* b) {
+      return a->n - b->n;
+    }
   };
   auto p = MakeRefCounted<Test>(123);
 
@@ -91,7 +93,10 @@ TEST(ChannelArgsTest, ObjectApi) {
       return "grpc.internal.my-fancy-object";
     }
     int n;
-    bool operator<(const MyFancyObject& rhs) const { return n < rhs.n; }
+    static int ChannelArgsCompare(const MyFancyObject* a,
+                                  const MyFancyObject* b) {
+      return a->n - b->n;
+    }
   };
   auto p = MakeRefCounted<MyFancyObject>(42);
   ChannelArgs a;
