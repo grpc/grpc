@@ -2065,11 +2065,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
           &s->frame_storage,
           std::min(s->frame_storage.length, size_t(GRPC_HEADER_SIZE_IN_BYTES)),
           &s->unprocessed_incoming_frames_buffer);
-      if (s->unprocessed_incoming_frames_buffer.length > 0) {
-        pending_data = true;
-      }
     }
-    if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
+    if (s->read_closed && s->frame_storage.length == 0 &&
         s->recv_trailing_metadata_finished != nullptr) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
