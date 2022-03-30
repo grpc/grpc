@@ -82,7 +82,7 @@ TEST(ChannelArgsTest, StoreRefCountedPtr) {
   auto p = MakeRefCounted<Test>(123);
 
   ChannelArgs a;
-  a = a.Set("test", std::move(p));
+  a = a.Set("test", p);
   EXPECT_EQ(a.GetPointer<Test>("test")->n, 123);
 }
 
