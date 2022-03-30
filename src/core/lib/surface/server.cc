@@ -439,16 +439,16 @@ class ChannelBroadcaster {
   // when the actual setup and shutdown broadcast take place.
 
   // Copies over the channels from the locked server.
-  void FillChannelsLocked(std::vector<grpc_channel*> channels) {
+  void FillChannelsLocked(std::vector<RefCountedPtr<Channel>> channels) {
     GPR_DEBUG_ASSERT(channels_.empty());
     channels_ = std::move(channels);
   }
 
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
-    for (grpc_channel* channel : channels_) {
-      SendShutdown(channel, send_goaway, GRPC_ERROR_REF(force_disconnect));
-      GRPC_CHANNEL_INTERNAL_UNREF(channel, "broadcast");
+    for (const RefCountedPtr<Channel>& channel : channels_) {
+      SendShutdown(channel->c_ptr(), send_goaway,
+                   GRPC_ERROR_REF(force_disconnect));
     }
     channels_.clear();  // just for safety against double broadcast
     GRPC_ERROR_UNREF(force_disconnect);
@@ -486,7 +486,7 @@ class ChannelBroadcaster {
     elem->filter->start_transport_op(elem, op);
   }
 
-  std::vector<grpc_channel*> channels_;
+  std::vector<RefCountedPtr<Channel>> channels_;
 };
 
 }  // namespace
@@ -751,12 +751,11 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-std::vector<grpc_channel*> Server::GetChannelsLocked() const {
-  std::vector<grpc_channel*> channels;
+std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
+  std::vector<RefCountedPtr<Channel>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel());
-    GRPC_CHANNEL_INTERNAL_REF(chand->channel(), "broadcast");
+    channels.push_back(chand->channel()->Ref());
   }
   return channels;
 }
@@ -956,13 +955,8 @@ grpc_call_error Server::RequestRegisteredCall(
 class Server::ChannelData::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  explicit ConnectivityWatcher(ChannelData* chand) : chand_(chand) {
-    GRPC_CHANNEL_INTERNAL_REF(chand_->channel_, "connectivity");
-  }
-
-  ~ConnectivityWatcher() override {
-    GRPC_CHANNEL_INTERNAL_UNREF(chand_->channel_, "connectivity");
-  }
+  explicit ConnectivityWatcher(ChannelData* chand)
+      : chand_(chand), channel_(chand_->channel_->Ref()) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -974,7 +968,8 @@ class Server::ChannelData::ConnectivityWatcher
     chand_->Destroy();
   }
 
-  ChannelData* chand_;
+  ChannelData* const chand_;
+  const RefCountedPtr<Channel> channel_;
 };
 
 //
@@ -999,7 +994,7 @@ Server::ChannelData::~ChannelData() {
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        grpc_channel* channel, size_t cq_idx,
+                                        Channel* channel, size_t cq_idx,
                                         grpc_transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);

@@ -1264,7 +1264,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   const grpc_channel_args* client_args = grpc_core::CoreConfiguration::Get()
                                              .channel_args_preconditioning()
-                                             .PreconditionChannelArgs(args);
+                                             .PreconditionChannelArgs(args)
+                                             .ToC();
   grpc_channel_args_destroy(args);
   grpc_transport* server_transport;
   grpc_transport* client_transport;

@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -191,12 +192,12 @@ class Server : public InternallyRefCounted<Server>,
     ChannelData() = default;
     ~ChannelData();
 
-    void InitTransport(RefCountedPtr<Server> server, grpc_channel* channel,
+    void InitTransport(RefCountedPtr<Server> server, Channel* channel,
                        size_t cq_idx, grpc_transport* transport,
                        intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
-    grpc_channel* channel() const { return channel_; }
+    Channel* channel() const { return channel_; }
     size_t cq_idx() const { return cq_idx_; }
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
@@ -218,7 +219,7 @@ class Server : public InternallyRefCounted<Server>,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    grpc_channel* channel_;
+    Channel* channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
@@ -363,7 +364,7 @@ class Server : public InternallyRefCounted<Server>,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<grpc_channel*> GetChannelsLocked() const;
+  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.

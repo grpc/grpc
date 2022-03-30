@@ -78,10 +78,10 @@ class ChannelStackBuilder {
   grpc_transport* transport() const { return transport_; }
 
   // Set channel args (takes a copy of them).
-  ChannelStackBuilder& SetChannelArgs(const grpc_channel_args* args);
+  ChannelStackBuilder& SetChannelArgs(ChannelArgs args);
 
   // Query the channel args.
-  const grpc_channel_args* channel_args() const { return args_; }
+  const ChannelArgs& channel_args() const { return args_; }
 
   // Mutable vector of proposed stack entries.
   std::vector<StackEntry>* mutable_stack() { return &stack_; }
@@ -117,10 +117,11 @@ class ChannelStackBuilder {
   // The transport
   grpc_transport* transport_ = nullptr;
   // Channel args
-  const grpc_channel_args* args_ = nullptr;
+  ChannelArgs args_;
   // The in-progress stack
   std::vector<StackEntry> stack_;
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H

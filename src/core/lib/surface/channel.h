@@ -31,12 +31,6 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
-/// Creates a grpc_channel.
-grpc_channel* grpc_channel_create_internal(
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_stack_type channel_stack_type,
-    grpc_transport* optional_transport, grpc_error_handle* error);
-
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */
 void grpc_channel_destroy_internal(grpc_channel* channel);
@@ -96,10 +90,15 @@ struct CallRegistrationTable {
 class Channel : public RefCounted<Channel>,
                 public CppImplOf<Channel, grpc_channel> {
  public:
-  Channel(bool is_client, std::string target, ChannelArgs channel_args,
-          grpc_compression_options compression_options,
-          RefCountedPtr<grpc_channel_stack> channel_stack);
   ~Channel();
+
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
+      const char* target, ChannelArgs args,
+      grpc_channel_stack_type channel_stack_type,
+      grpc_transport* optional_transport);
+
+  static absl::StatusOr<RefCountedPtr<Channel>> CreateWithBuilder(
+      grpc_core::ChannelStackBuilder* builder);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
 
@@ -129,6 +128,10 @@ class Channel : public RefCounted<Channel>,
   RegisteredCall* RegisterCall(const char* method, const char* host);
 
  private:
+  Channel(bool is_client, std::string target, ChannelArgs channel_args,
+          grpc_compression_options compression_options,
+          RefCountedPtr<grpc_channel_stack> channel_stack);
+
   const bool is_client_;
   const grpc_compression_options compression_options_;
   std::atomic<size_t> call_size_estimate_;

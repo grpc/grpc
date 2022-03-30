@@ -296,8 +296,9 @@ ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src);
 }  // namespace grpc_core
 
 // Takes ownership of the old_args
-typedef grpc_channel_args* (*grpc_channel_args_client_channel_creation_mutator)(
-    const char* target, grpc_channel_args* old_args,
+typedef grpc_core::ChannelArgs (
+    *grpc_channel_args_client_channel_creation_mutator)(
+    const char* target, grpc_core::ChannelArgs old_args,
     grpc_channel_stack_type type);
 
 // Should be called only once globaly before grpc is init'ed.

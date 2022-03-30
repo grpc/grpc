@@ -70,14 +70,10 @@ Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
       target_(std::move(target)),
       channel_stack_(std::move(channel_stack)) {}
 
-}  // namespace grpc_core
-
-grpc_channel* grpc_channel_create_with_builder(
-    grpc_core::ChannelStackBuilder* builder,
-    grpc_channel_stack_type channel_stack_type, grpc_error_handle* error) {
-  std::string target(builder->target());
+absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
+    grpc_core::ChannelStackBuilder* builder) {
   auto channel_args = grpc_core::ChannelArgs::FromC(builder->channel_args());
-  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+  if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
     GRPC_STATS_INC_SERVER_CHANNELS_CREATED();
   } else {
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
@@ -85,15 +81,10 @@ grpc_channel* grpc_channel_create_with_builder(
   absl::StatusOr<grpc_core::RefCountedPtr<grpc_channel_stack>> r =
       builder->Build();
   if (!r.ok()) {
-    auto* builder_error = absl_status_to_grpc_error(r.status());
+    auto status = r.status();
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
-            grpc_error_std_string(builder_error).c_str());
-    if (error != nullptr) {
-      *error = builder_error;
-    } else {
-      GRPC_ERROR_UNREF(builder_error);
-    }
-    return nullptr;
+            status.ToString().c_str());
+    return status;
   }
 
   grpc_compression_options compression_options;
@@ -122,32 +113,13 @@ grpc_channel* grpc_channel_create_with_builder(
           .value_or(0) |
       1 /* always support no compression */;
 
-  return (new grpc_core::Channel(
-              grpc_channel_stack_type_is_client(channel_stack_type),
-              std::string(builder->target()), std::move(channel_args),
-              compression_options, std::move(*r)))
-      ->c_ptr();
+  return MakeRefCounted<grpc_core::Channel>(
+      grpc_channel_stack_type_is_client(builder->channel_stack_type()),
+      std::string(builder->target()), std::move(channel_args),
+      compression_options, std::move(*r));
 }
 
-static grpc_core::UniquePtr<char> get_default_authority(
-    const grpc_channel_args* input_args) {
-  bool has_default_authority = false;
-  char* ssl_override = nullptr;
-  grpc_core::UniquePtr<char> default_authority;
-  const size_t num_args = input_args != nullptr ? input_args->num_args : 0;
-  for (size_t i = 0; i < num_args; ++i) {
-    if (0 == strcmp(input_args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
-      has_default_authority = true;
-    } else if (0 == strcmp(input_args->args[i].key,
-                           GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      ssl_override = grpc_channel_arg_get_string(&input_args->args[i]);
-    }
-  }
-  if (!has_default_authority && ssl_override != nullptr) {
-    default_authority.reset(gpr_strdup(ssl_override));
-  }
-  return default_authority;
-}
+}  // namespace grpc_core
 
 static grpc_channel_args* build_channel_args(
     const grpc_channel_args* input_args, char* default_authority) {
@@ -213,10 +185,12 @@ void CreateChannelzNode(grpc_core::ChannelStackBuilder* builder) {
 
 }  // namespace
 
-grpc_channel* grpc_channel_create_internal(
-    const char* target, const grpc_channel_args* input_args,
+namespace grpc_core {
+
+absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
+    const char* target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type,
-    grpc_transport* optional_transport, grpc_error_handle* error) {
+    grpc_transport* optional_transport) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -236,15 +210,19 @@ grpc_channel* grpc_channel_create_internal(
   grpc_init();
   grpc_core::ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type);
-  const grpc_core::UniquePtr<char> default_authority =
-      get_default_authority(input_args);
-  grpc_channel_args* args =
-      build_channel_args(input_args, default_authority.get());
+  if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
+    auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+    if (ssl_override.has_value()) {
+      args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                      std::string(ssl_override.value()));
+    }
+  }
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
     if (channel_args_mutator != nullptr) {
-      args = channel_args_mutator(target, args, channel_stack_type);
+      auto* c_args args =
+          channel_args_mutator(target, args, channel_stack_type);
     }
   }
   builder.SetChannelArgs(args).SetTarget(target).SetTransport(
@@ -267,8 +245,6 @@ grpc_channel* grpc_channel_create_internal(
   }
   return channel;
 }
-
-namespace grpc_core {
 
 void Channel::UpdateCallSizeEstimate(size_t size) {
   size_t cur = call_size_estimate_.load(std::memory_order_relaxed);
