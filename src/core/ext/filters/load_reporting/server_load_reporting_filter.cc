@@ -49,7 +49,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-namespace grpc {
+namespace grpc_core {
 
 constexpr char kEncodedIpv4AddressLengthString[] = "08";
 constexpr char kEncodedIpv6AddressLengthString[] = "32";
@@ -288,4 +288,4 @@ struct ServerLoadReportingFilterStaticRegistrar {
   }
 } server_load_reporting_filter_static_registrar;
 
-}  // namespace grpc
+}  // namespace grpc_core

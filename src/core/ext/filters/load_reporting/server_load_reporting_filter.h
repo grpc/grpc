@@ -26,7 +26,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 
-namespace grpc {
+namespace grpc_core {
 
 class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
  public:
@@ -47,6 +47,6 @@ class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
   std::string peer_identity_;
 };
 
-}  // namespace grpc
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H

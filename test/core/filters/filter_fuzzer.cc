@@ -509,8 +509,9 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
-  gpr_now_impl = now_impl;
   g_now = {1, 0, GPR_CLOCK_MONOTONIC};
+  grpc_core::TestOnlySetProcessEpoch(g_now);
+  gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
