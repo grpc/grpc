@@ -2499,6 +2499,8 @@ TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
           status.error_code(), status.error_message().c_str());
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
 }
 
 using GlobalXdsClientTest = BasicTest;
@@ -14242,7 +14244,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.

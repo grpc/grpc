@@ -239,7 +239,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 }
 
 + (void)setUp {
-  grpc_test_init(0, NULL);
+  grpc_test_init(NULL, NULL);
 }
 
 @end

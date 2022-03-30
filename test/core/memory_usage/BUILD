@@ -84,6 +84,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
