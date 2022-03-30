@@ -31,7 +31,7 @@ namespace grpc {
 class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
  public:
   static absl::StatusOr<ServerLoadReportingFilter> Create(
-      const grpc_channel_args* args, grpc_core::ChannelFilter::Args);
+      grpc_core::ChannelArgs args, grpc_core::ChannelFilter::Args);
 
   // Getters.
   const char* peer_identity() { return peer_identity_.c_str(); }
@@ -49,5 +49,4 @@ class ServerLoadReportingFilter : public grpc_core::ChannelFilter {
 
 }  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H \
-        */
+#endif  // GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_FILTER_H

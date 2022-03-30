@@ -27,8 +27,8 @@ class GrpcServerAuthzFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<GrpcServerAuthzFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args);
+  static absl::StatusOr<GrpcServerAuthzFilter> Create(ChannelArgs args,
+                                                      ChannelFilter::Args);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
