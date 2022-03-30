@@ -379,13 +379,13 @@ void FactoryInit() {
 //                   - perform handshakes
 grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_credentials* creds,
-                                  const grpc_channel_args* args) {
+                                  const grpc_channel_args* c_args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)args));
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args);
+  ChannelArgs args = grpc_core::CoreConfiguration::Get()
+                         .channel_args_preconditioning()
+                         .PreconditionChannelArgs(c_args);
   grpc_channel* channel = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
