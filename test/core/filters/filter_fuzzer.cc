@@ -17,6 +17,7 @@
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -267,9 +268,13 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
 #define MAKE_FILTER(name) Filter::Make<name>(#name)
 
 const Filter* const kFilters[] = {
-    MAKE_FILTER(ClientAuthorityFilter), MAKE_FILTER(HttpClientFilter),
-    MAKE_FILTER(ClientAuthFilter),      MAKE_FILTER(GrpcServerAuthzFilter),
-    MAKE_FILTER(MaxAgeFilter),          MAKE_FILTER(ClientIdleFilter),
+    MAKE_FILTER(ClientAuthorityFilter),
+    MAKE_FILTER(HttpClientFilter),
+    MAKE_FILTER(ClientAuthFilter),
+    MAKE_FILTER(GrpcServerAuthzFilter),
+    MAKE_FILTER(MaxAgeFilter),
+    MAKE_FILTER(ClientIdleFilter),
+    MAKE_FILTER(ServerLoadReportingFilter),
 };
 
 absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
