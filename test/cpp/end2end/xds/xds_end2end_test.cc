@@ -594,9 +594,280 @@ const grpc_arg_pointer_vtable kChannelArgsArgVtable = {
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
-  // TODO(roth): In a subsequent PR, move BalancerServerThread definition
-  // here to avoid the need for this forward declaration.
-  class BalancerServerThread;
+  // A base class for server threads.
+  class ServerThread {
+   public:
+    // A status notifier for xDS-enabled servers.
+    class XdsServingStatusNotifier
+        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+     public:
+      void OnServingStatusUpdate(std::string uri,
+                                 ServingStatusUpdate update) override {
+        grpc_core::MutexLock lock(&mu_);
+        status_map[uri] = update.status;
+        cond_.Signal();
+      }
+
+      void WaitOnServingStatusChange(std::string uri,
+                                     grpc::StatusCode expected_status) {
+        grpc_core::MutexLock lock(&mu_);
+        std::map<std::string, grpc::Status>::iterator it;
+        while ((it = status_map.find(uri)) == status_map.end() ||
+               it->second.error_code() != expected_status) {
+          cond_.Wait(&mu_);
+        }
+      }
+
+     private:
+      grpc_core::Mutex mu_;
+      grpc_core::CondVar cond_;
+      std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
+    };
+
+    explicit ServerThread(XdsEnd2endTest* test_obj,
+                          bool use_xds_enabled_server = false)
+        : test_obj_(test_obj),
+          port_(grpc_pick_unused_port_or_die()),
+          use_xds_enabled_server_(use_xds_enabled_server) {}
+
+    virtual ~ServerThread() { Shutdown(); }
+
+    void Start() {
+      gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
+      GPR_ASSERT(!running_);
+      running_ = true;
+      StartAllServices();
+      grpc_core::Mutex mu;
+      // We need to acquire the lock here in order to prevent the notify_one
+      // by ServerThread::Serve from firing before the wait below is hit.
+      grpc_core::MutexLock lock(&mu);
+      grpc_core::CondVar cond;
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerThread::Serve, this, &mu, &cond));
+      cond.Wait(&mu);
+      gpr_log(GPR_INFO, "%s server startup complete", Type());
+    }
+
+    void Shutdown() {
+      if (!running_) return;
+      gpr_log(GPR_INFO, "%s about to shutdown", Type());
+      ShutdownAllServices();
+      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+      thread_->join();
+      gpr_log(GPR_INFO, "%s shutdown completed", Type());
+      running_ = false;
+    }
+
+    virtual std::shared_ptr<ServerCredentials> Credentials() {
+      return std::make_shared<SecureServerCredentials>(
+          grpc_fake_transport_security_server_credentials_create());
+    }
+
+    int port() const { return port_; }
+
+    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
+
+    XdsServingStatusNotifier* notifier() { return &notifier_; }
+
+   private:
+    // Adds channel args to the server for the XdsClient bootstrap
+    // config and channel args.
+    class XdsChannelArgsServerBuilderOption : public grpc::ServerBuilderOption {
+     public:
+      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
+          : test_obj_(test_obj) {}
+
+      void UpdateArguments(grpc::ChannelArguments* args) override {
+        args->SetString(
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
+            test_obj_->bootstrap_);
+        args->SetPointerWithVtable(
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
+            &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
+      }
+
+      void UpdatePlugins(
+          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* /*plugins*/)
+          override {}
+
+     private:
+      XdsEnd2endTest* test_obj_;
+    };
+
+    virtual const char* Type() = 0;
+    virtual void RegisterAllServices(ServerBuilder* builder) = 0;
+    virtual void StartAllServices() = 0;
+    virtual void ShutdownAllServices() = 0;
+
+    void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
+      // We need to acquire the lock here in order to prevent the notify_one
+      // below from firing before its corresponding wait is executed.
+      grpc_core::MutexLock lock(mu);
+      std::string server_address = absl::StrCat("localhost:", port_);
+      if (use_xds_enabled_server_) {
+        XdsServerBuilder builder;
+        if (GetParam().bootstrap_source() ==
+            TestType::kBootstrapFromChannelArg) {
+          builder.SetOption(
+              absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
+        }
+        builder.set_status_notifier(&notifier_);
+        builder.experimental().set_drain_grace_time(
+            test_obj_->xds_drain_grace_time_ms_);
+        builder.AddListeningPort(server_address, Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      } else {
+        ServerBuilder builder;
+        builder.AddListeningPort(server_address, Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      }
+      cond->Signal();
+    }
+
+    XdsEnd2endTest* test_obj_;
+    const int port_;
+    std::unique_ptr<Server> server_;
+    XdsServingStatusNotifier notifier_;
+    std::unique_ptr<std::thread> thread_;
+    bool running_ = false;
+    const bool use_xds_enabled_server_;
+  };
+
+  // A server thread for a backend server.
+  class BackendServerThread : public ServerThread {
+   public:
+    explicit BackendServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj, test_obj->use_xds_enabled_server_) {}
+
+    BackendServiceImpl<grpc::testing::EchoTestService::Service>*
+    backend_service() {
+      return &backend_service_;
+    }
+    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>*
+    backend_service1() {
+      return &backend_service1_;
+    }
+    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
+    backend_service2() {
+      return &backend_service2_;
+    }
+
+    std::shared_ptr<ServerCredentials> Credentials() override {
+      if (GetParam().use_xds_credentials()) {
+        if (use_xds_enabled_server()) {
+          // We are testing server's use of XdsServerCredentials
+          return XdsServerCredentials(InsecureServerCredentials());
+        } else {
+          // We are testing client's use of XdsCredentials
+          std::string root_cert = ReadFile(kCaCertPath);
+          std::string identity_cert = ReadFile(kServerCertPath);
+          std::string private_key = ReadFile(kServerKeyPath);
+          std::vector<experimental::IdentityKeyCertPair>
+              identity_key_cert_pairs = {{private_key, identity_cert}};
+          auto certificate_provider = std::make_shared<
+              grpc::experimental::StaticDataCertificateProvider>(
+              root_cert, identity_key_cert_pairs);
+          grpc::experimental::TlsServerCredentialsOptions options(
+              certificate_provider);
+          options.watch_root_certs();
+          options.watch_identity_key_cert_pairs();
+          options.set_cert_request_type(
+              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+          return grpc::experimental::TlsServerCredentials(options);
+        }
+      }
+      return ServerThread::Credentials();
+    }
+
+   private:
+    const char* Type() override { return "Backend"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&backend_service_);
+      builder->RegisterService(&backend_service1_);
+      builder->RegisterService(&backend_service2_);
+    }
+
+    void StartAllServices() override {
+      backend_service_.Start();
+      backend_service1_.Start();
+      backend_service2_.Start();
+    }
+
+    void ShutdownAllServices() override {
+      backend_service_.Shutdown();
+      backend_service1_.Shutdown();
+      backend_service2_.Shutdown();
+    }
+
+    BackendServiceImpl<grpc::testing::EchoTestService::Service>
+        backend_service_;
+    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>
+        backend_service1_;
+    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
+        backend_service2_;
+  };
+
+  // A server thread for the xDS server.
+  class BalancerServerThread : public ServerThread {
+   public:
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
+          ads_service_(new AdsServiceImpl()),
+          lrs_service_(new LrsServiceImpl(
+              (GetParam().enable_load_reporting()
+                   ? test_obj->client_load_reporting_interval_seconds_
+                   : 0),
+              {kDefaultClusterName})) {}
+
+    AdsServiceImpl* ads_service() { return ads_service_.get(); }
+    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+
+   private:
+    const char* Type() override { return "Balancer"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(ads_service_->v2_rpc_service());
+      builder->RegisterService(ads_service_->v3_rpc_service());
+      builder->RegisterService(lrs_service_->v2_rpc_service());
+      builder->RegisterService(lrs_service_->v3_rpc_service());
+    }
+
+    void StartAllServices() override {
+      ads_service_->Start();
+      lrs_service_->Start();
+    }
+
+    void ShutdownAllServices() override {
+      ads_service_->Shutdown();
+      lrs_service_->Shutdown();
+    }
+
+    std::shared_ptr<AdsServiceImpl> ads_service_;
+    std::shared_ptr<LrsServiceImpl> lrs_service_;
+  };
+
+#ifndef DISABLED_XDS_PROTO_IN_CC
+  // Server thread for CSDS server.
+  class AdminServerThread : public ServerThread {
+   public:
+    explicit AdminServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj) {}
+
+   private:
+    const char* Type() override { return "Admin"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&csds_service_);
+    }
+    void StartAllServices() override {}
+    void ShutdownAllServices() override {}
+
+    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
+  };
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
   class BootstrapBuilder {
    public:
@@ -1612,276 +1883,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
  protected:
-  class XdsServingStatusNotifier
-      : public grpc::experimental::XdsServerServingStatusNotifierInterface {
-   public:
-    void OnServingStatusUpdate(std::string uri,
-                               ServingStatusUpdate update) override {
-      grpc_core::MutexLock lock(&mu_);
-      status_map[uri] = update.status;
-      cond_.Signal();
-    }
-
-    void WaitOnServingStatusChange(std::string uri,
-                                   grpc::StatusCode expected_status) {
-      grpc_core::MutexLock lock(&mu_);
-      std::map<std::string, grpc::Status>::iterator it;
-      while ((it = status_map.find(uri)) == status_map.end() ||
-             it->second.error_code() != expected_status) {
-        cond_.Wait(&mu_);
-      }
-    }
-
-   private:
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar cond_;
-    std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
-  };
-
-  class ServerThread {
-   public:
-    explicit ServerThread(XdsEnd2endTest* test_obj,
-                          bool use_xds_enabled_server = false)
-        : test_obj_(test_obj),
-          port_(grpc_pick_unused_port_or_die()),
-          use_xds_enabled_server_(use_xds_enabled_server) {}
-
-    virtual ~ServerThread() { Shutdown(); }
-
-    void Start() {
-      gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
-      GPR_ASSERT(!running_);
-      running_ = true;
-      StartAllServices();
-      grpc_core::Mutex mu;
-      // We need to acquire the lock here in order to prevent the notify_one
-      // by ServerThread::Serve from firing before the wait below is hit.
-      grpc_core::MutexLock lock(&mu);
-      grpc_core::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
-          std::bind(&ServerThread::Serve, this, &mu, &cond));
-      cond.Wait(&mu);
-      gpr_log(GPR_INFO, "%s server startup complete", Type());
-    }
-
-    void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
-      // We need to acquire the lock here in order to prevent the notify_one
-      // below from firing before its corresponding wait is executed.
-      grpc_core::MutexLock lock(mu);
-      std::ostringstream server_address;
-      server_address << "localhost:" << port_;
-      if (use_xds_enabled_server_) {
-        XdsServerBuilder builder;
-        if (GetParam().bootstrap_source() ==
-            TestType::kBootstrapFromChannelArg) {
-          builder.SetOption(
-              absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
-        }
-        builder.set_status_notifier(&notifier_);
-        builder.experimental().set_drain_grace_time(
-            test_obj_->xds_drain_grace_time_ms_);
-        builder.AddListeningPort(server_address.str(), Credentials());
-        RegisterAllServices(&builder);
-        server_ = builder.BuildAndStart();
-      } else {
-        ServerBuilder builder;
-        builder.AddListeningPort(server_address.str(), Credentials());
-        RegisterAllServices(&builder);
-        server_ = builder.BuildAndStart();
-      }
-      cond->Signal();
-    }
-
-    void Shutdown() {
-      if (!running_) return;
-      gpr_log(GPR_INFO, "%s about to shutdown", Type());
-      ShutdownAllServices();
-      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
-      thread_->join();
-      gpr_log(GPR_INFO, "%s shutdown completed", Type());
-      running_ = false;
-    }
-
-    virtual std::shared_ptr<ServerCredentials> Credentials() {
-      return std::make_shared<SecureServerCredentials>(
-          grpc_fake_transport_security_server_credentials_create());
-    }
-
-    int port() const { return port_; }
-
-    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
-
-    XdsServingStatusNotifier* notifier() { return &notifier_; }
-
-   private:
-    class XdsChannelArgsServerBuilderOption : public grpc::ServerBuilderOption {
-     public:
-      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
-          : test_obj_(test_obj) {}
-
-      void UpdateArguments(grpc::ChannelArguments* args) override {
-        args->SetString(
-            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-            test_obj_->bootstrap_);
-        args->SetPointerWithVtable(
-            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
-            &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
-      }
-
-      void UpdatePlugins(
-          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* /*plugins*/)
-          override {}
-
-     private:
-      XdsEnd2endTest* test_obj_;
-    };
-
-    virtual void RegisterAllServices(ServerBuilder* builder) = 0;
-    virtual void StartAllServices() = 0;
-    virtual void ShutdownAllServices() = 0;
-
-    virtual const char* Type() = 0;
-
-    XdsEnd2endTest* test_obj_;
-    const int port_;
-    std::unique_ptr<Server> server_;
-    XdsServingStatusNotifier notifier_;
-    std::unique_ptr<std::thread> thread_;
-    bool running_ = false;
-    const bool use_xds_enabled_server_;
-  };
-
-  class BackendServerThread : public ServerThread {
-   public:
-    explicit BackendServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, test_obj->use_xds_enabled_server_) {}
-
-    BackendServiceImpl<grpc::testing::EchoTestService::Service>*
-    backend_service() {
-      return &backend_service_;
-    }
-    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>*
-    backend_service1() {
-      return &backend_service1_;
-    }
-    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
-    backend_service2() {
-      return &backend_service2_;
-    }
-
-    std::shared_ptr<ServerCredentials> Credentials() override {
-      if (GetParam().use_xds_credentials()) {
-        if (use_xds_enabled_server()) {
-          // We are testing server's use of XdsServerCredentials
-          return XdsServerCredentials(InsecureServerCredentials());
-        } else {
-          // We are testing client's use of XdsCredentials
-          std::string root_cert = ReadFile(kCaCertPath);
-          std::string identity_cert = ReadFile(kServerCertPath);
-          std::string private_key = ReadFile(kServerKeyPath);
-          std::vector<experimental::IdentityKeyCertPair>
-              identity_key_cert_pairs = {{private_key, identity_cert}};
-          auto certificate_provider = std::make_shared<
-              grpc::experimental::StaticDataCertificateProvider>(
-              root_cert, identity_key_cert_pairs);
-          grpc::experimental::TlsServerCredentialsOptions options(
-              certificate_provider);
-          options.watch_root_certs();
-          options.watch_identity_key_cert_pairs();
-          options.set_cert_request_type(
-              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-          return grpc::experimental::TlsServerCredentials(options);
-        }
-      }
-      return ServerThread::Credentials();
-    }
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&backend_service_);
-      builder->RegisterService(&backend_service1_);
-      builder->RegisterService(&backend_service2_);
-    }
-
-    void StartAllServices() override {
-      backend_service_.Start();
-      backend_service1_.Start();
-      backend_service2_.Start();
-    }
-
-    void ShutdownAllServices() override {
-      backend_service_.Shutdown();
-      backend_service1_.Shutdown();
-      backend_service2_.Shutdown();
-    }
-
-    const char* Type() override { return "Backend"; }
-
-    BackendServiceImpl<grpc::testing::EchoTestService::Service>
-        backend_service_;
-    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>
-        backend_service1_;
-    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
-        backend_service2_;
-  };
-
-  class BalancerServerThread : public ServerThread {
-   public:
-    explicit BalancerServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
-          ads_service_(new AdsServiceImpl()),
-          lrs_service_(new LrsServiceImpl(
-              (GetParam().enable_load_reporting()
-                   ? test_obj->client_load_reporting_interval_seconds_
-                   : 0),
-              {kDefaultClusterName})) {}
-
-    AdsServiceImpl* ads_service() { return ads_service_.get(); }
-    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(ads_service_->v2_rpc_service());
-      builder->RegisterService(ads_service_->v3_rpc_service());
-      builder->RegisterService(lrs_service_->v2_rpc_service());
-      builder->RegisterService(lrs_service_->v3_rpc_service());
-    }
-
-    void StartAllServices() override {
-      ads_service_->Start();
-      lrs_service_->Start();
-    }
-
-    void ShutdownAllServices() override {
-      ads_service_->Shutdown();
-      lrs_service_->Shutdown();
-    }
-
-    const char* Type() override { return "Balancer"; }
-
-    std::shared_ptr<AdsServiceImpl> ads_service_;
-    std::shared_ptr<LrsServiceImpl> lrs_service_;
-  };
-
-#ifndef DISABLED_XDS_PROTO_IN_CC
-  class AdminServerThread : public ServerThread {
-   public:
-    explicit AdminServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj) {}
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&csds_service_);
-    }
-    void StartAllServices() override {}
-    void ShutdownAllServices() override {}
-
-    const char* Type() override { return "Admin"; }
-
-    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
-  };
-#endif  // DISABLED_XDS_PROTO_IN_CC
-
   class LongRunningRpc {
    public:
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
