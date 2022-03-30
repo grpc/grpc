@@ -25,32 +25,45 @@ namespace {
 auto* g_memory_allocator = new MemoryAllocator(
     ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 
-ChannelArgs TestChannelArgs(absl::string_view default_authority) {
-  return ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
-}
+class TestChannelArgs {
+ public:
+  explicit TestChannelArgs(const char* default_authority)
+      : arg_(grpc_channel_arg_string_create(
+            const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+            const_cast<char*>(default_authority))),
+        args_{1, &arg_} {}
+
+  const grpc_channel_args* args() const { return &args_; }
+
+ private:
+  grpc_arg arg_;
+  grpc_channel_args args_;
+};
 
 TEST(ClientAuthorityFilterTest, DefaultFails) {
   EXPECT_FALSE(
-      ClientAuthorityFilter::Create(ChannelArgs(), ChannelFilter::Args()).ok());
+      ClientAuthorityFilter::Create(nullptr, ChannelFilter::Args()).ok());
 }
 
 TEST(ClientAuthorityFilterTest, WithArgSucceeds) {
-  EXPECT_EQ(ClientAuthorityFilter::Create(TestChannelArgs("foo.test.google.au"),
-                                          ChannelFilter::Args())
-                .status(),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ClientAuthorityFilter::Create(
+          TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args())
+          .status(),
+      absl::OkStatus());
 }
 
 TEST(ClientAuthorityFilterTest, NonStringArgFails) {
-  EXPECT_FALSE(ClientAuthorityFilter::Create(
-                   ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, 123),
-                   ChannelFilter::Args())
-                   .ok());
+  grpc_arg arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), 123);
+  grpc_channel_args args = {1, &arg};
+  EXPECT_FALSE(
+      ClientAuthorityFilter::Create(&args, ChannelFilter::Args()).ok());
 }
 
 TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
+      TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
@@ -82,7 +95,7 @@ TEST(ClientAuthorityFilterTest, PromiseCompletesImmediatelyAndSetsAuthority) {
 TEST(ClientAuthorityFilterTest,
      PromiseCompletesImmediatelyAndDoesNotClobberAlreadySetsAuthority) {
   auto filter = *ClientAuthorityFilter::Create(
-      TestChannelArgs("foo.test.google.au"), ChannelFilter::Args());
+      TestChannelArgs("foo.test.google.au").args(), ChannelFilter::Args());
   auto arena = MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch initial_metadata_batch(arena.get());
   grpc_metadata_batch trailing_metadata_batch(arena.get());
