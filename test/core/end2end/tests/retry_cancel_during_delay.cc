@@ -135,9 +135,8 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
       10 * grpc_test_slowdown_factor());
 
   grpc_arg args[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(service_config.c_str())),
+      grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+                                     const_cast<char*>(service_config.c_str())),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   std::string name = absl::StrCat("retry_cancel_during_delay/", mode.name);
