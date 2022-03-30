@@ -484,6 +484,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
     if not uses_polling:
         native.sh_test(
             name = name,
+            srcs = srcs,
             args = args,
             tags = tags,
             **test_args

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_package", "grpc_sh_test")
 
 licenses(["notice"])
 
@@ -90,7 +90,7 @@ genrule(
     cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
 )
 
-sh_test(
+grpc_sh_test(
     name = "run_golden_file_test",
     srcs = ["run_golden_file_test.sh"],
     data = [
@@ -100,4 +100,5 @@ sh_test(
         ":compiler_test_mock_golden",
         ":golden_file_test",
     ],
+    uses_polling = False,
 )
