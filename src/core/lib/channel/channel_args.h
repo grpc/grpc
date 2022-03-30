@@ -79,8 +79,7 @@ struct ChannelArgTypeTraits<
 template <typename T>
 struct ChannelArgTypeTraits<
     T, absl::enable_if_t<
-           std::is_base_of<RefCounted<T, NonPolymorphicRefCount>,
-                           T>::value,
+           std::is_base_of<RefCounted<T, NonPolymorphicRefCount>, T>::value,
            void>> {
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
