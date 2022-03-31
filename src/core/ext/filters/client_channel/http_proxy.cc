@@ -185,11 +185,12 @@ bool HttpProxyMapper::MapName(const char* server_uri,
   args_to_add.push_back(grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
       const_cast<char*>(server_target.c_str())));
+  std::string header;
   if (user_cred != nullptr) {
     /* Use base64 encoding for user credentials as stated in RFC 7617 */
     auto encoded_user_cred =
         UniquePtr<char>(grpc_base64_encode(user_cred, strlen(user_cred), 0, 0));
-    std::string header =
+    header =
         absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred.get());
     args_to_add.push_back(grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_HTTP_CONNECT_HEADERS),
