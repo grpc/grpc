@@ -1850,18 +1850,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return assignment;
   }
 
- public:
-  // This method could benefit test subclasses; to make it accessible
-  // via bind with a qualified name, it needs to be public.
-  void SetEdsResourceWithDelay(BalancerServerThread* balancer,
-                               const ClusterLoadAssignment& assignment,
-                               int delay_ms) {
-    GPR_ASSERT(delay_ms > 0);
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
-    balancer->ads_service()->SetEdsResource(assignment);
-  }
-
- protected:
   class LongRunningRpc {
    public:
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
@@ -2059,29 +2047,16 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
 // Tests that RPCs will be blocked until a non-empty serverlist is received.
 TEST_P(BasicTest, InitiallyEmptyServerlist) {
   CreateAndStartBackends(1);
-  const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const int kCallDeadlineMs = kServerlistDelayMs * 2;
-  // First response is an empty serverlist, sent right away.
+  // First response is an empty serverlist.
   EdsResourceArgs args({{"locality0", {}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send non-empty serverlist only after kServerlistDelayMs.
+  // RPCs should fail.
+  CheckRpcSendFailure();
+  // Send non-empty serverlist.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args), kServerlistDelayMs));
-  const auto t0 = system_clock::now();
-  // Client will block: LB will initially send empty serverlist.
-  CheckRpcSendOk(
-      1, RpcOptions().set_timeout_ms(kCallDeadlineMs).set_wait_for_ready(true));
-  const auto ellapsed_ms =
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          system_clock::now() - t0);
-  // but eventually, the LB sends a serverlist update that allows the call to
-  // proceed. The call delay must be larger than the delay in sending the
-  // populated serverlist but under the call's deadline (which is enforced by
-  // the call's deadline).
-  EXPECT_GT(ellapsed_ms.count(), kServerlistDelayMs);
-  delayed_resource_setter.join();
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // RPCs should eventually succeed.
+  WaitForAllBackends(0, 1, WaitForBackendOptions().set_allow_failures(true));
 }
 
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
@@ -11953,19 +11928,17 @@ TEST_P(LocalityMapTest, UpdateMap) {
 // a given priority.
 TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
   CreateAndStartBackends(2);
+  // Initial EDS update has backend 0.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args), 5000));
   // Wait for the first backend to be ready.
   WaitForBackend(0);
-  // Keep sending RPCs until we switch over to backend 1, which tells us
-  // that we received the update.  No RPCs should fail during this
-  // transition.
+  // Send EDS update that replaces the locality and switches to backend 1.
+  args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // When the client sees the update, RPCs should start going to backend 1.
+  // No RPCs should fail during this change.
   WaitForBackend(1);
-  delayed_resource_setter.join();
 }
 
 class FailoverTest : public XdsEnd2endTest {
