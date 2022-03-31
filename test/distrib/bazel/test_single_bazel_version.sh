@@ -53,7 +53,7 @@ export OVERRIDE_BAZEL_VERSION="$VERSION"
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
 
-for TEST_DIRECTORY in ${TEST_DIRECTORIES[@]}; do
+for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
   bazel test --test_output=errors //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
