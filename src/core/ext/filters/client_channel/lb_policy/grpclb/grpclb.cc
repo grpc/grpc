@@ -1867,11 +1867,8 @@ void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* args = builder->channel_args();
-        const grpc_arg* channel_arg =
-            grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-        if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-            strcmp(channel_arg->value.string, "grpclb") == 0) {
+        if (builder->channel_args().GetString(GRPC_ARG_LB_POLICY_NAME) ==
+            "grpclb") {
           // TODO(roth): When we get around to re-attempting
           // https://github.com/grpc/grpc/pull/16214, we should try to keep
           // this filter at the very top of the subchannel stack, since that

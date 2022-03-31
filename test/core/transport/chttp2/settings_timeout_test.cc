@@ -125,7 +125,8 @@ class Client {
     EventState state;
     const grpc_channel_args* args = CoreConfiguration::Get()
                                         .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
+                                        .PreconditionChannelArgs(nullptr)
+                                        .ToC();
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
                             addresses_or->data(),
                             ExecCtx::Get()->Now() + Duration::Seconds(1));
@@ -263,7 +264,7 @@ TEST(SettingsTimeout, Basic) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int result = RUN_ALL_TESTS();
   grpc_shutdown();

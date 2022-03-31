@@ -35,13 +35,6 @@
  * is safe to use from within core. */
 void grpc_channel_destroy_internal(grpc_channel* channel);
 
-/// Creates a grpc_channel with a builder. See the description of
-/// \a grpc_channel_create for variable definitions.
-grpc_channel* grpc_channel_create_with_builder(
-    grpc_core::ChannelStackBuilder* builder,
-    grpc_channel_stack_type channel_stack_type,
-    grpc_error_handle* error = nullptr);
-
 /** Create a call given a grpc_channel, in order to call \a method.
     Progress is tied to activity on \a pollset_set. The returned call object is
     meant to be used with \a grpc_call_start_batch_and_execute, which relies on
@@ -126,6 +119,16 @@ class Channel : public RefCounted<Channel>,
   MemoryAllocator* allocator() { return &allocator_; }
   bool is_client() const { return is_client_; }
   RegisteredCall* RegisterCall(const char* method, const char* host);
+
+  int TestOnlyRegisteredCalls() {
+    MutexLock lock(&registration_table_.mu);
+    return registration_table_.map.size();
+  }
+
+  int TestOnlyRegistrationAttempts() {
+    MutexLock lock(&registration_table_.mu);
+    return registration_table_.method_registration_attempts;
+  }
 
  private:
   Channel(bool is_client, std::string target, ChannelArgs channel_args,

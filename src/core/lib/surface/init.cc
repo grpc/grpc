@@ -83,7 +83,7 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 static bool maybe_prepend_client_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
   if (builder->channel_args().Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
-    builder->PrependFilter(&grpc_client_auth_filter, nullptr);
+    builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
   }
   return true;
 }

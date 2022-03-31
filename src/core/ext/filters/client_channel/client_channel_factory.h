@@ -27,6 +27,8 @@ namespace grpc_core {
 
 class ClientChannelFactory {
  public:
+  struct RawPointerChannelArgTag {};
+
   virtual ~ClientChannelFactory() = default;
 
   // Creates a subchannel with the specified args.

@@ -203,9 +203,8 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(ChannelArgs args,
       auth_context->Ref());
 }
 
-}  // namespace grpc_core
-
-const grpc_channel_filter grpc_client_auth_filter =
-    grpc_core::MakePromiseBasedFilter<grpc_core::ClientAuthFilter,
-                                      grpc_core::FilterEndpoint::kClient>(
+const grpc_channel_filter ClientAuthFilter::kFilter =
+    MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>(
         "client-auth-filter");
+
+}  // namespace grpc_core

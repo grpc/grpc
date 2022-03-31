@@ -850,7 +850,7 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(
       TransportCounter::CounterInitCallback);
   grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(

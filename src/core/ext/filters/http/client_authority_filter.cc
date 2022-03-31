@@ -64,18 +64,18 @@ ArenaPromise<ServerMetadataHandle> ClientAuthorityFilter::MakeCallPromise(
   return next_promise_factory(std::move(call_args));
 }
 
-namespace {
-const grpc_channel_filter grpc_client_authority_filter =
+const grpc_channel_filter ClientAuthorityFilter::kFilter =
     MakePromiseBasedFilter<ClientAuthorityFilter, FilterEndpoint::kClient>(
         "authority");
 
+namespace {
 bool add_client_authority_filter(ChannelStackBuilder* builder) {
   if (builder->channel_args()
           .GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
           .value_or(false)) {
     return true;
   }
-  builder->PrependFilter(&grpc_client_authority_filter, nullptr);
+  builder->PrependFilter(&ClientAuthorityFilter::kFilter, nullptr);
   return true;
 }
 }  // namespace
