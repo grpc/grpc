@@ -12431,7 +12431,6 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
 TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
   CreateAndStartBackends(1);
   balancer_->lrs_service()->set_cluster_names({"bogus"});
-  const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
