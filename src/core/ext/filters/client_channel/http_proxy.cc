@@ -153,8 +153,9 @@ bool HttpProxyMapper::MapName(const char* server_uri,
   }
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
   auto no_proxy_str = UniquePtr<char>(gpr_getenv("no_grpc_proxy"));
-  if (no_proxy_str == nullptr)
+  if (no_proxy_str == nullptr) {
     no_proxy_str = UniquePtr<char>(gpr_getenv("no_proxy"));
+  }
   if (no_proxy_str != nullptr) {
     bool use_proxy = true;
     std::string server_host;
