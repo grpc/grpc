@@ -17,6 +17,7 @@ import unittest
 
 
 class ImportTest(unittest.TestCase):
+
     def test_import(self):
         from foo.bar.namespaced.upper.example.namespaced_example_pb2 import NamespacedExample
         namespaced_example = NamespacedExample()
