@@ -22,14 +22,15 @@ static const upb_MiniTable_Sub envoy_config_cluster_v3_CircuitBreakers_submsgs[1
   {.submsg = &envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_cluster_v3_CircuitBreakers__fields[1] = {
+static const upb_MiniTable_Field envoy_config_cluster_v3_CircuitBreakers__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 0, 0, 11, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_cluster_v3_CircuitBreakers_msginit = {
   &envoy_config_cluster_v3_CircuitBreakers_submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers__fields[0],
-  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_cluster_v3_CircuitBreakers_Thresholds_submsgs[2] = {
