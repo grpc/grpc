@@ -822,11 +822,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     explicit BalancerServerThread(XdsEnd2endTest* test_obj)
         : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
           ads_service_(new AdsServiceImpl()),
-          lrs_service_(new LrsServiceImpl(
-              (GetParam().enable_load_reporting()
-                   ? 20 * grpc_test_slowdown_factor()
-                   : 0),
-              {kDefaultClusterName})) {}
+          lrs_service_(
+              new LrsServiceImpl((GetParam().enable_load_reporting()
+                                      ? 20 * grpc_test_slowdown_factor()
+                                      : 0),
+                                 {kDefaultClusterName})) {}
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
@@ -1188,9 +1188,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
   }
 
-  std::shared_ptr<Channel> CreateChannel(
-      int failover_timeout_ms = 0, const char* server_name = kServerName,
-      const char* xds_authority = "") {
+  std::shared_ptr<Channel> CreateChannel(int failover_timeout_ms = 0,
+                                         const char* server_name = kServerName,
+                                         const char* xds_authority = "") {
     ChannelArguments args;
     // TODO(roth): Remove this once we enable retries by default internally.
     args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
@@ -7385,8 +7385,8 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({{"locality0",
-                         {MakeNonExistantEndpoint(), CreateEndpoint(0)}}});
+  EdsResourceArgs args(
+      {{"locality0", {MakeNonExistantEndpoint(), CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -12033,14 +12033,12 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
 TEST_P(FailoverTest, Failover) {
   CreateAndStartBackends(2);
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight,
-       1},
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        2},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        3},
-      {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight,
-       0},
+      {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
@@ -12364,16 +12362,17 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(total_rpcs_sent, client_stats.total_issued_requests());
   EXPECT_EQ(total_failed_rpcs_sent, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
-  ASSERT_THAT(client_stats.locality_stats(), ::testing::ElementsAre(
-      ::testing::Pair("locality0", ::testing::_),
-      ::testing::Pair("locality1", ::testing::_)));
+  ASSERT_THAT(
+      client_stats.locality_stats(),
+      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_),
+                             ::testing::Pair("locality1", ::testing::_)));
   size_t num_successful_rpcs = 0;
   size_t num_failed_rpcs = 0;
   for (const auto& p : client_stats.locality_stats()) {
     EXPECT_EQ(p.second.total_requests_in_progress, 0U);
-    EXPECT_EQ(p.second.total_issued_requests,
-              p.second.total_successful_requests +
-              p.second.total_error_requests);
+    EXPECT_EQ(
+        p.second.total_issued_requests,
+        p.second.total_successful_requests + p.second.total_error_requests);
     num_successful_rpcs += p.second.total_successful_requests;
     num_failed_rpcs += p.second.total_error_requests;
   }
