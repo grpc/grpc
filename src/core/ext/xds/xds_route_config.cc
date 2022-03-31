@@ -339,9 +339,8 @@ grpc_error_handle ClusterSpecifierPluginParse(
     grpc_error_handle error =
         ExtractExtensionTypeName(context, any, &plugin_type);
     if (error != GRPC_ERROR_NONE) return error;
-    bool is_optional = true;
-    // bool is_optional =
-    // envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(cluster_specifier_plugin[i]);
+    bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
+        cluster_specifier_plugin[i]);
     const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
         XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
     if (cluster_specifier_plugin_impl == nullptr) {
@@ -349,6 +348,9 @@ grpc_error_handle ClusterSpecifierPluginParse(
         gpr_log(GPR_INFO, "donna in new case");
         rds_update->ignored_cluster_specifier_plugin_set.emplace(name);
         continue;
+      } else {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Unable to locate the cluster specifier plugin in the registry");
       }
     }
     // Find the plugin and generate the policy.

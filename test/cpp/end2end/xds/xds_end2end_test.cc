@@ -7819,9 +7819,7 @@ TEST_P(RlsTest,
   EXPECT_THAT(
       response_state->error_message,
       ::testing::HasSubstr(
-          // TODO: change this back once is_optional is no longer hard-coded.
-          //"Unable to locate the cluster specifier plugin in the registry"));
-          "No valid routes specified."));
+          "Unable to locate the cluster specifier plugin in the registry"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
