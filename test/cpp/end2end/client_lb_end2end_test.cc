@@ -1917,7 +1917,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, StatusFailed) {
   Status status;
   SendRpc(stub, /*response=*/nullptr, /*timeout_ms=*/1000, &status,
           /*wait_for_ready=*/false, &request);
-  EXPECT_EQ(status.error_code(), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_EQ(status.error_code(), StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "bummer, man");
   absl::Status status_seen_by_lb = last_status();
   EXPECT_EQ(status_seen_by_lb.code(), absl::StatusCode::kPermissionDenied);

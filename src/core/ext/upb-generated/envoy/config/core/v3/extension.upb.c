@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include "upb/msg_internal.h"
 #include "envoy/config/core/v3/extension.upb.h"
-#include "envoy/config/core/v3/config_source.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "validate/validate.upb.h"
@@ -31,34 +30,15 @@ const upb_MiniTable envoy_config_core_v3_TypedExtensionConfig_msginit = {
   UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
-static const upb_MiniTable_Sub envoy_config_core_v3_ExtensionConfigSource_submsgs[2] = {
-  {.submsg = &envoy_config_core_v3_ConfigSource_msginit},
-  {.submsg = &google_protobuf_Any_msginit},
-};
-
-static const upb_MiniTable_Field envoy_config_core_v3_ExtensionConfigSource__fields[4] = {
-  {1, UPB_SIZE(4, 8), 1, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(1, 1), 0, 0, 8, kUpb_FieldMode_Scalar | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(12, 24), 0, 0, 9, kUpb_FieldMode_Array | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-};
-
-const upb_MiniTable envoy_config_core_v3_ExtensionConfigSource_msginit = {
-  &envoy_config_core_v3_ExtensionConfigSource_submsgs[0],
-  &envoy_config_core_v3_ExtensionConfigSource__fields[0],
-  UPB_SIZE(16, 32), 4, upb_ExtMode_NonExtendable, 4, 255, 0,
-};
-
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_core_v3_TypedExtensionConfig_msginit,
-  &envoy_config_core_v3_ExtensionConfigSource_msginit,
 };
 
 const upb_MiniTable_File envoy_config_core_v3_extension_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  2,
+  1,
   0,
   0,
 };

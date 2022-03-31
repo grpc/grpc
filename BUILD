@@ -2433,7 +2433,6 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "ref_counted_ptr",
-        "time",
         "useful",
     ],
 )
