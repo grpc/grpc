@@ -791,7 +791,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   template <typename Stub>
   static Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
                               ClientContext* context, EchoRequest& request,
-                              EchoResponse* response);
+                              EchoResponse* response) {
+    switch (rpc_options.method) {
+      case METHOD_ECHO:
+        return stub->Echo(context, request, response);
+      case METHOD_ECHO1:
+        return stub->Echo1(context, request, response);
+      case METHOD_ECHO2:
+        return stub->Echo2(context, request, response);
+    }
+    GPR_UNREACHABLE_CODE();
+  }
 
   // Sends the specified number of RPCs and fails if the RPC fails.
   void CheckRpcSendOk(const size_t times = 1,

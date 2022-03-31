@@ -46,11 +46,9 @@
 namespace grpc {
 namespace testing {
 
-using ::envoy::config::cluster::v3::Cluster;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
-using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 
@@ -782,21 +780,6 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
           : std::make_shared<SecureChannelCredentials>(
                 grpc_fake_transport_security_credentials_create());
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
-}
-
-template <typename Stub>
-Status XdsEnd2endTest::SendRpcMethod(
-    Stub* stub, const RpcOptions& rpc_options, ClientContext* context,
-    EchoRequest& request, EchoResponse* response) {
-  switch (rpc_options.method) {
-    case METHOD_ECHO:
-      return stub->Echo(context, request, response);
-    case METHOD_ECHO1:
-      return stub->Echo1(context, request, response);
-    case METHOD_ECHO2:
-      return stub->Echo2(context, request, response);
-  }
-  GPR_UNREACHABLE_CODE();
 }
 
 Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
