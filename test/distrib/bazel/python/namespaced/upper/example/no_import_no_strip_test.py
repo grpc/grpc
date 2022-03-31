@@ -23,7 +23,7 @@ class ImportTest(unittest.TestCase):
             NamespacedExample
         namespaced_example = NamespacedExample()
         namespaced_example.value = "hello"
-        # Dummy assert, important part is namespaced example was imported.
+        # Superfluous assert, important part is namespaced example was imported.
         self.assertEqual(namespaced_example.value, "hello")
 
     def test_grpc(self):
