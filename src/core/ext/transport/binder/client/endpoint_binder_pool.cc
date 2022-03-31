@@ -53,7 +53,7 @@ Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_
 
 namespace grpc_binder {
 
-void EndpointBinderPool ::GetEndpointBinder(
+void EndpointBinderPool::GetEndpointBinder(
     std::string conn_id,
     std::function<void(std::unique_ptr<grpc_binder::Binder>)> cb) {
   gpr_log(GPR_INFO, "EndpointBinder requested. conn_id = %s", conn_id.c_str());

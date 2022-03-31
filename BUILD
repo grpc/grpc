@@ -1769,6 +1769,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     deps = [
         "gpr_platform",
     ],
@@ -1875,7 +1878,7 @@ grpc_cc_library(
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_stack.cc",
-        "src/core/lib/channel/channel_stack_builder.cc",
+        "src/core/lib/channel/channel_stack_builder_impl.cc",
         "src/core/lib/channel/channel_trace.cc",
         "src/core/lib/channel/channelz.cc",
         "src/core/lib/channel/channelz_registry.cc",
@@ -1902,7 +1905,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_cfstream.cc",
         "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
-        "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
@@ -1921,7 +1923,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
-        "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/polling_entity.cc",
@@ -2017,7 +2018,7 @@ grpc_cc_library(
         "src/core/lib/channel/call_tracer.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/promise_based_filter.h",
-        "src/core/lib/channel/channel_stack_builder.h",
+        "src/core/lib/channel/channel_stack_builder_impl.h",
         "src/core/lib/channel/channel_trace.h",
         "src/core/lib/channel/channelz.h",
         "src/core/lib/channel/channelz_registry.h",
@@ -2043,7 +2044,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
-        "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
@@ -2053,7 +2053,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
-        "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
@@ -2074,7 +2073,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
-        "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -2132,6 +2130,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/combiner.h",
         "src/core/lib/iomgr/iomgr_internal.h",
         "src/core/lib/channel/channel_args.h",
+        "src/core/lib/channel/channel_stack_builder.h",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
     # integrated, or when it becomes obvious the glue code is unnecessary.
@@ -2164,6 +2163,7 @@ grpc_cc_library(
         "avl",
         "bitset",
         "channel_args",
+        "channel_stack_builder",
         "channel_stack_type",
         "chunked_vector",
         "closure",
@@ -2224,7 +2224,38 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "channel_stack_builder",
         "channel_stack_type",
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "single_set_ptr",
+    hdrs = [
+        "src/core/lib/gprpp/single_set_ptr.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_stack_builder",
+    srcs = [
+        "src/core/lib/channel/channel_stack_builder.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/channel_stack_builder.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "channel_args",
+        "channel_stack_type",
+        "closure",
+        "error",
         "gpr_base",
     ],
 )
@@ -2390,12 +2421,18 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
+        "avl",
         "channel_stack_type",
         "gpr_base",
         "grpc_codegen",
+        "match",
+        "ref_counted",
+        "ref_counted_ptr",
         "useful",
     ],
 )
@@ -2568,6 +2605,7 @@ grpc_cc_library(
         "grpc_base",
         "idle_filter_state",
         "loop",
+        "single_set_ptr",
         "sleep",
         "try_seq",
     ],
@@ -2692,10 +2730,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "call_push_pull",
         "config",
         "gpr_base",
         "grpc_base",
         "grpc_message_size_filter",
+        "seq",
         "slice",
     ],
 )
@@ -2827,6 +2867,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
         "src/core/ext/xds/xds_common_types.cc",
         "src/core/ext/xds/xds_endpoint.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
@@ -2851,6 +2892,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.h",
         "src/core/ext/xds/xds_common_types.h",
         "src/core/ext/xds/xds_endpoint.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
@@ -2939,6 +2981,8 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
+        "rls_config_upb",
+        "rls_config_upbdefs",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -3287,6 +3331,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr",
         "grpc++_base",
@@ -3294,6 +3339,7 @@ grpc_cc_library(
         "grpc_lb_policy_grpclb",
         "grpc_security_base",
         "grpc_sockaddr",
+        "seq",
         "slice",
         "uri_parser",
     ],
@@ -3738,6 +3784,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
     ],
     hdrs = [
+        "src/core/lib/security/credentials/insecure/insecure_credentials.h",
         "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",
     ],
     language = "c++",
@@ -4568,6 +4615,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_insecure_credentials",
         "grpc_resolver",
         "grpc_security_base",
         "grpc_transport_chttp2",
@@ -4596,6 +4644,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_http_filters",
+        "grpc_insecure_credentials",
         "grpc_security_base",
         "grpc_transport_chttp2",
         "memory_quota",
@@ -5310,6 +5359,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "rls_upb",
     deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+)
+
+grpc_upb_proto_library(
+    name = "rls_config_upb",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "rls_config_upbdefs",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

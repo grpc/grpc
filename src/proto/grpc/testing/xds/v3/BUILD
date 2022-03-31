@@ -197,6 +197,7 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "base_proto",
+        "extension_proto",
         "percent_proto",
         "range_proto",
         "regex_proto",

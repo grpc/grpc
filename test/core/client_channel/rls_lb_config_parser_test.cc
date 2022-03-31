@@ -35,22 +35,16 @@ namespace {
 
 class RlsConfigParsingTest : public ::testing::Test {
  public:
-  static void SetUpTestSuite() {
-    gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
-    grpc_init();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestSuite() {
-    grpc_shutdown_blocking();
-    gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
-  }
+  static void TearDownTestSuite() { grpc_shutdown_blocking(); }
 };
 
 TEST_F(RlsConfigParsingTest, ValidConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"rls.example.com:80\",\n"
       "        \"cacheSizeBytes\":1,\n"
@@ -88,7 +82,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "    }\n"
       "  }]\n"
       "}\n";
@@ -109,7 +103,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":1,\n"
       "      \"routeLookupChannelServiceConfig\": 1,\n"
       "      \"childPolicy\":1,\n"
@@ -135,7 +129,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"unknown\":{}}\n"
       "      ],\n"
@@ -160,7 +154,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"grpclb\":{\"childPolicy\":1}}\n"
       "      ],\n"
@@ -184,7 +178,7 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupChannelServiceConfig\": {\n"
       "        \"loadBalancingPolicy\": \"unknown\"\n"
       "      },\n"
@@ -217,7 +211,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "      }\n"
       "    }\n"
@@ -239,7 +233,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":1,\n"
       "        \"name\":1,\n"
@@ -264,7 +258,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
                   "field:lookupService error:type should be STRING.*"
                   "field:maxAge error:type should be STRING.*"
                   "field:staleAge error:type should be STRING.*"
-                  "field:cacheSizeBytes error:type should be NUMBER.*"
+                  "field:cacheSizeBytes error:failed to parse.*"
                   "field:defaultTarget error:type should be STRING"));
   GRPC_ERROR_UNREF(error);
 }
@@ -273,7 +267,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"\",\n"
       "        \"cacheSizeBytes\":0\n"
@@ -301,7 +295,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -328,7 +322,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -362,7 +356,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -403,7 +397,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -463,7 +457,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -500,7 +494,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -537,7 +531,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -579,6 +573,6 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

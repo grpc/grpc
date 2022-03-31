@@ -83,11 +83,11 @@ class CdsLb : public LoadBalancingPolicy {
           },
           DEBUG_LOCATION);
     }
-    void OnError(grpc_error_handle error) override {
+    void OnError(absl::Status status) override {
       Ref().release();  // Ref held by lambda
       parent_->work_serializer()->Run(
-          [this, error]() {
-            parent_->OnError(name_, error);
+          [this, status]() {
+            parent_->OnError(name_, status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -141,10 +141,10 @@ class CdsLb : public LoadBalancingPolicy {
       std::set<std::string>* clusters_needed);
   void OnClusterChanged(const std::string& name,
                         XdsClusterResource cluster_data);
-  void OnError(const std::string& name, grpc_error_handle error);
+  void OnError(const std::string& name, absl::Status status);
   void OnResourceDoesNotExist(const std::string& name);
 
-  grpc_error_handle UpdateXdsCertificateProvider(
+  absl::Status UpdateXdsCertificateProvider(
       const std::string& cluster_name, const XdsClusterResource& cluster_data);
 
   void CancelClusterDataWatch(absl::string_view cluster_name,
@@ -390,10 +390,10 @@ void CdsLb::OnClusterChanged(const std::string& name,
   if (it == watchers_.end()) return;
   it->second.update = cluster_data;
   // Take care of integration with new certificate code.
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  error = UpdateXdsCertificateProvider(name, it->second.update.value());
-  if (error != GRPC_ERROR_NONE) {
-    return OnError(name, error);
+  absl::Status status =
+      UpdateXdsCertificateProvider(name, it->second.update.value());
+  if (!status.ok()) {
+    return OnError(name, status);
   }
   // Scan the map starting from the root cluster to generate the list of
   // discovery mechanisms. If we don't have some of the data we need (i.e., we
@@ -435,10 +435,12 @@ void CdsLb::OnClusterChanged(const std::string& name,
       gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
               this, json_str.c_str());
     }
+    grpc_error_handle error = GRPC_ERROR_NONE;
     RefCountedPtr<LoadBalancingPolicy::Config> config =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
     if (error != GRPC_ERROR_NONE) {
-      OnError(name, error);
+      OnError(name, absl::UnavailableError(grpc_error_std_string(error)));
+      GRPC_ERROR_UNREF(error);
       return;
     }
     // Create child policy if not already present.
@@ -450,8 +452,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
       child_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
           config->name(), std::move(args));
       if (child_policy_ == nullptr) {
-        OnError(name, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                          "failed to create child policy"));
+        OnError(name, absl::UnavailableError("failed to create child policy"));
         return;
       }
       grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
@@ -489,19 +490,18 @@ void CdsLb::OnClusterChanged(const std::string& name,
   }
 }
 
-void CdsLb::OnError(const std::string& name, grpc_error_handle error) {
+void CdsLb::OnError(const std::string& name, absl::Status status) {
   gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
-          this, name.c_str(), grpc_error_std_string(error).c_str());
+          this, name.c_str(), status.ToString().c_str());
   // Go into TRANSIENT_FAILURE if we have not yet created the child
   // policy (i.e., we have not yet received data from xds).  Otherwise,
   // we keep running with the data we had previously.
   if (child_policy_ == nullptr) {
-    absl::Status status = grpc_error_to_absl_status(error);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(status));
+        absl::make_unique<TransientFailurePicker>(
+            absl::UnavailableError(status.ToString())));
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 void CdsLb::OnResourceDoesNotExist(const std::string& name) {
@@ -517,15 +517,15 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
   MaybeDestroyChildPolicyLocked();
 }
 
-grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
+absl::Status CdsLb::UpdateXdsCertificateProvider(
     const std::string& cluster_name, const XdsClusterResource& cluster_data) {
   // Early out if channel is not configured to use xds security.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args_);
   if (channel_credentials == nullptr ||
-      channel_credentials->type() != kCredentialsTypeXds) {
+      channel_credentials->type() != XdsCredentials::Type()) {
     xds_certificate_provider_ = nullptr;
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   if (xds_certificate_provider_ == nullptr) {
     xds_certificate_provider_ = MakeRefCounted<XdsCertificateProvider>();
@@ -543,11 +543,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(root_provider_instance_name);
     if (new_root_provider == nullptr) {
-      return grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("Certificate provider instance name: \"",
-                           root_provider_instance_name, "\" not recognized.")),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      return absl::UnavailableError(
+          absl::StrCat("Certificate provider instance name: \"",
+                       root_provider_instance_name, "\" not recognized."));
     }
   }
   if (root_certificate_provider_ != new_root_provider) {
@@ -582,11 +580,9 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
     if (new_identity_provider == nullptr) {
-      return grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-              "Certificate provider instance name: \"",
-              identity_provider_instance_name, "\" not recognized.")),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      return absl::UnavailableError(
+          absl::StrCat("Certificate provider instance name: \"",
+                       identity_provider_instance_name, "\" not recognized."));
     }
   }
   if (identity_certificate_provider_ != new_identity_provider) {
@@ -614,7 +610,7 @@ grpc_error_handle CdsLb::UpdateXdsCertificateProvider(
           .match_subject_alt_names;
   xds_certificate_provider_->UpdateSubjectAlternativeNameMatchers(
       cluster_name, match_subject_alt_names);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void CdsLb::CancelClusterDataWatch(absl::string_view cluster_name,
