@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 
+#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -38,6 +39,10 @@ TEST(NoProxyTest, EmptyList) {
   char* name_to_resolve = nullptr;
   EXPECT_TRUE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
                                         &name_to_resolve, &new_args));
+  EXPECT_STREQ(name_to_resolve, "proxy.google.com");
+  EXPECT_STREQ(grpc_channel_args_find_string(
+                   new_args, const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER)),
+               "test.google.com:443");
   gpr_free(name_to_resolve);
   grpc_channel_args_destroy(new_args);
   gpr_unsetenv("no_proxy");
@@ -54,6 +59,10 @@ TEST(NoProxyTest, Basic) {
   char* name_to_resolve = nullptr;
   EXPECT_FALSE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
                                          &name_to_resolve, &new_args));
+  EXPECT_EQ(name_to_resolve, nullptr);
+  EXPECT_EQ(grpc_channel_args_find_string(
+                new_args, const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER)),
+            nullptr);
   gpr_free(name_to_resolve);
   grpc_channel_args_destroy(new_args);
   gpr_unsetenv("no_proxy");
@@ -70,6 +79,10 @@ TEST(NoProxyTest, EmptyEntries) {
   char* name_to_resolve = nullptr;
   EXPECT_FALSE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
                                          &name_to_resolve, &new_args));
+  EXPECT_EQ(name_to_resolve, nullptr);
+  EXPECT_EQ(grpc_channel_args_find_string(
+                new_args, const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER)),
+            nullptr);
   gpr_free(name_to_resolve);
   grpc_channel_args_destroy(new_args);
   gpr_unsetenv("no_proxy");

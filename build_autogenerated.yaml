@@ -6168,6 +6168,7 @@ targets:
   - test/core/client_channel/http_proxy_mapper_test.cc
   deps:
   - grpc_test_util
+  uses_polling: false
 - name: httpcli_test
   gtest: true
   build: test

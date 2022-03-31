@@ -35,6 +35,7 @@ grpc_cc_test(
     srcs = ["http_proxy_mapper_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
