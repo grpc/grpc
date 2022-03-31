@@ -81,7 +81,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL);
-  builder.SetChannelArgs(grpc_core::ChannelArgs::FromC(args));
+  builder.SetChannelArgs(ChannelArgs::FromC(args));
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
@@ -119,7 +119,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL);
-  builder.SetChannelArgs(grpc_core::ChannelArgs::FromC(args));
+  builder.SetChannelArgs(ChannelArgs::FromC(args));
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));

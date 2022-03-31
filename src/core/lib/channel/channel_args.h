@@ -194,9 +194,8 @@ class ChannelArgs {
   const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        Value value) const;
-   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       int value) const;
- GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        bool value) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        absl::string_view value) const;
