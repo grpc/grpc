@@ -2044,7 +2044,7 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   // Same backend listed twice.
   auto endpoints = CreateEndpointsForBackends();
   endpoints.push_back(endpoints.front());
-  EdsResourceArgs args({{"locality0", std::move(endpoints)}});
+  EdsResourceArgs args({{"locality0", endpoints}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for the backend to come online.
   WaitForAllBackends();
@@ -2062,7 +2062,8 @@ TEST_P(BasicTest, InitiallyEmptyServerlist) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
-  EdsResourceArgs args({{"locality0", {}}});
+  EdsResourceArgs::Locality empty_locality("locality0", {});
+  EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send non-empty serverlist only after kServerlistDelayMs.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -2462,7 +2463,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2487,7 +2488,7 @@ TEST_P(
   })));
   WaitForBackend(0);
   // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2717,7 +2718,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   WaitForAllBackends(0, 1);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2792,7 +2793,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   WaitForAllBackends(0, 1);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2947,7 +2948,7 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   CheckRpcSendOk(kNumRpcsToDefaultBalancer);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -11627,7 +11628,7 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   // Create second channel for a new server name.
   // This should fail because there is no LDS resource for this server name.
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, "new-server.example.com");
+      CreateChannel(/*failover_timeout_ms=*/0, "new-server.example.com");
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
@@ -11672,7 +11673,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   // Create second channel for a new server name.
   // This should fail because the LDS resource points to a non-existent RDS
   // resource.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
