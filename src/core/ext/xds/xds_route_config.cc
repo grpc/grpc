@@ -329,11 +329,16 @@ grpc_error_handle ClusterSpecifierPluginParse(
             cluster_specifier_plugin[i]);
     std::string name = UpbStringToStdString(
         envoy_config_core_v3_TypedExtensionConfig_name(extension));
+    if (rds_update->cluster_specifier_plugin_map.find(name) !=
+        rds_update->cluster_specifier_plugin_map.end()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Duplicated definition of cluster_specifier_plugin.");
+    }
     const google_protobuf_Any* any =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
     if (any == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "could not obtrain TypedExtensionConfig for plugin config");
+          "Could not obtrain TypedExtensionConfig for plugin config.");
     }
     absl::string_view plugin_type;
     grpc_error_handle error =
@@ -345,12 +350,11 @@ grpc_error_handle ClusterSpecifierPluginParse(
         XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
     if (cluster_specifier_plugin_impl == nullptr) {
       if (is_optional) {
-        gpr_log(GPR_INFO, "donna in new case");
         rds_update->ignored_cluster_specifier_plugin_set.emplace(name);
         continue;
       } else {
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to locate the cluster specifier plugin in the registry");
+            "Unable to locate the cluster specifier plugin in the registry.");
       }
     }
     // Find the plugin and generate the policy.

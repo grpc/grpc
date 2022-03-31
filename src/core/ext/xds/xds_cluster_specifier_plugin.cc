@@ -83,8 +83,12 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   policy["rls_experimental"] = std::move(rls_policy);
   Json::Array policies;
   policies.emplace_back(std::move(policy));
-  Json lb_policy_config = Json(policies);
+  Json lb_policy_config(std::move(policies));
   grpc_error_handle parse_error = GRPC_ERROR_NONE;
+  // TODO(roth): If/when we ever add a second plugin, refactor this code
+  // somehow such that we automatically validate the resulting config against
+  // the gRPC LB policy registry instead of requiring each plugin to do that
+  // itself.
   LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config,
                                                         &parse_error);
   if (parse_error != GRPC_ERROR_NONE) {

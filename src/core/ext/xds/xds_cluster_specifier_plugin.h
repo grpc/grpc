@@ -64,10 +64,10 @@ class XdsClusterSpecifierPluginRegistry {
       std::unique_ptr<XdsClusterSpecifierPluginImpl> plugin,
       absl::string_view config_proto_type_name);
 
+  static void PopulateSymtab(upb_DefPool* symtab);
+
   static const XdsClusterSpecifierPluginImpl* GetPluginForType(
       absl::string_view config_proto_type_name);
-
-  static void PopulateSymtab(upb_DefPool* symtab);
 
   // Global init and shutdown.
   static void Init();

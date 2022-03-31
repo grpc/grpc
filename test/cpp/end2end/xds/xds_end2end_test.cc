@@ -7778,6 +7778,62 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
+  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  const char* kNewClusterName = "new_cluster";
+  const char* kNewEdsServiceName = "new_eds_service_name";
+  // Populate new EDS resources.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName));
+  // Populate new CDS resources.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Prepare the RLSLookupConfig: change route configurations to use cluster
+  // specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kRlsTestKey);
+  header->add_names(kRlsTestKey1);
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* duplicate_plugin = new_route_config.add_cluster_specifier_plugins();
+  duplicate_plugin->mutable_extension()->set_name(
+      kRlsClusterSpecifierPluginInstanceName);
+  duplicate_plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(
+                  "Duplicated definition of cluster_specifier_plugin."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+}
+
 TEST_P(RlsTest,
        XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
@@ -7819,7 +7875,7 @@ TEST_P(RlsTest,
   EXPECT_THAT(
       response_state->error_message,
       ::testing::HasSubstr(
-          "Unable to locate the cluster specifier plugin in the registry"));
+          "Unable to locate the cluster specifier plugin in the registry."));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
