@@ -738,9 +738,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // A server thread for a backend server.
   class BackendServerThread : public ServerThread {
    public:
-    explicit BackendServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, test_obj->use_xds_enabled_server_) {
-      if (test_obj->use_xds_enabled_server_) {
+    BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server)
+        : ServerThread(test_obj, use_xds_enabled_server) {
+      if (use_xds_enabled_server) {
         test_obj->SetServerListenerNameAndRouteConfiguration(
             test_obj->balancer_.get(), test_obj->default_server_listener_,
             port(), test_obj->default_server_route_config_);
@@ -1038,13 +1038,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // that it needs, so that we aren't wasting resources.
 
   explicit XdsEnd2endTest(int client_load_reporting_interval_seconds = 100,
-                          int xds_resource_does_not_exist_timeout_ms = 0,
-                          bool use_xds_enabled_server = false)
+                          int xds_resource_does_not_exist_timeout_ms = 0)
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         xds_resource_does_not_exist_timeout_ms_(
             xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server),
         balancer_(CreateAndStartBalancer()) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
@@ -1168,9 +1166,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  void CreateBackends(size_t num_backends) {
+  void CreateBackends(size_t num_backends, bool xds_enabled = false) {
     for (size_t i = 0; i < num_backends; ++i) {
-      backends_.emplace_back(new BackendServerThread(this));
+      backends_.emplace_back(new BackendServerThread(this, xds_enabled));
     }
   }
 
@@ -1178,8 +1176,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     for (auto& backend : backends_) backend->Start();
   }
 
-  void CreateAndStartBackends(size_t num_backends) {
-    CreateBackends(num_backends);
+  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false) {
+    CreateBackends(num_backends, xds_enabled);
     StartAllBackends();
   }
 
@@ -1953,7 +1951,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   const int client_load_reporting_interval_seconds_;
   const int xds_resource_does_not_exist_timeout_ms_ = 0;
-  const bool use_xds_enabled_server_;
 
   bool ipv6_only_ = false;
 
@@ -2645,7 +2642,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  protected:
-  XdsFederationTest() : XdsEnd2endTest(3, 0, true) {
+  XdsFederationTest() : XdsEnd2endTest(3) {
     authority_balancer_ = CreateAndStartBalancer();
   }
 
@@ -2694,7 +2691,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for the new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -2745,7 +2742,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
   InitClient(builder);
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -2820,7 +2817,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
   InitClient(builder);
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -2902,7 +2899,7 @@ TEST_P(XdsFederationTest, FederationServer) {
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
   InitClient(builder);
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -2973,7 +2970,7 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
   InitClient(builder);
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -3058,11 +3055,6 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
 
 class SecureNamingTest : public XdsEnd2endTest {
  public:
-  SecureNamingTest()
-      : XdsEnd2endTest(/*client_load_reporting_interval_seconds=*/100,
-                       /*xds_resource_does_not_exist_timeout_ms=*/0,
-                       /*use_xds_enabled_server=*/false) {}
-
   void SetUp() override {}
 };
 
@@ -8835,12 +8827,9 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
-  XdsEnabledServerTest()
-      : XdsEnd2endTest(100, 0, true /* use_xds_enabled_server */) {}
-
   void SetUp() override {
     XdsEnd2endTest::SetUp();
-    CreateBackends(1);
+    CreateBackends(1, /*xds_enabled=*/true);
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
@@ -9053,9 +9042,6 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
-  XdsServerSecurityTest()
-      : XdsEnd2endTest(100, 0, true /* use_xds_enabled_server */) {}
-
   void SetUp() override {
     BootstrapBuilder builder = BootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
@@ -9070,7 +9056,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder);
-    CreateBackends(1);
+    CreateBackends(1, /*xds_enabled=*/true);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -11660,8 +11646,8 @@ class TimeoutTest : public XdsEnd2endTest {
  protected:
   TimeoutTest()
       : XdsEnd2endTest(/*client_load_reporting_interval_seconds=*/100,
-                       /*xds_resource_does_not_exist_timeout_ms=*/500,
-                       /*use_xds_enabled_server=*/false) {}
+                       /*xds_resource_does_not_exist_timeout_ms=*/500) {}
+
   void SetUp() override {
     XdsEnd2endTest::SetUp();
     CreateAndStartBackends(4);
