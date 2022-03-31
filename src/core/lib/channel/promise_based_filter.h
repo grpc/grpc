@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -360,7 +361,7 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public ServerCallData {
 // class SomeChannelFilter : public ChannelFilter {
 //  public:
 //   static absl::StatusOr<SomeChannelFilter> Create(
-//       ChannelFilter::Args filter_args);
+//       ChannelArgs channel_args, ChannelFilter::Args filter_args);
 // };
 // TODO(ctiller): allow implementing get_channel_info, start_transport_op in
 // some way on ChannelFilter.
@@ -410,7 +411,7 @@ MakePromiseBasedFilter(const char* name) {
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
         GPR_ASSERT(!args->is_last);
-        auto status = F::Create(args->channel_args,
+        auto status = F::Create(ChannelArgs::FromC(args->channel_args),
                                 ChannelFilter::Args(args->channel_stack));
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
         new (elem->channel_data) F(std::move(*status));

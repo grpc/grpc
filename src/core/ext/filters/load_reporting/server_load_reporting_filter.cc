@@ -56,10 +56,10 @@ constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 
 absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
-    const grpc_channel_args* args, grpc_core::ChannelFilter::Args) {
+    grpc_core::ChannelArgs channel_args, grpc_core::ChannelFilter::Args) {
   // Find and record the peer_identity.
   ServerLoadReportingFilter filter;
-  const grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
+  const auto* auth_context = channel_args.GetObject<grpc_auth_context>();
   if (auth_context != nullptr &&
       grpc_auth_context_peer_is_authenticated(auth_context)) {
     grpc_auth_property_iterator auth_it =

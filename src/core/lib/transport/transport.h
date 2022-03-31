@@ -44,6 +44,8 @@
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
 
+#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
 namespace grpc_core {
 // TODO(ctiller): eliminate once MetadataHandle is constructable directly.
 namespace promise_filter_detail {

@@ -60,6 +60,10 @@ class grpc_security_connector
         url_scheme_(url_scheme) {}
   ~grpc_security_connector() override = default;
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SECURITY_CONNECTOR;
+  }
+
   // Checks the peer. Callee takes ownership of the peer object.
   // When done, sets *auth_context and invokes on_peer_checked.
   virtual void check_peer(
