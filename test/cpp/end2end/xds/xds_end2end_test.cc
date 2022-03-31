@@ -824,7 +824,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           ads_service_(new AdsServiceImpl()),
           lrs_service_(new LrsServiceImpl(
               (GetParam().enable_load_reporting()
-                   ? test_obj->client_load_reporting_interval_seconds_
+                   ? 20 * grpc_test_slowdown_factor()
                    : 0),
               {kDefaultClusterName})) {}
 
@@ -1037,10 +1037,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // time, change each test to directly start the number of backends
   // that it needs, so that we aren't wasting resources.
 
-  explicit XdsEnd2endTest(int client_load_reporting_interval_seconds = 100)
-      : client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds),
-        balancer_(CreateAndStartBalancer()) {
+  XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -1947,8 +1944,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return rpcs;
   }
 
-  const int client_load_reporting_interval_seconds_;
-
   bool ipv6_only_ = false;
 
   std::unique_ptr<BalancerServerThread> balancer_;
@@ -2639,9 +2634,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 
 class XdsFederationTest : public XdsEnd2endTest {
  protected:
-  XdsFederationTest() : XdsEnd2endTest(3) {
-    authority_balancer_ = CreateAndStartBalancer();
-  }
+  XdsFederationTest() : authority_balancer_(CreateAndStartBalancer()) {}
 
   void SetUp() override {
     // Each test will use a slightly different bootstrapfile,
@@ -12405,7 +12398,6 @@ TEST_P(DropTest, DropAll) {
 
 class ClientLoadReportingTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingTest() : XdsEnd2endTest(3) {}
   void SetUp() override {
     XdsEnd2endTest::SetUp();
     CreateAndStartBackends(4);
@@ -12698,8 +12690,6 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
 
 class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
  public:
-  ClientLoadReportingWithDropTest() : XdsEnd2endTest(20) {}
-
   void SetUp() override {
     XdsEnd2endTest::SetUp();
     CreateAndStartBackends(4);
@@ -13283,7 +13273,7 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 #ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
-  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(100) {
+  ClientStatusDiscoveryServiceTest() {
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
