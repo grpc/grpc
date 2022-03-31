@@ -1833,6 +1833,16 @@
         "mode": "NULLABLE",
         "name": "clientQueriesPerCpuSec",
         "type": "FLOAT"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "startTime",
+        "type": "TIMESTAMP"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "endTime",
+        "type": "TIMESTAMP"
       }
     ],
     "mode": "NULLABLE",
