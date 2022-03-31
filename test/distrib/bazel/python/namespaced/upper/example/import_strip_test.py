@@ -27,6 +27,7 @@ class ImportTest(unittest.TestCase):
 
     def test_grpc(self):
         from foo.bar.namespaced_example_pb2_grpc import NamespacedServiceStub
+
         # No error from import
         self.assertEqual(1, 1)
 

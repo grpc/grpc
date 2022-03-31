@@ -13,18 +13,17 @@
 # limitations under the License.
 """The Python implementation of the GRPC helloworld.Greeter client."""
 
+from concurrent import futures
 import contextlib
 import datetime
 import logging
 import unittest
 
-import grpc
-
-from google.protobuf import duration_pb2
-from google.protobuf import timestamp_pb2
-from concurrent import futures
 from google.cloud import helloworld_pb2
 from google.cloud import helloworld_pb2_grpc
+from google.protobuf import duration_pb2
+from google.protobuf import timestamp_pb2
+import grpc
 
 _HOST = 'localhost'
 _SERVER_ADDRESS = '{}:0'.format(_HOST)
