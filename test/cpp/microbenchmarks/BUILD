@@ -101,6 +101,7 @@ grpc_cc_test(
         "no_windows",
         "notsan",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -113,6 +114,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -125,6 +127,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -137,6 +140,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -160,6 +164,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -244,6 +249,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -293,6 +299,7 @@ grpc_cc_test(
         "no_windows",
         "notap",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )

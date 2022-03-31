@@ -149,7 +149,7 @@ static void inctry(void* v /*=m*/) {
 /* ------------------------------------------------- */
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test("spinlock", &inc, 1, 1);
   test("spinlock try", &inctry, 1, 1);
   return 0;

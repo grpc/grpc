@@ -58,7 +58,7 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_convert_grpc_to_tsi_cert_pairs();
