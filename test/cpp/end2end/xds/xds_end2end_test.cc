@@ -1037,12 +1037,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // time, change each test to directly start the number of backends
   // that it needs, so that we aren't wasting resources.
 
-  explicit XdsEnd2endTest(int client_load_reporting_interval_seconds = 100,
-                          int xds_resource_does_not_exist_timeout_ms = 0)
+  explicit XdsEnd2endTest(int client_load_reporting_interval_seconds = 100)
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
-        xds_resource_does_not_exist_timeout_ms_(
-            xds_resource_does_not_exist_timeout_ms),
         balancer_(CreateAndStartBalancer()) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
@@ -1100,14 +1097,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void InitClient(BootstrapBuilder builder = BootstrapBuilder(),
-                  std::string lb_expected_authority = "") {
+                  std::string lb_expected_authority = "",
+                  int xds_resource_does_not_exist_timeout_ms = 0) {
     // Create fake resolver response generators used by client.
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    if (xds_resource_does_not_exist_timeout_ms_ > 0) {
+    if (xds_resource_does_not_exist_timeout_ms > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
-          xds_resource_does_not_exist_timeout_ms_));
+          xds_resource_does_not_exist_timeout_ms));
     }
     if (!lb_expected_authority.empty()) {
       constexpr char authority_const[] = "localhost:%d";
@@ -1950,7 +1948,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   const int client_load_reporting_interval_seconds_;
-  const int xds_resource_does_not_exist_timeout_ms_ = 0;
 
   bool ipv6_only_ = false;
 
@@ -11644,12 +11641,9 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
 
 class TimeoutTest : public XdsEnd2endTest {
  protected:
-  TimeoutTest()
-      : XdsEnd2endTest(/*client_load_reporting_interval_seconds=*/100,
-                       /*xds_resource_does_not_exist_timeout_ms=*/500) {}
-
   void SetUp() override {
-    XdsEnd2endTest::SetUp();
+    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/500);
     CreateAndStartBackends(4);
   }
 };
@@ -13289,9 +13283,7 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 #ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
-  explicit ClientStatusDiscoveryServiceTest(
-      int xds_resource_does_not_exist_timeout_ms = 0)
-      : XdsEnd2endTest(100, xds_resource_does_not_exist_timeout_ms) {
+  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(100) {
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
@@ -13806,10 +13798,12 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
 
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
  protected:
-  // Shorten the ADS subscription timeout to speed up the test run.
-  CsdsShortAdsTimeoutTest()
-      : ClientStatusDiscoveryServiceTest(
-            /* xds_resource_does_not_exist_timeout_ms_ = */ 2000) {}
+  void SetUp() override {
+    // Shorten the ADS subscription timeout to speed up the test run.
+    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/2000);
+    CreateAndStartBackends(1);
+  }
 };
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
