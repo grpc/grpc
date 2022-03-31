@@ -12095,10 +12095,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(
-      0, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-             true));
-  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
 }
 
 // Tests that after the localities' priorities are updated, we still choose
