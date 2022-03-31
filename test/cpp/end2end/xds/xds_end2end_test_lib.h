@@ -23,8 +23,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -168,7 +168,9 @@ class TestType {
   bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
   bool use_csds_streaming() const { return use_csds_streaming_; }
-  HttpFilterConfigLocation filter_config_setup() const { return filter_config_setup_; }
+  HttpFilterConfigLocation filter_config_setup() const {
+    return filter_config_setup_;
+  }
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
   ::envoy::config::rbac::v3::RBAC_Action rbac_action() const {
     return rbac_action_;
@@ -244,9 +246,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       ::envoy::config::endpoint::v3::ClusterLoadAssignment;
   using Listener = ::envoy::config::listener::v3::Listener;
   using RouteConfiguration = ::envoy::config::route::v3::RouteConfiguration;
-  using HttpConnectionManager =
-      ::envoy::extensions::filters::network::http_connection_manager::v3::
-          HttpConnectionManager;
+  using HttpConnectionManager = ::envoy::extensions::filters::network::
+      http_connection_manager::v3::HttpConnectionManager;
 
   static constexpr char kDefaultLocalityRegion[] =
       "xds_default_locality_region";
@@ -840,8 +841,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   };
 
   // Sends RPCs and expects them to fail.
-  void CheckRpcSendFailure(const CheckRpcSendFailureOptions& options =
-                               CheckRpcSendFailureOptions());
+  void CheckRpcSendFailure(
+      const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specfied drop_error_message_prefix.
@@ -1025,10 +1026,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     GPR_ASSERT(p >= 0 && p <= 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
-    gpr_log(
-        GPR_INFO,
-        "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
-        num_rpcs, p, error_tolerance);
+    gpr_log(GPR_INFO,
+            "Sending %" PRIuPTR
+            " RPCs for percentage=%.3f error_tolerance=%.3f",
+            num_rpcs, p, error_tolerance);
     return num_rpcs;
   }
 

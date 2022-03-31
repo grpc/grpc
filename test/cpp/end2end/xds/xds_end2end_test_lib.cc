@@ -15,9 +15,9 @@
 
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
+#include <functional>
 #include <map>
 #include <memory>
-#include <functional>
 #include <set>
 #include <string>
 #include <thread>
@@ -27,11 +27,11 @@
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -60,18 +60,16 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 // XdsEnd2endTest::ServerThread::XdsServingStatusNotifier
 //
 
-void
-XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::OnServingStatusUpdate(
-    std::string uri, ServingStatusUpdate update) {
+void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
+    OnServingStatusUpdate(std::string uri, ServingStatusUpdate update) {
   grpc_core::MutexLock lock(&mu_);
   status_map[uri] = update.status;
   cond_.Signal();
 }
 
-void
-XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(
-        std::string uri, grpc::StatusCode expected_status) {
+void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
+    WaitOnServingStatusChange(std::string uri,
+                              grpc::StatusCode expected_status) {
   grpc_core::MutexLock lock(&mu_);
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
@@ -113,9 +111,8 @@ class XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
       : test_obj_(test_obj) {}
 
   void UpdateArguments(grpc::ChannelArguments* args) override {
-    args->SetString(
-        GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-        test_obj_->bootstrap_);
+    args->SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
+                    test_obj_->bootstrap_);
     args->SetPointerWithVtable(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
@@ -167,8 +164,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
   std::string server_address = absl::StrCat("localhost:", port_);
   if (use_xds_enabled_server_) {
     XdsServerBuilder builder;
-    if (GetParam().bootstrap_source() ==
-        TestType::kBootstrapFromChannelArg) {
+    if (GetParam().bootstrap_source() == TestType::kBootstrapFromChannelArg) {
       builder.SetOption(
           absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
     }
@@ -196,8 +192,8 @@ XdsEnd2endTest::BackendServerThread::BackendServerThread(
     : ServerThread(test_obj, use_xds_enabled_server) {
   if (use_xds_enabled_server) {
     test_obj->SetServerListenerNameAndRouteConfiguration(
-        test_obj->balancer_.get(), test_obj->default_server_listener_,
-        port(), test_obj->default_server_route_config_);
+        test_obj->balancer_.get(), test_obj->default_server_listener_, port(),
+        test_obj->default_server_route_config_);
   }
 }
 
@@ -212,11 +208,11 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
       std::string root_cert = ReadFile(kCaCertPath);
       std::string identity_cert = ReadFile(kServerCertPath);
       std::string private_key = ReadFile(kServerKeyPath);
-      std::vector<experimental::IdentityKeyCertPair>
-          identity_key_cert_pairs = {{private_key, identity_cert}};
-      auto certificate_provider = std::make_shared<
-          grpc::experimental::StaticDataCertificateProvider>(
-          root_cert, identity_key_cert_pairs);
+      std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
+          {private_key, identity_cert}};
+      auto certificate_provider =
+          std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+              root_cert, identity_key_cert_pairs);
       grpc::experimental::TlsServerCredentialsOptions options(
           certificate_provider);
       options.watch_root_certs();
@@ -256,11 +252,10 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl()),
-      lrs_service_(
-          new LrsServiceImpl((GetParam().enable_load_reporting()
-                                  ? 20 * grpc_test_slowdown_factor()
-                                  : 0),
-                             {kDefaultClusterName})) {}
+      lrs_service_(new LrsServiceImpl(
+          (GetParam().enable_load_reporting() ? 20 * grpc_test_slowdown_factor()
+                                              : 0),
+          {kDefaultClusterName})) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -288,9 +283,9 @@ std::string XdsEnd2endTest::BootstrapBuilder::Build() {
   std::vector<std::string> fields;
   fields.push_back(MakeXdsServersText(top_server_));
   if (!client_default_listener_resource_name_template_.empty()) {
-    fields.push_back(absl::StrCat(
-        "  \"client_default_listener_resource_name_template\": \"",
-        client_default_listener_resource_name_template_, "\""));
+    fields.push_back(
+        absl::StrCat("  \"client_default_listener_resource_name_template\": \"",
+                     client_default_listener_resource_name_template_, "\""));
   }
   fields.push_back(MakeNodeText());
   if (!server_listener_resource_name_template_.empty()) {
@@ -318,9 +313,8 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
       "        }\n"
       "      ]";
   return absl::StrReplaceAll(
-      kXdsServerTemplate,
-      {{"<SERVER_URI>", server_uri},
-       {"<SERVER_FEATURES>", (v2_ ? "" : "\"xds_v3\"")}});
+      kXdsServerTemplate, {{"<SERVER_URI>", server_uri},
+                           {"<SERVER_FEATURES>", (v2_ ? "" : "\"xds_v3\"")}});
 }
 
 std::string XdsEnd2endTest::BootstrapBuilder::MakeNodeText() {
@@ -348,13 +342,13 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeCertificateProviderText() {
     std::vector<std::string> fields;
     fields.push_back(absl::StrFormat("    \"%s\": {", key));
     if (!plugin_info.plugin_config.empty()) {
-      fields.push_back(absl::StrFormat("      \"plugin_name\": \"%s\",",
-                                       plugin_info.name));
-      fields.push_back(absl::StrCat(
-          "      \"config\": {\n", plugin_info.plugin_config, "\n      }"));
+      fields.push_back(
+          absl::StrFormat("      \"plugin_name\": \"%s\",", plugin_info.name));
+      fields.push_back(absl::StrCat("      \"config\": {\n",
+                                    plugin_info.plugin_config, "\n      }"));
     } else {
-      fields.push_back(absl::StrFormat("      \"plugin_name\": \"%s\"",
-                                       plugin_info.name));
+      fields.push_back(
+          absl::StrFormat("      \"plugin_name\": \"%s\"", plugin_info.name));
     }
     fields.push_back("    }");
     entries.push_back(absl::StrJoin(fields, "\n"));
@@ -392,8 +386,7 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
     context->AddMetadata(item.first, item.second);
   }
   if (timeout_ms != 0) {
-    context->set_deadline(
-        grpc_timeout_milliseconds_to_deadline(timeout_ms));
+    context->set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
   }
   if (wait_for_ready) context->set_wait_for_ready(true);
   request->set_message(kRequestMessage);
@@ -529,8 +522,7 @@ HttpConnectionManager XdsEnd2endTest::ClientHcmAccessor::Unpack(
 
 void XdsEnd2endTest::ClientHcmAccessor::Pack(const HttpConnectionManager& hcm,
                                              Listener* listener) const {
-  auto* api_listener =
-      listener->mutable_api_listener()->mutable_api_listener();
+  auto* api_listener = listener->mutable_api_listener()->mutable_api_listener();
   api_listener->PackFrom(hcm);
 }
 
@@ -554,8 +546,7 @@ void XdsEnd2endTest::ServerHcmAccessor::Pack(const HttpConnectionManager& hcm,
 void XdsEnd2endTest::SetListenerAndRouteConfiguration(
     BalancerServerThread* balancer, Listener listener,
     const RouteConfiguration& route_config, const HcmAccessor& hcm_accessor) {
-  HttpConnectionManager http_connection_manager =
-      hcm_accessor.Unpack(listener);
+  HttpConnectionManager http_connection_manager = hcm_accessor.Unpack(listener);
   if (GetParam().enable_rds_testing()) {
     auto* rds = http_connection_manager.mutable_rds();
     rds->set_route_config_name(route_config.name());
@@ -587,9 +578,10 @@ void XdsEnd2endTest::SetRouteConfiguration(
 }
 
 std::vector<XdsEnd2endTest::EdsResourceArgs::Endpoint>
-XdsEnd2endTest::CreateEndpointsForBackends(
-    size_t start_index, size_t stop_index, HealthStatus health_status,
-    int lb_weight) {
+XdsEnd2endTest::CreateEndpointsForBackends(size_t start_index,
+                                           size_t stop_index,
+                                           HealthStatus health_status,
+                                           int lb_weight) {
   if (stop_index == 0) stop_index = backends_.size();
   std::vector<EdsResourceArgs::Endpoint> endpoints;
   for (size_t i = start_index; i < stop_index; ++i) {
@@ -754,8 +746,8 @@ void XdsEnd2endTest::ResetStub(int failover_timeout_ms,
 }
 
 std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
-    int failover_timeout_ms, const char* server_name,
-    const char* xds_authority, ChannelArguments* args) {
+    int failover_timeout_ms, const char* server_name, const char* xds_authority,
+    ChannelArguments* args) {
   ChannelArguments local_args;
   if (args == nullptr) args = &local_args;
   // TODO(roth): Remove this once we enable retries by default internally.
@@ -796,16 +788,16 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
   Status status;
   switch (rpc_options.service) {
     case SERVICE_ECHO:
-      status = SendRpcMethod(stub_.get(), rpc_options, &context, request,
-                             response);
+      status =
+          SendRpcMethod(stub_.get(), rpc_options, &context, request, response);
       break;
     case SERVICE_ECHO1:
-      status = SendRpcMethod(stub1_.get(), rpc_options, &context, request,
-                             response);
+      status =
+          SendRpcMethod(stub1_.get(), rpc_options, &context, request, response);
       break;
     case SERVICE_ECHO2:
-      status = SendRpcMethod(stub2_.get(), rpc_options, &context, request,
-                             response);
+      status =
+          SendRpcMethod(stub2_.get(), rpc_options, &context, request, response);
       break;
   }
   return status;
@@ -854,8 +846,7 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
 }
 
 void XdsEnd2endTest::LongRunningRpc::StartRpc(
-    grpc::testing::EchoTestService::Stub* stub,
-    const RpcOptions& rpc_options) {
+    grpc::testing::EchoTestService::Stub* stub, const RpcOptions& rpc_options) {
   sender_thread_ = std::thread([this, stub, rpc_options]() {
     EchoRequest request;
     EchoResponse response;
