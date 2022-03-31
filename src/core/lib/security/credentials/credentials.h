@@ -115,7 +115,7 @@ struct grpc_channel_credentials
   // By default, leave channel args as is. The callee takes ownership
   // of the passed-in channel args, and the caller takes ownership
   // of the returned channel args.
-  virtual grpc_channel_args* update_arguments(grpc_channel_args* args) {
+  virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
     return args;
   }
 
