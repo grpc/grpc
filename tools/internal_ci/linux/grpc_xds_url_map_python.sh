@@ -103,6 +103,7 @@ run_test() {
   #   grpc/core/master/linux/...
   #   grpc/core/v1.42.x/branch/linux/...
   set -x
+  export PYTHON3_BIN_PATH="python3.8"
   ../../bazel test tests/url_map:all \
     --action_env=HOME=$(echo $HOME) \
     --test_arg="--flagfile=${TEST_DRIVER_FLAGFILE}" \
