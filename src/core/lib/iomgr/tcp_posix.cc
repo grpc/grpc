@@ -686,7 +686,8 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
   }
 }
 
-static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   grpc_closure* cb = tcp->read_cb;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
@@ -706,7 +707,8 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) ABSL_EXCLUSIV
 
 /* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 4
-static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
@@ -851,7 +853,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) ABSL_EXCLUSIVE_
   return true;
 }
 
-static void maybe_make_read_slices(grpc_tcp* tcp) ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+static void maybe_make_read_slices(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
