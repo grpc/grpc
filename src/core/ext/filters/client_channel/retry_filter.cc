@@ -1508,6 +1508,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
   // If this attempt has been abandoned, then we're not going to use the
   // result of this recv_message op, so do nothing.
   if (call_attempt->abandoned_) {
+    // The transport will not invoke recv_trailing_metadata_ready until the byte
+    // stream for any recv_message op is orphaned, so we do that here to ensure
+    // that any pending recv_trailing_metadata op can complete.
+    call_attempt->recv_message_.reset();
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
                             "recv_message_ready for abandoned attempt");
     return;

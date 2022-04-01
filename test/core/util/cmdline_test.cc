@@ -466,7 +466,7 @@ static void test_badargs4(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_simple_int();
   test_eq_int();
   test_2dash_int();

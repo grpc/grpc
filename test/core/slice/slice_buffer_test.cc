@@ -149,7 +149,7 @@ void test_slice_buffer_first() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_slice_buffer_add();

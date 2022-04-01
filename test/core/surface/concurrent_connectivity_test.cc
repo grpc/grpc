@@ -316,7 +316,7 @@ int run_concurrent_watches_with_short_timeouts_test() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   run_concurrent_connectivity_test();
   run_concurrent_watches_with_short_timeouts_test();

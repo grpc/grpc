@@ -135,7 +135,7 @@ static void test_with_vtable(const grpc_socket_mutator_vtable* vtable) {
 
 int main(int argc, char** argv) {
   int sock;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   sock = socket(PF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(sock > 0);

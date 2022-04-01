@@ -180,7 +180,7 @@ static void test_mt_multipop(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_serial();
   test_mt();
   test_mt_multipop();
