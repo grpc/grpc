@@ -199,8 +199,7 @@ void HttpRequest::Orphan() {
           "HTTP request cancelled during handshake"));
 
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "HTTP request cancelled during handshake",
-          &overall_error_, 1));
+          "HTTP request cancelled during handshake", &overall_error_, 1));
     }
     if (own_endpoint_ && ep_ != nullptr) {
       grpc_endpoint_shutdown(

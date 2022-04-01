@@ -16,6 +16,8 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/resolved_address_utils.h"
 
 #include <string.h>
@@ -27,7 +29,8 @@ namespace {
 void* grpc_resolved_addr_copy(void* p) {
   if (p == nullptr) return nullptr;
   grpc_resolved_address* addr = new grpc_resolved_address;
-  memcpy(addr, static_cast<grpc_resolved_address*>(p), sizeof(grpc_resolved_address));
+  memcpy(addr, static_cast<grpc_resolved_address*>(p),
+         sizeof(grpc_resolved_address));
   return addr;
 }
 
@@ -44,8 +47,8 @@ int grpc_resolved_addr_cmp(void* a, void* b) {
 }
 
 void grpc_resolved_addr_destroy(void* p) {
-   grpc_resolved_address* addr = static_cast<grpc_resolved_address*>(p);
-   delete addr; 
+  grpc_resolved_address* addr = static_cast<grpc_resolved_address*>(p);
+  delete addr;
 }
 
 const grpc_arg_pointer_vtable connector_arg_vtable = {

@@ -54,7 +54,7 @@ void grpc_client_channel_shutdown(void) {
 namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
-  // The order of the registration is crucial here. 
+  // The order of the registration is crucial here.
   // We want TCP connect handshaker to be registered last so that it is added to
   // the start of the handshaker list.
   RegisterHttpConnectHandshaker(builder);

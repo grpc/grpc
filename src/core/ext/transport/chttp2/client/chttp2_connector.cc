@@ -82,8 +82,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
                                    &resolved_address_),
-      grpc_channel_arg_integer_create(const_cast<char*>(
-          GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET), 1),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET),
+          1),
   };
   grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
       args_.channel_args, args_to_add.data(), args_to_add.size());

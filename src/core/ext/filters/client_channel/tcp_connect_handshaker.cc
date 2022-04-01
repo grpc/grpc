@@ -15,6 +15,9 @@
 // limitations under the License.
 //
 //
+
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/tcp_connect_handshaker.h"
 
 #include <string.h>
@@ -135,8 +138,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
     if (error != GRPC_ERROR_NONE || self->shutdown_) {
       if (error == GRPC_ERROR_NONE) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
-      } else {
-        error = GRPC_ERROR_REF(error);
       }
       if (self->endpoint_ != nullptr) {
         grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
@@ -144,7 +145,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
         self->shutdown_ = true;
-        self->Finish(error);
+        self->Finish(GRPC_ERROR_REF(error));
       }
       // The on_handshake_done_ is already as part of shutdown when connecting
       // So nothing to be done here.

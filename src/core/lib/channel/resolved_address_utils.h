@@ -19,7 +19,10 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTILS_H
 #define GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "include/grpc/impl/codegen/grpc_types.h"
+
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
@@ -30,7 +33,7 @@ grpc_arg grpc_resolved_address_to_arg(const char* key,
 
 // Util to get the resolved address  from a channel arg.
 grpc_resolved_address* grpc_resolved_address_from_arg(const grpc_arg* arg);
-                                                      
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_CHANNEL_RESOLVED_ADDRESS_UTILS_H

@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_TCP_CONNECT_HANDSHAKER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_TCP_CONNECT_HANDSHAKER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
@@ -24,6 +26,6 @@ namespace grpc_core {
 // Register the TCP Connect handshaker into the configuration builder.
 void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder);
 
-} // namespace grpc_core
- 
+}  // namespace grpc_core
+
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_TCP_CONNECT_HANDSHAKER_H
