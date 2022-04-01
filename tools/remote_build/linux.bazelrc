@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# common configurations for running on RBE on linux (both manually and on kokoro)
+# bazelrc file for running gRPC tests with RBE (on Linux)
 
 import %workspace%/tools/remote_build/rbe_remote_execution.bazelrc
 
@@ -31,6 +31,8 @@ build --test_tag_filters=-no_linux
 build --build_tag_filters=-no_linux
 
 import %workspace%/tools/remote_build/test_config_common.bazelrc
+
+build --jobs=100
 
 # address sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific

@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# bazelrc file for running gRPC tests with RBE (on Linux)
-# manually from developer's workstation
+# bazelrc file for running gRPC tests on Kokoro using RBE (on Linux)
+# This file has extra settings for tests that run on CI (kokoro).
 
-import %workspace%/tools/remote_build/rbe_common_linux.bazelrc
+import %workspace%/tools/remote_build/linux.bazelrc
 
-build --jobs=100
+# required by kokoro for some reason
+# TODO(jtattermusch): is this still actually required?
+build --test_env=USER=anon
+
+build --jobs=200
