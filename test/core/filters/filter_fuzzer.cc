@@ -53,31 +53,27 @@ const grpc_transport_vtable kFakeTransportVTable = {
     // name
     "fake_transport",
     // init_stream
-    [](grpc_transport* self, grpc_stream* stream,
-       grpc_stream_refcount* refcount, const void* server_data,
-       Arena* arena) -> int { abort(); },
+    [](grpc_transport*, grpc_stream*, grpc_stream_refcount*, const void*,
+       Arena*) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport* self, ClientMetadataHandle initial_metadata)
-        -> ArenaPromise<ServerMetadataHandle> { abort(); },
+    [](grpc_transport*,
+       ClientMetadataHandle) -> ArenaPromise<ServerMetadataHandle> { abort(); },
     // set_pollset
-    [](grpc_transport* self, grpc_stream* stream, grpc_pollset* pollset) {
+    [](grpc_transport*, grpc_stream*, grpc_pollset*) { abort(); },
+    // set_pollset_set
+    [](grpc_transport*, grpc_stream*, grpc_pollset_set*) { abort(); },
+    // perform_stream_op
+    [](grpc_transport*, grpc_stream*, grpc_transport_stream_op_batch*) {
       abort();
     },
-    // set_pollset_set
-    [](grpc_transport* self, grpc_stream* stream,
-       grpc_pollset_set* pollset_set) { abort(); },
-    // perform_stream_op
-    [](grpc_transport* self, grpc_stream* stream,
-       grpc_transport_stream_op_batch* op) { abort(); },
     // perform_op
-    [](grpc_transport* self, grpc_transport_op* op) { abort(); },
+    [](grpc_transport*, grpc_transport_op*) { abort(); },
     // destroy_stream
-    [](grpc_transport* self, grpc_stream* stream,
-       grpc_closure* then_schedule_closure) { abort(); },
+    [](grpc_transport*, grpc_stream*, grpc_closure*) { abort(); },
     // destroy
-    [](grpc_transport* self) { abort(); },
+    [](grpc_transport*) { abort(); },
     // get_endpoint
-    [](grpc_transport* self) -> grpc_endpoint* { abort(); },
+    [](grpc_transport*) -> grpc_endpoint* { abort(); },
 };
 
 class FakeChannelSecurityConnector final
@@ -86,21 +82,17 @@ class FakeChannelSecurityConnector final
   FakeChannelSecurityConnector()
       : grpc_channel_security_connector("fake", nullptr, nullptr) {}
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  RefCountedPtr<grpc_auth_context>* auth_context,
-                  grpc_closure* on_peer_checked) override {
+  void check_peer(tsi_peer, grpc_endpoint*, RefCountedPtr<grpc_auth_context>*,
+                  grpc_closure*) override {
     abort();
   }
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
-                         grpc_error_handle error) override {
-    abort();
-  }
+  void cancel_check_peer(grpc_closure*, grpc_error_handle) override { abort(); }
 
-  int cmp(const grpc_security_connector* other) const override { abort(); }
+  int cmp(const grpc_security_connector*) const override { abort(); }
 
-  ArenaPromise<absl::Status> CheckCallHost(
-      absl::string_view host, grpc_auth_context* auth_context) override {
+  ArenaPromise<absl::Status> CheckCallHost(absl::string_view,
+                                           grpc_auth_context*) override {
     uint32_t qry = next_check_call_host_qry_++;
     return [this, qry]() -> Poll<absl::Status> {
       auto it = check_call_host_results_.find(qry);
@@ -109,9 +101,8 @@ class FakeChannelSecurityConnector final
     };
   }
 
-  void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* interested_parties,
-                       HandshakeManager* handshake_mgr) override {
+  void add_handshakers(const grpc_channel_args*, grpc_pollset_set*,
+                       HandshakeManager*) override {
     abort();
   }
 
@@ -131,9 +122,7 @@ class ConstAuthorizationEngine final : public AuthorizationEngine {
   explicit ConstAuthorizationEngine(AuthorizationEngine::Decision decision)
       : decision_(decision) {}
 
-  Decision Evaluate(const EvaluateArgs& args) const override {
-    return decision_;
-  }
+  Decision Evaluate(const EvaluateArgs&) const override { return decision_; }
 
  private:
   Decision decision_;
