@@ -40,7 +40,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 #endif
 
 // Prefer TestEnvironment below.
-void grpc_test_init(int argc, char** argv);
+void grpc_test_init(int* argc, char** argv);
 
 // Wait until gRPC is fully shut down.
 // Returns if grpc is shutdown
@@ -53,7 +53,7 @@ namespace testing {
 // provides test init and shutdown inside.
 class TestEnvironment {
  public:
-  TestEnvironment(int argc, char** argv);
+  TestEnvironment(int* argc, char** argv);
   ~TestEnvironment();
 };
 

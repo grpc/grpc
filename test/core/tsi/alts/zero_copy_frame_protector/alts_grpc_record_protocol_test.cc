@@ -447,7 +447,7 @@ static void alts_grpc_record_protocol_tests(
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   alts_grpc_record_protocol_tests(
       &test_fixture_integrity_only_no_rekey_no_extra_copy_create);

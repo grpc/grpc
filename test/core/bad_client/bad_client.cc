@@ -282,9 +282,12 @@ grpc_bad_client_arg connection_preface_arg = {
 
 bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   // Get last frame from incoming slice buffer.
+  constexpr int kExpectedFrameLength = 13;
+  if (incoming->length < kExpectedFrameLength) return false;
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
-  grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
+  grpc_slice_buffer_trim_end(incoming, kExpectedFrameLength,
+                             &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 

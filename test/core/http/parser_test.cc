@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
   const grpc_slice_split_mode split_modes[] = {GRPC_SLICE_SPLIT_IDENTITY,
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {
@@ -245,6 +245,34 @@ int main(int argc, char** argv) {
                   "\n"
                   "abc",
                   200, "abc", NULL);
+    test_succeeds(split_modes[i],
+                  "HTTP/1.1 200 OK\r\n"
+                  "Transfer-Encoding: chunked\r\n"
+                  "\r\n"
+                  "4\r\n"
+                  "This\r\n"
+                  "16;param1;param2\r\n"
+                  " is a chunked encoding\r\n"
+                  "1D\r\n"
+                  " example.\r\nNo params handled.\r\n"
+                  "0\r\n"
+                  "\r\n",
+                  200,
+                  "This is a chunked encoding example.\r\nNo params handled.",
+                  "Transfer-Encoding", "chunked", NULL);
+    test_succeeds(split_modes[i],
+                  "HTTP/1.1 200 OK\r\n"
+                  "Transfer-Encoding: chunked\r\n"
+                  "\r\n"
+                  "e\r\n"
+                  "HTTP Trailers \r\n"
+                  "13\r\n"
+                  "are also supported.\r\n"
+                  "0\r\n"
+                  "abc: xyz\r\n"
+                  "\r\n",
+                  200, "HTTP Trailers are also supported.", "Transfer-Encoding",
+                  "chunked", "abc", "xyz", NULL);
     test_request_succeeds(split_modes[i],
                           "GET / HTTP/1.0\r\n"
                           "\r\n",

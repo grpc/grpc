@@ -53,5 +53,6 @@ $PYTHON -m isort $ACTION \
   --skip-glob "third_party/*" \
   --skip-glob "*/env/*" \
   --skip-glob "*pb2*.py" \
+  --skip-glob "**/site-packages/**/*" \
   --dont-follow-links \
   "${DIRS[@]}"

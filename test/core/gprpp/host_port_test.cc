@@ -74,7 +74,7 @@ static void test_split_host_port_invalid() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   test_join_host_port();
   test_join_host_port_garbage();

@@ -254,7 +254,7 @@ TEST(GrpcChannelArgsTest, TestServerCreateWithArgs) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto r = RUN_ALL_TESTS();
   grpc_shutdown();
