@@ -342,6 +342,11 @@
       },
       {
         "mode": "NULLABLE",
+        "name": "core_http2_initiate_write_due_to_settings_ack",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
         "name": "core_http2_initiate_write_due_to_bdp_estimator_ping",
         "type": "INTEGER"
       },
@@ -1174,6 +1179,11 @@
       },
       {
         "mode": "NULLABLE",
+        "name": "core_http2_initiate_write_due_to_settings_ack",
+        "type": "INTEGER"
+      },
+      {
+        "mode": "NULLABLE",
         "name": "core_http2_initiate_write_due_to_bdp_estimator_ping",
         "type": "INTEGER"
       },
@@ -1833,6 +1843,16 @@
         "mode": "NULLABLE",
         "name": "clientQueriesPerCpuSec",
         "type": "FLOAT"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "startTime",
+        "type": "TIMESTAMP"
+      },
+      {
+        "mode": "NULLABLE",
+        "name": "endTime",
+        "type": "TIMESTAMP"
       }
     ],
     "mode": "NULLABLE",
@@ -1953,5 +1973,80 @@
     "mode": "NULLABLE",
     "name": "nodeMetadata",
     "type": "RECORD"
+  },
+  {
+    "fields": [
+      {
+        "mode": "NULLABLE",
+        "name": "name",
+        "type": "STRING"
+      },
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE",
+            "name": "name",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "cpuSeconds",
+            "type": "FLOAT"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "memoryMean",
+            "type": "FLOAT"
+          }
+          
+        ],
+        "mode": "REPEATED",
+        "name": "containers",
+        "type": "RECORD"
+      }
+    ],
+    "mode": "REPEATED",
+    "name": "clientsPrometheusData",
+    "type": "RECORD"
+  },
+  {
+    "fields": [
+      {
+        "mode": "NULLABLE",
+        "name": "name",
+        "type": "STRING"
+      },
+      {
+        "fields": [
+          {
+            "mode": "NULLABLE",
+            "name": "name",
+            "type": "STRING"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "cpuSeconds",
+            "type": "FLOAT"
+          },
+          {
+            "mode": "NULLABLE",
+            "name": "memoryMean",
+            "type": "FLOAT"
+          }
+          
+        ],
+        "mode": "REPEATED",
+        "name": "containers",
+        "type": "RECORD"
+      }
+    ],
+    "mode": "REPEATED",
+    "name": "serversPrometheusData",
+    "type": "RECORD"
+  },
+  {
+    "mode": "NULLABLE",
+    "name": "testDurationSeconds",
+    "type": "FLOAT"
   }
 ]

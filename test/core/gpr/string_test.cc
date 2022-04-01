@@ -296,7 +296,7 @@ static void test_parse_bool_value(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_strdup();
   test_dump();
   test_parse_uint32();

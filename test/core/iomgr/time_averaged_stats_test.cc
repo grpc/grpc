@@ -181,7 +181,7 @@ static void some_regress_some_persist_test(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   no_regress_no_persist_test_1();
   no_regress_no_persist_test_2();
   no_regress_no_persist_test_3();
