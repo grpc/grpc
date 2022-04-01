@@ -24,14 +24,14 @@
 
 namespace {
 
-static void* grpc_resolved_addr_copy(void* p) {
+void* grpc_resolved_addr_copy(void* p) {
   if (p == nullptr) return nullptr;
   grpc_resolved_address* addr = new grpc_resolved_address;
   memcpy(addr, static_cast<grpc_resolved_address*>(p), sizeof(grpc_resolved_address));
   return addr;
 }
 
-static int grpc_resolved_addr_cmp(void* a, void* b) {
+int grpc_resolved_addr_cmp(void* a, void* b) {
   grpc_resolved_address* addr_a = static_cast<grpc_resolved_address*>(a);
   grpc_resolved_address* addr_b = static_cast<grpc_resolved_address*>(b);
   if (addr_a->len < addr_b->len) {
@@ -43,12 +43,12 @@ static int grpc_resolved_addr_cmp(void* a, void* b) {
   return strcmp(addr_a->addr, addr_b->addr);
 }
 
-static void grpc_resolved_addr_destroy(void* p) {
+void grpc_resolved_addr_destroy(void* p) {
    grpc_resolved_address* addr = static_cast<grpc_resolved_address*>(p);
    delete addr; 
 }
 
-static const grpc_arg_pointer_vtable connector_arg_vtable = {
+const grpc_arg_pointer_vtable connector_arg_vtable = {
     grpc_resolved_addr_copy, grpc_resolved_addr_destroy,
     grpc_resolved_addr_cmp};
 
