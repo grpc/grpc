@@ -146,8 +146,6 @@ using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
-using ::envoy::extensions::filters::network::http_connection_manager::v3::
-    HttpFilter;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
