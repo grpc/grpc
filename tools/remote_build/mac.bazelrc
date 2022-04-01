@@ -6,12 +6,16 @@
 
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
-# remote cache is needed not only for build speedup,
-# but also for the test logs to be available in ResultStore
-# for now, don't upload results to cache, only the test logs.
-# TODO(jtattermusch): setup a "cache-silo-key" before enabling uploads to build cache
+# Configure remote cache. Note that remote cache is needed
+# not only for build speedup, but also for the test logs
+# to become available in ResultStore.
 build --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build --remote_instance_name=projects/grpc-testing/instances/default_instance
+# Disable uploading to build cache by default. This is to prevent
+# polluting the build cache with locally-started builds.
+# When running on CI, we will override this setting along
+# with cache silo keys that prevent the build from being broken
+# by unintentional cache hits.
 build --remote_upload_local_results=false
 
 build --auth_enabled=true
