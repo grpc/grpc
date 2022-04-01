@@ -15,7 +15,7 @@
 
 # bazelrc file for running gRPC tests with RBE (on Linux)
 
-import %workspace%/tools/remote_build/rbe_remote_execution.bazelrc
+import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
 
 # Next section is linux-specific RBE configuration
 build --crosstool_top=@rbe_default//cc:toolchain
@@ -30,7 +30,7 @@ build --platforms=@rbe_default//config:platform
 build --test_tag_filters=-no_linux
 build --build_tag_filters=-no_linux
 
-import %workspace%/tools/remote_build/test_config_common.bazelrc
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
 build --jobs=100
 

@@ -15,7 +15,7 @@
 
 # bazelrc to configure bazel to use RBE remote executors to build and run tests.
 
-import %workspace%/tools/remote_build/rbe_base_config.bazelrc
+import %workspace%/tools/remote_build/include/rbe_base_config.bazelrc
 
 # configure backend for remote execution
 build --remote_executor=grpcs://remotebuildexecution.googleapis.com

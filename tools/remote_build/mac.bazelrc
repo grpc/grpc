@@ -4,7 +4,7 @@
 # but we still use RBE for build cache and to upload
 # results to ResultStore.
 
-import %workspace%/tools/remote_build/rbe_base_config.bazelrc
+import %workspace%/tools/remote_build/include/rbe_base_config.bazelrc
 
 # Disable uploading to build cache by default. This is to prevent
 # polluting the build cache with locally-started builds.
@@ -24,4 +24,4 @@ build --define=use_strict_warning=true
 # https://github.com/bazelbuild/bazel/issues/9190
 build --dynamic_mode=off
 
-import %workspace%/tools/remote_build/test_config_common.bazelrc
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc

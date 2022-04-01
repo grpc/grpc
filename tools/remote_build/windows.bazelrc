@@ -1,4 +1,4 @@
-import %workspace%/tools/remote_build/rbe_remote_execution.bazelrc
+import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
 
 # Next section is windows-specific RBE configuration
 build --host_crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
@@ -17,4 +17,4 @@ build --build_tag_filters=-no_windows
 
 build --jobs=100
 
-import %workspace%/tools/remote_build/test_config_common.bazelrc
+import %workspace%/tools/remote_build/include/test_config_common.bazelrc
