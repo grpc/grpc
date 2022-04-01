@@ -15,6 +15,7 @@
 import datetime
 import time
 from typing import Optional
+import unittest
 
 from absl import flags
 from absl.testing import absltest
@@ -199,6 +200,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
                                   duration=_SAMPLE_DURATION,
                                   method=rpc_type)
 
+    @unittest.skip("[DO-NOT-MERGE]")
     def test_plaintext_allow(self) -> None:
         self.setupTrafficDirectorGrpc()
         self.td.create_authz_policy(action='ALLOW', rules=self.authz_rules())
@@ -253,6 +255,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         #     self.configure_and_assert(test_client, 'principal-present',
         #                               grpc.StatusCode.PERMISSION_DENIED)
 
+    @unittest.skip("[DO-NOT-MERGE]")
     def test_tls_allow(self) -> None:
         self.setupTrafficDirectorGrpc()
         self.td.create_authz_policy(action='ALLOW', rules=self.authz_rules())
@@ -313,6 +316,7 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             self.configure_and_assert(test_client, 'never-match-principal',
                                       grpc.StatusCode.PERMISSION_DENIED)
 
+    @unittest.skip("[DO-NOT-MERGE]")
     def test_plaintext_deny(self) -> None:
         self.setupTrafficDirectorGrpc()
         self.td.create_authz_policy(action='DENY', rules=self.authz_rules())
