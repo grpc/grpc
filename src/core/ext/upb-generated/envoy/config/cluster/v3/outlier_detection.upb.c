@@ -22,7 +22,7 @@ static const upb_MiniTable_Sub envoy_config_cluster_v3_OutlierDetection_submsgs[
   {.submsg = &google_protobuf_UInt32Value_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_cluster_v3_OutlierDetection__fields[21] = {
+static const upb_MiniTable_Field envoy_config_cluster_v3_OutlierDetection__fields[22] = {
   {1, UPB_SIZE(4, 8), 1, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 16), 2, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 24), 3, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
@@ -44,12 +44,13 @@ static const upb_MiniTable_Field envoy_config_cluster_v3_OutlierDetection__field
   {19, UPB_SIZE(72, 144), 18, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
   {20, UPB_SIZE(76, 152), 19, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
   {21, UPB_SIZE(80, 160), 20, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {22, UPB_SIZE(84, 168), 21, 0, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_cluster_v3_OutlierDetection_msginit = {
   &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
   &envoy_config_cluster_v3_OutlierDetection__fields[0],
-  UPB_SIZE(88, 168), 21, upb_ExtMode_NonExtendable, 21, 255, 0,
+  UPB_SIZE(88, 176), 22, upb_ExtMode_NonExtendable, 22, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
