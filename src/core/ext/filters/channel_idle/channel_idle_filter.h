@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
-#define CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -119,4 +119,4 @@ class MaxAgeFilter final : public ChannelIdleFilter {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_EXT_FILTERS_CHANNEL_IDLE_CHANNEL_IDLE_FILTER_H
