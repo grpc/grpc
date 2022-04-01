@@ -7740,7 +7740,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   CheckRpcSendOk(kNumEchoRpcs, rpc_options);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
@@ -7757,7 +7757,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction cluster contains cluster "
                                    "specifier plugin name not configured:"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
@@ -7796,7 +7796,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
               ::testing::HasSubstr(absl::StrCat(
                   "Duplicated definition of cluster_specifier_plugin ",
                   kRlsClusterSpecifierPluginInstanceName)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest,
@@ -7840,7 +7840,7 @@ TEST_P(RlsTest,
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
                                    "grpc.lookup.v1.RouteLookupConfig"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest,
@@ -7871,7 +7871,7 @@ TEST_P(RlsTest,
   // Ensure we ignore the cluster specifier plugin and send traffic according to
   // the default route.
   WaitForAllBackends(0, 1);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
@@ -7924,7 +7924,7 @@ TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
   EXPECT_THAT(
       response_state->error_message,
       ::testing::HasSubstr("field:requiredMatch error:must not be present"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
