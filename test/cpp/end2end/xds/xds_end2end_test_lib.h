@@ -51,64 +51,8 @@
 namespace grpc {
 namespace testing {
 
-// A wrapper around the backend echo test service impl that counts
-// requests and responses.
-template <typename RpcService>
-class BackendServiceImpl
-    : public CountedService<TestMultipleServiceImpl<RpcService>> {
- public:
-  BackendServiceImpl() {}
-
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    auto peer_identity = context->auth_context()->GetPeerIdentity();
-    CountedService<TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
-    const auto status =
-        TestMultipleServiceImpl<RpcService>::Echo(context, request, response);
-    CountedService<
-        TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
-    {
-      grpc_core::MutexLock lock(&mu_);
-      clients_.insert(context->peer());
-      last_peer_identity_.clear();
-      for (const auto& entry : peer_identity) {
-        last_peer_identity_.emplace_back(entry.data(), entry.size());
-      }
-    }
-    return status;
-  }
-
-  Status Echo1(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) override {
-    return Echo(context, request, response);
-  }
-
-  Status Echo2(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) override {
-    return Echo(context, request, response);
-  }
-
-  void Start() {}
-  void Shutdown() {}
-
-  std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&mu_);
-    return clients_;
-  }
-
-  const std::vector<std::string>& last_peer_identity() {
-    grpc_core::MutexLock lock(&mu_);
-    return last_peer_identity_;
-  }
-
- private:
-  grpc_core::Mutex mu_;
-  std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
-  std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
-};
-
 // The parameter type for INSTANTIATE_TEST_SUITE_P().
-class TestType {
+class XdsTestType {
  public:
   enum HttpFilterConfigLocation {
     // Set the HTTP filter config directly in LDS.
@@ -123,42 +67,42 @@ class TestType {
     kBootstrapFromEnvVar,
   };
 
-  TestType& set_enable_load_reporting() {
+  XdsTestType& set_enable_load_reporting() {
     enable_load_reporting_ = true;
     return *this;
   }
 
-  TestType& set_enable_rds_testing() {
+  XdsTestType& set_enable_rds_testing() {
     enable_rds_testing_ = true;
     return *this;
   }
 
-  TestType& set_use_v2() {
+  XdsTestType& set_use_v2() {
     use_v2_ = true;
     return *this;
   }
 
-  TestType& set_use_xds_credentials() {
+  XdsTestType& set_use_xds_credentials() {
     use_xds_credentials_ = true;
     return *this;
   }
 
-  TestType& set_use_csds_streaming() {
+  XdsTestType& set_use_csds_streaming() {
     use_csds_streaming_ = true;
     return *this;
   }
 
-  TestType& set_filter_config_setup(HttpFilterConfigLocation setup) {
+  XdsTestType& set_filter_config_setup(HttpFilterConfigLocation setup) {
     filter_config_setup_ = setup;
     return *this;
   }
 
-  TestType& set_bootstrap_source(BootstrapSource bootstrap_source) {
+  XdsTestType& set_bootstrap_source(BootstrapSource bootstrap_source) {
     bootstrap_source_ = bootstrap_source;
     return *this;
   }
 
-  TestType& set_rbac_action(::envoy::config::rbac::v3::RBAC_Action action) {
+  XdsTestType& set_rbac_action(::envoy::config::rbac::v3::RBAC_Action action) {
     rbac_action_ = action;
     return *this;
   }
@@ -199,7 +143,7 @@ class TestType {
   }
 
   // For use as the final parameter in INSTANTIATE_TEST_SUITE_P().
-  static std::string Name(const ::testing::TestParamInfo<TestType>& info) {
+  static std::string Name(const ::testing::TestParamInfo<XdsTestType>& info) {
     return info.param.AsString();
   }
 
@@ -230,8 +174,8 @@ class TestType {
 // default_server_route_config_.  Methods are provided for constructing new
 // resources that can be added to the xDS server as needed.
 //
-// This provides a mechanism for running backend servers, which will be
-// stored in backends_.  No servers are created or started by default,
+// This class provides a mechanism for running backend servers, which will
+// be stored in backends_.  No servers are created or started by default,
 // but tests can call CreateAndStartBackends() to start however many
 // backends they want.  There are also a number of methods for accessing
 // backends by index, which is the index into the backends_ vector.
@@ -239,7 +183,7 @@ class TestType {
 // the indexes in the range [start_index, stop_index).  If stop_index
 // is 0, backends_.size() is used.  Backends may or may not be
 // xDS-enabled, at the discretion of the test.
-class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
+class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
  protected:
   using Cluster = ::envoy::config::cluster::v3::Cluster;
   using ClusterLoadAssignment =
@@ -334,6 +278,63 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   // A server thread for a backend server.
   class BackendServerThread : public ServerThread {
    public:
+    // A wrapper around the backend echo test service impl that counts
+    // requests and responses.
+    template <typename RpcService>
+    class BackendServiceImpl
+        : public CountedService<TestMultipleServiceImpl<RpcService>> {
+     public:
+      BackendServiceImpl() {}
+
+      Status Echo(ServerContext* context, const EchoRequest* request,
+                  EchoResponse* response) override {
+        auto peer_identity = context->auth_context()->GetPeerIdentity();
+        CountedService<TestMultipleServiceImpl<RpcService>>::
+            IncreaseRequestCount();
+        const auto status = TestMultipleServiceImpl<RpcService>::Echo(
+            context, request, response);
+        CountedService<
+            TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
+        {
+          grpc_core::MutexLock lock(&mu_);
+          clients_.insert(context->peer());
+          last_peer_identity_.clear();
+          for (const auto& entry : peer_identity) {
+            last_peer_identity_.emplace_back(entry.data(), entry.size());
+          }
+        }
+        return status;
+      }
+
+      Status Echo1(ServerContext* context, const EchoRequest* request,
+                   EchoResponse* response) override {
+        return Echo(context, request, response);
+      }
+
+      Status Echo2(ServerContext* context, const EchoRequest* request,
+                   EchoResponse* response) override {
+        return Echo(context, request, response);
+      }
+
+      void Start() {}
+      void Shutdown() {}
+
+      std::set<std::string> clients() {
+        grpc_core::MutexLock lock(&mu_);
+        return clients_;
+      }
+
+      const std::vector<std::string>& last_peer_identity() {
+        grpc_core::MutexLock lock(&mu_);
+        return last_peer_identity_;
+      }
+
+     private:
+      grpc_core::Mutex mu_;
+      std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
+      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
+    };
+
     // If use_xds_enabled_server is true, the server will use xDS.
     BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server);
 
@@ -350,9 +351,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return &backend_service2_;
     }
 
-    // If TestType::use_xds_credentials() and use_xds_enabled_server()
+    // If XdsTestType::use_xds_credentials() and use_xds_enabled_server()
     // are both true, returns XdsServerCredentials.
-    // Otherwise, if TestType::use_xds_credentials() is true and
+    // Otherwise, if XdsTestType::use_xds_credentials() is true and
     // use_xds_enabled_server() is false, returns TlsServerCredentials.
     // Otherwise, returns fake credentials.
     std::shared_ptr<ServerCredentials> Credentials() override;

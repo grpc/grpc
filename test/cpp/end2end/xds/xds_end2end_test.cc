@@ -9014,10 +9014,10 @@ class XdsRbacTest : public XdsServerRdsTest {
       std::string filter_name = absl::StrFormat("rbac%d", ++count);
       filter->set_name(filter_name);
       switch (GetParam().filter_config_setup()) {
-        case TestType::HttpFilterConfigLocation::kHttpFilterConfigInListener:
+        case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener:
           filter->mutable_typed_config()->PackFrom(rbac);
           break;
-        case TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute:
+        case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute:
           filter->mutable_typed_config()->PackFrom(RBAC());
           google::protobuf::Any filter_config;
           RBACPerRoute rbac_per_route;
@@ -9086,7 +9086,7 @@ TEST_P(XdsRbacNackTest, NacksSchemePrincipalHeader) {
   backends_[0]->Start();
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
-          TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
+          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
     const auto response_state = WaitForRdsNack();
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
     EXPECT_THAT(response_state->error_message,
@@ -9113,7 +9113,7 @@ TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPrincipalHeaders) {
   backends_[0]->Start();
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
-          TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
+          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
     const auto response_state = WaitForRdsNack();
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
     EXPECT_THAT(response_state->error_message,
@@ -9140,7 +9140,7 @@ TEST_P(XdsRbacNackTest, NacksSchemePermissionHeader) {
   backends_[0]->Start();
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
-          TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
+          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
     const auto response_state = WaitForRdsNack();
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
     EXPECT_THAT(response_state->error_message,
@@ -9167,7 +9167,7 @@ TEST_P(XdsRbacNackTest, NacksGrpcPrefixedPermissionHeaders) {
   backends_[0]->Start();
   if (GetParam().enable_rds_testing() &&
       GetParam().filter_config_setup() ==
-          TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
+          XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute) {
     const auto response_state = WaitForRdsNack();
     ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
     EXPECT_THAT(response_state->error_message,
@@ -10018,7 +10018,8 @@ TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
 }
 
 TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
-  ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
+  ASSERT_NE(GetParam().bootstrap_source(),
+            XdsTestType::kBootstrapFromChannelArg)
       << "This test cannot use bootstrap from channel args, because it "
          "needs two channels to use the same XdsClient instance.";
   CreateAndStartBackends(1);
@@ -10052,7 +10053,8 @@ TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
 }
 
 TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
-  ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
+  ASSERT_NE(GetParam().bootstrap_source(),
+            XdsTestType::kBootstrapFromChannelArg)
       << "This test cannot use bootstrap from channel args, because it "
          "needs two channels to use the same XdsClient instance.";
   CreateAndStartBackends(1);
@@ -11654,49 +11656,45 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
 
 #endif  // DISABLED_XDS_PROTO_IN_CC
 
-std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
-  return info.param.AsString();
-}
-
 // Run both with and without load reporting.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, BasicTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 
 // Don't run with load reporting or v2 or RDS, since they are irrelevant to
 // the tests.
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
-                         ::testing::Values(TestType()), &TestTypeName);
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 // LDS depends on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(TestType()),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(XdsTestType()),
+                         &XdsTestType::Name);
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
-                         ::testing::Values(TestType().set_use_v2()),
-                         &TestTypeName);
+                         ::testing::Values(XdsTestType().set_use_v2()),
+                         &XdsTestType::Name);
 
 // LDS/RDS commmon tests depend on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LdsRdsTest,
-    ::testing::Values(TestType(), TestType().set_enable_rds_testing(),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
                       // Also test with xDS v2.
-                      TestType().set_enable_rds_testing().set_use_v2()),
-    &TestTypeName);
+                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    &XdsTestType::Name);
 
 // Rls tests depend on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, RlsTest,
-    ::testing::Values(TestType(), TestType().set_enable_rds_testing(),
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
                       // Also test with xDS v2.
-                      TestType().set_enable_rds_testing().set_use_v2()),
-    &TestTypeName);
+                      XdsTestType().set_enable_rds_testing().set_use_v2()),
+    &XdsTestType::Name);
 
 // CDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, CdsTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 
 // CDS depends on XdsResolver.
 // Security depends on v3.
@@ -11704,50 +11702,55 @@ INSTANTIATE_TEST_SUITE_P(
 // tests.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsSecurityTest,
-    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+    ::testing::Values(XdsTestType().set_use_xds_credentials()),
+    &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var, so that we use a global XdsClient
 // instance.  Otherwise, we would need to use a separate fake resolver
 // result generator on the client and server sides.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
-                         ::testing::Values(TestType().set_bootstrap_source(
-                             TestType::kBootstrapFromEnvVar)),
-                         &TestTypeName);
+                         ::testing::Values(XdsTestType().set_bootstrap_source(
+                             XdsTestType::kBootstrapFromEnvVar)),
+                         &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerSecurityTest,
-    ::testing::Values(TestType()
-                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-                          .set_use_xds_credentials()),
-    &TestTypeName);
+    ::testing::Values(
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
+            .set_use_xds_credentials()),
+    &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsEnabledServerStatusNotificationTest,
-    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
+    ::testing::Values(XdsTestType().set_use_xds_credentials()),
+    &XdsTestType::Name);
 
 // Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerFilterChainMatchTest,
-    ::testing::Values(TestType()
-                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-                          .set_use_xds_credentials()),
-    &TestTypeName);
+    ::testing::Values(
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
+            .set_use_xds_credentials()),
+    &XdsTestType::Name);
 
 // Test xDS-enabled server with and without RDS.
 // Run with bootstrap from env var so that we use one XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsServerRdsTest,
-    ::testing::Values(TestType()
-                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-                          .set_use_xds_credentials(),
-                      TestType()
-                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-                          .set_use_xds_credentials()
-                          .set_enable_rds_testing()),
-    &TestTypeName);
+    ::testing::Values(
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
+            .set_use_xds_credentials(),
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
+            .set_use_xds_credentials()
+            .set_enable_rds_testing()),
+    &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var, so that we use a global XdsClient
@@ -11756,24 +11759,24 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTest,
     ::testing::Values(
-        TestType().set_use_xds_credentials().set_bootstrap_source(
-            TestType::kBootstrapFromEnvVar),
-        TestType()
+        XdsTestType().set_use_xds_credentials().set_bootstrap_source(
+            XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var, so that we use a global XdsClient
@@ -11785,19 +11788,19 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacNackTest,
     ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType().set_enable_rds_testing().set_bootstrap_source(
-            TestType::kBootstrapFromEnvVar),
-        TestType()
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
+            XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var, so that we use a global XdsClient
@@ -11806,18 +11809,18 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithRouteOverrideAlwaysPresent,
     ::testing::Values(
-        TestType()
+        XdsTestType()
             .set_use_xds_credentials()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 // We are only testing the server here.
 // Run with bootstrap from env var, so that we use a global XdsClient
@@ -11826,58 +11829,58 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsRbacTestWithActionPermutations,
     ::testing::Values(
-        TestType()
+        XdsTestType()
             .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_ALLOW)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
             .set_use_xds_credentials()
             .set_enable_rds_testing()
             .set_filter_config_setup(
-                TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
+                XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)
             .set_rbac_action(RBAC_Action_DENY)
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 // EDS could be tested with or without XdsResolver, but the tests would
 // be the same either way, so we test it only with XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, EdsTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 
 // Test initial resource timeouts for each resource type.
 // Do this only for XdsResolver with RDS enabled, so that we can test
@@ -11887,70 +11890,73 @@ INSTANTIATE_TEST_SUITE_P(
 // XdsClient (needed for testing the timeout for the 2nd LDS and RDS resource).
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, TimeoutTest,
-    ::testing::Values(TestType().set_enable_rds_testing().set_bootstrap_source(
-        TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
+    ::testing::Values(
+        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
+            XdsTestType::kBootstrapFromEnvVar)),
+    &XdsTestType::Name);
 
 // XdsResolverOnlyTest depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsResolverOnlyTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 
 // Runs with bootstrap from env var, so that there's a global XdsClient.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, GlobalXdsClientTest,
     ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_load_reporting()),
-    &TestTypeName);
+    &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsFederationTest,
     ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing()),
-    &TestTypeName);
+    &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsFederationLoadReportingTest,
-    ::testing::Values(TestType()
-                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-                          .set_enable_load_reporting(),
-                      TestType()
-                          .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
-                          .set_enable_load_reporting()
-                          .set_enable_rds_testing()),
-    &TestTypeName);
+    ::testing::Values(
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
+            .set_enable_load_reporting(),
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
+            .set_enable_load_reporting()
+            .set_enable_rds_testing()),
+    &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LocalityMapTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, FailoverTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, DropTest,
-    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
-    &TestTypeName);
+    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 
 // Load reporting tests are not run with load reporting disabled.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientLoadReportingTest,
-    ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
+    ::testing::Values(XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, BootstrapSourceTest,
     ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromFile)),
-    &TestTypeName);
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromFile)),
+    &XdsTestType::Name);
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 // Run CSDS tests with RDS enabled and disabled.
@@ -11959,33 +11965,33 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientStatusDiscoveryServiceTest,
     ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing(),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_use_csds_streaming(),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing()
             .set_use_csds_streaming()),
-    &TestTypeName);
+    &XdsTestType::Name);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, CsdsShortAdsTimeoutTest,
     ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing(),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_use_csds_streaming(),
-        TestType()
-            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+        XdsTestType()
+            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing()
             .set_use_csds_streaming()),
-    &TestTypeName);
+    &XdsTestType::Name);
 #endif  // DISABLED_XDS_PROTO_IN_CC
 
 }  // namespace

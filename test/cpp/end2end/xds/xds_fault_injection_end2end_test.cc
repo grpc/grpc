@@ -75,14 +75,14 @@ class FaultInjectionTest : public XdsEnd2endTest {
 
   void SetFilterConfig(HTTPFault& http_fault) {
     switch (GetParam().filter_config_setup()) {
-      case TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute: {
+      case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute: {
         Listener listener = BuildListenerWithFaultInjection();
         RouteConfiguration route =
             BuildRouteConfigurationWithFaultInjection(http_fault);
         SetListenerAndRouteConfiguration(balancer_.get(), listener, route);
         break;
       }
-      case TestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
+      case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
         Listener listener = BuildListenerWithFaultInjection(http_fault);
         SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                          default_route_config_);
@@ -96,12 +96,12 @@ class FaultInjectionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, FaultInjectionTest,
     ::testing::Values(
-        TestType(), TestType().set_enable_rds_testing(),
-        TestType().set_filter_config_setup(
-            TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute),
-        TestType().set_enable_rds_testing().set_filter_config_setup(
-            TestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)),
-    &TestType::Name);
+        XdsTestType(), XdsTestType().set_enable_rds_testing(),
+        XdsTestType().set_filter_config_setup(
+            XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute),
+        XdsTestType().set_enable_rds_testing().set_filter_config_setup(
+            XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)),
+    &XdsTestType::Name);
 
 // Test to ensure the most basic fault injection config works.
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
