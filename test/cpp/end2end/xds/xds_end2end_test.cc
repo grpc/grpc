@@ -7774,7 +7774,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction cluster contains cluster "
-                                   "specifier plugin name not configured."));
+                                   "specifier plugin name not configured:"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
@@ -7872,10 +7872,8 @@ TEST_P(RlsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "Unable to locate the cluster specifier plugin in the registry."));
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 

@@ -348,24 +348,24 @@ grpc_error_handle ClusterSpecifierPluginParse(
         cluster_specifier_plugin[i]);
     const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
         XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+    std::string lb_policy_config;
     if (cluster_specifier_plugin_impl == nullptr) {
-      if (is_optional) {
-        rds_update->ignored_cluster_specifier_plugin_set.emplace(name);
-        continue;
-      } else {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "Unable to locate the cluster specifier plugin in the registry.");
+      if (!is_optional) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Unknown ClusterSpecifierPlugin type ", plugin_type));
       }
-    }
-    // Find the plugin and generate the policy.
-    auto lb_policy_config =
-        cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
-            google_protobuf_Any_value(any), context.arena, context.symtab);
-    if (!lb_policy_config.ok()) {
-      return absl_status_to_grpc_error(lb_policy_config.status());
+      // Optional plugin, leave lb_policy_config empty.
+    } else {
+      auto config =
+          cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
+              google_protobuf_Any_value(any), context.arena, context.symtab);
+      if (!config.ok()) {
+        return absl_status_to_grpc_error(config.status());
+      }
+      lb_policy_config = std::move(*config);
     }
     rds_update->cluster_specifier_plugin_map[std::move(name)] =
-        std::move(lb_policy_config.value());
+        std::move(lb_policy_config);
   }
   return GRPC_ERROR_NONE;
 }
@@ -795,20 +795,17 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster specifier plugin name.");
     }
-    if (cluster_specifier_plugin_map.find(plugin_name) !=
-        cluster_specifier_plugin_map.end()) {
-      route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
-                                kClusterSpecifierPluginIndex>(
-          std::move(plugin_name));
-    } else {
-      if (ignored_cluster_specifier_plugin_set.find(plugin_name) ==
-          ignored_cluster_specifier_plugin_set.end()) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "RouteAction cluster contains cluster specifier plugin name not "
-            "configured.");
-      }
-      *ignore_route = true;
+    auto it = cluster_specifier_plugin_map.find(plugin_name);
+    if (it == cluster_specifier_plugin_map.end()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("RouteAction cluster contains cluster specifier plugin "
+                       "name not configured: ",
+                       plugin_name));
     }
+    if (it->second.empty()) *ignore_route = true;
+    route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
+                              kClusterSpecifierPluginIndex>(
+        std::move(plugin_name));
   } else {
     // No cluster or weighted_clusters or plugin found in RouteAction, ignore
     // this route.
