@@ -86,9 +86,7 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
     // The callback from grpc_tcp_client_connect will perform
     // the necessary clean up.
     if (connecting_) {
-      ExecCtx::Run(
-          DEBUG_LOCATION, on_handshake_done_,
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
+      Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
     }
   }
   GRPC_ERROR_UNREF(why);
