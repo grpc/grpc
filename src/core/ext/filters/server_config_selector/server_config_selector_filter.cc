@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -117,13 +118,19 @@ ArenaPromise<ServerMetadataHandle> ServerConfigSelectorFilter::MakeCallPromise(
   auto call_config =
       sel.value()->GetCallConfig(call_args.client_initial_metadata.get());
   if (call_config.error != GRPC_ERROR_NONE) {
-    return Immediate(ServerMetadataHandle(
+    auto r = Immediate(ServerMetadataHandle(
         absl::UnavailableError(grpc_error_std_string(call_config.error))));
+    GRPC_ERROR_UNREF(call_config.error);
+    return r;
   }
-  GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-      .value = GetContext<Arena>()->New<ServiceConfigCallData>(
+  auto& ctx = GetContext<
+      grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA];
+  ctx.value = GetContext<Arena>()->New<ServiceConfigCallData>(
       std::move(call_config.service_config), call_config.method_configs,
       ServiceConfigCallData::CallAttributes{});
+  ctx.destroy = [](void* p) {
+    static_cast<ServiceConfigCallData*>(p)->~ServiceConfigCallData();
+  };
   return next_promise_factory(std::move(call_args));
 }
 
