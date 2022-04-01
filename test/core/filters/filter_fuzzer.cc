@@ -559,11 +559,12 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   auto channel_args = grpc_core::LoadChannelArgs(msg.channel_args(), &globals);
   auto filter = grpc_core::CreateFilter(msg.filter(), channel_args,
                                         grpc_core::ChannelFilter::Args());
-  if (!filter.ok()) return;
-  grpc_core::MainLoop main_loop(std::move(*filter), channel_args);
-  for (const auto& action : msg.actions()) {
-    grpc_timer_manager_tick();
-    main_loop.Run(action, &globals);
+  if (filter.ok()) {
+    grpc_core::MainLoop main_loop(std::move(*filter), channel_args);
+    for (const auto& action : msg.actions()) {
+      grpc_timer_manager_tick();
+      main_loop.Run(action, &globals);
+    }
   }
 
   grpc_shutdown();
