@@ -51,62 +51,6 @@
 namespace grpc {
 namespace testing {
 
-// A wrapper around the backend echo test service impl that counts
-// requests and responses.
-template <typename RpcService>
-class BackendServiceImpl
-    : public CountedService<TestMultipleServiceImpl<RpcService>> {
- public:
-  BackendServiceImpl() {}
-
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    auto peer_identity = context->auth_context()->GetPeerIdentity();
-    CountedService<TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
-    const auto status =
-        TestMultipleServiceImpl<RpcService>::Echo(context, request, response);
-    CountedService<
-        TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
-    {
-      grpc_core::MutexLock lock(&mu_);
-      clients_.insert(context->peer());
-      last_peer_identity_.clear();
-      for (const auto& entry : peer_identity) {
-        last_peer_identity_.emplace_back(entry.data(), entry.size());
-      }
-    }
-    return status;
-  }
-
-  Status Echo1(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) override {
-    return Echo(context, request, response);
-  }
-
-  Status Echo2(ServerContext* context, const EchoRequest* request,
-               EchoResponse* response) override {
-    return Echo(context, request, response);
-  }
-
-  void Start() {}
-  void Shutdown() {}
-
-  std::set<std::string> clients() {
-    grpc_core::MutexLock lock(&mu_);
-    return clients_;
-  }
-
-  const std::vector<std::string>& last_peer_identity() {
-    grpc_core::MutexLock lock(&mu_);
-    return last_peer_identity_;
-  }
-
- private:
-  grpc_core::Mutex mu_;
-  std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
-  std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
-};
-
 // The parameter type for INSTANTIATE_TEST_SUITE_P().
 class XdsTestType {
  public:
@@ -230,8 +174,8 @@ class XdsTestType {
 // default_server_route_config_.  Methods are provided for constructing new
 // resources that can be added to the xDS server as needed.
 //
-// This provides a mechanism for running backend servers, which will be
-// stored in backends_.  No servers are created or started by default,
+// This class provides a mechanism for running backend servers, which will
+// be stored in backends_.  No servers are created or started by default,
 // but tests can call CreateAndStartBackends() to start however many
 // backends they want.  There are also a number of methods for accessing
 // backends by index, which is the index into the backends_ vector.
@@ -334,6 +278,63 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // A server thread for a backend server.
   class BackendServerThread : public ServerThread {
    public:
+    // A wrapper around the backend echo test service impl that counts
+    // requests and responses.
+    template <typename RpcService>
+    class BackendServiceImpl
+        : public CountedService<TestMultipleServiceImpl<RpcService>> {
+     public:
+      BackendServiceImpl() {}
+
+      Status Echo(ServerContext* context, const EchoRequest* request,
+                  EchoResponse* response) override {
+        auto peer_identity = context->auth_context()->GetPeerIdentity();
+        CountedService<TestMultipleServiceImpl<RpcService>>::
+            IncreaseRequestCount();
+        const auto status = TestMultipleServiceImpl<RpcService>::Echo(
+            context, request, response);
+        CountedService<
+            TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
+        {
+          grpc_core::MutexLock lock(&mu_);
+          clients_.insert(context->peer());
+          last_peer_identity_.clear();
+          for (const auto& entry : peer_identity) {
+            last_peer_identity_.emplace_back(entry.data(), entry.size());
+          }
+        }
+        return status;
+      }
+
+      Status Echo1(ServerContext* context, const EchoRequest* request,
+                   EchoResponse* response) override {
+        return Echo(context, request, response);
+      }
+
+      Status Echo2(ServerContext* context, const EchoRequest* request,
+                   EchoResponse* response) override {
+        return Echo(context, request, response);
+      }
+
+      void Start() {}
+      void Shutdown() {}
+
+      std::set<std::string> clients() {
+        grpc_core::MutexLock lock(&mu_);
+        return clients_;
+      }
+
+      const std::vector<std::string>& last_peer_identity() {
+        grpc_core::MutexLock lock(&mu_);
+        return last_peer_identity_;
+      }
+
+     private:
+      grpc_core::Mutex mu_;
+      std::set<std::string> clients_ ABSL_GUARDED_BY(mu_);
+      std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(mu_);
+    };
+
     // If use_xds_enabled_server is true, the server will use xDS.
     BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server);
 
