@@ -19,7 +19,24 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/filters/client_channel/proxy_mapper.h"
+
 namespace grpc_core {
+
+class HttpProxyMapper : public ProxyMapperInterface {
+ public:
+  bool MapName(const char* server_uri, const grpc_channel_args* args,
+               char** name_to_resolve, grpc_channel_args** new_args) override;
+
+  bool MapAddress(const grpc_resolved_address& /*address*/,
+                  const grpc_channel_args* /*args*/,
+                  grpc_resolved_address** /*new_address*/,
+                  grpc_channel_args** /*new_args*/) override {
+    return false;
+  }
+};
 
 void RegisterHttpProxyMapper();
 

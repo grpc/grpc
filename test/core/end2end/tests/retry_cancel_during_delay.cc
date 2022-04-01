@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -116,25 +117,26 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   int was_cancelled = 2;
   char* peer;
 
+  std::string service_config = absl::StrFormat(
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"service\", \"method\": \"method\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 3,\n"
+      "      \"initialBackoff\": \"%ds\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}",
+      10 * grpc_test_slowdown_factor());
+
   grpc_arg args[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 3,\n"
-              "      \"initialBackoff\": \"10s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    },\n"
-              "    \"timeout\": \"5s\"\n"
-              "  } ]\n"
-              "}")),
+      grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+                                     const_cast<char*>(service_config.c_str())),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   std::string name = absl::StrCat("retry_cancel_during_delay/", mode.name);
@@ -236,7 +238,6 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verify_empty(cqv);
 
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
