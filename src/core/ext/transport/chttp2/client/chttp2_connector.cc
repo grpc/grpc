@@ -97,7 +97,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   handshake_mgr_->DoHandshake(endpoint_, channel_args, args.deadline,
                               nullptr /* acceptor */, OnHandshakeDone, this);
   grpc_channel_args_destroy(channel_args);
-  endpoint_ = nullptr;  // Endpoint handed off to handshake manager.
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
