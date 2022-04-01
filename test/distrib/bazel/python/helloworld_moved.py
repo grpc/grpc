@@ -28,7 +28,6 @@ from google.cloud import helloworld_pb2
 from google.cloud import helloworld_pb2_grpc
 # isort: on
 
-
 _HOST = 'localhost'
 _SERVER_ADDRESS = '{}:0'.format(_HOST)
 
