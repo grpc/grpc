@@ -17,15 +17,17 @@ import unittest
 
 
 class ImportTest(unittest.TestCase):
+
     def test_import(self):
         from namespaced_example_pb2 import NamespacedExample
         namespaced_example = NamespacedExample()
         namespaced_example.value = "hello"
-        # Dummy assert, important part is namespaced example was imported.
+        # Superfluous assert, important part is namespaced example was imported.
         self.assertEqual(namespaced_example.value, "hello")
 
     def test_grpc(self):
         from namespaced_example_pb2_grpc import NamespacedServiceStub
+
         # No error from import
         self.assertEqual(1, 1)
 
