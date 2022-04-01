@@ -179,17 +179,16 @@ FaultInjectionFilter::MakeInjectionDecision(
       UnderFraction(delay_percentage_numerator,
                     fi_policy->delay_percentage_denominator);
   const bool abort_request =
-      fi_policy->abort_code != GRPC_STATUS_OK &&
+      abort_code != GRPC_STATUS_OK &&
       UnderFraction(abort_percentage_numerator,
                     fi_policy->abort_percentage_denominator);
 
-  return InjectionDecision(fi_policy->max_faults,
-                           delay_request ? fi_policy->delay : Duration::Zero(),
-                           abort_request
-                               ? absl::optional<absl::Status>(absl::Status(
-                                     static_cast<absl::StatusCode>(abort_code),
-                                     fi_policy->abort_message))
-                               : absl::nullopt);
+  return InjectionDecision(
+      fi_policy->max_faults, delay_request ? delay : Duration::Zero(),
+      abort_request ? absl::optional<absl::Status>(absl::Status(
+                          static_cast<absl::StatusCode>(abort_code),
+                          fi_policy->abort_message))
+                    : absl::nullopt);
 }
 
 bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota(
