@@ -664,7 +664,30 @@ static void tcp_destroy(grpc_endpoint* ep) {
   TCP_UNREF(tcp, "destroy");
 }
 
-static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) {
+static void maybe_post_reclaimer(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  if (!tcp->has_posted_reclaimer) {
+    tcp->has_posted_reclaimer = true;
+    tcp->memory_owner.PostReclaimer(
+        grpc_core::ReclamationPass::kBenign,
+        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (sweep.has_value()) {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+              gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
+            }
+            tcp->read_mu.Lock();
+            if (tcp->incoming_buffer != nullptr) {
+              grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+            }
+            tcp->read_mu.Unlock();
+            tcp->has_posted_reclaimer = false;
+          }
+        });
+  }
+}
+
+static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   grpc_closure* cb = tcp->read_cb;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
@@ -684,8 +707,12 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) {
 
 /* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 4
-static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
+static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
+  }
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -745,7 +772,6 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
-        tcp->read_mu.Unlock();
         finish_estimate(tcp);
         tcp->inq = 0;
         return false;
@@ -827,7 +853,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
   return true;
 }
 
-static void maybe_make_read_slices(grpc_tcp* tcp) {
+static void maybe_make_read_slices(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -837,10 +864,16 @@ static void maybe_make_read_slices(grpc_tcp* tcp) {
               tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
               tcp->target_length, tcp->incoming_buffer->length);
     }
+    int target_length = static_cast<int>(tcp->target_length);
+    int extra_wanted =
+        target_length - static_cast<int>(tcp->incoming_buffer->length);
+    grpc_slice_buffer_add_indexed(
+        tcp->incoming_buffer,
+        tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
+            tcp->min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
+                             tcp->max_read_chunk_size))));
     maybe_post_reclaimer(tcp);
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }
 }
 
@@ -850,11 +883,13 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
             grpc_error_std_string(error).c_str());
   }
+  tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
   if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       /* We've consumed the edge, request a new one */
+      tcp->read_mu.Unlock();
       notify_on_read(tcp);
       return;
     }
@@ -867,6 +902,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_closure* cb = tcp->read_cb;
   tcp->read_cb = nullptr;
   tcp->incoming_buffer = nullptr;
+  tcp->read_mu.Unlock();
   grpc_core::Closure::Run(DEBUG_LOCATION, cb, tcp_read_error);
   TCP_UNREF(tcp, "read");
 }
