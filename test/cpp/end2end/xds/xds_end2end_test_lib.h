@@ -289,8 +289,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       Status Echo(ServerContext* context, const EchoRequest* request,
                   EchoResponse* response) override {
         auto peer_identity = context->auth_context()->GetPeerIdentity();
-        CountedService<TestMultipleServiceImpl<RpcService>>::
-            IncreaseRequestCount();
+        CountedService<
+            TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
         const auto status = TestMultipleServiceImpl<RpcService>::Echo(
             context, request, response);
         CountedService<
