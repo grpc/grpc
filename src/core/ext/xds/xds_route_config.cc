@@ -302,11 +302,7 @@ std::string XdsRouteConfigResource::ToString() const {
   }
   parts.push_back("cluster_specifier_plugins={\n");
   for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
-  }
-  parts.push_back("ignored_cluster_specifier_plugins={\n");
-  for (const auto& it : ignored_cluster_specifier_plugin_set) {
-    parts.push_back(it);
+    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second.empty() ? "" : it.second));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
@@ -709,7 +705,6 @@ grpc_error_handle RouteActionParse(
     const std::map<std::string /*cluster_specifier_plugin_name*/,
                    std::string /*LB policy config*/>&
         cluster_specifier_plugin_map,
-    const std::set<std::string>& ignored_cluster_specifier_plugin_set,
     XdsRouteConfigResource::Route::RouteAction* route, bool* ignore_route) {
   const envoy_config_route_v3_RouteAction* route_action =
       envoy_config_route_v3_Route_route(route_msg);
@@ -1018,8 +1013,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
             absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
         error = RouteActionParse(
             context, routes[j], rds_update->cluster_specifier_plugin_map,
-            rds_update->ignored_cluster_specifier_plugin_set, &route_action,
-            &ignore_route);
+            &route_action, &ignore_route);
         if (error != GRPC_ERROR_NONE) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&
