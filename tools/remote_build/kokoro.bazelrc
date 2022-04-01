@@ -12,22 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# bazelrc file for running gRPC tests on Kokoro using Foundry
+# bazelrc file for running gRPC tests on Kokoro using RBE (on Linux)
 
-import %workspace%/tools/remote_build/rbe_common.bazelrc
-
-build --remote_cache=grpcs://remotebuildexecution.googleapis.com
-build --remote_executor=grpcs://remotebuildexecution.googleapis.com
-
-build --auth_enabled=true
-
-build --bes_backend=grpcs://buildeventservice.googleapis.com
-build --bes_timeout=600s
-build --project_id=grpc-testing
+import %workspace%/tools/remote_build/rbe_remote_execution.bazelrc
 
 # required by kokoro for some reason
+# TODO(jtattermusch): is this still actually required?
 build --test_env=USER=anon
 
 build --jobs=200
-build --test_output=errors
-build --keep_going=true

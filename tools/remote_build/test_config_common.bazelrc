@@ -1,4 +1,5 @@
-# Copyright 2018 The gRPC Authors
+#@IgnoreInspection BashAddShebang
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# bazelrc file for running gRPC tests with RBE (on Linux)
-# manually from developer's workstation
+# bazelrc for common configuration of gRPC tests
 
-import %workspace%/tools/remote_build/rbe_common_linux.bazelrc
+build --verbose_failures=true
 
-build --jobs=100
+# without verbose gRPC logs the test outputs are not very useful
+test --test_env=GRPC_VERBOSITY=debug
+
+# print output for tests that fail (default is "summary")
+build --test_output=errors
