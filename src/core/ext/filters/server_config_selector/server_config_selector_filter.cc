@@ -37,8 +37,8 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
   ServerConfigSelectorFilter(ServerConfigSelectorFilter&&) = default;
   ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
 
-  static absl::StatusOr<ServerConfigSelectorFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args);
+  static absl::StatusOr<ServerConfigSelectorFilter> Create(ChannelArgs args,
+                                                           ChannelFilter::Args);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
@@ -78,13 +78,13 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
-    const grpc_channel_args* args, ChannelFilter::Args) {
-  RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider =
-      ServerConfigSelectorProvider::GetFromChannelArgs(*args);
+    ChannelArgs args, ChannelFilter::Args) {
+  ServerConfigSelectorProvider* server_config_selector_provider =
+      args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {
     return absl::UnknownError("No ServerConfigSelectorProvider object found");
   }
-  return ServerConfigSelectorFilter(std::move(server_config_selector_provider));
+  return ServerConfigSelectorFilter(server_config_selector_provider->Ref());
 }
 
 ServerConfigSelectorFilter::ServerConfigSelectorFilter(
