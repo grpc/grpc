@@ -89,7 +89,7 @@ absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
   return FaultInjectionFilter(std::move(args), std::move(filter_args));
 }
 
-FaultInjectionFilter::FaultInjectionFilter(ChannelArgs args,
+FaultInjectionFilter::FaultInjectionFilter(ChannelArgs,
                                            ChannelFilter::Args filter_args)
     : index_(grpc_channel_stack_filter_instance_number(
           filter_args.channel_stack(),
