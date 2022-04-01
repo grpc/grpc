@@ -166,7 +166,8 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
   std::string server_address = absl::StrCat("localhost:", port_);
   if (use_xds_enabled_server_) {
     XdsServerBuilder builder;
-    if (GetParam().bootstrap_source() == TestType::kBootstrapFromChannelArg) {
+    if (GetParam().bootstrap_source() ==
+        XdsTestType::kBootstrapFromChannelArg) {
       builder.SetOption(
           absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
     }
@@ -722,15 +723,15 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
   if (GetParam().use_v2()) builder.SetV2();
   bootstrap_ = builder.Build();
-  if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
+  if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
-  } else if (GetParam().bootstrap_source() == TestType::kBootstrapFromFile) {
+  } else if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromFile) {
     FILE* out = gpr_tmpfile("xds_bootstrap_v3", &bootstrap_file_);
     fputs(bootstrap_.c_str(), out);
     fclose(out);
     gpr_setenv("GRPC_XDS_BOOTSTRAP", bootstrap_file_);
   }
-  if (GetParam().bootstrap_source() != TestType::kBootstrapFromChannelArg) {
+  if (GetParam().bootstrap_source() != XdsTestType::kBootstrapFromChannelArg) {
     // If getting bootstrap from channel arg, we'll pass these args in
     // via the parent channel args in CreateChannel() instead.
     grpc_core::internal::SetXdsChannelArgsForTest(&xds_channel_args_);
@@ -765,7 +766,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   if (failover_timeout_ms > 0) {
     args->SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout_ms);
   }
-  if (GetParam().bootstrap_source() == TestType::kBootstrapFromChannelArg) {
+  if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromChannelArg) {
     // We're getting the bootstrap from a channel arg, so we do the
     // same thing for the response generator to use for the xDS
     // channel and the xDS resource-does-not-exist timeout value.
