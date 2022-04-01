@@ -6163,6 +6163,16 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http_proxy_mapper_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/http_proxy_mapper_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: httpcli_test
   gtest: true
   build: test
