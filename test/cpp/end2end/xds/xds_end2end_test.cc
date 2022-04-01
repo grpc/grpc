@@ -7762,24 +7762,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
   RouteLookupConfig route_lookup_config;
@@ -7817,9 +7799,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
-TEST_P(
-    RlsTest,
-    XdsRoutingClusterSpecifierPluginIgnoresUnknownSpecifierProtoNotOptional) {
+TEST_P(RlsTest,
+       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -7863,26 +7844,12 @@ TEST_P(
 }
 
 TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoOptional) {
+       XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
   RouteLookupConfig route_lookup_config;
