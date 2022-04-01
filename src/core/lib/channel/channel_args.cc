@@ -112,14 +112,6 @@ ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
   return ChannelArgs(args_.Add(std::string(key), std::move(value)));
 }
 
-ChannelArgs ChannelArgs::Set(absl::string_view key, int value) const {
-  return ChannelArgs(args_.Add(std::string(key), Value(value)));
-}
-
-ChannelArgs ChannelArgs::Set(absl::string_view key, bool value) const {
-  return ChannelArgs(args_.Add(std::string(key), value ? 1 : 0));
-}
-
 ChannelArgs ChannelArgs::Set(absl::string_view key,
                              absl::string_view value) const {
   return Set(key, std::string(value));
