@@ -188,8 +188,18 @@ void HttpRequest::Orphan() {
     cancelled_ = true;
     dns_request_.reset();  // cancel potentially pending DNS resolution
     if (handshake_mgr_ != nullptr) {
+      // gRPC's TCP connection establishment API doesn't currently have
+      // a mechanism for cancellation. So invoke the user callback now. The TCP
+      // connection will eventually complete (at least within its deadline), and
+      // we'll simply unref ourselves at that point.
+      // TODO(apolcyn): fix this to cancel the TCP connection attempt when
+      // an API to do so exists.
+
       handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "HTTP request cancelled during handshake"));
+
+      Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "HTTP request cancelled during handshake", &overall_error_, 1));
     }
     if (own_endpoint_ && ep_ != nullptr) {
       grpc_endpoint_shutdown(
@@ -265,6 +275,8 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   req->own_endpoint_ = true;
   if (req->cancelled_) {
     // Handshake finished after the request was cancelled.
+    // As we already finished and the on_done_ callback was called, nothing
+    // to do here.
     req->handshake_mgr_.reset();
     return;
   }
