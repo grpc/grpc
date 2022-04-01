@@ -125,10 +125,6 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
-  // As we fake the TCP client connection failure when shutdown is called
-  // we don't want to args->endpoint directly.
-  // Instead pass a endpoint_ and swap on success this endpoint to
-  // args endpoint on success.
   grpc_tcp_client_connect(&connected_, &endpoint_, interested_parties_,
                           args->args, &addr_, args->deadline);
 }
@@ -142,8 +138,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
     if (error != GRPC_ERROR_NONE || self->shutdown_) {
       if (error == GRPC_ERROR_NONE) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
-      } else {
-        error = GRPC_ERROR_REF(error);
       }
       if (self->endpoint_ != nullptr) {
         grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
@@ -151,12 +145,10 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
         self->shutdown_ = true;
-        self->Finish(error);
-      } else {
-        // The on_handshake_done_ is already as part of shutdown when connecting
-        // So nothing to be done here other than unrefing the error.
-        GRPC_ERROR_UNREF(error);
+        self->Finish(GRPC_ERROR_REF(error));
       }
+      // The on_handshake_done_ is already as part of shutdown when connecting
+      // So nothing to be done here.
       return;
     }
 
@@ -174,9 +166,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
 TCPConnectHandshaker::~TCPConnectHandshaker() {
   if (endpoint_to_destroy_ != nullptr) {
     grpc_endpoint_destroy(endpoint_to_destroy_);
-  }
-  if (endpoint_ != nullptr) {
-    grpc_endpoint_destroy(endpoint_);
   }
   if (read_buffer_to_destroy_ != nullptr) {
     grpc_slice_buffer_destroy_internal(read_buffer_to_destroy_);
