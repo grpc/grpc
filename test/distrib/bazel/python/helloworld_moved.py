@@ -19,11 +19,15 @@ import datetime
 import logging
 import unittest
 
-from google.cloud import helloworld_pb2
-from google.cloud import helloworld_pb2_grpc
+# TODO(https://github.com/grpc/grpc/issues/29284)
+# isort: off
+import grpc
 from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
-import grpc
+from google.cloud import helloworld_pb2
+from google.cloud import helloworld_pb2_grpc
+# isort: on
+
 
 _HOST = 'localhost'
 _SERVER_ADDRESS = '{}:0'.format(_HOST)
