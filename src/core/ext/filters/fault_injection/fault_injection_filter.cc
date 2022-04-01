@@ -85,12 +85,11 @@ class FaultInjectionFilter::InjectionDecision {
 };
 
 absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    ChannelArgs args, ChannelFilter::Args filter_args) {
-  return FaultInjectionFilter(std::move(args), std::move(filter_args));
+    ChannelArgs, ChannelFilter::Args filter_args) {
+  return FaultInjectionFilter(filter_args);
 }
 
-FaultInjectionFilter::FaultInjectionFilter(ChannelArgs,
-                                           ChannelFilter::Args filter_args)
+FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
     : index_(grpc_channel_stack_filter_instance_number(
           filter_args.channel_stack(),
           filter_args.uninitialized_channel_element())),

@@ -46,10 +46,11 @@ class FaultInjectionFilter : public ChannelFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  FaultInjectionFilter(ChannelArgs args, ChannelFilter::Args filter_args);
+  explicit FaultInjectionFilter(ChannelFilter::Args filter_args);
 
   class InjectionDecision;
-  InjectionDecision MakeInjectionDecision(const ClientMetadataHandle& md);
+  InjectionDecision MakeInjectionDecision(
+      const ClientMetadataHandle& initial_metadata);
 
   // The relative index of instances of the same filter.
   int index_;
