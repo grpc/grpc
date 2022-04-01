@@ -197,9 +197,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_stream_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/tcp_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/tcp_connect_handshaker.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_idle/idle_filter_state.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_idle/idle_filter_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />

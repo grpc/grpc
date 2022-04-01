@@ -100,10 +100,9 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   {
     MutexLock lock(&mu_);
     connecting_ = true;
-    on_handshake_done_ = on_handshake_done;
-    args_ = args;
   }
-
+  on_handshake_done_ = on_handshake_done;
+  args_ = args;
 
   const grpc_arg* addr_arg = grpc_channel_args_find(
       args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
