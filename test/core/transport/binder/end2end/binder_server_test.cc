@@ -211,6 +211,6 @@ TEST_F(BinderServerTest, CreateChannelWithEndpointBinderMultipleConnections) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

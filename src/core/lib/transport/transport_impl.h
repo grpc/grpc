@@ -77,6 +77,7 @@ typedef struct grpc_transport_vtable {
 
 /* an instance of a grpc transport */
 struct grpc_transport {
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
   /* pointer to a vtable defining operations on this transport */
   const grpc_transport_vtable* vtable;
 };

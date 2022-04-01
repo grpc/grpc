@@ -23,6 +23,9 @@
 struct grpc_authorization_policy_provider
     : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {
  public:
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER;
+  }
   struct AuthorizationEngines {
     grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> allow_engine;
     grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine;

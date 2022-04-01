@@ -2285,8 +2285,7 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
-        "grpc_client_idle_filter",
-        "grpc_max_age_filter",
+        "grpc_channel_idle_filter",
         "grpc_message_size_filter",
         "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
@@ -2434,6 +2433,7 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "ref_counted_ptr",
+        "time",
         "useful",
     ],
 )
@@ -2584,10 +2584,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
-        "src/core/ext/filters/client_idle/idle_filter_state.cc",
+        "src/core/ext/filters/channel_idle/idle_filter_state.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_idle/idle_filter_state.h",
+        "src/core/ext/filters/channel_idle/idle_filter_state.h",
     ],
     language = "c++",
     deps = [
@@ -2596,9 +2596,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_client_idle_filter",
+    name = "grpc_channel_idle_filter",
     srcs = [
-        "src/core/ext/filters/client_idle/client_idle_filter.cc",
+        "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
     ],
     deps = [
         "capture",
@@ -2608,24 +2608,9 @@ grpc_cc_library(
         "grpc_base",
         "idle_filter_state",
         "loop",
+        "single_set_ptr",
         "sleep",
         "try_seq",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_max_age_filter",
-    srcs = [
-        "src/core/ext/filters/max_age/max_age_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/max_age/max_age_filter.h",
-    ],
-    language = "c++",
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_base",
     ],
 )
 
@@ -2885,6 +2870,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
         "src/core/ext/xds/xds_common_types.cc",
         "src/core/ext/xds/xds_endpoint.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
@@ -2909,6 +2895,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.h",
         "src/core/ext/xds/xds_common_types.h",
         "src/core/ext/xds/xds_endpoint.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
@@ -2997,6 +2984,8 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
+        "rls_config_upb",
+        "rls_config_upbdefs",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -3345,6 +3334,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr",
         "grpc++_base",
@@ -3352,6 +3342,7 @@ grpc_cc_library(
         "grpc_lb_policy_grpclb",
         "grpc_security_base",
         "grpc_sockaddr",
+        "seq",
         "slice",
         "uri_parser",
     ],
@@ -5371,6 +5362,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "rls_upb",
     deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+)
+
+grpc_upb_proto_library(
+    name = "rls_config_upb",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "rls_config_upbdefs",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

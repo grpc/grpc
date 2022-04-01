@@ -85,22 +85,28 @@ class GracefulShutdownTest : public ::testing::Test {
                                            nullptr) == GRPC_ERROR_NONE);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     // Start polling on the client
-    client_poll_thread_ = absl::make_unique<std::thread>([this]() {
-      grpc_completion_queue* client_cq =
-          grpc_completion_queue_create_for_next(nullptr);
-      {
-        ExecCtx exec_ctx;
-        grpc_endpoint_add_to_pollset(fds_.client, grpc_cq_pollset(client_cq));
-        grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(client_cq));
-      }
-      while (!shutdown_) {
-        GPR_ASSERT(
-            grpc_completion_queue_next(
-                client_cq, grpc_timeout_milliseconds_to_deadline(10), nullptr)
-                .type == GRPC_QUEUE_TIMEOUT);
-      }
-      grpc_completion_queue_destroy(client_cq);
-    });
+    absl::Notification client_poller_thread_started_notification;
+    client_poll_thread_ = absl::make_unique<std::thread>(
+        [this, &client_poller_thread_started_notification]() {
+          grpc_completion_queue* client_cq =
+              grpc_completion_queue_create_for_next(nullptr);
+          {
+            ExecCtx exec_ctx;
+            grpc_endpoint_add_to_pollset(fds_.client,
+                                         grpc_cq_pollset(client_cq));
+            grpc_endpoint_add_to_pollset(fds_.server,
+                                         grpc_cq_pollset(client_cq));
+          }
+          client_poller_thread_started_notification.Notify();
+          while (!shutdown_) {
+            GPR_ASSERT(grpc_completion_queue_next(
+                           client_cq, grpc_timeout_milliseconds_to_deadline(10),
+                           nullptr)
+                           .type == GRPC_QUEUE_TIMEOUT);
+          }
+          grpc_completion_queue_destroy(client_cq);
+        });
+    client_poller_thread_started_notification.WaitForNotification();
     // Write connection prefix and settings frame
     constexpr char kPrefix[] =
         "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n\x00\x00\x00\x04\x00\x00\x00\x00\x00";
@@ -410,7 +416,7 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int result = RUN_ALL_TESTS();
   grpc_shutdown();

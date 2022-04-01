@@ -22,6 +22,7 @@ grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
     srcs = ["byte_buffer_reader_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -71,6 +72,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
