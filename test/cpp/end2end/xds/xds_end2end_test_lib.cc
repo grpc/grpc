@@ -34,6 +34,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpcpp/security/tls_certificate_provider.h>
+
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
@@ -410,17 +412,25 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
 // XdsEnd2endTest
 //
 
-constexpr char XdsEnd2endTest::kDefaultLocalityRegion[];
-constexpr char XdsEnd2endTest::kDefaultLocalityZone[];
-constexpr char XdsEnd2endTest::kServerName[];
-constexpr char XdsEnd2endTest::kDefaultRouteConfigurationName[];
-constexpr char XdsEnd2endTest::kDefaultClusterName[];
-constexpr char XdsEnd2endTest::kDefaultEdsServiceName[];
-constexpr char XdsEnd2endTest::kDefaultServerRouteConfigurationName[];
-constexpr char XdsEnd2endTest::kCaCertPath[];
-constexpr char XdsEnd2endTest::kServerCertPath[];
-constexpr char XdsEnd2endTest::kServerKeyPath[];
-constexpr char XdsEnd2endTest::kRequestMessage[];
+const char XdsEnd2endTest::kDefaultLocalityRegion[] =
+    "xds_default_locality_region";
+const char XdsEnd2endTest::kDefaultLocalityZone[] = "xds_default_locality_zone";
+
+const char XdsEnd2endTest::kServerName[] = "server.example.com";
+const char XdsEnd2endTest::kDefaultRouteConfigurationName[] =
+    "route_config_name";
+const char XdsEnd2endTest::kDefaultClusterName[] = "cluster_name";
+const char XdsEnd2endTest::kDefaultEdsServiceName[] = "eds_service_name";
+const char XdsEnd2endTest::kDefaultServerRouteConfigurationName[] =
+    "default_server_route_config_name";
+
+const char XdsEnd2endTest::kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+const char XdsEnd2endTest::kServerCertPath[] =
+    "src/core/tsi/test_creds/server1.pem";
+const char XdsEnd2endTest::kServerKeyPath[] =
+    "src/core/tsi/test_creds/server1.key";
+
+const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
   bool localhost_resolves_to_ipv4 = false;

@@ -249,26 +249,26 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   using HttpConnectionManager = ::envoy::extensions::filters::network::
       http_connection_manager::v3::HttpConnectionManager;
 
-  static constexpr char kDefaultLocalityRegion[] =
-      "xds_default_locality_region";
-  static constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
-  static constexpr int kDefaultLocalityWeight = 3;
-  static constexpr int kDefaultLocalityPriority = 0;
+  // Default values for locality fields.
+  static const char kDefaultLocalityRegion[];
+  static const char kDefaultLocalityZone[];
+  static const int kDefaultLocalityWeight = 3;
+  static const int kDefaultLocalityPriority = 0;
 
-  static constexpr char kServerName[] = "server.example.com";
-  static constexpr char kDefaultRouteConfigurationName[] = "route_config_name";
-  static constexpr char kDefaultClusterName[] = "cluster_name";
-  static constexpr char kDefaultEdsServiceName[] = "eds_service_name";
-  static constexpr char kDefaultServerRouteConfigurationName[] =
-      "default_server_route_config_name";
+  // Default resource names.
+  static const char kServerName[];
+  static const char kDefaultRouteConfigurationName[];
+  static const char kDefaultClusterName[];
+  static const char kDefaultEdsServiceName[];
+  static const char kDefaultServerRouteConfigurationName[];
 
-  static constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
-  static constexpr char kServerCertPath[] =
-      "src/core/tsi/test_creds/server1.pem";
-  static constexpr char kServerKeyPath[] =
-      "src/core/tsi/test_creds/server1.key";
+  // TLS certificate paths.
+  static const char kCaCertPath[];
+  static const char kServerCertPath[];
+  static const char kServerKeyPath[];
 
-  static constexpr char kRequestMessage[] = "Live long and prosper.";
+  // Message used in EchoRequest to the backend.
+  static const char kRequestMessage[];
 
   // A base class for server threads.
   class ServerThread {
