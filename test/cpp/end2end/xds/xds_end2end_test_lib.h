@@ -44,10 +44,6 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 
-#ifndef DISABLED_XDS_PROTO_IN_CC
-#include "src/cpp/server/csds/csds.h"
-#endif  // DISABLED_XDS_PROTO_IN_CC
-
 namespace grpc {
 namespace testing {
 
@@ -389,26 +385,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
   };
-
-#ifndef DISABLED_XDS_PROTO_IN_CC
-  // Server thread for CSDS server.
-  class AdminServerThread : public ServerThread {
-   public:
-    explicit AdminServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj) {}
-
-   private:
-    const char* Type() override { return "Admin"; }
-
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&csds_service_);
-    }
-    void StartAllServices() override {}
-    void ShutdownAllServices() override {}
-
-    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
-  };
-#endif  // DISABLED_XDS_PROTO_IN_CC
 
   // A builder for the xDS bootstrap config.
   class BootstrapBuilder {
