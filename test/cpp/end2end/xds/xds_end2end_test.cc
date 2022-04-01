@@ -7745,24 +7745,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
   RouteConfiguration new_route_config = default_route_config_;
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -7829,13 +7811,15 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(
-                  "Duplicated definition of cluster_specifier_plugin."));
+              ::testing::HasSubstr(absl::StrCat(
+                  "Duplicated definition of cluster_specifier_plugin ",
+                  kRlsClusterSpecifierPluginInstanceName)));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
+TEST_P(
+    RlsTest,
+    XdsRoutingClusterSpecifierPluginIgnoresUnknownSpecifierProtoNotOptional) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -7873,7 +7857,8 @@ TEST_P(RlsTest,
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type"));
+              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
+                                   "grpc.lookup.v1.RouteLookupConfig"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
@@ -7918,8 +7903,7 @@ TEST_P(RlsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we ignore the cluster specifier plugin and send traffic according to
   // the default route.
-  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
-  WaitForAllBackends(0, 1, WaitForBackendOptions(), rpc_options);
+  WaitForAllBackends(0, 1);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 

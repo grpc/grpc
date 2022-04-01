@@ -302,8 +302,7 @@ std::string XdsRouteConfigResource::ToString() const {
   }
   parts.push_back("cluster_specifier_plugins={\n");
   for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", it.first,
-                                    it.second.empty() ? "" : it.second));
+    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
@@ -328,8 +327,8 @@ grpc_error_handle ClusterSpecifierPluginParse(
         envoy_config_core_v3_TypedExtensionConfig_name(extension));
     if (rds_update->cluster_specifier_plugin_map.find(name) !=
         rds_update->cluster_specifier_plugin_map.end()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Duplicated definition of cluster_specifier_plugin.");
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Duplicated definition of cluster_specifier_plugin ", name));
     }
     const google_protobuf_Any* any =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);

@@ -176,9 +176,6 @@ struct XdsRouteConfigResource {
   };
 
   std::vector<VirtualHost> virtual_hosts;
-  // The plugin is unsupported but optional, so it will be ignored.  We
-  // recognize such plugin by storing an empty string as it is not a valid LB
-  // policy config.
   std::map<std::string /*cluster_specifier_plugin_name*/,
            std::string /*LB policy config*/>
       cluster_specifier_plugin_map;
