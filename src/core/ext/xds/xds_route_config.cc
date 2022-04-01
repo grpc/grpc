@@ -302,7 +302,8 @@ std::string XdsRouteConfigResource::ToString() const {
   }
   parts.push_back("cluster_specifier_plugins={\n");
   for (const auto& it : cluster_specifier_plugin_map) {
-    parts.push_back(absl::StrFormat("%s={%s}\n", it.first, it.second.empty() ? "" : it.second));
+    parts.push_back(absl::StrFormat("%s={%s}\n", it.first,
+                                    it.second.empty() ? "" : it.second));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");
@@ -1011,9 +1012,9 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
         auto& route_action =
             absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
-        error = RouteActionParse(
-            context, routes[j], rds_update->cluster_specifier_plugin_map,
-            &route_action, &ignore_route);
+        error = RouteActionParse(context, routes[j],
+                                 rds_update->cluster_specifier_plugin_map,
+                                 &route_action, &ignore_route);
         if (error != GRPC_ERROR_NONE) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&

@@ -7909,15 +7909,17 @@ TEST_P(RlsTest,
   plugin->mutable_extension()->mutable_typed_config()->PackFrom(
       route_lookup_config);
   plugin->set_is_optional(true);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route->mutable_route()->set_cluster_specifier_plugin(
       kRlsClusterSpecifierPluginInstanceName);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("No valid routes specified."));
+  // Ensure we ignore the cluster specifier plugin and send traffic according to
+  // the default route.
+  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
+  WaitForAllBackends(0, 1, WaitForBackendOptions(), rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
