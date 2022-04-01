@@ -11117,6 +11117,24 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
   }
 
  private:
+  // Server thread for CSDS server.
+  class AdminServerThread : public ServerThread {
+   public:
+    explicit AdminServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj) {}
+
+   private:
+    const char* Type() override { return "Admin"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&csds_service_);
+    }
+    void StartAllServices() override {}
+    void ShutdownAllServices() override {}
+
+    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
+  };
+
   std::unique_ptr<AdminServerThread> admin_server_thread_;
   std::shared_ptr<Channel> admin_channel_;
   std::unique_ptr<
