@@ -21,6 +21,7 @@ echo "CPU type: $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU Cores: $(sysctl -n hw.ncpu)"
 echo "Memory: $(sysctl -n hw.memsize)"
+echo "Kokoro image version: $(cat /VERSION)"
 
 # Info on disk usage and mounted volumes
 mount
