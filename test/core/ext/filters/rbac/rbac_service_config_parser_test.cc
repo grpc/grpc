@@ -410,7 +410,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
           "permissions\\[5\\]" CHILD_ERROR_TAG
           "field:destinationIp error:type should be OBJECT.*"
           "permissions\\[6\\]" CHILD_ERROR_TAG
-          "field:destinationPort error:type should be NUMBER.*"
+          "field:destinationPort error:failed to parse.*"
           "permissions\\[7\\]" CHILD_ERROR_TAG
           "field:metadata error:type should be OBJECT.*"
           "permissions\\[8\\]" CHILD_ERROR_TAG
@@ -651,7 +651,7 @@ TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();

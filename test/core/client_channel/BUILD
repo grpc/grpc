@@ -31,12 +31,26 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "http_proxy_mapper_test",
+    srcs = ["http_proxy_mapper_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "retry_throttle_test",
     srcs = ["retry_throttle_test.cc"],
     external_deps = [
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

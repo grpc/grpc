@@ -145,7 +145,7 @@ void fake_tsi_test_do_round_trip_odd_buffer_size() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   fake_tsi_test_do_handshake_tiny_handshake_buffer();
   fake_tsi_test_do_handshake_small_handshake_buffer();

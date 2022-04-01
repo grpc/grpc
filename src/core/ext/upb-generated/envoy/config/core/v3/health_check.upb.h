@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+struct envoy_config_core_v3_HealthStatusSet;
 struct envoy_config_core_v3_HealthCheck;
 struct envoy_config_core_v3_HealthCheck_Payload;
 struct envoy_config_core_v3_HealthCheck_HttpHealthCheck;
@@ -28,6 +29,7 @@ struct envoy_config_core_v3_HealthCheck_RedisHealthCheck;
 struct envoy_config_core_v3_HealthCheck_GrpcHealthCheck;
 struct envoy_config_core_v3_HealthCheck_CustomHealthCheck;
 struct envoy_config_core_v3_HealthCheck_TlsOptions;
+typedef struct envoy_config_core_v3_HealthStatusSet envoy_config_core_v3_HealthStatusSet;
 typedef struct envoy_config_core_v3_HealthCheck envoy_config_core_v3_HealthCheck;
 typedef struct envoy_config_core_v3_HealthCheck_Payload envoy_config_core_v3_HealthCheck_Payload;
 typedef struct envoy_config_core_v3_HealthCheck_HttpHealthCheck envoy_config_core_v3_HealthCheck_HttpHealthCheck;
@@ -36,6 +38,7 @@ typedef struct envoy_config_core_v3_HealthCheck_RedisHealthCheck envoy_config_co
 typedef struct envoy_config_core_v3_HealthCheck_GrpcHealthCheck envoy_config_core_v3_HealthCheck_GrpcHealthCheck;
 typedef struct envoy_config_core_v3_HealthCheck_CustomHealthCheck envoy_config_core_v3_HealthCheck_CustomHealthCheck;
 typedef struct envoy_config_core_v3_HealthCheck_TlsOptions envoy_config_core_v3_HealthCheck_TlsOptions;
+extern const upb_MiniTable envoy_config_core_v3_HealthStatusSet_msginit;
 extern const upb_MiniTable envoy_config_core_v3_HealthCheck_msginit;
 extern const upb_MiniTable envoy_config_core_v3_HealthCheck_Payload_msginit;
 extern const upb_MiniTable envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit;
@@ -73,6 +76,50 @@ typedef enum {
 } envoy_config_core_v3_HealthStatus;
 
 
+
+/* envoy.config.core.v3.HealthStatusSet */
+
+UPB_INLINE envoy_config_core_v3_HealthStatusSet* envoy_config_core_v3_HealthStatusSet_new(upb_Arena* arena) {
+  return (envoy_config_core_v3_HealthStatusSet*)_upb_Message_New(&envoy_config_core_v3_HealthStatusSet_msginit, arena);
+}
+UPB_INLINE envoy_config_core_v3_HealthStatusSet* envoy_config_core_v3_HealthStatusSet_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_core_v3_HealthStatusSet* ret = envoy_config_core_v3_HealthStatusSet_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_HealthStatusSet_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_core_v3_HealthStatusSet* envoy_config_core_v3_HealthStatusSet_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_core_v3_HealthStatusSet* ret = envoy_config_core_v3_HealthStatusSet_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_core_v3_HealthStatusSet_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_core_v3_HealthStatusSet_serialize(const envoy_config_core_v3_HealthStatusSet* msg, upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_config_core_v3_HealthStatusSet_msginit, 0, arena, len);
+}
+UPB_INLINE char* envoy_config_core_v3_HealthStatusSet_serialize_ex(const envoy_config_core_v3_HealthStatusSet* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  return upb_Encode(msg, &envoy_config_core_v3_HealthStatusSet_msginit, options, arena, len);
+}
+UPB_INLINE int32_t const* envoy_config_core_v3_HealthStatusSet_statuses(const envoy_config_core_v3_HealthStatusSet *msg, size_t *len) { return (int32_t const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+
+UPB_INLINE int32_t* envoy_config_core_v3_HealthStatusSet_mutable_statuses(envoy_config_core_v3_HealthStatusSet *msg, size_t *len) {
+  return (int32_t*)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE int32_t* envoy_config_core_v3_HealthStatusSet_resize_statuses(envoy_config_core_v3_HealthStatusSet *msg, size_t len, upb_Arena *arena) {
+  return (int32_t*)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, 2, arena);
+}
+UPB_INLINE bool envoy_config_core_v3_HealthStatusSet_add_statuses(envoy_config_core_v3_HealthStatusSet *msg, int32_t val, upb_Arena *arena) {
+  return _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), 2, &val,
+      arena);
+}
 
 /* envoy.config.core.v3.HealthCheck */
 
@@ -811,12 +858,27 @@ UPB_INLINE upb_StringView envoy_config_core_v3_HealthCheck_GrpcHealthCheck_servi
 UPB_INLINE upb_StringView envoy_config_core_v3_HealthCheck_GrpcHealthCheck_authority(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
 }
+UPB_INLINE bool envoy_config_core_v3_HealthCheck_GrpcHealthCheck_has_initial_metadata(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
+UPB_INLINE const struct envoy_config_core_v3_HeaderValueOption* const* envoy_config_core_v3_HealthCheck_GrpcHealthCheck_initial_metadata(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, size_t *len) { return (const struct envoy_config_core_v3_HeaderValueOption* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
 
 UPB_INLINE void envoy_config_core_v3_HealthCheck_GrpcHealthCheck_set_service_name(envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_GrpcHealthCheck_set_authority(envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_HeaderValueOption** envoy_config_core_v3_HealthCheck_GrpcHealthCheck_mutable_initial_metadata(envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, size_t *len) {
+  return (struct envoy_config_core_v3_HeaderValueOption**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
+}
+UPB_INLINE struct envoy_config_core_v3_HeaderValueOption** envoy_config_core_v3_HealthCheck_GrpcHealthCheck_resize_initial_metadata(envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, size_t len, upb_Arena *arena) {
+  return (struct envoy_config_core_v3_HeaderValueOption**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_core_v3_HealthCheck_GrpcHealthCheck_add_initial_metadata(envoy_config_core_v3_HealthCheck_GrpcHealthCheck *msg, upb_Arena *arena) {
+  struct envoy_config_core_v3_HeaderValueOption* sub = (struct envoy_config_core_v3_HeaderValueOption*)_upb_Message_New(&envoy_config_core_v3_HeaderValueOption_msginit, arena);
+  bool ok = _upb_Array_Append_accessor2(
+      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
 }
 
 /* envoy.config.core.v3.HealthCheck.CustomHealthCheck */

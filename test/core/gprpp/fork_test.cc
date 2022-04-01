@@ -130,7 +130,7 @@ static void test_exec_count() {
 }
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_init();
   test_thd_count();
   test_exec_count();

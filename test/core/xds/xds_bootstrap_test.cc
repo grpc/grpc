@@ -770,7 +770,7 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
       absl::make_unique<grpc_core::testing::FakeCertificateProviderFactory>());

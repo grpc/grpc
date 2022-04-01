@@ -151,6 +151,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                    GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            grpc_chttp2_initiate_write(t,
+                                       GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
             if (t->notify_on_receive_settings != nullptr) {
               grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                       t->notify_on_receive_settings,

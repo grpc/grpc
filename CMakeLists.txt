@@ -443,6 +443,9 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/lookup/v1/rls.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/lookup/v1/rls_config.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp(
@@ -888,6 +891,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx hpack_parser_table_test)
   add_dependencies(buildtests_cxx hpack_parser_test)
   add_dependencies(buildtests_cxx http2_client)
+  add_dependencies(buildtests_cxx http_proxy_mapper_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx httpcli_test)
   endif()
@@ -902,9 +906,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
   add_dependencies(buildtests_cxx interop_client)
   add_dependencies(buildtests_cxx interop_server)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx interop_test)
-  endif()
   add_dependencies(buildtests_cxx join_test)
   add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx large_metadata_bad_client_test)
@@ -1435,6 +1436,8 @@ endif()
 
 add_library(grpc
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/channel_idle/channel_idle_filter.cc
+  src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1505,7 +1508,6 @@ add_library(grpc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
@@ -1655,6 +1657,7 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls_config.upb.c
   src/core/ext/upb-generated/udpa/annotations/migrate.upb.c
   src/core/ext/upb-generated/udpa/annotations/security.upb.c
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
@@ -1789,6 +1792,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-generated/google/rpc/status.upbdefs.c
   src/core/ext/upbdefs-generated/opencensus/proto/trace/v1/trace_config.upbdefs.c
+  src/core/ext/upbdefs-generated/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/migrate.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
@@ -1821,6 +1825,7 @@ add_library(grpc
   src/core/ext/xds/xds_client.cc
   src/core/ext/xds/xds_client_stats.cc
   src/core/ext/xds/xds_cluster.cc
+  src/core/ext/xds/xds_cluster_specifier_plugin.cc
   src/core/ext/xds/xds_common_types.cc
   src/core/ext/xds/xds_endpoint.cc
   src/core/ext/xds/xds_http_fault_filter.cc
@@ -2235,6 +2240,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
+  test/core/event_engine/test_init.cc
   test/core/util/build.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
@@ -2303,6 +2309,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
+  test/core/event_engine/test_init.cc
   test/core/util/build.cc
   test/core/util/cmdline.cc
   test/core/util/fuzzer_util.cc
@@ -2370,6 +2377,8 @@ endif()
 
 add_library(grpc_unsecure
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/channel_idle/channel_idle_filter.cc
+  src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2434,7 +2443,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -3960,6 +3968,7 @@ add_library(upb
   third_party/upb/upb/decode.c
   third_party/upb/upb/def.c
   third_party/upb/upb/encode.c
+  third_party/upb/upb/json_encode.c
   third_party/upb/upb/msg.c
   third_party/upb/upb/reflection.c
   third_party/upb/upb/table.c
@@ -11797,6 +11806,41 @@ target_link_libraries(http2_client
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(http_proxy_mapper_test
+  test/core/client_channel/http_proxy_mapper_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(http_proxy_mapper_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(http_proxy_mapper_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(httpcli_test
@@ -11929,7 +11973,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(idle_filter_state_test
-  src/core/ext/filters/client_idle/idle_filter_state.cc
+  src/core/ext/filters/channel_idle/idle_filter_state.cc
   test/core/client_idle/idle_filter_state_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -12204,44 +12248,6 @@ target_link_libraries(interop_server
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(interop_test
-    test/cpp/interop/interop_test.cc
-    third_party/googletest/googletest/src/gtest-all.cc
-    third_party/googletest/googlemock/src/gmock-all.cc
-  )
-
-  target_include_directories(interop_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(interop_test
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc++_test_config
-    grpc++_test_util
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -14122,6 +14128,7 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
   test/core/util/test_lb_policies.cc
   test/cpp/end2end/rls_end2end_test.cc
+  test/cpp/end2end/rls_server.cc
   test/cpp/end2end/test_service_impl.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16777,6 +16784,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    test/core/event_engine/test_init.cc
     test/core/util/build.cc
     test/core/util/cmdline.cc
     test/core/util/fuzzer_util.cc
@@ -16990,6 +16998,14 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(xds_end2end_test
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lookup/v1/rls_config.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
@@ -17147,6 +17163,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
     src/cpp/server/csds/csds.cc
+    test/cpp/end2end/rls_server.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test.cc
     test/cpp/end2end/xds/xds_server.cc

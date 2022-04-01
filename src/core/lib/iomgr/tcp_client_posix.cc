@@ -136,6 +136,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   int done;
   grpc_endpoint** ep = ac->ep;
   grpc_closure* closure = ac->closure;
+  std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
   (void)GRPC_ERROR_REF(error);
@@ -221,8 +222,7 @@ finish:
     std::string description =
         absl::StrCat("Failed to connect to remote host: ", str);
     error = grpc_error_set_str(error, GRPC_ERROR_STR_DESCRIPTION, description);
-    error =
-        grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, ac->addr_str);
+    error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is

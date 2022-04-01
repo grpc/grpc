@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
   // Override the poll function before anything else can happen
   grpc_poll_function = maybe_assert_non_blocking_poll;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
 
   // Start the nonblocking poll thread-local variable as false because the

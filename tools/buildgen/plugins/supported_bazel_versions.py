@@ -1,8 +1,4 @@
-#!/bin/sh
-
-# Test runner for end2end tests from bazel
-
-# Copyright 2017 gRPC authors.
+# Copyright 2022 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,8 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-if [ -n "$3" ]
-  then
-    export GRPC_POLL_STRATEGY=$3
-fi
-"$1" "$2"
+"""Retrieves supported bazel versions from plaintext file."""
+
+_SUPPORTED_VERSIONS_FILE = "bazel/supported_versions.txt"
+
+
+def _get_supported_bazel_versions():
+    versions = []
+    with open(_SUPPORTED_VERSIONS_FILE, "r") as f:
+        for line in f:
+            versions.append(line.strip())
+    return versions
+
+
+def mako_plugin(dictionary):
+    dictionary["supported_bazel_versions"] = _get_supported_bazel_versions()

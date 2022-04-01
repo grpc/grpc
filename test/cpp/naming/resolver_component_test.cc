@@ -674,7 +674,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   if (absl::GetFlag(FLAGS_target_name).empty()) {

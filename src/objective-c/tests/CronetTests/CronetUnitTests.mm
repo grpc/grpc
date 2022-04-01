@@ -58,7 +58,8 @@ static void drain_cq(grpc_completion_queue *cq) {
   [super setUp];
 
   char *argv[] = {(char *)"CoreCronetEnd2EndTests"};
-  grpc_test_init(1, argv);
+  int argc = 1;
+  grpc_test_init(&argc, argv);
 
   grpc_init();
   configureCronet(/*enable_netlog=*/false);

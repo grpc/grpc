@@ -38,7 +38,7 @@ static void test_format_get_request(void) {
   slice = grpc_httpcli_format_get_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "GET /index.html HTTP/1.0\r\n"
+                                     "GET /index.html HTTP/1.1\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
                                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
@@ -64,7 +64,7 @@ static void test_format_post_request(void) {
   slice = grpc_httpcli_format_post_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "POST /index.html HTTP/1.0\r\n"
+                                     "POST /index.html HTTP/1.1\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
                                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
@@ -91,7 +91,7 @@ static void test_format_post_request_no_body(void) {
   slice = grpc_httpcli_format_post_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "POST /index.html HTTP/1.0\r\n"
+                                     "POST /index.html HTTP/1.1\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
                                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
@@ -122,7 +122,7 @@ static void test_format_post_request_content_type_override(void) {
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(
                       slice,
-                      "POST /index.html HTTP/1.0\r\n"
+                      "POST /index.html HTTP/1.1\r\n"
                       "Host: example.com\r\n"
                       "Connection: close\r\n"
                       "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
@@ -136,7 +136,7 @@ static void test_format_post_request_content_type_override(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_format_get_request();
