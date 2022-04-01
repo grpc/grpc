@@ -145,7 +145,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   while (true) {
     stream->Read(&response);
     if (!response.load().empty()) {
-      ASSERT_EQ(response.load().size(), 3);
+      ASSERT_EQ(response.load().size(), 3) << response.DebugString();
       for (const auto& load : response.load()) {
         if (load.in_progress_report_case()) {
           // The special load record that reports the number of in-progress
@@ -186,7 +186,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

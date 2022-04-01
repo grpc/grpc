@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -114,31 +116,34 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   grpc_call_error error;
   grpc_slice details;
 
+  std::string service_config = absl::StrFormat(
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"service\", \"method\": \"method\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 2,\n"
+      "      \"initialBackoff\": \"1s\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"perAttemptRecvTimeout\": \"%ds\",\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}",
+      2 * grpc_test_slowdown_factor());
+
   grpc_arg args[] = {
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1),
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 2,\n"
-              "      \"initialBackoff\": \"1s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"perAttemptRecvTimeout\": \"2s\",\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    }\n"
-              "  } ]\n"
-              "}")),
+      grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+                                     const_cast<char*>(service_config.c_str())),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
-      begin_test(config, "retry", &client_args, nullptr);
+      begin_test(config, "test_retry_per_attempt_recv_timeout_on_last_attempt",
+                 &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 

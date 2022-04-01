@@ -298,7 +298,7 @@ static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
       /*enable_extra_copy=*/false);

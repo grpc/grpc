@@ -16,4 +16,13 @@ Refer to the GitHub `reflection example <https://github.com/grpc/grpc/blob/maste
 Module Contents
 ---------------
 
+Server-side
+...........
+
 .. automodule:: grpc_reflection.v1alpha.reflection
+
+Client-side
+...........
+
+.. automodule:: grpc_reflection.v1alpha.proto_reflection_descriptor_database
+   :member-order: bysource

@@ -209,7 +209,7 @@ class FilterStackCall final : public Call {
 
   bool is_trailers_only() const override {
     bool result = is_trailers_only_;
-    GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.empty());
+    GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.TransportSize() == 0);
     return result;
   }
 
