@@ -77,19 +77,21 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
   // TCP connection attempt.
   {
     MutexLock lock(&mu_);
-    shutdown_ = true;
-    // If the TCP connect had ever succeded, shutdown.
-    if (args_->endpoint != nullptr) {
-      grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(why));
-    }
-    CleanupArgsForFailureLocked();
+    if (!shutdown_) {
+      shutdown_ = true;
+      // If the TCP connect had ever succeded, shutdown.
+      if (args_->endpoint != nullptr) {
+        grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(why));
+      }
+      CleanupArgsForFailureLocked();
 
-    // If we are shutting down while connecting, respond back with
-    // handshake done.
-    // The callback from grpc_tcp_client_connect will perform
-    // the necessary clean up.
-    if (connecting_) {
-      Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
+      // If we are shutting down while connecting, respond back with
+      // handshake done.
+      // The callback from grpc_tcp_client_connect will perform
+      // the necessary clean up.
+      if (connecting_) {
+        Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
+      }
     }
   }
   GRPC_ERROR_UNREF(why);
@@ -126,8 +128,8 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // make sure that we still exist at that point by taking a ref.
   Ref().release();  // Ref held by callback.
   // As we fake the TCP client connection failure when shutdown is called
-  // we don't want to args->endpoint directly.
-  // Instead pass a endpoint_ and swap on success this endpoint to
+  // we don't want to pass args->endpoint directly.
+  // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
   grpc_tcp_client_connect(&connected_, &endpoint_, interested_parties_,
                           args->args, &addr_, args->deadline);
