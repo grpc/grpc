@@ -7702,51 +7702,16 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction cluster contains cluster "
-                                   "specifier plugin name not configured:"));
+                                   "specifier plugin name not configured."));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kRlsServiceValue);
-  name->set_method(kRlsMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kRlsTestKey);
-  header->add_names(kRlsTestKey1);
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  route_lookup_config.set_cache_size_bytes(5000);
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* duplicate_plugin = new_route_config.add_cluster_specifier_plugins();
-  duplicate_plugin->mutable_extension()->set_name(
-      kRlsClusterSpecifierPluginInstanceName);
-  duplicate_plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(absl::StrCat(
-                  "Duplicated definition of cluster_specifier_plugin ",
-                  kRlsClusterSpecifierPluginInstanceName)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
-}
-
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
+  // TODO(donnadionne): Doug is working on adding a new is_optional field to
+  // ClusterSpecifierPlugin in envoyproxy/envoy#20301. Once that goes in, the
+  // behavior we want in this case is that if is_optional is true, then we
+  // ignore that plugin and ignore any routes that refer to that plugin.
+  // However, if is_optional is false, then we want to NACK.
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
@@ -7765,45 +7730,15 @@ TEST_P(RlsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
-                                   "grpc.lookup.v1.RouteLookupConfig"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
-}
-
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
-  // mistakenly packed the inner RouteLookupConfig instead.
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
-      route_lookup_config);
-  plugin->set_is_optional(true);
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Ensure we ignore the cluster specifier plugin and send traffic according to
-  // the default route.
-  WaitForAllBackends();
+  EXPECT_THAT(
+      response_state->error_message,
+      ::testing::HasSubstr(
+          "Unable to locate the cluster specifier plugin in the registry"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
   gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  CreateAndStartBackends(2);
   // Prepare the RLSLookupConfig and configure all the keys; add required_match
   // field which should not be there.
   RouteLookupConfig route_lookup_config;
