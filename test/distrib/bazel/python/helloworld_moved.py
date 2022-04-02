@@ -13,18 +13,20 @@
 # limitations under the License.
 """The Python implementation of the GRPC helloworld.Greeter client."""
 
+from concurrent import futures
 import contextlib
 import datetime
 import logging
 import unittest
 
+# TODO(https://github.com/grpc/grpc/issues/29284)
+# isort: off
 import grpc
-
 from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
-from concurrent import futures
 from google.cloud import helloworld_pb2
 from google.cloud import helloworld_pb2_grpc
+# isort: on
 
 _HOST = 'localhost'
 _SERVER_ADDRESS = '{}:0'.format(_HOST)
@@ -56,6 +58,7 @@ def _listening_server():
 
 
 class ImportTest(unittest.TestCase):
+
     def test_import(self):
         with _listening_server() as port:
             with grpc.insecure_channel('{}:{}'.format(_HOST, port)) as channel:
@@ -66,7 +69,7 @@ class ImportTest(unittest.TestCase):
                     name='you',
                     request_initiation=request_timestamp,
                 ),
-                    wait_for_ready=True)
+                                         wait_for_ready=True)
                 self.assertEqual(response.message, "Hello, you!")
                 self.assertGreater(response.request_duration.nanos, 0)
 

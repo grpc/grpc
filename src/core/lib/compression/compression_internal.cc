@@ -194,13 +194,7 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromString(
 }
 
 uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
-  uint32_t x = 0;
-  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (set_.is_set(i)) {
-      x |= (1u << i);
-    }
-  }
-  return x;
+  return set_.ToInt<uint32_t>();
 }
 
 absl::optional<grpc_compression_algorithm>
