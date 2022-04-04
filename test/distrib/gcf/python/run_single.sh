@@ -4,6 +4,8 @@ source common.sh
 
 set -euxo pipefail
 
+cd $(dirname $0)
+
 RUNTIME="$1"
 ARTIFACT_URL="$2"
 

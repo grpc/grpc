@@ -2,6 +2,8 @@
 
 set -euxo pipefail
 
+cd $(dirname $0)
+
 ARTIFACT_DIRECTORY="$1"
 
 BUCKET_NAME="grpc-gcf-distribtests"
