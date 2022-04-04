@@ -9,7 +9,6 @@ ARTIFACT_DIRECTORY="$1"
 BUCKET_NAME="grpc-gcf-distribtests"
 
 RUN_ID=$(uuidgen)
-BASEDIR=$(dirname "$0")
 
 FAILED_RUNTIMES=""
 
@@ -30,7 +29,7 @@ while read -r RUNTIME; do
   gsutil cp "${ARTIFACT}" "gs://${BUCKET_NAME}/${RUN_ID}/${ARTIFACT_BASENAME}"
 
   echo "Testing runtime ${RUNTIME} with artifact ${ARTIFACT_BASENAME}"
-  $BASEDIR/run_single.sh "${RUNTIME}" "https://storage.googleapis.com/${BUCKET_NAME}/${RUN_ID}/${ARTIFACT_BASENAME}" || FAILED_RUNTIMES="${FAILED_RUNTIMES} ${RUNTIME}"
+  ./run_single.sh "${RUNTIME}" "https://storage.googleapis.com/${BUCKET_NAME}/${RUN_ID}/${ARTIFACT_BASENAME}" || FAILED_RUNTIMES="${FAILED_RUNTIMES} ${RUNTIME}"
 done<<<"${RUNTIMES}"
 
 if [ "$FAILED_RUNTIMES" != "" ]
