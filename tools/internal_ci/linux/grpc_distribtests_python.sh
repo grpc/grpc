@@ -53,6 +53,8 @@ cp -r artifacts/* input_artifacts/ || true
 
 INPUT_ARTIFACTS=$(realpath input_artifacts)
 
+(yes || true) | gcloud components update
+
 # TODO: Put this file back.
 test/distrib/gcf/python/run.sh "$INPUT_ARTIFACTS"
 # Run all python linux distribtests
