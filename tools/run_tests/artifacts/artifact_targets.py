@@ -433,7 +433,7 @@ def targets():
         CSharpExtArtifact('macos', 'ios', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
-        PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'x64', 'cp38-cp38', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'x64', 'cp310-cp310', presubmit=True),
         PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m', presubmit=True),
