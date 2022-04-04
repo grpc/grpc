@@ -738,6 +738,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     template <class ClusterStats>
     explicit ClientStats(const ClusterStats& cluster_stats)
         : cluster_name_(cluster_stats.cluster_name()),
+          eds_service_name_(cluster_stats.cluster_service_name()),
           total_dropped_requests_(cluster_stats.total_dropped_requests()) {
       for (const auto& input_locality_stats :
            cluster_stats.upstream_locality_stats()) {
@@ -752,6 +753,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
     }
 
     const std::string& cluster_name() const { return cluster_name_; }
+    const std::string& eds_service_name() const { return eds_service_name_; }
 
     const std::map<std::string, LocalityStats>& locality_stats() const {
       return locality_stats_;
@@ -770,6 +772,7 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 
    private:
     std::string cluster_name_;
+    std::string eds_service_name_;
     std::map<std::string, LocalityStats> locality_stats_;
     uint64_t total_dropped_requests_ = 0;
     std::map<std::string, uint64_t> dropped_requests_;

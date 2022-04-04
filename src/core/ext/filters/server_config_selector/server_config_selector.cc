@@ -54,14 +54,8 @@ grpc_arg ServerConfigSelectorProvider::MakeChannelArg() const {
       const_cast<ServerConfigSelectorProvider*>(this), &kChannelArgVtable);
 }
 
-RefCountedPtr<ServerConfigSelectorProvider>
-ServerConfigSelectorProvider::GetFromChannelArgs(
-    const grpc_channel_args& args) {
-  ServerConfigSelectorProvider* config_selector_provider =
-      grpc_channel_args_find_pointer<ServerConfigSelectorProvider>(
-          &args, kServerConfigSelectorProviderChannelArgName);
-  return config_selector_provider != nullptr ? config_selector_provider->Ref()
-                                             : nullptr;
+absl::string_view ServerConfigSelectorProvider::ChannelArgName() {
+  return kServerConfigSelectorProviderChannelArgName;
 }
 
 }  // namespace grpc_core
