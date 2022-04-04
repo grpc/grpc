@@ -26,11 +26,13 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -52,9 +54,17 @@ namespace grpc_core {
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct ChannelArgTypeTraits;
 
+// Specialization for ref-counted pointers.
+// Types should expose:
+// static int ChannelArgsCompare(const T* a, const T* b);
 template <typename T>
 struct ChannelArgTypeTraits<
-    T, absl::enable_if_t<std::is_base_of<RefCounted<T>, T>::value, void>> {
+    T,
+    absl::enable_if_t<
+        std::is_base_of<RefCounted<T>, T>::value ||
+            std::is_base_of<RefCounted<T, NonPolymorphicRefCount>, T>::value ||
+            std::is_base_of<DualRefCounted<T>, T>::value,
+        void>> {
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
         // copy
@@ -63,9 +73,26 @@ struct ChannelArgTypeTraits<
         [](void* p) { static_cast<T*>(p)->Unref(); },
         // compare
         [](void* p1, void* p2) {
-          return QsortCompare(*static_cast<const T*>(p1),
-                              *static_cast<const T*>(p2));
+          return T::ChannelArgsCompare(static_cast<const T*>(p1),
+                                       static_cast<const T*>(p2));
         },
+    };
+    return &tbl;
+  };
+};
+
+template <typename T>
+struct ChannelArgTypeTraits<T,
+                            absl::void_t<typename T::RawPointerChannelArgTag>> {
+  static void* TakeUnownedPointer(T* p) { return p; }
+  static const grpc_arg_pointer_vtable* VTable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return p; },
+        // destroy
+        [](void*) {},
+        // compare
+        [](void* p1, void* p2) { return QsortCompare(p1, p2); },
     };
     return &tbl;
   };
@@ -142,20 +169,27 @@ class ChannelArgs {
   template <typename T>
   GRPC_MUST_USE_RESULT absl::enable_if_t<
       std::is_same<const grpc_arg_pointer_vtable*,
-                   decltype(ChannelArgTypeTraits<T>::vtable())>::value,
+                   decltype(ChannelArgTypeTraits<T>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, T* value) const {
     return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
                              ChannelArgTypeTraits<T>::VTable()));
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT absl::enable_if_t<
-      std::is_same<const grpc_arg_pointer_vtable*,
-                   decltype(ChannelArgTypeTraits<T>::VTable())>::value,
-      ChannelArgs>
-  Set(absl::string_view name, RefCountedPtr<T> value) const {
-    return Set(name,
-               Pointer(value.release(), ChannelArgTypeTraits<T>::VTable()));
+  GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
+                                const RefCountedPtr<T>& value) const
+      -> absl::enable_if_t<
+          std::is_same<
+              const grpc_arg_pointer_vtable*,
+              decltype(ChannelArgTypeTraits<absl::remove_cvref_t<
+                           decltype(*value->Ref())>>::VTable())>::value,
+          ChannelArgs> {
+    auto store_value = value->Ref();
+    return Set(
+        name,
+        Pointer(store_value.release(),
+                ChannelArgTypeTraits<
+                    absl::remove_cvref_t<decltype(*store_value)>>::VTable()));
   }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const { return Get(name) != nullptr; }

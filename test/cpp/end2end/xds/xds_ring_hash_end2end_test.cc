@@ -54,8 +54,8 @@ INSTANTIATE_TEST_SUITE_P(
     &XdsTestType::Name);
 
 TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -113,8 +113,6 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
     }
   }
   EXPECT_TRUE(found);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 // Tests that ring hash policy that hashes using channel id ensures all RPCs

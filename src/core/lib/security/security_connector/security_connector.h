@@ -79,6 +79,11 @@ class grpc_security_connector
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
 
+  static int ChannelArgsCompare(const grpc_security_connector* a,
+                                const grpc_security_connector* b) {
+    return a->cmp(b);
+  }
+
   absl::string_view url_scheme() const { return url_scheme_; }
 
  private:
