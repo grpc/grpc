@@ -131,7 +131,9 @@ HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
 absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
                                                           ChannelFilter::Args) {
   auto* transport = args.GetObject<grpc_transport>();
-  GPR_ASSERT(transport != nullptr);
+  if (transport == nullptr) {
+    return absl::InvalidArgumentError("HttpClientFilter needs a transport");
+  }
   return HttpClientFilter(SchemeFromArgs(args),
                           UserAgentFromArgs(args, transport->vtable->name));
 }

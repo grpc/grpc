@@ -30,7 +30,7 @@ BAZEL_INVOCATION_ID="$(uuidgen)"
 echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
 
 tools/bazel \
-  --bazelrc=tools/remote_build/kokoro.bazelrc \
+  --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \
   --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
