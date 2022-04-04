@@ -132,7 +132,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:counted_service",
         "//test/cpp/end2end:rls_server",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

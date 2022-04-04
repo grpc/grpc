@@ -2428,6 +2428,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
         "match",
@@ -2572,10 +2573,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena",
         "gpr_base",
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
+        "promise",
     ],
 )
 
@@ -2597,6 +2600,9 @@ grpc_cc_library(
     name = "grpc_channel_idle_filter",
     srcs = [
         "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/channel_idle/channel_idle_filter.h",
     ],
     deps = [
         "capture",

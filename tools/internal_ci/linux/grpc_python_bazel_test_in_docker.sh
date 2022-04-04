@@ -29,10 +29,3 @@ BAZEL_FLAGS="--test_output=errors"
 bazel test ${BAZEL_FLAGS} ${TEST_TARGETS}
 bazel test --config=python_single_threaded_unary_stream ${BAZEL_FLAGS} ${TEST_TARGETS}
 bazel test --config=python_poller_engine ${BAZEL_FLAGS} ${TEST_TARGETS}
-
-
-# TODO(https://github.com/grpc/grpc/issues/19854): Move this to a new Kokoro
-# job.
-(cd /var/local/git/grpc/bazel/test/python_test_repo;
-  bazel test --test_output=errors //...
-)
