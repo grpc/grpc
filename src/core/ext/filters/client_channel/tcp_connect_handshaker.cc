@@ -46,7 +46,7 @@ class TCPConnectHandshaker : public Handshaker {
  private:
   ~TCPConnectHandshaker() override;
   void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void Finish(grpc_error_handle error);
+  void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void Connected(void* arg, grpc_error_handle error);
 
   Mutex mu_;
@@ -102,7 +102,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
     MutexLock lock(&mu_);
     on_handshake_done_ = on_handshake_done;
   }
-
+  GPR_ASSERT(args->endpoint == nullptr);
   args_ = args;
   const grpc_arg* addr_arg = grpc_channel_args_find(
       args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
