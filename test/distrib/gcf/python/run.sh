@@ -22,7 +22,7 @@ while read -r RUNTIME; do
   BARE_VERSION=$(echo "${RUNTIME}" | sed 's/python//g')
 
   # We sort to get the latest manylinux version.
-  ARTIFACT=$(find ${ARTIFACT_DIRECTORY} -regex '.*grpcio-[0-9\.]+-cp'"${BARE_VERSION}"'-cp'"${BARE_VERSION}"'m?-manylinux.+x86_64\.whl' | sort -r | head -n 1)
+  ARTIFACT=$(find ${ARTIFACT_DIRECTORY} -regex '.*grpcio-[0-9\.]+.+-cp'"${BARE_VERSION}"'-cp'"${BARE_VERSION}"'m?-manylinux.+x86_64\.whl' | sort -r | head -n 1)
   ARTIFACT_BASENAME=$(basename "${ARTIFACT}")
 
   # Upload artifact to GCS so GCF can access it.
