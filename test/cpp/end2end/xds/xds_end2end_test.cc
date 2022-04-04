@@ -970,7 +970,7 @@ class XdsFederationTest : public XdsEnd2endTest {
 // Bootstrap config default client listener template uses new-style name with
 // authority "xds.example.com".
 TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -1021,14 +1021,13 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
   WaitForAllBackends();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // In bootstrap config, authority has no client listener template, so we use the
 // default.
 TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerName =
@@ -1093,13 +1092,12 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   // server.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // Bootstrap entry for that authority specifies a client listener name template.
 TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1168,13 +1166,12 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   // server.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 // Setting server_listener_resource_name_template to start with "xdstp:" and
 // look up xds server under an authority map.
 TEST_P(XdsFederationTest, FederationServer) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -1240,7 +1237,6 @@ TEST_P(XdsFederationTest, FederationServer) {
     authority_balancer_->ads_service()->SetLdsResource(server_listener);
   }
   WaitForAllBackends();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 using XdsFederationLoadReportingTest = XdsFederationTest;
@@ -1250,7 +1246,7 @@ using XdsFederationLoadReportingTest = XdsFederationTest;
 // Sending traffic to both default balancer and authority balancer and checking
 // load reporting with each one.
 TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1355,7 +1351,6 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   EXPECT_EQ(0U, default_client_stats.total_dropped_requests());
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class SecureNamingTest : public XdsEnd2endTest {
@@ -4487,8 +4482,8 @@ TEST_P(CdsTest, Vanilla) {
 }
 
 TEST_P(CdsTest, LogicalDNSClusterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(1);
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -4512,13 +4507,11 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   }
   // RPCs should succeed.
   CheckRpcSendOk();
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4528,13 +4521,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "load_assignment not present for LOGICAL_DNS cluster"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4546,13 +4537,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
       response_state->error_message,
       ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
                            "exactly one locality, found 0"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4566,13 +4555,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
       response_state->error_message,
       ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
                            "exactly one locality, found 2"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4584,13 +4571,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
               ::testing::HasSubstr(
                   "locality for LOGICAL_DNS cluster must have exactly one "
                   "endpoint, found 0"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4604,13 +4589,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
               ::testing::HasSubstr(
                   "locality for LOGICAL_DNS cluster must have exactly one "
                   "endpoint, found 2"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4620,13 +4603,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LbEndpoint endpoint field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4639,13 +4620,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Endpoint address field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4659,13 +4638,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Address socket_address field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4682,13 +4659,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
                                    "custom resolver name set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4703,13 +4678,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress address field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -4725,13 +4698,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress port_value field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -4779,13 +4750,11 @@ TEST_P(CdsTest, AggregateClusterType) {
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
   WaitForBackend(0);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -4843,13 +4812,11 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
     }
   }
   EXPECT_TRUE(found);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -4905,13 +4872,11 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
   WaitForBackend(0);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
@@ -4969,8 +4934,6 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
   WaitForBackend(0);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 // This test covers a bug seen in the wild where the
@@ -4980,8 +4943,8 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
 // name to be reused incorrectly, which triggered an assertion failure
 // in the xds_cluster_impl policy caused by changing its cluster name.
 TEST_P(CdsTest, AggregateClusterReconfigEdsWhileLogicalDnsChildFails) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -5044,13 +5007,11 @@ TEST_P(CdsTest, AggregateClusterReconfigEdsWhileLogicalDnsChildFails) {
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
   WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewClusterName1 = "new_cluster_1";
   const char* kNewEdsServiceName1 = "new_eds_service_name_1";
@@ -5093,8 +5054,6 @@ TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName1));
   WaitForBackend(1);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 // Test that CDS client should send a NACK if cluster type is Logical DNS but
@@ -6020,7 +5979,7 @@ class RlsTest : public XdsEnd2endTest {
 };
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -6083,11 +6042,10 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   CheckRpcSendOk(kNumEchoRpcs, rpc_options);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   RouteConfiguration new_route_config = default_route_config_;
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -6099,52 +6057,16 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction cluster contains cluster "
-                                   "specifier plugin name not configured:"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+                                   "specifier plugin name not configured."));
 }
 
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kRlsServiceValue);
-  name->set_method(kRlsMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kRlsTestKey);
-  header->add_names(kRlsTestKey1);
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  route_lookup_config.set_cache_size_bytes(5000);
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* duplicate_plugin = new_route_config.add_cluster_specifier_plugins();
-  duplicate_plugin->mutable_extension()->set_name(
-      kRlsClusterSpecifierPluginInstanceName);
-  duplicate_plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(absl::StrCat(
-                  "Duplicated definition of cluster_specifier_plugin ",
-                  kRlsClusterSpecifierPluginInstanceName)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
-}
-
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
+  // TODO(donnadionne): Doug is working on adding a new is_optional field to
+  // ClusterSpecifierPlugin in envoyproxy/envoy#20301. Once that goes in, the
+  // behavior we want in this case is that if is_optional is true, then we
+  // ignore that plugin and ignore any routes that refer to that plugin.
+  // However, if is_optional is false, then we want to NACK.
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
   RouteLookupConfig route_lookup_config;
@@ -6162,45 +6084,14 @@ TEST_P(RlsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
-                                   "grpc.lookup.v1.RouteLookupConfig"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
-}
-
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
-  // mistakenly packed the inner RouteLookupConfig instead.
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
-      route_lookup_config);
-  plugin->set_is_optional(true);
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Ensure we ignore the cluster specifier plugin and send traffic according to
-  // the default route.
-  WaitForAllBackends();
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
+  EXPECT_THAT(
+      response_state->error_message,
+      ::testing::HasSubstr(
+          "Unable to locate the cluster specifier plugin in the registry"));
 }
 
 TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  CreateAndStartBackends(2);
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   // Prepare the RLSLookupConfig and configure all the keys; add required_match
   // field which should not be there.
   RouteLookupConfig route_lookup_config;
@@ -6231,7 +6122,6 @@ TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
   EXPECT_THAT(
       response_state->error_message,
       ::testing::HasSubstr("field:requiredMatch error:must not be present"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
@@ -8801,13 +8691,9 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
 
 class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
  protected:
-  static void SetUpTestSuite() {
-    gpr_setenv("GRPC_XDS_EXPERIMENTAL_RBAC", "true");
-  }
+  XdsServerRdsTest() : env_var_("GRPC_XDS_EXPERIMENTAL_RBAC") {}
 
-  static void TearDownTestSuite() {
-    gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC");
-  }
+  ScopedExperimentalEnvVar env_var_;
 };
 
 TEST_P(XdsServerRdsTest, Basic) {

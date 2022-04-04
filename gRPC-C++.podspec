@@ -214,7 +214,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/ext/filters/channel_idle/idle_filter_state.h',
+    ss.source_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+                      'src/core/ext/filters/channel_idle/idle_filter_state.h',
                       'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
@@ -1042,7 +1043,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb_internal.h',
                       'third_party/xxhash/xxhash.h'
 
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/idle_filter_state.h',
+    ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+                              'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
