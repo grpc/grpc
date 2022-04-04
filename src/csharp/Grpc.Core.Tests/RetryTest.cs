@@ -60,23 +60,23 @@ namespace Grpc.Core.Tests
             server.ShutdownAsync().Wait();
         }
 
-        // [Test]
-        // public void ServiceConfigRetryPolicy_UnaryCall()
-        // {
-        //     var counter = new AtomicCounter();
+        [Test]
+        public void ServiceConfigRetryPolicy_UnaryCall()
+        {
+            var counter = new AtomicCounter();
 
-        //     helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
-        //     {
-        //         var attempt = counter.Increment();
-        //         if (attempt <= 2)
-        //         {
-        //             throw new RpcException(new Status(StatusCode.Unavailable, $"Attempt {attempt} failed on purpose"));
-        //         }
-        //         return Task.FromResult("PASS");
-        //     });
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                var attempt = counter.Increment();
+                if (attempt <= 2)
+                {
+                    throw new RpcException(new Status(StatusCode.Unavailable, $"Attempt {attempt} failed on purpose"));
+                }
+                return Task.FromResult("PASS");
+            });
 
-        //     Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
-        // }
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
+        }
 
         [Test]
         public async Task ServiceConfigRetryPolicy_AsyncUnaryCall()
@@ -112,8 +112,8 @@ namespace Grpc.Core.Tests
             });
 
             var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "A B C");
-            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
             CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
         }
     }
 }
