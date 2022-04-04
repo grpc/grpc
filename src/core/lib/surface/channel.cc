@@ -67,7 +67,25 @@ Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
                      ->memory_quota()
                      ->CreateMemoryOwner(target)),
       target_(std::move(target)),
-      channel_stack_(std::move(channel_stack)) {}
+      channel_stack_(std::move(channel_stack)) {
+  // We need to make sure that grpc_shutdown() does not shut things down
+  // until after the channel is destroyed.  However, the channel may not
+  // actually be destroyed by the time grpc_channel_destroy() returns,
+  // since there may be other existing refs to the channel.  If those
+  // refs are held by things that are visible to the wrapped language
+  // (such as outstanding calls on the channel), then the wrapped
+  // language can be responsible for making sure that grpc_shutdown()
+  // does not run until after those refs are released.  However, the
+  // channel may also have refs to itself held internally for various
+  // things that need to be cleaned up at channel destruction (e.g.,
+  // LB policies, subchannels, etc), and because these refs are not
+  // visible to the wrapped language, it cannot be responsible for
+  // deferring grpc_shutdown() until after they are released.  To
+  // accommodate that, we call grpc_init() here and then call
+  // grpc_shutdown() when the channel is actually destroyed, thus
+  // ensuring that shutdown is deferred until that point.
+  grpc_init();
+}
 
 absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
@@ -167,23 +185,6 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
     const char* target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type,
     grpc_transport* optional_transport) {
-  // We need to make sure that grpc_shutdown() does not shut things down
-  // until after the channel is destroyed.  However, the channel may not
-  // actually be destroyed by the time grpc_channel_destroy() returns,
-  // since there may be other existing refs to the channel.  If those
-  // refs are held by things that are visible to the wrapped language
-  // (such as outstanding calls on the channel), then the wrapped
-  // language can be responsible for making sure that grpc_shutdown()
-  // does not run until after those refs are released.  However, the
-  // channel may also have refs to itself held internally for various
-  // things that need to be cleaned up at channel destruction (e.g.,
-  // LB policies, subchannels, etc), and because these refs are not
-  // visible to the wrapped language, it cannot be responsible for
-  // deferring grpc_shutdown() until after they are released.  To
-  // accommodate that, we call grpc_init() here and then call
-  // grpc_shutdown() when the channel is actually destroyed, thus
-  // ensuring that shutdown is deferred until that point.
-  grpc_init();
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type);
   if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
@@ -204,7 +205,6 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
       .SetTarget(target)
       .SetTransport(optional_transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
-    grpc_shutdown();  // Since we won't call destroy_channel().
     return nullptr;
   }
   // We only need to do this for clients here. For servers, this will be
@@ -212,9 +212,7 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     CreateChannelzNode(&builder);
   }
-  auto channel = CreateWithBuilder(&builder);
-  if (!channel.ok()) grpc_shutdown();  // Since we won't call destroy_channel().
-  return channel;
+  return CreateWithBuilder(&builder);
 }
 
 void Channel::UpdateCallSizeEstimate(size_t size) {
@@ -414,6 +412,8 @@ Channel::~Channel() {
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel destroyed"));
   }
+  // See explanation in Channel::Channel().
+  grpc_shutdown();
 }
 
 }  // namespace grpc_core
