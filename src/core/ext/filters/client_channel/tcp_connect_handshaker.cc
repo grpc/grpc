@@ -84,7 +84,6 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
         grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(why));
       }
       CleanupArgsForFailureLocked();
-
       // If we are shutting down while connecting, respond back with
       // handshake done.
       // The callback from grpc_tcp_client_connect will perform
@@ -106,20 +105,15 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   }
   on_handshake_done_ = on_handshake_done;
   args_ = args;
-
   const grpc_arg* addr_arg = grpc_channel_args_find(
       args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
-
   grpc_resolved_address* resolved_address =
       grpc_resolved_address_from_arg(addr_arg);
   GPR_ASSERT(resolved_address != nullptr);
-
   memcpy(&addr_, grpc_resolved_address_from_arg(addr_arg),
          sizeof(grpc_resolved_address));
-
   bind_endpoint_to_pollset_ = grpc_channel_args_find_bool(
       args->args, GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, false);
-
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
   // to mu_, this can result in a deadlock (see
@@ -161,7 +155,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-
+    
     GPR_ASSERT(self->endpoint_ != nullptr);
     self->args_->endpoint = self->endpoint_;
     self->endpoint_ = nullptr;
