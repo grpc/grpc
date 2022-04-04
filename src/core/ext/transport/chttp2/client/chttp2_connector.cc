@@ -308,6 +308,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       gpr_log(GPR_ERROR,
               "Can't create subchannel: channel credentials missing for secure "
               "channel.");
+      gpr_log(GPR_ERROR, "Got args: %s",
+              grpc_channel_args_string(args).c_str());
       return nullptr;
     }
     // Make sure security connector does not already exist in args.
@@ -384,16 +386,18 @@ grpc_channel* grpc_channel_create(const char* target,
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)c_args));
-  grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
-                                    .channel_args_preconditioning()
-                                    .PreconditionChannelArgs(c_args);
   grpc_channel* channel = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
     gpr_once_init(&g_factory_once, FactoryInit);
-    args = creds->update_arguments(args.SetObject(g_factory));
+    grpc_core::ChannelArgs args =
+        creds->update_arguments(grpc_core::CoreConfiguration::Get()
+                                    .channel_args_preconditioning()
+                                    .PreconditionChannelArgs(c_args)
+                                    .SetObject(creds->Ref())
+                                    .SetObject(g_factory));
     // Create channel.
     auto r = grpc_core::CreateChannel(target, args);
     if (r.ok()) {
@@ -435,6 +439,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
           .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority")
+          .SetObject(creds->Ref())
           .ToC();
 
   int flags = fcntl(fd, F_GETFL, 0);

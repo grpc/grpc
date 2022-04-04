@@ -382,7 +382,7 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
         [filter](ChannelStackBuilder* builder) {
           auto args = builder->channel_args();
           if (args.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
-                  .value_or(args.WantMinimalStack())) {
+                  .value_or(!args.WantMinimalStack())) {
             builder->PrependFilter(filter, nullptr);
           }
           return true;

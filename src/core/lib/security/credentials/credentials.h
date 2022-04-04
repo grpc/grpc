@@ -92,6 +92,15 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNEL_CREDENTIALS;
+  }
+
+  static int ChannelArgsCompare(const grpc_channel_credentials* args1,
+                                const grpc_channel_credentials* args2) {
+    return args1->cmp(args2);
+  }
+
   // Creates a security connector for the channel. May also create new channel
   // args for the channel to be used in place of the passed in const args if
   // returned non NULL. In that case the caller is responsible for destroying
