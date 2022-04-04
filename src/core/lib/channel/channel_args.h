@@ -59,47 +59,12 @@ struct ChannelArgTypeTraits;
 // static int ChannelArgsCompare(const T* a, const T* b);
 template <typename T>
 struct ChannelArgTypeTraits<
-    T, absl::enable_if_t<std::is_base_of<RefCounted<T>, T>::value, void>> {
-  static const grpc_arg_pointer_vtable* VTable() {
-    static const grpc_arg_pointer_vtable tbl = {
-        // copy
-        [](void* p) -> void* { return static_cast<T*>(p)->Ref().release(); },
-        // destroy
-        [](void* p) { static_cast<T*>(p)->Unref(); },
-        // compare
-        [](void* p1, void* p2) {
-          return T::ChannelArgsCompare(static_cast<const T*>(p1),
-                                       static_cast<const T*>(p2));
-        },
-    };
-    return &tbl;
-  };
-};
-
-template <typename T>
-struct ChannelArgTypeTraits<
-    T, absl::enable_if_t<
-           std::is_base_of<RefCounted<T, NonPolymorphicRefCount>, T>::value,
-           void>> {
-  static const grpc_arg_pointer_vtable* VTable() {
-    static const grpc_arg_pointer_vtable tbl = {
-        // copy
-        [](void* p) -> void* { return static_cast<T*>(p)->Ref().release(); },
-        // destroy
-        [](void* p) { static_cast<T*>(p)->Unref(); },
-        // compare
-        [](void* p1, void* p2) {
-          return T::ChannelArgsCompare(static_cast<const T*>(p1),
-                                       static_cast<const T*>(p2));
-        },
-    };
-    return &tbl;
-  };
-};
-
-template <typename T>
-struct ChannelArgTypeTraits<
-    T, absl::enable_if_t<std::is_base_of<DualRefCounted<T>, T>::value, void>> {
+    T,
+    absl::enable_if_t<
+        std::is_base_of<RefCounted<T>, T>::value ||
+            std::is_base_of<RefCounted<T, NonPolymorphicRefCount>, T>::value ||
+            std::is_base_of<DualRefCounted<T>, T>::value,
+        void>> {
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
         // copy
