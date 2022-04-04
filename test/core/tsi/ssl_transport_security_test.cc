@@ -1044,8 +1044,10 @@ void ssl_tsi_test_do_handshake_with_custom_bio_pair() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_fixture->network_bio_buf_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
   ssl_fixture->ssl_bio_buf_size = 256;
+#endif
   ssl_fixture->force_client_auth = true;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
