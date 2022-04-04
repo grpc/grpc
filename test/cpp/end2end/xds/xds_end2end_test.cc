@@ -1029,14 +1029,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class ScopedExperimentalEnvVar {
    public:
-    explicit ScopedExperimentalEnvVar(const char* env_var)
-        : env_var_(env_var) {
+    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
       gpr_setenv(env_var_, "true");
     }
 
-    ~ScopedExperimentalEnvVar() {
-      gpr_unsetenv(env_var_);
-    }
+    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
 
    private:
     const char* env_var_;
