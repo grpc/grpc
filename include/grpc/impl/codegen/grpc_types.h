@@ -457,11 +457,11 @@ typedef struct {
 /** Channel argument for tcp_connect_handshaker, it indicates the address to
  * connect to. */
 #define GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS \
-  "grpc.tcp_handshaker_resolved_address"
+  "grpc.internal.tcp_handshaker_resolved_address"
 /** Channel argument for tcp_connect_handshaker, it indicates whether the
  *  handshaker should bind the endpoint to the pollset.  */
 #define GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET \
-  "grpc.tcp_handshaker_bind_endpoint_to_pollset"
+  "grpc.internal.tcp_handshaker_bind_endpoint_to_pollset"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
