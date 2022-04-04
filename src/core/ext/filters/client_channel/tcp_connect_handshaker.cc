@@ -52,7 +52,6 @@ class TCPConnectHandshaker : public Handshaker {
   Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // Endpoint and read buffer to destroy after a shutdown.
-  grpc_endpoint* endpoint_ = nullptr;
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
@@ -124,8 +123,9 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // we don't want to pass args->endpoint directly.
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
-  grpc_tcp_client_connect(&connected_, &endpoint_, interested_parties_,
-                          args->args, &addr_, args->deadline);
+  grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
+                          interested_parties_, args->args, &addr_,
+                          args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
@@ -139,8 +139,9 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       } else {
         error = GRPC_ERROR_REF(error);
       }
-      if (self->endpoint_ != nullptr) {
-        grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
+      if (self->endpoint_to_destroy_ != nullptr) {
+        grpc_endpoint_shutdown(self->endpoint_to_destroy_,
+                               GRPC_ERROR_REF(error));
       }
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
@@ -153,9 +154,9 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-    GPR_ASSERT(self->endpoint_ != nullptr);
-    self->args_->endpoint = self->endpoint_;
-    self->endpoint_ = nullptr;
+    GPR_ASSERT(self->endpoint_to_destroy_ != nullptr);
+    self->args_->endpoint = self->endpoint_to_destroy_;
+    self->endpoint_to_destroy_ = nullptr;
     if (self->bind_endpoint_to_pollset_) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
                                        self->interested_parties_);
@@ -168,9 +169,6 @@ TCPConnectHandshaker::~TCPConnectHandshaker() {
   if (endpoint_to_destroy_ != nullptr) {
     grpc_endpoint_destroy(endpoint_to_destroy_);
   }
-  if (endpoint_ != nullptr) {
-    grpc_endpoint_destroy(endpoint_);
-  }
   if (read_buffer_to_destroy_ != nullptr) {
     grpc_slice_buffer_destroy_internal(read_buffer_to_destroy_);
     gpr_free(read_buffer_to_destroy_);
@@ -179,8 +177,6 @@ TCPConnectHandshaker::~TCPConnectHandshaker() {
 }
 
 void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
-  endpoint_to_destroy_ = args_->endpoint;
-  args_->endpoint = nullptr;
   read_buffer_to_destroy_ = args_->read_buffer;
   args_->read_buffer = nullptr;
   grpc_channel_args_destroy(args_->args);
