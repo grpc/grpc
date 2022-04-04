@@ -124,10 +124,12 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
               static_cast<grpc_compression_algorithm>(
                   GRPC_COMPRESS_ALGORITHMS_COUNT - 1));
   }
-  compression_options.enabled_algorithms_bitset =
-      channel_args.GetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)
-          .value_or(0) |
-      1 /* always support no compression */;
+  auto enabled_algorithms_bitset =
+      channel_args.GetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET);
+  if (enabled_algorithms_bitset.has_value()) {
+    compression_options.enabled_algorithms_bitset =
+        *enabled_algorithms_bitset | 1 /* always support no compression */;
+  }
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
