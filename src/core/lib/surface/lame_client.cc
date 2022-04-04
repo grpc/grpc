@@ -190,9 +190,9 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
           .PreconditionChannelArgs(nullptr)
           .Set(GRPC_ARG_LAME_FILTER_ERROR,
                grpc_core::ChannelArgs::Pointer(
-                   &error, &grpc_core::kLameFilterErrorArgVtable));
+                   new grpc_error_handle(error),
+                   &grpc_core::kLameFilterErrorArgVtable));
   auto channel = grpc_core::Channel::Create(target, std::move(args),
                                             GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  GRPC_ERROR_UNREF(error);
   return channel.ok() ? channel->release()->c_ptr() : nullptr;
 }

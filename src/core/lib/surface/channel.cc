@@ -157,7 +157,7 @@ void CreateChannelzNode(ChannelStackBuilder* builder) {
   builder->SetChannelArgs(
       args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)
           .Set(GRPC_ARG_CHANNELZ_CHANNEL_NODE,
-               ChannelArgs::Pointer(channelz_node.get(),
+               ChannelArgs::Pointer(channelz_node.release(),
                                     &channelz_node_arg_vtable)));
 }
 
