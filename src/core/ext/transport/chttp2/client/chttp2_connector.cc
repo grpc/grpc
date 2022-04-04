@@ -78,7 +78,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     GPR_ASSERT(endpoint_ == nullptr);
     memcpy(&resolved_address_, args.address, sizeof(grpc_resolved_address));
   }
-
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
                                    &resolved_address_),
@@ -88,7 +87,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   };
   grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
       args_.channel_args, args_to_add.data(), args_to_add.size());
-
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
