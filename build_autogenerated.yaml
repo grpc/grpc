@@ -312,6 +312,7 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
@@ -1787,6 +1788,7 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
