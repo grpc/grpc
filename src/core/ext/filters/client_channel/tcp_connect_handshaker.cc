@@ -77,16 +77,12 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
     MutexLock lock(&mu_);
     if (!shutdown_) {
       shutdown_ = true;
-      // If the TCP connect had ever succeded, shutdown.
-      if (args_->endpoint != nullptr) {
-        grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(why));
-      }
-      CleanupArgsForFailureLocked();
       // If we are shutting down while connecting, respond back with
       // handshake done.
       // The callback from grpc_tcp_client_connect will perform
       // the necessary clean up.
       if (on_handshake_done_ != nullptr) {
+        CleanupArgsForFailureLocked();
         Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
       }
     }
