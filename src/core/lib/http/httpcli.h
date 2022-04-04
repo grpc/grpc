@@ -208,7 +208,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
-  grpc_resolved_address current_address_;
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;
   int have_read_byte_ ABSL_GUARDED_BY(mu_) = 0;
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
