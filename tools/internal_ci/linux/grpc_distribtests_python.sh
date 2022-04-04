@@ -51,10 +51,14 @@ rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
 
+INPUT_ARTIFACTS=$(realpath input_artifacts)
+
+# TODO: Put this file back.
+test/distrib/gcf/python/run.sh "$INPUT_ARTIFACTS"
 # Run all python linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
-tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
+# tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
