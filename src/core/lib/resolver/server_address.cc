@@ -153,8 +153,7 @@ std::string ServerAddress::ToString() const {
       grpc_sockaddr_to_string(&address_, false),
   };
   if (args_ != nullptr) {
-    parts.emplace_back(
-        absl::StrCat("args={", grpc_channel_args_string(args_), "}"));
+    parts.emplace_back(absl::StrCat("args=", grpc_channel_args_string(args_)));
   }
   if (!attributes_.empty()) {
     std::vector<std::string> attrs;
