@@ -51,12 +51,11 @@ class TCPConnectHandshaker : public Handshaker {
 
   Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  bool connecting_ ABSL_GUARDED_BY(mu_) = false;
   // Endpoint and read buffer to destroy after a shutdown.
   grpc_endpoint* endpoint_ = nullptr;
   grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
-  grpc_closure* on_handshake_done_ = nullptr;
+  grpc_closure* on_handshake_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   grpc_pollset_set* interested_parties_ = nullptr;
   grpc_polling_entity pollent_;
   HandshakerArgs* args_ = nullptr;
@@ -88,7 +87,7 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
       // handshake done.
       // The callback from grpc_tcp_client_connect will perform
       // the necessary clean up.
-      if (connecting_) {
+      if (on_handshake_done_ != nullptr) {
         Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
       }
     }
@@ -101,9 +100,9 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                        HandshakerArgs* args) {
   {
     MutexLock lock(&mu_);
-    connecting_ = true;
+    on_handshake_done_ = on_handshake_done;
   }
-  on_handshake_done_ = on_handshake_done;
+
   args_ = args;
   const grpc_arg* addr_arg = grpc_channel_args_find(
       args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
@@ -134,7 +133,6 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       static_cast<TCPConnectHandshaker*>(arg));
   {
     MutexLock lock(&self->mu_);
-    self->connecting_ = false;
     if (error != GRPC_ERROR_NONE || self->shutdown_) {
       if (error == GRPC_ERROR_NONE) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
@@ -192,6 +190,7 @@ void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
 void TCPConnectHandshaker::Finish(grpc_error_handle error) {
   grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
+  on_handshake_done_ = nullptr;
 }
 
 //
