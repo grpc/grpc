@@ -155,7 +155,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-    
+
     GPR_ASSERT(self->endpoint_ != nullptr);
     self->args_->endpoint = self->endpoint_;
     self->endpoint_ = nullptr;
