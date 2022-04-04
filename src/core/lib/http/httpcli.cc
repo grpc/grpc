@@ -295,14 +295,12 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
         "failed to create security connector", &overall_error_, 1));
     return;
   }
-
   memcpy(&current_address_, addr, sizeof(grpc_resolved_address));
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_security_connector_to_arg(sc.get()),
       grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
                                    &current_address_),
   };
-
   const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector
                                          : channel_args_,
@@ -316,7 +314,6 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   grpc_endpoint* ep = ep_;
   ep_ = nullptr;
   own_endpoint_ = false;
-
   handshake_mgr_->DoHandshake(ep, new_args, deadline_,
                               /*acceptor=*/nullptr, OnHandshakeDone,
                               /*user_data=*/this);
