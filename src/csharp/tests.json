@@ -42,6 +42,7 @@
     "Grpc.Core.Tests.PerformanceTest",
     "Grpc.Core.Tests.PInvokeTest",
     "Grpc.Core.Tests.ResponseHeadersTest",
+    "Grpc.Core.Tests.RetryTest",
     "Grpc.Core.Tests.SanityTest",
     "Grpc.Core.Tests.ServerBindFailedTest",
     "Grpc.Core.Tests.ServerTest",
