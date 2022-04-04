@@ -35,7 +35,6 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/resolved_address_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
@@ -295,10 +294,12 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
         "failed to create security connector", &overall_error_, 1));
     return;
   }
+  std::string address = grpc_sockaddr_to_uri(addr);
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_security_connector_to_arg(sc.get()),
-      grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
-                                   const_cast<grpc_resolved_address*>(addr)),
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
+          const_cast<char*>(address.c_str())),
   };
   const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector

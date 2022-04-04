@@ -34,7 +34,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/resolved_address_utils.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -69,6 +68,7 @@ Chttp2Connector::~Chttp2Connector() {
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
+  std::string address;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
@@ -76,11 +76,12 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     result_ = result;
     notify_ = notify;
     GPR_ASSERT(endpoint_ == nullptr);
-    memcpy(&resolved_address_, args.address, sizeof(grpc_resolved_address));
+    address = grpc_sockaddr_to_uri(args.address);
   }
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      grpc_resolved_address_to_arg(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
-                                   &resolved_address_),
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
+          const_cast<char*>(address.c_str())),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET),
           1),

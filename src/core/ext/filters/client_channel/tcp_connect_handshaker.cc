@@ -23,10 +23,10 @@
 #include <string.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/channel/resolved_address_utils.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 
@@ -99,13 +99,11 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   }
   GPR_ASSERT(args->endpoint == nullptr);
   args_ = args;
-  const grpc_arg* addr_arg = grpc_channel_args_find(
+  char* address = grpc_channel_args_find_string(
       args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
-  grpc_resolved_address* resolved_address =
-      grpc_resolved_address_from_arg(addr_arg);
-  GPR_ASSERT(resolved_address != nullptr);
-  memcpy(&addr_, grpc_resolved_address_from_arg(addr_arg),
-         sizeof(grpc_resolved_address));
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address);
+  GPR_ASSERT(uri.ok());
+  GPR_ASSERT(grpc_parse_uri(*uri, &addr_));
   bind_endpoint_to_pollset_ = grpc_channel_args_find_bool(
       args->args, GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, false);
   // In some implementations, the closure can be flushed before

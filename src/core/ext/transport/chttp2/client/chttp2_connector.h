@@ -63,7 +63,6 @@ class Chttp2Connector : public SubchannelConnector {
   grpc_closure on_timeout_;
   absl::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
-  grpc_resolved_address resolved_address_;
 };
 
 }  // namespace grpc_core
