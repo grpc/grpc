@@ -66,7 +66,7 @@ rvm use 3.1.0
 set -x
 RUBY_3_1_0_TAR="${HOME}/.rake-compiler/sources/ruby-3.1.0.tar.gz"
 mkdir -p "$(dirname $RUBY_3_1_0_TAR)"
-curl -L "https://ftp.ruby-lang.org/pub/ruby/3.0/$(basename $RUBY_3_1_0_TAR)" -o "$RUBY_3_1_0_TAR"
+curl -L "https://ftp.ruby-lang.org/pub/ruby/3.1/$(basename $RUBY_3_1_0_TAR)" -o "$RUBY_3_1_0_TAR"
 ccache -c
 ruby --version | grep 'ruby 3.1.0'
 tools/run_tests/helper_scripts/bundle_install_wrapper.sh
