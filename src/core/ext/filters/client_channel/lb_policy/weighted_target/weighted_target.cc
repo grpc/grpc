@@ -210,6 +210,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
+  bool update_in_progress_ = false;
 
   // Children.
   std::map<std::string, OrphanablePtr<WeightedChild>> targets_;
@@ -308,6 +309,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   // Update all children.
   absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
+  update_in_progress_ = true;
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
@@ -319,10 +321,17 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     }
     targets_[name]->UpdateLocked(config, std::move(addresses), args.args);
   }
+  update_in_progress_ = false;
   UpdateStateLocked();
 }
 
 void WeightedTargetLb::UpdateStateLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] scanning children to determine "

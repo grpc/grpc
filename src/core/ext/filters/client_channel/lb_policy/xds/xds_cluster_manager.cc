@@ -196,6 +196,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
+  bool update_in_progress_ = false;
 
   // Children.
   std::map<std::string, OrphanablePtr<ClusterChild>> children_;
@@ -265,6 +266,7 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Add or update the children in the new config.
+  update_in_progress_ = true;
   for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
@@ -277,10 +279,17 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     }
     it->second->UpdateLocked(config, args.addresses, args.args);
   }
+  update_in_progress_ = false;
   UpdateStateLocked();
 }
 
 void XdsClusterManagerLb::UpdateStateLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   // Also count the number of children in each state, to determine the
   // overall state.
   size_t num_ready = 0;
