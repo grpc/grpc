@@ -158,6 +158,9 @@ std::string GetHeaderIncludes(grpc_generator::File* file,
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
+    // port_def.inc must be included after all other includes.
+    std::vector<std::string> wrapHeadersTop = {"google/protobuf/port_def.inc"};
+    PrintIncludes(printer.get(), wrapHeadersTop, params.use_system_headers, "");
     printer->Print(vars, "\n");
 
     vars["message_header_ext"] = params.message_header_extension.empty()
@@ -1584,7 +1587,7 @@ std::string GetHeaderServices(grpc_generator::File* file,
 }
 
 std::string GetHeaderEpilogue(grpc_generator::File* file,
-                              const Parameters& /*params*/) {
+                              const Parameters& params) {
   std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -1605,6 +1608,8 @@ std::string GetHeaderEpilogue(grpc_generator::File* file,
     }
 
     printer->Print(vars, "\n");
+    std::vector<std::string> wrapHeadersBottom = {"google/protobuf/port_undef.inc"};
+    PrintIncludes(printer.get(), wrapHeadersBottom, params.use_system_headers, "");
     printer->Print(vars, "#endif  // GRPC_$filename_identifier$__INCLUDED\n");
 
     printer->Print(file->GetTrailingComments("//").c_str());
@@ -1664,6 +1669,9 @@ std::string GetSourceIncludes(grpc_generator::File* file,
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
+    // port_def.inc must be included after all other includes.
+    std::vector<std::string> wrapHeadersTop = {"google/protobuf/port_def.inc"};
+    PrintIncludes(printer.get(), wrapHeadersTop, params.use_system_headers, "");
 
     if (!file->package().empty()) {
       std::vector<std::string> parts = file->package_parts();
@@ -2120,7 +2128,7 @@ std::string GetSourceServices(grpc_generator::File* file,
 }
 
 std::string GetSourceEpilogue(grpc_generator::File* file,
-                              const Parameters& /*params*/) {
+                              const Parameters& params) {
   std::string temp;
 
   if (!file->package().empty()) {
@@ -2362,6 +2370,8 @@ std::string GetMockEpilogue(grpc_generator::File* file,
     }
     temp.append("\n");
   }
+  std::vector<std::string> wrapHeadersBottom = {"google/protobuf/port_undef.inc"};
+  PrintIncludes(file->CreatePrinter(&temp).get(), wrapHeadersBottom, params.use_system_headers, "");
 
   return temp;
 }
