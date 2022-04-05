@@ -205,7 +205,8 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
   }
 }
 
-void AwsExternalAccountCredentials::AddMetadataRequestHeaders(grpc_http_request* request) {
+void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
+    grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
@@ -250,7 +251,6 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   } else {
     http_request_creds = CreateHttpRequestSSLCredentials();
   }
-
   http_request_ =
       HttpRequest::Get(std::move(*uri), nullptr /* channel args */,
                        ctx_->pollent, &request, ctx_->deadline, &ctx_->closure,
