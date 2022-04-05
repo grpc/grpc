@@ -109,7 +109,7 @@ class PythonArtifact:
             self.labels.append('presubmit')
         self.py_version = py_version
         if _LATEST_MANYLINUX in platform:
-            self.labels.apend('latest-manylinux')
+            self.labels.append('latest-manylinux')
         if 'manylinux' in platform:
             self.labels.append('linux')
         if 'linux_extra' in platform:
