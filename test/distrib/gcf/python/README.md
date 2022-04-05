@@ -3,7 +3,7 @@
 This distribtest acts as a smoke test for usage of the `grpcio` Python wheel in
 the GCF environment. This test is dependent on two long-lived GCP resources:
 
-- `gcf-distribtest-topic` Pub Sub Topic
+- `gcf-distribtest-topic` Pub Sub Topic with default configuration.
 - `grpc-gcf-distribtest` GCS Bucket. This bucket has 1 day TTL on all artifacts.
 
 

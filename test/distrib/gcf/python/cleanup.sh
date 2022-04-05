@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cd "$(dirname "$0")"
+
 # Shellcheck cant find the included file.
 # shellcheck disable=SC1091
 source common.sh
