@@ -12070,8 +12070,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P1:locality1, child number 1
   // - P2:locality2, child number 2
   EdsResourceArgs args({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight,
-       0},
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        1},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
@@ -12085,8 +12084,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P2:locality3, child number 3 (new child)
   // Child number 1 will be deactivated.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight,
-       0},
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
       {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        1},
       {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
@@ -12100,8 +12098,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
   // - P2:locality3, child number 3
   // Child number 1 will be deactivated.
   args = EdsResourceArgs({
-      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight,
-       0},
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
       {"locality4", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        1},
       {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
