@@ -81,7 +81,7 @@ EXTERNAL_PROTO_LIBRARIES = {
 }
 
 
-def _maybe_is_supported_external_lib(name: str) -> Optional[str]:
+def _maybe_get_internal_path(name: str) -> Optional[str]:
     for key in EXTERNAL_PROTO_LIBRARIES:
         if name.startswith('@' + key):
             return key
@@ -204,7 +204,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
                 # @REPO_NAME to a valid path prefix. At this stage, we need
                 # to check repo name, since the label/path mapping is not
                 # available in BUILD files.
-                external_library_name = _maybe_is_supported_external_lib(src)
+                external_library_name = _maybe_get_internal_path(src)
                 if external_library_name is not None:
                     result.append(
                         src.replace(
