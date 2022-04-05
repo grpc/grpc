@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 ARTIFACT_DIRECTORY="$1"
 
@@ -15,13 +15,13 @@ FAILED_RUNTIMES=""
 # This is the only programmatic way to get access to the list of runtimes.
 # While hacky, it's better than the alternative -- manually upgrading a
 # hand-curated list every few months.
-RUNTIMES=$(gcloud functions deploy --help | egrep -o "python[0-9]+" | sort | uniq)
+RUNTIMES=$(gcloud functions deploy --help | grep -Eo "python[0-9]+" | sort | uniq)
 
 while read -r RUNTIME; do
-  BARE_VERSION=$(echo "${RUNTIME}" | sed 's/python//g')
+  BARE_VERSION=${RUNTIME//python/}
 
   # We sort to get the latest manylinux version.
-  ARTIFACT=$(find ${ARTIFACT_DIRECTORY} -regex '.*grpcio-[0-9\.]+.+-cp'"${BARE_VERSION}"'-cp'"${BARE_VERSION}"'m?-manylinux.+x86_64\.whl' | sort -r | head -n 1)
+  ARTIFACT=$(find "${ARTIFACT_DIRECTORY}" -regex '.*grpcio-[0-9\.]+.+-cp'"${BARE_VERSION}"'-cp'"${BARE_VERSION}"'m?-manylinux.+x86_64\.whl' | sort -r | head -n 1)
   ARTIFACT_BASENAME=$(basename "${ARTIFACT}")
 
   # Upload artifact to GCS so GCF can access it.

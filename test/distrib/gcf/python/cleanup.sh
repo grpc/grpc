@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Shellcheck cant find the included file.
+# shellcheck disable=SC1091
 source common.sh
 
 set -euxo pipefail

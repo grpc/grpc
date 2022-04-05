@@ -1,10 +1,12 @@
 #!/bin/bash
 
+# Shellcheck cant find the included file.
+# shellcheck disable=SC1091
 source common.sh
 
 set -euxo pipefail
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 RUNTIME="$1"
 ARTIFACT_URL="$2"
@@ -33,7 +35,7 @@ DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_pu
 HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 
 # Send Requests
-for i in $(seq 1 "${REQUEST_COUNT}"); do
+for _ in $(seq 1 "${REQUEST_COUNT}"); do
   GCP_IDENTITY_TOKEN=$(gcloud auth print-identity-token 2>/dev/null);
   curl -v -H "Authorization: Bearer $GCP_IDENTITY_TOKEN" "${HTTP_URL}"
 done
