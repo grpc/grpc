@@ -35,10 +35,6 @@ const char* kDefaultRegionEnvVar = "AWS_DEFAULT_REGION";
 const char* kAccessKeyIdEnvVar = "AWS_ACCESS_KEY_ID";
 const char* kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
 const char* kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
-// const char* kImdsV2SessionTokenHeader = "x-aws-ec2-metadata-token";
-// const char* kImdsV2SessionTokenTTLHeader =
-// "x-aws-ec2-metadata-token-ttl-seconds"; const char* kImdsV2SessionTokenTTL =
-// "300";
 
 std::string UrlEncode(const absl::string_view& s) {
   const char* hex = "0123456789ABCDEF";
@@ -209,7 +205,7 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
   }
 }
 
-void AwsExternalAccountCredentials::AddHeaders(grpc_http_request* request) {
+void AwsExternalAccountCredentials::AddMetadataRequestHeaders(grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
@@ -245,7 +241,7 @@ void AwsExternalAccountCredentials::RetrieveRegion() {
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
-  AddHeaders(&request);
+  AddMetadataRequestHeaders(&request);
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRegion, this, nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
@@ -299,7 +295,7 @@ void AwsExternalAccountCredentials::RetrieveRoleName() {
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
-  AddHeaders(&request);
+  AddMetadataRequestHeaders(&request);
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveRoleName, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
@@ -365,7 +361,7 @@ void AwsExternalAccountCredentials::RetrieveSigningKeys() {
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
-  AddHeaders(&request);
+  AddMetadataRequestHeaders(&request);
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSigningKeys, this, nullptr);
   // TODO(ctiller): use the caller's resource quota.
   RefCountedPtr<grpc_channel_credentials> http_request_creds;

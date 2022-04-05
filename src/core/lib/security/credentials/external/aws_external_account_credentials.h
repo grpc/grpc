@@ -59,7 +59,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
   void FinishRetrieveSubjectToken(std::string subject_token,
                                   grpc_error_handle error);
 
-  void AddHeaders(grpc_http_request* request);
+  void AddMetadataRequestHeaders(grpc_http_request* request);
 
   std::string audience_;
   OrphanablePtr<HttpRequest> http_request_;
