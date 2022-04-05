@@ -203,6 +203,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     if (fd < 0) {
       switch (errno) {
         case EINTR:
+        case ECONNABORTED:
           continue;
         case EAGAIN:
           grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
