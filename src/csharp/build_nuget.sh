@@ -27,6 +27,10 @@ cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/csharp_ext_* nativelibs || true
 mkdir -p protoc_plugins
 cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/protoc_* protoc_plugins || true
 
+# Collect protobuf well-known protos from the third_party/protobuf submodule.
+mkdir -p protobuf_wkt_protos
+cp ../../third_party/protobuf/src/google/protobuf/{any,api,descriptor,duration,empty,field_mask,source_context,struct,timestamp,type,wrappers}.proto protobuf_wkt_protos
+
 # Add current timestamp to dev nugets
 ./nuget_helpers/expand_dev_version.sh
 
@@ -74,6 +78,9 @@ dotnet pack --configuration Release Grpc.Tools --output ../../artifacts
 dotnet pack --configuration Release Grpc --output ../../artifacts
 dotnet pack --configuration Release Grpc.Core.NativeDebug --output ../../artifacts
 dotnet pack --configuration Release Grpc.Core.Xamarin --output ../../artifacts
+
+# Create a zipfile with all the artifacts needed to create the Grpc.Tools nuget later.
+zip -r ../../artifacts/csharp_grpc_tools_artifacts.zip protoc_plugins/ protobuf_wkt_protos/
 
 # Create a zipfile with all the nugets we just created
 cd ../../artifacts
