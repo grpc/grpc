@@ -208,6 +208,8 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
       status = alts_grpc_record_protocol_unprotect(
           protector->unrecord_protocol, &protector->protected_staging_sb,
           unprotected_slices);
+      grpc_slice_buffer_reset_and_unref_internal(
+          &protector->protected_staging_sb);
     }
     protector->parsed_frame_size = 0;
     if (status != TSI_OK) {
