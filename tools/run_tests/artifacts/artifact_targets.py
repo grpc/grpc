@@ -22,6 +22,7 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 import python_utils.jobset as jobset
 
+_LATEST_MANYLINUX = "manylinux2014"
 
 def create_docker_jobspec(name,
                           dockerfile_dir,
@@ -107,6 +108,8 @@ class PythonArtifact:
         if presubmit:
             self.labels.append('presubmit')
         self.py_version = py_version
+        if _LATEST_MANYLINUX in platform:
+            self.labels.apend('latest-manylinux')
         if 'manylinux' in platform:
             self.labels.append('linux')
         if 'linux_extra' in platform:
