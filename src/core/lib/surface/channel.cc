@@ -85,6 +85,15 @@ Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
+  auto channelz_node = channelz_node_;
+  *channel_stack_->on_destroy = [channelz_node]() {
+    if (channelz_node != nullptr) {
+      channelz_node->AddTraceEvent(
+          channelz::ChannelTrace::Severity::Info,
+          grpc_slice_from_static_string("Channel destroyed"));
+    }
+    grpc_shutdown();
+  };
 }
 
 absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
@@ -405,20 +414,6 @@ grpc_call* grpc_channel_create_registered_call(
 
   return call;
 }
-
-namespace grpc_core {
-
-Channel::~Channel() {
-  if (channelz_node_ != nullptr) {
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string("Channel destroyed"));
-  }
-  // See explanation in Channel::Channel().
-  grpc_shutdown();
-}
-
-}  // namespace grpc_core
 
 void grpc_channel_destroy_internal(grpc_channel* c_channel) {
   grpc_core::RefCountedPtr<grpc_core::Channel> channel(
