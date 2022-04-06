@@ -111,6 +111,14 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   }
   bind_endpoint_to_pollset_ = grpc_channel_args_find_bool(
       args->args, GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, false);
+  const char* args_to_remove[] = {
+      GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
+      GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET};
+  // Update args to not contain the args relevant to TCP connect handshaker.
+  grpc_channel_args* channel_args = grpc_channel_args_copy_and_remove(
+      args->args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
+  grpc_channel_args_destroy(args->args);
+  args->args = channel_args;
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
   // to mu_, this can result in a deadlock (see
