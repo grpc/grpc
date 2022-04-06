@@ -68,7 +68,6 @@ Chttp2Connector::~Chttp2Connector() {
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
-  std::string address;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
@@ -76,8 +75,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     result_ = result;
     notify_ = notify;
     GPR_ASSERT(endpoint_ == nullptr);
-    address = grpc_sockaddr_to_uri(args.address);
   }
+  std::string address = grpc_sockaddr_to_uri(args.address);
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
