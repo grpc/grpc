@@ -231,7 +231,6 @@ static void on_read(void* arg, grpc_error_handle err) {
             "Dropped >= %d new connection attempts due to high memory pressure",
             dropped_connections_count);
       }
-      gpr_log(GPR_INFO, "Drop incoming connection: high memory pressure");
       close(fd);
       continue;
     }
