@@ -57,6 +57,9 @@ UPB_INLINE char* xds_core_v3_Authority_serialize_ex(const xds_core_v3_Authority*
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &xds_core_v3_Authority_msginit, options, arena, len);
 }
+UPB_INLINE void xds_core_v3_Authority_clear_name(const xds_core_v3_Authority* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView xds_core_v3_Authority_name(const xds_core_v3_Authority* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
 }
