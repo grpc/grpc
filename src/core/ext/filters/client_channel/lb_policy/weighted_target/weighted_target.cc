@@ -282,6 +282,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] Received update", this);
   }
+  update_in_progress_ = true;
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the targets not in the new config.
@@ -292,34 +293,25 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       child->DeactivateLocked();
     }
   }
-  // Create any children that don't already exist.
-  // Note that we add all children before updating any of them, because
-  // an update may trigger a child to immediately update its
-  // connectivity state (e.g., reporting TRANSIENT_FAILURE immediately when
-  // receiving an empty address list), and we don't want to return an
-  // overall state with incomplete data.
-  for (const auto& p : config_->target_map()) {
-    const std::string& name = p.first;
-    auto it = targets_.find(name);
-    if (it == targets_.end()) {
-      targets_.emplace(name, MakeOrphanable<WeightedChild>(
-                                 Ref(DEBUG_LOCATION, "WeightedChild"), name));
-    }
-  }
   // Update all children.
   absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
-  update_in_progress_ = true;
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
+    auto& target = targets_[name];
+    // Create child if it does not already exist.
+    if (target == nullptr) {
+      target = MakeOrphanable<WeightedChild>(
+          Ref(DEBUG_LOCATION, "WeightedChild"), name);
+    }
     absl::StatusOr<ServerAddressList> addresses;
     if (address_map.ok()) {
       addresses = std::move((*address_map)[name]);
     } else {
       addresses = address_map.status();
     }
-    targets_[name]->UpdateLocked(config, std::move(addresses), args.args);
+    target->UpdateLocked(config, std::move(addresses), args.args);
   }
   update_in_progress_ = false;
   UpdateStateLocked();

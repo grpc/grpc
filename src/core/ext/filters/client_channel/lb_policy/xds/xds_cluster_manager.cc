@@ -255,6 +255,7 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
   }
+  update_in_progress_ = true;
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the children not in the new config.
@@ -266,18 +267,15 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
     }
   }
   // Add or update the children in the new config.
-  update_in_progress_ = true;
   for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
-    auto it = children_.find(name);
-    if (it == children_.end()) {
-      it = children_
-               .emplace(name, MakeOrphanable<ClusterChild>(
-                                  Ref(DEBUG_LOCATION, "ClusterChild"), name))
-               .first;
+    auto& child = children_[name];
+    if (child == nullptr) {
+      child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
+                                           name);
     }
-    it->second->UpdateLocked(config, args.addresses, args.args);
+    child->UpdateLocked(config, args.addresses, args.args);
   }
   update_in_progress_ = false;
   UpdateStateLocked();
