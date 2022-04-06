@@ -60,7 +60,7 @@ class InjectedDelay {
   ~InjectedDelay() { grpc_channel_args_destroy(channel_args_); }
 
  private:
-  static void TimerCallback(void* arg, grpc_error_handle error) {
+  static void TimerCallback(void* arg, grpc_error_handle /*error*/) {
     auto* self = static_cast<InjectedDelay*>(arg);
     g_original_vtable->connect(self->closure_, self->endpoint_,
                                self->interested_parties_, self->channel_args_,
