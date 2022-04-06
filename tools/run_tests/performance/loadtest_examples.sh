@@ -95,7 +95,7 @@ basic_example() {
         --allow_client_language=c++ --allow_server_language=c++ \
         --allow_server_language=node \
         -o "${outputdir}/${outputfile}"
-    echo "Created example: ${outputfile}"
+    echo "Created example: ${outputdir}/${outputfile}"
 }
 
 # Prebuilt examples contain substitution keys, so must be processed before
@@ -117,7 +117,7 @@ prebuilt_example() {
         --allow_client_language=c++ --allow_server_language=c++ \
         --allow_server_language=node \
         -o "${outputdir}/${outputfile}"
-    echo "Created example: ${outputfile}"
+    echo "Created example: ${outputdir}/${outputfile}"
 }
 
 for scenario in "${scenarios[@]}"; do
