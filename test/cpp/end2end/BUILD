@@ -57,6 +57,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "connection_delay_injector",
+    testonly = True,
+    hdrs = ["connection_delay_injector.h"],
+    srcs = ["connection_delay_injector.cc"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
     name = "interceptors_util",
     testonly = True,
     srcs = ["interceptors_util.cc"],
@@ -479,6 +489,7 @@ grpc_cc_test(
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
+        ":connection_delay_injector",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
