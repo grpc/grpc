@@ -12059,6 +12059,57 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
 }
 
+// This tests a bug triggered by the xds_cluster_resolver policy reusing
+// a child name for the priority policy when that child name was still
+// present but deactivated.
+TEST_P(FailoverTest, PriorityChildNameChurn) {
+  CreateAndStartBackends(4);
+  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  // Initial update:
+  // - P0:locality0, child number 0 (unreachable)
+  // - P1:locality1, child number 1
+  // - P2:locality2, child number 2
+  EdsResourceArgs args({
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(0);
+  // Next update:
+  // - P0:locality0, child number 0 (still unreachable)
+  // - P1:locality2, child number 2 (moved from P2 to P1)
+  // - P2:locality3, child number 3 (new child)
+  // Child number 1 will be deactivated.
+  args = EdsResourceArgs({
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
+      {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       2},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(1);
+  // Next update:
+  // - P0:locality0, child number 0 (still unreachable)
+  // - P1:locality4, child number 4 (new child number -- should not reuse #1)
+  // - P2:locality3, child number 3
+  // Child number 1 will be deactivated.
+  args = EdsResourceArgs({
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality4", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       1},
+      {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       2},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
+  // P2 should not have gotten any traffic in this change.
+  EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
+}
+
 using DropTest = XdsEnd2endTest;
 
 // Tests that RPCs are dropped according to the drop config.
