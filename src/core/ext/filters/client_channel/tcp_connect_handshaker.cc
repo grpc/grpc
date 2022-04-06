@@ -46,7 +46,7 @@ class TCPConnectHandshaker : public Handshaker {
  private:
   ~TCPConnectHandshaker() override;
   void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void FinishLocked(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void Connected(void* arg, grpc_error_handle error);
 
   Mutex mu_;
@@ -83,7 +83,8 @@ void TCPConnectHandshaker::Shutdown(grpc_error_handle why) {
       // the necessary clean up.
       if (on_handshake_done_ != nullptr) {
         CleanupArgsForFailureLocked();
-        Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
+        FinishLocked(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown"));
       }
     }
   }
@@ -140,7 +141,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       if (!self->shutdown_) {
         self->CleanupArgsForFailureLocked();
         self->shutdown_ = true;
-        self->Finish(error);
+        self->FinishLocked(error);
       } else {
         // The on_handshake_done_ is already as part of shutdown when connecting
         // So nothing to be done here other than unrefing the error.
@@ -155,7 +156,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       grpc_endpoint_add_to_pollset_set(self->args_->endpoint,
                                        self->interested_parties_);
     }
-    self->Finish(GRPC_ERROR_NONE);
+    self->FinishLocked(GRPC_ERROR_NONE);
   }
 }
 
@@ -177,7 +178,7 @@ void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
   args_->args = nullptr;
 }
 
-void TCPConnectHandshaker::Finish(grpc_error_handle error) {
+void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
   grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
   on_handshake_done_ = nullptr;
