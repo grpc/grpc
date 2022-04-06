@@ -30,7 +30,7 @@ import json
 import os
 import string
 import sys
-from typing import Any, Dict, Iterable, Mapping, Optional, Type, Callable
+from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Type
 
 import yaml
 
