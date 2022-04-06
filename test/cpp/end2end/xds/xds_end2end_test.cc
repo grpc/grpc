@@ -6438,10 +6438,14 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashToLogicalDnsAtStartup) {
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate EDS resource.
   EdsResourceArgs args({
-      {"locality0", {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
-       kDefaultLocalityWeight, 0},
-      {"locality1", {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
-       kDefaultLocalityWeight, 1},
+      {"locality0",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       0},
+      {"locality1",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Populate new CDS resources.
