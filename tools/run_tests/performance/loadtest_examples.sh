@@ -69,6 +69,7 @@ example_language() {
 scenarios=(
     "cpp_generic_async_streaming_ping_pong_secure"
     "csharp_protobuf_async_unary_ping_pong"
+    "dotnet_protobuf_async_unary_ping_pong"
     "go_generic_sync_streaming_ping_pong_secure"
     "java_generic_async_streaming_ping_pong_secure"
     "node_to_node_generic_async_streaming_ping_pong_secure"
