@@ -11860,6 +11860,34 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
   delayed_resource_setter.join();
 }
 
+TEST_P(LocalityMapTest, ConsistentWeightedTargetUpdates) {
+  CreateAndStartBackends(4);
+  // Initial update has two localities.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 3)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(1, 3);
+  // Next update removes locality1.
+  // Also add backend 0 to locality0, so that we can tell when the
+  // update has been seen.
+  args = EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(0);
+  // Next update re-adds locality1.
+  // Also add backend 3 to locality1, so that we can tell when the
+  // update has been seen.
+  args = EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(3);
+}
+
 class FailoverTest : public XdsEnd2endTest {
  public:
   void SetUp() override {
