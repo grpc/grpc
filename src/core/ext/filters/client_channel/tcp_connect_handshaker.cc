@@ -103,8 +103,12 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   char* address = grpc_channel_args_find_string(
       args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address);
-  GPR_ASSERT(uri.ok());
-  GPR_ASSERT(grpc_parse_uri(*uri, &addr_));
+  if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
+    MutexLock lock(&mu_);
+    FinishLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Resolved address in invalid format"));
+    return;
+  }
   bind_endpoint_to_pollset_ = grpc_channel_args_find_bool(
       args->args, GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, false);
   // In some implementations, the closure can be flushed before
