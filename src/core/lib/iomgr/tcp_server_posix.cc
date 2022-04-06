@@ -382,8 +382,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
     if (!addr_str.ok()) {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          addr_str.status().ToString().c_str());
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
     }
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = listener->next;

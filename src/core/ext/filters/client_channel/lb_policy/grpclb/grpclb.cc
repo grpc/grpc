@@ -535,8 +535,7 @@ std::string GrpcLb::Serverlist::AsText() const {
       grpc_resolved_address addr;
       ParseServer(server, &addr);
       auto addr_str = grpc_sockaddr_to_string(&addr, false);
-      ipport = addr_str.ok() ? addr_str->c_str()
-                             : addr_str.status().ToString().c_str();
+      ipport = addr_str.ok() ? *addr_str : addr_str.status().ToString();
     }
     entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
                                       ipport, server.load_balance_token));
