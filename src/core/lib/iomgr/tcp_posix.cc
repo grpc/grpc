@@ -424,8 +424,8 @@ struct grpc_tcp {
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
-  bool last_read_completed;
-  int last_min_read_chunk_size;
+  bool curr_read_completed;
+  int curr_min_read_chunk_size;
 };
 
 struct backup_poller {
@@ -745,12 +745,12 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
-        tcp->last_read_completed = true;
+        tcp->curr_read_completed = true;
         finish_estimate(tcp);
         tcp->inq = 0;
         return false;
       } else {
-        tcp->last_read_completed = false;
+        tcp->curr_read_completed = false;
         grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
         return true;
@@ -762,7 +762,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
        * We may have read something, i.e., total_read_bytes > 0, but
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
-      tcp->last_read_completed = true;
+      tcp->curr_read_completed = true;
       grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
       *error = tcp_annotate_error(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
@@ -820,7 +820,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
   }
 
   // There may be more data to be read because recvmsg did not return EAGAIN.
-  tcp->last_read_completed = false;
+  tcp->curr_read_completed = false;
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   if (total_read_bytes < tcp->incoming_buffer->length) {
     grpc_slice_buffer_trim_end(tcp->incoming_buffer,
@@ -844,21 +844,21 @@ static void maybe_make_read_slices(grpc_tcp* tcp) {
     int target_length = static_cast<int>(tcp->target_length);
     int extra_wanted =
         target_length - static_cast<int>(tcp->incoming_buffer->length);
-    if (tcp->last_read_completed) {
+    if (tcp->curr_read_completed) {
       // Set it to false again to start the next block of reads
-      tcp->last_read_completed = false;
-      // Reset last_min_read_chunk_size for the next block of reads
-      tcp->last_min_read_chunk_size = tcp->min_read_chunk_size;
+      tcp->curr_read_completed = false;
+      // Reset curr_min_read_chunk_size for the next block of reads
+      tcp->curr_min_read_chunk_size = tcp->min_read_chunk_size;
     } else {
       // Last read is not completed yet. Double the last min read chunk size.
-      tcp->last_min_read_chunk_size =
-          std::min(2 * tcp->last_min_read_chunk_size, tcp->max_read_chunk_size);
+      tcp->curr_min_read_chunk_size =
+          std::min(2 * tcp->curr_min_read_chunk_size, tcp->max_read_chunk_size);
     }
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
         tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->last_min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->last_min_read_chunk_size,
+            tcp->curr_min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, tcp->curr_min_read_chunk_size,
                              tcp->max_read_chunk_size))));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -1770,8 +1770,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
-  tcp->last_read_completed = true;
-  tcp->last_min_read_chunk_size = tcp->min_read_chunk_size;
+  tcp->curr_read_completed = true;
+  tcp->curr_min_read_chunk_size = tcp->min_read_chunk_size;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
