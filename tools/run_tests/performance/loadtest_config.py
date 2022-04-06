@@ -30,7 +30,7 @@ import json
 import os
 import string
 import sys
-from typing import Any, Dict, Iterable, Mapping, Optional, Type
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Type
 
 import yaml
 
@@ -118,17 +118,56 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
         yield index_fmt.format(i)
 
 
+def scenario_transform_function(
+    client_channels: int, offered_loads: Iterable[int],
+    async_server_threads: int
+) -> Optional[Callable[[Iterable[Mapping[str, Any]]], Iterable[Mapping[str,
+                                                                       Any]]]]:
+    """Returns a transform to be applied to a list of scenarios."""
+    if client_channels == 0 or len(
+            offered_loads) == 0 or async_server_threads == 0:
+        return lambda s: s
+
+    def _transform(
+            scenarios: Iterable[Mapping[str,
+                                        Any]]) -> Iterable[Mapping[str, Any]]:
+        """Transforms scenarios by inserting num of client channels, number of async_server_threads and offered_load."""
+
+        for base_scenario in scenarios:
+            base_scenario['client_config']['client_channels'] = client_channels
+            base_scenario['server_config'][
+                'async_server_threads'] = async_server_threads
+            base_name = base_scenario['name']
+            name_components = base_name.split('1channel')
+            for offered_load in offered_loads:
+                scenario = copy.deepcopy(base_scenario)
+                name = name_components[
+                    0] + '%dchannel_%dasync_server_thread_%dload' % (
+                        client_channels, async_server_threads,
+                        offered_load) + name_components[1]
+                load = {}
+                load['offered_load'] = offered_load
+                scenario['client_config']['load_params']['poisson'] = load
+                scenario['name'] = name
+                yield scenario
+
+    return _transform
+
+
 def gen_loadtest_configs(
-        base_config: Mapping[str, Any],
-        base_config_clients: Iterable[Mapping[str, Any]],
-        base_config_servers: Iterable[Mapping[str, Any]],
-        scenario_name_regex: str,
-        language_config: scenario_config_exporter.LanguageConfig,
-        loadtest_name_prefix: str,
-        uniquifier_elements: Iterable[str],
-        annotations: Mapping[str, str],
-        instances_per_client: int = 1,
-        runs_per_test: int = 1) -> Iterable[Dict[str, Any]]:
+    base_config: Mapping[str, Any],
+    base_config_clients: Iterable[Mapping[str, Any]],
+    base_config_servers: Iterable[Mapping[str, Any]],
+    scenario_name_regex: str,
+    language_config: scenario_config_exporter.LanguageConfig,
+    loadtest_name_prefix: str,
+    uniquifier_elements: Iterable[str],
+    annotations: Mapping[str, str],
+    instances_per_client: int = 1,
+    runs_per_test: int = 1,
+    scenario_transform: Callable[[Iterable[Mapping[str, Any]]],
+                                 List[Dict[str, Any]]] = lambda s: s
+) -> Iterable[Dict[str, Any]]:
     """Generates LoadTest configurations for a given language config.
 
     The LoadTest configurations are generated as YAML objects.
@@ -142,8 +181,10 @@ def gen_loadtest_configs(
         category=language_config.category,
         client_language=language_config.client_language,
         server_language=language_config.server_language)
-    scenarios = scenario_config_exporter.gen_scenarios(language_config.language,
-                                                       scenario_filter)
+
+    scenarios = scenario_transform(
+        scenario_config_exporter.gen_scenarios(language_config.language,
+                                               scenario_filter))
 
     for scenario in scenarios:
         for run_index in gen_run_indices(runs_per_test):
@@ -349,7 +390,7 @@ def main() -> None:
                       help='Regex to select scenarios to run.')
     argp.add_argument(
         '--category',
-        choices=['all', 'inproc', 'scalable', 'smoketest', 'sweep'],
+        choices=['all', 'inproc', 'scalable', 'smoketest', 'sweep', 'psm'],
         default='all',
         help='Select a category of tests to run.')
     argp.add_argument(
@@ -378,6 +419,19 @@ def main() -> None:
                       '--output',
                       type=str,
                       help='Output file name. Output to stdout if not set.')
+    argp.add_argument(
+        '-offered_loads_list',
+        nargs="*",
+        type=int,
+        default=[],
+        help='A list of offered loads that the tests are running with.')
+    argp.add_argument('-client_channel',
+                      type=int,
+                      help='Number of client channel opened for the test')
+    argp.add_argument(
+        '-async_server_threads',
+        type=int,
+        help='Number of server threads to handle the request in the test')
     args = argp.parse_args()
 
     if args.instances_per_client < 1:
@@ -403,6 +457,10 @@ def main() -> None:
         uniquifier_elements.append(now_string())
 
     annotations = parse_key_value_args(args.annotations)
+
+    transform = scenario_transform_function(args.client_channel,
+                                            args.offered_loads_list,
+                                            args.async_server_threads)
 
     with open(args.template) as f:
         base_config = yaml.safe_load(
@@ -436,7 +494,8 @@ def main() -> None:
                                  uniquifier_elements=uniquifier_elements,
                                  annotations=annotations,
                                  instances_per_client=args.instances_per_client,
-                                 runs_per_test=args.runs_per_test))
+                                 runs_per_test=args.runs_per_test,
+                                 scenario_transform=transform))
     configs = (config for config in itertools.chain(*config_generators))
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
