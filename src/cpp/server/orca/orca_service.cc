@@ -48,7 +48,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
             reinterpret_cast<const char*>(slice.begin()), slice.size(),
             arena.ptr());
     if (request == nullptr) {
-      Finish(Status(StatusCode::UNKNOWN, "could not parse request proto"));
+      Finish(Status(StatusCode::INTERNAL, "could not parse request proto"));
       return;
     }
     const auto* duration_proto =
