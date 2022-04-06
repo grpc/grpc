@@ -118,7 +118,10 @@ Apart from the above steps, please perform the following two steps to generate t
 Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below.
 
 1. Update third_party/upb directory by running
-   `git subtree pull --squash --prefix=third_party/upb https://github.com/protocolbuffers/upb.git main`
+   - `wget https://github.com/protocolbuffers/upb/archive/refs/heads/main.zip`
+   - `rm -rf  ~/git/grpc/third_party/upb`
+   - `unzip main.zip -d ~/git/grpc/third_party`
+   - `mv ~/git/grpc/third_party/upb-main ~/git/grpc/third_party/upb`
 2. Update the dependency in `grpc_deps.bzl` to the same commit
 3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
 4. Update `src/upb/gen_build_yaml.py` for newly added or removed upb files
