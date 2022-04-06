@@ -357,6 +357,7 @@ void WeightedTargetLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
+        GPR_ASSERT(child->weight() > 0);
         end += child->weight();
         picker_list.push_back(std::make_pair(end, child->picker_wrapper()));
         break;
