@@ -255,7 +255,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
-              addr_uri.value().c_str());
+              addr_uri->c_str());
     }
 
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
@@ -383,7 +383,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
     if (!addr_str.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          std::string(addr_str.status().ToString()));
+          addr_str.status().ToString().c_str());
     }
     sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = listener->next;
@@ -397,7 +397,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp->fd = fd;
     sp->emfd = grpc_fd_create(
         fd,
-        absl::StrFormat("tcp-server-listener:%s/clone-%d", addr_str->c_str(), i)
+        absl::StrFormat("tcp-server-listener:%s/clone-%d", *addr_str, i)
             .c_str(),
         true);
     memcpy(&sp->addr, &listener->addr, sizeof(grpc_resolved_address));
@@ -612,7 +612,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     }
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
-              addr_uri.value().c_str());
+              addr_uri->c_str());
     }
     std::string name = absl::StrCat("tcp-server-connection:", addr_uri.value());
     grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);

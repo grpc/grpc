@@ -95,14 +95,14 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   absl::StatusOr<std::string> addr_str = grpc_sockaddr_to_string(addr, true);
   if (!addr_str.ok()) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        std::string(addr_str.status().ToString()));
+        addr_str.status().ToString().c_str());
   }
-  grpc_tcp_listener* sp = nullptr;
   std::string name = absl::StrCat("tcp-server-listener:", addr_str.value());
   gpr_mu_lock(&s->mu);
   s->nports++;
   GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-  sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
+  grpc_tcp_listener* sp =
+      static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
   sp->next = nullptr;
   if (s->head == nullptr) {
     s->head = sp;

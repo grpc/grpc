@@ -324,7 +324,6 @@ RingHash::Ring::Ring(RingHash* parent,
     sum += address_weight.weight;
     address_weights.push_back(std::move(address_weight));
   }
-  GPR_ASSERT(sum > 0);
   // Calculating normalized weights and find min and max.
   double min_normalized_weight = 1.0;
   double max_normalized_weight = 0.0;

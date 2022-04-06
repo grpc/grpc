@@ -64,7 +64,7 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
 #else
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* /* addr */) {
-  absl::StrCat("Unix socket is not supported.");
+  return absl::InvalidArgumentError("Unix socket is not supported.");
 }
 #endif
 

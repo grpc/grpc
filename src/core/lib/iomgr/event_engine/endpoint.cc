@@ -116,10 +116,8 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
     return "";
   }
   if (eeep->peer_address.empty()) {
-    auto uri = ResolvedAddressToURI(addr);
-    if (!uri.ok()) return "";
     const EventEngine::ResolvedAddress& addr = eeep->endpoint->GetPeerAddress();
-    eeep->peer_address = uri.value();
+    eeep->peer_address = ResolvedAddressToURI(addr).value();
   }
   return eeep->peer_address;
 }
@@ -130,11 +128,9 @@ absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
     return "";
   }
   if (eeep->local_address.empty()) {
-    auto uri = ResolvedAddressToURI(addr);
-    if (!uri.ok()) return "";
     const EventEngine::ResolvedAddress& addr =
         eeep->endpoint->GetLocalAddress();
-    eeep->local_address = uri.value();
+    eeep->local_address = ResolvedAddressToURI(addr).value();
   }
   return eeep->local_address;
 }

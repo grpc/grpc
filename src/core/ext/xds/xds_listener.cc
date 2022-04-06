@@ -781,7 +781,7 @@ grpc_error_handle AddFilterChainDataForSourceIpRange(
       auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
       if (!addr_str.ok()) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            std::string(addr_str.status().ToString()));
+            addr_str.status().ToString().c_str());
       }
       auto insert_result = source_ip_map->emplace(
           absl::StrCat(addr_str.value(), "/", prefix_range.prefix_len),
@@ -869,7 +869,7 @@ grpc_error_handle AddFilterChainDataForDestinationIpRange(
       auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
       if (!addr_str.ok()) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            std::string(addr_str.status().ToString()));
+            addr_str.status().ToString().c_str());
       }
       auto insert_result = destination_ip_map->emplace(
           absl::StrCat(addr_str.value(), "/", prefix_range.prefix_len),

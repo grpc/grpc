@@ -531,9 +531,8 @@ static void log_address_sorting_list(const grpc_ares_request* r,
             "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
             "]=%s",
             r, input_output_str, i,
-            std::string(addr_str.ok() ? addr_str.value()
-                                      : addr_str.status().ToString())
-                .c_str());
+            addr_str.ok() ? addr_str->c_str()
+                          : addr_str.status().ToString().c_str());
   }
 }
 

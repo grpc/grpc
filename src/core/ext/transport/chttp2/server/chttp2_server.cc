@@ -674,13 +674,12 @@ grpc_error_handle Chttp2ServerListener::Create(
       auto string_address = grpc_sockaddr_to_uri(addr);
       if (!string_address.ok()) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            std::string(string_address.status().ToString()));
+            string_address.status().ToString().c_str());
       }
       listener->channelz_listen_socket_ =
           MakeRefCounted<channelz::ListenSocketNode>(
-              string_address.value().c_str(),
-              absl::StrFormat("chttp2 listener %s",
-                              string_address.value().c_str()));
+              string_address->c_str(),
+              absl::StrFormat("chttp2 listener %s", string_address->c_str()));
     }
     // Register with the server only upon success
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));

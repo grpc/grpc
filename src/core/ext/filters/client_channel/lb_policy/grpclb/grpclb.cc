@@ -535,8 +535,8 @@ std::string GrpcLb::Serverlist::AsText() const {
       grpc_resolved_address addr;
       ParseServer(server, &addr);
       auto addr_str = grpc_sockaddr_to_string(&addr, false);
-      ipport = std::string(addr_str.ok() ? addr_str.value()
-                                         : addr_str.status().ToString());
+      ipport = addr_str.ok() ? addr_str->c_str()
+                             : addr_str.status().ToString().c_str();
     }
     entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
                                       ipport, server.load_balance_token));
@@ -588,7 +588,7 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
       gpr_log(GPR_INFO,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              addr_uri.ok() ? addr_uri.value().c_str()
+              addr_uri.ok() ? addr_uri->c_str()
                             : addr_uri.status().ToString().c_str());
     }
     // Attach attribute to address containing LB token and stats object.
