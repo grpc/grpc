@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <string.h>
@@ -61,7 +62,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 
-static gpr_atm num_dropped_connections = 0;
+static std::atomic<int64_t> num_dropped_connections{0};
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const grpc_channel_args* args,
@@ -223,12 +224,11 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
 
     if (sp->server->memory_quota->IsMemoryPressureHigh()) {
-      int dropped_connections_count =
-          gpr_atm_no_barrier_fetch_add(&num_dropped_connections, 1);
+      int64_t dropped_connections_count = ++num_dropped_connections;
       if (dropped_connections_count % 1000 == 0) {
         gpr_log(
             GPR_INFO,
-            "Dropped >= %d new connection attempts due to high memory pressure",
+            "Dropped >= %" PRId64 " new connection attempts due to high memory pressure",
             dropped_connections_count);
       }
       close(fd);
