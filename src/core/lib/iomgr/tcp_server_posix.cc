@@ -61,6 +61,8 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 
+static gpr_atm num_dropped_connections == 0;
+
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const grpc_channel_args* args,
                                            grpc_tcp_server** server) {
@@ -221,6 +223,14 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
 
     if (sp->server->memory_quota->IsMemoryPressureHigh()) {
+      int dropped_connections_count =
+        gpr_atm_no_barrier_fetch_add(&num_dropped_connections, 1);
+      if (dropped_connections_count % 1000 == 0) {
+        gpr_log(
+            GPR_INFO,
+            "Dropped >= %d new connection attempts due to high memory pressure",
+            dropped_connections_count);
+      }
       gpr_log(GPR_INFO, "Drop incoming connection: high memory pressure");
       close(fd);
       continue;

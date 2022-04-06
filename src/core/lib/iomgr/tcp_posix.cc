@@ -423,6 +423,9 @@ struct grpc_tcp {
                                       on errors anymore */
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
+
+  bool last_read_completed;
+  int last_min_read_chunk_size;
 };
 
 struct backup_poller {
@@ -661,8 +664,9 @@ static void tcp_destroy(grpc_endpoint* ep) {
   TCP_UNREF(tcp, "destroy");
 }
 
-static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) {
+static void call_read_cb(grpc_tcp* tcp, grpc_error_handle error) {
   grpc_closure* cb = tcp->read_cb;
+
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
@@ -677,11 +681,14 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error) {
       }
     }
   }
+
+  tcp->read_cb = nullptr;
+  tcp->incoming_buffer = nullptr;
+  grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
 }
 
-/* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 4
-static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
+static void tcp_do_read(grpc_tcp* tcp) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
@@ -741,15 +748,19 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
     if (read_bytes < 0) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
+      tcp->last_read_completed = true;
       if (errno == EAGAIN) {
         finish_estimate(tcp);
         tcp->inq = 0;
-        return false;
+        /* We've consumed the edge, request a new one */
+        notify_on_read(tcp);
       } else {
         grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
-        return true;
+        call_read_cb(tcp,
+                     tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp));
+        TCP_UNREF(tcp, "read");
       }
+      return;
     }
     if (read_bytes == 0) {
       /* 0 read size ==> end of stream
@@ -757,10 +768,13 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
        * We may have read something, i.e., total_read_bytes > 0, but
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
+      tcp->last_read_completed = true;
       grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-      *error = tcp_annotate_error(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
-      return true;
+      call_read_cb(
+          tcp, tcp_annotate_error(
+                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
+      TCP_UNREF(tcp, "read");
+      return;
     }
 
     GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
@@ -813,17 +827,19 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
     finish_estimate(tcp);
   }
 
+  // There may be more data to be read because recvmsg did not return EAGAIN.
+  tcp->last_read_completed = false;
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   if (total_read_bytes < tcp->incoming_buffer->length) {
     grpc_slice_buffer_trim_end(tcp->incoming_buffer,
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
   }
-  *error = GRPC_ERROR_NONE;
-  return true;
+  call_read_cb(tcp, GRPC_ERROR_NONE);
+  TCP_UNREF(tcp, "read");
 }
 
-static void maybe_make_read_slices(grpc_tcp* tcp) {
+static void tcp_continue_read(grpc_tcp* tcp) {
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -836,16 +852,27 @@ static void maybe_make_read_slices(grpc_tcp* tcp) {
     int target_length = static_cast<int>(tcp->target_length);
     int extra_wanted =
         target_length - static_cast<int>(tcp->incoming_buffer->length);
+    if (tcp->last_read_completed) {
+      // Set it to false again to start the next block of reads
+      tcp->last_read_completed = false;
+      // Reset last_min_read_chunk_size for the next block of reads
+      tcp->last_min_read_chunk_size = tcp->min_read_chunk_size;
+    } else {
+      // Last read is not completed yet. Double the last min read chunk size.
+      tcp->last_min_read_chunk_size =
+          std::min(2 * tcp->last_min_read_chunk_size, tcp->max_read_chunk_size);
+    }
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
         tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
+            tcp->last_min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, tcp->last_min_read_chunk_size,
                              tcp->max_read_chunk_size))));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }
+  tcp_do_read(tcp);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
@@ -854,25 +881,15 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
             grpc_error_std_string(error).c_str());
   }
-  grpc_error_handle tcp_read_error;
-  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
-    maybe_make_read_slices(tcp);
-    if (!tcp_do_read(tcp, &tcp_read_error)) {
-      /* We've consumed the edge, request a new one */
-      notify_on_read(tcp);
-      return;
-    }
-    tcp_trace_read(tcp, tcp_read_error);
-  } else {
-    tcp_read_error = GRPC_ERROR_REF(error);
+
+  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
+    call_read_cb(tcp, GRPC_ERROR_REF(error));
+    TCP_UNREF(tcp, "read");
+  } else {
+    tcp_continue_read(tcp);
   }
-  grpc_closure* cb = tcp->read_cb;
-  tcp->read_cb = nullptr;
-  tcp->incoming_buffer = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, cb, tcp_read_error);
-  TCP_UNREF(tcp, "read");
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
@@ -1752,6 +1769,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
+  tcp->last_read_completed = true;
+  tcp->last_min_read_chunk_size = tcp->min_read_chunk_size;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
