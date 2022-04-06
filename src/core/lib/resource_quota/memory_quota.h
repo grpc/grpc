@@ -25,7 +25,7 @@
 #include <queue>
 #include <vector>
 
-#include "third_party/grpc/include/grpc/support/port_platform.h"
+#include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
