@@ -594,9 +594,286 @@ const grpc_arg_pointer_vtable kChannelArgsArgVtable = {
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
-  // TODO(roth): In a subsequent PR, move BalancerServerThread definition
-  // here to avoid the need for this forward declaration.
-  class BalancerServerThread;
+  // A base class for server threads.
+  class ServerThread {
+   public:
+    // A status notifier for xDS-enabled servers.
+    class XdsServingStatusNotifier
+        : public grpc::experimental::XdsServerServingStatusNotifierInterface {
+     public:
+      void OnServingStatusUpdate(std::string uri,
+                                 ServingStatusUpdate update) override {
+        grpc_core::MutexLock lock(&mu_);
+        status_map[uri] = update.status;
+        cond_.Signal();
+      }
+
+      void WaitOnServingStatusChange(std::string uri,
+                                     grpc::StatusCode expected_status) {
+        grpc_core::MutexLock lock(&mu_);
+        std::map<std::string, grpc::Status>::iterator it;
+        while ((it = status_map.find(uri)) == status_map.end() ||
+               it->second.error_code() != expected_status) {
+          cond_.Wait(&mu_);
+        }
+      }
+
+     private:
+      grpc_core::Mutex mu_;
+      grpc_core::CondVar cond_;
+      std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
+    };
+
+    explicit ServerThread(XdsEnd2endTest* test_obj,
+                          bool use_xds_enabled_server = false)
+        : test_obj_(test_obj),
+          port_(grpc_pick_unused_port_or_die()),
+          use_xds_enabled_server_(use_xds_enabled_server) {}
+
+    virtual ~ServerThread() { Shutdown(); }
+
+    void Start() {
+      gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
+      GPR_ASSERT(!running_);
+      running_ = true;
+      StartAllServices();
+      grpc_core::Mutex mu;
+      // We need to acquire the lock here in order to prevent the notify_one
+      // by ServerThread::Serve from firing before the wait below is hit.
+      grpc_core::MutexLock lock(&mu);
+      grpc_core::CondVar cond;
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerThread::Serve, this, &mu, &cond));
+      cond.Wait(&mu);
+      gpr_log(GPR_INFO, "%s server startup complete", Type());
+    }
+
+    void Shutdown() {
+      if (!running_) return;
+      gpr_log(GPR_INFO, "%s about to shutdown", Type());
+      ShutdownAllServices();
+      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
+      thread_->join();
+      gpr_log(GPR_INFO, "%s shutdown completed", Type());
+      running_ = false;
+    }
+
+    virtual std::shared_ptr<ServerCredentials> Credentials() {
+      return std::make_shared<SecureServerCredentials>(
+          grpc_fake_transport_security_server_credentials_create());
+    }
+
+    int port() const { return port_; }
+
+    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
+
+    XdsServingStatusNotifier* notifier() { return &notifier_; }
+
+   private:
+    // Adds channel args to the server for the XdsClient bootstrap
+    // config and channel args.
+    class XdsChannelArgsServerBuilderOption : public grpc::ServerBuilderOption {
+     public:
+      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
+          : test_obj_(test_obj) {}
+
+      void UpdateArguments(grpc::ChannelArguments* args) override {
+        args->SetString(
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
+            test_obj_->bootstrap_);
+        args->SetPointerWithVtable(
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
+            &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
+      }
+
+      void UpdatePlugins(
+          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* /*plugins*/)
+          override {}
+
+     private:
+      XdsEnd2endTest* test_obj_;
+    };
+
+    virtual const char* Type() = 0;
+    virtual void RegisterAllServices(ServerBuilder* builder) = 0;
+    virtual void StartAllServices() = 0;
+    virtual void ShutdownAllServices() = 0;
+
+    void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
+      // We need to acquire the lock here in order to prevent the notify_one
+      // below from firing before its corresponding wait is executed.
+      grpc_core::MutexLock lock(mu);
+      std::string server_address = absl::StrCat("localhost:", port_);
+      if (use_xds_enabled_server_) {
+        XdsServerBuilder builder;
+        if (GetParam().bootstrap_source() ==
+            TestType::kBootstrapFromChannelArg) {
+          builder.SetOption(
+              absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
+        }
+        builder.set_status_notifier(&notifier_);
+        builder.experimental().set_drain_grace_time(
+            test_obj_->xds_drain_grace_time_ms_);
+        builder.AddListeningPort(server_address, Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      } else {
+        ServerBuilder builder;
+        builder.AddListeningPort(server_address, Credentials());
+        RegisterAllServices(&builder);
+        server_ = builder.BuildAndStart();
+      }
+      cond->Signal();
+    }
+
+    XdsEnd2endTest* test_obj_;
+    const int port_;
+    std::unique_ptr<Server> server_;
+    XdsServingStatusNotifier notifier_;
+    std::unique_ptr<std::thread> thread_;
+    bool running_ = false;
+    const bool use_xds_enabled_server_;
+  };
+
+  // A server thread for a backend server.
+  class BackendServerThread : public ServerThread {
+   public:
+    BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server)
+        : ServerThread(test_obj, use_xds_enabled_server) {
+      if (use_xds_enabled_server) {
+        test_obj->SetServerListenerNameAndRouteConfiguration(
+            test_obj->balancer_.get(), test_obj->default_server_listener_,
+            port(), test_obj->default_server_route_config_);
+      }
+    }
+
+    BackendServiceImpl<grpc::testing::EchoTestService::Service>*
+    backend_service() {
+      return &backend_service_;
+    }
+    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>*
+    backend_service1() {
+      return &backend_service1_;
+    }
+    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
+    backend_service2() {
+      return &backend_service2_;
+    }
+
+    std::shared_ptr<ServerCredentials> Credentials() override {
+      if (GetParam().use_xds_credentials()) {
+        if (use_xds_enabled_server()) {
+          // We are testing server's use of XdsServerCredentials
+          return XdsServerCredentials(InsecureServerCredentials());
+        } else {
+          // We are testing client's use of XdsCredentials
+          std::string root_cert = ReadFile(kCaCertPath);
+          std::string identity_cert = ReadFile(kServerCertPath);
+          std::string private_key = ReadFile(kServerKeyPath);
+          std::vector<experimental::IdentityKeyCertPair>
+              identity_key_cert_pairs = {{private_key, identity_cert}};
+          auto certificate_provider = std::make_shared<
+              grpc::experimental::StaticDataCertificateProvider>(
+              root_cert, identity_key_cert_pairs);
+          grpc::experimental::TlsServerCredentialsOptions options(
+              certificate_provider);
+          options.watch_root_certs();
+          options.watch_identity_key_cert_pairs();
+          options.set_cert_request_type(
+              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+          return grpc::experimental::TlsServerCredentials(options);
+        }
+      }
+      return ServerThread::Credentials();
+    }
+
+   private:
+    const char* Type() override { return "Backend"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&backend_service_);
+      builder->RegisterService(&backend_service1_);
+      builder->RegisterService(&backend_service2_);
+    }
+
+    void StartAllServices() override {
+      backend_service_.Start();
+      backend_service1_.Start();
+      backend_service2_.Start();
+    }
+
+    void ShutdownAllServices() override {
+      backend_service_.Shutdown();
+      backend_service1_.Shutdown();
+      backend_service2_.Shutdown();
+    }
+
+    BackendServiceImpl<grpc::testing::EchoTestService::Service>
+        backend_service_;
+    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>
+        backend_service1_;
+    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
+        backend_service2_;
+  };
+
+  // A server thread for the xDS server.
+  class BalancerServerThread : public ServerThread {
+   public:
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
+          ads_service_(new AdsServiceImpl()),
+          lrs_service_(
+              new LrsServiceImpl((GetParam().enable_load_reporting()
+                                      ? 20 * grpc_test_slowdown_factor()
+                                      : 0),
+                                 {kDefaultClusterName})) {}
+
+    AdsServiceImpl* ads_service() { return ads_service_.get(); }
+    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+
+   private:
+    const char* Type() override { return "Balancer"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(ads_service_->v2_rpc_service());
+      builder->RegisterService(ads_service_->v3_rpc_service());
+      builder->RegisterService(lrs_service_->v2_rpc_service());
+      builder->RegisterService(lrs_service_->v3_rpc_service());
+    }
+
+    void StartAllServices() override {
+      ads_service_->Start();
+      lrs_service_->Start();
+    }
+
+    void ShutdownAllServices() override {
+      ads_service_->Shutdown();
+      lrs_service_->Shutdown();
+    }
+
+    std::shared_ptr<AdsServiceImpl> ads_service_;
+    std::shared_ptr<LrsServiceImpl> lrs_service_;
+  };
+
+#ifndef DISABLED_XDS_PROTO_IN_CC
+  // Server thread for CSDS server.
+  class AdminServerThread : public ServerThread {
+   public:
+    explicit AdminServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj) {}
+
+   private:
+    const char* Type() override { return "Admin"; }
+
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&csds_service_);
+    }
+    void StartAllServices() override {}
+    void ShutdownAllServices() override {}
+
+    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
+  };
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
   class BootstrapBuilder {
    public:
@@ -750,24 +1027,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         "grpc/server?xds.resource.listening_address=%s";
   };
 
-  // TODO(roth): We currently set the number of backends on a per-test-suite
-  // basis, not a per-test-case basis.  However, not every individual test
-  // case in a given test suite uses the same number of backends, so we wind
-  // up having to set the numbers for the test suite to the max number needed
-  // by any one test case in that test suite.  This results in starting more
-  // servers (and using more ports) than we actually need.  When we have
-  // time, change each test to directly start the number of backends
-  // that it needs, so that we aren't wasting resources.
-  explicit XdsEnd2endTest(size_t num_backends,
-                          int client_load_reporting_interval_seconds = 100,
-                          int xds_resource_does_not_exist_timeout_ms = 0,
-                          bool use_xds_enabled_server = false)
-      : num_backends_(num_backends),
-        client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds),
-        xds_resource_does_not_exist_timeout_ms_(
-            xds_resource_does_not_exist_timeout_ms),
-        use_xds_enabled_server_(use_xds_enabled_server) {
+  class ScopedExperimentalEnvVar {
+   public:
+    explicit ScopedExperimentalEnvVar(const char* env_var) : env_var_(env_var) {
+      gpr_setenv(env_var_, "true");
+    }
+
+    ~ScopedExperimentalEnvVar() { gpr_unsetenv(env_var_); }
+
+   private:
+    const char* env_var_;
+  };
+
+  XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
@@ -802,6 +1074,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_load_reporting()) {
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
+    // Initialize client-side resources on balancer.
+    SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                     default_route_config_);
+    balancer_->ads_service()->SetCdsResource(default_cluster_);
     // Construct a default server-side RDS resource for tests to use.
     default_server_route_config_.set_name(kDefaultServerRouteConfigurationName);
     virtual_host = default_server_route_config_.add_virtual_hosts();
@@ -819,37 +1095,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         ->PackFrom(http_connection_manager);
   }
 
-  void CreateClientsAndServers(BootstrapBuilder builder = BootstrapBuilder(),
-                               std::string lb_expected_authority = "") {
-    // Create the backends but don't start them yet. We need to create the
-    // backends to allocate the ports, so that the xDS servers know what
-    // default resources to populate when we create them.  However, we can't
-    // start the backends until after we've started the xDS servers, because
-    // in the tests that use xDS-enabled servers, the backends will try to
-    // contact the xDS servers as soon as they start up.
-    for (size_t i = 0; i < num_backends_; ++i) {
-      backends_.emplace_back(new BackendServerThread(this));
-    }
-    // Start the load balancer.
-    balancer_ = CreateAndStartBalancer();
-    // Initialize resources on balancer.
-    SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                     default_route_config_);
-    if (use_xds_enabled_server_) {
-      for (const auto& backend : backends_) {
-        SetServerListenerNameAndRouteConfiguration(
-            balancer_.get(), default_server_listener_, backend->port(),
-            default_server_route_config_);
-      }
-    }
-    balancer_->ads_service()->SetCdsResource(default_cluster_);
+  void InitClient(BootstrapBuilder builder = BootstrapBuilder(),
+                  std::string lb_expected_authority = "",
+                  int xds_resource_does_not_exist_timeout_ms = 0) {
     // Create fake resolver response generators used by client.
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    if (xds_resource_does_not_exist_timeout_ms_ > 0) {
+    if (xds_resource_does_not_exist_timeout_ms > 0) {
       xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
-          xds_resource_does_not_exist_timeout_ms_));
+          xds_resource_does_not_exist_timeout_ms));
     }
     if (!lb_expected_authority.empty()) {
       constexpr char authority_const[] = "localhost:%d";
@@ -865,9 +1120,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_.args = xds_channel_args_to_add_.data();
     // Initialize XdsClient state.
     builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()));
-    if (GetParam().use_v2()) {
-      builder.SetV2();
-    }
+    if (GetParam().use_v2()) builder.SetV2();
     bootstrap_ = builder.Build();
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
@@ -894,7 +1147,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ResetStub();
   }
 
-  void SetUp() override { CreateClientsAndServers(); }
+  void SetUp() override { InitClient(); }
 
   void TearDown() override {
     ShutdownAllBackends();
@@ -910,8 +1163,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
+  void CreateBackends(size_t num_backends, bool xds_enabled = false) {
+    for (size_t i = 0; i < num_backends; ++i) {
+      backends_.emplace_back(new BackendServerThread(this, xds_enabled));
+    }
+  }
+
   void StartAllBackends() {
     for (auto& backend : backends_) backend->Start();
+  }
+
+  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false) {
+    CreateBackends(num_backends, xds_enabled);
+    StartAllBackends();
   }
 
   void StartBackend(size_t index) { backends_[index]->Start(); }
@@ -929,22 +1193,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return balancer;
   }
 
-  void ResetStub(int failover_timeout = 0) {
-    channel_ = CreateChannel(failover_timeout);
+  void ResetStub(int failover_timeout_ms = 0) {
+    channel_ = CreateChannel(failover_timeout_ms);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     stub1_ = grpc::testing::EchoTest1Service::NewStub(channel_);
     stub2_ = grpc::testing::EchoTest2Service::NewStub(channel_);
   }
 
-  std::shared_ptr<Channel> CreateChannel(
-      int failover_timeout = 0, const char* server_name = kServerName,
-      const char* xds_authority = "",
-      grpc_channel_args* xds_channel_args = nullptr) {
+  std::shared_ptr<Channel> CreateChannel(int failover_timeout_ms = 0,
+                                         const char* server_name = kServerName,
+                                         const char* xds_authority = "") {
     ChannelArguments args;
     // TODO(roth): Remove this once we enable retries by default internally.
     args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
-    if (failover_timeout > 0) {
-      args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
+    if (failover_timeout_ms > 0) {
+      args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout_ms);
     }
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromChannelArg) {
       // We're getting the bootstrap from a channel arg, so we do the
@@ -952,10 +1215,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       // channel and the xDS resource-does-not-exist timeout value.
       args.SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
                      bootstrap_.c_str());
-      if (xds_channel_args == nullptr) xds_channel_args = &xds_channel_args_;
       args.SetPointerWithVtable(
           GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
-          xds_channel_args, &kChannelArgsArgVtable);
+          &xds_channel_args_, &kChannelArgsArgVtable);
     }
     args.SetPointerWithVtable(
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -1612,276 +1874,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
  protected:
-  class XdsServingStatusNotifier
-      : public grpc::experimental::XdsServerServingStatusNotifierInterface {
-   public:
-    void OnServingStatusUpdate(std::string uri,
-                               ServingStatusUpdate update) override {
-      grpc_core::MutexLock lock(&mu_);
-      status_map[uri] = update.status;
-      cond_.Signal();
-    }
-
-    void WaitOnServingStatusChange(std::string uri,
-                                   grpc::StatusCode expected_status) {
-      grpc_core::MutexLock lock(&mu_);
-      std::map<std::string, grpc::Status>::iterator it;
-      while ((it = status_map.find(uri)) == status_map.end() ||
-             it->second.error_code() != expected_status) {
-        cond_.Wait(&mu_);
-      }
-    }
-
-   private:
-    grpc_core::Mutex mu_;
-    grpc_core::CondVar cond_;
-    std::map<std::string, grpc::Status> status_map ABSL_GUARDED_BY(mu_);
-  };
-
-  class ServerThread {
-   public:
-    explicit ServerThread(XdsEnd2endTest* test_obj,
-                          bool use_xds_enabled_server = false)
-        : test_obj_(test_obj),
-          port_(grpc_pick_unused_port_or_die()),
-          use_xds_enabled_server_(use_xds_enabled_server) {}
-
-    virtual ~ServerThread() { Shutdown(); }
-
-    void Start() {
-      gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
-      GPR_ASSERT(!running_);
-      running_ = true;
-      StartAllServices();
-      grpc_core::Mutex mu;
-      // We need to acquire the lock here in order to prevent the notify_one
-      // by ServerThread::Serve from firing before the wait below is hit.
-      grpc_core::MutexLock lock(&mu);
-      grpc_core::CondVar cond;
-      thread_ = absl::make_unique<std::thread>(
-          std::bind(&ServerThread::Serve, this, &mu, &cond));
-      cond.Wait(&mu);
-      gpr_log(GPR_INFO, "%s server startup complete", Type());
-    }
-
-    void Serve(grpc_core::Mutex* mu, grpc_core::CondVar* cond) {
-      // We need to acquire the lock here in order to prevent the notify_one
-      // below from firing before its corresponding wait is executed.
-      grpc_core::MutexLock lock(mu);
-      std::ostringstream server_address;
-      server_address << "localhost:" << port_;
-      if (use_xds_enabled_server_) {
-        XdsServerBuilder builder;
-        if (GetParam().bootstrap_source() ==
-            TestType::kBootstrapFromChannelArg) {
-          builder.SetOption(
-              absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
-        }
-        builder.set_status_notifier(&notifier_);
-        builder.experimental().set_drain_grace_time(
-            test_obj_->xds_drain_grace_time_ms_);
-        builder.AddListeningPort(server_address.str(), Credentials());
-        RegisterAllServices(&builder);
-        server_ = builder.BuildAndStart();
-      } else {
-        ServerBuilder builder;
-        builder.AddListeningPort(server_address.str(), Credentials());
-        RegisterAllServices(&builder);
-        server_ = builder.BuildAndStart();
-      }
-      cond->Signal();
-    }
-
-    void Shutdown() {
-      if (!running_) return;
-      gpr_log(GPR_INFO, "%s about to shutdown", Type());
-      ShutdownAllServices();
-      server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
-      thread_->join();
-      gpr_log(GPR_INFO, "%s shutdown completed", Type());
-      running_ = false;
-    }
-
-    virtual std::shared_ptr<ServerCredentials> Credentials() {
-      return std::make_shared<SecureServerCredentials>(
-          grpc_fake_transport_security_server_credentials_create());
-    }
-
-    int port() const { return port_; }
-
-    bool use_xds_enabled_server() const { return use_xds_enabled_server_; }
-
-    XdsServingStatusNotifier* notifier() { return &notifier_; }
-
-   private:
-    class XdsChannelArgsServerBuilderOption : public grpc::ServerBuilderOption {
-     public:
-      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
-          : test_obj_(test_obj) {}
-
-      void UpdateArguments(grpc::ChannelArguments* args) override {
-        args->SetString(
-            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
-            test_obj_->bootstrap_);
-        args->SetPointerWithVtable(
-            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
-            &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
-      }
-
-      void UpdatePlugins(
-          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* /*plugins*/)
-          override {}
-
-     private:
-      XdsEnd2endTest* test_obj_;
-    };
-
-    virtual void RegisterAllServices(ServerBuilder* builder) = 0;
-    virtual void StartAllServices() = 0;
-    virtual void ShutdownAllServices() = 0;
-
-    virtual const char* Type() = 0;
-
-    XdsEnd2endTest* test_obj_;
-    const int port_;
-    std::unique_ptr<Server> server_;
-    XdsServingStatusNotifier notifier_;
-    std::unique_ptr<std::thread> thread_;
-    bool running_ = false;
-    const bool use_xds_enabled_server_;
-  };
-
-  class BackendServerThread : public ServerThread {
-   public:
-    explicit BackendServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, test_obj->use_xds_enabled_server_) {}
-
-    BackendServiceImpl<grpc::testing::EchoTestService::Service>*
-    backend_service() {
-      return &backend_service_;
-    }
-    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>*
-    backend_service1() {
-      return &backend_service1_;
-    }
-    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
-    backend_service2() {
-      return &backend_service2_;
-    }
-
-    std::shared_ptr<ServerCredentials> Credentials() override {
-      if (GetParam().use_xds_credentials()) {
-        if (use_xds_enabled_server()) {
-          // We are testing server's use of XdsServerCredentials
-          return XdsServerCredentials(InsecureServerCredentials());
-        } else {
-          // We are testing client's use of XdsCredentials
-          std::string root_cert = ReadFile(kCaCertPath);
-          std::string identity_cert = ReadFile(kServerCertPath);
-          std::string private_key = ReadFile(kServerKeyPath);
-          std::vector<experimental::IdentityKeyCertPair>
-              identity_key_cert_pairs = {{private_key, identity_cert}};
-          auto certificate_provider = std::make_shared<
-              grpc::experimental::StaticDataCertificateProvider>(
-              root_cert, identity_key_cert_pairs);
-          grpc::experimental::TlsServerCredentialsOptions options(
-              certificate_provider);
-          options.watch_root_certs();
-          options.watch_identity_key_cert_pairs();
-          options.set_cert_request_type(
-              GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-          return grpc::experimental::TlsServerCredentials(options);
-        }
-      }
-      return ServerThread::Credentials();
-    }
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&backend_service_);
-      builder->RegisterService(&backend_service1_);
-      builder->RegisterService(&backend_service2_);
-    }
-
-    void StartAllServices() override {
-      backend_service_.Start();
-      backend_service1_.Start();
-      backend_service2_.Start();
-    }
-
-    void ShutdownAllServices() override {
-      backend_service_.Shutdown();
-      backend_service1_.Shutdown();
-      backend_service2_.Shutdown();
-    }
-
-    const char* Type() override { return "Backend"; }
-
-    BackendServiceImpl<grpc::testing::EchoTestService::Service>
-        backend_service_;
-    BackendServiceImpl<grpc::testing::EchoTest1Service::Service>
-        backend_service1_;
-    BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
-        backend_service2_;
-  };
-
-  class BalancerServerThread : public ServerThread {
-   public:
-    explicit BalancerServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
-          ads_service_(new AdsServiceImpl()),
-          lrs_service_(new LrsServiceImpl(
-              (GetParam().enable_load_reporting()
-                   ? test_obj->client_load_reporting_interval_seconds_
-                   : 0),
-              {kDefaultClusterName})) {}
-
-    AdsServiceImpl* ads_service() { return ads_service_.get(); }
-    LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(ads_service_->v2_rpc_service());
-      builder->RegisterService(ads_service_->v3_rpc_service());
-      builder->RegisterService(lrs_service_->v2_rpc_service());
-      builder->RegisterService(lrs_service_->v3_rpc_service());
-    }
-
-    void StartAllServices() override {
-      ads_service_->Start();
-      lrs_service_->Start();
-    }
-
-    void ShutdownAllServices() override {
-      ads_service_->Shutdown();
-      lrs_service_->Shutdown();
-    }
-
-    const char* Type() override { return "Balancer"; }
-
-    std::shared_ptr<AdsServiceImpl> ads_service_;
-    std::shared_ptr<LrsServiceImpl> lrs_service_;
-  };
-
-#ifndef DISABLED_XDS_PROTO_IN_CC
-  class AdminServerThread : public ServerThread {
-   public:
-    explicit AdminServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj) {}
-
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&csds_service_);
-    }
-    void StartAllServices() override {}
-    void ShutdownAllServices() override {}
-
-    const char* Type() override { return "Admin"; }
-
-    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
-  };
-#endif  // DISABLED_XDS_PROTO_IN_CC
-
   class LongRunningRpc {
    public:
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
@@ -1954,18 +1946,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return rpcs;
   }
 
-  const size_t num_backends_;
-  const int client_load_reporting_interval_seconds_;
   bool ipv6_only_ = false;
+
+  std::unique_ptr<BalancerServerThread> balancer_;
+
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<grpc::testing::EchoTest1Service::Stub> stub1_;
   std::unique_ptr<grpc::testing::EchoTest2Service::Stub> stub2_;
+
   std::vector<std::unique_ptr<BackendServerThread>> backends_;
-  std::unique_ptr<BalancerServerThread> balancer_;
+
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       logical_dns_cluster_resolver_response_generator_;
-  int xds_resource_does_not_exist_timeout_ms_ = 0;
   absl::InlinedVector<grpc_arg, 3> xds_channel_args_to_add_;
   grpc_channel_args xds_channel_args_;
 
@@ -1974,25 +1967,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   Listener default_server_listener_;
   RouteConfiguration default_server_route_config_;
   Cluster default_cluster_;
-  bool use_xds_enabled_server_;
   int xds_drain_grace_time_ms_ = 10 * 60 * 1000;  // 10 mins
   bool bootstrap_contents_from_env_var_;
   std::string bootstrap_;
   char* bootstrap_file_ = nullptr;
 };
 
-class BasicTest : public XdsEnd2endTest {
- public:
-  BasicTest() : XdsEnd2endTest(4) {}
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
-  }
-};
+using BasicTest = XdsEnd2endTest;
 
 // Tests that the balancer sends the correct response to the client, and the
 // client sends RPCs to the backends using the default child policy.
 TEST_P(BasicTest, Vanilla) {
+  CreateAndStartBackends(3);
   const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -2003,7 +1989,7 @@ TEST_P(BasicTest, Vanilla) {
   // We need to wait for all backends to come online.
   WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress,
@@ -2016,6 +2002,7 @@ TEST_P(BasicTest, Vanilla) {
 
 // Tests that the client can handle resource wrapped in a Resource message.
 TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
+  CreateAndStartBackends(1);
   balancer_->ads_service()->set_wrap_resources(true);
   const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({
@@ -2027,7 +2014,7 @@ TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
   // We need to wait for all backends to come online.
   WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress,
@@ -2039,9 +2026,11 @@ TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
 }
 
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
+  CreateAndStartBackends(2);
   const size_t kNumRpcsPerAddress = 100;
   auto endpoints = CreateEndpointsForBackends();
-  endpoints[0].health_status = HealthStatus::DRAINING;
+  endpoints.push_back(MakeNonExistantEndpoint());
+  endpoints.back().health_status = HealthStatus::DRAINING;
   EdsResourceArgs args({
       {"locality0", std::move(endpoints), kDefaultLocalityWeight,
        kDefaultLocalityPriority},
@@ -2050,11 +2039,11 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
-  WaitForAllBackends(/*start_index=*/1);
+  WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * (num_backends_ - 1));
+  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
   // Each backend should have gotten 100 requests.
-  for (size_t i = 1; i < backends_.size(); ++i) {
+  for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress,
               backends_[i]->backend_service()->request_count());
   }
@@ -2063,40 +2052,33 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
 // Tests that subchannel sharing works when the same backend is listed
 // multiple times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
+  CreateAndStartBackends(1);
   // Same backend listed twice.
-  auto endpoints = CreateEndpointsForBackends(0, 1);
+  auto endpoints = CreateEndpointsForBackends();
   endpoints.push_back(endpoints.front());
-  EdsResourceArgs args({
-      {"locality0", endpoints},
-  });
-  const size_t kNumRpcsPerAddress = 10;
+  EdsResourceArgs args({{"locality0", endpoints}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for the backend to come online.
-  WaitForBackend(0);
+  WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
+  const size_t kNumRpcsPerAddress = 10;
   CheckRpcSendOk(kNumRpcsPerAddress * endpoints.size());
   // Backend should have gotten 20 requests.
   EXPECT_EQ(kNumRpcsPerAddress * endpoints.size(),
             backends_[0]->backend_service()->request_count());
-  // And they should have come from a single client port, because of
-  // subchannel sharing.
-  EXPECT_EQ(1UL, backends_[0]->backend_service()->clients().size());
 }
 
 // Tests that RPCs will be blocked until a non-empty serverlist is received.
 TEST_P(BasicTest, InitiallyEmptyServerlist) {
+  CreateAndStartBackends(1);
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
   EdsResourceArgs::Locality empty_locality("locality0", {});
-  EdsResourceArgs args({
-      empty_locality,
-  });
+  EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send non-empty serverlist only after kServerlistDelayMs.
-  args = EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
                 BuildEdsResource(args), kServerlistDelayMs));
@@ -2124,11 +2106,9 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<EdsResourceArgs::Endpoint> endpoints;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    endpoints.emplace_back(grpc_pick_unused_port_or_die());
+    endpoints.emplace_back(MakeNonExistantEndpoint());
   }
-  EdsResourceArgs args({
-      {"locality0", endpoints},
-  });
+  EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
@@ -2140,9 +2120,8 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
 // Tests that RPCs fail when the backends are down, and will succeed again
 // after the backends are restarted.
 TEST_P(BasicTest, BackendsRestart) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(3);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
@@ -2156,13 +2135,14 @@ TEST_P(BasicTest, BackendsRestart) {
   // below (which we expect to succeed), if the callbacks happen in the wrong
   // order, the same race condition could happen again due to the client not
   // yet having noticed that the backends were all down.
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(num_backends_));
+  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(backends_.size()));
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
 }
 
 TEST_P(BasicTest, IgnoresDuplicateUpdates) {
+  CreateAndStartBackends(1);
   const size_t kNumRpcsPerAddress = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -2186,12 +2166,11 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
   }
 }
 
-using XdsResolverOnlyTest = BasicTest;
+using XdsResolverOnlyTest = XdsEnd2endTest;
 
 TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  CreateAndStartBackends(2);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for backends to come online.
   WaitForAllBackends(0, 1);
@@ -2204,10 +2183,8 @@ TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
   balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
   // Update backend, just so we can be sure that the client has
   // reconnected to the balancer.
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args2));
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Restart balancer.
   balancer_->Start();
   // Make sure client has reconnected.
@@ -2216,20 +2193,17 @@ TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
 
 // Tests switching over from one cluster to another.
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 2);
+  WaitForAllBackends(0, 1);
   // Populate new EDS resource.
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 4)},
-  });
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsServiceName));
+      BuildEdsResource(args, kNewEdsServiceName));
   // Populate new CDS resource.
   Cluster new_cluster = default_cluster_;
   new_cluster.set_name(kNewClusterName);
@@ -2245,14 +2219,13 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Wait for all new backends to be used.
-  WaitForAllBackends(2, 4);
+  WaitForAllBackends(1, 2);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
 TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
@@ -2271,6 +2244,7 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
 
 // Tests that we restart all xDS requests when we reestablish the ADS call.
 TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
+  CreateAndStartBackends(2);
   // Manually configure use of RDS.
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -2285,12 +2259,10 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   balancer_->ads_service()->SetRdsResource(default_route_config_);
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 2);
+  WaitForAllBackends(0, 1);
   // Now shut down and restart the balancer.  When the client
   // reconnects, it should automatically restart the requests for all
   // resource types.
@@ -2299,11 +2271,9 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   // Make sure things are still working.
   CheckRpcSendOk(100);
   // Populate new EDS resource.
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 4)},
-  });
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsServiceName));
+      BuildEdsResource(args, kNewEdsServiceName));
   // Populate new CDS resource.
   Cluster new_cluster = default_cluster_;
   new_cluster.set_name(kNewClusterName);
@@ -2318,10 +2288,11 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
       ->set_cluster(kNewClusterName);
   balancer_->ads_service()->SetRdsResource(new_route_config);
   // Wait for all new backends to be used.
-  WaitForAllBackends(2, 4);
+  WaitForAllBackends(1, 2);
 }
 
 TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
@@ -2329,20 +2300,17 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
       ->set_prefix("/");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
 }
 
 TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
+  CreateAndStartBackends(1);
   constexpr size_t kMaxConcurrentRequests = 10;
   // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
   CircuitBreakers circuit_breaks;
@@ -2374,17 +2342,13 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
-  // Make sure RPCs go to the correct backend:
-  EXPECT_EQ(kMaxConcurrentRequests + 1,
-            backends_[0]->backend_service()->request_count());
 }
 
 TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
+  CreateAndStartBackends(1);
   constexpr size_t kMaxConcurrentRequests = 10;
   // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
   CircuitBreakers circuit_breaks;
@@ -2419,17 +2383,13 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
-  // Make sure RPCs go to the correct backend:
-  EXPECT_EQ(kMaxConcurrentRequests + 1,
-            backends_[0]->backend_service()->request_count());
 }
 
 TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
+  CreateAndStartBackends(2);
   const char* kNewEdsResourceName = "new_eds_resource_name";
   // Populate EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Check that the channel is working.
   CheckRpcSendOk();
@@ -2437,11 +2397,9 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
   balancer_->Shutdown();
   balancer_->Start();
   // Create new EDS resource.
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsResourceName));
+      BuildEdsResource(args, kNewEdsResourceName));
   // Change CDS resource to point to new EDS resource.
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
@@ -2469,6 +2427,7 @@ TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
 // backends according to the last balancer response, until a new balancer is
 // reachable.
 TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
+  CreateAndStartBackends(2);
   // Set up EDS resource pointing to backend 0.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -2499,23 +2458,24 @@ TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
           status.error_code(), status.error_message().c_str());
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
 }
 
-using GlobalXdsClientTest = BasicTest;
+using GlobalXdsClientTest = XdsEnd2endTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
+  CreateAndStartBackends(1);
   const char* kNewServerName = "new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2526,6 +2486,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
 TEST_P(
     GlobalXdsClientTest,
     MultipleChannelsShareXdsClientWithResourceUpdateAfterOneChannelGoesAway) {
+  CreateAndStartBackends(2);
   // Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
   // XdsClient properly handles the case where there are multiple watchers on
   // the same resource and one of them unsubscribes.
@@ -2539,7 +2500,7 @@ TEST_P(
   })));
   WaitForBackend(0);
   // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2558,6 +2519,7 @@ TEST_P(
 
 // Tests that the NACK for multiple bad LDS resources includes both errors.
 TEST_P(GlobalXdsClientTest, MultipleBadResources) {
+  CreateAndStartBackends(1);
   constexpr char kServerName2[] = "server.other.com";
   constexpr char kServerName3[] = "server.another.com";
   auto listener = default_listener_;
@@ -2569,9 +2531,7 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
   listener.set_name(kServerName3);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForLdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -2622,10 +2582,9 @@ TEST_P(GlobalXdsClientTest, MultipleBadResources) {
 // Tests that we don't trigger does-not-exist callbacks for a resource
 // that was previously valid but is updated to be invalid.
 TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
+  CreateAndStartBackends(1);
   // Set up valid resources and check that the channel works.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk();
   // Now send an update changing the Listener to be invalid.
@@ -2639,19 +2598,17 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
                   kServerName,
                   ": validation error.*"
                   "Listener has neither address nor ApiListener")));
+  CheckRpcSendOk();
 }
 
 class XdsFederationTest : public XdsEnd2endTest {
  protected:
-  XdsFederationTest() : XdsEnd2endTest(2, 3, 0, true) {
-    authority_balancer_ = CreateAndStartBalancer();
-  }
+  XdsFederationTest() : authority_balancer_(CreateAndStartBalancer()) {}
 
   void SetUp() override {
     // Each test will use a slightly different bootstrapfile,
     // so SetUp() is intentionally empty here and the real
-    // setup: calling of CreateClientAndServers(builder)
-    // is moved into each test.
+    // setup (calling of InitClient()) is moved into each test.
   }
 
   void TearDown() override {
@@ -2666,7 +2623,7 @@ class XdsFederationTest : public XdsEnd2endTest {
 // Bootstrap config default client listener template uses new-style name with
 // authority "xds.example.com".
 TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -2691,8 +2648,8 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
       // in the authority.
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
-  CreateClientsAndServers(builder);
-  StartAllBackends();
+  InitClient(builder);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for the new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -2717,14 +2674,13 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
   WaitForAllBackends();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // In bootstrap config, authority has no client listener template, so we use the
 // default.
 TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerName =
@@ -2742,8 +2698,8 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   BootstrapBuilder builder = BootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
-  CreateClientsAndServers(builder);
-  StartAllBackends();
+  InitClient(builder);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -2773,7 +2729,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   WaitForAllBackends(0, 1);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2789,13 +2745,12 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   // server.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // Bootstrap entry for that authority specifies a client listener name template.
 TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -2817,8 +2772,8 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
-  CreateClientsAndServers(builder);
-  StartAllBackends();
+  InitClient(builder);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -2848,7 +2803,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   WaitForAllBackends(0, 1);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -2864,13 +2819,12 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   // server.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 // Setting server_listener_resource_name_template to start with "xdstp:" and
 // look up xds server under an authority map.
 TEST_P(XdsFederationTest, FederationServer) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -2899,8 +2853,8 @@ TEST_P(XdsFederationTest, FederationServer) {
       // in the authority.
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
       "client/%s?client_listener_resource_name_template_not_in_use");
-  CreateClientsAndServers(builder);
-  StartAllBackends();
+  InitClient(builder);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for new authority balancer.
   EdsResourceArgs args =
       EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -2936,7 +2890,6 @@ TEST_P(XdsFederationTest, FederationServer) {
     authority_balancer_->ads_service()->SetLdsResource(server_listener);
   }
   WaitForAllBackends();
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 using XdsFederationLoadReportingTest = XdsFederationTest;
@@ -2946,7 +2899,7 @@ using XdsFederationLoadReportingTest = XdsFederationTest;
 // Sending traffic to both default balancer and authority balancer and checking
 // load reporting with each one.
 TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_FEDERATION", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -2970,8 +2923,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
-  CreateClientsAndServers(builder);
-  StartAllBackends();
+  InitClient(builder);
+  CreateAndStartBackends(2, /*xds_enabled=*/true);
   // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
   // and RPCs sent using the new stub go to backend 1.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -3003,7 +2956,7 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   CheckRpcSendOk(kNumRpcsToDefaultBalancer);
   // Create second channel to new target uri and send 1 RPC .
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, kNewServerName, kAuthority);
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
@@ -3051,25 +3004,19 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   EXPECT_EQ(0U, default_client_stats.total_dropped_requests());
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
-  gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
 class SecureNamingTest : public XdsEnd2endTest {
  public:
-  SecureNamingTest()
-      : XdsEnd2endTest(/*num_backends=*/4,
-                       /*client_load_reporting_interval_seconds=*/100,
-                       /*xds_resource_does_not_exist_timeout_ms=*/0,
-                       /*use_xds_enabled_server=*/false) {}
-
-  void SetUp() override {}
+  void SetUp() override {
+    // Each test calls InitClient() on its own.
+  }
 };
 
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  CreateClientsAndServers(BootstrapBuilder(),
-                          /*lb_expected_authority=*/"localhost:%d");
-  StartAllBackends();
+  InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
+  CreateAndStartBackends(4);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
@@ -3080,9 +3027,9 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
-  CreateClientsAndServers(BootstrapBuilder(),
-                          /*lb_expected_authority=*/"incorrect_server_name");
-  StartAllBackends();
+  InitClient(BootstrapBuilder(),
+             /*lb_expected_authority=*/"incorrect_server_name");
+  CreateAndStartBackends(4);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
   });
@@ -3092,7 +3039,7 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
 }
 
-using LdsTest = BasicTest;
+using LdsTest = XdsEnd2endTest;
 
 // Tests that LDS client should send a NACK if there is no API listener in the
 // Listener in the LDS response.
@@ -3169,6 +3116,7 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
 // Tests that LDS client accepts the rds message in the
 // http_connection_manager with a config_source field that specifies ADS.
 TEST_P(LdsTest, AcceptsRdsConfigSourceOfTypeAds) {
+  CreateAndStartBackends(1);
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3301,6 +3249,7 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
 
 // Test that we ignore optional unknown filter types.
 TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
+  CreateAndStartBackends(1);
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3315,9 +3264,7 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = balancer_->ads_service()->lds_response_state();
@@ -3349,6 +3296,7 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
 
 // Test that we ignore optional filters without configs.
 TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
+  CreateAndStartBackends(1);
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3363,9 +3311,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = balancer_->ads_service()->lds_response_state();
@@ -3425,6 +3371,7 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
 
 // Test that we ignore optional HTTP filters unsupported on client-side.
 TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
+  CreateAndStartBackends(1);
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3440,11 +3387,9 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(0);
+  WaitForAllBackends();
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -3485,13 +3430,14 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
       ::testing::HasSubstr("'original_ip_detection_extensions' must be empty"));
 }
 
-using LdsV2Test = LdsTest;
+using LdsV2Test = XdsEnd2endTest;
 
 // Tests that we ignore the HTTP filter list in v2.
 // TODO(roth): The test framework is not set up to allow us to test
 // the server sending v2 resources when the client requests v3, so this
 // just tests a pure v2 setup.  When we have time, fix this.
 TEST_P(LdsV2Test, IgnoresHttpFilters) {
+  CreateAndStartBackends(1);
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3503,14 +3449,12 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk();
 }
 
-using LdsRdsTest = BasicTest;
+using LdsRdsTest = XdsEnd2endTest;
 
 MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
   gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
@@ -3539,9 +3483,8 @@ TEST_P(LdsRdsTest, Vanilla) {
 
 // Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
 TEST_P(LdsRdsTest, ListenerRemoved) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends();
@@ -3937,6 +3880,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
 // Tests that LDS client should choose the default route (with no matching
 // specified) after unable to find a match with previous routes.
 TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4011,6 +3955,7 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4073,6 +4018,7 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4142,6 +4088,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
+  CreateAndStartBackends(3);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4204,6 +4151,7 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4275,6 +4223,7 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
+  CreateAndStartBackends(3);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4362,6 +4311,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
+  CreateAndStartBackends(3);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4433,6 +4383,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4563,6 +4514,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -4717,6 +4669,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 5;
@@ -4755,6 +4708,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   // Populate new EDS resources.
@@ -5098,6 +5052,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
+  CreateAndStartBackends(1);
   const size_t kNumRetries = 3;
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5159,6 +5114,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
+  CreateAndStartBackends(1);
   const size_t kNumRetries = 3;
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5183,6 +5139,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
+  CreateAndStartBackends(1);
   // Set num retries to 3, but due to longer back off, we expect only 1 retry
   // will take place.
   const size_t kNumRetries = 3;
@@ -5217,6 +5174,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
+  CreateAndStartBackends(1);
   // Set num retries to 3, but due to longer back off, we expect only 2 retry
   // will take place, while the 2nd one will obey the max backoff.
   const size_t kNumRetries = 3;
@@ -5258,6 +5216,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
+  CreateAndStartBackends(1);
   const size_t kNumRetries = 3;
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5282,6 +5241,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
 
 TEST_P(LdsRdsTest,
        XdsRetryPolicyUnsupportedStatusCodeWithVirtualHostLevelRetry) {
+  CreateAndStartBackends(1);
   const size_t kNumRetries = 3;
   // Populate new EDS resources.
   EdsResourceArgs args({
@@ -5312,6 +5272,7 @@ TEST_P(LdsRdsTest,
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
+  CreateAndStartBackends(1);
   // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -5334,6 +5295,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
 }
 
 TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
+  CreateAndStartBackends(1);
   // Populate new EDS resources.
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
@@ -5360,6 +5322,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEcho1Rpcs = 100;
@@ -5444,6 +5407,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 100;
@@ -5490,6 +5454,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
+  CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const size_t kNumEchoRpcs = 100;
@@ -5537,6 +5502,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const double kErrorTolerance = 0.05;
@@ -5589,6 +5555,7 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
+  CreateAndStartBackends(4);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -5687,6 +5654,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   // Populate new EDS resources.
@@ -5770,6 +5738,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
 
 // Test that we ignore optional unknown filter types in VirtualHost.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
+  CreateAndStartBackends(1);
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
@@ -5780,9 +5749,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5826,6 +5793,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
 // Test that we ignore optional filters without configs in VirtualHost.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -5881,6 +5849,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
 // Test that we ignore optional unknown filter types in Route.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -5891,9 +5860,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -5939,6 +5906,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
 // Test that we ignore optional filters without configs in Route.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -5948,9 +5916,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -6001,6 +5967,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
 // Test that we ignore optional unknown filter types in ClusterWeight.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6016,9 +5983,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -6075,6 +6040,7 @@ TEST_P(LdsRdsTest,
 // Test that we ignore optional filters without configs in ClusterWeight.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  CreateAndStartBackends(1);
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6089,9 +6055,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -6122,7 +6086,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
       ::testing::HasSubstr("router filter does not support config override"));
 }
 
-using CdsTest = BasicTest;
+using CdsTest = XdsEnd2endTest;
 
 // Tests that CDS client should send an ACK upon correct CDS response.
 TEST_P(CdsTest, Vanilla) {
@@ -6133,8 +6097,9 @@ TEST_P(CdsTest, Vanilla) {
 }
 
 TEST_P(CdsTest, LogicalDNSClusterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(1);
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6151,19 +6116,17 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
     logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
-  // Wait for traffic to go to backend 1.
-  WaitForBackend(1);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  // RPCs should succeed.
+  CheckRpcSendOk();
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6173,13 +6136,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
                   "load_assignment not present for LOGICAL_DNS cluster"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6191,13 +6152,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
       response_state->error_message,
       ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
                            "exactly one locality, found 0"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6211,13 +6170,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
       response_state->error_message,
       ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
                            "exactly one locality, found 2"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6229,13 +6186,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
               ::testing::HasSubstr(
                   "locality for LOGICAL_DNS cluster must have exactly one "
                   "endpoint, found 0"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6249,13 +6204,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
               ::testing::HasSubstr(
                   "locality for LOGICAL_DNS cluster must have exactly one "
                   "endpoint, found 2"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6265,13 +6218,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LbEndpoint endpoint field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6284,13 +6235,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Endpoint address field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6304,13 +6253,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Address socket_address field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6327,13 +6274,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
                                    "custom resolver name set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6348,13 +6293,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress address field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
@@ -6370,23 +6313,22 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress port_value field not set"));
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   // Populate new EDS resources.
   EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -6412,24 +6354,23 @@ TEST_P(CdsTest, AggregateClusterType) {
   cluster_config.add_clusters(kNewCluster2Name);
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
-  // Wait for traffic to go to backend 1.
-  WaitForBackend(1);
-  // Shutdown backend 1 and wait for all traffic to go to backend 2.
-  ShutdownBackend(1);
-  WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(0);
+  // Shutdown backend 0 and wait for all traffic to go to backend 1.
+  ShutdownBackend(0);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Bring backend 1 back and ensure all traffic go back to it.
-  StartBackend(1);
-  WaitForBackend(1);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  // Bring backend 0 back and ensure all traffic go back to it.
+  StartBackend(0);
+  WaitForBackend(0);
 }
 
 TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
@@ -6486,20 +6427,17 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
     }
   }
   EXPECT_TRUE(found);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
 
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate new EDS resources.
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
   // Populate new CDS resources.
@@ -6534,34 +6472,33 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(GetBackendPorts(2, 3));
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
     logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
-  // Wait for traffic to go to backend 1.
-  WaitForBackend(1);
-  // Shutdown backend 1 and wait for all traffic to go to backend 2.
-  ShutdownBackend(1);
-  WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(0);
+  // Shutdown backend 0 and wait for all traffic to go to backend 1.
+  ShutdownBackend(0);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Bring backend 1 back and ensure all traffic go back to it.
-  StartBackend(1);
-  WaitForBackend(1);
-  gpr_unsetenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  // Bring backend 0 back and ensure all traffic go back to it.
+  StartBackend(0);
+  WaitForBackend(0);
 }
 
 TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER",
-             "true");
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate new EDS resources.
   EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args2, kNewEdsService2Name));
@@ -6597,23 +6534,141 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(GetBackendPorts(1, 2));
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts(0, 1));
     logical_dns_cluster_resolver_response_generator_->SetResponse(
         std::move(result));
   }
-  // Wait for traffic to go to backend 1.
-  WaitForBackend(1);
-  // Shutdown backend 1 and wait for all traffic to go to backend 2.
-  ShutdownBackend(1);
-  WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(0);
+  // Shutdown backend 0 and wait for all traffic to go to backend 1.
+  ShutdownBackend(0);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Bring backend 1 back and ensure all traffic go back to it.
-  StartBackend(1);
-  WaitForBackend(1);
-  gpr_unsetenv(
+  // Bring backend 0 back and ensure all traffic go back to it.
+  StartBackend(0);
+  WaitForBackend(0);
+}
+
+// This test covers a bug seen in the wild where the
+// xds_cluster_resolver policy's code to reuse child policy names did
+// not correctly handle the case where the LOGICAL_DNS priority failed,
+// thus returning a priority with no localities.  This caused the child
+// name to be reused incorrectly, which triggered an assertion failure
+// in the xds_cluster_impl policy caused by changing its cluster name.
+TEST_P(CdsTest, AggregateClusterReconfigEdsWhileLogicalDnsChildFails) {
+  ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate EDS resource with all unreachable endpoints.
+  // - Priority 0: locality0
+  // - Priority 1: locality1, locality2
+  EdsResourceArgs args1({
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality2", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Logical DNS Cluster
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = absl::UnavailableError("injected error");
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // When an RPC fails, we know the channel has seen the update.
+  CheckRpcSendFailure();
+  // Send an EDS update that moves locality1 to priority 0.
+  args1 = EdsResourceArgs({
+      {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+}
+
+TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
+  const char* kNewClusterName1 = "new_cluster_1";
+  const char* kNewEdsServiceName1 = "new_eds_service_name_1";
+  const char* kNewClusterName2 = "new_cluster_2";
+  const char* kNewEdsServiceName2 = "new_eds_service_name_2";
+  // Populate EDS resource for cluster 1 with unreachable endpoint.
+  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName1));
+  // Populate CDS resource for cluster 1.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewClusterName1);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName1);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Populate EDS resource for cluster 2.
+  args1 = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName2));
+  // Populate CDS resource for cluster 2.
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewClusterName2);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName2);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewClusterName1);
+  cluster_config.add_clusters(kNewClusterName2);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for channel to get the resources and get connected.
+  WaitForBackend(0);
+  // Send an EDS update for cluster 1 that reuses the locality name from
+  // cluster 1 and points traffic to backend 1.
+  args1 = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName1));
+  WaitForBackend(1);
 }
 
 // Test that CDS client should send a NACK if cluster type is Logical DNS but
@@ -6662,6 +6717,7 @@ TEST_P(CdsTest, UnsupportedClusterType) {
 TEST_P(CdsTest, MultipleBadResources) {
   constexpr char kClusterName2[] = "cluster_name_2";
   constexpr char kClusterName3[] = "cluster_name_3";
+  CreateAndStartBackends(1);
   // Add cluster with unsupported type.
   auto cluster = default_cluster_;
   cluster.set_name(kClusterName2);
@@ -6693,9 +6749,7 @@ TEST_P(CdsTest, MultipleBadResources) {
   route->mutable_route()->set_cluster(kClusterName3);
   SetRouteConfiguration(balancer_.get(), route_config);
   // Add EDS resource.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send RPC.
   const auto response_state = WaitForCdsNack();
@@ -6725,9 +6779,8 @@ TEST_P(CdsTest, MultipleBadResources) {
 // Tests that we don't trigger does-not-exist callbacks for a resource
 // that was previously valid but is updated to be invalid.
 TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Check that everything works.
   CheckRpcSendOk();
@@ -6741,6 +6794,7 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
               ::testing::ContainsRegex(absl::StrCat(
                   kDefaultClusterName,
                   ": validation error.*DiscoveryType is not valid")));
+  CheckRpcSendOk();
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
@@ -6758,6 +6812,7 @@ TEST_P(CdsTest, EdsConfigSourceDoesNotSpecifyAdsOrSelf) {
 
 // Tests that CDS client accepts an eds_config of type ADS.
 TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_ads();
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -6796,6 +6851,7 @@ TEST_P(CdsTest, WrongLrsServer) {
 // Tests that ring hash policy that hashes using channel id ensures all RPCs
 // to go 1 particular backend.
 TEST_P(CdsTest, RingHashChannelIdHashing) {
+  CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -6805,9 +6861,7 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk(100);
   bool found = false;
@@ -6825,6 +6879,7 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
 // Tests that ring hash policy that hashes using a header value can spread
 // RPCs across all the backends.
 TEST_P(CdsTest, RingHashHeaderHashing) {
+  CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -6834,9 +6889,7 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Note each type of RPC will contains a header value that will always be
   // hashed to a specific backend as the header value matches the value used
@@ -6869,6 +6922,7 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
 // Tests that ring hash policy that hashes using a header value and regex
 // rewrite to aggregate RPCs to 1 backend.
 TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
+  CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -6884,9 +6938,7 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
       "foo");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -6918,6 +6970,7 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
 
 // Tests that ring hash policy that hashes using a random value.
 TEST_P(CdsTest, RingHashNoHashPolicy) {
+  CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
   const uint32_t kRpcTimeoutMs = 10000;
@@ -6929,7 +6982,7 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
       100000);
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
@@ -6947,6 +7000,7 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
 // Test that ring hash policy evaluation will continue past the terminal
 // policy if no results are produced yet.
 TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
+  CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -6959,7 +7013,7 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   hash_policy2->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
@@ -6972,6 +7026,7 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
 // Test random hash is used when header hashing specified a header field that
 // the RPC did not have.
 TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
+  CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
   const uint32_t kRpcTimeoutMs = 10000;
@@ -6989,7 +7044,7 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   hash_policy->mutable_header()->set_header_name("header_not_present");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"unmatched_header", absl::StrFormat("%" PRIu32, rand())},
@@ -7011,6 +7066,7 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
 // Test random hash is used when only unsupported hash policies are
 // configured.
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
+  CreateAndStartBackends(2);
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
   const uint32_t kRpcTimeoutMs = 10000;
@@ -7034,7 +7090,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
       "query_parameter");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
@@ -7052,6 +7108,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
 // Tests that ring hash policy that hashes using a random value can spread
 // RPCs across all the backends according to locality weight.
 TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
+  CreateAndStartBackends(2);
   const size_t kWeight1 = 1;
   const size_t kWeight2 = 2;
   const size_t kWeightTotal = kWeight1 + kWeight2;
@@ -7090,6 +7147,7 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
 // RPCs across all the backends according to locality weight.
 TEST_P(CdsTest,
        RingHashRandomHashingDistributionAccordingToLocalityAndEndpointWeight) {
+  CreateAndStartBackends(2);
   const size_t kWeight1 = 1 * 1;
   const size_t kWeight2 = 2 * 2;
   const size_t kWeightTotal = kWeight1 + kWeight2;
@@ -7127,6 +7185,7 @@ TEST_P(CdsTest,
 // Tests round robin is not implacted by the endpoint weight, and that the
 // localities in a locality map are picked according to their weights.
 TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
+  CreateAndStartBackends(2);
   const int kLocalityWeight0 = 2;
   const int kLocalityWeight1 = 8;
   const int kTotalLocalityWeight = kLocalityWeight0 + kLocalityWeight1;
@@ -7168,6 +7227,7 @@ TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
 // RPCs to go 1 particular backend; and that subsequent hashing policies are
 // ignored due to the setting of terminal.
 TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
+  CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -7180,9 +7240,7 @@ TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
   hash_policy_to_be_ignored->mutable_header()->set_header_name("random_string");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"fixed_string", "fixed_value"},
@@ -7206,6 +7264,7 @@ TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
 // (tho it is not possible to catch the connecting state before moving to
 // ready)
 TEST_P(CdsTest, RingHashIdleToReady) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -7215,9 +7274,7 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   CheckRpcSendOk();
@@ -7227,6 +7284,7 @@ TEST_P(CdsTest, RingHashIdleToReady) {
 // Test that when the first pick is down leading to a transient failure, we
 // will move on to the next ring hash entry.
 TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -7239,25 +7297,22 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   std::vector<EdsResourceArgs::Endpoint> endpoints;
   const int unused_port = grpc_pick_unused_port_or_die();
   endpoints.emplace_back(unused_port);
-  endpoints.emplace_back(backends_[1]->port());
-  EdsResourceArgs args({
-      {"locality0", std::move(endpoints)},
-  });
+  endpoints.emplace_back(backends_[0]->port());
+  EdsResourceArgs args({{"locality0", std::move(endpoints)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(unused_port)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
   CheckRpcSendOk(100, rpc_options);
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
 // Test that when a backend goes down, we will move on to the next subchannel
 // (with a lower priority).  When the backend comes back up, traffic will move
 // back.
 TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
+  CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -7290,6 +7345,7 @@ TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
 
 // Test that when all backends are down, we will keep reattempting.
 TEST_P(CdsTest, RingHashAllFailReattempt) {
+  CreateAndStartBackends(1);
   const uint32_t kConnectionTimeoutMilliseconds = 5000;
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -7300,20 +7356,16 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  std::vector<EdsResourceArgs::Endpoint> endpoints;
-  endpoints.emplace_back(grpc_pick_unused_port_or_die());
-  endpoints.emplace_back(backends_[1]->port());
-  EdsResourceArgs args({
-      {"locality0", std::move(endpoints)},
-  });
+  EdsResourceArgs args(
+      {{"locality0", {MakeNonExistantEndpoint(), CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  ShutdownBackend(1);
+  ShutdownBackend(0);
   CheckRpcSendFailure(CheckRpcSendFailureOptions().set_rpc_options(
       RpcOptions().set_metadata(std::move(metadata))));
-  StartBackend(1);
+  StartBackend(0);
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
@@ -7322,6 +7374,7 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
 // Test that when all backends are down and then up, we may pick a TF backend
 // and we will then jump to ready backend.
 TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
+  CreateAndStartBackends(2);
   const uint32_t kConnectionTimeoutMilliseconds = 5000;
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -7332,14 +7385,11 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  std::vector<EdsResourceArgs::Endpoint> endpoints;
   // Make sure we include some unused ports to fill the ring.
-  endpoints.emplace_back(backends_[0]->port());
-  endpoints.emplace_back(backends_[1]->port());
-  endpoints.emplace_back(grpc_pick_unused_port_or_die());
-  endpoints.emplace_back(grpc_pick_unused_port_or_die());
   EdsResourceArgs args({
-      {"locality0", std::move(endpoints)},
+      {"locality0",
+       {CreateEndpoint(0), CreateEndpoint(1), MakeNonExistantEndpoint(),
+        MakeNonExistantEndpoint()}},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -7378,6 +7428,7 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
 // Test unspported hash policy types are all ignored before a supported
 // policy.
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
+  CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
@@ -7395,9 +7446,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk(100);
   bool found = false;
@@ -7415,6 +7464,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
 // Test we nack when ring hash policy has invalid hash function (something
 // other than XX_HASH.
 TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   cluster.mutable_ring_hash_lb_config()->set_hash_function(
@@ -7426,9 +7476,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForCdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -7439,6 +7487,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
 
 // Test we nack when ring hash policy has invalid ring size.
 TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
@@ -7450,9 +7499,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForCdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -7463,6 +7510,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMinimumRingSize) {
 
 // Test we nack when ring hash policy has invalid ring size.
 TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -7474,9 +7522,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForCdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -7487,6 +7533,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidMaxmumRingSize) {
 
 // Test we nack when ring hash policy has invalid ring size.
 TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
+  CreateAndStartBackends(1);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -7500,9 +7547,7 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForCdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
@@ -7522,6 +7567,8 @@ class RlsTest : public XdsEnd2endTest {
     RlsServiceImpl* rls_service() { return rls_service_.get(); }
 
    private:
+    const char* Type() override { return "Rls"; }
+
     void RegisterAllServices(ServerBuilder* builder) override {
       builder->RegisterService(rls_service_.get());
     }
@@ -7530,19 +7577,12 @@ class RlsTest : public XdsEnd2endTest {
 
     void ShutdownAllServices() override { rls_service_->Shutdown(); }
 
-    const char* Type() override { return "Rls"; }
-
     std::shared_ptr<RlsServiceImpl> rls_service_;
   };
 
-  RlsTest() : XdsEnd2endTest(4) {
+  RlsTest() {
     rls_server_ = absl::make_unique<RlsServerThread>(this);
     rls_server_->Start();
-  }
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
   }
 
   void TearDown() override {
@@ -7554,7 +7594,8 @@ class RlsTest : public XdsEnd2endTest {
 };
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  CreateAndStartBackends(2);
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   const size_t kNumEchoRpcs = 5;
@@ -7616,29 +7657,10 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
   CheckRpcSendOk(kNumEchoRpcs, rpc_options);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   RouteConfiguration new_route_config = default_route_config_;
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -7651,7 +7673,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction cluster contains cluster "
                                    "specifier plugin name not configured."));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
@@ -7660,25 +7681,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
   // behavior we want in this case is that if is_optional is true, then we
   // ignore that plugin and ignore any routes that refer to that plugin.
   // However, if is_optional is false, then we want to NACK.
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
   RouteLookupConfig route_lookup_config;
@@ -7700,29 +7703,10 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
       response_state->error_message,
       ::testing::HasSubstr(
           "Unable to locate the cluster specifier plugin in the registry"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   // Prepare the RLSLookupConfig and configure all the keys; add required_match
   // field which should not be there.
   RouteLookupConfig route_lookup_config;
@@ -7753,28 +7737,13 @@ TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
   EXPECT_THAT(
       response_state->error_message,
       ::testing::HasSubstr("field:requiredMatch error:must not be present"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
+  CreateAndStartBackends(1);
   // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
   // Prepare the RLSLookupConfig and configure all the keys; change route
   // configurations to use cluster specifier plugin.
   RouteLookupConfig route_lookup_config;
@@ -7807,7 +7776,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   WaitForAllBackends(0, 1, WaitForBackendOptions(), rpc_options);
 }
 
-class XdsSecurityTest : public BasicTest {
+class XdsSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
     BootstrapBuilder builder = BootstrapBuilder();
@@ -7822,8 +7791,8 @@ class XdsSecurityTest : public BasicTest {
                                      kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
-    CreateClientsAndServers(builder);
-    StartAllBackends();
+    InitClient(builder);
+    CreateAndStartBackends(1);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
@@ -8713,11 +8682,9 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
-  XdsEnabledServerTest()
-      : XdsEnd2endTest(1, 100, 0, true /* use_xds_enabled_server */) {}
-
   void SetUp() override {
     XdsEnd2endTest::SetUp();
+    CreateBackends(1, /*xds_enabled=*/true);
     EdsResourceArgs args({
         {"locality0", CreateEndpointsForBackends(0, 1)},
     });
@@ -8930,9 +8897,6 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
-  XdsServerSecurityTest()
-      : XdsEnd2endTest(1, 100, 0, true /* use_xds_enabled_server */) {}
-
   void SetUp() override {
     BootstrapBuilder builder = BootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
@@ -8946,7 +8910,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                      kCaCertPath));
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
-    CreateClientsAndServers(builder);
+    InitClient(builder);
+    CreateBackends(1, /*xds_enabled=*/true);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -10341,13 +10306,9 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
 
 class XdsServerRdsTest : public XdsEnabledServerStatusNotificationTest {
  protected:
-  static void SetUpTestSuite() {
-    gpr_setenv("GRPC_XDS_EXPERIMENTAL_RBAC", "true");
-  }
+  XdsServerRdsTest() : env_var_("GRPC_XDS_EXPERIMENTAL_RBAC") {}
 
-  static void TearDownTestSuite() {
-    gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_RBAC");
-  }
+  ScopedExperimentalEnvVar env_var_;
 };
 
 TEST_P(XdsServerRdsTest, Basic) {
@@ -11481,13 +11442,13 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionOrIdPrincipal) {
       grpc::StatusCode::PERMISSION_DENIED);
 }
 
-using EdsTest = BasicTest;
+using EdsTest = XdsEnd2endTest;
 
 // Tests that EDS client should send a NACK if the EDS update contains
 // sparse priorities.
 TEST_P(EdsTest, NacksSparsePriorityList) {
   EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const auto response_state = WaitForEdsNack();
@@ -11496,15 +11457,31 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
               ::testing::HasSubstr("sparse priority list"));
 }
 
+// Tests that EDS client should send a NACK if the EDS update contains
+// multiple instances of the same locality in the same priority.
+TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
+  EdsResourceArgs args({
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  const auto response_state = WaitForEdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(
+                  "duplicate locality {region=\"xds_default_locality_region\", "
+                  "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
+                  "found in priority 0"));
+}
+
 // In most of our tests, we use different names for different resource
 // types, to make sure that there are no cut-and-paste errors in the code
 // that cause us to look at data for the wrong resource type.  So we add
 // this test to make sure that the EDS resource name defaults to the
 // cluster name if not specified in the CDS resource.
 TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args, kDefaultClusterName));
   Cluster cluster = default_cluster_;
@@ -11515,14 +11492,9 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
 
 class TimeoutTest : public XdsEnd2endTest {
  protected:
-  TimeoutTest()
-      : XdsEnd2endTest(/*num_backends=*/4,
-                       /*client_load_reporting_interval_seconds=*/100,
-                       /*xds_resource_does_not_exist_timeout_ms=*/500,
-                       /*use_xds_enabled_server=*/false) {}
   void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
+    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/500);
   }
 };
 
@@ -11540,15 +11512,14 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
       << "This test cannot use bootstrap from channel args, because it "
          "needs two channels to use the same XdsClient instance.";
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Create second channel for a new server name.
   // This should fail because there is no LDS resource for this server name.
   auto channel2 =
-      CreateChannel(/*failover_timeout=*/0, "new-server.example.com");
+      CreateChannel(/*failover_timeout_ms=*/0, "new-server.example.com");
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
@@ -11575,9 +11546,8 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   ASSERT_NE(GetParam().bootstrap_source(), TestType::kBootstrapFromChannelArg)
       << "This test cannot use bootstrap from channel args, because it "
          "needs two channels to use the same XdsClient instance.";
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Add listener for 2nd channel, but no RDS resource.
   const char* kNewServerName = "new-server.example.com";
@@ -11594,7 +11564,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   // Create second channel for a new server name.
   // This should fail because the LDS resource points to a non-existent RDS
   // resource.
-  auto channel2 = CreateChannel(/*failover_timeout=*/0, kNewServerName);
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
@@ -11617,9 +11587,8 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
 }
 
 TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // Change route config to point to non-existing cluster.
@@ -11656,9 +11625,8 @@ TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
 }
 
 TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
   // New cluster that points to a non-existant EDS resource.
@@ -11689,11 +11657,12 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   EXPECT_TRUE(error_seen);
 }
 
-using LocalityMapTest = BasicTest;
+using LocalityMapTest = XdsEnd2endTest;
 
 // Tests that the localities in a locality map are picked according to their
 // weights.
 TEST_P(LocalityMapTest, WeightedRoundRobin) {
+  CreateAndStartBackends(2);
   const int kLocalityWeight0 = 2;
   const int kLocalityWeight1 = 8;
   const int kTotalLocalityWeight = kLocalityWeight0 + kLocalityWeight1;
@@ -11729,6 +11698,7 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
 
 // Tests that we correctly handle a locality containing no endpoints.
 TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
+  CreateAndStartBackends(2);
   const size_t kNumRpcs = 5000;
   // EDS response contains 2 localities, one with no endpoints.
   EdsResourceArgs args({
@@ -11745,10 +11715,6 @@ TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
             kNumRpcs / backends_.size());
   EXPECT_EQ(backends_[1]->backend_service()->request_count(),
             kNumRpcs / backends_.size());
-  EXPECT_EQ(backends_[2]->backend_service()->request_count(),
-            kNumRpcs / backends_.size());
-  EXPECT_EQ(backends_[3]->backend_service()->request_count(),
-            kNumRpcs / backends_.size());
 }
 
 // EDS update with no localities.
@@ -11762,6 +11728,7 @@ TEST_P(LocalityMapTest, NoLocalities) {
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(LocalityMapTest, StressTest) {
+  CreateAndStartBackends(2);
   const size_t kNumLocalities = 100;
   const uint32_t kRpcTimeoutMs = 5000;
   // The first ADS response contains kNumLocalities localities, each of which
@@ -11773,24 +11740,21 @@ TEST_P(LocalityMapTest, StressTest) {
     args.locality_list.emplace_back(std::move(locality));
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until backend 0 is ready, before which kNumLocalities localities are
-  // received and handled by the xds policy.
+  // Wait until backend 0 is ready.
   WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The second ADS response contains 1 locality, which contains backend 1.
-  args = EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait until backend 1 is ready, before which kNumLocalities localities are
-  // removed by the xds policy.
+  // Wait until backend 1 is ready.
   WaitForBackend(1);
 }
 
 // Tests that the localities in a locality map are picked correctly after
 // update (addition, modification, deletion).
 TEST_P(LocalityMapTest, UpdateMap) {
+  CreateAndStartBackends(4);
   const size_t kNumRpcs = 3000;
   // The locality weight for the first 3 localities.
   const std::vector<int> kLocalityWeights0 = {2, 3, 4};
@@ -11880,13 +11844,10 @@ TEST_P(LocalityMapTest, UpdateMap) {
 // Tests that we don't fail RPCs when replacing all of the localities in
 // a given priority.
 TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
+  CreateAndStartBackends(2);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({
-      {"locality1", CreateEndpointsForBackends(1, 2)},
-  });
+  args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
                 BuildEdsResource(args), 5000));
@@ -11899,16 +11860,17 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
   delayed_resource_setter.join();
 }
 
-class FailoverTest : public BasicTest {
+class FailoverTest : public XdsEnd2endTest {
  public:
   void SetUp() override {
-    BasicTest::SetUp();
-    ResetStub(500);
+    XdsEnd2endTest::SetUp();
+    ResetStub(/*failover_timeout_ms=*/500);
   }
 };
 
 // Localities with the highest priority are used when multiple priority exist.
 TEST_P(FailoverTest, ChooseHighestPriority) {
+  CreateAndStartBackends(4);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        1},
@@ -11928,6 +11890,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
 
 // Does not choose priority with no endpoints.
 TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
+  CreateAndStartBackends(3);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        1},
@@ -11946,6 +11909,7 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
 
 // Does not choose locality with no endpoints.
 TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
+  CreateAndStartBackends(1);
   EdsResourceArgs args({
       {"locality0", {}, kDefaultLocalityWeight, 0},
       {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 0},
@@ -11958,29 +11922,24 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
 // If the higher priority localities are not reachable, failover to the
 // highest priority among the rest.
 TEST_P(FailoverTest, Failover) {
+  CreateAndStartBackends(2);
   EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
-       1},
-      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+      {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        2},
-      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+      {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        3},
-      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
-       0},
+      {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
   });
-  ShutdownBackend(3);
-  ShutdownBackend(0);
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false));
-  for (size_t i = 0; i < 4; ++i) {
-    if (i == 1) continue;
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
+  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
+  CreateAndStartBackends(4);
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -11999,7 +11958,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   WaitForBackend(
       1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
              true));
-  for (size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < backends_.size(); ++i) {
     if (i == 1) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -12012,47 +11971,27 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
 // The first update only contains unavailable priorities. The second update
 // contains available priorities.
 TEST_P(FailoverTest, UpdateInitialUnavailable) {
+  CreateAndStartBackends(2);
   EdsResourceArgs args({
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendFailure();
+  args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
       {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
-       0},
-      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
-       1},
-      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
-       2},
-      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
-       3},
-  });
-  ShutdownBackend(0);
-  ShutdownBackend(1);
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args), 1000));
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_millis(500, GPR_TIMESPAN));
-  // Send 0.5 second worth of RPCs.
-  do {
-    CheckRpcSendFailure();
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  WaitForBackend(
-      2, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-             true));
-  for (size_t i = 0; i < 4; ++i) {
-    if (i == 2) continue;
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  delayed_resource_setter.join();
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
 }
 
 // Tests that after the localities' priorities are updated, we still choose
 // the highest READY priority with the updated localities.
 TEST_P(FailoverTest, UpdatePriority) {
+  CreateAndStartBackends(4);
   const size_t kNumRpcs = 100;
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -12065,6 +12004,10 @@ TEST_P(FailoverTest, UpdatePriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
+  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0U, backends_[2]->backend_service()->request_count());
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        2},
@@ -12075,62 +12018,52 @@ TEST_P(FailoverTest, UpdatePriority) {
       {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
        3},
   });
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args), 1000));
-  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
-  for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(1);
   CheckRpcSendOk(kNumRpcs);
   EXPECT_EQ(kNumRpcs, backends_[1]->backend_service()->request_count());
-  delayed_resource_setter.join();
 }
 
 // Moves all localities in the current priority to a higher priority.
 TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
+  CreateAndStartBackends(3);
+  auto non_existant_endpoint = MakeNonExistantEndpoint();
   // First update:
-  // - Priority 0 is locality 0, containing backend 0, which is down.
-  // - Priority 1 is locality 1, containing backends 1 and 2, which are up.
-  ShutdownBackend(0);
+  // - Priority 0 is locality 0, containing an unreachable backend.
+  // - Priority 1 is locality 1, containing backends 0 and 1.
   EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
-       0},
-      {"locality1", CreateEndpointsForBackends(1, 3), kDefaultLocalityWeight,
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(0, 2), kDefaultLocalityWeight,
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // When we get the first update, all backends in priority 0 are down,
+  // so we will create priority 1.  Backends 0 and 1 should have traffic,
+  // but backend 2 should not.
+  WaitForAllBackends(0, 2, WaitForBackendOptions().set_reset_counters(false));
+  EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
   // Second update:
   // - Priority 0 contains both localities 0 and 1.
   // - Priority 1 is not present.
-  // - We add backend 3 to locality 1, just so we have a way to know
+  // - We add backend 2 to locality 1, just so we have a way to know
   //   when the update has been seen by the client.
   args = EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
-       0},
-      {"locality1", CreateEndpointsForBackends(1, 4), kDefaultLocalityWeight,
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(0, 3), kDefaultLocalityWeight,
        0},
   });
-  std::thread delayed_resource_setter(
-      std::bind(&BasicTest::SetEdsResourceWithDelay, this, balancer_.get(),
-                BuildEdsResource(args), 1000));
-  // When we get the first update, all backends in priority 0 are down,
-  // so we will create priority 1.  Backends 1 and 2 should have traffic,
-  // but backend 3 should not.
-  WaitForAllBackends(1, 3, WaitForBackendOptions().set_reset_counters(false));
-  EXPECT_EQ(0UL, backends_[3]->backend_service()->request_count());
-  // When backend 3 gets traffic, we know the second update has been seen.
-  WaitForBackend(3);
-  // The ADS service of balancer 0 got at least 1 response.
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // When backend 2 gets traffic, we know the second update has been seen.
+  WaitForBackend(2);
+  // The xDS server got at least 1 response.
   EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
-  delayed_resource_setter.join();
 }
 
-using DropTest = BasicTest;
+using DropTest = XdsEnd2endTest;
 
 // Tests that RPCs are dropped according to the drop config.
 TEST_P(DropTest, Vanilla) {
+  CreateAndStartBackends(1);
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
@@ -12141,9 +12074,7 @@ TEST_P(DropTest, Vanilla) {
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -12158,14 +12089,13 @@ TEST_P(DropTest, Vanilla) {
 
 // Tests that drop config is converted correctly from per hundred.
 TEST_P(DropTest, DropPerHundred) {
+  CreateAndStartBackends(1);
   const uint32_t kDropPerHundredForLb = 10;
   const double kDropRateForLb = kDropPerHundredForLb / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   // The ADS response contains one drop category.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerHundredForLb}};
   args.drop_denominator = FractionalPercent::HUNDRED;
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -12180,14 +12110,13 @@ TEST_P(DropTest, DropPerHundred) {
 
 // Tests that drop config is converted correctly from per ten thousand.
 TEST_P(DropTest, DropPerTenThousand) {
+  CreateAndStartBackends(1);
   const uint32_t kDropPerTenThousandForLb = 1000;
   const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   // The ADS response contains one drop category.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerTenThousandForLb}};
   args.drop_denominator = FractionalPercent::TEN_THOUSAND;
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -12202,6 +12131,7 @@ TEST_P(DropTest, DropPerTenThousand) {
 
 // Tests that drop is working correctly after update.
 TEST_P(DropTest, Update) {
+  CreateAndStartBackends(1);
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kErrorTolerance = 0.05;
@@ -12214,9 +12144,7 @@ TEST_P(DropTest, Update) {
   const size_t kNumRpcsBoth =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The first ADS response contains one drop category.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
@@ -12281,51 +12209,67 @@ TEST_P(DropTest, DropAll) {
   EXPECT_EQ(num_drops, kNumRpcs);
 }
 
-class ClientLoadReportingTest : public XdsEnd2endTest {
- public:
-  ClientLoadReportingTest() : XdsEnd2endTest(4, 3) {}
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
-  }
-};
+using ClientLoadReportingTest = XdsEnd2endTest;
 
 // Tests that the load report received at the balancer is correct.
 TEST_P(ClientLoadReportingTest, Vanilla) {
+  CreateAndStartBackends(4);
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
-  // TODO(juanlishen): Partition the backends after multiple localities is
-  // tested.
   EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  size_t num_warmup_rpcs = WaitForAllBackends();
+  size_t num_warmup_rpcs = WaitForAllBackends(
+      0, 4, WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
   CheckRpcSendFailure(CheckRpcSendFailureOptions()
-                          .set_times(kNumFailuresPerAddress * num_backends_)
+                          .set_times(kNumFailuresPerAddress * backends_.size())
                           .set_rpc_options(RpcOptions().set_server_fail(true)));
-  // Check that each backend got the right number of requests.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
-              backends_[i]->backend_service()->request_count());
+  const size_t total_successful_rpcs_sent =
+      (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
+  const size_t total_failed_rpcs_sent =
+      kNumFailuresPerAddress * backends_.size();
+  // Check that the backends got the right number of requests.
+  size_t total_rpcs_sent = 0;
+  for (const auto& backend : backends_) {
+    total_rpcs_sent += backend->backend_service()->request_count();
   }
+  EXPECT_EQ(total_rpcs_sent,
+            total_successful_rpcs_sent + total_failed_rpcs_sent);
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
   ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_warmup_rpcs,
+  EXPECT_EQ(client_stats.cluster_name(), kDefaultClusterName);
+  EXPECT_EQ(client_stats.eds_service_name(), kDefaultEdsServiceName);
+  EXPECT_EQ(total_successful_rpcs_sent,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
-                num_warmup_rpcs,
-            client_stats.total_issued_requests());
-  EXPECT_EQ(kNumFailuresPerAddress * num_backends_,
-            client_stats.total_error_requests());
+  EXPECT_EQ(total_rpcs_sent, client_stats.total_issued_requests());
+  EXPECT_EQ(total_failed_rpcs_sent, client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  ASSERT_THAT(
+      client_stats.locality_stats(),
+      ::testing::ElementsAre(::testing::Pair("locality0", ::testing::_),
+                             ::testing::Pair("locality1", ::testing::_)));
+  size_t num_successful_rpcs = 0;
+  size_t num_failed_rpcs = 0;
+  for (const auto& p : client_stats.locality_stats()) {
+    EXPECT_EQ(p.second.total_requests_in_progress, 0U);
+    EXPECT_EQ(
+        p.second.total_issued_requests,
+        p.second.total_successful_requests + p.second.total_error_requests);
+    num_successful_rpcs += p.second.total_successful_requests;
+    num_failed_rpcs += p.second.total_error_requests;
+  }
+  EXPECT_EQ(num_successful_rpcs, total_successful_rpcs_sent);
+  EXPECT_EQ(num_failed_rpcs, total_failed_rpcs_sent);
+  EXPECT_EQ(num_successful_rpcs + num_failed_rpcs, total_rpcs_sent);
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
@@ -12333,21 +12277,18 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
 
 // Tests send_all_clusters.
 TEST_P(ClientLoadReportingTest, SendAllClusters) {
+  CreateAndStartBackends(2);
   balancer_->lrs_service()->set_send_all_clusters(true);
   const size_t kNumRpcsPerAddress = 10;
   const size_t kNumFailuresPerAddress = 3;
-  // TODO(juanlishen): Partition the backends after multiple localities is
-  // tested.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends();
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
   CheckRpcSendFailure(CheckRpcSendFailureOptions()
-                          .set_times(kNumFailuresPerAddress * num_backends_)
+                          .set_times(kNumFailuresPerAddress * backends_.size())
                           .set_rpc_options(RpcOptions().set_server_fail(true)));
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
@@ -12359,13 +12300,13 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
   ClientStats& client_stats = load_report.front();
-  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_warmup_rpcs,
+  EXPECT_EQ(kNumRpcsPerAddress * backends_.size() + num_warmup_rpcs,
             client_stats.total_successful_requests());
   EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * num_backends_ +
+  EXPECT_EQ((kNumRpcsPerAddress + kNumFailuresPerAddress) * backends_.size() +
                 num_warmup_rpcs,
             client_stats.total_issued_requests());
-  EXPECT_EQ(kNumFailuresPerAddress * num_backends_,
+  EXPECT_EQ(kNumFailuresPerAddress * backends_.size(),
             client_stats.total_error_requests());
   EXPECT_EQ(0U, client_stats.total_dropped_requests());
   // The LRS service got a single request, and sent a single response.
@@ -12376,43 +12317,29 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
 // Tests that we don't include stats for clusters that are not requested
 // by the LRS server.
 TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
+  CreateAndStartBackends(1);
   balancer_->lrs_service()->set_cluster_names({"bogus"});
-  const size_t kNumRpcsPerAddress = 100;
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   WaitForAllBackends();
-  // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
-  // Each backend should have gotten 100 requests.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->backend_service()->request_count());
-  }
-  // The LRS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
-  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 0UL);
+  // The LRS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
 }
 
 // Tests that if the balancer restarts, the client load report contains the
 // stats before and after the restart correctly.
 TEST_P(ClientLoadReportingTest, BalancerRestart) {
-  const size_t kNumBackendsFirstPass = backends_.size() / 2;
-  const size_t kNumBackendsSecondPass =
-      backends_.size() - kNumBackendsFirstPass;
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, kNumBackendsFirstPass)},
-  });
+  CreateAndStartBackends(4);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends returned by the balancer are ready.
-  size_t num_rpcs = WaitForAllBackends(
-      /*start_index=*/0, /*stop_index=*/kNumBackendsFirstPass);
+  size_t num_rpcs = WaitForAllBackends(0, 2);
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
@@ -12428,26 +12355,23 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // Note: We need to use WaitForAllBackends() here instead of just
   // CheckRpcSendOk(kNumBackendsFirstPass), because when the balancer
   // shuts down, the XdsClient will generate an error to the
-  // ServiceConfigWatcher, which will cause the xds resolver to send a
+  // ListenerWatcher, which will cause the xds resolver to send a
   // no-op update to the LB policy.  When this update gets down to the
   // round_robin child policy for the locality, it will generate a new
   // subchannel list, which resets the start index randomly.  So we need
   // to be a little more permissive here to avoid spurious failures.
   ResetBackendCounters();
-  num_rpcs = WaitForAllBackends(/*start_index=*/0,
-                                /*stop_index=*/kNumBackendsFirstPass);
+  num_rpcs = WaitForAllBackends(0, 2);
   // Now restart the balancer, this time pointing to the new backends.
   balancer_->Start();
-  args = EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(kNumBackendsFirstPass)},
-  });
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(2, 4)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
-  num_rpcs += WaitForAllBackends(/*start_index=*/kNumBackendsFirstPass);
+  num_rpcs += WaitForAllBackends(2, 4);
   // Send one RPC per backend.
-  CheckRpcSendOk(kNumBackendsSecondPass);
-  num_rpcs += kNumBackendsSecondPass;
+  CheckRpcSendOk(2);
+  num_rpcs += 2;
   // Check client stats.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
@@ -12460,6 +12384,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
 
 // Tests load reporting when switching over from one cluster to another.
 TEST_P(ClientLoadReportingTest, ChangeClusters) {
+  CreateAndStartBackends(4);
   const char* kNewClusterName = "new_cluster_name";
   const char* kNewEdsServiceName = "new_eds_service_name";
   balancer_->lrs_service()->set_cluster_names(
@@ -12490,6 +12415,8 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
       load_report,
       ::testing::ElementsAre(::testing::AllOf(
           ::testing::Property(&ClientStats::cluster_name, kDefaultClusterName),
+          ::testing::Property(&ClientStats::eds_service_name,
+                              kDefaultEdsServiceName),
           ::testing::Property(
               &ClientStats::locality_stats,
               ::testing::ElementsAre(::testing::Pair(
@@ -12526,6 +12453,8 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
           ::testing::AllOf(
               ::testing::Property(&ClientStats::cluster_name,
                                   kDefaultClusterName),
+              ::testing::Property(&ClientStats::eds_service_name,
+                                  kDefaultEdsServiceName),
               ::testing::Property(
                   &ClientStats::locality_stats,
                   ::testing::ElementsAre(::testing::Pair(
@@ -12546,6 +12475,8 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
               ::testing::Property(&ClientStats::total_dropped_requests, 0UL)),
           ::testing::AllOf(
               ::testing::Property(&ClientStats::cluster_name, kNewClusterName),
+              ::testing::Property(&ClientStats::eds_service_name,
+                                  kNewEdsServiceName),
               ::testing::Property(
                   &ClientStats::locality_stats,
                   ::testing::ElementsAre(::testing::Pair(
@@ -12574,18 +12505,9 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
 }
 
-class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
- public:
-  ClientLoadReportingWithDropTest() : XdsEnd2endTest(4, 20) {}
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
-  }
-};
-
 // Tests that the drop stats are correctly reported by client load reporting.
-TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
+TEST_P(ClientLoadReportingTest, DropStats) {
+  CreateAndStartBackends(1);
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kErrorTolerance = 0.05;
@@ -12597,9 +12519,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   const char kStatusMessageDropPrefix[] = "EDS-configured drop: ";
   // The ADS response contains two drop categories.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -12633,13 +12553,6 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
 
 class FaultInjectionTest : public XdsEnd2endTest {
  public:
-  FaultInjectionTest() : XdsEnd2endTest(1) {}
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
-  }
-
   // Builds a Listener with Fault Injection filter config. If the http_fault
   // is nullptr, then assign an empty filter config. This filter config is
   // required to enable the fault injection features.
@@ -12714,11 +12627,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
 
 // Without the listener config, the fault injection won't be enabled.
 TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
+  CreateAndStartBackends(1);
   const uint32_t kAbortPercentagePerHundred = 100;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -12736,14 +12648,13 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
+  CreateAndStartBackends(1);
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -12764,15 +12675,14 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
+  CreateAndStartBackends(1);
   const uint32_t kAbortPercentageCap = 100;
   const uint32_t kAbortPercentage = 50;
   const double kAbortRate = kAbortPercentage / 100.0;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -12795,6 +12705,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
+  CreateAndStartBackends(1);
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 50;
@@ -12803,9 +12714,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
@@ -12841,6 +12750,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
+  CreateAndStartBackends(1);
   const uint32_t kFixedDelayMilliseconds = 100000;
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
   const uint32_t kDelayPercentageCap = 100;
@@ -12850,9 +12760,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
@@ -12892,12 +12800,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
+  CreateAndStartBackends(1);
   const uint32_t kFixedDelaySeconds = 1;
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -12926,6 +12833,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
+  CreateAndStartBackends(1);
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelaySeconds = 1;
@@ -12936,9 +12844,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
@@ -12988,6 +12894,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
 // injected fault in our code.
 TEST_P(FaultInjectionTest,
        XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
+  CreateAndStartBackends(1);
   const uint32_t kAbortPercentagePerMillion = 500000;
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
   const uint32_t kFixedDelaySeconds = 1;                // 1s
@@ -12998,9 +12905,7 @@ TEST_P(FaultInjectionTest,
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   const size_t kMaxConcurrentRequests = kNumRpcs;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Loosen the max concurrent request limit
   Cluster cluster = default_cluster_;
@@ -13046,15 +12951,14 @@ TEST_P(FaultInjectionTest,
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
+  CreateAndStartBackends(1);
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
   const uint32_t kRpcTimeoutMs = 4000;     // 4 seconds
   const uint32_t kLongDelaySeconds = 100;  // 100 seconds
   const uint32_t kAlwaysDelayPercentage = 100;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -13083,14 +12987,13 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
+  CreateAndStartBackends(1);
   // kRpcTimeoutMilliseconds is 10s should never be reached.
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 10000;
   const uint32_t kFixedDelaySeconds = 1;
   const uint32_t kDelayPercentagePerHundred = 100;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -13116,13 +13019,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
 // interaction with the FI code.  See https://github.com/grpc/grpc/pull/27217
 // for description.
 TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
+  CreateAndStartBackends(1);
   const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 500;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 100;
   // Create an EDS resource
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
@@ -13144,19 +13046,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
       << context.debug_error_string();
 }
 
-class BootstrapSourceTest : public XdsEnd2endTest {
- public:
-  BootstrapSourceTest() : XdsEnd2endTest(4) {}
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
-  }
-};
+using BootstrapSourceTest = XdsEnd2endTest;
 
 TEST_P(BootstrapSourceTest, Vanilla) {
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
 }
@@ -13164,9 +13058,7 @@ TEST_P(BootstrapSourceTest, Vanilla) {
 #ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
-  explicit ClientStatusDiscoveryServiceTest(
-      int xds_resource_does_not_exist_timeout_ms = 0)
-      : XdsEnd2endTest(1, 100, xds_resource_does_not_exist_timeout_ms) {
+  ClientStatusDiscoveryServiceTest() {
     admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
@@ -13181,11 +13073,6 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
     if (GetParam().use_csds_streaming()) {
       stream_ = csds_stub_->StreamClientStatus(&stream_context_);
     }
-  }
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    StartAllBackends();
   }
 
   ~ClientStatusDiscoveryServiceTest() override {
@@ -13412,6 +13299,7 @@ MATCHER_P2(EqNoRdsHCM, route_configuration_name, cluster_name,
 }
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
+  CreateAndStartBackends(1);
   const size_t kNumRpcs = 5;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -13478,6 +13366,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEmpty) {
 }
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
+  CreateAndStartBackends(1);
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -13518,6 +13407,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
 }
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
+  CreateAndStartBackends(1);
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -13564,6 +13454,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
 }
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
+  CreateAndStartBackends(1);
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -13595,6 +13486,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
 }
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
+  CreateAndStartBackends(1);
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -13681,10 +13573,11 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
 
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
  protected:
-  // Shorten the ADS subscription timeout to speed up the test run.
-  CsdsShortAdsTimeoutTest()
-      : ClientStatusDiscoveryServiceTest(
-            /* xds_resource_does_not_exist_timeout_ms_ = */ 2000) {}
+  void SetUp() override {
+    // Shorten the ADS subscription timeout to speed up the test run.
+    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/2000);
+  }
 };
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
@@ -14039,9 +13932,6 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientLoadReportingTest,
     ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, ClientLoadReportingWithDropTest,
-    ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, FaultInjectionTest,
@@ -14101,7 +13991,7 @@ INSTANTIATE_TEST_SUITE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.

@@ -112,6 +112,19 @@ ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
   return ChannelArgs(args_.Add(std::string(key), std::move(value)));
 }
 
+ChannelArgs ChannelArgs::Set(absl::string_view key,
+                             absl::string_view value) const {
+  return Set(key, std::string(value));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, const char* value) const {
+  return Set(key, std::string(value));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view key, std::string value) const {
+  return Set(key, Value(std::move(value)));
+}
+
 ChannelArgs ChannelArgs::Remove(absl::string_view key) const {
   return ChannelArgs(args_.Remove(key));
 }
@@ -121,6 +134,15 @@ absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
   if (v == nullptr) return absl::nullopt;
   if (!absl::holds_alternative<int>(*v)) return absl::nullopt;
   return absl::get<int>(*v);
+}
+
+absl::optional<Duration> ChannelArgs::GetDurationFromIntMillis(
+    absl::string_view name) const {
+  auto ms = GetInt(name);
+  if (!ms.has_value()) return absl::nullopt;
+  if (*ms == INT_MAX) return Duration::Infinity();
+  if (*ms == INT_MIN) return Duration::NegativeInfinity();
+  return Duration::Milliseconds(*ms);
 }
 
 absl::optional<absl::string_view> ChannelArgs::GetString(

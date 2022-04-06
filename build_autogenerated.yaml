@@ -80,6 +80,7 @@ libs:
   - test/core/end2end/tests/filter_init_fails.cc
   - test/core/end2end/tests/filter_latency.cc
   - test/core/end2end/tests/filter_status_code.cc
+  - test/core/end2end/tests/filtered_metadata.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
   - test/core/end2end/tests/grpc_authz.cc
   - test/core/end2end/tests/high_initial_seqno.cc
@@ -312,6 +313,8 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/ext/filters/channel_idle/channel_idle_filter.h
+  - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
@@ -355,7 +358,6 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
-  - src/core/ext/filters/client_idle/idle_filter_state.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/fault_injection/service_config_parser.h
@@ -364,7 +366,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
   - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
-  - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
   - src/core/ext/filters/rbac/rbac_service_config_parser.h
@@ -736,6 +737,7 @@ libs:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/http/format_request.h
@@ -818,6 +820,7 @@ libs:
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/call_push_pull.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -969,6 +972,8 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/census/grpc_context.cc
+  - src/core/ext/filters/channel_idle/channel_idle_filter.cc
+  - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1027,8 +1032,6 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_channel/subchannel_stream_client.cc
-  - src/core/ext/filters/client_idle/client_idle_filter.cc
-  - src/core/ext/filters/client_idle/idle_filter_state.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -1038,7 +1041,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_compress_filter.cc
   - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
-  - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
   - src/core/ext/filters/rbac/rbac_service_config_parser.cc
@@ -1659,6 +1661,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/event_engine/test_init.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -1681,6 +1684,7 @@ libs:
   - test/core/util/tls_utils.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -1712,6 +1716,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/event_engine/test_init.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -1733,6 +1738,7 @@ libs:
   - test/core/util/test_tcp_server.h
   - test/core/util/tracer_util.h
   src:
+  - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
@@ -1783,6 +1789,8 @@ libs:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/ext/filters/channel_idle/channel_idle_filter.h
+  - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
@@ -1823,7 +1831,6 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
-  - src/core/ext/filters/client_idle/idle_filter_state.h
   - src/core/ext/filters/deadline/deadline_filter.h
   - src/core/ext/filters/fault_injection/fault_injection_filter.h
   - src/core/ext/filters/fault_injection/service_config_parser.h
@@ -1832,7 +1839,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
   - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
-  - src/core/ext/filters/max_age/max_age_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -1916,6 +1922,7 @@ libs:
   - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/http/format_request.h
@@ -1996,6 +2003,7 @@ libs:
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/call_push_pull.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -2093,6 +2101,8 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/census/grpc_context.cc
+  - src/core/ext/filters/channel_idle/channel_idle_filter.cc
+  - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2145,8 +2155,6 @@ libs:
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_channel/subchannel_stream_client.cc
-  - src/core/ext/filters/client_idle/client_idle_filter.cc
-  - src/core/ext/filters/client_idle/idle_filter_state.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
   - src/core/ext/filters/fault_injection/fault_injection_filter.cc
   - src/core/ext/filters/fault_injection/service_config_parser.cc
@@ -2156,7 +2164,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_compress_filter.cc
   - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
-  - src/core/ext/filters/max_age/max_age_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -6296,6 +6303,16 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: http_proxy_mapper_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/http_proxy_mapper_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: httpcli_test
   gtest: true
   build: test
@@ -6350,9 +6367,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/filters/client_idle/idle_filter_state.h
+  - src/core/ext/filters/channel_idle/idle_filter_state.h
   src:
-  - src/core/ext/filters/client_idle/idle_filter_state.cc
+  - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - test/core/client_idle/idle_filter_state_test.cc
   deps: []
   uses_polling: false
@@ -6438,19 +6455,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: interop_test
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/interop/interop_test.cc
-  deps:
-  - grpc++_test_config
-  - grpc++_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: join_test
   gtest: true
   build: test
@@ -8489,6 +8493,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/test_init.h
   - test/core/util/build.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
@@ -8513,6 +8518,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc

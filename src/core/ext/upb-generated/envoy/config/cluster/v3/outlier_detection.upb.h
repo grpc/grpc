@@ -144,6 +144,10 @@ UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time(c
 UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_max_ejection_time(const envoy_config_cluster_v3_OutlierDetection* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(80, 160), const struct google_protobuf_Duration*);
 }
+UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time_jitter(const envoy_config_cluster_v3_OutlierDetection *msg) { return _upb_hasbit(msg, 21); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_max_ejection_time_jitter(const envoy_config_cluster_v3_OutlierDetection* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(84, 168), const struct google_protobuf_Duration*);
+}
 
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
   _upb_sethas(msg, 1);
@@ -405,6 +409,19 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetec
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
     if (!sub) return NULL;
     envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time_jitter(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_Duration* value) {
+  _upb_sethas(msg, 21);
+  *UPB_PTR_AT(msg, UPB_SIZE(84, 168), struct google_protobuf_Duration*) = value;
+}
+UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_mutable_max_ejection_time_jitter(envoy_config_cluster_v3_OutlierDetection *msg, upb_Arena *arena) {
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_cluster_v3_OutlierDetection_max_ejection_time_jitter(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time_jitter(msg, sub);
   }
   return sub;
 }

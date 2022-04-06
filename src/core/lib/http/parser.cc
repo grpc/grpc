@@ -177,6 +177,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
   size_t* hdr_count = nullptr;
+  size_t size = 0;
   grpc_http_header** hdrs = nullptr;
   grpc_http_header hdr = {nullptr, nullptr};
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -205,13 +206,20 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
     cur++;
   }
   GPR_ASSERT((size_t)(end - cur) >= parser->cur_line_end_length);
-  hdr.value = buf2str(
-      cur, static_cast<size_t>(end - cur) - parser->cur_line_end_length);
+  size = static_cast<size_t>(end - cur) - parser->cur_line_end_length;
+  if ((size != 0) && (cur[size - 1] == '\r')) {
+    size--;
+  }
+  hdr.value = buf2str(cur, size);
 
   switch (parser->type) {
     case GRPC_HTTP_RESPONSE:
       hdr_count = &parser->http.response->hdr_count;
       hdrs = &parser->http.response->hdrs;
+      if ((strcmp(hdr.key, "Transfer-Encoding") == 0) &&
+          (strcmp(hdr.value, "chunked") == 0)) {
+        parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_LENGTH;
+      }
       break;
     case GRPC_HTTP_REQUEST:
       hdr_count = &parser->http.request->hdr_count;
@@ -245,17 +253,24 @@ static grpc_error_handle finish_line(grpc_http_parser* parser,
       parser->state = GRPC_HTTP_HEADERS;
       break;
     case GRPC_HTTP_HEADERS:
+    case GRPC_HTTP_TRAILERS:
       if (parser->cur_line_length == parser->cur_line_end_length) {
-        parser->state = GRPC_HTTP_BODY;
-        *found_body_start = true;
+        if (parser->state == GRPC_HTTP_HEADERS) {
+          parser->state = GRPC_HTTP_BODY;
+          *found_body_start = true;
+        } else {
+          parser->state = GRPC_HTTP_END;
+        }
         break;
-      }
-      err = add_header(parser);
-      if (err != GRPC_ERROR_NONE) {
-        return err;
+      } else {
+        err = add_header(parser);
+        if (err != GRPC_ERROR_NONE) {
+          return err;
+        }
       }
       break;
     case GRPC_HTTP_BODY:
+    case GRPC_HTTP_END:
       GPR_UNREACHABLE_CODE(return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Should never reach here"));
   }
@@ -269,6 +284,59 @@ static grpc_error_handle addbyte_body(grpc_http_parser* parser, uint8_t byte) {
   char** body = nullptr;
 
   if (parser->type == GRPC_HTTP_RESPONSE) {
+    switch (parser->http.response->chunked_state) {
+      case GRPC_HTTP_CHUNKED_LENGTH:
+        if ((byte == '\r') || (byte == ';')) {
+          parser->http.response->chunked_state =
+              GRPC_HTTP_CHUNKED_IGNORE_ALL_UNTIL_LF;
+        } else if ((byte >= '0') && (byte <= '9')) {
+          parser->http.response->chunk_length *= 16;
+          parser->http.response->chunk_length += byte - '0';
+        } else if ((byte >= 'a') && (byte <= 'f')) {
+          parser->http.response->chunk_length *= 16;
+          parser->http.response->chunk_length += byte - 'a' + 10;
+        } else if ((byte >= 'A') && (byte <= 'F')) {
+          parser->http.response->chunk_length *= 16;
+          parser->http.response->chunk_length += byte - 'A' + 10;
+        } else {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Expected chunk size in hexadecimal");
+        }
+        return GRPC_ERROR_NONE;
+      case GRPC_HTTP_CHUNKED_IGNORE_ALL_UNTIL_LF:
+        if (byte == '\n') {
+          if (parser->http.response->chunk_length == 0) {
+            parser->state = GRPC_HTTP_TRAILERS;
+          } else {
+            parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_BODY;
+          }
+        }
+        return GRPC_ERROR_NONE;
+      case GRPC_HTTP_CHUNKED_BODY:
+        if (parser->http.response->chunk_length == 0) {
+          if (byte != '\r') {
+            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "Expected '\\r\\n' after chunk body");
+          }
+          parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_CONSUME_LF;
+          parser->http.response->chunk_length = 0;
+          return GRPC_ERROR_NONE;
+        } else {
+          parser->http.response->chunk_length--;
+          /* fallback to the normal body appending code below */
+        }
+        break;
+      case GRPC_HTTP_CHUNKED_CONSUME_LF:
+        if (byte != '\n') {
+          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "Expected '\\r\\n' after chunk body");
+        }
+        parser->http.response->chunked_state = GRPC_HTTP_CHUNKED_LENGTH;
+        return GRPC_ERROR_NONE;
+      case GRPC_HTTP_CHUNKED_PLAIN:
+        /* avoiding warning; just fallback to normal codepath */
+        break;
+    }
     body_length = &parser->http.response->body_length;
     body = &parser->http.response->body;
   } else if (parser->type == GRPC_HTTP_REQUEST) {
@@ -318,6 +386,7 @@ static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
   switch (parser->state) {
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
+    case GRPC_HTTP_TRAILERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_http1_trace)) {
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
@@ -334,6 +403,8 @@ static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
       return GRPC_ERROR_NONE;
     case GRPC_HTTP_BODY:
       return addbyte_body(parser, byte);
+    case GRPC_HTTP_END:
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexpected byte after end");
   }
   GPR_UNREACHABLE_CODE(return GRPC_ERROR_NONE);
 }
@@ -385,7 +456,7 @@ grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
 }
 
 grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser) {
-  if (parser->state != GRPC_HTTP_BODY) {
+  if ((parser->state != GRPC_HTTP_BODY) && (parser->state != GRPC_HTTP_END)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Did not finish headers");
   }
   return GRPC_ERROR_NONE;

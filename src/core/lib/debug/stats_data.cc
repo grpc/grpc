@@ -73,6 +73,7 @@ const char* grpc_stats_counter_name[GRPC_STATS_COUNTER_COUNT] = {
     "http2_initiate_write_due_to_stream_flow_control",
     "http2_initiate_write_due_to_transport_flow_control",
     "http2_initiate_write_due_to_send_settings",
+    "http2_initiate_write_due_to_settings_ack",
     "http2_initiate_write_due_to_bdp_estimator_ping",
     "http2_initiate_write_due_to_flow_control_unstalled_by_setting",
     "http2_initiate_write_due_to_flow_control_unstalled_by_update",
@@ -181,6 +182,7 @@ const char* grpc_stats_counter_doc[GRPC_STATS_COUNTER_COUNT] = {
     "Number of HTTP2 writes initiated due to 'stream_flow_control'",
     "Number of HTTP2 writes initiated due to 'transport_flow_control'",
     "Number of HTTP2 writes initiated due to 'send_settings'",
+    "Number of HTTP2 writes initiated due to 'settings_ack'",
     "Number of HTTP2 writes initiated due to 'bdp_estimator_ping'",
     "Number of HTTP2 writes initiated due to "
     "'flow_control_unstalled_by_setting'",

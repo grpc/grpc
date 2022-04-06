@@ -57,7 +57,7 @@ static void test_unsetenv(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_setenv_getenv();
   test_unsetenv();
   return 0;

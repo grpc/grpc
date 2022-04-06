@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
@@ -154,6 +155,7 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use security");
+ABSL_FLAG(bool, minstack, false, "Use minimal stack");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -167,7 +169,7 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc::testing::TestEnvironment env(1, fake_argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   grpc_init();
   srand(static_cast<unsigned>(clock()));
@@ -180,17 +182,24 @@ int main(int argc, char** argv) {
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
+  std::vector<grpc_arg> args_vec;
+  if (absl::GetFlag(FLAGS_minstack)) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
+  }
+  grpc_channel_args args = {args_vec.size(), args_vec.data()};
+
   MemStats before_server_create = MemStats::Snapshot();
   if (absl::GetFlag(FLAGS_secure)) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    server = grpc_server_create(nullptr, nullptr);
+    server = grpc_server_create(&args, nullptr);
     GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    server = grpc_server_create(nullptr, nullptr);
+    server = grpc_server_create(&args, nullptr);
     GPR_ASSERT(grpc_server_add_http2_port(
         server, addr.c_str(), grpc_insecure_server_credentials_create()));
   }

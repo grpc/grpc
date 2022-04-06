@@ -69,8 +69,6 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_call_stack grpc_call_stack;
 
-#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
-
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;

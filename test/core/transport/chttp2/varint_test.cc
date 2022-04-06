@@ -44,7 +44,7 @@ static void test_varint(uint32_t value, uint8_t prefix_or,
   test_varint<prefix_bits>(value, prefix_or, expect, sizeof(expect) - 1)
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   TEST_VARINT(0, 1, 0, "\x00");
   TEST_VARINT(128, 1, 0, "\x7f\x01");

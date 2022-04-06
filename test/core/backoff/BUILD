@@ -30,6 +30,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = True,  # uses EventEngine::Now()
     uses_polling = False,
     deps = [
         "//:gpr",
