@@ -240,5 +240,13 @@ void ExternalCertificateVerifier::DestructInCoreExternalVerifier(
 HostNameCertificateVerifier::HostNameCertificateVerifier()
     : CertificateVerifier(grpc_tls_certificate_verifier_host_name_create()) {}
 
+bool NoOpCertificateVerifier::Verify(
+    grpc::experimental::TlsCustomVerificationCheckRequest* request,
+    std::function<void(grpc::Status)> callback, grpc::Status* sync_status) {
+  *sync_status = grpc::Status(grpc::StatusCode::OK, "");
+  // Sync verifications should always return true.
+  return true;
+}
+
 }  // namespace experimental
 }  // namespace grpc
