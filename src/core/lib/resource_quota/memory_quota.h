@@ -15,6 +15,8 @@
 #ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
@@ -25,13 +27,13 @@
 #include <queue>
 #include <vector>
 
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice.h>
-
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "third_party/grpc/include/grpc/support/port_platform.h"
+#include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {
 
@@ -295,7 +297,11 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // Add the released memory to our free bytes counter... if this increases
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
-    if (free_bytes_.fetch_add(n, std::memory_order_release) != 0) return;
+    size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
+    if (prev_free + n > 1024 * 1024) {
+      MaybeDonateBack();
+    }
+    if (prev_free != 0) return;
     MaybeRegisterReclaimer();
   }
 
@@ -323,6 +329,27 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  private:
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
+  void MaybeDonateBack() {
+    size_t free = free_bytes_.load(std::memory_order_relaxed);
+    const size_t kReduceToSize = 1024 * 1024 / 2;
+    while (true) {
+      if (free <= kReduceToSize) return;
+      size_t ret = free - kReduceToSize;
+      if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+          gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
+                  name_.c_str(), ret);
+        }
+        MutexLock lock(&memory_quota_mu_);
+        GPR_ASSERT(taken_bytes_ >= ret);
+        taken_bytes_ -= ret;
+        memory_quota_->Return(ret);
+        return;
+      }
+    }
+  }
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
   void Replenish() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
