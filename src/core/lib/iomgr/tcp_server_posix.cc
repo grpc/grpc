@@ -224,7 +224,7 @@ static void on_read(void* arg, grpc_error_handle err) {
 
     if (sp->server->memory_quota->IsMemoryPressureHigh()) {
       int dropped_connections_count =
-        gpr_atm_no_barrier_fetch_add(&num_dropped_connections, 1);
+          gpr_atm_no_barrier_fetch_add(&num_dropped_connections, 1);
       if (dropped_connections_count % 1000 == 0) {
         gpr_log(
             GPR_INFO,
