@@ -28,6 +28,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -51,11 +52,13 @@ static std::string grpc_sockaddr_to_uri_unix_if_possible(
   }
   const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
   if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
-    return absl::StrCat(
-        "unix-abstract:",
+    // Encode any nulls that might be present in the path.
+    std::string new_path = absl::StrReplaceAll(
         absl::string_view(
             unix_addr->sun_path + 1,
-            resolved_addr->len - sizeof(unix_addr->sun_family) - 1));
+            resolved_addr->len - sizeof(unix_addr->sun_family) - 1),
+        {{absl::string_view("\0", 1), "%00"}});
+    return absl::StrCat("unix-abstract:", new_path);
   }
   return absl::StrCat("unix:", unix_addr->sun_path);
 }
@@ -407,3 +410,4 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
   }
   return false;
 }
+
