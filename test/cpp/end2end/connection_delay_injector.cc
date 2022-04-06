@@ -22,8 +22,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/timer.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
