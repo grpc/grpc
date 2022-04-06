@@ -58,8 +58,8 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
           google_protobuf_Duration_seconds(duration_proto),
           google_protobuf_Duration_nanos(duration_proto));
     }
-    auto min_interval =
-        grpc_core::Duration::Milliseconds(service_->min_report_duration_ms_);
+    auto min_interval = grpc_core::Duration::Milliseconds(
+        service_->min_report_duration_ / absl::Milliseconds(1));
     if (report_interval_ < min_interval) report_interval_ = min_interval;
     // Send initial response.
     SendResponse();
@@ -138,7 +138,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 //
 
 OrcaService::OrcaService(OrcaService::Options options)
-    : min_report_duration_ms_(options.min_report_duration_ms) {
+    : min_report_duration_(options.min_report_duration) {
   AddMethod(new internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
       internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));

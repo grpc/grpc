@@ -90,7 +90,8 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
   };
 
   OrcaServiceEnd2endTest()
-      : orca_service_(OrcaService::Options().set_min_report_duration_ms(0)) {
+      : orca_service_(OrcaService::Options().set_min_report_duration(
+            absl::ZeroDuration())) {
     std::string server_address =
         absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     ServerBuilder builder;

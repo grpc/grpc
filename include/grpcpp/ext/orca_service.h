@@ -20,6 +20,7 @@
 #include <map>
 #include <string>
 
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include <grpcpp/impl/codegen/server_callback.h>
@@ -38,11 +39,11 @@ class OrcaService : public Service {
   struct Options {
     // Minimum report interval.  If a client requests an interval lower
     // than this value, this value will be used instead.
-    int min_report_duration_ms = 30 * 1000;
+    absl::Duration min_report_duration = absl::Seconds(30);
 
     Options() = default;
-    Options& set_min_report_duration_ms(int ms) {
-      min_report_duration_ms = ms;
+    Options& set_min_report_duration(absl::Duration duration) {
+      min_report_duration = duration;
       return *this;
     }
   };
@@ -67,7 +68,7 @@ class OrcaService : public Service {
 
   Slice GetOrCreateSerializedResponse();
 
-  const int min_report_duration_ms_;
+  const absl::Duration min_report_duration_;
 
   grpc::internal::Mutex mu_;
   double cpu_utilization_ ABSL_GUARDED_BY(&mu_) = -1;
