@@ -61,7 +61,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 
-static gpr_atm num_dropped_connections == 0;
+static gpr_atm num_dropped_connections = 0;
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const grpc_channel_args* args,
