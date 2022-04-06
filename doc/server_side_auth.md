@@ -2,7 +2,8 @@ Server-side API for Authenticating Clients
 ==========================================
 
 NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently.
-NOTE2: `CallCredentials` class is only valid for secure channels in C-Core. So, for connections under insecure channels, features below might not be available.
+
+NOTE2: `CallCredentials` class is only valid if its security level is less than or equal to the security level of the associated connection. See the [gRFC](https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md) for more.
 
 ## AuthContext
 
@@ -13,11 +14,7 @@ The authentication context is structured as a multi-map of key-value pairs - the
 The contents of the *auth properties* are populated by an *auth interceptor*. The interceptor also chooses which property key will act as the peer identity (e.g. for client certificate authentication this property will be `"x509_common_name"` or `"x509_subject_alternative_name"`).
 
 Note that AuthContext is not modifiable, unless AuthMetadataProcessor is used([reference](https://github.com/grpc/grpc/blob/master/include/grpcpp/impl/codegen/security/auth_context.h#L89)). 
-When AuthContext is modified through AuthMetadataProcessor, we are able to see the modifications in all the subsequent calls. This is because AuthContext is a channel-level object which could be shared by multiple calls.
-
-AuthContext contains the channel-level information, such as the peer identity, etc. 
-If it is modified through AuthMetadataProcessor, all
-
+When AuthContext is modified through AuthMetadataProcessor, we are able to see the modifications in all the subsequent calls. This is because AuthContext is a connection-level object which could be shared by multiple calls.
 
 WARNING: AuthContext is the only reliable source of truth when it comes to authenticating RPCs. Using any other call/context properties for authentication purposes is wrong and inherently unsafe.
 
