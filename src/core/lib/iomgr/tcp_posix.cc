@@ -744,12 +744,13 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error) {
     if (read_bytes < 0) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
-      tcp->last_read_completed = true;
       if (errno == EAGAIN) {
+        tcp->last_read_completed = true;
         finish_estimate(tcp);
         tcp->inq = 0;
         return false;
       } else {
+        tcp->last_read_completed = false;
         grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
         *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
         return true;
