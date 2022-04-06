@@ -1113,8 +1113,10 @@ void Server::ChannelData::FinishDestroy(void* arg,
                                         grpc_error_handle /*error*/) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
   Server* server = chand->server_.get();
+  auto* channel_stack = chand->channel_->channel_stack();
   chand->channel_.reset();
   server->Unref();
+  GRPC_CHANNEL_STACK_UNREF(channel_stack, "Server::ChannelData::Destroy");
 }
 
 void Server::ChannelData::Destroy() {
@@ -1124,6 +1126,9 @@ void Server::ChannelData::Destroy() {
   list_position_.reset();
   server_->Ref().release();
   server_->MaybeFinishShutdown();
+  // Unreffed by FinishDestroy
+  GRPC_CHANNEL_STACK_REF(channel_->channel_stack(),
+                         "Server::ChannelData::Destroy");
   GRPC_CLOSURE_INIT(&finish_destroy_channel_closure_, FinishDestroy, this,
                     grpc_schedule_on_exec_ctx);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_server_channel_trace)) {
