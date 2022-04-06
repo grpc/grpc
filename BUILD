@@ -1734,6 +1734,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_sockaddr",
         "resolved_address",
+        "uri_parser",
     ],
 )
 

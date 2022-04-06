@@ -51,16 +51,20 @@ static std::string grpc_sockaddr_to_uri_unix_if_possible(
     return "";
   }
   const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
+  std::string scheme, path;
   if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
-    // Encode any nulls that might be present in the path.
-    std::string new_path = absl::StrReplaceAll(
-        absl::string_view(
-            unix_addr->sun_path + 1,
-            resolved_addr->len - sizeof(unix_addr->sun_family) - 1),
-        {{absl::string_view("\0", 1), "%00"}});
-    return absl::StrCat("unix-abstract:", new_path);
+    scheme = "unix-abstract";
+    path = std::string(unix_addr->sun_path + 1,
+                       resolved_addr->len - sizeof(unix_addr->sun_family) - 1);
+  } else {
+    scheme = "unix";
+    path = unix_addr->sun_path;
   }
-  return absl::StrCat("unix:", unix_addr->sun_path);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      std::move(scheme), /*authority=*/"", std::move(path),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return "";
+  return uri->ToString();
 }
 #else
 static std::string grpc_sockaddr_to_uri_unix_if_possible(

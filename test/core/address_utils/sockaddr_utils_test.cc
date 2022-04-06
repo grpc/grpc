@@ -211,27 +211,20 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
-grpc_resolved_address MakeAddrUnix(std::string path) {
-  grpc_resolved_address resolved_addr_unix;
-  struct sockaddr_un* addr_un =
-      reinterpret_cast<struct sockaddr_un*>(resolved_addr_unix.addr);
-  memset(&resolved_addr_unix, 0, sizeof(resolved_addr_unix));
-  addr_un->sun_family = AF_UNIX;
-  addr_un->sun_path[0] = '\0';
-  memcpy(&addr_un->sun_path[1], path.data(), path.size());
-  resolved_addr_unix.len =
-      static_cast<socklen_t>(sizeof(addr_un->sun_family) + path.size() + 1);
-  return resolved_addr_unix;
-}
-
 TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
-  grpc_resolved_address unix_addr = MakeAddrUnix(std::string("no_nulls"));
-  EXPECT_EQ(grpc_sockaddr_to_uri(&unix_addr), "unix-abstract:no_nulls");
+  grpc_resolved_address addr;
+  ASSERT_TRUE(GRPC_ERROR_NONE ==
+              grpc_core::UnixSockaddrPopulate("sample-path", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr), "unix:sample-path");
 
-  grpc_resolved_address unix_addr_with_null =
-      MakeAddrUnix(std::string("path_\0with_null", 15));
-  EXPECT_EQ(grpc_sockaddr_to_uri(&unix_addr_with_null),
-            "unix-abstract:path_%00with_null");
+  ASSERT_TRUE(GRPC_ERROR_NONE ==
+              grpc_core::UnixAbstractSockaddrPopulate("no-nulls", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr), "unix-abstract:no-nulls");
+
+  ASSERT_TRUE(GRPC_ERROR_NONE ==
+              grpc_core::UnixAbstractSockaddrPopulate(
+                  std::string("path_\0with_null", 15), &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr), "unix-abstract:path_%00with_null");
 }
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
