@@ -410,4 +410,3 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
   }
   return false;
 }
-
