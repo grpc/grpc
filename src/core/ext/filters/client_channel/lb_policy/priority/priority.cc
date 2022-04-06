@@ -516,6 +516,13 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
       return;
     }
     // Child has been failing for a while.  Move on to the next priority.
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
+      gpr_log(GPR_INFO,
+              "[priority_lb %p] skipping priority %u, child %s: state=%s, "
+              "failover timer not pending",
+              this, priority, child_name.c_str(),
+              ConnectivityStateName(child->connectivity_state()));
+    }
   }
   // If there are no more priorities to try, report TRANSIENT_FAILURE.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -791,9 +798,13 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   connectivity_state_ = state;
   connectivity_status_ = status;
   picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  // If READY or IDLE or TRANSIENT_FAILURE, cancel failover timer.
-  if (state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_IDLE ||
-      state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  // If we transition to state CONNECTING, start failover timer if not
+  // already pending.  Otherwise, cancel failover timer.
+  if (state == GRPC_CHANNEL_CONNECTING) {
+    if (failover_timer_ == nullptr) {
+      failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
+    }
+  } else {
     failover_timer_.reset();
   }
   // Notify the parent policy.
@@ -802,9 +813,9 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
 
 void PriorityLb::ChildPriority::DeactivateLocked() {
   // If already deactivated, don't do it again.
-  if (deactivation_timer_ != nullptr) return;
-  failover_timer_.reset();
-  deactivation_timer_ = MakeOrphanable<DeactivationTimer>(Ref());
+  if (deactivation_timer_ == nullptr) {
+    deactivation_timer_ = MakeOrphanable<DeactivationTimer>(Ref());
+  }
 }
 
 void PriorityLb::ChildPriority::MaybeReactivateLocked() {
