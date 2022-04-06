@@ -15,8 +15,6 @@
 #ifndef GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
@@ -27,12 +25,16 @@
 #include <queue>
 #include <vector>
 
+#include "third_party/grpc/include/grpc/support/port_platform.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice.h>
+
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
-#include "third_party/grpc/include/grpc/support/port_platform.h"
 #include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {

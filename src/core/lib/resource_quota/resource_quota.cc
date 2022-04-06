@@ -14,8 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/resource_quota/memory_quota.h"
-
 #include <atomic>
 
 #include "src/core/lib/gpr/useful.h"
