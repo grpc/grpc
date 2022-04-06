@@ -79,6 +79,8 @@ extern void filter_latency(grpc_end2end_test_config config);
 extern void filter_latency_pre_init(void);
 extern void filter_status_code(grpc_end2end_test_config config);
 extern void filter_status_code_pre_init(void);
+extern void filtered_metadata(grpc_end2end_test_config config);
+extern void filtered_metadata_pre_init(void);
 extern void graceful_server_shutdown(grpc_end2end_test_config config);
 extern void graceful_server_shutdown_pre_init(void);
 extern void grpc_authz(grpc_end2end_test_config config);
@@ -244,6 +246,7 @@ void grpc_end2end_tests_pre_init(void) {
   filter_init_fails_pre_init();
   filter_latency_pre_init();
   filter_status_code_pre_init();
+  filtered_metadata_pre_init();
   graceful_server_shutdown_pre_init();
   grpc_authz_pre_init();
   high_initial_seqno_pre_init();
@@ -347,6 +350,7 @@ void grpc_end2end_tests(int argc, char **argv,
     filter_init_fails(config);
     filter_latency(config);
     filter_status_code(config);
+    filtered_metadata(config);
     graceful_server_shutdown(config);
     grpc_authz(config);
     high_initial_seqno(config);
@@ -517,6 +521,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("filter_status_code", argv[i])) {
       filter_status_code(config);
+      continue;
+    }
+    if (0 == strcmp("filtered_metadata", argv[i])) {
+      filtered_metadata(config);
       continue;
     }
     if (0 == strcmp("graceful_server_shutdown", argv[i])) {
