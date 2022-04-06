@@ -183,7 +183,9 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
-    if (reservation.has_value()) return *reservation;
+    if (reservation.has_value()) {
+      return *reservation;
+    }
     // If that failed, grab more from the quota and retry.
     Replenish();
   }
@@ -376,8 +378,13 @@ void BasicMemoryQuota::Start() {
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "RQ: %s perform %s reclamation",
-                  self->name_.c_str(), std::get<0>(arg));
+          double free = self->free_bytes_.load();
+          if (free < 0) free = 0;
+          size_t quota_size = self->quota_size_.load();
+          gpr_log(GPR_INFO,
+                  "RQ: %s perform %s reclamation. Available free bytes: %f, "
+                  "total quota_size: %zu",
+                  self->name_.c_str(), std::get<0>(arg), free, quota_size);
         }
         // One of the reclaimer queues gave us a way to get back memory.
         // Call the reclaimer with a token that contains enough to wake us
@@ -436,7 +443,13 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "RQ: %s reclamation complete", name_.c_str());
+      double free = free_bytes_.load();
+      if (free < 0) free = 0;
+      size_t quota_size = quota_size_.load();
+      gpr_log(GPR_INFO,
+              "RQ: %s reclamation complete. Available free bytes: %f, "
+              "total quota_size: %zu",
+              name_.c_str(), free, quota_size);
     }
     waker.Wakeup();
   }
