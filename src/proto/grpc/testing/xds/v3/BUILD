@@ -168,18 +168,6 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "orca_service_proto",
-    srcs = [
-        "orca_service.proto",
-    ],
-    has_services = True,
-    well_known_protos = True,
-    deps = [
-        "orca_load_report_proto",
-    ],
-)
-
-grpc_proto_library(
     name = "protocol_proto",
     srcs = [
         "protocol.proto",
