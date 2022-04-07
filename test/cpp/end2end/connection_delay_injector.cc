@@ -14,16 +14,10 @@
 
 #include "test/cpp/end2end/connection_delay_injector.h"
 
-#include <atomic>
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/timer.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
@@ -31,16 +25,57 @@ extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
 namespace grpc {
 namespace testing {
 
+//
+// ConnectionAttemptInjector
+//
+
 namespace {
 
 grpc_tcp_client_vtable* g_original_vtable = nullptr;
+ConnectionAttemptInjector* g_injector = nullptr;
 
-std::atomic<grpc_core::Duration> g_delay;
+void TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
+                         grpc_pollset_set* interested_parties,
+                         const grpc_channel_args* channel_args,
+                         const grpc_resolved_address* addr,
+                         grpc_core::Timestamp deadline) {
+  GPR_ASSERT(g_injector != nullptr);
+  g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
+                               addr, deadline);
+}
 
-class InjectedDelay {
+grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
+
+}  // namespace
+
+ConnectionAttemptInjector::ConnectionAttemptInjector() {
+  g_original_vtable =
+      absl::exchange(grpc_tcp_client_impl, &kDelayedConnectVTable);
+  GPR_ASSERT(absl::exchange(g_injector, this) == nullptr);
+}
+
+ConnectionAttemptInjector::~ConnectionAttemptInjector() {
+  g_injector = nullptr;
+  grpc_tcp_client_impl = g_original_vtable;
+}
+
+void ConnectionAttemptInjector::AttemptConnection(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties,
+    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
+    grpc_core::Timestamp deadline) {
+  g_original_vtable->connect(closure, ep, interested_parties, channel_args,
+                             addr, deadline);
+}
+
+//
+// ConnectionDelayInjector
+//
+
+class ConnectionDelayInjector::InjectedDelay {
  public:
-  InjectedDelay(grpc_closure* closure, grpc_endpoint** ep,
-                grpc_pollset_set* interested_parties,
+  InjectedDelay(grpc_core::Duration duration, grpc_closure* closure,
+                grpc_endpoint** ep, grpc_pollset_set* interested_parties,
                 const grpc_channel_args* channel_args,
                 const grpc_resolved_address* addr,
                 grpc_core::Timestamp deadline)
@@ -51,7 +86,6 @@ class InjectedDelay {
         deadline_(deadline) {
     memcpy(&address_, addr, sizeof(grpc_resolved_address));
     GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
-    auto duration = g_delay.load();
     deadline_ += duration;
     grpc_timer_init(&timer_, grpc_core::ExecCtx::Get()->Now() + duration,
                     &timer_callback_);
@@ -62,9 +96,9 @@ class InjectedDelay {
  private:
   static void TimerCallback(void* arg, grpc_error_handle /*error*/) {
     auto* self = static_cast<InjectedDelay*>(arg);
-    g_original_vtable->connect(self->closure_, self->endpoint_,
-                               self->interested_parties_, self->channel_args_,
-                               &self->address_, self->deadline_);
+    AttemptConnection(self->closure_, self->endpoint_,
+                      self->interested_parties_, self->channel_args_,
+                      &self->address_, self->deadline_);
     delete self;
   }
 
@@ -80,36 +114,13 @@ class InjectedDelay {
   grpc_core::Timestamp deadline_;
 };
 
-void TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
-                         grpc_pollset_set* interested_parties,
-                         const grpc_channel_args* channel_args,
-                         const grpc_resolved_address* addr,
-                         grpc_core::Timestamp deadline) {
-  new InjectedDelay(closure, ep, interested_parties, channel_args, addr,
-                    deadline);
-}
-
-grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
-
-}  // namespace
-
-ConnectionDelayInjector::InjectedDelay::~InjectedDelay() {
-  g_delay.store(grpc_core::Duration());
-}
-
-ConnectionDelayInjector::ConnectionDelayInjector() {
-  g_original_vtable =
-      absl::exchange(grpc_tcp_client_impl, &kDelayedConnectVTable);
-}
-
-ConnectionDelayInjector::~ConnectionDelayInjector() {
-  grpc_tcp_client_impl = g_original_vtable;
-}
-
-std::unique_ptr<ConnectionDelayInjector::InjectedDelay>
-ConnectionDelayInjector::SetDelay(grpc_core::Duration duration) {
-  GPR_ASSERT(g_delay.exchange(duration) == grpc_core::Duration());
-  return absl::make_unique<ConnectionDelayInjector::InjectedDelay>();
+void ConnectionDelayInjector::HandleConnection(
+    grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties,
+    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
+    grpc_core::Timestamp deadline) {
+  new InjectedDelay(duration_, closure, ep, interested_parties, channel_args,
+                    addr, deadline);
 }
 
 }  // namespace testing
