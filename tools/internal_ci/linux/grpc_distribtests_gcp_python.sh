@@ -55,6 +55,7 @@ INPUT_ARTIFACTS=$(realpath input_artifacts)
 
 (yes || true) | gcloud components update
 
+# TODO(rbellevi): Run in a docker image.
 test/distrib/gcf/python/run.sh "$INPUT_ARTIFACTS"
 
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
