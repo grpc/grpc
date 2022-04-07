@@ -16,27 +16,27 @@
 extern const upb_MiniTable google_protobuf_EnumValueOptions_msginit;
 extern const upb_MiniTable google_protobuf_FieldOptions_msginit;
 const upb_MiniTable_Extension envoy_annotations_disallowed_by_default_ext = {
-  {189503207, 0, 0, 0, 8, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-    &google_protobuf_FieldOptions_msginit,
-    {.submsg = NULL},
+  {189503207, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  &google_protobuf_FieldOptions_msginit,
+  {.submsg = NULL},
 
 };
 const upb_MiniTable_Extension envoy_annotations_deprecated_at_minor_version_ext = {
-  {157299826, 0, 0, 0, 9, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-    &google_protobuf_FieldOptions_msginit,
-    {.submsg = NULL},
+  {157299826, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  &google_protobuf_FieldOptions_msginit,
+  {.submsg = NULL},
 
 };
 const upb_MiniTable_Extension envoy_annotations_disallowed_by_default_enum_ext = {
-  {70100853, 0, 0, 0, 8, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_1Byte << upb_FieldRep_Shift)},
-    &google_protobuf_EnumValueOptions_msginit,
-    {.submsg = NULL},
+  {70100853, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 8, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  &google_protobuf_EnumValueOptions_msginit,
+  {.submsg = NULL},
 
 };
 const upb_MiniTable_Extension envoy_annotations_deprecated_at_minor_version_enum_ext = {
-  {181198657, 0, 0, 0, 9, kUpb_FieldMode_Scalar | upb_LabelFlags_IsExtension | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-    &google_protobuf_EnumValueOptions_msginit,
-    {.submsg = NULL},
+  {181198657, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | kUpb_LabelFlags_IsExtension | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  &google_protobuf_EnumValueOptions_msginit,
+  {.submsg = NULL},
 
 };
 

@@ -86,9 +86,9 @@ class ConnectionDelayInjector::InjectedDelay {
         deadline_(deadline) {
     memcpy(&address_, addr, sizeof(grpc_resolved_address));
     GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
-    deadline_ += duration;
-    grpc_timer_init(&timer_, grpc_core::ExecCtx::Get()->Now() + duration,
-                    &timer_callback_);
+    grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+    duration = std::min(duration, deadline_ - now);
+    grpc_timer_init(&timer_, now + duration, &timer_callback_);
   }
 
   ~InjectedDelay() { grpc_channel_args_destroy(channel_args_); }

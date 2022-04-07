@@ -57,11 +57,20 @@ UPB_INLINE char* envoy_admin_v3_MutexStats_serialize_ex(const envoy_admin_v3_Mut
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_MutexStats_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_MutexStats_clear_num_contentions(const envoy_admin_v3_MutexStats* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_MutexStats_num_contentions(const envoy_admin_v3_MutexStats* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t);
 }
+UPB_INLINE void envoy_admin_v3_MutexStats_clear_current_wait_cycles(const envoy_admin_v3_MutexStats* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_MutexStats_current_wait_cycles(const envoy_admin_v3_MutexStats* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_MutexStats_clear_lifetime_wait_cycles(const envoy_admin_v3_MutexStats* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_MutexStats_lifetime_wait_cycles(const envoy_admin_v3_MutexStats* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t);
