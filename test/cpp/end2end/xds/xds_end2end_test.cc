@@ -64,8 +64,8 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_listener.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -6485,45 +6485,46 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
                           grpc_core::Timestamp deadline) override {
       {
         grpc_core::MutexLock lock(&mu_);
-        gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d",
-                state_, grpc_sockaddr_get_port(addr));
+        gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d", state_,
+                grpc_sockaddr_get_port(addr));
         switch (state_) {
-         case kInit:
-          // Make P0 report TF, which should trigger us to try to connect to P1.
-          if (grpc_sockaddr_get_port(addr) == p0_port_) {
-            gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
-            grpc_core::ExecCtx::Run(
-                DEBUG_LOCATION, closure,
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "injected connection failure"));
-            state_ = kP0Failed;
-            return;
-          }
-          break;
-         case kP0Failed:
-          // Hold connection attempt to P1 so that it stays in CONNECTING.
-          if (grpc_sockaddr_get_port(addr) == p1_port_) {
-            gpr_log(GPR_INFO,
-                    "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
-            queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
-                closure, ep, interested_parties, channel_args, addr, deadline);
-            state_ = kDone;
-            return;
-          }
-          break;
-         case kDone:
-          // P0 should attempt reconnection.  Log it to make the test
-          // easier to debug, but allow it to complete, so that the
-          // priority policy deactivates P1.
-          if (grpc_sockaddr_get_port(addr) == p0_port_) {
-            gpr_log(GPR_INFO,
-                    "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
-          }
-          break;
+          case kInit:
+            // Make P0 report TF, which should trigger us to try to connect to
+            // P1.
+            if (grpc_sockaddr_get_port(addr) == p0_port_) {
+              gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                                      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                          "injected connection failure"));
+              state_ = kP0Failed;
+              return;
+            }
+            break;
+          case kP0Failed:
+            // Hold connection attempt to P1 so that it stays in CONNECTING.
+            if (grpc_sockaddr_get_port(addr) == p1_port_) {
+              gpr_log(GPR_INFO,
+                      "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
+              queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
+                  closure, ep, interested_parties, channel_args, addr,
+                  deadline);
+              state_ = kDone;
+              return;
+            }
+            break;
+          case kDone:
+            // P0 should attempt reconnection.  Log it to make the test
+            // easier to debug, but allow it to complete, so that the
+            // priority policy deactivates P1.
+            if (grpc_sockaddr_get_port(addr) == p0_port_) {
+              gpr_log(GPR_INFO,
+                      "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
+            }
+            break;
         }
       }
-      AttemptConnection(closure, ep, interested_parties, channel_args,
-                        addr, deadline);
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
     }
 
     // Invoked by the test when the RPC to the P0 backend has succeeded
@@ -6576,11 +6577,15 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
     const int p1_port_;
 
     grpc_core::Mutex mu_;
-    enum { kInit, kP0Failed, kDone, } state_ ABSL_GUARDED_BY(mu_) = kInit;
+    enum {
+      kInit,
+      kP0Failed,
+      kDone,
+    } state_ ABSL_GUARDED_BY(mu_) = kInit;
     std::unique_ptr<QueuedAttempt> queued_p1_attempt_ ABSL_GUARDED_BY(mu_);
   };
-  ConnectionInjector connection_attempt_injector(
-      backends_[0]->port(), backends_[1]->port());
+  ConnectionInjector connection_attempt_injector(backends_[0]->port(),
+                                                 backends_[1]->port());
   // Wait for P0 backend.
   // Increase timeout to account for subchannel connection delays.
   WaitForBackend(0, WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));

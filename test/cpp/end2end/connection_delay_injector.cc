@@ -61,9 +61,8 @@ ConnectionAttemptInjector::~ConnectionAttemptInjector() {
 
 void ConnectionAttemptInjector::AttemptConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_core::Timestamp deadline) {
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                              addr, deadline);
 }
@@ -116,9 +115,8 @@ class ConnectionDelayInjector::InjectedDelay {
 
 void ConnectionDelayInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_core::Timestamp deadline) {
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   new InjectedDelay(duration_, closure, ep, interested_parties, channel_args,
                     addr, deadline);
 }

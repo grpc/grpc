@@ -46,18 +46,18 @@ class ConnectionAttemptInjector {
   // Implementations must eventually either invoke the closure
   // themselves or delegate to the iomgr implementation by calling
   // AttemptConnection().
-  virtual void HandleConnection(
-      grpc_closure* closure, grpc_endpoint** ep,
-      grpc_pollset_set* interested_parties,
-      const grpc_channel_args* channel_args,
-      const grpc_resolved_address* addr, grpc_core::Timestamp deadline) = 0;
+  virtual void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                                grpc_pollset_set* interested_parties,
+                                const grpc_channel_args* channel_args,
+                                const grpc_resolved_address* addr,
+                                grpc_core::Timestamp deadline) = 0;
 
  protected:
-  static void AttemptConnection(
-      grpc_closure* closure, grpc_endpoint** ep,
-      grpc_pollset_set* interested_parties,
-      const grpc_channel_args* channel_args,
-      const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
+  static void AttemptConnection(grpc_closure* closure, grpc_endpoint** ep,
+                                grpc_pollset_set* interested_parties,
+                                const grpc_channel_args* channel_args,
+                                const grpc_resolved_address* addr,
+                                grpc_core::Timestamp deadline);
 };
 
 // A concrete implementation that injects a fixed delay.
@@ -66,12 +66,11 @@ class ConnectionDelayInjector : public ConnectionAttemptInjector {
   explicit ConnectionDelayInjector(grpc_core::Duration duration)
       : duration_(duration) {}
 
-  void HandleConnection(
-      grpc_closure* closure, grpc_endpoint** ep,
-      grpc_pollset_set* interested_parties,
-      const grpc_channel_args* channel_args,
-      const grpc_resolved_address* addr,
-      grpc_core::Timestamp deadline) override;
+  void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                        grpc_pollset_set* interested_parties,
+                        const grpc_channel_args* channel_args,
+                        const grpc_resolved_address* addr,
+                        grpc_core::Timestamp deadline) override;
 
  private:
   class InjectedDelay;
