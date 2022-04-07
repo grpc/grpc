@@ -273,6 +273,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     absl::optional<XdsEndpointResource> latest_update;
     // State used to retain child policy names for priority policy.
     std::vector<size_t /*child_number*/> priority_child_numbers;
+    size_t next_available_child_number = 0;
 
     const XdsClusterResolverLbConfig::DiscoveryMechanism& config() const;
 
@@ -667,10 +668,11 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
     }
     // If we didn't find an existing child number, assign a new one.
     if (!child_number.has_value()) {
-      for (child_number = 0;
+      for (child_number = discovery_entry.next_available_child_number;
            child_locality_map.find(*child_number) != child_locality_map.end();
            ++(*child_number)) {
       }
+      discovery_entry.next_available_child_number = *child_number + 1;
       // Add entry so we know that the child number is in use.
       // (Don't need to add the list of localities, since we won't use them.)
       child_locality_map[*child_number];
