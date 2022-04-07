@@ -928,3 +928,17 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "orca_service_end2end_test",
+    srcs = ["orca_service_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:orca_service_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
