@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
@@ -245,11 +246,19 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   }
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
-  std::string uri_str;
-  if (scheme != nullptr) {
-    uri_str = absl::StrCat(scheme, ":", path);
-  }
-  return uri_str;
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      std::move(scheme), /*authority=*/"", std::move(path),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return "";
+  return uri->ToString();
+}
+
+std::string grpc_sockaddr_to_uri_decoded(
+    const grpc_resolved_address* resolved_addr) {
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(grpc_sockaddr_to_uri(resolved_addr));
+  if (!uri.ok()) return "";
+  return absl::StrCat(uri->scheme(), ":",  uri->path());
 }
 
 const char* grpc_sockaddr_get_uri_scheme(

@@ -277,19 +277,20 @@ void grpc_tcp_client_create_from_prepared_fd(
                   addr->len);
   } while (err < 0 && errno == EINTR);
 
-  std::string name = absl::StrCat("tcp-client:", grpc_sockaddr_to_uri(addr));
+  std::string name =
+      absl::StrCat("tcp-client:", grpc_sockaddr_to_uri_decoded(addr));
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
 
   if (err >= 0) {
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args,
-                                         grpc_sockaddr_to_uri(addr));
+                                         grpc_sockaddr_to_uri_decoded(addr));
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                               grpc_sockaddr_to_uri(addr));
+                               grpc_sockaddr_to_uri_decoded(addr));
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return;
@@ -302,7 +303,7 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->ep = ep;
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
-  ac->addr_str = grpc_sockaddr_to_uri(addr);
+  ac->addr_str = grpc_sockaddr_to_uri_decoded(addr);
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,

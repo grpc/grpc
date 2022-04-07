@@ -24,7 +24,6 @@
 #include <string>
 
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.
@@ -69,6 +68,9 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
 
 /* Returns the URI string corresponding to \a addr */
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
+
+/* Returns the string decoded from URI corresponding to \a addr */
+std::string grpc_sockaddr_to_uri_decoded(const grpc_resolved_address* addr);
 
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);

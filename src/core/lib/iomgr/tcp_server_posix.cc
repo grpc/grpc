@@ -184,6 +184,13 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   }
 }
 
+static std::string grpc_sockaddr_to_uri_decoded(grpc_resolved_address* addr) {
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Parse(grpc_sockaddr_to_uri(addr));
+  if(!uri.ok()) return "";
+  return uri->ToString();
+}
+
 /* event manager callback when reads are ready */
 static void on_read(void* arg, grpc_error_handle err) {
   grpc_tcp_listener* sp = static_cast<grpc_tcp_listener*>(arg);
@@ -247,7 +254,7 @@ static void on_read(void* arg, grpc_error_handle err) {
       goto error;
     }
 
-    std::string addr_str = grpc_sockaddr_to_uri(&addr);
+    std::string addr_str = grpc_sockaddr_to_uri_decoded(&addr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
               addr_str.c_str());
@@ -595,7 +602,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
       return;
     }
     (void)grpc_set_socket_no_sigpipe_if_possible(fd);
-    std::string addr_str = grpc_sockaddr_to_uri(&addr);
+    std::string addr_str = grpc_sockaddr_to_uri_decoded(&addr);
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
               addr_str.c_str());

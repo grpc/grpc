@@ -84,7 +84,7 @@ void SubchannelKey::Init(
 }
 
 std::string SubchannelKey::ToString() const {
-  return absl::StrCat("{address=", grpc_sockaddr_to_uri(&address_),
+  return absl::StrCat("{address=", grpc_sockaddr_to_uri_decoded(&address_),
                       ", args=", grpc_channel_args_string(args_), "}");
 }
 

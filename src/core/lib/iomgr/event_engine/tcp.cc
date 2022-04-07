@@ -143,7 +143,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_core::Timestamp deadline) {
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
-          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
+          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri_decoded(addr)));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);
