@@ -947,7 +947,6 @@ include/grpcpp/create_channel.h \
 include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
-include/grpcpp/ext/orca_service.h \
 include/grpcpp/generic/async_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
 include/grpcpp/grpcpp.h \
@@ -1551,8 +1550,6 @@ src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
 src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h \
 src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
 src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h \
-src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
-src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
@@ -2529,7 +2526,6 @@ src/cpp/server/health/default_health_check_service.h \
 src/cpp/server/health/health_check_service.cc \
 src/cpp/server/health/health_check_service_server_builder_option.cc \
 src/cpp/server/insecure_server_credentials.cc \
-src/cpp/server/orca/orca_service.cc \
 src/cpp/server/secure_server_credentials.cc \
 src/cpp/server/secure_server_credentials.h \
 src/cpp/server/server_builder.cc \
