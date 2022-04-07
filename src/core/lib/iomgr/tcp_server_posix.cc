@@ -187,7 +187,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
 static std::string grpc_sockaddr_to_uri_decoded(grpc_resolved_address* addr) {
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(grpc_sockaddr_to_uri(addr));
-  if(!uri.ok()) return "";
+  if (!uri.ok()) return "";
   return uri->ToString();
 }
 

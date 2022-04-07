@@ -258,7 +258,7 @@ std::string grpc_sockaddr_to_uri_decoded(
   absl::StatusOr<grpc_core::URI> uri =
       grpc_core::URI::Parse(grpc_sockaddr_to_uri(resolved_addr));
   if (!uri.ok()) return "";
-  return absl::StrCat(uri->scheme(), ":",  uri->path());
+  return absl::StrCat(uri->scheme(), ":", uri->path());
 }
 
 const char* grpc_sockaddr_get_uri_scheme(
