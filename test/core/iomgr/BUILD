@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
 licenses(["notice"])
 
@@ -362,4 +363,21 @@ grpc_cc_test(
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+objc_library(
+    name = "CFStreamTestLib",
+    testonly = True,
+    srcs = glob(["ios/**/*.mm"]),
+    deps = [
+        "//:iomgr_port",
+        "//:gpr_platform",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+ios_unit_test(
+    name = "CFStreamTest",
+    minimum_os_version = "9.0",
+    deps = [":CFStreamTestLib"],
 )
