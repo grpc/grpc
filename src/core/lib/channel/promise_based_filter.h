@@ -124,6 +124,53 @@ class BaseCallData : public Activity, private Wakeable {
     }
   };
 
+  class Flusher {
+   public:
+    void Release(grpc_transport_stream_op_batch* batch) {
+      release_.push_back(batch);
+    }
+
+    void Cancel(grpc_transport_stream_op_batch* batch,
+                grpc_error_handle error) {
+      grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
+                                                               &call_closures_);
+    }
+
+    // Returns true if still in the combiner, false if the combiner was
+    // released.
+    bool Flush(CallCombiner* call_combiner, grpc_call_stack* call_stack,
+               grpc_call_element* elem) GRPC_MUST_USE_RESULT;
+
+   private:
+    absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
+    CallCombinerClosureList call_closures_;
+  };
+
+  // Smart pointer like wrapper around a batch.
+  // Creation makes a ref count of one capture.
+  // Copying increments.
+  // Must be moved from or released or cancelled before destruction.
+  class CapturedBatch final {
+   public:
+    explicit CapturedBatch(grpc_call_element* elem,
+                           grpc_transport_stream_op_batch* batch);
+    ~CapturedBatch();
+    CapturedBatch(const CapturedBatch&);
+    CapturedBatch& operator=(const CapturedBatch&);
+    CapturedBatch(CapturedBatch&&) noexcept;
+    CapturedBatch& operator=(CapturedBatch&&) noexcept;
+
+    grpc_transport_stream_op_batch* operator->() { return batch_; }
+
+    void Release(Flusher* releaser);
+    void Cancel(grpc_error_handle error, Flusher* releaser);
+
+   private:
+    intptr_t& ref_count();
+
+    grpc_transport_stream_op_batch* batch_;
+  };
+
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
     return MetadataHandle<grpc_metadata_batch>(p);

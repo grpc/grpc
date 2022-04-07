@@ -19,6 +19,7 @@
 #include <cstdlib>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
 namespace promise_filter_detail {
@@ -69,6 +70,50 @@ void BaseCallData::Wakeup() {
 }
 
 void BaseCallData::Drop() { GRPC_CALL_STACK_UNREF(call_stack_, "waker"); }
+
+///////////////////////////////////////////////////////////////////////////////
+// BaseCallData::Flusher
+
+bool BaseCallData::Flusher::Flush(CallCombiner* call_combiner,
+                                  grpc_call_stack* call_stack,
+                                  grpc_call_element* elem) {
+  if (release_.empty()) {
+    if (call_closures_.size() == 0) return true;
+    call_closures_.RunClosures(call_combiner);
+    return false;
+  }
+  for (size_t i = 1; i < release_.size(); i++) {
+    struct CallNextOp {
+      grpc_closure closure;
+      grpc_transport_stream_op_batch* batch;
+      grpc_call_element* elem;
+      grpc_call_stack* call_stack;
+
+      static void Run(void* p, grpc_error_handle error) {
+        auto* self = static_cast<CallNextOp*>(p);
+        grpc_call_next_op(self->elem, self->batch);
+        GRPC_CALL_STACK_UNREF(self->call_stack, "flusher_batch");
+        delete self;
+      }
+    };
+    auto* op = new CallNextOp;
+    GRPC_CLOSURE_INIT(&op->closure, CallNextOp::Run, op, nullptr);
+    op->batch = release_[i];
+    op->elem = elem;
+    GRPC_CALL_STACK_REF(call_stack, "flusher_batch");
+    call_closures_.Add(&op->closure, GRPC_ERROR_NONE, "flusher_batch");
+  }
+  call_closures_.RunClosuresWithoutYielding(call_combiner);
+  grpc_call_next_op(elem, release_[0]);
+  return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// BaseCallData::CapturedBatch
+
+BaseCallData::CapturedBatch::CapturedBatch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch)
+    : batch_(batch) {}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ClientCallData
@@ -253,15 +298,15 @@ class ClientCallData::PollContext {
                   self_->recv_trailing_state_ == RecvTrailingState::kInitial ||
                   self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
               self_->call_combiner()->Cancel(GRPC_ERROR_REF(error));
-              forward_batch_ =
-                  grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                      [](void* p, grpc_error_handle) {
-                        GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
-                                                "finish_cancel");
-                      },
-                      self_->call_combiner(), nullptr));
-              forward_batch_->cancel_stream = true;
-              forward_batch_->payload->cancel_stream.cancel_error = error;
+              auto* b = grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+                  [](void* p, grpc_error_handle) {
+                    GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
+                                            "finish_cancel");
+                  },
+                  self_->call_combiner(), nullptr));
+              b->cancel_stream = true;
+              b->payload->cancel_stream.cancel_error = error;
+              flusher_.Release(b);
             }
             self_->recv_trailing_state_ = RecvTrailingState::kCancelled;
           }
@@ -293,36 +338,8 @@ class ClientCallData::PollContext {
     self_->poll_ctx_ = nullptr;
     if (have_scoped_activity_) scoped_activity_.Destroy();
     GRPC_CALL_STACK_REF(self_->call_stack(), "finish_poll");
-    bool in_combiner = true;
-    if (call_closures_.size() != 0) {
-      if (forward_batch_ != nullptr) {
-        call_closures_.RunClosuresWithoutYielding(self_->call_combiner());
-      } else {
-        in_combiner = false;
-        call_closures_.RunClosures(self_->call_combiner());
-      }
-    }
-    if (forward_batch_ != nullptr) {
-      GPR_ASSERT(in_combiner);
-      in_combiner = false;
-      forward_send_initial_metadata_ = false;
-      grpc_call_next_op(self_->elem(), forward_batch_);
-    }
-    if (cancel_send_initial_metadata_error_ != GRPC_ERROR_NONE) {
-      GPR_ASSERT(in_combiner);
-      forward_send_initial_metadata_ = false;
-      in_combiner = false;
-      grpc_transport_stream_op_batch_finish_with_failure(
-          absl::exchange(self_->send_initial_metadata_batch_, nullptr),
-          cancel_send_initial_metadata_error_, self_->call_combiner());
-    }
-    if (absl::exchange(forward_send_initial_metadata_, false)) {
-      GPR_ASSERT(in_combiner);
-      in_combiner = false;
-      grpc_call_next_op(
-          self_->elem(),
-          absl::exchange(self_->send_initial_metadata_batch_, nullptr));
-    }
+    bool in_combiner = flusher_.Flush(self_->call_combiner(),
+                                      self_->call_stack(), self_->elem());
     if (repoll_) {
       if (in_combiner) {
         self_->WakeInsideCombiner();
@@ -358,11 +375,8 @@ class ClientCallData::PollContext {
  private:
   ManualConstructor<ScopedActivity> scoped_activity_;
   ClientCallData* self_;
-  CallCombinerClosureList call_closures_;
-  grpc_error_handle cancel_send_initial_metadata_error_ = GRPC_ERROR_NONE;
-  grpc_transport_stream_op_batch* forward_batch_ = nullptr;
+  Flusher flusher_;
   bool repoll_ = false;
-  bool forward_send_initial_metadata_ = false;
   bool have_scoped_activity_;
 };
 
