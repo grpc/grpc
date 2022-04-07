@@ -421,36 +421,10 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
             "priority %u",
             this, child_priority, child->name().c_str(), current_priority_);
   }
-  // Ignore priorities not in the current config.
-  if (child_priority == UINT32_MAX) return;
-  // Ignore lower-than-current priorities.
-  if (child_priority > current_priority_) return;
-  // If a child reports TRANSIENT_FAILURE, start trying the next priority.
-  // Note that even if this is for a higher-than-current priority, we
-  // may still need to create some children between this priority and
-  // the current one (e.g., if we got an update that inserted new
-  // priorities ahead of the current one).
-  if (child->connectivity_state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    ChoosePriorityLocked(
-        /*report_connecting=*/child_priority == current_priority_);
-    return;
-  }
-  // The update is for a higher-than-current priority (or for any
-  // priority if we don't have any current priority).
-  if (child_priority < current_priority_) {
-    // If the child reports READY or IDLE, switch to that priority.
-    // Otherwise, ignore the update.
-    if (child->connectivity_state() == GRPC_CHANNEL_READY ||
-        child->connectivity_state() == GRPC_CHANNEL_IDLE) {
-      SetCurrentPriorityLocked(child_priority);
-    }
-    return;
-  }
-  // The current priority has returned a new picker, so pass it up to
-  // our parent.
-  channel_control_helper()->UpdateState(child->connectivity_state(),
-                                        child->connectivity_status(),
-                                        child->GetPicker());
+  // Unconditionally call ChoosePriorityLocked().  It should do the
+  // right thing based on the state of all children.
+  ChoosePriorityLocked(
+      /*report_connecting=*/child_priority == current_priority_);
 }
 
 void PriorityLb::DeleteChild(ChildPriority* child) {
@@ -774,9 +748,6 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(
 }
 
 void PriorityLb::ChildPriority::ExitIdleLocked() {
-  if (connectivity_state_ == GRPC_CHANNEL_IDLE && failover_timer_ == nullptr) {
-    failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
-  }
   child_policy_->ExitIdleLocked();
 }
 
