@@ -246,9 +246,9 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   }
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"", std::move(path),
-      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Create(scheme, /*authority=*/"", std::move(path),
+                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return "";
   return uri->ToString();
 }
