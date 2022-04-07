@@ -852,6 +852,9 @@ static void inc_initiate_write_reason(
     case GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS:
       GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SEND_SETTINGS();
       break;
+    case GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK:
+      GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_SETTINGS_ACK();
+      break;
     case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING:
       GRPC_STATS_INC_HTTP2_INITIATE_WRITE_DUE_TO_FLOW_CONTROL_UNSTALLED_BY_SETTING();
       break;
@@ -1963,8 +1966,8 @@ static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
 // INPUT PROCESSING - GENERAL
 //
 
-void grpc_chttp2_maybe_complete_recv_initial_metadata(
-    grpc_chttp2_transport* /*t*/, grpc_chttp2_stream* s) {
+void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
+                                                      grpc_chttp2_stream* s) {
   if (s->recv_initial_metadata_ready != nullptr &&
       s->published_metadata[0] != GRPC_METADATA_NOT_PUBLISHED) {
     if (s->seen_error) {
@@ -1975,6 +1978,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(
       }
     }
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
+    s->recv_initial_metadata->Set(grpc_core::PeerString(), t->peer_string);
     // If we didn't receive initial metadata from the wire and instead faked a
     // status (due to stream cancellations for example), let upper layers know
     // that trailing metadata is immediately available.
@@ -2070,6 +2074,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
       *s->recv_trailing_metadata = std::move(s->trailing_metadata_buffer);
+      s->recv_trailing_metadata->Set(grpc_core::PeerString(), t->peer_string);
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
   }
@@ -3298,6 +3303,8 @@ const char* grpc_chttp2_initiate_write_reason_string(
       return "TRANSPORT_FLOW_CONTROL";
     case GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS:
       return "SEND_SETTINGS";
+    case GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK:
+      return "SETTINGS_ACK";
     case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING:
       return "FLOW_CONTROL_UNSTALLED_BY_SETTING";
     case GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE:

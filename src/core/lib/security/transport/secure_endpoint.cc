@@ -71,7 +71,7 @@ struct secure_endpoint {
             ->memory_quota()
             ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
                                              ":secure_endpoint"));
-    self_reservation = memory_owner.MakeReservation(sizeof(this));
+    self_reservation = memory_owner.MakeReservation(sizeof(*this));
     read_staging_buffer =
         memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
     write_staging_buffer =

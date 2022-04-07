@@ -244,6 +244,8 @@ class PriorityLb : public LoadBalancingPolicy {
   // Internal state.
   bool shutting_down_ = false;
 
+  bool update_in_progress_ = false;
+
   std::map<std::string, OrphanablePtr<ChildPriority>> children_;
   // The priority that is being used.
   uint32_t current_priority_ = UINT32_MAX;
@@ -323,6 +325,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   // Update addresses.
   addresses_ = MakeHierarchicalAddressMap(args.addresses);
   // Check all existing children against the new config.
+  update_in_progress_ = true;
   for (const auto& p : children_) {
     const std::string& child_name = p.first;
     auto& child = p.second;
@@ -336,6 +339,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
                           config_it->second.ignore_reresolution_requests);
     }
   }
+  update_in_progress_ = false;
   // Try to get connected.
   TryNextPriorityLocked(/*report_connecting=*/children_.empty());
 }
@@ -351,6 +355,12 @@ uint32_t PriorityLb::GetChildPriorityLocked(
 
 void PriorityLb::HandleChildConnectivityStateChangeLocked(
     ChildPriority* child) {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead choose a new priority once the update has been seen by
+  // all children.  This ensures that we don't incorrectly do the wrong
+  // thing while state is inconsistent.
+  if (update_in_progress_) return;
   // Special case for the child that was the current child before the
   // most recent update.
   if (child == current_child_from_before_update_) {

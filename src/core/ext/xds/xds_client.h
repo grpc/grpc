@@ -266,11 +266,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LoadReportMap load_report_map;
   };
 
-  class Notifier;
-
   // Sends an error notification to all watchers.
   void NotifyOnErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Sends an error notification to a specific set of watchers.
+  void NotifyWatchersOnErrorLocked(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+      absl::Status status);
+  // Sends a resource-does-not-exist notification to a specific set of watchers.
+  void NotifyWatchersOnResourceDoesNotExist(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

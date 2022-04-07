@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -23,11 +24,28 @@ grpc_cc_test(
     srcs = ["client_authority_filter_test.cc"],
     external_deps = ["gtest"],
     language = "c++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc",
         "//:grpc_client_authority_filter",
         "//test/core/promise:test_context",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "filter_fuzzer",
+    srcs = ["filter_fuzzer.cc"],
+    corpus = "filter_fuzzer_corpus",
+    language = "C++",
+    proto = "filter_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
     ],
 )

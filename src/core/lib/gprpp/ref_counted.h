@@ -281,6 +281,8 @@ template <typename Child, typename Impl = PolymorphicRefCount,
           UnrefBehavior UnrefBehaviorArg = kUnrefDelete>
 class RefCounted : public Impl {
  public:
+  using RefCountedChildType = Child;
+
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
 
