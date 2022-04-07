@@ -726,6 +726,7 @@ class CSharpLanguage(Language):
     def __str__(self):
         return 'csharp'
 
+
 class DotnetLanguage(Language):
     """The pure C# implementation from grpc/grpc-dotnet."""
 
