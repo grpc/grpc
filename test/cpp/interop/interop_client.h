@@ -80,9 +80,11 @@ class InteropClient {
   // languages
   bool DoChannelSoakTest(int32_t soak_iterations, int32_t max_failures,
                          int64_t max_acceptable_per_iteration_latency_ms,
+                         int32_t soak_min_time_ms_between_rpcs,
                          int32_t overall_timeout_seconds);
   bool DoRpcSoakTest(int32_t soak_iterations, int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
+                     int32_t soak_min_time_ms_between_rpcs,
                      int32_t overall_timeout_seconds);
   bool DoLongLivedChannelTest(int32_t soak_iterations,
                               int32_t iteration_interval);
