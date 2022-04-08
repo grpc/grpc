@@ -134,19 +134,25 @@ UPB_INLINE char* envoy_admin_v3_ConfigDump_serialize_ex(const envoy_admin_v3_Con
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ConfigDump_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_ConfigDump_has_configs(const envoy_admin_v3_ConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const struct google_protobuf_Any* const* envoy_admin_v3_ConfigDump_configs(const envoy_admin_v3_ConfigDump *msg, size_t *len) { return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
+UPB_INLINE bool envoy_admin_v3_ConfigDump_has_configs(const envoy_admin_v3_ConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_admin_v3_ConfigDump_clear_configs(const envoy_admin_v3_ConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const struct google_protobuf_Any* const* envoy_admin_v3_ConfigDump_configs(const envoy_admin_v3_ConfigDump* msg, size_t* len) {
+  return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
 
-UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ConfigDump_mutable_configs(envoy_admin_v3_ConfigDump *msg, size_t *len) {
+UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ConfigDump_mutable_configs(envoy_admin_v3_ConfigDump* msg, size_t* len) {
   return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ConfigDump_resize_configs(envoy_admin_v3_ConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ConfigDump_resize_configs(envoy_admin_v3_ConfigDump* msg, size_t len, upb_Arena* arena) {
   return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ConfigDump_add_configs(envoy_admin_v3_ConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ConfigDump_add_configs(envoy_admin_v3_ConfigDump* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -182,26 +188,42 @@ UPB_INLINE char* envoy_admin_v3_UpdateFailureState_serialize_ex(const envoy_admi
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_UpdateFailureState_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_UpdateFailureState_has_failed_configuration(const envoy_admin_v3_UpdateFailureState *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_UpdateFailureState_failed_configuration(const envoy_admin_v3_UpdateFailureState* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_Any*);
+UPB_INLINE bool envoy_admin_v3_UpdateFailureState_has_failed_configuration(const envoy_admin_v3_UpdateFailureState* msg) {
+  return _upb_hasbit(msg, 1);
 }
-UPB_INLINE bool envoy_admin_v3_UpdateFailureState_has_last_update_attempt(const envoy_admin_v3_UpdateFailureState *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE void envoy_admin_v3_UpdateFailureState_clear_failed_configuration(const envoy_admin_v3_UpdateFailureState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_UpdateFailureState_failed_configuration(const envoy_admin_v3_UpdateFailureState* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*);
+}
+UPB_INLINE bool envoy_admin_v3_UpdateFailureState_has_last_update_attempt(const envoy_admin_v3_UpdateFailureState* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_UpdateFailureState_clear_last_update_attempt(const envoy_admin_v3_UpdateFailureState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_UpdateFailureState_last_update_attempt(const envoy_admin_v3_UpdateFailureState* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct google_protobuf_Timestamp*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Timestamp*);
+}
+UPB_INLINE void envoy_admin_v3_UpdateFailureState_clear_details(const envoy_admin_v3_UpdateFailureState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_UpdateFailureState_details(const envoy_admin_v3_UpdateFailureState* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
+  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView);
+}
+UPB_INLINE void envoy_admin_v3_UpdateFailureState_clear_version_info(const envoy_admin_v3_UpdateFailureState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_UpdateFailureState_version_info(const envoy_admin_v3_UpdateFailureState* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView);
+  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_StringView);
 }
 
 UPB_INLINE void envoy_admin_v3_UpdateFailureState_set_failed_configuration(envoy_admin_v3_UpdateFailureState *msg, struct google_protobuf_Any* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_protobuf_Any*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_UpdateFailureState_mutable_failed_configuration(envoy_admin_v3_UpdateFailureState *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_UpdateFailureState_mutable_failed_configuration(envoy_admin_v3_UpdateFailureState* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_UpdateFailureState_failed_configuration(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -212,9 +234,9 @@ UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_UpdateFailureState_mutable
 }
 UPB_INLINE void envoy_admin_v3_UpdateFailureState_set_last_update_attempt(envoy_admin_v3_UpdateFailureState *msg, struct google_protobuf_Timestamp* value) {
   _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct google_protobuf_Timestamp*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_UpdateFailureState_mutable_last_update_attempt(envoy_admin_v3_UpdateFailureState *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_UpdateFailureState_mutable_last_update_attempt(envoy_admin_v3_UpdateFailureState* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_UpdateFailureState_last_update_attempt(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -224,10 +246,10 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_UpdateFailureState_m
   return sub;
 }
 UPB_INLINE void envoy_admin_v3_UpdateFailureState_set_details(envoy_admin_v3_UpdateFailureState *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = value;
 }
 UPB_INLINE void envoy_admin_v3_UpdateFailureState_set_version_info(envoy_admin_v3_UpdateFailureState *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), upb_StringView) = value;
 }
 
 /* envoy.admin.v3.BootstrapConfigDump */
@@ -261,11 +283,21 @@ UPB_INLINE char* envoy_admin_v3_BootstrapConfigDump_serialize_ex(const envoy_adm
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_BootstrapConfigDump_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_BootstrapConfigDump_has_bootstrap(const envoy_admin_v3_BootstrapConfigDump *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_BootstrapConfigDump_has_bootstrap(const envoy_admin_v3_BootstrapConfigDump* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_clear_bootstrap(const envoy_admin_v3_BootstrapConfigDump* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_bootstrap_v3_Bootstrap* envoy_admin_v3_BootstrapConfigDump_bootstrap(const envoy_admin_v3_BootstrapConfigDump* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_bootstrap_v3_Bootstrap*);
 }
-UPB_INLINE bool envoy_admin_v3_BootstrapConfigDump_has_last_updated(const envoy_admin_v3_BootstrapConfigDump *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_BootstrapConfigDump_has_last_updated(const envoy_admin_v3_BootstrapConfigDump* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_clear_last_updated(const envoy_admin_v3_BootstrapConfigDump* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_BootstrapConfigDump_last_updated(const envoy_admin_v3_BootstrapConfigDump* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Timestamp*);
 }
@@ -274,7 +306,7 @@ UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_set_bootstrap(envoy_admin_v3_
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_bootstrap_v3_Bootstrap*) = value;
 }
-UPB_INLINE struct envoy_config_bootstrap_v3_Bootstrap* envoy_admin_v3_BootstrapConfigDump_mutable_bootstrap(envoy_admin_v3_BootstrapConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_bootstrap_v3_Bootstrap* envoy_admin_v3_BootstrapConfigDump_mutable_bootstrap(envoy_admin_v3_BootstrapConfigDump* msg, upb_Arena* arena) {
   struct envoy_config_bootstrap_v3_Bootstrap* sub = (struct envoy_config_bootstrap_v3_Bootstrap*)envoy_admin_v3_BootstrapConfigDump_bootstrap(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_bootstrap_v3_Bootstrap*)_upb_Message_New(&envoy_config_bootstrap_v3_Bootstrap_msginit, arena);
@@ -287,7 +319,7 @@ UPB_INLINE void envoy_admin_v3_BootstrapConfigDump_set_last_updated(envoy_admin_
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_BootstrapConfigDump_mutable_last_updated(envoy_admin_v3_BootstrapConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_BootstrapConfigDump_mutable_last_updated(envoy_admin_v3_BootstrapConfigDump* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_BootstrapConfigDump_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -328,40 +360,55 @@ UPB_INLINE char* envoy_admin_v3_ListenersConfigDump_serialize_ex(const envoy_adm
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ListenersConfigDump_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_clear_version_info(const envoy_admin_v3_ListenersConfigDump* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ListenersConfigDump_version_info(const envoy_admin_v3_ListenersConfigDump* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_has_static_listeners(const envoy_admin_v3_ListenersConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const envoy_admin_v3_ListenersConfigDump_StaticListener* const* envoy_admin_v3_ListenersConfigDump_static_listeners(const envoy_admin_v3_ListenersConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ListenersConfigDump_StaticListener* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_has_dynamic_listeners(const envoy_admin_v3_ListenersConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const envoy_admin_v3_ListenersConfigDump_DynamicListener* const* envoy_admin_v3_ListenersConfigDump_dynamic_listeners(const envoy_admin_v3_ListenersConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ListenersConfigDump_DynamicListener* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_has_static_listeners(const envoy_admin_v3_ListenersConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_clear_static_listeners(const envoy_admin_v3_ListenersConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE const envoy_admin_v3_ListenersConfigDump_StaticListener* const* envoy_admin_v3_ListenersConfigDump_static_listeners(const envoy_admin_v3_ListenersConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ListenersConfigDump_StaticListener* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+}
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_has_dynamic_listeners(const envoy_admin_v3_ListenersConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_clear_dynamic_listeners(const envoy_admin_v3_ListenersConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE const envoy_admin_v3_ListenersConfigDump_DynamicListener* const* envoy_admin_v3_ListenersConfigDump_dynamic_listeners(const envoy_admin_v3_ListenersConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ListenersConfigDump_DynamicListener* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len);
+}
 
 UPB_INLINE void envoy_admin_v3_ListenersConfigDump_set_version_info(envoy_admin_v3_ListenersConfigDump *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
-UPB_INLINE envoy_admin_v3_ListenersConfigDump_StaticListener** envoy_admin_v3_ListenersConfigDump_mutable_static_listeners(envoy_admin_v3_ListenersConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ListenersConfigDump_StaticListener** envoy_admin_v3_ListenersConfigDump_mutable_static_listeners(envoy_admin_v3_ListenersConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ListenersConfigDump_StaticListener**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
-UPB_INLINE envoy_admin_v3_ListenersConfigDump_StaticListener** envoy_admin_v3_ListenersConfigDump_resize_static_listeners(envoy_admin_v3_ListenersConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ListenersConfigDump_StaticListener** envoy_admin_v3_ListenersConfigDump_resize_static_listeners(envoy_admin_v3_ListenersConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ListenersConfigDump_StaticListener**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_StaticListener* envoy_admin_v3_ListenersConfigDump_add_static_listeners(envoy_admin_v3_ListenersConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_StaticListener* envoy_admin_v3_ListenersConfigDump_add_static_listeners(envoy_admin_v3_ListenersConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ListenersConfigDump_StaticListener* sub = (struct envoy_admin_v3_ListenersConfigDump_StaticListener*)_upb_Message_New(&envoy_admin_v3_ListenersConfigDump_StaticListener_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_ListenersConfigDump_DynamicListener** envoy_admin_v3_ListenersConfigDump_mutable_dynamic_listeners(envoy_admin_v3_ListenersConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ListenersConfigDump_DynamicListener** envoy_admin_v3_ListenersConfigDump_mutable_dynamic_listeners(envoy_admin_v3_ListenersConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ListenersConfigDump_DynamicListener**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
-UPB_INLINE envoy_admin_v3_ListenersConfigDump_DynamicListener** envoy_admin_v3_ListenersConfigDump_resize_dynamic_listeners(envoy_admin_v3_ListenersConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ListenersConfigDump_DynamicListener** envoy_admin_v3_ListenersConfigDump_resize_dynamic_listeners(envoy_admin_v3_ListenersConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ListenersConfigDump_DynamicListener**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListener* envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(envoy_admin_v3_ListenersConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListener* envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(envoy_admin_v3_ListenersConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ListenersConfigDump_DynamicListener* sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListener*)_upb_Message_New(&envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -397,11 +444,21 @@ UPB_INLINE char* envoy_admin_v3_ListenersConfigDump_StaticListener_serialize_ex(
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ListenersConfigDump_StaticListener_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_StaticListener_has_listener(const envoy_admin_v3_ListenersConfigDump_StaticListener *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_StaticListener_has_listener(const envoy_admin_v3_ListenersConfigDump_StaticListener* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_StaticListener_clear_listener(const envoy_admin_v3_ListenersConfigDump_StaticListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_ListenersConfigDump_StaticListener_listener(const envoy_admin_v3_ListenersConfigDump_StaticListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_StaticListener_has_last_updated(const envoy_admin_v3_ListenersConfigDump_StaticListener *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_StaticListener_has_last_updated(const envoy_admin_v3_ListenersConfigDump_StaticListener* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_StaticListener_clear_last_updated(const envoy_admin_v3_ListenersConfigDump_StaticListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ListenersConfigDump_StaticListener_last_updated(const envoy_admin_v3_ListenersConfigDump_StaticListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Timestamp*);
 }
@@ -410,7 +467,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_StaticListener_set_listener(e
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ListenersConfigDump_StaticListener_mutable_listener(envoy_admin_v3_ListenersConfigDump_StaticListener *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ListenersConfigDump_StaticListener_mutable_listener(envoy_admin_v3_ListenersConfigDump_StaticListener* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_ListenersConfigDump_StaticListener_listener(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -423,7 +480,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_StaticListener_set_last_updat
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ListenersConfigDump_StaticListener_mutable_last_updated(envoy_admin_v3_ListenersConfigDump_StaticListener *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ListenersConfigDump_StaticListener_mutable_last_updated(envoy_admin_v3_ListenersConfigDump_StaticListener* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_ListenersConfigDump_StaticListener_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -464,14 +521,27 @@ UPB_INLINE char* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_seriali
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListenerState_clear_version_info(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ListenersConfigDump_DynamicListenerState_version_info(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListenerState_has_listener(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListenerState_has_listener(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListenerState_clear_listener(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_listener(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListenerState_has_last_updated(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListenerState_has_last_updated(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListenerState_clear_last_updated(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_last_updated(const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Timestamp*);
 }
@@ -483,7 +553,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_list
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(envoy_admin_v3_ListenersConfigDump_DynamicListenerState *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_ListenersConfigDump_DynamicListenerState_listener(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -496,7 +566,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_last_updated(envoy_admin_v3_ListenersConfigDump_DynamicListenerState *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_last_updated(envoy_admin_v3_ListenersConfigDump_DynamicListenerState* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_ListenersConfigDump_DynamicListenerState_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -537,24 +607,50 @@ UPB_INLINE char* envoy_admin_v3_ListenersConfigDump_DynamicListener_serialize_ex
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ListenersConfigDump_DynamicListener_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_clear_name(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ListenersConfigDump_DynamicListener_name(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_active_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_active_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_clear_active_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_active_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const envoy_admin_v3_ListenersConfigDump_DynamicListenerState*);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_warming_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_warming_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_clear_warming_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_warming_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const envoy_admin_v3_ListenersConfigDump_DynamicListenerState*);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_draining_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_draining_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_clear_draining_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_draining_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const envoy_admin_v3_ListenersConfigDump_DynamicListenerState*);
 }
-UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_error_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener *msg) { return _upb_hasbit(msg, 4); }
+UPB_INLINE bool envoy_admin_v3_ListenersConfigDump_DynamicListener_has_error_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  return _upb_hasbit(msg, 4);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_clear_error_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ListenersConfigDump_DynamicListener_error_state(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_clear_client_status(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_ListenersConfigDump_DynamicListener_client_status(const envoy_admin_v3_ListenersConfigDump_DynamicListener* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -567,7 +663,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_set_active_st
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), envoy_admin_v3_ListenersConfigDump_DynamicListenerState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(envoy_admin_v3_ListenersConfigDump_DynamicListener *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(envoy_admin_v3_ListenersConfigDump_DynamicListener* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState*)envoy_admin_v3_ListenersConfigDump_DynamicListener_active_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState*)_upb_Message_New(&envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit, arena);
@@ -580,7 +676,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_set_warming_s
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(20, 32), envoy_admin_v3_ListenersConfigDump_DynamicListenerState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_warming_state(envoy_admin_v3_ListenersConfigDump_DynamicListener *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_warming_state(envoy_admin_v3_ListenersConfigDump_DynamicListener* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState*)envoy_admin_v3_ListenersConfigDump_DynamicListener_warming_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState*)_upb_Message_New(&envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit, arena);
@@ -593,7 +689,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_set_draining_
   _upb_sethas(msg, 3);
   *UPB_PTR_AT(msg, UPB_SIZE(24, 40), envoy_admin_v3_ListenersConfigDump_DynamicListenerState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_draining_state(envoy_admin_v3_ListenersConfigDump_DynamicListener *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_draining_state(envoy_admin_v3_ListenersConfigDump_DynamicListener* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState* sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState*)envoy_admin_v3_ListenersConfigDump_DynamicListener_draining_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_ListenersConfigDump_DynamicListenerState*)_upb_Message_New(&envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit, arena);
@@ -606,7 +702,7 @@ UPB_INLINE void envoy_admin_v3_ListenersConfigDump_DynamicListener_set_error_sta
   _upb_sethas(msg, 4);
   *UPB_PTR_AT(msg, UPB_SIZE(28, 48), envoy_admin_v3_UpdateFailureState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_error_state(envoy_admin_v3_ListenersConfigDump_DynamicListener *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_error_state(envoy_admin_v3_ListenersConfigDump_DynamicListener* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_ListenersConfigDump_DynamicListener_error_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);
@@ -650,55 +746,76 @@ UPB_INLINE char* envoy_admin_v3_ClustersConfigDump_serialize_ex(const envoy_admi
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ClustersConfigDump_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_clear_version_info(const envoy_admin_v3_ClustersConfigDump* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ClustersConfigDump_version_info(const envoy_admin_v3_ClustersConfigDump* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_has_static_clusters(const envoy_admin_v3_ClustersConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const envoy_admin_v3_ClustersConfigDump_StaticCluster* const* envoy_admin_v3_ClustersConfigDump_static_clusters(const envoy_admin_v3_ClustersConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ClustersConfigDump_StaticCluster* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_has_dynamic_active_clusters(const envoy_admin_v3_ClustersConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24)); }
-UPB_INLINE const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const* envoy_admin_v3_ClustersConfigDump_dynamic_active_clusters(const envoy_admin_v3_ClustersConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len); }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_has_dynamic_warming_clusters(const envoy_admin_v3_ClustersConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const* envoy_admin_v3_ClustersConfigDump_dynamic_warming_clusters(const envoy_admin_v3_ClustersConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_has_static_clusters(const envoy_admin_v3_ClustersConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_clear_static_clusters(const envoy_admin_v3_ClustersConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE const envoy_admin_v3_ClustersConfigDump_StaticCluster* const* envoy_admin_v3_ClustersConfigDump_static_clusters(const envoy_admin_v3_ClustersConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ClustersConfigDump_StaticCluster* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+}
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_has_dynamic_active_clusters(const envoy_admin_v3_ClustersConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_clear_dynamic_active_clusters(const envoy_admin_v3_ClustersConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const* envoy_admin_v3_ClustersConfigDump_dynamic_active_clusters(const envoy_admin_v3_ClustersConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len);
+}
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_has_dynamic_warming_clusters(const envoy_admin_v3_ClustersConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32));
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_clear_dynamic_warming_clusters(const envoy_admin_v3_ClustersConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(16, 32));
+}
+UPB_INLINE const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const* envoy_admin_v3_ClustersConfigDump_dynamic_warming_clusters(const envoy_admin_v3_ClustersConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ClustersConfigDump_DynamicCluster* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len);
+}
 
 UPB_INLINE void envoy_admin_v3_ClustersConfigDump_set_version_info(envoy_admin_v3_ClustersConfigDump *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = value;
 }
-UPB_INLINE envoy_admin_v3_ClustersConfigDump_StaticCluster** envoy_admin_v3_ClustersConfigDump_mutable_static_clusters(envoy_admin_v3_ClustersConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ClustersConfigDump_StaticCluster** envoy_admin_v3_ClustersConfigDump_mutable_static_clusters(envoy_admin_v3_ClustersConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ClustersConfigDump_StaticCluster**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
-UPB_INLINE envoy_admin_v3_ClustersConfigDump_StaticCluster** envoy_admin_v3_ClustersConfigDump_resize_static_clusters(envoy_admin_v3_ClustersConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ClustersConfigDump_StaticCluster** envoy_admin_v3_ClustersConfigDump_resize_static_clusters(envoy_admin_v3_ClustersConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ClustersConfigDump_StaticCluster**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ClustersConfigDump_StaticCluster* envoy_admin_v3_ClustersConfigDump_add_static_clusters(envoy_admin_v3_ClustersConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ClustersConfigDump_StaticCluster* envoy_admin_v3_ClustersConfigDump_add_static_clusters(envoy_admin_v3_ClustersConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ClustersConfigDump_StaticCluster* sub = (struct envoy_admin_v3_ClustersConfigDump_StaticCluster*)_upb_Message_New(&envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_mutable_dynamic_active_clusters(envoy_admin_v3_ClustersConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_mutable_dynamic_active_clusters(envoy_admin_v3_ClustersConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ClustersConfigDump_DynamicCluster**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
-UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_resize_dynamic_active_clusters(envoy_admin_v3_ClustersConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_resize_dynamic_active_clusters(envoy_admin_v3_ClustersConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ClustersConfigDump_DynamicCluster**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ClustersConfigDump_DynamicCluster* envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(envoy_admin_v3_ClustersConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ClustersConfigDump_DynamicCluster* envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(envoy_admin_v3_ClustersConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ClustersConfigDump_DynamicCluster* sub = (struct envoy_admin_v3_ClustersConfigDump_DynamicCluster*)_upb_Message_New(&envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_mutable_dynamic_warming_clusters(envoy_admin_v3_ClustersConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_mutable_dynamic_warming_clusters(envoy_admin_v3_ClustersConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ClustersConfigDump_DynamicCluster**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
 }
-UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_resize_dynamic_warming_clusters(envoy_admin_v3_ClustersConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ClustersConfigDump_DynamicCluster** envoy_admin_v3_ClustersConfigDump_resize_dynamic_warming_clusters(envoy_admin_v3_ClustersConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ClustersConfigDump_DynamicCluster**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ClustersConfigDump_DynamicCluster* envoy_admin_v3_ClustersConfigDump_add_dynamic_warming_clusters(envoy_admin_v3_ClustersConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ClustersConfigDump_DynamicCluster* envoy_admin_v3_ClustersConfigDump_add_dynamic_warming_clusters(envoy_admin_v3_ClustersConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ClustersConfigDump_DynamicCluster* sub = (struct envoy_admin_v3_ClustersConfigDump_DynamicCluster*)_upb_Message_New(&envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -734,11 +851,21 @@ UPB_INLINE char* envoy_admin_v3_ClustersConfigDump_StaticCluster_serialize_ex(co
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_StaticCluster_has_cluster(const envoy_admin_v3_ClustersConfigDump_StaticCluster *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_StaticCluster_has_cluster(const envoy_admin_v3_ClustersConfigDump_StaticCluster* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_StaticCluster_clear_cluster(const envoy_admin_v3_ClustersConfigDump_StaticCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_ClustersConfigDump_StaticCluster_cluster(const envoy_admin_v3_ClustersConfigDump_StaticCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_StaticCluster_has_last_updated(const envoy_admin_v3_ClustersConfigDump_StaticCluster *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_StaticCluster_has_last_updated(const envoy_admin_v3_ClustersConfigDump_StaticCluster* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_StaticCluster_clear_last_updated(const envoy_admin_v3_ClustersConfigDump_StaticCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ClustersConfigDump_StaticCluster_last_updated(const envoy_admin_v3_ClustersConfigDump_StaticCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Timestamp*);
 }
@@ -747,7 +874,7 @@ UPB_INLINE void envoy_admin_v3_ClustersConfigDump_StaticCluster_set_cluster(envo
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ClustersConfigDump_StaticCluster_mutable_cluster(envoy_admin_v3_ClustersConfigDump_StaticCluster *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ClustersConfigDump_StaticCluster_mutable_cluster(envoy_admin_v3_ClustersConfigDump_StaticCluster* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_ClustersConfigDump_StaticCluster_cluster(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -760,7 +887,7 @@ UPB_INLINE void envoy_admin_v3_ClustersConfigDump_StaticCluster_set_last_updated
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ClustersConfigDump_StaticCluster_mutable_last_updated(envoy_admin_v3_ClustersConfigDump_StaticCluster *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ClustersConfigDump_StaticCluster_mutable_last_updated(envoy_admin_v3_ClustersConfigDump_StaticCluster* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_ClustersConfigDump_StaticCluster_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -801,20 +928,41 @@ UPB_INLINE char* envoy_admin_v3_ClustersConfigDump_DynamicCluster_serialize_ex(c
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_clear_version_info(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ClustersConfigDump_DynamicCluster_version_info(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_DynamicCluster_has_cluster(const envoy_admin_v3_ClustersConfigDump_DynamicCluster *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_DynamicCluster_has_cluster(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_clear_cluster(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_ClustersConfigDump_DynamicCluster_cluster(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_DynamicCluster_has_last_updated(const envoy_admin_v3_ClustersConfigDump_DynamicCluster *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_DynamicCluster_has_last_updated(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_clear_last_updated(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ClustersConfigDump_DynamicCluster_last_updated(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_Timestamp*);
 }
-UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_DynamicCluster_has_error_state(const envoy_admin_v3_ClustersConfigDump_DynamicCluster *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE bool envoy_admin_v3_ClustersConfigDump_DynamicCluster_has_error_state(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_clear_error_state(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ClustersConfigDump_DynamicCluster_error_state(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_clear_client_status(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_ClustersConfigDump_DynamicCluster_client_status(const envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -827,7 +975,7 @@ UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_cluster(env
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(envoy_admin_v3_ClustersConfigDump_DynamicCluster *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_ClustersConfigDump_DynamicCluster_cluster(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -840,7 +988,7 @@ UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_update
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(20, 32), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_last_updated(envoy_admin_v3_ClustersConfigDump_DynamicCluster *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_last_updated(envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_ClustersConfigDump_DynamicCluster_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -853,7 +1001,7 @@ UPB_INLINE void envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_error_state
   _upb_sethas(msg, 3);
   *UPB_PTR_AT(msg, UPB_SIZE(24, 40), envoy_admin_v3_UpdateFailureState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_error_state(envoy_admin_v3_ClustersConfigDump_DynamicCluster *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_error_state(envoy_admin_v3_ClustersConfigDump_DynamicCluster* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_ClustersConfigDump_DynamicCluster_error_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);
@@ -897,34 +1045,46 @@ UPB_INLINE char* envoy_admin_v3_RoutesConfigDump_serialize_ex(const envoy_admin_
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_RoutesConfigDump_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_has_static_route_configs(const envoy_admin_v3_RoutesConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* const* envoy_admin_v3_RoutesConfigDump_static_route_configs(const envoy_admin_v3_RoutesConfigDump *msg, size_t *len) { return (const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_has_dynamic_route_configs(const envoy_admin_v3_RoutesConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* const* envoy_admin_v3_RoutesConfigDump_dynamic_route_configs(const envoy_admin_v3_RoutesConfigDump *msg, size_t *len) { return (const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len); }
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_has_static_route_configs(const envoy_admin_v3_RoutesConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_clear_static_route_configs(const envoy_admin_v3_RoutesConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* const* envoy_admin_v3_RoutesConfigDump_static_route_configs(const envoy_admin_v3_RoutesConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_has_dynamic_route_configs(const envoy_admin_v3_RoutesConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_clear_dynamic_route_configs(const envoy_admin_v3_RoutesConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* const* envoy_admin_v3_RoutesConfigDump_dynamic_route_configs(const envoy_admin_v3_RoutesConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+}
 
-UPB_INLINE envoy_admin_v3_RoutesConfigDump_StaticRouteConfig** envoy_admin_v3_RoutesConfigDump_mutable_static_route_configs(envoy_admin_v3_RoutesConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_RoutesConfigDump_StaticRouteConfig** envoy_admin_v3_RoutesConfigDump_mutable_static_route_configs(envoy_admin_v3_RoutesConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_RoutesConfigDump_StaticRouteConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_admin_v3_RoutesConfigDump_StaticRouteConfig** envoy_admin_v3_RoutesConfigDump_resize_static_route_configs(envoy_admin_v3_RoutesConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_RoutesConfigDump_StaticRouteConfig** envoy_admin_v3_RoutesConfigDump_resize_static_route_configs(envoy_admin_v3_RoutesConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_RoutesConfigDump_StaticRouteConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* envoy_admin_v3_RoutesConfigDump_add_static_route_configs(envoy_admin_v3_RoutesConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* envoy_admin_v3_RoutesConfigDump_add_static_route_configs(envoy_admin_v3_RoutesConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* sub = (struct envoy_admin_v3_RoutesConfigDump_StaticRouteConfig*)_upb_Message_New(&envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig** envoy_admin_v3_RoutesConfigDump_mutable_dynamic_route_configs(envoy_admin_v3_RoutesConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig** envoy_admin_v3_RoutesConfigDump_mutable_dynamic_route_configs(envoy_admin_v3_RoutesConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
-UPB_INLINE envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig** envoy_admin_v3_RoutesConfigDump_resize_dynamic_route_configs(envoy_admin_v3_RoutesConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig** envoy_admin_v3_RoutesConfigDump_resize_dynamic_route_configs(envoy_admin_v3_RoutesConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(envoy_admin_v3_RoutesConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(envoy_admin_v3_RoutesConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* sub = (struct envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig*)_upb_Message_New(&envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -960,11 +1120,21 @@ UPB_INLINE char* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_serialize_ex(
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_has_route_config(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_has_route_config(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_clear_route_config(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_route_config(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_has_last_updated(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_has_last_updated(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_clear_last_updated(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_last_updated(const envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Timestamp*);
 }
@@ -973,7 +1143,7 @@ UPB_INLINE void envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_set_route_conf
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_mutable_route_config(envoy_admin_v3_RoutesConfigDump_StaticRouteConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_mutable_route_config(envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_route_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -986,7 +1156,7 @@ UPB_INLINE void envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_set_last_updat
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_mutable_last_updated(envoy_admin_v3_RoutesConfigDump_StaticRouteConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_mutable_last_updated(envoy_admin_v3_RoutesConfigDump_StaticRouteConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1027,20 +1197,41 @@ UPB_INLINE char* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_serialize_ex
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_clear_version_info(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_version_info(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_has_route_config(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_has_route_config(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_clear_route_config(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_route_config(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_has_last_updated(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_has_last_updated(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_clear_last_updated(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_last_updated(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_Timestamp*);
 }
-UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_has_error_state(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE bool envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_has_error_state(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_clear_error_state(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_error_state(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_clear_client_status(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_client_status(const envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -1053,7 +1244,7 @@ UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_route_con
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_route_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -1066,7 +1257,7 @@ UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_upda
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(20, 32), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_last_updated(envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_last_updated(envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1079,7 +1270,7 @@ UPB_INLINE void envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_error_sta
   _upb_sethas(msg, 3);
   *UPB_PTR_AT(msg, UPB_SIZE(24, 40), envoy_admin_v3_UpdateFailureState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_error_state(envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_error_state(envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_error_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);
@@ -1123,34 +1314,46 @@ UPB_INLINE char* envoy_admin_v3_ScopedRoutesConfigDump_serialize_ex(const envoy_
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ScopedRoutesConfigDump_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_has_inline_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* const* envoy_admin_v3_ScopedRoutesConfigDump_inline_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_has_dynamic_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* const* envoy_admin_v3_ScopedRoutesConfigDump_dynamic_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump *msg, size_t *len) { return (const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len); }
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_has_inline_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_clear_inline_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* const* envoy_admin_v3_ScopedRoutesConfigDump_inline_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_has_dynamic_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_clear_dynamic_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* const* envoy_admin_v3_ScopedRoutesConfigDump_dynamic_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+}
 
-UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_mutable_inline_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_mutable_inline_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_resize_inline_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_resize_inline_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* envoy_admin_v3_ScopedRoutesConfigDump_add_inline_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* envoy_admin_v3_ScopedRoutesConfigDump_add_inline_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* sub = (struct envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs*)_upb_Message_New(&envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_mutable_dynamic_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_mutable_dynamic_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
-UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_resize_dynamic_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs** envoy_admin_v3_ScopedRoutesConfigDump_resize_dynamic_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* envoy_admin_v3_ScopedRoutesConfigDump_add_dynamic_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* envoy_admin_v3_ScopedRoutesConfigDump_add_dynamic_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* sub = (struct envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs*)_upb_Message_New(&envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1186,37 +1389,51 @@ UPB_INLINE char* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_clear_name(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_name(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_has_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32)); }
-UPB_INLINE const struct google_protobuf_Any* const* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, size_t *len) { return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_has_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_has_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_clear_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
+  _upb_array_detach(msg, UPB_SIZE(12, 24));
+}
+UPB_INLINE const struct google_protobuf_Any* const* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg, size_t* len) {
+  return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(12, 24), len);
+}
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_has_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_clear_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Timestamp*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Timestamp*);
 }
 
 UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_set_name(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
 }
-UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_mutable_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, size_t *len) {
-  return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
+UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_mutable_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg, size_t* len) {
+  return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
-UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_resize_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, size_t len, upb_Arena *arena) {
-  return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_resize_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg, size_t len, upb_Arena* arena) {
+  return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_add_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_add_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_set_last_updated(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, struct google_protobuf_Timestamp* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Timestamp*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_mutable_last_updated(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_mutable_last_updated(envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1257,21 +1474,47 @@ UPB_INLINE char* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_clear_name(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_name(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_clear_version_info(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_version_info(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_has_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 56)); }
-UPB_INLINE const struct google_protobuf_Any* const* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, size_t *len) { return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(32, 56), len); }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_has_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct google_protobuf_Timestamp*);
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_has_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(24, 40));
 }
-UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_has_error_state(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_clear_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  _upb_array_detach(msg, UPB_SIZE(24, 40));
+}
+UPB_INLINE const struct google_protobuf_Any* const* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_scoped_route_configs(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg, size_t* len) {
+  return (const struct google_protobuf_Any* const*)_upb_array_accessor(msg, UPB_SIZE(24, 40), len);
+}
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_has_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_clear_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_last_updated(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct google_protobuf_Timestamp*);
+}
+UPB_INLINE bool envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_has_error_state(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_clear_error_state(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 56), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_error_state(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const envoy_admin_v3_UpdateFailureState*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(32, 56), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_clear_client_status(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_client_status(const envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -1283,24 +1526,23 @@ UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_
 UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_set_version_info(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView) = value;
 }
-UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_mutable_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, size_t *len) {
-  return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(32, 56), len);
+UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_mutable_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg, size_t* len) {
+  return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 40), len);
 }
-UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_resize_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, size_t len, upb_Arena *arena) {
-  return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(32, 56), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE struct google_protobuf_Any** envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_resize_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg, size_t len, upb_Arena* arena) {
+  return (struct google_protobuf_Any**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(24, 40), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_add_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_add_scoped_route_configs(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(32, 56), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(24, 40), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_set_last_updated(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, struct google_protobuf_Timestamp* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct google_protobuf_Timestamp*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_mutable_last_updated(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_mutable_last_updated(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1311,9 +1553,9 @@ UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_ScopedRoutesConfigDu
 }
 UPB_INLINE void envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_set_error_state(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, envoy_admin_v3_UpdateFailureState* value) {
   _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), envoy_admin_v3_UpdateFailureState*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 56), envoy_admin_v3_UpdateFailureState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_mutable_error_state(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_mutable_error_state(envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_error_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);
@@ -1357,49 +1599,67 @@ UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_serialize_ex(const envoy_admin
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_SecretsConfigDump_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_has_static_secrets(const envoy_admin_v3_SecretsConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_admin_v3_SecretsConfigDump_StaticSecret* const* envoy_admin_v3_SecretsConfigDump_static_secrets(const envoy_admin_v3_SecretsConfigDump *msg, size_t *len) { return (const envoy_admin_v3_SecretsConfigDump_StaticSecret* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_has_dynamic_active_secrets(const envoy_admin_v3_SecretsConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const* envoy_admin_v3_SecretsConfigDump_dynamic_active_secrets(const envoy_admin_v3_SecretsConfigDump *msg, size_t *len) { return (const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len); }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_has_dynamic_warming_secrets(const envoy_admin_v3_SecretsConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const* envoy_admin_v3_SecretsConfigDump_dynamic_warming_secrets(const envoy_admin_v3_SecretsConfigDump *msg, size_t *len) { return (const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_has_static_secrets(const envoy_admin_v3_SecretsConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_clear_static_secrets(const envoy_admin_v3_SecretsConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_admin_v3_SecretsConfigDump_StaticSecret* const* envoy_admin_v3_SecretsConfigDump_static_secrets(const envoy_admin_v3_SecretsConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_SecretsConfigDump_StaticSecret* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_has_dynamic_active_secrets(const envoy_admin_v3_SecretsConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_clear_dynamic_active_secrets(const envoy_admin_v3_SecretsConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const* envoy_admin_v3_SecretsConfigDump_dynamic_active_secrets(const envoy_admin_v3_SecretsConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+}
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_has_dynamic_warming_secrets(const envoy_admin_v3_SecretsConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_clear_dynamic_warming_secrets(const envoy_admin_v3_SecretsConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(8, 16));
+}
+UPB_INLINE const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const* envoy_admin_v3_SecretsConfigDump_dynamic_warming_secrets(const envoy_admin_v3_SecretsConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_SecretsConfigDump_DynamicSecret* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len);
+}
 
-UPB_INLINE envoy_admin_v3_SecretsConfigDump_StaticSecret** envoy_admin_v3_SecretsConfigDump_mutable_static_secrets(envoy_admin_v3_SecretsConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_SecretsConfigDump_StaticSecret** envoy_admin_v3_SecretsConfigDump_mutable_static_secrets(envoy_admin_v3_SecretsConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_SecretsConfigDump_StaticSecret**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_admin_v3_SecretsConfigDump_StaticSecret** envoy_admin_v3_SecretsConfigDump_resize_static_secrets(envoy_admin_v3_SecretsConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_SecretsConfigDump_StaticSecret** envoy_admin_v3_SecretsConfigDump_resize_static_secrets(envoy_admin_v3_SecretsConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_SecretsConfigDump_StaticSecret**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_SecretsConfigDump_StaticSecret* envoy_admin_v3_SecretsConfigDump_add_static_secrets(envoy_admin_v3_SecretsConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_SecretsConfigDump_StaticSecret* envoy_admin_v3_SecretsConfigDump_add_static_secrets(envoy_admin_v3_SecretsConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_SecretsConfigDump_StaticSecret* sub = (struct envoy_admin_v3_SecretsConfigDump_StaticSecret*)_upb_Message_New(&envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_mutable_dynamic_active_secrets(envoy_admin_v3_SecretsConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_mutable_dynamic_active_secrets(envoy_admin_v3_SecretsConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_SecretsConfigDump_DynamicSecret**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
-UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_resize_dynamic_active_secrets(envoy_admin_v3_SecretsConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_resize_dynamic_active_secrets(envoy_admin_v3_SecretsConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_SecretsConfigDump_DynamicSecret**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_SecretsConfigDump_DynamicSecret* envoy_admin_v3_SecretsConfigDump_add_dynamic_active_secrets(envoy_admin_v3_SecretsConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_SecretsConfigDump_DynamicSecret* envoy_admin_v3_SecretsConfigDump_add_dynamic_active_secrets(envoy_admin_v3_SecretsConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_SecretsConfigDump_DynamicSecret* sub = (struct envoy_admin_v3_SecretsConfigDump_DynamicSecret*)_upb_Message_New(&envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_mutable_dynamic_warming_secrets(envoy_admin_v3_SecretsConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_mutable_dynamic_warming_secrets(envoy_admin_v3_SecretsConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_SecretsConfigDump_DynamicSecret**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
 }
-UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_resize_dynamic_warming_secrets(envoy_admin_v3_SecretsConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_SecretsConfigDump_DynamicSecret** envoy_admin_v3_SecretsConfigDump_resize_dynamic_warming_secrets(envoy_admin_v3_SecretsConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_SecretsConfigDump_DynamicSecret**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_SecretsConfigDump_DynamicSecret* envoy_admin_v3_SecretsConfigDump_add_dynamic_warming_secrets(envoy_admin_v3_SecretsConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_SecretsConfigDump_DynamicSecret* envoy_admin_v3_SecretsConfigDump_add_dynamic_warming_secrets(envoy_admin_v3_SecretsConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_SecretsConfigDump_DynamicSecret* sub = (struct envoy_admin_v3_SecretsConfigDump_DynamicSecret*)_upb_Message_New(&envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1435,23 +1695,47 @@ UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_DynamicSecret_serialize_ex(con
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_name(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_SecretsConfigDump_DynamicSecret_name(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_version_info(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_SecretsConfigDump_DynamicSecret_version_info(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_DynamicSecret_has_last_updated(const envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_DynamicSecret_has_last_updated(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_last_updated(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_DynamicSecret_last_updated(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct google_protobuf_Timestamp*);
 }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_DynamicSecret_has_secret(const envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_DynamicSecret_has_secret(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_secret(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_DynamicSecret_secret(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(28, 48), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_DynamicSecret_has_error_state(const envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_DynamicSecret_has_error_state(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_error_state(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 56), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_SecretsConfigDump_DynamicSecret_error_state(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(32, 56), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_clear_client_status(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_SecretsConfigDump_DynamicSecret_client_status(const envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -1467,7 +1751,7 @@ UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_last_updated(
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_last_updated(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_last_updated(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_SecretsConfigDump_DynamicSecret_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1480,7 +1764,7 @@ UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_secret(envoy_
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(28, 48), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_secret(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_secret(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_SecretsConfigDump_DynamicSecret_secret(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -1493,7 +1777,7 @@ UPB_INLINE void envoy_admin_v3_SecretsConfigDump_DynamicSecret_set_error_state(e
   _upb_sethas(msg, 3);
   *UPB_PTR_AT(msg, UPB_SIZE(32, 56), envoy_admin_v3_UpdateFailureState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_error_state(envoy_admin_v3_SecretsConfigDump_DynamicSecret *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_SecretsConfigDump_DynamicSecret_mutable_error_state(envoy_admin_v3_SecretsConfigDump_DynamicSecret* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_SecretsConfigDump_DynamicSecret_error_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);
@@ -1537,14 +1821,27 @@ UPB_INLINE char* envoy_admin_v3_SecretsConfigDump_StaticSecret_serialize_ex(cons
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_clear_name(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_SecretsConfigDump_StaticSecret_name(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_StaticSecret_has_last_updated(const envoy_admin_v3_SecretsConfigDump_StaticSecret *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_StaticSecret_has_last_updated(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_clear_last_updated(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_StaticSecret_last_updated(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Timestamp*);
 }
-UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_StaticSecret_has_secret(const envoy_admin_v3_SecretsConfigDump_StaticSecret *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_SecretsConfigDump_StaticSecret_has_secret(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_clear_secret(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_StaticSecret_secret(const envoy_admin_v3_SecretsConfigDump_StaticSecret* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct google_protobuf_Any*);
 }
@@ -1556,7 +1853,7 @@ UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_set_last_updated(e
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_StaticSecret_mutable_last_updated(envoy_admin_v3_SecretsConfigDump_StaticSecret *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_SecretsConfigDump_StaticSecret_mutable_last_updated(envoy_admin_v3_SecretsConfigDump_StaticSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_SecretsConfigDump_StaticSecret_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1569,7 +1866,7 @@ UPB_INLINE void envoy_admin_v3_SecretsConfigDump_StaticSecret_set_secret(envoy_a
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_StaticSecret_mutable_secret(envoy_admin_v3_SecretsConfigDump_StaticSecret *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_SecretsConfigDump_StaticSecret_mutable_secret(envoy_admin_v3_SecretsConfigDump_StaticSecret* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_SecretsConfigDump_StaticSecret_secret(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -1610,34 +1907,46 @@ UPB_INLINE char* envoy_admin_v3_EndpointsConfigDump_serialize_ex(const envoy_adm
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_EndpointsConfigDump_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_has_static_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* const* envoy_admin_v3_EndpointsConfigDump_static_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump *msg, size_t *len) { return (const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len); }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_has_dynamic_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8)); }
-UPB_INLINE const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* const* envoy_admin_v3_EndpointsConfigDump_dynamic_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump *msg, size_t *len) { return (const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len); }
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_has_static_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_clear_static_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(0, 0));
+}
+UPB_INLINE const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* const* envoy_admin_v3_EndpointsConfigDump_static_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* const*)_upb_array_accessor(msg, UPB_SIZE(0, 0), len);
+}
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_has_dynamic_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_clear_dynamic_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump* msg) {
+  _upb_array_detach(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* const* envoy_admin_v3_EndpointsConfigDump_dynamic_endpoint_configs(const envoy_admin_v3_EndpointsConfigDump* msg, size_t* len) {
+  return (const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+}
 
-UPB_INLINE envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig** envoy_admin_v3_EndpointsConfigDump_mutable_static_endpoint_configs(envoy_admin_v3_EndpointsConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig** envoy_admin_v3_EndpointsConfigDump_mutable_static_endpoint_configs(envoy_admin_v3_EndpointsConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
-UPB_INLINE envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig** envoy_admin_v3_EndpointsConfigDump_resize_static_endpoint_configs(envoy_admin_v3_EndpointsConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig** envoy_admin_v3_EndpointsConfigDump_resize_static_endpoint_configs(envoy_admin_v3_EndpointsConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* envoy_admin_v3_EndpointsConfigDump_add_static_endpoint_configs(envoy_admin_v3_EndpointsConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* envoy_admin_v3_EndpointsConfigDump_add_static_endpoint_configs(envoy_admin_v3_EndpointsConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* sub = (struct envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig*)_upb_Message_New(&envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig** envoy_admin_v3_EndpointsConfigDump_mutable_dynamic_endpoint_configs(envoy_admin_v3_EndpointsConfigDump *msg, size_t *len) {
+UPB_INLINE envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig** envoy_admin_v3_EndpointsConfigDump_mutable_dynamic_endpoint_configs(envoy_admin_v3_EndpointsConfigDump* msg, size_t* len) {
   return (envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
-UPB_INLINE envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig** envoy_admin_v3_EndpointsConfigDump_resize_dynamic_endpoint_configs(envoy_admin_v3_EndpointsConfigDump *msg, size_t len, upb_Arena *arena) {
+UPB_INLINE envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig** envoy_admin_v3_EndpointsConfigDump_resize_dynamic_endpoint_configs(envoy_admin_v3_EndpointsConfigDump* msg, size_t len, upb_Arena* arena) {
   return (envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(envoy_admin_v3_EndpointsConfigDump *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(envoy_admin_v3_EndpointsConfigDump* msg, upb_Arena* arena) {
   struct envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* sub = (struct envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig*)_upb_Message_New(&envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -1673,11 +1982,21 @@ UPB_INLINE char* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_seriali
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_has_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_has_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_clear_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_has_last_updated(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_has_last_updated(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_clear_last_updated(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_last_updated(const envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Timestamp*);
 }
@@ -1686,7 +2005,7 @@ UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_set_endp
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_mutable_endpoint_config(envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_mutable_endpoint_config(envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_endpoint_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -1699,7 +2018,7 @@ UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_set_last
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_mutable_last_updated(envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_mutable_last_updated(envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1740,20 +2059,41 @@ UPB_INLINE char* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_serial
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_clear_version_info(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_version_info(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView);
 }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_has_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_has_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_clear_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Any* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_endpoint_config(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), const struct google_protobuf_Any*);
 }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_has_last_updated(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_has_last_updated(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_clear_last_updated(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct google_protobuf_Timestamp* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_last_updated(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const struct google_protobuf_Timestamp*);
 }
-UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_has_error_state(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg) { return _upb_hasbit(msg, 3); }
+UPB_INLINE bool envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_has_error_state(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  return _upb_hasbit(msg, 3);
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_clear_error_state(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_admin_v3_UpdateFailureState* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_error_state(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const envoy_admin_v3_UpdateFailureState*);
+}
+UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_clear_client_status(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_client_status(const envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
@@ -1766,7 +2106,7 @@ UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_end
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(16, 24), struct google_protobuf_Any*) = value;
 }
-UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Any* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_endpoint_config(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Any*)_upb_Message_New(&google_protobuf_Any_msginit, arena);
@@ -1779,7 +2119,7 @@ UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_las
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(20, 32), struct google_protobuf_Timestamp*) = value;
 }
-UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_last_updated(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct google_protobuf_Timestamp* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_last_updated(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_last_updated(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_Timestamp*)_upb_Message_New(&google_protobuf_Timestamp_msginit, arena);
@@ -1792,7 +2132,7 @@ UPB_INLINE void envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_err
   _upb_sethas(msg, 3);
   *UPB_PTR_AT(msg, UPB_SIZE(24, 40), envoy_admin_v3_UpdateFailureState*) = value;
 }
-UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_error_state(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_admin_v3_UpdateFailureState* envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_error_state(envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig* msg, upb_Arena* arena) {
   struct envoy_admin_v3_UpdateFailureState* sub = (struct envoy_admin_v3_UpdateFailureState*)envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_error_state(msg);
   if (sub == NULL) {
     sub = (struct envoy_admin_v3_UpdateFailureState*)_upb_Message_New(&envoy_admin_v3_UpdateFailureState_msginit, arena);

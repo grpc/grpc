@@ -229,7 +229,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
-    "src/cpp/server/orca/orca_service.cc",
     "src/cpp/server/server_builder.cc",
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
@@ -306,7 +305,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_posix.h",
     "include/grpcpp/ext/health_check_service_server_builder_option.h",
-    "include/grpcpp/ext/orca_service.h",
     "include/grpcpp/generic/async_generic_service.h",
     "include/grpcpp/generic/generic_stub.h",
     "include/grpcpp/grpcpp.h",
@@ -4788,12 +4786,8 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
-        "protobuf_duration_upb",
         "ref_counted",
-        "time",
         "useful",
-        "xds_orca_service_upb",
-        "xds_orca_upb",
     ],
 )
 
@@ -4826,12 +4820,8 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",
-        "protobuf_duration_upb",
         "ref_counted",
-        "time",
         "useful",
-        "xds_orca_service_upb",
-        "xds_orca_upb",
     ],
 )
 
@@ -4983,6 +4973,31 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_orca",
+    srcs = [
+        "src/cpp/server/orca/orca_service.cc",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/orca_service.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++",
+        "grpc++_codegen_base",
+        "grpc_base",
+        "protobuf_duration_upb",
+        "time",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
     ],
     alwayslink = 1,
 )
