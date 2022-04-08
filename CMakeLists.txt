@@ -714,19 +714,11 @@ protobuf_generate_grpc_cpp_with_import_path(
 protobuf_generate_grpc_cpp_with_import_path(
   src/proto/grpc/testing/xds/v3/orca_load_report.proto src/proto/grpc/testing/xds/v3/orca_load_report.proto
 )
-<<<<<<< HEAD
-protobuf_generate_grpc_cpp(
-<<<<<<< HEAD
-  src/proto/grpc/testing/xds/v3/orca_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/path.proto
-=======
-=======
 protobuf_generate_grpc_cpp_with_import_path(
->>>>>>> 37be78a19f (Address reviewer's comment)
+  src/proto/grpc/testing/xds/v3/orca_service.proto src/proto/grpc/testing/xds/v3/orca_service.proto
+)
+protobuf_generate_grpc_cpp_with_import_path(
   src/proto/grpc/testing/xds/v3/path.proto src/proto/grpc/testing/xds/v3/path.proto
->>>>>>> e5f5e72b5d ([xDS Proto] Enhence gRPC buildgen for 3rd party proto compilation)
 )
 protobuf_generate_grpc_cpp_with_import_path(
   src/proto/grpc/testing/xds/v3/percent.proto src/proto/grpc/testing/xds/v3/percent.proto
