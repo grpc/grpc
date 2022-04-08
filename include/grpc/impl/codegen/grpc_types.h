@@ -454,14 +454,6 @@ typedef struct {
  * channel arg. Int valued, milliseconds. Defaults to 10 minutes.*/
 #define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \
   "grpc.experimental.server_config_change_drain_grace_time_ms"
-/** Channel argument for tcp_connect_handshaker, it indicates the address to
- * connect to. */
-#define GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS \
-  "grpc.internal.tcp_handshaker_resolved_address"
-/** Channel argument for tcp_connect_handshaker, it indicates whether the
- *  handshaker should bind the endpoint to the pollset.  */
-#define GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET \
-  "grpc.internal.tcp_handshaker_bind_endpoint_to_pollset"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

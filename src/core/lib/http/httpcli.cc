@@ -46,6 +46,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 namespace grpc_core {
 
