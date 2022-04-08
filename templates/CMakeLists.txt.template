@@ -400,10 +400,65 @@
   #  protobuf_generate_grpc_cpp
   #  --------------------------
   #
+  #   This method is no longer used by gRPC's CMake build process. However, it
+  #   is used by many open source dependencies, that we might want to keep
+  #   backward compatibility here.
+  #
   #   Add custom commands to process ``.proto`` files to C++ using protoc and
   #   GRPC plugin::
   #
-  #     protobuf_generate_grpc_cpp <FILE_LOCATION> <IMPORT_PATH>
+  #     protobuf_generate_grpc_cpp [<ARGN>...]
+  #
+  #   ``ARGN``
+  #     ``.proto`` files
+  #
+  function(protobuf_generate_grpc_cpp)
+    if(NOT ARGN)
+      message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
+      return()
+    endif()
+
+    set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text>)
+    foreach(FIL <%text>${ARGN}</%text>)
+      get_filename_component(ABS_FIL <%text>${FIL}</%text> ABSOLUTE)
+      get_filename_component(FIL_WE <%text>${FIL}</%text> NAME_WE)
+      file(RELATIVE_PATH REL_FIL <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text> <%text>${ABS_FIL}</%text>)
+      get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
+      set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
+
+      #if cross-compiling, find host plugin
+      if(CMAKE_CROSSCOMPILING)
+        find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
+      else()
+        set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+      endif()
+
+      add_custom_command(
+        OUTPUT <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"</%text>
+               <%text>"${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"</%text>
+        COMMAND <%text>${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}</%text>
+        ARGS --grpc_out=<%text>generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}</%text>
+             --cpp_out=<%text>${_gRPC_PROTO_GENS_DIR}</%text>
+             --plugin=protoc-gen-grpc=<%text>${_gRPC_CPP_PLUGIN}</%text>
+             <%text>${_protobuf_include_path}</%text>
+             <%text>${REL_FIL}</%text>
+        DEPENDS <%text>${ABS_FIL}</%text> <%text>${_gRPC_PROTOBUF_PROTOC}</%text> <%text>${_gRPC_CPP_PLUGIN}</%text>
+        WORKING_DIRECTORY <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
+        COMMENT "Running gRPC C++ protocol buffer compiler on <%text>${FIL}</%text>"
+        VERBATIM)
+    endforeach()
+  endfunction()
+
+  #  protobuf_generate_grpc_cpp_with_import_path
+  #  --------------------------
+  #
+  #   Add custom commands to process ``.proto`` files to C++ using protoc and
+  #   GRPC plugin::
+  #
+  #     protobuf_generate_grpc_cpp_with_import_path <FILE_LOCATION> <IMPORT_PATH>
   #
   #   ``FILE_LOCATION``
   #     The relative path of the ``.proto`` file to the project root
@@ -416,7 +471,7 @@
   #     correct symbol being generated and C++ include path being correct.
   #     More info can be found at https://github.com/grpc/grpc/pull/25272.
   #
-  function(protobuf_generate_grpc_cpp FILE_LOCATION IMPORT_PATH)
+  function(protobuf_generate_grpc_cpp_with_import_path FILE_LOCATION IMPORT_PATH)
     if(NOT FILE_LOCATION)
       message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
       return()
@@ -497,7 +552,7 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
-  protobuf_generate_grpc_cpp(
+  protobuf_generate_grpc_cpp_with_import_path(
     ${src} ${third_party_proto_import_path(src)}
   )
   % endfor

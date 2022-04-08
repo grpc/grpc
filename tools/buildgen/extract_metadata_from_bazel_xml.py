@@ -1214,7 +1214,7 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 
 # Step 7: generates build metadata for external ProtoBuf libraries.
 # We only want the ProtoBuf sources from these ProtoBuf dependencies, which may
-# not present in our release source tar balls. These rules will be used in CMake
+# not be present in our release source tar balls. These rules will be used in CMake
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
