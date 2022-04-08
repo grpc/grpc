@@ -28,14 +28,6 @@ tools/bazel version
 
 ./tools/run_tests/start_port_server.py
 
-# to get "bazel" link for kokoro build, we need to generate
-# invocation UUID, set a flag for bazel to use it
-# and upload "bazel_invocation_ids" file as artifact.
-# NOTE: UUID needs to be in lowercase for the result link to work
-# (on mac "uuidgen" outputs uppercase UUID)
-BAZEL_INVOCATION_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
-
 # only select ObjC test from the following subdirs
 # TODO(jtattermusch): start running selected tests from //test/core too.
 test_pattern="//test/cpp/end2end/... + //test/cpp/server/... + //test/cpp/client/... + //test/cpp/common/... + //test/cpp/codegen/... + //test/cpp/util/... + //test/cpp/grpclb/... + //test/cpp/test/..."
@@ -43,23 +35,11 @@ test_pattern="//test/cpp/end2end/... + //test/cpp/server/... + //test/cpp/client
 # iOS tests are marked as "manual" to prevent them from running by default. To run them, we need to use "bazel query" to list them first.
 ios_tests=$(tools/bazel query "kind(ios_unit_test, tests($test_pattern))" | grep '^//')
 
-tools/bazel \
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_cpp_ios_tests
+
+bazel_cpp_ios_tests/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   test \
-  --invocation_id="${BAZEL_INVOCATION_ID}" \
-  --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   $BAZEL_FLAGS \
-  -- ${ios_tests} || FAILED="true"
-
-if [ "$UPLOAD_TEST_RESULTS" != "" ]
-then
-  # Sleep to let ResultStore finish writing results before querying
-  sleep 60
-  PYTHONHTTPSVERIFY=0 python3 ./tools/run_tests/python_utils/upload_rbe_results.py
-fi
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+  -- ${ios_tests}
