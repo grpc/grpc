@@ -40,7 +40,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
     // Get slice from request.
     Slice slice;
-    request_buffer->DumpToSingleSlice(&slice);
+    GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
     // Parse request proto.
     upb::Arena arena;
     xds_service_orca_v3_OrcaLoadReportRequest* request =
