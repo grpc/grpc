@@ -528,6 +528,11 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT
 #define GPR_ALIGN_STRUCT(n)
 #endif
+#ifdef USE_STRICT_WARNING
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
+#else
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+#endif
 #endif
 
 #ifndef GRPC_UNUSED
