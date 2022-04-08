@@ -142,6 +142,7 @@ class InteropClient {
                        const int32_t soak_iterations,
                        const int32_t max_failures,
                        const int32_t max_acceptable_per_iteration_latency_ms,
+                       const int32_t min_time_ms_between_rpcs,
                        const int32_t overall_timeout_seconds);
 
   ServiceStub serviceStub_;

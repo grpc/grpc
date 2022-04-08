@@ -1082,11 +1082,11 @@ void InteropClient::PerformSoakTest(
     std::string debug_string = std::get<2>(result);
     results.push_back(result);
     if (!success) {
-      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d failed: %s", i,
+      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d failed: %s", i,
               elapsed_ms, debug_string.c_str());
       total_failures++;
     } else {
-      gpr_log(GPR_DEBUG, "soak iteration: %ld elapsed_ms: %d succeeded", i,
+      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d succeeded", i,
               elapsed_ms);
     }
     grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
