@@ -1145,14 +1145,12 @@ void InteropClient::PerformSoakTest(
 bool InteropClient::DoRpcSoakTest(
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t soak_min_time_ms_between_rpcs,
-    int32_t overall_timeout_seconds) {
+    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(false /* reset channel per iteration */, soak_iterations,
                   max_failures, max_acceptable_per_iteration_latency_ms,
-                  soak_min_time_ms_between_rpcs,
-                  overall_timeout_seconds);
+                  soak_min_time_ms_between_rpcs, overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "rpc_soak test done.");
   return true;
 }
@@ -1160,15 +1158,13 @@ bool InteropClient::DoRpcSoakTest(
 bool InteropClient::DoChannelSoakTest(
     int32_t soak_iterations, int32_t max_failures,
     int64_t max_acceptable_per_iteration_latency_ms,
-    int32_t soak_min_time_ms_between_rpcs,
-    int32_t overall_timeout_seconds) {
+    int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
   GPR_ASSERT(soak_iterations > 0);
   PerformSoakTest(true /* reset channel per iteration */, soak_iterations,
                   max_failures, max_acceptable_per_iteration_latency_ms,
-                  soak_min_time_ms_between_rpcs,
-                  overall_timeout_seconds);
+                  soak_min_time_ms_between_rpcs, overall_timeout_seconds);
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }
