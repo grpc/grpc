@@ -104,7 +104,7 @@ class PriorityLb : public LoadBalancingPolicy {
                       bool ignore_reresolution_requests);
     void ExitIdleLocked();
     void ResetBackoffLocked();
-    void DeactivateLocked();
+    void MaybeDeactivateLocked();
     void MaybeReactivateLocked();
 
     void Orphan() override;
@@ -121,7 +121,9 @@ class PriorityLb : public LoadBalancingPolicy {
       return connectivity_status_;
     }
 
-    bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
+    // Returns true if the child has been in state TRANSIENT_FAILURE
+    // since the last time it was in state READY.
+    bool healthy() const { return healthy_; }
 
    private:
     // A simple wrapper for ref-counting a picker from the child policy.
@@ -216,6 +218,8 @@ class PriorityLb : public LoadBalancingPolicy {
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     absl::Status connectivity_status_;
     RefCountedPtr<RefCountedPicker> picker_wrapper_;
+
+    bool healthy_ = true;
 
     OrphanablePtr<DeactivationTimer> deactivation_timer_;
     OrphanablePtr<FailoverTimer> failover_timer_;
@@ -357,7 +361,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
     auto config_it = config_->children().find(child_name);
     if (config_it == config_->children().end()) {
       // Existing child not found in new config.  Deactivate it.
-      child->DeactivateLocked();
+      child->MaybeDeactivateLocked();
     } else {
       // Existing child found in new config.  Update it.
       child->UpdateLocked(config_it->second.config,
@@ -473,9 +477,10 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
       SetCurrentPriorityLocked(priority);
       return;
     }
-    // Child is not READY or IDLE.
-    // If its failover timer is still pending, give it time to fire.
-    if (child->FailoverTimerPending()) {
+    // If the child is in state CONNECTING and is healthy, give it time
+    // to connect.
+    if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING &&
+        child->healthy()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
         gpr_log(GPR_INFO,
                 "[priority_lb %p] priority %u, child %s: child still "
@@ -493,9 +498,10 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] skipping priority %u, child %s: state=%s, "
-              "failover timer not pending",
+              "healthy=%d",
               this, priority, child_name.c_str(),
-              ConnectivityStateName(child->connectivity_state()));
+              ConnectivityStateName(child->connectivity_state()),
+              child->healthy());
     }
   }
   // If there are no more priorities to try, report TRANSIENT_FAILURE.
@@ -523,7 +529,7 @@ void PriorityLb::SetCurrentPriorityLocked(uint32_t priority) {
   for (uint32_t p = priority + 1; p < config_->priorities().size(); ++p) {
     const std::string& child_name = config_->priorities()[p];
     auto it = children_.find(child_name);
-    if (it != children_.end()) it->second->DeactivateLocked();
+    if (it != children_.end()) it->second->MaybeDeactivateLocked();
   }
   // Update picker.
   auto& child = children_[config_->priorities()[priority]];
@@ -748,6 +754,9 @@ PriorityLb::ChildPriority::CreateChildPolicyLocked(
 }
 
 void PriorityLb::ChildPriority::ExitIdleLocked() {
+  if (connectivity_state_ == GRPC_CHANNEL_IDLE && failover_timer_ == nullptr) {
+    failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
+  }
   child_policy_->ExitIdleLocked();
 }
 
@@ -769,21 +778,19 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   connectivity_state_ = state;
   connectivity_status_ = status;
   picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  // If we transition to state CONNECTING, start failover timer if not
-  // already pending.  Otherwise, cancel failover timer.
-  if (state == GRPC_CHANNEL_CONNECTING) {
-    if (failover_timer_ == nullptr) {
-      failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
-    }
-  } else {
+  // Update healthy_ and cancel failover timer in any state except CONNECTING.
+  if (state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_IDLE) {
+    healthy_ = true;
+    failover_timer_.reset();
+  } else if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    healthy_ = false;
     failover_timer_.reset();
   }
   // Notify the parent policy.
   priority_policy_->HandleChildConnectivityStateChangeLocked(this);
 }
 
-void PriorityLb::ChildPriority::DeactivateLocked() {
-  // If already deactivated, don't do it again.
+void PriorityLb::ChildPriority::MaybeDeactivateLocked() {
   if (deactivation_timer_ == nullptr) {
     deactivation_timer_ = MakeOrphanable<DeactivationTimer>(Ref());
   }
