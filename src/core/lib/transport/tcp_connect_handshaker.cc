@@ -18,17 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/tcp_connect_handshaker.h"
+#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 #include <string.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/transport/handshaker.h"
 
 namespace grpc_core {
 

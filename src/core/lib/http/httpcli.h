@@ -25,7 +25,6 @@
 
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /* User agent this library reports */

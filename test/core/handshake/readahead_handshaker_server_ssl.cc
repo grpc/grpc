@@ -31,11 +31,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/channel/handshaker_factory.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/transport/handshaker_factory.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 #include "test/core/handshake/server_ssl_common.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
