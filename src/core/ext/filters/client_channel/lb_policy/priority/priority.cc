@@ -121,7 +121,7 @@ class PriorityLb : public LoadBalancingPolicy {
       return connectivity_status_;
     }
 
-    // Returns true if the child has been in state TRANSIENT_FAILURE
+    // Returns true if the child has not been in state TRANSIENT_FAILURE
     // since the last time it was in state READY.
     bool healthy() const { return healthy_; }
 
