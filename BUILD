@@ -1471,6 +1471,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "handshaker",
+    language = "c++",
+    public_hdrs =  GRPC_PUBLIC_HDRS + [
+        "src/core/lib/transport/handshaker.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "handshaker_factory",
     language = "c++",
     public_hdrs = [
@@ -1493,6 +1504,30 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "http_connect_handshaker",
+    srcs = [
+        "src/core/lib/transport/http_connect_handshaker.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/http_connect_handshaker.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "gpr_base",
+        "handshaker",
+        "handshaker_registry",
+        "channel_args",
+        "config",
+        "httpcli",
+        "slice",
+        "uri_parser",
     ],
 )
 
@@ -1990,7 +2025,6 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/handshaker.cc",
-        "src/core/lib/transport/http_connect_handshaker.cc",
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/status_conversion.cc",
@@ -2108,7 +2142,6 @@ grpc_cc_library(
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/handshaker.h",
-        "src/core/lib/transport/http_connect_handshaker.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
@@ -2184,6 +2217,8 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_sockaddr",
         "grpc_trace",
+        "handshaker",
+        "handshaker_registry",
         "iomgr_port",
         "json",
         "latch",
@@ -2533,6 +2568,7 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker_registry",
         "httpcli",
+        "http_connect_handshaker",
         "json",
         "json_util",
         "orphanable",
