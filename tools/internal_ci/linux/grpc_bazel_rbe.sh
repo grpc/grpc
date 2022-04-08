@@ -15,6 +15,9 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
