@@ -8517,7 +8517,7 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
-external_libraries:
+external_proto_libraries:
 - destination: third_party/envoy-api
   hash: c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630
   proto_prefix: third_party/envoy-api/

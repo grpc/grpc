@@ -204,13 +204,14 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
                 # @REPO_NAME to a valid path prefix. At this stage, we need
                 # to check repo name, since the label/path mapping is not
                 # available in BUILD files.
-                external_library_name = _maybe_get_internal_path(src)
-                if external_library_name is not None:
+                external_proto_library_name = _maybe_get_internal_path(src)
+                if external_proto_library_name is not None:
                     result.append(
                         src.replace(
-                            f'@{external_library_name}//',
-                            EXTERNAL_PROTO_LIBRARIES[external_library_name].
-                            proto_prefix).replace(':', '/'))
+                            f'@{external_proto_library_name}//',
+                            EXTERNAL_PROTO_LIBRARIES[
+                                external_proto_library_name].proto_prefix).
+                        replace(':', '/'))
     return list(sorted(result))
 
 
@@ -1218,7 +1219,8 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
-build_yaml_like['external_libraries'] = _generate_external_proto_libraries()
+build_yaml_like[
+    'external_proto_libraries'] = _generate_external_proto_libraries()
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)

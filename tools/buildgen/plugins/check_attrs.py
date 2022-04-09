@@ -89,7 +89,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         'vs_proj_dir': anything(),
         'zlib': one_of((True,)),
     },
-    'external_library': {
+    'external_proto_library': {
         'destination': anything(),
         'proto_prefix': anything(),
         'urls': anything(),
@@ -132,7 +132,7 @@ def mako_plugin(dictionary):
         check_attributes(lib, 'lib', errors)
     for target in dictionary.get('targets', {}):
         check_attributes(target, 'target', errors)
-    for target in dictionary.get('external_libraries', {}):
-        check_attributes(target, 'external_library', errors)
+    for target in dictionary.get('external_proto_libraries', {}):
+        check_attributes(target, 'external_proto_library', errors)
     if errors:
         raise Exception('\n'.join(errors))

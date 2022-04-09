@@ -27,7 +27,7 @@
   proto_re = re.compile('(.*)\\.proto')
   lib_map = {lib.name: lib for lib in libs}
 
-  third_party_proto_prefixes = {lib.proto_prefix for lib in external_libraries}
+  third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
 
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
@@ -367,20 +367,20 @@
   include(cmake/zlib.cmake)
   include(cmake/download_archive.cmake)
 
-  % for external_library in external_libraries:
-  % if len(external_library.urls) > 1:
-  # Setup external proto library at ${external_library.destination} with ${len(external_library.urls)} download URLs
+  % for external_proto_library in external_proto_libraries:
+  % if len(external_proto_library.urls) > 1:
+  # Setup external proto library at ${external_proto_library.destination} with ${len(external_proto_library.urls)} download URLs
   % else:
-  # Setup external proto library at ${external_library.destination} if it doesn't exist
+  # Setup external proto library at ${external_proto_library.destination} if it doesn't exist
   % endif
-  % for download_url in external_library.urls:
-  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_library.destination})
-    # Download the archive via HTTP, validate the checksum, and extract to ${external_library.destination}.
+  % for download_url in external_proto_library.urls:
+  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination})
+    # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
-      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_library.destination}
+      <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
       ${download_url}
-      ${external_library.hash}
-      ${external_library.strip_prefix}
+      ${external_proto_library.hash}
+      ${external_proto_library.strip_prefix}
     )
   endif()
   % endfor
