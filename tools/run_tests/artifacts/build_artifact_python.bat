@@ -61,6 +61,9 @@ popd
 python -m pip install packaging==21.3 twine==3.8.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
+python -m pip freeze
+exit /b 1
+
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
 xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
 

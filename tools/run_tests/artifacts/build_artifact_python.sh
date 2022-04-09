@@ -225,3 +225,6 @@ then
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 fi
+
+"${PYTHON}" -m pip freeze
+exit 1

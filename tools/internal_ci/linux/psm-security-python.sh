@@ -121,6 +121,8 @@ run_test() {
   #   grpc/core/master/linux/...
   #   grpc/core/v1.42.x/branch/linux/...
   set -x
+  python3 -m pip freeze
+  exit 1
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
