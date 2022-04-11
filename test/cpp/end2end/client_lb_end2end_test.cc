@@ -64,39 +64,17 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
+#include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
-
-// defined in tcp_client.cc
-extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
-
-static grpc_tcp_client_vtable* default_client_impl;
 
 namespace grpc {
 namespace testing {
 namespace {
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
-
-gpr_atm g_connection_delay_ms;
-
-void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
-                                   grpc_pollset_set* interested_parties,
-                                   const grpc_channel_args* channel_args,
-                                   const grpc_resolved_address* addr,
-                                   grpc_core::Timestamp deadline) {
-  const int delay_ms = gpr_atm_acq_load(&g_connection_delay_ms);
-  if (delay_ms > 0) {
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
-  }
-  default_client_impl->connect(
-      closure, ep, interested_parties, channel_args, addr,
-      deadline + grpc_core::Duration::Milliseconds(delay_ms));
-}
-
-grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
 
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo RPC.
@@ -627,9 +605,9 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   response_generator.SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
-  gpr_atm_rel_store(&g_connection_delay_ms, kMinReconnectBackOffMs * 1.10);
-  default_client_impl = grpc_tcp_client_impl;
-  grpc_set_tcp_client_impl(&delayed_connect);
+  ConnectionDelayInjector delay_injector;
+  auto injected_delay = delay_injector.SetDelay(
+      grpc_core::Duration::Milliseconds(kMinReconnectBackOffMs * 1.10));
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
@@ -640,7 +618,6 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   // We should have waited at least kMinReconnectBackOffMs. We substract one to
   // account for test and precision accuracy drift.
   EXPECT_GE(waited.millis(), kMinReconnectBackOffMs - 1);
-  gpr_atm_rel_store(&g_connection_delay_ms, 0);
 }
 
 TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
