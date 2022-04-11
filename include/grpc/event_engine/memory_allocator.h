@@ -25,9 +25,7 @@
 
 #include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/slice.h>
-
-// forward-declaring an internal struct, not used publicly.
-struct grpc_slice_buffer;
+#include <grpc/slice_buffer.h>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -98,9 +96,7 @@ class SliceBuffer {
   grpc_slice Ref(size_t index) {
     if (index >= Count()) return grpc_empty_slice();
     grpc_slice slice = slice_buffer_->slices[index];
-    if (slice.refcount) {
-      grpc_slice_ref_internal(slice_buffer_->slices[index]);
-    }
+    grpc_slice_ref(slice);
     return slice;
   }
 
