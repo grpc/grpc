@@ -243,6 +243,28 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
   }
 }
 
+void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
+  size_t free = free_bytes_.load(std::memory_order_relaxed);
+  const size_t kReduceToSize = kMaxQuotaBufferSize / 2;
+  while (true) {
+    if (free <= kReduceToSize) return;
+    size_t ret = free - kReduceToSize;
+    if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acquire)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
+                name_.c_str(), ret);
+      }
+      MutexLock lock(&memory_quota_mu_);
+      GPR_ASSERT(taken_bytes_ >= ret);
+      taken_bytes_ -= ret;
+      memory_quota_->Return(ret);
+      return;
+    }
+  }
+}
+
 void GrpcMemoryAllocatorImpl::Replenish() {
   MutexLock lock(&memory_quota_mu_);
   GPR_ASSERT(!shutdown_);

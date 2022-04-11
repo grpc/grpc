@@ -75,6 +75,7 @@ enum class ReclamationPass {
   kDestructive = 3,
 };
 static constexpr size_t kNumReclamationPasses = 4;
+static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
 // For each reclamation function run we construct a ReclamationSweep.
 // When this object is finally destroyed (it may be moved several times first),
@@ -298,7 +299,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
-    if (prev_free + n > 1024 * 1024) {
+    if (prev_free + n > kMaxQuotaBufferSize) {
+      // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }
     if (prev_free != 0) return;
@@ -329,27 +331,12 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  private:
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
-  void MaybeDonateBack() {
-    size_t free = free_bytes_.load(std::memory_order_relaxed);
-    const size_t kReduceToSize = 1024 * 1024 / 2;
-    while (true) {
-      if (free <= kReduceToSize) return;
-      size_t ret = free - kReduceToSize;
-      if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire)) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
-                  name_.c_str(), ret);
-        }
-        MutexLock lock(&memory_quota_mu_);
-        GPR_ASSERT(taken_bytes_ >= ret);
-        taken_bytes_ -= ret;
-        memory_quota_->Return(ret);
-        return;
-      }
-    }
-  }
+  // This function may be invoked during a memory release operation. If the
+  // total free_bytes in this allocator/local cache exceeds
+  // kMaxQuotaBufferSize / 2, donate the excess free_bytes in this cache back
+  // to the total quota immediately. This helps prevent free bytes in any
+  // particular allocator from growing too large.
+  void MaybeDonateBack();
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
   void Replenish() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);
