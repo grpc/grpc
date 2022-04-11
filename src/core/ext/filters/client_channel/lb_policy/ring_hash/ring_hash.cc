@@ -643,28 +643,33 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
         ConnectivityStateName(last_connectivity_state_),
         ConnectivityStateName(connectivity_state));
   }
-  // Update connectivity state used by picker.
-  connectivity_state_for_picker_.store(connectivity_state,
-                                       std::memory_order_relaxed);
-  // Decide what state to report for aggregation purposes.
+  // Decide what state to report for the purposes of aggregation and
+  // picker behavior.
   // If we haven't seen a failure since the last time we were in state
   // READY, then we report the state change as-is.  However, once we do see
   // a failure, we report TRANSIENT_FAILURE and do not report any subsequent
   // state changes until we go back into state READY.
-  if (!seen_failure_since_ready_) {
-    if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  if (seen_failure_since_ready_) {
+    // If not transitioning to READY, ignore the update, since we want
+    // to continue to consider ourselves in TRANSIENT_FAILURE.
+    if (connectivity_state != GRPC_CHANNEL_READY) return;
+    // Otherwise, update from TF to READY.
+    seen_failure_since_ready_ = false;
+  } else if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    // If we go from READY to TF, treat it as IDLE.
+    if (last_connectivity_state_ == GRPC_CHANNEL_READY) {
+      connectivity_state = GRPC_CHANNEL_IDLE;
+    } else {
       seen_failure_since_ready_ = true;
     }
-    subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
-                                                 connectivity_state);
-  } else {
-    if (connectivity_state == GRPC_CHANNEL_READY) {
-      seen_failure_since_ready_ = false;
-      subchannel_list()->UpdateStateCountersLocked(
-          GRPC_CHANNEL_TRANSIENT_FAILURE, connectivity_state);
-    }
   }
-  // Record last seen connectivity state.
+  // Update state counters used for aggregation.
+  subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
+                                               connectivity_state);
+  // Update state seen by picker.
+  connectivity_state_for_picker_.store(connectivity_state,
+                                       std::memory_order_relaxed);
+  // Update last seen connectivity state.
   last_connectivity_state_ = connectivity_state;
 }
 
