@@ -565,10 +565,10 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // 1. If there is at least one subchannel in READY state, report READY.
   // 2. If there are 2 or more subchannels in TRANSIENT_FAILURE state, report
   //    TRANSIENT_FAILURE.
-  // 3. If there is at least one subchannel in TRANSIENT_FAILURE state
-  //    and there is more than one subchannel, report CONNECTING.
-  // 4. If there is at least one subchannel in CONNECTING state, report
+  // 3. If there is at least one subchannel in CONNECTING state, report
   //    CONNECTING.
+  // 4. If there is one subchannel in TRANSIENT_FAILURE state and there is
+  //    more than one subchannel, report CONNECTING.
   // 5. If there is at least one subchannel in IDLE state, report IDLE.
   // 6. Otherwise, report TRANSIENT_FAILURE.
   //
@@ -582,11 +582,11 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     status = absl::UnavailableError("connections to backends failing");
     start_connection_attempt = true;
+  } else if (num_connecting_ > 0) {
+    state = GRPC_CHANNEL_CONNECTING;
   } else if (num_transient_failure_ == 1 && num_subchannels() > 1) {
     state = GRPC_CHANNEL_CONNECTING;
     start_connection_attempt = true;
-  } else if (num_connecting_ > 0) {
-    state = GRPC_CHANNEL_CONNECTING;
   } else if (num_idle_ > 0) {
     state = GRPC_CHANNEL_IDLE;
   } else {
