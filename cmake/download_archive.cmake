@@ -21,6 +21,7 @@ file(MAKE_DIRECTORY ${_download_archive_TEMPORARY_DIR})
 function(download_archive destination url hash strip_prefix)
   # Fetch and validate
   set(_TEMPORARY_FILE ${_download_archive_TEMPORARY_DIR}/${strip_prefix}.tar.gz)
+  message(STATUS "Downloading from ${url}, if failed, please try configuring again")
   file(DOWNLOAD ${url} ${_TEMPORARY_FILE}
        TIMEOUT 60
        EXPECTED_HASH SHA256=${hash}
