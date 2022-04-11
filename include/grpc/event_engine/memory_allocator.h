@@ -32,16 +32,74 @@ struct grpc_slice_buffer;
 namespace grpc_event_engine {
 namespace experimental {
 
-// TODO(nnoble): needs implementation
+/// A Wrapper around \a grpc_slice_buffer pointer.
+///
+/// A slice buffer holds the memory for a collection of slices.
+/// The SliceBuffer object itself is meant to only hide the C-style API,
+/// and won't hold the data itself. In terms of lifespan, the
+/// grpc_slice_buffer ought to be kept somewhere inside the caller's objects,
+/// like a transport or an endpoint.
+///
+/// This lifespan rule is likely to change in the future, as we may
+/// collapse the grpc_slice_buffer structure straight into this class.
+///
+/// The SliceBuffer API is basically a replica of the grpc_slice_buffer's,
+/// and its documentation will move here once we remove the C structure,
+/// which should happen before the Event Engine's API is no longer
+/// an experimental API.
 class SliceBuffer {
  public:
-  SliceBuffer() { abort(); }
-  explicit SliceBuffer(grpc_slice_buffer*) { abort(); }
+  explicit SliceBuffer(grpc_slice_buffer* sb) : sb_(sb) {}
+  SliceBuffer(const SliceBuffer& other) : slice_buffer_(other.slice_buffer_) {}
+  SliceBuffer(SliceBuffer&& other) noexcept : slice_buffer_(other.slice_buffer_) {
+    other.sb_ = nullptr;
+  }
 
+  void Add(grpc_slice slice) {
+    grpc_slice_buffer_add(slice_buffer_, slice);
+  }
+
+  size_t AddIndexed(grpc_slice slice) {
+    return grpc_slice_buffer_add_indexed(slice_buffer_, slice);
+  }
+
+  void Pop() { grpc_slice_buffer_pop(slice_buffer_); }
+
+  size_t Count() { return slice_buffer_->count; }
+
+  void TrimEnd(size_t n) { grpc_slice_buffer_trim_end(slice_buffer_, n, nullptr); }
+
+  void MoveFirstIntoBuffer(size_t n, void* dst) {
+    grpc_slice_buffer_move_first_into_buffer(slice_buffer_, n, dst);
+  }
+
+  void Clear() { grpc_slice_buffer_reset_and_unref(slice_buffer_); }
+
+  grpc_slice TakeFirst() {
+    return grpc_slice_buffer_take_first(slice_buffer_);
+  }
+
+  void UndoTakeFirst(grpc_slice slice) {
+    grpc_slice_buffer_undo_take_first(slice_buffer_, slice);
+  }
+
+  grpc_slice Ref(size_t index) {
+    if (index >= Count()) return grpc_empty_slice();
+    grpc_slice slice = slice_buffer_->slices[index];
+    if (slice.refcount) {
+      grpc_slice_ref_internal(slice_buffer_->slices[index]);
+    }
+    return slice;
+  }
+
+  size_t Length() { return slice_buffer_->length; }
+
+  // This is not a stable API, and will be removed in the future once
+  // the C-based slice buffer goes away.
   grpc_slice_buffer* RawSliceBuffer() { return slice_buffer_; }
 
  private:
-  grpc_slice_buffer* slice_buffer_;
+  grpc_slice_buffer* slice_buffer_ = nullptr;
 };
 
 // Tracks memory allocated by one system.
