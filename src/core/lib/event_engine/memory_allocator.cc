@@ -71,7 +71,8 @@ grpc_core::Slice SliceBuffer::RefSlice(size_t index) {
   if (index >= Count()) {
     return grpc_core::Slice(grpc_empty_slice());
   }
-  return grpc_core::Slice(grpc_slice_ref(slice_buffer_->slices[index]));
+  return grpc_core::Slice(
+      grpc_slice_ref_internal(slice_buffer_->slices[index]));
 }
 
 grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
