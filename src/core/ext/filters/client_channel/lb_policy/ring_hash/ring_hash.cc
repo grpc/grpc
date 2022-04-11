@@ -523,7 +523,10 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
     }
   }
   // Send updated state to parent based on reported subchannel states.
-  UpdateRingHashConnectivityStateLocked(num_subchannels());
+  // Pretend we're getting this update from the last subchannel, so that
+  // if we need to proactively start connecting, we'll start from the
+  // first subchannel.
+  UpdateRingHashConnectivityStateLocked(num_subchannels() - 1);
 }
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
