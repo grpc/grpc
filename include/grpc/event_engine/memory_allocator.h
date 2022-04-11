@@ -49,11 +49,12 @@ namespace experimental {
 /// an experimental API.
 class SliceBuffer {
  public:
-  explicit SliceBuffer(grpc_slice_buffer* sb) : sb_(sb) {}
+  explicit SliceBuffer(grpc_slice_buffer* slice_buffer)
+      : slice_buffer_(slice_buffer) {}
   SliceBuffer(const SliceBuffer& other) : slice_buffer_(other.slice_buffer_) {}
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
-    other.sb_ = nullptr;
+    other.slice_buffer_ = nullptr;
   }
 
   /// Adds a new slice into the SliceBuffer and makes an attempt to merge
