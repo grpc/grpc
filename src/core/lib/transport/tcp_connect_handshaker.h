@@ -25,7 +25,7 @@
 #define GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS \
   "grpc.internal.tcp_handshaker_resolved_address"
 
-// Whether the TCP connect handshaker should bind the endpoint to the pollset. 
+// Whether the TCP connect handshaker should bind the endpoint to the pollset.
 #define GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET \
   "grpc.internal.tcp_handshaker_bind_endpoint_to_pollset"
 
