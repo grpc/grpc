@@ -27,7 +27,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
-namespace grpc_core{
+namespace grpc_core {
 class Slice;
 }
 
@@ -60,9 +60,7 @@ class SliceBuffer {
   }
   /// Upon destruction, the underlying raw slice buffer is cleaned out and all
   /// slices are unreffed.
-  ~SliceBuffer() {
-    grpc_slice_buffer_destroy(slice_buffer_);
-  }
+  ~SliceBuffer() { grpc_slice_buffer_destroy(slice_buffer_); }
 
   /// Adds a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.

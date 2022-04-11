@@ -13,11 +13,11 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "grpc/event_engine/memory_allocator.h"
-
 #include <gmock/gmock.h>
-#include <grpc/grpc.h>
 #include <gtest/gtest.h>
+
+#include "grpc/event_engine/memory_allocator.h"
+#include <grpc/grpc.h>
 
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
@@ -29,7 +29,7 @@ static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
   GPR_ASSERT(len > 0);
-  unsigned char * contents = reinterpret_cast<unsigned char*>(new char[len]);
+  unsigned char* contents = reinterpret_cast<unsigned char*>(new char[len]);
   memset(contents, 'a', len);
   return Slice(grpc_slice_new(contents, len, gpr_free));
 }
@@ -44,14 +44,14 @@ TEST(SliceBufferTest, AddAndRemoveTest) {
   sb.Add(std::move(first_slice));
   sb.Add(std::move(second_slice));
   ASSERT_EQ(sb.Count(), 2);
-  ASSERT_EQ(sb.Length(), 2*kNewSliceLength);
+  ASSERT_EQ(sb.Length(), 2 * kNewSliceLength);
   Slice popped = sb.TakeFirst();
   ASSERT_EQ(popped, first_slice_copy);
   ASSERT_EQ(sb.Count(), 1);
   ASSERT_EQ(sb.Length(), kNewSliceLength);
   sb.UndoTakeFirst(std::move(popped));
   ASSERT_EQ(sb.Count(), 2);
-  ASSERT_EQ(sb.Length(), 2*kNewSliceLength);
+  ASSERT_EQ(sb.Length(), 2 * kNewSliceLength);
   sb.Clear();
   ASSERT_EQ(sb.Count(), 0);
   ASSERT_EQ(sb.Length(), 0);
@@ -72,10 +72,9 @@ TEST(SliceBufferTest, SliceRefTest) {
   ASSERT_EQ(first_reffed, first_slice_copy);
   ASSERT_EQ(second_reffed, second_slice_copy);
   ASSERT_EQ(sb.Count(), 2);
-  ASSERT_EQ(sb.Length(), 2*kNewSliceLength + 1);
+  ASSERT_EQ(sb.Length(), 2 * kNewSliceLength + 1);
   sb.Clear();
 }
-
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

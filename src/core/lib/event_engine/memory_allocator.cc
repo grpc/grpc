@@ -17,8 +17,8 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_event_engine {
 namespace experimental {
