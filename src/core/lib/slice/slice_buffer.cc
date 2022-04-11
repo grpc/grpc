@@ -23,10 +23,14 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+
+using grpc_event_engine::experimental::SliceBuffer;
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
@@ -414,4 +418,29 @@ void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
   sb->slices[0] = slice;
   sb->count++;
   sb->length += GRPC_SLICE_LENGTH(slice);
+}
+
+
+void SliceBuffer::Add(grpc_core::Slice slice) {
+  grpc_slice_buffer_add(slice_buffer_, slice.TakeCSlice());
+}
+
+size_t SliceBuffer::AddIndexed(grpc_core::Slice slice) {
+  return grpc_slice_buffer_add_indexed(slice_buffer_, slice.TakeCSlice());
+}
+
+grpc_core::Slice SliceBuffer::TakeFirst() {
+  return grpc_core::Slice(grpc_slice_buffer_take_first(slice_buffer_));
+}
+
+void SliceBuffer::UndoTakeFirst(grpc_core::Slice slice) {
+  grpc_slice_buffer_undo_take_first(slice_buffer_, slice.TakeCSlice());
+}
+
+grpc_core::Slice SliceBuffer::RefSlice(size_t index) {
+  if (index >= Count()) {
+    return grpc_core::Slice(grpc_empty_slice());
+  }
+  return grpc_core::Slice(
+      grpc_slice_ref_internal(slice_buffer_->slices[index]));
 }
