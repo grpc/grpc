@@ -20,10 +20,10 @@
 
 #include <string.h>
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -419,7 +419,6 @@ void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
   sb->count++;
   sb->length += GRPC_SLICE_LENGTH(slice);
 }
-
 
 void SliceBuffer::Add(grpc_core::Slice slice) {
   grpc_slice_buffer_add(slice_buffer_, slice.TakeCSlice());
