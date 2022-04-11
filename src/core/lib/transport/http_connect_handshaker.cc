@@ -29,7 +29,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-// #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
