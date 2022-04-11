@@ -27,6 +27,10 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
+namespace grpc_core{
+class Slice;
+}
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -49,20 +53,24 @@ class SliceBuffer {
  public:
   explicit SliceBuffer(grpc_slice_buffer* slice_buffer)
       : slice_buffer_(slice_buffer) {}
-  SliceBuffer(const SliceBuffer& other) : slice_buffer_(other.slice_buffer_) {}
+  SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
     other.slice_buffer_ = nullptr;
   }
+  /// Upon destruction, the underlying raw slice buffer is cleaned out and all
+  /// slices are unreffed.
+  ~SliceBuffer() {
+    grpc_slice_buffer_destroy(slice_buffer_);
+  }
 
   /// Adds a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
-  void Add(grpc_slice slice) { grpc_slice_buffer_add(slice_buffer_, slice); }
+  void Add(grpc_core::Slice slice);
 
   /// Adds a new slice into the SliceBuffer at the next available index.
-  size_t AddIndexed(grpc_slice slice) {
-    return grpc_slice_buffer_add_indexed(slice_buffer_, slice);
-  }
+  /// Returns the index at which the new slice is added.
+  size_t AddIndexed(grpc_core::Slice slice);
 
   /// Removes the first slice in the SliceBuffer.
   void Pop() { grpc_slice_buffer_pop(slice_buffer_); }
@@ -84,21 +92,14 @@ class SliceBuffer {
   void Clear() { grpc_slice_buffer_reset_and_unref(slice_buffer_); }
 
   /// Removes the first slice in the SliceBuffer and returns it.
-  grpc_slice TakeFirst() { return grpc_slice_buffer_take_first(slice_buffer_); }
+  grpc_core::Slice TakeFirst();
 
   /// Prepends the slice to the the front of the SliceBuffer.
-  void UndoTakeFirst(grpc_slice slice) {
-    grpc_slice_buffer_undo_take_first(slice_buffer_, slice);
-  }
+  void UndoTakeFirst(grpc_core::Slice slice);
 
   /// Increased the ref-count of slice at the specified index and returns the
   /// associated slice.
-  grpc_slice Ref(size_t index) {
-    if (index >= Count()) return grpc_empty_slice();
-    grpc_slice slice = slice_buffer_->slices[index];
-    grpc_slice_ref(slice);
-    return slice;
-  }
+  grpc_core::Slice RefSlice(size_t index);
 
   /// The total number of bytes held by the SliceBuffer
   size_t Length() { return slice_buffer_->length; }

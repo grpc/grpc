@@ -18,6 +18,7 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -49,6 +50,29 @@ class SliceRefCount : public grpc_slice_refcount {
 };
 
 }  // namespace
+
+void SliceBuffer::Add(grpc_core::Slice slice) {
+  grpc_slice_buffer_add(slice_buffer_, slice.TakeCSlice());
+}
+
+size_t SliceBuffer::AddIndexed(grpc_core::Slice slice) {
+  return grpc_slice_buffer_add_indexed(slice_buffer_, slice.TakeCSlice());
+}
+
+grpc_core::Slice SliceBuffer::TakeFirst() {
+  return grpc_core::Slice(grpc_slice_buffer_take_first(slice_buffer_));
+}
+
+void SliceBuffer::UndoTakeFirst(grpc_core::Slice slice) {
+  grpc_slice_buffer_undo_take_first(slice_buffer_, slice.TakeCSlice());
+}
+
+grpc_core::Slice SliceBuffer::RefSlice(size_t index) {
+  if (index >= Count()) {
+    return grpc_core::Slice(grpc_empty_slice());
+  }
+  return grpc_core::Slice(grpc_slice_ref(slice_buffer_->slices[index]));
+}
 
 grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
