@@ -70,7 +70,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 //
