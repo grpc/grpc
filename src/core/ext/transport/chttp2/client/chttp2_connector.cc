@@ -92,7 +92,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
-
   Ref().release();  // Ref held by OnHandshakeDone().
   handshake_mgr_->DoHandshake(nullptr /* endpoint */, channel_args,
                               args.deadline, nullptr /* acceptor */,
