@@ -398,7 +398,9 @@ grpc_cc_library(
         "grpc_common",
         "grpc_security_base",
         "grpc_trace",
+        "http_connect_handshaker",
         "slice",
+        "tcp_connect_handshaker",
     ],
 )
 
@@ -447,7 +449,9 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
+        "http_connect_handshaker",
         "slice",
+        "tcp_connect_handshaker",
     ],
 )
 
@@ -1473,7 +1477,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "handshaker",
     language = "c++",
-    public_hdrs =  GRPC_PUBLIC_HDRS + [
+    public_hdrs = [
         "src/core/lib/transport/handshaker.h",
     ],
     deps = [
@@ -1512,20 +1516,43 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/transport/http_connect_handshaker.cc",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/http_connect_handshaker.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
     deps = [
-        "gpr_base",
-        "handshaker",
-        "handshaker_registry",
         "channel_args",
         "config",
+        "gpr_base",
+        "grpc_base",
+        "handshaker",
+        "handshaker_registry",
         "httpcli",
+        "slice",
+        "uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_connect_handshaker",
+    srcs = [
+        "src/core/lib/transport/tcp_connect_handshaker.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/tcp_connect_handshaker.h",
+    ],
+    deps = [
+        "channel_args",
+        "config",
+        "grpc_base",
+        "gpr_platform",
+        "handshaker",
+        "handshaker_registry",
+        "memory_quota",
         "slice",
         "uri_parser",
     ],
@@ -2028,7 +2055,6 @@ grpc_cc_library(
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/status_conversion.cc",
-        "src/core/lib/transport/tcp_connect_handshaker.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
@@ -2146,7 +2172,6 @@ grpc_cc_library(
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/status_conversion.h",
-        "src/core/lib/transport/tcp_connect_handshaker.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
@@ -2567,8 +2592,8 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "handshaker_registry",
-        "httpcli",
         "http_connect_handshaker",
+        "httpcli",
         "json",
         "json_util",
         "orphanable",
@@ -3735,6 +3760,7 @@ grpc_cc_library(
         "grpc_security_base",
         "ref_counted_ptr",
         "sockaddr_utils",
+        "tcp_connect_handshaker",
         "useful",
     ],
 )
@@ -4660,6 +4686,7 @@ grpc_cc_library(
         "grpc_transport_chttp2",
         "slice",
         "sockaddr_utils",
+        "tcp_connect_handshaker",
         "uri_parser",
     ],
 )

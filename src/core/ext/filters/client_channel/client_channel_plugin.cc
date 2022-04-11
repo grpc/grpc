@@ -36,8 +36,6 @@
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/transport/http_connect_handshaker.h"
-#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 void grpc_client_channel_init(void) {
   grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
@@ -54,11 +52,6 @@ void grpc_client_channel_shutdown(void) {
 namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
-  // The order of the registration is crucial here.
-  // We want TCP connect handshaker to be registered last so that it is added to
-  // the start of the handshaker list.
-  RegisterHttpConnectHandshaker(builder);
-  RegisterTCPConnectHandshaker(builder);
   internal::ClientChannelServiceConfigParser::Register(builder);
   internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()->RegisterStage(
