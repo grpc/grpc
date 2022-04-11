@@ -204,22 +204,22 @@ static void on_read(void* arg, grpc_error_handle err) {
        strip off the ::ffff:0.0.0.0/96 prefix first. */
     int fd = grpc_accept4(sp->fd, &addr, 1, 1);
     if (fd < 0) {
-      switch (errno) {
-        case EINTR:
-          continue;
-        case EAGAIN:
-          grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
-          return;
-        default:
-          gpr_mu_lock(&sp->server->mu);
-          if (!sp->server->shutdown_listeners) {
-            gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
-          } else {
-            /* if we have shutdown listeners, accept4 could fail, and we
-               needn't notify users */
-          }
-          gpr_mu_unlock(&sp->server->mu);
-          goto error;
+      if (errno == EINTR) {
+        continue;
+      } else if (errno == EAGAIN || errno == ECONNABORTED ||
+                 errno == EWOULDBLOCK) {
+        grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
+        return;
+      } else {
+        gpr_mu_lock(&sp->server->mu);
+        if (!sp->server->shutdown_listeners) {
+          gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
+        } else {
+          /* if we have shutdown listeners, accept4 could fail, and we
+             needn't notify users */
+        }
+        gpr_mu_unlock(&sp->server->mu);
+        goto error;
       }
     }
 
