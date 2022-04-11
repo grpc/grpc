@@ -98,8 +98,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         Ref(DEBUG_LOCATION, "ChildOutlierDetection"),
         "outlier_detection_child");
   }
-  child_->UpdateLocked(std::move(args.addresses), config_->child().config,
-                       config_->child().ignore_reresolution_requests);
+  child_->UpdateLocked(std::move(args.addresses), config_->child_policy(), false);
   update_in_progress_ = false;
 }
 
@@ -304,14 +303,14 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error_handle> error_list;
     // Child policy.
-    OutlierDetectionLbConfig::OutlierDetectionLbChild child;
+    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     auto it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:childPolicy error:required field missing"));
     } else {
       grpc_error_handle parse_error = GRPC_ERROR_NONE;
-      auto child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
+      child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       bool ignore_reresolution_requests = false;
       // If present, ignore_reresolution_requests must be of type
@@ -333,8 +332,6 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
-      child.config = std::move(child_policy);
-      child.ignore_reresolution_requests = ignore_reresolution_requests;
     }
     // TODO@donnadionne more parsing of outlier detection here
     std::string interval;
@@ -348,7 +345,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     } else {
       interval = it->second.string_value();
     }
-    return MakeRefCounted<OutlierDetectionLbConfig>(std::move(child));
+    return MakeRefCounted<OutlierDetectionLbConfig>(std::move(child_policy));
   }
 };
 

@@ -41,19 +41,14 @@ namespace grpc_core {
 // Config for outlier detection LB policy.
 class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
  public:
-  struct OutlierDetectionLbChild {
-    RefCountedPtr<LoadBalancingPolicy::Config> config;
-    bool ignore_reresolution_requests = false;
-  };
-
-  OutlierDetectionLbConfig(OutlierDetectionLbChild child)
-      : child_(std::move(child)) {}
+  OutlierDetectionLbConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
+      : child_policy_(std::move(child_policy)) {}
   const char* name() const override;
 
-  const OutlierDetectionLbChild& child() const { return child_; }
+  const RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const { return child_policy_; }
 
  private:
-  OutlierDetectionLbChild child_;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
 };
 
 // outlier detection LB policy.
