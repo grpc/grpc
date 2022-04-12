@@ -23,6 +23,11 @@ import uuid
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 os.chdir(_ROOT)
 
+# How long to sleep before querying Resultstore API and uploading to bigquery
+# (to let ResultStore finish writing results from the bazel invocation that has
+# just finished).
+_UPLOAD_RBE_RESULTS_DELAY_SECONDS = 60
+
 
 def _platform_string():
     """Detect current platform"""
@@ -151,8 +156,7 @@ def _create_bazel_wrapper(report_path, report_suite_name, invocation_id,
 
         if upload_results:
             upload_results_lines = [
-                '# Sleep to let ResultStore finish writing results before querying',
-                'sleep 60',
+                'sleep %s' % _UPLOAD_RBE_RESULTS_DELAY_SECONDS,
                 'PYTHONHTTPSVERIFY=0 python3 ./tools/run_tests/python_utils/upload_rbe_results.py --invocation_id="%s"'
                 % invocation_id,
                 '',
@@ -190,8 +194,7 @@ def _create_bazel_wrapper(report_path, report_suite_name, invocation_id,
 
         if upload_results:
             upload_results_lines = [
-                '@rem Sleep to let ResultStore finish writing results before querying',
-                'sleep 60',
+                'sleep %s' % _UPLOAD_RBE_RESULTS_DELAY_SECONDS,
                 'python3 tools/run_tests/python_utils/upload_rbe_results.py --invocation_id="%s" || exit /b 1'
                 % invocation_id,
                 '',
