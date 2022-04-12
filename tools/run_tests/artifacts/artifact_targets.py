@@ -186,10 +186,7 @@ class PythonArtifact:
                 environ=environ,
                 timeout_seconds=60 * 60 * 2)
         elif self.platform == 'windows':
-            if 'Python27' in self.py_version:
-                environ['EXT_COMPILER'] = 'mingw32'
-            else:
-                environ['EXT_COMPILER'] = 'msvc'
+            environ['EXT_COMPILER'] = 'msvc'
             # For some reason, the batch script %random% always runs with the same
             # seed.  We create a random temp-dir here
             dir = ''.join(
