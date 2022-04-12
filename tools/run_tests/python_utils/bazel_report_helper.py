@@ -96,7 +96,7 @@ def _create_bazel_wrapper(report_path, report_suite_name, invocation_id,
 
     bazel_wrapper_filename = os.path.join(report_path, 'bazel_wrapper')
     bazel_wrapper_bat_filename = bazel_wrapper_filename + '.bat'
-    bazel_rc_filename = os.path.join(report_path, 'bazel_rc')
+    bazel_rc_filename = os.path.join(report_path, 'bazel_wrapper.bazelrc')
 
     # put xml reports in a separate directory if requested by GRPC_TEST_REPORT_BASE_DIR
     report_base_dir = os.getenv('GRPC_TEST_REPORT_BASE_DIR', None)
