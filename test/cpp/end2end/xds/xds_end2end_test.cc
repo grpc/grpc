@@ -7671,8 +7671,10 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("RouteAction cluster contains cluster "
-                                   "specifier plugin name not configured:"));
+              ::testing::HasSubstr(absl::StrCat(
+                  "RouteAction cluster contains cluster specifier plugin "
+                  "name not configured: ",
+                  kRlsClusterSpecifierPluginInstanceName)));
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
