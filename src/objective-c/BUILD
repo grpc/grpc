@@ -19,7 +19,10 @@ load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
 licenses(["notice"])
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_visibility = ["//visibility:public"],
+    features = ["-layering_check"],
+)
 
 exports_files(["LICENSE"])
 
