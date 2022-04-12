@@ -103,6 +103,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   if (method.has_value()) {
     switch (*method) {
       case grpc_core::HttpMethodMetadata::kPost:
+      case grpc_core::HttpMethodMetadata::kPut:
         break;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:
