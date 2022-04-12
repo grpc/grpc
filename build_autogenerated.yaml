@@ -8411,6 +8411,7 @@ targets:
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
@@ -8459,6 +8460,7 @@ targets:
   - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc
   - test/cpp/util/tls_test_utils.cc
   deps:

@@ -47,6 +47,42 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_end2end_test_lib",
+    testonly = True,
+    srcs = ["xds_end2end_test_lib.cc"],
+    hdrs = ["xds_end2end_test_lib.h"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":xds_server",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/testing/xds:ads_for_test_proto",
+        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
+        "//src/proto/grpc/testing/xds/v3:ads_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:discovery_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
+        "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
+        "//src/proto/grpc/testing/xds/v3:listener_proto",
+        "//src/proto/grpc/testing/xds/v3:lrs_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:counted_service",
+        "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:tls_test_utils",
+    ],
+)
+
 grpc_cc_test(
     name = "xds_end2end_test",
     size = "large",
@@ -71,7 +107,7 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
-        ":xds_server",
+        ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -97,9 +133,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:counted_service",
         "//test/cpp/end2end:rls_server",
-        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
         "//test/cpp/util:tls_test_utils",
