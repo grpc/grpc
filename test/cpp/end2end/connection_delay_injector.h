@@ -79,8 +79,8 @@ class ConnectionAttemptInjector {
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
-      AttemptConnection(closure_, endpoint_, interested_parties_,
-                        channel_args_, &address_, deadline_);
+      AttemptConnection(closure_, endpoint_, interested_parties_, channel_args_,
+                        &address_, deadline_);
       closure_ = nullptr;
     }
 

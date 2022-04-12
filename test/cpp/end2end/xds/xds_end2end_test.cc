@@ -7551,9 +7551,8 @@ TEST_P(CdsTest, RingHashContinuesConnectingWithoutPicks) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(non_existant_endpoint.port)}};
-  rpc.StartRpc(
-      stub_.get(),
-      RpcOptions().set_timeout_ms(0).set_metadata(std::move(metadata)));
+  rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
+                                std::move(metadata)));
   // Wait for channel to become connected, after the RPC has been cancelled.
   EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(5)));
   // RPC should have been cancelled.
